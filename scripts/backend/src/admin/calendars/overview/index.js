@@ -209,7 +209,7 @@ export function CalendarsOverview() {
         hideDateRange
       />
 
-      <ProLaunch className="my-8 max-w-xl" />
+      <ProLaunch className="my-8 max-w-2xl" />
     </div>
   );
 }

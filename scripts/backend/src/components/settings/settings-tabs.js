@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 const tabs = [
   { name: "default", title: "Default settings" },
   { name: "integrations", title: "API & integrations" },
-  { name: "license", title: "License & updates" },
 ];
 
 export function SettingsTabs({ settings, setSettings, location }) {

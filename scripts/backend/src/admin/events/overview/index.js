@@ -330,7 +330,7 @@ export function EventsOverview() {
         defaultSort={[{ id: "status", desc: false }]}
       />
 
-      <ProLaunch className="my-8 max-w-xl" />
+      <ProLaunch className="my-8 max-w-2xl" />
     </div>
   );
 }
