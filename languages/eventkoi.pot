@@ -1,0 +1,945 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2025-08-01T02:01:29+00:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.11.0\n"
+"X-Domain: eventkoi\n"
+
+#: admin/class-menus.php:60
+#: admin/class-menus.php:120
+msgid "Dashboard"
+msgstr ""
+
+#: admin/class-menus.php:61
+#: admin/class-menus.php:124
+msgid "Settings"
+msgstr ""
+
+#: admin/class-menus.php:108
+#: admin/class-menus.php:109
+#: admin/class-menus.php:121
+#: core/class-post-types.php:111
+msgid "Events"
+msgstr ""
+
+#: admin/class-menus.php:122
+#: core/class-post-types.php:54
+msgid "Calendars"
+msgstr ""
+
+#: api/class-calendar.php:92
+msgid "Invalid calendar ID."
+msgstr ""
+
+#: api/class-calendar.php:112
+#: api/class-calendar.php:167
+#: api/class-calendar.php:187
+msgid "Calendar ID is required."
+msgstr ""
+
+#: api/class-calendar.php:145
+msgid "Invalid calendar data."
+msgstr ""
+
+#. translators: %s: Parameter name.
+#: api/class-calendars.php:88
+#: api/class-calendars.php:108
+msgid "No %s provided."
+msgstr ""
+
+#: api/class-event.php:125
+#: core/class-ical.php:42
+msgid "Invalid event ID."
+msgstr ""
+
+#: api/class-event.php:144
+msgid "Invalid event data."
+msgstr ""
+
+#: api/class-event.php:155
+#: api/class-event.php:175
+#: api/class-event.php:194
+#: api/class-event.php:214
+msgid "Missing event ID."
+msgstr ""
+
+#: api/class-event.php:233
+#: api/class-event.php:342
+msgid "Missing event ID or timestamp."
+msgstr ""
+
+#: api/class-event.php:272
+msgid "Missing or invalid instance override data."
+msgstr ""
+
+#: api/class-event.php:355
+msgid "Instance overrides reset to defaults."
+msgstr ""
+
+#: api/class-events.php:217
+msgid "No event IDs provided."
+msgstr ""
+
+#: api/class-license.php:64
+msgid "Invalid license request."
+msgstr ""
+
+#: api/class-license.php:91
+msgid "Invalid license response."
+msgstr ""
+
+#: api/class-license.php:107
+msgid "License successfully activated."
+msgstr ""
+
+#: api/class-license.php:108
+msgid "License is invalid."
+msgstr ""
+
+#: api/class-license.php:125
+msgid "License key is missing."
+msgstr ""
+
+#: api/class-license.php:146
+msgid "No update data found."
+msgstr ""
+
+#: api/class-license.php:155
+msgid "Update check triggered."
+msgstr ""
+
+#: api/class-order.php:54
+msgid "Invalid order ID."
+msgstr ""
+
+#: api/class-order.php:65
+msgid "Order not found."
+msgstr ""
+
+#: api/class-orders.php:57
+#: api/class-orders.php:78
+msgid "Invalid request object."
+msgstr ""
+
+#: api/class-orders.php:66
+msgid "Error retrieving orders."
+msgstr ""
+
+#: api/class-orders.php:86
+msgid "Missing required parameters."
+msgstr ""
+
+#: api/class-orders.php:98
+msgid "Failed to add note."
+msgstr ""
+
+#: api/class-settings.php:79
+msgid "Request body is empty."
+msgstr ""
+
+#: api/class-settings.php:91
+msgid "Invalid data format. Expected a JSON object."
+msgstr ""
+
+#: api/class-settings.php:145
+msgid "API key regenerated successfully."
+msgstr ""
+
+#: api/class-settings.php:171
+msgid "Settings updated successfully."
+msgstr ""
+
+#: api/class-stats.php:53
+#: api/class-uploads.php:179
+msgid "Invalid request."
+msgstr ""
+
+#. translators: %d quantity.
+#: api/class-stripe.php:165
+msgid "Test payment for %d tickets"
+msgstr ""
+
+#: api/class-uploads.php:67
+#: api/class-uploads.php:193
+msgid "Invalid or missing event ID."
+msgstr ""
+
+#: api/class-uploads.php:106
+msgid "No image file uploaded."
+msgstr ""
+
+#: api/class-uploads.php:112
+msgid "Uploaded file is not a valid image."
+msgstr ""
+
+#: api/class-uploads.php:121
+msgid "File exceeds maximum upload size of %s MB."
+msgstr ""
+
+#: core/class-auto-updater.php:43
+msgid "Every 4 Hours"
+msgstr ""
+
+#: core/class-auto-updater.php:290
+msgid "View full changelog →"
+msgstr ""
+
+#: core/class-bindings.php:36
+msgid "Event title"
+msgstr ""
+
+#: core/class-bindings.php:37
+msgid "Event details"
+msgstr ""
+
+#: core/class-bindings.php:38
+msgid "Event timezone"
+msgstr ""
+
+#: core/class-bindings.php:39
+msgid "Event Google Map"
+msgstr ""
+
+#: core/class-bindings.php:40
+#: core/class-post-types.php:126
+msgid "Event image"
+msgstr ""
+
+#: core/class-bindings.php:41
+msgid "Event image URL"
+msgstr ""
+
+#: core/class-bindings.php:42
+msgid "Event calendar URL"
+msgstr ""
+
+#: core/class-bindings.php:43
+msgid "Event calendar"
+msgstr ""
+
+#: core/class-bindings.php:44
+msgid "Event calendar link"
+msgstr ""
+
+#: core/class-bindings.php:45
+msgid "Event location"
+msgstr ""
+
+#: core/class-bindings.php:46
+msgid "Event date time with summary"
+msgstr ""
+
+#: core/class-bindings.php:47
+msgid "Event date time"
+msgstr ""
+
+#: core/class-bindings.php:48
+msgid "Event date type"
+msgstr ""
+
+#: core/class-bindings.php:49
+msgid "Recurring rule summary"
+msgstr ""
+
+#. translators: Custom block category for EventKoi plugin.
+#: core/class-blocks.php:44
+msgid "EventKoi"
+msgstr ""
+
+#: core/class-calendar.php:228
+msgid "Calendar created."
+msgstr ""
+
+#: core/class-calendar.php:256
+msgid "Calendar updated."
+msgstr ""
+
+#: core/class-calendar.php:300
+msgid "Calendar deleted."
+msgstr ""
+
+#. translators: %s is calendar name
+#: core/class-calendar.php:316
+#: core/class-calendars.php:96
+msgid "[Duplicate] %s"
+msgstr ""
+
+#: core/class-calendar.php:334
+msgid "Calendar duplicated."
+msgstr ""
+
+#: core/class-calendars.php:41
+msgid "All"
+msgstr ""
+
+#: core/class-calendars.php:79
+msgid "Calendar removed permanently."
+msgid_plural "Calendars removed permanently."
+msgstr[0] ""
+msgstr[1] ""
+
+#: core/class-calendars.php:108
+msgid "Calendar duplicated permanently."
+msgid_plural "Calendars duplicated permanently."
+msgstr[0] ""
+msgstr[1] ""
+
+#: core/class-event.php:345
+#: core/class-event.php:1655
+msgid "Attend online"
+msgstr ""
+
+#: core/class-event.php:400
+msgid "Event created."
+msgstr ""
+
+#: core/class-event.php:422
+msgid "Event updated."
+msgstr ""
+
+#: core/class-event.php:1015
+msgid "Date and time to be confirmed"
+msgstr ""
+
+#. translators: %d is the number of extra recurrence rules.
+#: core/class-event.php:1050
+msgid "%d more rule"
+msgid_plural "%d more rules"
+msgstr[0] ""
+msgstr[1] ""
+
+#. translators: %1$s is the start date, %2$s is the end date.
+#: core/class-event.php:1097
+msgid "%1$s – %2$s"
+msgstr ""
+
+#: core/class-event.php:1300
+#: core/class-events.php:250
+msgid "Event restored successfully."
+msgid_plural "Events restored successfully."
+msgstr[0] ""
+msgstr[1] ""
+
+#: core/class-event.php:1316
+msgid "Event moved to Trash."
+msgstr ""
+
+#. translators: %s event title
+#: core/class-event.php:1330
+msgid "[Duplicate]: %s"
+msgstr ""
+
+#: core/class-event.php:1352
+msgid "Event duplicated."
+msgstr ""
+
+#: core/class-event.php:1452
+msgid "Untitled event"
+msgstr ""
+
+#: core/class-event.php:1470
+msgid "No event details."
+msgstr ""
+
+#: core/class-event.php:1611
+msgid "No location available."
+msgstr ""
+
+#: core/class-event.php:1725
+#: core/class-event.php:1819
+msgid "Date and time to be confirmed."
+msgstr ""
+
+#: core/class-event.php:1932
+msgid "Daily"
+msgstr ""
+
+#: core/class-event.php:1934
+msgid "Weekly"
+msgstr ""
+
+#: core/class-event.php:1936
+msgid "Monthly"
+msgstr ""
+
+#: core/class-event.php:1938
+msgid "Yearly"
+msgstr ""
+
+#: core/class-event.php:1957
+msgid "January"
+msgstr ""
+
+#: core/class-event.php:1958
+msgid "February"
+msgstr ""
+
+#: core/class-event.php:1959
+msgid "March"
+msgstr ""
+
+#: core/class-event.php:1960
+msgid "April"
+msgstr ""
+
+#: core/class-event.php:1961
+msgid "May"
+msgstr ""
+
+#: core/class-event.php:1962
+msgid "June"
+msgstr ""
+
+#: core/class-event.php:1963
+msgid "July"
+msgstr ""
+
+#: core/class-event.php:1964
+msgid "August"
+msgstr ""
+
+#: core/class-event.php:1965
+msgid "September"
+msgstr ""
+
+#: core/class-event.php:1966
+msgid "October"
+msgstr ""
+
+#: core/class-event.php:1967
+msgid "November"
+msgstr ""
+
+#: core/class-event.php:1968
+msgid "December"
+msgstr ""
+
+#: core/class-event.php:2019
+msgid "first"
+msgstr ""
+
+#: core/class-event.php:2020
+msgid "second"
+msgstr ""
+
+#: core/class-event.php:2021
+msgid "third"
+msgstr ""
+
+#: core/class-event.php:2022
+msgid "fourth"
+msgstr ""
+
+#: core/class-event.php:2023
+msgid "fifth"
+msgstr ""
+
+#: core/class-event.php:2041
+msgid "Monday"
+msgstr ""
+
+#: core/class-event.php:2042
+msgid "Tuesday"
+msgstr ""
+
+#: core/class-event.php:2043
+msgid "Wednesday"
+msgstr ""
+
+#: core/class-event.php:2044
+msgid "Thursday"
+msgstr ""
+
+#: core/class-event.php:2045
+msgid "Friday"
+msgstr ""
+
+#: core/class-event.php:2046
+msgid "Saturday"
+msgstr ""
+
+#: core/class-event.php:2047
+msgid "Sunday"
+msgstr ""
+
+#: core/class-events.php:209
+msgid "Event moved to trash."
+msgid_plural "Events moved to trash."
+msgstr[0] ""
+msgstr[1] ""
+
+#: core/class-events.php:228
+msgid "Event removed permanently."
+msgid_plural "Events removed permanently."
+msgstr[0] ""
+msgstr[1] ""
+
+#: core/class-events.php:353
+msgid "Event duplicated successfully."
+msgid_plural "Events duplicated successfully."
+msgstr[0] ""
+msgstr[1] ""
+
+#: core/class-hooks.php:149
+msgid "Card"
+msgstr ""
+
+#: core/class-hooks.php:150
+msgid "Invoice"
+msgstr ""
+
+#: core/class-hooks.php:151
+msgid "SEPA Direct Debit"
+msgstr ""
+
+#: core/class-hooks.php:152
+msgid "PayPal"
+msgstr ""
+
+#: core/class-hooks.php:153
+msgid "Cash"
+msgstr ""
+
+#: core/class-hooks.php:154
+msgid "Link"
+msgstr ""
+
+#: core/class-install.php:93
+msgctxt "Default category slug"
+msgid "Default calendar"
+msgstr ""
+
+#: core/class-post-types.php:56
+msgid "Event calendars"
+msgstr ""
+
+#: core/class-post-types.php:57
+#: components/empty-state/NotFound.js:29
+msgid "Calendar"
+msgstr ""
+
+#: core/class-post-types.php:58
+msgctxt "Admin menu name"
+msgid "Calendars"
+msgstr ""
+
+#: core/class-post-types.php:59
+msgid "Search calendars"
+msgstr ""
+
+#: core/class-post-types.php:60
+msgid "All calendars"
+msgstr ""
+
+#: core/class-post-types.php:61
+msgid "Parent calendar"
+msgstr ""
+
+#: core/class-post-types.php:62
+msgid "Parent calendar:"
+msgstr ""
+
+#: core/class-post-types.php:63
+msgid "Edit calendar"
+msgstr ""
+
+#: core/class-post-types.php:64
+msgid "Update calendar"
+msgstr ""
+
+#: core/class-post-types.php:65
+msgid "Add new calendar"
+msgstr ""
+
+#: core/class-post-types.php:66
+msgid "New calendar name"
+msgstr ""
+
+#: core/class-post-types.php:67
+msgid "No calendars found"
+msgstr ""
+
+#: core/class-post-types.php:68
+msgid "Event Calendar Link"
+msgstr ""
+
+#: core/class-post-types.php:69
+msgid "A link to a event calendar."
+msgstr ""
+
+#: core/class-post-types.php:70
+msgctxt "Template name"
+msgid "Events by Calendar"
+msgstr ""
+
+#: core/class-post-types.php:112
+#: core/class-template.php:46
+#: components/empty-state/NotFound.js:28
+msgid "Event"
+msgstr ""
+
+#: core/class-post-types.php:113
+msgid "All Events"
+msgstr ""
+
+#: core/class-post-types.php:114
+msgctxt "Admin menu name"
+msgid "Events"
+msgstr ""
+
+#: core/class-post-types.php:115
+msgid "Add New"
+msgstr ""
+
+#: core/class-post-types.php:116
+msgid "Add new event"
+msgstr ""
+
+#: core/class-post-types.php:117
+msgid "Edit"
+msgstr ""
+
+#: core/class-post-types.php:118
+msgid "Edit event"
+msgstr ""
+
+#: core/class-post-types.php:119
+msgid "New event"
+msgstr ""
+
+#: core/class-post-types.php:120
+msgid "View event"
+msgstr ""
+
+#: core/class-post-types.php:121
+msgid "View events"
+msgstr ""
+
+#: core/class-post-types.php:122
+msgid "Search events"
+msgstr ""
+
+#: core/class-post-types.php:123
+msgid "No events found"
+msgstr ""
+
+#: core/class-post-types.php:124
+msgid "No events found in trash"
+msgstr ""
+
+#: core/class-post-types.php:125
+msgid "Parent event"
+msgstr ""
+
+#: core/class-post-types.php:127
+msgid "Set event image"
+msgstr ""
+
+#: core/class-post-types.php:128
+msgid "Remove event image"
+msgstr ""
+
+#: core/class-post-types.php:129
+msgid "Use as event image"
+msgstr ""
+
+#: core/class-post-types.php:130
+msgid "Insert into event"
+msgstr ""
+
+#: core/class-post-types.php:131
+msgid "Uploaded to this event"
+msgstr ""
+
+#: core/class-post-types.php:132
+msgid "Filter events"
+msgstr ""
+
+#: core/class-post-types.php:133
+msgid "Events navigation"
+msgstr ""
+
+#: core/class-post-types.php:134
+msgid "Events list"
+msgstr ""
+
+#: core/class-post-types.php:135
+msgid "Event Link"
+msgstr ""
+
+#: core/class-post-types.php:136
+msgid "A link to an event."
+msgstr ""
+
+#: core/class-post-types.php:138
+msgid "This is where you can browse events in this site."
+msgstr ""
+
+#: core/class-scripts.php:81
+msgid "No events were found."
+msgstr ""
+
+#: core/class-template.php:47
+msgid "Default template for a single event view."
+msgstr ""
+
+#: core/core-functions.php:150
+msgid "Invalid calendar. Please check the calendar ID."
+msgstr ""
+
+#: core/core-functions.php:226
+msgctxt "slug"
+msgid "event"
+msgstr ""
+
+#: core/core-functions.php:227
+msgctxt "slug"
+msgid "calendar"
+msgstr ""
+
+#: core/core-functions.php:428
+#: core/core-functions.php:429
+#: components/order/OrderActivity.js:40
+#: lib/utils.js:47
+msgid "Completed"
+msgstr ""
+
+#: core/core-functions.php:430
+#: components/order/OrderActivity.js:48
+#: lib/utils.js:51
+msgid "Refunded"
+msgstr ""
+
+#: core/core-functions.php:431
+#: components/order/OrderActivity.js:52
+#: lib/utils.js:53
+msgid "Partially refunded"
+msgstr ""
+
+#: core/core-functions.php:432
+#: components/order/OrderActivity.js:44
+msgid "Failed"
+msgstr ""
+
+#: core/core-functions.php:433
+#: components/order/OrderActivity.js:36
+#: lib/utils.js:45
+msgid "Pending payment"
+msgstr ""
+
+#: core/core-functions.php:436
+msgid "Incomplete"
+msgstr ""
+
+#: payments/class-stripe.php:160
+#: payments/class-stripe.php:610
+msgid "Invalid Stripe authentication."
+msgstr ""
+
+#: payments/class-stripe.php:325
+msgid "Unknown reason"
+msgstr ""
+
+#: payments/class-stripe.php:575
+msgid "Stripe public key is required."
+msgstr ""
+
+#: payments/class-stripe.php:598
+msgid "Stripe API request failed."
+msgstr ""
+
+#: payments/class-stripe.php:604
+msgid "Invalid API key provided."
+msgstr ""
+
+#: payments/class-stripe.php:633
+msgid "Stripe event listener for EventKoi."
+msgstr ""
+
+#: admin/tickets/orders/view/index.js:91
+msgid "Last updated on %s"
+msgstr ""
+
+#: blocks/calendar/controls.js:37
+#: blocks/list/controls.js:36
+msgid "Accent"
+msgstr ""
+
+#: blocks/calendar/controls.js:62
+#: blocks/list/controls.js:63
+msgid "Display options"
+msgstr ""
+
+#: blocks/calendar/controls.js:65
+#: blocks/list/controls.js:66
+msgid "Select calendar(s)"
+msgstr ""
+
+#: blocks/calendar/controls.js:75
+msgid "Timeframe defaults to"
+msgstr ""
+
+#: blocks/calendar/controls.js:92
+msgid "Week starts on"
+msgstr ""
+
+#: blocks/calendar/index.js:11
+msgid "EK Events Calendar"
+msgstr ""
+
+#: blocks/list/controls.js:77
+msgid "Show/hide components"
+msgstr ""
+
+#: blocks/list/controls.js:82
+msgid "Featured image"
+msgstr ""
+
+#: blocks/list/controls.js:88
+msgid "Location"
+msgstr ""
+
+#: blocks/list/controls.js:94
+msgid "Description"
+msgstr ""
+
+#: blocks/list/controls.js:99
+msgid "Design options"
+msgstr ""
+
+#: blocks/list/index.js:11
+msgid "EK Events List"
+msgstr ""
+
+#: components/empty-state/NotFound.js:27
+msgid "Order"
+msgstr ""
+
+#: components/empty-state/NotFound.js:30
+#: components/order/OrderSummary.js:12
+msgid "Ticket"
+msgstr ""
+
+#: components/empty-state/NotFound.js:31
+#: components/empty-state/NotFound.js:32
+msgid "Item"
+msgstr ""
+
+#: components/empty-state/NotFound.js:50
+msgid "%s not found"
+msgstr ""
+
+#: components/empty-state/NotFound.js:55
+msgid "This %s may have been deleted, or the link you followed is invalid."
+msgstr ""
+
+#: components/empty-state/NotFound.js:66
+msgid "Back to all %s"
+msgstr ""
+
+#: components/order/CopyableOrderId.js:37
+msgid "Copied!"
+msgstr ""
+
+#: components/order/CopyableOrderId.js:37
+msgid "Click to copy"
+msgstr ""
+
+#: components/order/CustomerInfo.js:10
+msgid "Customer"
+msgstr ""
+
+#: components/order/CustomerInfo.js:15
+msgid "Name"
+msgstr ""
+
+#: components/order/CustomerInfo.js:23
+msgid "Email"
+msgstr ""
+
+#: components/order/CustomerInfo.js:38
+msgid "Billing address"
+msgstr ""
+
+#: components/order/OrderActivity.js:21
+msgid "Admin note:"
+msgstr ""
+
+#: components/order/OrderActivity.js:29
+msgid "Checkout started"
+msgstr ""
+
+#: components/order/OrderActivity.js:62
+msgid "Order status:"
+msgstr ""
+
+#: components/order/OrderActivity.js:87
+msgid "Activity"
+msgstr ""
+
+#: components/order/OrderActivity.js:131
+msgid "Add note..."
+msgstr ""
+
+#: components/order/OrderActivity.js:154
+msgid "Saving..."
+msgstr ""
+
+#: components/order/OrderActivity.js:155
+msgid "Add note"
+msgstr ""
+
+#: components/order/OrderSummary.js:9
+msgid "Order summary"
+msgstr ""
+
+#: components/order/OrderSummary.js:13
+msgid "Price"
+msgstr ""
+
+#: components/order/OrderSummary.js:14
+msgid "Quantity"
+msgstr ""
+
+#: components/order/OrderSummary.js:15
+msgid "Amount"
+msgstr ""
+
+#: components/order/OrderSummary.js:28
+msgid "Total"
+msgstr ""
+
+#: components/order/PaymentMethod.js:15
+msgid "ending in"
+msgstr ""
+
+#: components/order/PaymentMethod.js:31
+msgid "Payment method"
+msgstr ""
+
+#: components/order/PaymentMethod.js:36
+msgid "Payment ID"
+msgstr ""
+
+#: components/order/PaymentMethod.js:56
+msgid "Type"
+msgstr ""
+
+#: components/order/PaymentMethod.js:63
+msgid "Origin"
+msgstr ""
+
+#: components/order/PaymentMethod.js:74
+msgid "IP address"
+msgstr ""
+
+#: lib/utils.js:49
+msgid "Payment failed"
+msgstr ""
