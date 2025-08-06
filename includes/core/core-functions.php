@@ -455,7 +455,7 @@ function eventkoi_get_stripe_webhook_secret() {
 
 	// Use a test webhook secret for local development.
 	if ( str_contains( home_url(), 'localhost' ) ) {
-		$webhook_secret = 'whsec_55faa71db4e9f10aea76e4c2d1ee7f199aacd3881e85117645f1131036030a48';
+		$webhook_secret = '';
 	} else {
 		$settings = \EventKoi\Core\Settings::get();
 
