@@ -28,7 +28,7 @@ const features = [
   "30 day money-back guarantee",
 ];
 
-export function ProLaunch({ className }) {
+export function ProLaunch({ className, minimal = false }) {
   return (
     <Box container className={cn("border-[#B8D7D4] gap-8", className)}>
       <div className="flex gap-2">
@@ -46,7 +46,11 @@ export function ProLaunch({ className }) {
 
           <Button
             asChild
-            className="bg-[#3A6667] hover:bg-[#325c5c] min-w-[140px] text-white font-medium text-sm px-5 py-2 rounded-sm"
+            className={cn(
+              "bg-[#3A6667] hover:bg-[#325c5c] min-w-[140px] text-white font-medium text-sm px-5 py-2 rounded-sm",
+              minimal &&
+                "bg-white hover:bg-white hover:text-black hover:border-black border border-solid shadow-sm border-black text-black"
+            )}
             size="sm"
           >
             <a
@@ -78,18 +82,22 @@ export function ProLaunch({ className }) {
         </div>
       </div>
 
-      <hr className="border-t border-[#E1E7E8]" />
-      <ul className="space-y-4 pl-0 mb-0">
-        {features.map((feature) => (
-          <li
-            key={feature}
-            className="flex items-center gap-[6px] text-[15px] text-[#263130] font-normal"
-          >
-            <ZapFilled className="w-4 h-4" />
-            {feature}
-          </li>
-        ))}
-      </ul>
+      {!minimal && (
+        <>
+          <hr className="border-t border-[#E1E7E8]" />
+          <ul className="space-y-4 pl-0 mb-0">
+            {features.map((feature) => (
+              <li
+                key={feature}
+                className="flex items-center gap-[6px] text-[15px] text-[#263130] font-normal"
+              >
+                <ZapFilled className="w-4 h-4" />
+                {feature}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </Box>
   );
 }

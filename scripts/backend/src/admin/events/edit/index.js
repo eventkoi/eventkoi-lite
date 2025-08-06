@@ -137,7 +137,7 @@ export function EventEdit() {
             "w-full mx-auto items-start gap-6",
             isEditingInstance
               ? "grid grid-cols-1"
-              : "grid md:grid-cols-[180px_1fr] grid-cols-1"
+              : "grid md:grid-cols-[210px_1fr] grid-cols-1"
           )}
         >
           {!isEditingInstance && <EventTabs />}

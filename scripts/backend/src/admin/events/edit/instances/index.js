@@ -1,4 +1,5 @@
 import { Box } from "@/components/box";
+import { ProLaunch } from "@/components/dashboard/pro-launch";
 import { EventInstancesTable } from "@/components/event/instances-table";
 import { Panel } from "@/components/panel";
 import { Textarea } from "@/components/ui/textarea";
@@ -375,37 +376,39 @@ export function EventEditInstances() {
   }, [event?.title]);
 
   return (
-    <div className="flex flex-col w-full gap-8">
-      <Box container>
-        <Panel className="flex gap-2 p-0">
-          <div className="relative flex items-center gap-2">
-            <Textarea
-              ref={textareaRef}
-              id="event-name-readonly"
-              className={cn(
-                "inline-flex flex-1 resize-none overflow-hidden bg-transparent border-2 border-transparent rounded-md p-2 font-medium text-2xl leading-tight min-h-0 w-auto max-w-full",
-                "text-foreground",
-                "shadow-none ring-0 focus:ring-0 focus-visible:ring-0",
-                "outline-none focus:outline-none focus-visible:outline-none",
-                "focus-visible:ring-offset-0 focus-visible:ring-transparent focus-visible:ring-offset-transparent",
-                "cursor-default select-none",
-                !event?.title && "text-muted-foreground"
-              )}
-              value={event?.title || ""}
-              readOnly
-              rows={1}
-            />
-          </div>
-        </Panel>
-
-        <EventInstancesTable
-          instances={instances}
-          isLoading={false}
-          eventId={event?.id}
-          timezone={event?.timezone}
-          status={statusFilter}
-        />
-      </Box>
-    </div>
+    <>
+      <ProLaunch className="mb-8" />
+      <div className="flex flex-col w-full gap-8 opacity-70 pointer-events-none">
+        <Box container>
+          <Panel className="flex gap-2 p-0">
+            <div className="relative flex items-center gap-2">
+              <Textarea
+                ref={textareaRef}
+                id="event-name-readonly"
+                className={cn(
+                  "inline-flex flex-1 resize-none overflow-hidden bg-transparent border-2 border-transparent rounded-md p-2 font-medium text-2xl leading-tight min-h-0 w-auto max-w-full",
+                  "text-foreground",
+                  "shadow-none ring-0 focus:ring-0 focus-visible:ring-0",
+                  "outline-none focus:outline-none focus-visible:outline-none",
+                  "focus-visible:ring-offset-0 focus-visible:ring-transparent focus-visible:ring-offset-transparent",
+                  "cursor-default select-none",
+                  !event?.title && "text-muted-foreground"
+                )}
+                value={event?.title || "Untitled event"}
+                readOnly
+                rows={1}
+              />
+            </div>
+          </Panel>
+          <EventInstancesTable
+            instances={instances}
+            isLoading={false}
+            eventId={event?.id}
+            timezone={event?.timezone}
+            status={statusFilter}
+          />
+        </Box>
+      </div>
+    </>
   );
 }

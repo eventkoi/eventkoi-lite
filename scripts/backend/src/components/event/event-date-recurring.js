@@ -294,7 +294,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
   console.log(event);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 opacity-70 pointer-events-none">
       {rules.map((rule, index) => {
         const timezone = event?.timezone || "UTC";
 
