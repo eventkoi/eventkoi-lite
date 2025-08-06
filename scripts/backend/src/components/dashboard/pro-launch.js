@@ -45,10 +45,17 @@ export function ProLaunch({ className }) {
           </div>
 
           <Button
+            asChild
             className="bg-[#3A6667] hover:bg-[#325c5c] min-w-[140px] text-white font-medium text-sm px-5 py-2 rounded-sm"
             size="sm"
           >
-            Claim discount
+            <a
+              href="https://eventkoi.com/upgradeqf35m3ref/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Claim discount
+            </a>
           </Button>
         </div>
         {/* Right: 10% Discount */}

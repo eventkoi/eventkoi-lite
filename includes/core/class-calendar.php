@@ -211,23 +211,8 @@ class Calendar {
 		$slug = ! empty( $meta['slug'] ) ? sanitize_text_field( $meta['slug'] ) : '';
 
 		if ( 0 === $id ) {
-			$args = array(
-				'slug' => ! empty( $slug ) ? $slug : '',
-			);
-
-			$last_id           = wp_insert_term( $name, 'event_cal', $args );
-			$calendar          = get_term_by( 'id', $last_id['term_id'], 'event_cal' );
-			self::$calendar    = $calendar;
-			self::$calendar_id = ! empty( $calendar->term_id ) ? $calendar->term_id : 0;
-
-			self::update_meta( $meta );
-
-			return array_merge(
-				array(
-					'update_endpoint' => true,
-					'message'         => __( 'Calendar created.', 'eventkoi' ),
-				),
-				self::get_meta(),
+			return array(
+				'message' => __( 'Calendar creation is a Pro feature.', 'eventkoi' ),
 			);
 		}
 
