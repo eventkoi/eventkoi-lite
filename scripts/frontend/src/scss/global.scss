@@ -1,0 +1,67 @@
+.eventkoi-root {
+  &.eventkoi-legacy {
+    .wp-block-columns.is-not-stacked-on-mobile {
+      gap: 20px;
+      p {
+        margin: 0;
+      }
+    }
+    .wp-block-group__inner-container .wp-block-columns:last-child {
+      margin-bottom: 0 !important;
+    }
+    figure {
+      margin-top: 0;
+    }
+  }
+  .wp-block-button__link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .eventkoi-gmap {
+    width: 100%;
+    border-radius: 10px;
+  }
+  .eventkoi-no-underline {
+    text-decoration: none;
+  }
+  .eventkoi-details {
+    padding: 1px 0 0;
+  }
+  .eventkoi-rule-summary {
+    display: block;
+    margin-bottom: 2px;
+  }
+  figure.wp-block-image img {
+    width: 100%;
+  }
+  .wp-block-column .wp-block-column figure.wp-block-image {
+    position: relative;
+    top: -3px;
+  }
+  .eventkoi-location {
+    font-style: normal;
+    margin-bottom: 1.5em;
+    display: block;
+    white-space: pre-line;
+    strong {
+      font-weight: 600;
+    }
+    &:last-of-type {
+      margin-bottom: 0;
+    }
+    .eventkoi-location-label {
+      font-size: 0.9em;
+      display: inline-block;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+    &.physical,
+    &.virtual {
+      position: relative;
+    }
+  }
+  [data-selected="true"]:not(:hover) {
+    background: transparent !important;
+  }
+}

@@ -1,0 +1,148 @@
+.wp-eventkoi {
+  #wpbody-content {
+    padding-bottom: 0;
+  }
+
+  #wpcontent {
+    padding-left: 0;
+  }
+}
+
+.eventkoi-admin {
+  font-family:
+    inter,
+    -apple-system,
+    blinkmacsystemfont,
+    "Segoe UI",
+    roboto,
+    oxygen-sans,
+    ubuntu,
+    cantarell,
+    "Helvetica Neue",
+    sans-serif;
+  font-size: 16px;
+
+  p {
+    font-size: 16px;
+  }
+
+  li {
+    margin-bottom: 0px;
+  }
+
+  a {
+    &:hover,
+    &:focus {
+      box-shadow: none;
+      color: inherit;
+    }
+  }
+
+  [contenteditable="true"]:empty:before {
+    content: attr(placeholder);
+    pointer-events: none;
+    display: block;
+    color: #777777;
+  }
+
+  .eventkoi-error {
+    border-color: #d13d3d !important;
+  }
+
+  /* Hide scrollbars and native spinner arrows */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none; /* IE/Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+
+  .appearance-none {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  }
+
+  .mce-tinymce {
+    border: 1px solid #e5e7eb; /* gray-200 */
+    border-radius: 0.5rem; /* rounded-lg */
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); /* subtle shadow */
+    background-color: #f9fafb; /* gray-50 */
+    overflow: hidden;
+  }
+
+  /* Toolbar container */
+  .mce-container-body .mce-toolbar-grp {
+    background-color: #f9fafb;
+    border-bottom: 0;
+    padding: 0;
+  }
+
+  /* Toolbar buttons */
+  .mce-container-body .mce-btn {
+    margin: 0 2px;
+    border: none;
+    min-height: 28px;
+    display: inline-flex;
+    &:hover,
+    &.mce-listbox:hover {
+      box-shadow: none;
+    }
+    .mce-ico::before {
+      position: relative;
+      top: 1px;
+    }
+    button {
+      background: transparent;
+      color: #374151;
+      font-size: 14px;
+      padding: 4px 6px;
+      border-radius: 2px;
+      transition: none;
+      border: none;
+    }
+  }
+
+  /* Button hover */
+  .mce-container-body {
+    padding: 0;
+  }
+  .mce-container-body .mce-btn button:hover {
+    background-color: #e5e7eb; /* gray-200 */
+    color: #111827; /* gray-900 */
+    border: none;
+  }
+
+  .mce-container-body .mce-btn.mce-active button {
+    background-color: #333;
+    color: #fff;
+    border: none;
+  }
+
+  /* Icons follow text color */
+  .mce-container-body .mce-btn i {
+    color: inherit !important;
+    font-size: 16px;
+  }
+
+  /* Edit area spacing */
+  .mce-edit-area iframe {
+    padding: 0;
+  }
+
+  /* Remove outlines */
+  .mce-container-body .mce-btn button:focus {
+    outline: none;
+    box-shadow: none;
+  }
+
+  .mce-container-body .mce-btn-group {
+    padding: 4px;
+  }
+
+  .mce-container-body .mce-btn-group:not(:first-child) {
+    border-left: 1px solid #eee !important;
+    margin-left: 0;
+  }
+}

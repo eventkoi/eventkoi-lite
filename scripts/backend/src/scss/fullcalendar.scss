@@ -1,0 +1,134 @@
+:root {
+  --fc-border-color: #dddddd;
+  --fc-daygrid-event-dot-width: 6px;
+  --fc-today-bg-color: transparent;
+}
+
+.fc {
+  .fc-scrollgrid {
+    border: 0;
+  }
+  .fc-daygrid-day.fc-day-today {
+    background-color: var(--fc-today-bg-color);
+  }
+  .fc-daygrid-day-top {
+    flex-direction: row;
+  }
+  .fc-daygrid-body {
+    border-left: 1px solid var(--fc-border-color);
+  }
+  .fc-scrollgrid-section-body > td {
+    border-top: 1px solid var(--fc-border-color);
+  }
+  .fc-daygrid-day-number {
+    text-decoration: none !important;
+    padding: 6px;
+  }
+  .fc-scrollgrid-section th {
+    border: 0;
+  }
+  .fc-col-header {
+    th {
+      border: 0;
+    }
+  }
+  .fc-col-header-cell {
+    padding-top: 20px;
+    padding-bottom: 20px;
+    font-size: 0.9em;
+    text-align: left;
+  }
+  .fc-col-header-cell-cushion {
+    text-decoration: none;
+    font-weight: 500;
+    text-transform: uppercase;
+    padding: 0 0 0 6px;
+    font-size: 14px;
+    color: #999999;
+  }
+  .fc-toolbar.fc-header-toolbar {
+    margin-bottom: 0;
+    .fc-toolbar-chunk {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      &:last-child {
+        .fc-button-group {
+          gap: 0px;
+          background: #f5f5f5;
+          border: 1px solid #ebebeb;
+          border-radius: 8px;
+          padding: 3px;
+        }
+        .fc-button {
+          font-size: 14px;
+          background-color: transparent !important;
+          box-shadow: none !important;
+          color: #666 !important;
+          border: 0 !important;
+          padding: 4px 14px !important;
+          text-transform: capitalize;
+          height: 32px !important;
+          &.fc-button-active {
+            color: #333 !important;
+            background-color: #fff !important;
+            border-radius: 8px;
+            border: 0 !important;
+            box-shadow: 0 1px #eee !important;
+            font-weight: 500;
+          }
+        }
+      }
+    }
+    .fc-toolbar-title {
+      display: inline-flex;
+      font-family: Helvetica, sans-serif;
+      margin: 0 !important;
+    }
+    .fc-button-group {
+      gap: 6px;
+      font-size: 14px;
+    }
+  }
+  .fc-button.fc-prev-button,
+  .fc-button.fc-next-button {
+    background-color: transparent !important;
+    border-color: transparent !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    color: #393838 !important;
+    border: none;
+    padding: 0;
+    &:hover,
+    &:focus,
+    &:active {
+      background-color: transparent !important;
+      border-color: transparent !important;
+      border-radius: 0 !important;
+      box-shadow: none !important;
+      color: #111111 !important;
+    }
+  }
+  .fc-today-button {
+    background-color: transparent;
+    border: 1px solid #aaa;
+    font-size: 14px;
+    border-radius: 4px;
+    color: #666;
+    height: 32px;
+    line-height: 32px;
+    display: flex;
+    align-items: center;
+    margin: 0 !important;
+    &:disabled {
+      background-color: transparent;
+      color: #888;
+      border-color: #bbb;
+    }
+  }
+  .fc-scrollgrid-section-header {
+    .fc-scroller {
+      overflow: hidden !important;
+    }
+  }
+}
