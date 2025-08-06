@@ -6,7 +6,7 @@ on:
       - main
 
 permissions:
-  contents: write # Required to delete releases and upload assets
+  contents: write # Required to create releases and upload assets
 
 jobs:
   build:
@@ -15,12 +15,6 @@ jobs:
     steps:
       - name: Checkout plugin code
         uses: actions/checkout@v3
-
-      - name: Delete previous release (if exists)
-        uses: dev-drprasad/delete-tag-and-release@v1.1
-        with:
-          tag_name: latest-lite
-          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create plugin zip with exact files only
         run: |
