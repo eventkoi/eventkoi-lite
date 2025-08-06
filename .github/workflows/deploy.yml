@@ -6,7 +6,7 @@ on:
       - main
 
 permissions:
-  contents: write # Required to delete releases and upload assets
+  contents: write # Required to delete releases and upload assets.
 
 jobs:
   build:
