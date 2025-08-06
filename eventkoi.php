@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       EventKoi Lite
  * Plugin URI:        https://eventkoi.com
- * Description:       Event and calendar management for WordPress. (Free version)
+ * Description:       Event and calendar management for WordPress. (Free)
  * Version:           1.0.0
  * Author:            EventKoi
  * Author URI:        https://eventkoi.com
