@@ -1,102 +1,88 @@
-import { useState } from "react";
+"use client";
 
 import { Box } from "@/components/box";
-import { Heading } from "@/components/heading";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
 
-import { callEdgeFunction } from "@/lib/remote";
-import { showStaticToast, showToastError } from "@/lib/toast";
-
-/**
- * ProLaunch form.
- *
- * Displays email capture UI for upcoming Pro plan with secure HMAC submission.
- *
- * @return {JSX.Element} ProLaunch UI block.
- */
-export function ProLaunch() {
-  const [email, setEmail] = useState(eventkoi_params.admin_email || "");
-  const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
-
-  /**
-   * Submit email to Supabase via Edge Function.
-   *
-   * @return {Promise<void>}
-   */
-  const handleSubmit = async () => {
-    if (!email || !email.includes("@")) {
-      showToastError("Please enter a valid email.");
-      return;
-    }
-
-    setSubmitting(true);
-
-    try {
-      const data = await callEdgeFunction("pro-signup", {
-        method: "POST",
-        body: JSON.stringify({
-          email,
-          plugin_version: eventkoi_params?.version || null,
-        }),
-      });
-
-      if (data?.success && data?.duplicate) {
-        showStaticToast("You're already signed up.");
-        setSuccess(true);
-      } else if (data?.success) {
-        showStaticToast("You're on the list! 🎉");
-        setSuccess(true);
-      } else {
-        showToastError("Signup failed. Please try again.");
-      }
-    } catch (err) {
-      console.error("Signup error:", err);
-      showToastError("Unexpected error. Please try again.");
-    }
-
-    setSubmitting(false);
-  };
-
-  if (!success) return null;
-
+// Correct filled Zap icon (from Lucide, your version)
+function ZapFilled({ className }) {
   return (
-    <Box container>
-      <Heading level={3}>Sign up for Pro launch + early bird discount</Heading>
-      <p className="text-base leading-7 mb-4">
-        Enter your email to get notified when we launch EventKoi Pro. Get a
-        special discount only for early users like yourself.
-      </p>
+    <svg
+      viewBox="0 0 24 24"
+      fill="currentColor"
+      stroke="none"
+      width={20}
+      height={20}
+      className={cn("inline-block align-middle text-foreground", className)}
+      aria-hidden="true"
+    >
+      <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" />
+    </svg>
+  );
+}
 
-      <div className="flex flex-col items-start gap-1.5">
-        <Label htmlFor="ek-admin-email">Your email</Label>
-        <Input
-          type="email"
-          id="ek-admin-email"
-          value={email}
-          disabled={success}
-          placeholder="Enter your email..."
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <div className="mt-5">
-          <Button
-            onClick={handleSubmit}
-            disabled={submitting || success}
-            className="px-8 min-h-[50px] min-w-[175px] border rounded-xl items-center border-foreground bg-foreground text-white hover:text-card-foreground hover:bg-accent hover:border-foreground/40"
-          >
-            {success
-              ? "You're signed up!"
-              : submitting
-              ? "Submitting..."
-              : "Get notified"}
-          </Button>
-          <div className="pt-1 text-muted-foreground text-sm">
-            We will only email you about launch notifications.
+const features = [
+  "Recurring events",
+  "Unlimited calendars",
+  "Priority support",
+  "30 day money-back guarantee",
+];
+
+export function ProLaunch({ className }) {
+  return (
+    <Box container className={cn("border-[#B8D7D4] gap-8", className)}>
+      <div className="flex gap-2">
+        {/* Left: Text + Button + Features */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-[6px] mb-2">
+            <ZapFilled />
+            <div className="!m-0 !p-0 text-foreground text-[20px] font-medium">
+              Access Pro features
+            </div>
           </div>
+          <div className="text-sm text-muted-foreground mb-4">
+            Get 10% off any Pro plan when you upgrade today.
+          </div>
+
+          <Button
+            className="bg-[#3A6667] hover:bg-[#325c5c] min-w-[140px] text-white font-medium text-sm px-5 py-2 rounded-sm"
+            size="sm"
+          >
+            Claim discount
+          </Button>
+        </div>
+        {/* Right: 10% Discount */}
+        <div className="flex flex-col items-center min-w-[82px] select-none">
+          <span
+            className="text-[60px] leading-[1] tracking-[-3px] block font-bold"
+            style={{
+              background:
+                "linear-gradient(103deg, #2B4244 29.71%, #8CBCB9 57.08%, #4E8888 80.54%)",
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}
+          >
+            10%
+          </span>
+          <span className="font-bold uppercase tracking-wide text-[16px] text-[#3A6667] mt-[4px]">
+            Discount
+          </span>
         </div>
       </div>
+
+      <hr className="border-t border-[#E1E7E8]" />
+      <ul className="space-y-4 pl-0 mb-0">
+        {features.map((feature) => (
+          <li
+            key={feature}
+            className="flex items-center gap-[6px] text-[15px] text-[#263130] font-normal"
+          >
+            <ZapFilled className="w-4 h-4" />
+            {feature}
+          </li>
+        ))}
+      </ul>
     </Box>
   );
 }
