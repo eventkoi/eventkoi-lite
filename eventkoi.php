@@ -33,7 +33,7 @@ define( 'EVENTKOI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'EVENTKOI_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'EVENTKOI_PLUGIN_FILE', __FILE__ );
 define( 'EVENTKOI_API', 'eventkoi/v1' );
-define( 'EVENTKOI_PRO', 'EventKoi Pro' );
+define( 'EVENTKOI_PRO', 'EventKoi Lite' );
 define( 'EVENTKOI_CONFIG', 'https://zgxjadedaiqnjfhxxnjs.supabase.co/functions/v1/config' );
 
 require_once __DIR__ . '/bootstrap.php';

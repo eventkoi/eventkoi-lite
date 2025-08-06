@@ -103,7 +103,7 @@ export function SettingsGoogleMaps({ settings, setSettings }) {
         </Panel>
         <Separator />
         <Panel className="gap-6">
-          <Alert className="flex gap-x-8 bg-gray-50">
+          <Alert className="flex gap-x-8 bg-gray-50 justify-between">
             <AlertDescription>
               You need an API key from Google to integrate Google maps. Follow
               this doc to generate API key.
