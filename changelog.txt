@@ -1,5 +1,5 @@
 <div>
-  <h4>July 25 2025</h4>
+  <h4>August 7 2025</h4>
   <h2>0.9.0 – First Lite release</h2>
   <h3>Release notes</h3>
   <ul>
