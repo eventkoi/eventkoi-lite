@@ -28,7 +28,7 @@ const features = [
   "30 day money-back guarantee",
 ];
 
-export function ProLaunch({ className, minimal = false }) {
+export function ProLaunch({ className, headline, minimal = false }) {
   return (
     <Box container className={cn("border-[#B8D7D4] gap-8", className)}>
       <div className="flex gap-2">
@@ -37,7 +37,7 @@ export function ProLaunch({ className, minimal = false }) {
           <div className="flex items-center gap-[6px] mb-2">
             <ZapFilled />
             <div className="!m-0 !p-0 text-foreground text-[20px] font-medium">
-              Access Pro features
+              {headline ? headline : "Access Pro features"}
             </div>
           </div>
           <div className="text-sm text-muted-foreground mb-4">

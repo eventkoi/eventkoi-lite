@@ -195,7 +195,7 @@ export function CalendarsOverview() {
     <div className="flex flex-col gap-8">
       <div className="mx-auto flex w-full gap-2 justify-between">
         <Heading>Calendars</Heading>
-        <AddButton title="Create calendar" url="/calendars/add" locked />
+        <AddButton title="Add calendar" url="/calendars/add" locked />
       </div>
       <DataTable
         data={data}
@@ -209,7 +209,10 @@ export function CalendarsOverview() {
         hideDateRange
       />
 
-      <ProLaunch className="my-8 max-w-2xl" />
+      <ProLaunch
+        headline="Upgrade now to add multiple calendars"
+        className="my-8 max-w-2xl"
+      />
     </div>
   );
 }

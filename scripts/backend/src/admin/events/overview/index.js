@@ -310,7 +310,7 @@ export function EventsOverview() {
     <div className="flex flex-col gap-8">
       <div className="mx-auto flex w-full gap-2 justify-between">
         <Heading>Events</Heading>
-        <AddButton title="Create event" url="/events/add" />
+        <AddButton title="Add event" url="/events/add" />
       </div>
 
       <DataTable
