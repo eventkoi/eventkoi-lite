@@ -42,7 +42,7 @@ jobs:
           cp -r templates build/eventkoi-lite/
           cp -r vendor-prefixed build/eventkoi-lite/
 
-          cp autoload.php bootstrap.php composer.json eventkoi.php license.txt build/eventkoi-lite/
+          cp autoload.php bootstrap.php composer.json eventkoi.php changelog.txt license.txt build/eventkoi-lite/
 
           cd build
           zip -qr eventkoi-lite.zip eventkoi-lite
