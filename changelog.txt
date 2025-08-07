@@ -1,1 +1,9 @@
-This is readme.
+<p>August 7 2025<br>0.9.1<br>Improvements<br>
+– Updated translation files<br>
+– Improved compatibility with WordPress 6.8<br>
+– Minor UI enhancements
+</p>
+<p>July 18 2025<br>0.9.0<br>First public release<br>
+– Initial event management feature<br>
+– Core Lite features
+</p>
