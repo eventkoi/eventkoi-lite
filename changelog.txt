@@ -5,8 +5,6 @@
   <ul>
     <li>Initial public release of EventKoi Lite plugin.</li>
     <li>Core event creation and management features.</li>
-    <li>Unlimited events and basic schedule editor.</li>
-    <li>Frontend event listings with clean, responsive design.</li>
     <li>Built-in support for single-day and multi-day events.</li>
     <li>Seamless upgrade path to EventKoi Pro for advanced features.</li>
   </ul>
