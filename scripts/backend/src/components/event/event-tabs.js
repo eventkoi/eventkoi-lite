@@ -38,12 +38,12 @@ export function EventTabs() {
             key={tab.name}
             to={tab.name}
             className={cn(
-              "font-medium px-3 py-3 rounded-lg",
+              "flex flex-col items-start gap-1 font-medium px-3 py-3 rounded-lg",
               isActive ? "text-foreground bg-foreground/5" : ""
             )}
           >
             {tab.title}
-            {tab.name === "instances" && <ProBadge />}
+            {tab.name === "instances" && <ProBadge className="ml-0" />}
           </Link>
         );
       })}

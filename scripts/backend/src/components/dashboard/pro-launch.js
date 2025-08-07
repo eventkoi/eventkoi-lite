@@ -47,9 +47,7 @@ export function ProLaunch({ className, headline, minimal = false }) {
           <Button
             asChild
             className={cn(
-              "bg-[#3A6667] hover:bg-[#325c5c] min-w-[140px] text-white font-medium text-sm px-5 py-2 rounded-sm",
-              minimal &&
-                "bg-white hover:bg-white hover:text-black hover:border-black border border-solid shadow-sm border-black text-black"
+              "bg-[#3A6667] hover:bg-[#325c5c] min-w-[140px] text-white font-medium text-sm px-5 py-2 rounded-sm"
             )}
             size="sm"
           >

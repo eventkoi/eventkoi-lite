@@ -989,6 +989,10 @@ body {
   margin-top: auto !important;
 }
 
+.ml-0 {
+  margin-left: 0px !important;
+}
+
 .line-clamp-2 {
   overflow: hidden !important;
   display: -webkit-box !important;

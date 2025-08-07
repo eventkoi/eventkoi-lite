@@ -93,7 +93,11 @@ export function EventDate({ showAttributes }) {
         </TabsContent>
 
         <TabsContent value="recurring">
-          <ProLaunch minimal className="mb-8 mt-6" />
+          <ProLaunch
+            headline="Upgrade to access Recurring Events"
+            minimal
+            className="mb-8 mt-6"
+          />
           <EventDateRecurring showAttributes={showAttributes} />
         </TabsContent>
       </Tabs>
