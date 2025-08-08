@@ -31,17 +31,18 @@ const features = [
 export function ProLaunch({ className, headline, minimal = false }) {
   return (
     <Box container className={cn("border-[#B8D7D4] gap-8", className)}>
-      <div className="flex gap-2">
+      <div className="flex gap-4">
         {/* Left: Text + Button + Features */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-[6px] mb-2">
+          <div className="flex items-center gap-[6px] mb-3">
             <ZapFilled />
             <div className="!m-0 !p-0 text-foreground text-[20px] font-medium">
               {headline ? headline : "Access Pro features"}
             </div>
           </div>
-          <div className="text-sm text-muted-foreground mb-4">
-            Get 10% off any Pro plan when you upgrade today.
+          <div className="text-sm leading-[1.6] text-muted-foreground mb-4">
+            Thanks for using EventKoi Lite. Get an exclusive 10% discount on all
+            Pro plans when you upgrade today.
           </div>
 
           <Button
