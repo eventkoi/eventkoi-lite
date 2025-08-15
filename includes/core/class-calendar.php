@@ -338,7 +338,8 @@ class Calendar {
 		$date = trim( $date );
 
 		try {
-			if ( ! preg_match( '/[Z\+\-]\d{2}:?\d{2}$/', $date ) ) {
+			// Only append Z if it doesn't already end with Z or an offset.
+			if ( ! preg_match( '/Z$|[+\-]\d{2}:?\d{2}$/', $date ) ) {
 				$date .= 'Z';
 			}
 
