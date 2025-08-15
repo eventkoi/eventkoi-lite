@@ -1,11 +1,10 @@
 import { AddButton } from "@/components/add-button";
-import { ProLaunch } from "@/components/dashboard/pro-launch";
 import { DataTable } from "@/components/data-table";
 import { Heading } from "@/components/heading";
 import { SortButton } from "@/components/sort-button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { formatAdminDateCell } from "@/lib/date-utils";
+import { formatWPtime } from "@/lib/date-utils";
 import { showStaticToast } from "@/lib/toast";
 import apiRequest from "@wordpress/api-fetch";
 import {
@@ -76,7 +75,6 @@ export function EventsOverview() {
         const apiURL = `${eventkoi_params.api}/events?${params.toString()}`;
         const response = await apiRequest({ path: apiURL, method: "get" });
         setData(response);
-        console.log(response);
         showStaticToast(toastMessage);
       } catch (error) {
         console.error("Failed to load events:", error);
@@ -212,7 +210,10 @@ export function EventsOverview() {
 
           return (
             <div className="text-foreground whitespace-pre-line">
-              {formatAdminDateCell(start_date_iso, timezone, isAllDay)}
+              {formatWPtime(start_date_iso, {
+                timezone,
+                format: isAllDay ? "date" : "date-time",
+              })}
             </div>
           );
         },
@@ -248,7 +249,10 @@ export function EventsOverview() {
             <div className="text-foreground whitespace-pre-line">
               {isInfiniteRecurring
                 ? "Never"
-                : formatAdminDateCell(end_date_iso, timezone, isAllDay)}
+                : formatWPtime(end_date_iso, {
+                    timezone,
+                    format: isAllDay ? "date" : "date-time",
+                  })}
             </div>
           );
         },
@@ -282,9 +286,10 @@ export function EventsOverview() {
         ),
         cell: ({ row }) => {
           const raw = row.getValue("modified_date");
+          const { timezone } = row.original;
           return (
             <div className="text-foreground whitespace-pre-line">
-              {raw?.replace(/ /, "\n")}
+              {formatWPtime(raw, { timezone })}
             </div>
           );
         },
