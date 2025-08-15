@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { format } from "date-fns";
 import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { DateTime } from "luxon";
 import { useRef, useState } from "react";
 
 export function CalendarToolbar({
@@ -23,6 +23,7 @@ export function CalendarToolbar({
   search,
   setSearch,
   events,
+  timezone,
 }) {
   const [open, setOpen] = useState(false);
   const inputRef = useRef(null);
@@ -128,11 +129,11 @@ export function CalendarToolbar({
                       className="grid grid-cols-[180px_1fr] gap-2 p-2 cursor-pointer text-sm text-foreground rounded-md hover:!bg-accent"
                     >
                       <span className="font-normal truncate">
-                        {format(
-                          new Date(event.start_date || event.start),
-                          "d MMM yyyy, eee • h:mm a"
-                        )
-                          .replace(/\s([AP]M)$/, "$1")
+                        {DateTime.fromISO(event.start_date || event.start, {
+                          zone: "utc",
+                        })
+                          .setZone(timezone)
+                          .toFormat("d MMM yyyy, EEE • h:mma")
                           .replace("AM", "am")
                           .replace("PM", "pm")}
                       </span>

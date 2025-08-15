@@ -25,6 +25,7 @@ import {
   WhatsappIcon,
   XIcon,
 } from "@/icons";
+import { normalizeTimeZone, shiftTime } from "@/lib/date-utils";
 import {
   Calendar,
   CheckCheck,
@@ -35,33 +36,49 @@ import {
   Share2,
   X,
 } from "lucide-react";
+import { DateTime } from "luxon";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
-const formatTime = (iso) => {
-  const d = new Date(iso);
-  const hours = d.getHours();
-  const minutes = d.getMinutes();
-  const options = {
+function formatTime(iso, tz = "utc") {
+  const date = new Date(iso);
+
+  const opts = {
     hour: "numeric",
     hour12: true,
-    ...(minutes !== 0 && { minute: "2-digit" }),
+    minute: date.getUTCMinutes() !== 0 ? "2-digit" : undefined,
+    timeZone: tz === "utc" ? "UTC" : normalizeTimeZone(tz),
   };
 
-  return d
-    .toLocaleTimeString(undefined, options)
-    .replace(/\s?(AM|PM)/i, (match) => match.trim().toLowerCase());
-};
+  return date
+    .toLocaleTimeString(undefined, opts)
+    .toLowerCase()
+    .replace(/\s*(am|pm)/, "$1") // remove space before am/pm
+    .replace(/:00(am|pm)/, "$1"); // remove :00 if minutes are zero
+}
 
-const formatDate = (iso) => {
-  const d = new Date(iso);
-  return d.toLocaleDateString(undefined, {
+function formatDate(iso, tz = false) {
+  // If tz is false or UTC, just render the date portion without shift
+  if (!tz || tz === "utc") {
+    const d = new Date(iso); // only to extract date parts, no shifting
+    return d.toLocaleDateString(undefined, {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      timeZone: "UTC", // force UTC so no browser local shift
+    });
+  }
+
+  // Otherwise shift to target zone
+  return new Date(iso).toLocaleDateString(undefined, {
     weekday: "short",
     month: "short",
     day: "numeric",
     year: "numeric",
+    timeZone: normalizeTimeZone(tz),
   });
-};
+}
 
 const formatCalDate = (iso, allDay) => {
   const d = new Date(iso);
@@ -76,19 +93,70 @@ export function EventPopover({
   anchor,
   onClose,
   ignoreNextOutsideClick,
+  timezone = "UTC",
 }) {
   const [shareOpen, setShareOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [calendarMenuOpen, setCalendarMenuOpen] = useState(false);
   const [fixedAnchor] = useState(anchor);
 
+  const tz = normalizeTimeZone(timezone);
   const location = event.location_line;
 
-  const formattedDate = event.allDay
-    ? formatDate(event.start)
-    : `${formatDate(event.start)}, ${formatTime(event.start)} – ${formatTime(
-        event.end
-      )}`;
+  const formattedDate = (() => {
+    const hasServerTimes = event.start_time && event.end_time;
+
+    // If PHP gave us times (continuous standard events), just use them directly
+    if (hasServerTimes) {
+      // tz can now be "Asia/Singapore", "local", 3, -8, etc.
+
+      if (event.start !== event.end_real) {
+        return `${formatDate(event.start, tz)}, ${shiftTime(
+          event.start,
+          event.start_time,
+          tz
+        )} – ${formatDate(event.end_real, tz)}, ${shiftTime(
+          event.end_real,
+          event.end_time,
+          tz
+        )}`;
+      } else {
+        return `${formatDate(event.start, tz)}} – ${shiftTime(
+          event.end_real,
+          event.end_time,
+          tz
+        )}`;
+      }
+    }
+
+    // === fallback: old logic for other event types ===
+    if (event.allDay) {
+      if (event.start.split("T")[0] !== event.end.split("T")[0]) {
+        return `${formatDate(event.start, tz)} – ${formatDate(
+          event.end_real,
+          tz
+        )}`;
+      }
+      return formatDate(event.start, tz);
+    }
+
+    const sameDay = DateTime.fromISO(event.start, { zone: tz }).hasSame(
+      DateTime.fromISO(event.end, { zone: tz }),
+      "day"
+    );
+
+    if (sameDay) {
+      return `${formatDate(event.start, tz)}, ${formatTime(
+        event.start,
+        tz
+      )} – ${formatTime(event.end, tz)}`;
+    }
+
+    return `${formatDate(event.start, tz)}, ${formatTime(
+      event.start,
+      tz
+    )} – ${formatDate(event.end, tz)}, ${formatTime(event.end, tz)}`;
+  })();
 
   const handleGoogleCal = () => {
     const url = new URL("https://www.google.com/calendar/render");
@@ -123,7 +191,7 @@ export function EventPopover({
     <>
       <div
         data-event-popover
-        className="absolute z-50 w-[350px] rounded-lg border bg-white shadow-[0_0_4px_#bbb] text-sm overflow-hidden"
+        className="absolute z-50 w-[370px] rounded-lg border bg-white shadow-[0_0_4px_#bbb] text-sm overflow-hidden"
         style={{
           left: `${fixedAnchor.x}px`,
           top: `${fixedAnchor.y}px`,
@@ -145,8 +213,8 @@ export function EventPopover({
         }}
       >
         {/* Header */}
-        <div className="px-4 pt-2 pb-0 space-y-1">
-          <div className="flex justify-end gap-1">
+        <div className="px-4 py-4 pb-0 relative">
+          <div className="flex absolute right-1 top-1 gap-1">
             <Button
               size="icon"
               variant="ghost"
@@ -165,7 +233,7 @@ export function EventPopover({
             </Button>
           </div>
 
-          <div className="flex flex-col gap-3">
+          <div className="flex flex-row space-x-2 pe-[80px]">
             <a
               href={event.url}
               target="_blank"
@@ -176,7 +244,10 @@ export function EventPopover({
             </a>
 
             {event.date_type === "recurring" && (
-              <Badge variant="secondary" className="w-fit font-normal">
+              <Badge
+                variant="secondary"
+                className="w-fit bg-[#eeeeee] hover:bg-[#eeeeee] font-normal"
+              >
                 Recurring
               </Badge>
             )}

@@ -1,4 +1,5 @@
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { buildTimeline, safeNormalizeTimeZone } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
 import { Globe, Image, MapPin } from "lucide-react";
 
@@ -16,9 +17,20 @@ export function ListView({
     );
   }
 
+  const urlParams = new URLSearchParams(window.location.search);
+  const tzFromQuery = urlParams.get("tz");
+
   return (
     <div className="grid">
       {events.map((event) => {
+        const wpTz = tzFromQuery
+          ? safeNormalizeTimeZone(tzFromQuery)
+          : safeNormalizeTimeZone(
+              event?.timezone ||
+                window.eventkoi_params?.timezone_string ||
+                "UTC"
+            );
+
         const loc = event.locations?.[0] ?? {};
         const isVirtual = loc.type === "virtual" || loc.type === "online";
         const isPhysical = loc.type === "inperson" || loc.type === "physical";
@@ -115,7 +127,7 @@ export function ListView({
 
             <div className="ek-meta flex flex-col gap-2 grow min-w-0">
               <div className="flex md:hidden text-muted-foreground">
-                {event.timeline}
+                {buildTimeline(event, wpTz)}
               </div>
 
               <h3 className="m-0">
@@ -134,7 +146,7 @@ export function ListView({
             </div>
 
             <div className="hidden md:block ml-auto text-[14px] text-muted-foreground min-w-[200px] text-right">
-              {event.timeline}
+              {buildTimeline(event, wpTz)}
             </div>
           </div>
         );
