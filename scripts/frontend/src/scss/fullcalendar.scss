@@ -7,7 +7,6 @@
 .fc {
   .fc-daygrid-event {
     border-radius: 0;
-    background-color: transparent !important;
     border-top-width: 0;
     border-right-width: 0;
     border-bottom-width: 0;
@@ -17,6 +16,14 @@
     box-shadow: none !important;
     .fc-event-main {
       color: inherit !important;
+    }
+    &.fc-daygrid-dot-event {
+      background-color: transparent !important;
+    }
+    &.fc-h-event {
+      color: #fff !important;
+      border-radius: 3px !important;
+      padding: 4px 2px;
     }
   }
   .fc-event-selected::after,
@@ -40,7 +47,7 @@
   }
   .fc-daygrid-day-number {
     text-decoration: none !important;
-    padding: 6px;
+    padding: 4px 6px 0;
   }
   .fc-scrollgrid-section th {
     border: 0;
