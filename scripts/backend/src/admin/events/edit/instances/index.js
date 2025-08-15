@@ -22,7 +22,6 @@ export function generateInstances(
   includeTrashed = false,
   timezone = "UTC"
 ) {
-  console.log(rules);
   const now = new Date();
   const instances = [];
 
@@ -41,8 +40,8 @@ export function generateInstances(
   for (let i = 0; i < rules.length; i++) {
     const rule = rules[i];
 
-    const luxonStart = DateTime.fromISO(rule.start_date, { zone: timezone });
-    const luxonEnd = DateTime.fromISO(rule.end_date, { zone: timezone });
+    const luxonStart = DateTime.fromISO(rule.start_date, { zone: "utc" });
+    const luxonEnd = DateTime.fromISO(rule.end_date, { zone: "utc" });
 
     const start = new Date(
       luxonStart.year,
@@ -124,7 +123,7 @@ export function generateInstances(
             hour: startHour,
             minute: startMinute,
           },
-          { zone: timezone }
+          { zone: "utc" }
         );
 
         const instanceEnd = DateTime.fromObject(
@@ -135,10 +134,10 @@ export function generateInstances(
             hour: endHour,
             minute: endMinute,
           },
-          { zone: timezone }
+          { zone: "utc" }
         );
 
-        const instanceTimestamp = Math.floor(instanceStart.toSeconds());
+        const instanceTimestamp = Math.floor(instanceStart.toUTC().toSeconds());
 
         const override = overrides.find(
           (o) => o.timestamp === instanceTimestamp
@@ -174,8 +173,10 @@ export function generateInstances(
           title: override?.title || title || `Instance ${j + 1}`,
           status,
           all_day: rule.all_day || false,
-          start_date: instanceStart.toFormat("yyyy-MM-dd'T'HH:mm:ss.SSS"),
-          end_date: instanceEnd.toFormat("yyyy-MM-dd'T'HH:mm:ss.SSS"),
+          start_date: instanceStart
+            .toUTC()
+            .toISO({ suppressMilliseconds: false }),
+          end_date: instanceEnd.toUTC().toISO({ suppressMilliseconds: false }),
           modified_date: override?.modified_at || "",
           instance_url: instanceUrl,
           override, // ✅ so the table can use it
@@ -250,7 +251,7 @@ export function generateInstances(
             hour: startHour,
             minute: startMinute,
           },
-          { zone: timezone }
+          { zone: "utc" }
         );
 
         const instanceEnd = DateTime.fromObject(
@@ -261,10 +262,10 @@ export function generateInstances(
             hour: endHour,
             minute: endMinute,
           },
-          { zone: timezone }
+          { zone: "utc" }
         );
 
-        const instanceTimestamp = Math.floor(instanceStart.toSeconds());
+        const instanceTimestamp = Math.floor(instanceStart.toUTC().toSeconds());
 
         const override = overrides.find(
           (o) => o.timestamp === instanceTimestamp
@@ -300,8 +301,10 @@ export function generateInstances(
           title: title || `Instance ${j + 1}`,
           status,
           all_day: rule.all_day || false,
-          start_date: instanceStart.toFormat("yyyy-MM-dd'T'HH:mm:ss.SSS"),
-          end_date: instanceEnd.toFormat("yyyy-MM-dd'T'HH:mm:ss.SSS"),
+          start_date: instanceStart
+            .toUTC()
+            .toISO({ suppressMilliseconds: false }),
+          end_date: instanceEnd.toUTC().toISO({ suppressMilliseconds: false }),
           modified_date: override?.modified_at || "",
           instance_url: instanceUrl,
           override,
@@ -354,8 +357,6 @@ export function EventEditInstances() {
       event?.timezone
     );
 
-    console.log(newInstances);
-
     setInstances(newInstances);
   }, [
     event?.recurrence_rules,
@@ -378,7 +379,7 @@ export function EventEditInstances() {
   return (
     <>
       <ProLaunch className="mb-8" />
-      <div className="flex flex-col w-full gap-8 opacity-70 pointer-events-none">
+      <div className="flex flex-col w-full gap-8">
         <Box container>
           <Panel className="flex gap-2 p-0">
             <div className="relative flex items-center gap-2">
@@ -394,12 +395,13 @@ export function EventEditInstances() {
                   "cursor-default select-none",
                   !event?.title && "text-muted-foreground"
                 )}
-                value={event?.title || "Untitled event"}
+                value={event?.title || ""}
                 readOnly
                 rows={1}
               />
             </div>
           </Panel>
+
           <EventInstancesTable
             instances={instances}
             isLoading={false}
