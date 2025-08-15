@@ -77,6 +77,7 @@ class Event {
 		'recurrence_rules',
 		'recurrence_overrides',
 		'rulesummary',
+		'standard_type',
 	);
 
 	/**
@@ -457,6 +458,7 @@ class Event {
 		$date_type        = ! empty( $meta['date_type'] ) ? esc_attr( $meta['date_type'] ) : 'standard';
 		$event_days       = ! empty( $meta['event_days'] ) ? $meta['event_days'] : array();
 		$locations        = ! empty( $meta['locations'] ) ? $meta['locations'] : array();
+		$standard_type    = ! empty( $meta['standard_type'] ) ? esc_attr( $meta['standard_type'] ) : 'selected';
 		$recurrence_rules = ! empty( $meta['recurrence_rules'] ) && is_array( $meta['recurrence_rules'] )
 		? array_values( array_filter( $meta['recurrence_rules'], 'is_array' ) )
 		: array();
@@ -480,6 +482,7 @@ class Event {
 		update_post_meta( self::$event_id, 'date_type', (string) $date_type );
 		update_post_meta( self::$event_id, 'event_days', (array) $event_days );
 		update_post_meta( self::$event_id, 'locations', (array) $locations );
+		update_post_meta( self::$event_id, 'standard_type', (string) $standard_type );
 		update_post_meta( self::$event_id, 'recurrence_rules', $recurrence_rules );
 
 		// Set FSE page template if provided.
@@ -496,21 +499,20 @@ class Event {
 		}
 
 		if ( $start_date ) {
-			$start_gmt    = eventkoi_get_gmt_from_date( $start_date );
-			$start_utc_ts = strtotime( $start_gmt );
+			$start_utc_ts = strtotime( $start_date );
 
-			update_post_meta( self::$event_id, 'start_date', $start_gmt );
+			update_post_meta( self::$event_id, 'start_date', $start_date );
 			update_post_meta( self::$event_id, 'start_timestamp', $start_utc_ts );
+
 		} else {
 			delete_post_meta( self::$event_id, 'start_date' );
 			delete_post_meta( self::$event_id, 'start_timestamp' );
 		}
 
 		if ( $end_date ) {
-			$end_gmt    = eventkoi_get_gmt_from_date( $end_date );
-			$end_utc_ts = strtotime( $end_gmt );
+			$end_utc_ts = strtotime( $end_date );
 
-			update_post_meta( self::$event_id, 'end_date', $end_gmt );
+			update_post_meta( self::$event_id, 'end_date', $end_date );
 			update_post_meta( self::$event_id, 'end_timestamp', $end_utc_ts );
 		} else {
 			delete_post_meta( self::$event_id, 'end_date' );
@@ -845,96 +847,109 @@ class Event {
 	}
 
 	/**
-	 * Get event start date.
+	 * Get event start date exactly as saved (no timezone conversion).
 	 *
 	 * @param bool $gmt Optional. If true, return date in GMT. Default false.
-	 * @return string Formatted event start date.
+	 * @return string Raw event start date string.
 	 */
-	public static function get_start_date( $gmt = false ) {
-		$formatted = ''; // Prevent undefined variable warning.
+	public static function get_start_date( $gmt = true ) {
+		$formatted     = '';
+		$type          = self::get_date_type();
+		$standard_type = get_post_meta( self::$event_id, 'standard_type', true );
 
-		$type = self::get_date_type();
+		// If standard + continuous, read directly from meta.
+		if ( 'standard' === $type && 'continuous' === $standard_type ) {
+			$meta_val = get_post_meta( self::$event_id, 'start_date', true );
+			if ( ! empty( $meta_val ) ) {
+				$formatted = $meta_val;
+			}
+		}
 
-		if ( 'standard' === $type || 'multi' === $type ) {
+		// Standard & multi-day (but not continuous standard).
+		if ( empty( $formatted ) && in_array( $type, array( 'standard', 'multi' ), true ) ) {
 			$days = self::get_event_days();
 			if ( ! empty( $days[0]['start_date'] ) ) {
-				$raw_date  = $days[0]['start_date'];
-				$timestamp = strtotime( $raw_date );
-				$formatted = $gmt ? gmdate( 'Y-m-d H:i:s', $timestamp ) : wp_date( 'Y-m-d H:i:s', $timestamp );
+				$formatted = $days[0]['start_date'];
 			}
 		}
 
-		if ( 'recurring' === $type ) {
+		// Recurring.
+		if ( empty( $formatted ) && 'recurring' === $type ) {
 			$rules = self::get_recurrence_rules();
 			if ( ! empty( $rules[0]['start_date'] ) ) {
-				$raw_date  = $rules[0]['start_date'];
-				$timestamp = strtotime( $raw_date );
-				$formatted = $gmt ? gmdate( 'Y-m-d H:i:s', $timestamp ) : wp_date( 'Y-m-d H:i:s', $timestamp );
+				$formatted = $rules[0]['start_date'];
 			}
 		}
 
-		// Fallback to legacy stored start_date.
+		// Fallback to post meta.
 		if ( empty( $formatted ) ) {
 			$date = get_post_meta( self::$event_id, 'start_date', true );
 			if ( $date ) {
-				$formatted = eventkoi_date_i18n( $date, $gmt );
+				$formatted = $date;
 			}
 		}
 
-		$hook = true === $gmt ? 'eventkoi_get_event_start_date_gmt' : 'eventkoi_get_event_start_date';
-
-		return apply_filters( $hook, (string) $formatted, self::$event_id, self::$event );
+		return apply_filters( 'eventkoi_get_event_start_date_raw', (string) $formatted, self::$event_id, self::$event );
 	}
 
 	/**
-	 * Get event end date.
+	 * Get event end date exactly as saved (no timezone conversion).
 	 *
 	 * @param bool $gmt Optional. If true, return date in GMT. Default false.
-	 * @return string
+	 * @return string Raw event end date string.
 	 */
-	public static function get_end_date( $gmt = false ) {
+	public static function get_end_date( $gmt = true ) {
 		$formatted = '';
-		$type      = self::get_date_type();
 
-		if ( in_array( $type, array( 'standard', 'multi' ), true ) ) {
+		$type          = self::get_date_type();
+		$standard_type = self::get_standard_type();
+
+		// If standard + continuous, read directly from meta.
+		if ( 'standard' === $type && 'continuous' === $standard_type ) {
+			$meta_val = get_post_meta( self::$event_id, 'end_date', true );
+			if ( ! empty( $meta_val ) ) {
+				$formatted = $meta_val;
+			}
+		}
+
+		// Standard & multi-day (but not continuous standard).
+		if ( empty( $formatted ) && in_array( $type, array( 'standard', 'multi' ), true ) ) {
 			$days = self::get_event_days();
 			if ( ! empty( $days ) ) {
 				$last_day = end( $days );
 				if ( ! empty( $last_day['end_date'] ) ) {
-					$ts        = strtotime( $last_day['end_date'] );
-					$formatted = $gmt ? gmdate( 'Y-m-d H:i:s', $ts ) : wp_date( 'Y-m-d H:i:s', $ts );
+					$formatted = $last_day['end_date'];
 				}
 			}
 		}
 
-		if ( 'recurring' === $type ) {
+		// Recurring.
+		if ( empty( $formatted ) && 'recurring' === $type ) {
 			$last = self::get_last_start_end_datetime();
 
 			if ( ! empty( $last['is_infinite'] ) ) {
 				return '';
 			}
 
-			if ( ! empty( $last['end'] ) && $last['end'] instanceof \DateTimeInterface ) {
-				$dt = $last['end'];
-				if ( $gmt ) {
-					$dt = $dt->setTimezone( new \DateTimeZone( 'UTC' ) );
+			if ( ! empty( $last['end'] ) ) {
+				// If it's already a string, use as-is.
+				if ( $last['end'] instanceof \DateTimeInterface ) {
+					$formatted = $last['end']->format( 'Y-m-d H:i:s' );
+				} else {
+					$formatted = $last['end'];
 				}
-				$formatted = $dt->format( 'Y-m-d H:i:s' );
 			}
 		}
 
+		// Fallback to post meta.
 		if ( empty( $formatted ) ) {
 			$date = get_post_meta( self::$event_id, 'end_date', true );
 			if ( $date ) {
-				$formatted = eventkoi_date_i18n( $date, $gmt );
+				$formatted = $date;
 			}
 		}
 
-		$hook = $gmt
-		? 'eventkoi_get_event_end_date_gmt'
-		: 'eventkoi_get_event_end_date';
-
-		return apply_filters( $hook, (string) $formatted, self::$event_id, self::$event );
+		return apply_filters( 'eventkoi_get_event_end_date_raw', (string) $formatted, self::$event_id, self::$event );
 	}
 
 	/**
@@ -968,20 +983,34 @@ class Event {
 	}
 
 	/**
-	 * Get event start date in ISO 8601 format.
+	 * Get event start date in ISO-8601 format.
 	 *
-	 * @return string ISO-formatted start date, or empty string if not set.
+	 * @return string ISO-formatted start date in UTC, or empty string if not set.
 	 */
 	public static function get_start_date_iso() {
 		$raw = self::get_start_date( true );
-		if ( empty( $raw ) ) {
+		if ( '' === $raw ) {
 			return '';
 		}
-		$timestamp = strtotime( $raw );
-		if ( false === $timestamp ) {
+
+		$ts = strtotime( $raw );
+		if ( false === $ts ) {
 			return '';
 		}
-		return wp_date( 'Y-m-d\TH:i:s\Z', $timestamp, new \DateTimeZone( 'UTC' ) );
+
+		// Force UTC/GMT output.
+		$iso = gmdate( 'Y-m-d\TH:i:s\Z', $ts );
+
+		/**
+		 * Filters the ISO-formatted start date for an event.
+		 *
+		 * @since x.x.x
+		 *
+		 * @param string $iso       ISO-formatted start date in UTC.
+		 * @param int    $event_id  Event post ID.
+		 * @param array  $event     Full event data array.
+		 */
+		return (string) apply_filters( 'eventkoi_get_event_start_date_iso', $iso, self::$event_id, self::$event );
 	}
 
 	/**
@@ -1002,15 +1031,29 @@ class Event {
 			return '';
 		}
 
+		// Force UTC/GMT output.
 		$iso = gmdate( 'Y-m-d\TH:i:s\Z', $ts );
-		/** This filter is documented in EventKoi/Core/Event.php */
+
+		/**
+		 * Filters the ISO-formatted end date for an event.
+		 *
+		 * @since x.x.x
+		 *
+		 * @param string $iso       ISO-formatted end date in UTC.
+		 * @param int    $event_id  Event post ID.
+		 * @param array  $event     Full event data array.
+		 */
 		return (string) apply_filters( 'eventkoi_get_event_end_date_iso', $iso, self::$event_id, self::$event );
 	}
 
 	/**
 	 * Get timeline of an event.
 	 *
-	 * @return string|null Human-readable timeline, or null if unavailable.
+	 * NOTE: This version does not apply timezone conversion.
+	 *       Dates are in UTC; timezone conversion happens in JS.
+	 *       For recurring events, still returns the recurring summary text.
+	 *
+	 * @return string|null
 	 */
 	public static function get_timeline() {
 		if ( self::get_tbc() ) {
@@ -1025,12 +1068,12 @@ class Event {
 
 			if ( ! empty( $rules ) && is_array( $rules ) ) {
 				$start_ts = null;
+
 				foreach ( $rules as $rule ) {
 					if ( empty( $rule['start_date'] ) ) {
 						continue;
 					}
-
-					$ts = strtotime( $rule['start_date'] );
+					$ts = strtotime( $rule['start_date'] . ' UTC' );
 					if ( ! $start_ts || $ts < $start_ts ) {
 						$start_ts = $ts;
 					}
@@ -1058,62 +1101,27 @@ class Event {
 			}
 		}
 
-		if ( 'standard' === $date_type || 'multi' === $date_type ) {
-			$days = self::get_event_days();
-
-			if ( is_array( $days ) && ! empty( $days ) ) {
-				$first = $days[0];
-				$last  = $days[ count( $days ) - 1 ];
-
-				if ( empty( $first['start_date'] ) ) {
-					return null;
-				}
-
-				$start_dt = new \DateTimeImmutable( $first['start_date'], new \DateTimeZone( 'UTC' ) );
-				$start_dt = $start_dt->setTimezone( wp_timezone() );
-
-				$end_dt = ! empty( $last['end_date'] )
-				? ( new \DateTimeImmutable( $last['end_date'], new \DateTimeZone( 'UTC' ) ) )->setTimezone( wp_timezone() )
-				: null;
-
-				$is_same_day = $end_dt && $start_dt->format( 'Y-m-d' ) === $end_dt->format( 'Y-m-d' );
-				$is_all_day  = ! empty( $first['all_day'] );
-
-				if ( $is_same_day && ! $is_all_day ) {
-					// Format like: 29 May 2025, 8:15am – 5pm.
-					$start_time = strtolower( $start_dt->format( 'g' . ( $start_dt->format( 'i' ) !== '00' ? ':i' : '' ) . 'a' ) );
-					$end_time   = strtolower( $end_dt->format( 'g' . ( $end_dt->format( 'i' ) !== '00' ? ':i' : '' ) . 'a' ) );
-
-					return sprintf(
-						'%s, %s – %s',
-						$start_dt->format( 'j M Y' ),
-						$start_time,
-						$end_time
-					);
-				}
-
-				if ( ! $end_dt || $start_dt->format( 'Y-m-d' ) === $end_dt->format( 'Y-m-d' ) ) {
-					return $start_dt->format( 'j M Y' );
-				}
-
-				// translators: %1$s is the start date, %2$s is the end date.
-				return sprintf( __( '%1$s – %2$s', 'eventkoi' ), $start_dt->format( 'j M Y' ), $end_dt->format( 'j M Y' ) );
-			}
-		}
-
 		return null;
 	}
 
 	/**
 	 * Get event modified date.
 	 *
-	 * @param bool $gmt If true, GMT time will be returned.
+	 * @param bool $gmt If true, returns UTC date string in ISO 8601 format with Z suffix.
+	 * @return string
 	 */
-	public static function get_modified_date( $gmt = false ) {
+	public static function get_modified_date( $gmt = true ) {
+		$date = '';
+
 		if ( ! empty( self::$event->post_modified_gmt ) && strtotime( self::$event->post_modified_gmt ) > 0 ) {
-			$date = eventkoi_date_i18n( self::$event->post_modified_gmt, $gmt );
-		} else {
-			$date = '';
+			if ( $gmt ) {
+				// Return as ISO 8601 UTC with Z suffix.
+				$date = gmdate( 'Y-m-d\TH:i:s\Z', strtotime( self::$event->post_modified_gmt ) );
+			} else {
+				// Convert GMT to site timezone and return as local ISO 8601.
+				$local = get_date_from_gmt( self::$event->post_modified_gmt, 'Y-m-d H:i:s' );
+				$date  = date_i18n( 'Y-m-d\TH:i:s', strtotime( $local ) );
+			}
 		}
 
 		$hook = $gmt ? 'eventkoi_get_event_modified_date_gmt' : 'eventkoi_get_event_modified_date';
@@ -1159,6 +1167,19 @@ class Event {
 		}
 
 		return apply_filters( 'eventkoi_get_event_type', (string) $type, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Get event standard type.
+	 */
+	public static function get_standard_type() {
+		$standard_type = get_post_meta( self::$event_id, 'standard_type', true );
+
+		if ( empty( $standard_type ) ) {
+			$standard_type = 'selected';
+		}
+
+		return apply_filters( 'eventkoi_get_event_standard_type', (string) $standard_type, self::$event_id, self::$event );
 	}
 
 	/**
@@ -1561,7 +1582,6 @@ class Event {
 		return implode( ', ', $links );
 	}
 
-
 	/**
 	 * Rendered calendar.
 	 */
@@ -1772,30 +1792,50 @@ class Event {
 
 		$outputs = array();
 
-		foreach ( $data as $item ) {
-			if ( empty( $item['start_date'] ) ) {
-				continue;
-			}
+		// Handle continuous standard events using event start/end meta.
+		if ( 'standard' === $type && 'continuous' === self::get_standard_type() ) {
+			$start_date = self::get_start_date(); // Already stored in UTC.
+			$end_date   = self::get_end_date();
 
-			$start_ts   = strtotime( $item['start_date'] );
-			$end_ts     = ! empty( $item['end_date'] ) ? strtotime( $item['end_date'] ) : null;
-			$is_all_day = ! empty( $item['all_day'] );
+			$start_ts   = $start_date ? strtotime( $start_date ) : null;
+			$end_ts     = $end_date ? strtotime( $end_date ) : null;
+			$is_all_day = false;
 
 			if ( $is_all_day ) {
-				$line = wp_date( 'M j, Y', $start_ts );
+				$line = wp_date( 'M j, Y', $start_ts ) . ( $end_ts ? ' — ' . wp_date( 'M j, Y', $end_ts ) : '' );
 			} else {
 				$start_str = wp_date( 'M j, Y, g:ia', $start_ts );
-				$line      = $end_ts ? $start_str . ' - ' . wp_date( 'g:ia', $end_ts ) : $start_str;
-			}
-
-			if ( 'recurring' === $type ) {
-				$summary = self::render_rule_summary_single( $item );
-				if ( ! empty( $summary ) ) {
-					$line .= '<br><span class="eventkoi-rule-summary">' . esc_html( $summary ) . '</span>';
-				}
+				$line      = $end_ts ? $start_str . ' — ' . wp_date( 'M j, Y, g:ia', $end_ts ) : $start_str;
 			}
 
 			$outputs[] = $line;
+		} else {
+			// Existing per-day rendering.
+			foreach ( $data as $item ) {
+				if ( empty( $item['start_date'] ) ) {
+					continue;
+				}
+
+				$start_ts   = strtotime( $item['start_date'] );
+				$end_ts     = ! empty( $item['end_date'] ) ? strtotime( $item['end_date'] ) : null;
+				$is_all_day = ! empty( $item['all_day'] );
+
+				if ( $is_all_day ) {
+					$line = wp_date( 'M j, Y', $start_ts );
+				} else {
+					$start_str = wp_date( 'M j, Y, g:ia', $start_ts );
+					$line      = $end_ts ? $start_str . ' - ' . wp_date( 'g:ia', $end_ts ) : $start_str;
+				}
+
+				if ( 'recurring' === $type ) {
+					$summary = self::render_rule_summary_single( $item );
+					if ( ! empty( $summary ) ) {
+						$line .= '<br><span class="eventkoi-rule-summary">' . esc_html( $summary ) . '</span>';
+					}
+				}
+
+				$outputs[] = $line;
+			}
 		}
 
 		return apply_filters(
@@ -1968,11 +2008,9 @@ class Event {
 			isset( $rule['month_day_rule'] ) && 'weekday-of-month' === $rule['month_day_rule']
 			) {
 				try {
-					$tz_wp        = new \DateTimeZone( wp_timezone_string() );
 					$start        = new \DateTimeImmutable( $start_date );
-					$start_local  = $start->setTimezone( $tz_wp );
-					$weekday_name = $start_local->format( 'l' );
-					$nth          = (int) ceil( $start_local->format( 'j' ) / 7 );
+					$weekday_name = $start->format( 'l' );
+					$nth          = (int) ceil( $start->format( 'j' ) / 7 );
 					$nth_str      = isset( $ordinals[ $nth ] ) ? $ordinals[ $nth ] : $nth . 'th';
 					$label       .= ', on the ' . $nth_str . ' ' . $weekday_name;
 				} catch ( \Exception $e ) {} // phpcs:ignore.
@@ -2144,7 +2182,7 @@ class Event {
 	 * @return array{start: \DateTimeImmutable|null, end: \DateTimeImmutable|null}
 	 */
 	public static function get_last_start_end_datetime() {
-		$tz_wp = new \DateTimeZone( wp_timezone_string() );
+		$tz_wp = new \DateTimeZone( 'UTC' );
 		$rules = self::get_recurrence_rules();
 
 		foreach ( $rules as $rule ) {
@@ -2253,7 +2291,7 @@ class Event {
 				$last_end_local   = null;
 				if ( $duration > 0 ) {
 					$end_ts         = $last_start_local->getTimestamp() + $duration;
-					$last_end_local = ( new \DateTimeImmutable( '@' . $end_ts ) )->setTimezone( $tz_wp );
+					$last_end_local = new \DateTimeImmutable( '@' . $end_ts );
 				}
 
 				return array(
