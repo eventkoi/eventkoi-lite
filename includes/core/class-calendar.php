@@ -325,6 +325,34 @@ class Calendar {
 	}
 
 	/**
+	 * Normalize a date string to full UTC ISO-8601 with Z suffix.
+	 *
+	 * @param string|null $date Date string to normalize.
+	 * @return string|null Normalized date string, or null if empty/invalid.
+	 */
+	public static function normalize_utc_iso( $date ) {
+		if ( empty( $date ) ) {
+			return null;
+		}
+
+		$date = trim( $date );
+
+		try {
+			if ( ! preg_match( '/[Z\+\-]\d{2}:?\d{2}$/', $date ) ) {
+				$date .= 'Z';
+			}
+
+			$dt = new \DateTimeImmutable( $date );
+
+			return $dt->setTimezone( new \DateTimeZone( 'UTC' ) )
+					->format( 'Y-m-d\TH:i:s\Z' );
+
+		} catch ( \Exception $e ) {
+			return null;
+		}
+	}
+
+	/**
 	 * Get all events in calendar.
 	 *
 	 * @param array $ids              Array of calendar IDs to get events from.
@@ -401,19 +429,14 @@ class Calendar {
 					}
 
 					try {
-						// 1. Always parse start_date as UTC, then convert to SITE TIMEZONE, then rebuild as local wall time
-						$dt_utc   = new \DateTimeImmutable( $rule['start_date'], new \DateTimeZone( 'UTC' ) );
-						$dt_local = $dt_utc->setTimezone( $timezone ); // Use $timezone from earlier: wp_timezone().
-
 						// Now re-create as wall time (why? to avoid any internal offsetting).
-						$start_wall = new \DateTimeImmutable(
-							$dt_local->format( 'Y-m-d H:i:s' ),
-							$timezone
-						);
+						$start_wall = new \DateTimeImmutable( $rule['start_date'] );
+						$dt_local   = $start_wall;
 
-						$end_dt   = ! empty( $rule['end_date'] )
-							? ( new \DateTimeImmutable( $rule['end_date'], new \DateTimeZone( 'UTC' ) ) )->setTimezone( $timezone )
-							: null;
+						$end_dt = ! empty( $rule['end_date'] )
+						? new \DateTimeImmutable( $rule['end_date'] )
+						: null;
+
 						$duration = $end_dt ? $end_dt->getTimestamp() - $start_wall->getTimestamp() : 0;
 						$count    = 0;
 
@@ -437,7 +460,7 @@ class Calendar {
 						if ( isset( $rule['ends'] ) && 'after' === $rule['ends'] ) {
 							$options['COUNT'] = absint( $rule['ends_after'] );
 						} elseif ( isset( $rule['ends'] ) && 'on' === $rule['ends'] ) {
-							$options['UNTIL'] = ( new \DateTimeImmutable( $rule['ends_on'], new \DateTimeZone( 'UTC' ) ) )->setTimezone( $timezone );
+							$options['UNTIL'] = new \DateTimeImmutable( $rule['ends_on'] );
 						}
 
 						// Weekly BYDAY.
@@ -465,18 +488,18 @@ class Calendar {
 						}
 
 						if ( 'month' === $rule['frequency'] ) {
-							$weekday_map = array( 'SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA' ); // PHP: 0=Sun.
+							$weekday_map = array( 'SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA' );
 
 							if ( 'weekday-of-month' === $rule['month_day_rule'] ) {
-								$php_day = (int) $dt_local->format( 'w' );
-								$ordinal = (int) ceil( (int) $dt_local->format( 'j' ) / 7 );
+								// Always derive from start date — ignore provided month_day_value or weekdays array.
+								$js_day  = (int) $start_wall->format( 'w' ); // 0=Sun
+								$ordinal = (int) ceil( (int) $start_wall->format( 'j' ) / 7 );
 
-								$options['BYDAY']    = $weekday_map[ $php_day ];
+								$options['BYDAY']    = $weekday_map[ $js_day ];
 								$options['BYSETPOS'] = $ordinal;
-								unset( $options['BYMONTHDAY'] );
+
 							} elseif ( 'day-of-month' === $rule['month_day_rule'] ) {
 								$options['BYMONTHDAY'] = (int) $rule['month_day_value'];
-								unset( $options['BYDAY'], $options['BYSETPOS'] );
 							}
 						}
 
@@ -512,11 +535,23 @@ class Calendar {
 					}
 
 					try {
-						$start_dt = new \DateTimeImmutable( $rule['start_date'], new \DateTimeZone( 'UTC' ) );
-						$end_dt   = ! empty( $rule['end_date'] )
-							? new \DateTimeImmutable( $rule['end_date'], new \DateTimeZone( 'UTC' ) )
-							: null;
-						$duration = $end_dt ? $end_dt->getTimestamp() - $start_dt->getTimestamp() : 0;
+						// Normalize start/end to UTC ISO with Z.
+						$start_str = self::normalize_utc_iso( $rule['start_date'] );
+						$end_str   = self::normalize_utc_iso( $rule['end_date'] ?? null );
+
+						if ( ! $start_str ) {
+							continue;
+						}
+
+						// Parse original UTC start/end.
+						$orig_start = new \DateTimeImmutable( $start_str );
+						$orig_end   = $end_str ? new \DateTimeImmutable( $end_str ) : null;
+
+						// Duration in seconds.
+						$duration = $orig_end ? $orig_end->getTimestamp() - $orig_start->getTimestamp() : 0;
+
+						// Anchor DTSTART to midnight UTC for recurrence generation.
+						$anchor_start = $orig_start->setTime( 0, 0, 0 );
 
 						$freq_map = array(
 							'day'   => 'DAILY',
@@ -531,16 +566,17 @@ class Calendar {
 
 						$options = array(
 							'FREQ'     => $freq_map[ $rule['frequency'] ],
-							'DTSTART'  => $start_dt,
+							'DTSTART'  => $anchor_start,
 							'INTERVAL' => isset( $rule['every'] ) ? absint( $rule['every'] ) : 1,
 						);
 
 						if ( isset( $rule['ends'] ) && 'after' === $rule['ends'] ) {
 							$options['COUNT'] = absint( $rule['ends_after'] );
 						} elseif ( isset( $rule['ends'] ) && 'on' === $rule['ends'] ) {
-							$options['UNTIL'] = new \DateTimeImmutable( $rule['ends_on'] );
+							$options['UNTIL'] = new \DateTimeImmutable( $rule['ends_on'], new \DateTimeZone( 'UTC' ) );
 						}
 
+						// Weekly recurrence.
 						if ( 'week' === $rule['frequency'] && ! empty( $rule['weekdays'] ) ) {
 							$map              = array( 'MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU' );
 							$options['BYDAY'] = implode(
@@ -554,24 +590,43 @@ class Calendar {
 							);
 						}
 
+						// Monthly recurrence.
 						if ( 'month' === $rule['frequency'] ) {
-							$weekday_map = array( 'MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU' );
+							$weekday_map = array( 'SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA' );
 
 							if ( 'weekday-of-month' === $rule['month_day_rule'] ) {
-								$js_day  = (int) $start_dt->format( 'w' ); // 0=Sun
-								$ordinal = (int) ceil( (int) $start_dt->format( 'j' ) / 7 );
+								// Always derive from start date — ignore month_day_value completely.
+								$js_day  = (int) $anchor_start->format( 'w' ); // 0=Sun
+								$ordinal = (int) ceil( (int) $anchor_start->format( 'j' ) / 7 );
 
 								$options['BYDAY']    = $weekday_map[ $js_day ];
 								$options['BYSETPOS'] = $ordinal;
+
 							} elseif ( 'day-of-month' === $rule['month_day_rule'] ) {
 								$options['BYMONTHDAY'] = (int) $rule['month_day_value'];
 							}
 						}
 
+						// Create RRule.
 						$rrule = new \EKLIB\RRule\RRule( $options );
-						$next  = $rrule->getOccurrencesBetween( new \DateTimeImmutable( 'now' ), null )[0] ?? null;
 
-						if ( $next ) {
+						// Get the *next* logical occurrence in UTC (include today if matches).
+						$now  = new \DateTimeImmutable( 'now', new \DateTimeZone( 'UTC' ) );
+						$next = $rrule->getOccurrencesAfter( $now, true );
+
+						// If the library returns an array, take the first item.
+						if ( is_array( $next ) ) {
+							$next = $next[0] ?? null;
+						}
+
+						if ( $next instanceof \DateTimeInterface ) {
+
+							$next = $next->setTime(
+								(int) $orig_start->format( 'H' ),
+								(int) $orig_start->format( 'i' ),
+								(int) $orig_start->format( 's' )
+							);
+
 							$results[] = self::format_event_instance(
 								$event,
 								$next,
@@ -592,33 +647,87 @@ class Calendar {
 			} elseif ( 'recurring' !== $event::get_date_type() ) {
 				$days = $event::get_event_days();
 
-				foreach ( $days as $i => $instance ) {
+				if ( 'continuous' === $event::get_standard_type() ) {
+					$range_start = $event::get_start_date();
+					$range_end   = $event::get_end_date();
+
+					if ( ! empty( $range_start ) && ! empty( $range_end ) ) {
+						$start_dt_utc    = new \DateTimeImmutable( $range_start, new \DateTimeZone( 'UTC' ) );
+						$end_dt_utc      = new \DateTimeImmutable( $range_end, new \DateTimeZone( 'UTC' ) );
+						$end_all_day_utc = $end_dt_utc->modify( '+1 day' )->setTime( 0, 0, 0 );
+
+						$start_time_full = gmdate( 'g:ia', $start_dt_utc->getTimestamp() );
+						$end_time_full   = gmdate( 'g:ia', $end_dt_utc->getTimestamp() );
+
+						$start_minutes = gmdate( 'i', $start_dt_utc->getTimestamp() );
+						$end_minutes   = gmdate( 'i', $end_dt_utc->getTimestamp() );
+
+						$start_time = ( '00' === $start_minutes )
+							? gmdate( 'ga', $start_dt_utc->getTimestamp() )
+							: $start_time_full;
+
+						$end_time = ( '00' === $end_minutes )
+							? gmdate( 'ga', $end_dt_utc->getTimestamp() )
+							: $end_time_full;
+
+						$results[] = array(
+							'id'            => $event::get_id() . '-span',
+							'title'         => $event::get_title(),
+							'date_type'     => $event::get_date_type(),
+							'start'         => $start_dt_utc->format( 'Y-m-d\TH:i:s\Z' ),
+							'end'           => $end_all_day_utc->format( 'Y-m-d\TH:i:s\Z' ),
+							'end_real'      => $end_dt_utc->format( 'Y-m-d\TH:i:s\Z' ),
+							'start_time'    => $start_time,
+							'end_time'      => $end_time,
+							'allDay'        => true,
+							'url'           => $event::get_url(),
+							'description'   => $event::get_summary(),
+							'address1'      => $primary['address1'] ?? '',
+							'address2'      => $primary['address2'] ?? '',
+							'latitude'      => $event::get_latitude(),
+							'longitude'     => $event::get_longitude(),
+							'embed_gmap'    => $event::get_embed_gmap(),
+							'gmap_link'     => $event::get_gmap_link(),
+							'thumbnail'     => $event::get_image(),
+							'type'          => ! empty( $primary_type ) ? $primary_type : $event::get_type(),
+							'virtual_url'   => $virtual_url,
+							'link_text'     => $link_text,
+							'location_line' => $location_fallback,
+							'locations'     => $locations,
+							'timeline'      => $event::get_timeline(),
+							'timezone'      => $event::get_timezone(),
+						);
+					}
+				} elseif ( 'selected' === $event::get_standard_type() && false === $expand_instances && ! empty( $days ) ) {
+					// Use the first day's start and the last day's end.
+					$first = reset( $days );
+					$last  = end( $days );
+
 					$start = '';
 					$end   = '';
 
-					if ( ! empty( $instance['start_date'] ) ) {
-						$start_dt = new \DateTimeImmutable( $instance['start_date'], new \DateTimeZone( 'UTC' ) );
-						$start    = $start_dt->setTimezone( $timezone )->format( 'Y-m-d\TH:i:s' );
+					if ( ! empty( $first['start_date'] ) ) {
+						$start_dt = new \DateTimeImmutable( $first['start_date'], new \DateTimeZone( 'UTC' ) );
+						$start    = $start_dt->format( 'Y-m-d\TH:i:s\Z' );
 					}
 
-					if ( ! empty( $instance['end_date'] ) ) {
-						$end_dt = new \DateTimeImmutable( $instance['end_date'], new \DateTimeZone( 'UTC' ) );
+					if ( ! empty( $last['end_date'] ) ) {
+						$end_dt = new \DateTimeImmutable( $last['end_date'], new \DateTimeZone( 'UTC' ) );
 
-						if ( ! empty( $instance['all_day'] ) ) {
-							// Make end date exclusive for FullCalendar.
+						if ( ! empty( $last['all_day'] ) ) {
 							$end_dt = $end_dt->modify( '+1 day' )->setTime( 0, 0, 0 );
 						}
 
-						$end = $end_dt->setTimezone( $timezone )->format( 'Y-m-d\TH:i:s' );
+						$end = $end_dt->format( 'Y-m-d\TH:i:s\Z' );
 					}
 
 					$results[] = array(
-						'id'            => $event::get_id() . '-day' . $i,
+						'id'            => $event::get_id() . '-span',
 						'title'         => $event::get_title(),
 						'date_type'     => $event::get_date_type(),
 						'start'         => $start,
 						'end'           => $end,
-						'allDay'        => ! empty( $instance['all_day'] ),
+						'allDay'        => ! empty( $first['all_day'] ),
 						'url'           => $event::get_url(),
 						'description'   => $event::get_summary(),
 						'address1'      => $primary['address1'] ?? '',
@@ -635,7 +744,55 @@ class Calendar {
 						'location_line' => $location_fallback,
 						'locations'     => $locations,
 						'timeline'      => $event::get_timeline(),
+						'timezone'      => $event::get_timezone(),
 					);
+				} else {
+					// Original loop for other cases.
+					foreach ( $days as $i => $instance ) {
+						$start = '';
+						$end   = '';
+
+						if ( ! empty( $instance['start_date'] ) ) {
+							$start_dt = new \DateTimeImmutable( $instance['start_date'], new \DateTimeZone( 'UTC' ) );
+							$start    = $start_dt->format( 'Y-m-d\TH:i:s\Z' );
+						}
+
+						if ( ! empty( $instance['end_date'] ) ) {
+							$end_dt = new \DateTimeImmutable( $instance['end_date'], new \DateTimeZone( 'UTC' ) );
+
+							if ( ! empty( $instance['all_day'] ) ) {
+								$end_dt = $end_dt->modify( '+1 day' )->setTime( 0, 0, 0 );
+							}
+
+							$end = $end_dt->format( 'Y-m-d\TH:i:s\Z' );
+						}
+
+						$results[] = array(
+							'id'            => $event::get_id() . '-day' . $i,
+							'title'         => $event::get_title(),
+							'date_type'     => $event::get_date_type(),
+							'start'         => $start,
+							'end'           => $end,
+							'allDay'        => ! empty( $instance['all_day'] ),
+							'url'           => $event::get_url(),
+							'description'   => $event::get_summary(),
+							'address1'      => $primary['address1'] ?? '',
+							'address2'      => $primary['address2'] ?? '',
+							'address3'      => '',
+							'latitude'      => $event::get_latitude(),
+							'longitude'     => $event::get_longitude(),
+							'embed_gmap'    => $event::get_embed_gmap(),
+							'gmap_link'     => $event::get_gmap_link(),
+							'thumbnail'     => $event::get_image(),
+							'type'          => ! empty( $primary_type ) ? $primary_type : $event::get_type(),
+							'virtual_url'   => $virtual_url,
+							'link_text'     => $link_text,
+							'location_line' => $location_fallback,
+							'locations'     => $locations,
+							'timeline'      => $event::get_timeline(),
+							'timezone'      => $event::get_timezone(),
+						);
+					}
 				}
 			}
 		}
@@ -659,17 +816,24 @@ class Calendar {
 	 * @return array
 	 */
 	protected static function format_event_instance( $event, $dt, $duration, $timezone, $primary, $primary_type, $virtual_url, $link_text, $location_fallback, $locations ) {
-		$start = $dt->setTimezone( $timezone )->format( 'Y-m-d\TH:i:s' );
-		$end   = '';
+		$start = $dt->setTimezone( new \DateTimeZone( 'UTC' ) )
+			->format( 'Y-m-d\TH:i:s\Z' );
 
+		$end = '';
 		if ( $duration > 0 ) {
 			$end = $dt->add( new \DateInterval( 'PT' . $duration . 'S' ) )
-			->setTimezone( $timezone )
-			->format( 'Y-m-d\TH:i:s' );
+				->setTimezone( new \DateTimeZone( 'UTC' ) )
+				->format( 'Y-m-d\TH:i:s\Z' );
 		}
 
-		$start_utc     = get_gmt_from_date( $start );
-		$utc_timestamp = strtotime( $start_utc );
+		$utc_timestamp = gmmktime(
+			(int) gmdate( 'H', strtotime( $start ) ),
+			(int) gmdate( 'i', strtotime( $start ) ),
+			(int) gmdate( 's', strtotime( $start ) ),
+			(int) gmdate( 'm', strtotime( $start ) ),
+			(int) gmdate( 'd', strtotime( $start ) ),
+			(int) gmdate( 'Y', strtotime( $start ) )
+		);
 
 		$url = $event::get_url(); // Base permalink.
 
@@ -735,6 +899,7 @@ class Calendar {
 			'location_line' => $override_location_line,
 			'locations'     => $override_locations,
 			'timeline'      => $event::get_timeline(),
+			'timezone'      => $event::get_timezone(),
 		);
 
 		// Merge top-level override keys.

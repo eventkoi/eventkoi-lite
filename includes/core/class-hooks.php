@@ -128,11 +128,11 @@ class Hooks {
 					$format = eventkoi_get_field_date_format( $field );
 
 					$results[ $key ]->formatted[ $field ] = esc_html(
-						wp_date( $format, $value )
+						gmdate( $format, $value )
 					);
 
 					$results[ $key ]->formatted[ $field . '_gmt' ] = esc_html(
-						wp_date( $format, $value, new \DateTimeZone( 'UTC' ) )
+						gmdate( $format, $value, new \DateTimeZone( 'UTC' ) )
 					);
 				}
 

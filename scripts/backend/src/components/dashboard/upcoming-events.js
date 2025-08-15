@@ -4,6 +4,7 @@ import { Heading } from "@/components/heading";
 import { Placeholder } from "@/components/placeholder";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { Button } from "@/components/ui/button";
+import { buildTimelineFromApi } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
 import apiRequest from "@wordpress/api-fetch";
 import {
@@ -62,6 +63,8 @@ export function UpcomingEvents() {
 
   const fillerCount = events?.length === 1 ? 2 : events?.length === 2 ? 1 : 0;
 
+  console.log(events);
+
   return (
     <Box container>
       <Heading level={3}>Events</Heading>
@@ -104,7 +107,7 @@ export function UpcomingEvents() {
 
                 {event.status !== "tbc" && (
                   <span className="block text-muted-foreground">
-                    {event.timeline}
+                    {buildTimelineFromApi(event, event.timezone)}
                   </span>
                 )}
 

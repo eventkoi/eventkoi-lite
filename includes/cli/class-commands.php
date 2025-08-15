@@ -62,8 +62,8 @@ class Commands {
 			'ID'         => $event_id,
 			'Title'      => $data['title'] ?? '(no title)',
 			'Type'       => $type_label,
-			'Start Date' => ! empty( $datetime['start'] ) ? wp_date( 'Y-m-d H:i', strtotime( $datetime['start'] ) ) : 'N/A',
-			'End Date'   => ! empty( $datetime['end'] ) ? wp_date( 'Y-m-d H:i', strtotime( $datetime['end'] ) ) : 'N/A',
+			'Start Date' => ! empty( $datetime['start'] ) ? gmdate( 'Y-m-d H:i', strtotime( $datetime['start'] ) ) : 'N/A',
+			'End Date'   => ! empty( $datetime['end'] ) ? gmdate( 'Y-m-d H:i', strtotime( $datetime['end'] ) ) : 'N/A',
 		);
 
 		self::output_event_summary( $summary, $format );
