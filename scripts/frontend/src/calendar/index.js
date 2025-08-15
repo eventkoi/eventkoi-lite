@@ -1,18 +1,21 @@
 "use client";
 
+import { CalendarToolbar } from "@/components/calendar/calendar-toolbar";
+import { CalendarHeaderPopover } from "@/components/calendar/CalendarHeaderPopover";
+import { EventPopover } from "@/components/calendar/EventPopover";
+import { ListView } from "@/components/calendar/list-view";
+import { TimezonePicker } from "@/components/timezone-picker";
+import { safeNormalizeTimeZone } from "@/lib/date-utils";
+import { groupTimezones } from "@/lib/utils";
 import apiRequest from "@wordpress/api-fetch";
 import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 
 import dayGridPlugin from "@fullcalendar/daygrid";
 import listPlugin from "@fullcalendar/list";
+import luxonPlugin from "@fullcalendar/luxon3";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
-
-import { CalendarToolbar } from "@/components/calendar/calendar-toolbar";
-import { CalendarHeaderPopover } from "@/components/calendar/CalendarHeaderPopover";
-import { EventPopover } from "@/components/calendar/EventPopover";
-import { ListView } from "@/components/calendar/list-view";
 
 const days = {
   sunday: 0,
@@ -45,6 +48,24 @@ export function Calendar({
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [anchorPos, setAnchorPos] = useState(null);
   const [search, setSearch] = useState("");
+
+  const tzGroups = groupTimezones();
+
+  // Get tz from URL query string (highest priority)
+  const urlParams = new URLSearchParams(window.location.search);
+  const tzFromQuery = urlParams.get("tz"); // e.g. "3", "UTC", "Asia/Singapore"
+
+  // Determine initial raw timezone with priority: URL > override > WP > UTC
+  const initialRawTimezone =
+    tzFromQuery ||
+    eventkoi_params?.timezone_override ||
+    eventkoi_params?.timezone ||
+    "UTC";
+
+  // Make it a state so user/components can change it
+  const [timezone, setTimezone] = useState(
+    safeNormalizeTimeZone(initialRawTimezone)
+  );
 
   const calendarRef = useRef(null);
   const ignoreNextOutsideClick = useRef(false);
@@ -186,14 +207,21 @@ export function Calendar({
 
   if (display === "list") {
     return (
-      <ListView
-        events={events}
-        showImage={showImage}
-        showDescription={showDescription}
-        showLocation={showLocation}
-        borderStyle={borderStyle}
-        borderSize={borderSize}
-      />
+      <>
+        <ListView
+          events={events}
+          showImage={showImage}
+          showDescription={showDescription}
+          showLocation={showLocation}
+          borderStyle={borderStyle}
+          borderSize={borderSize}
+        />
+        {/* Timezone info footer */}
+        <div className="pt-[30px] text-sm text-muted-foreground">
+          All event times above are shown in:{" "}
+          <TimezonePicker timezone={timezone} setTimezone={setTimezone} />
+        </div>
+      </>
     );
   }
 
@@ -211,15 +239,16 @@ export function Calendar({
         search={search}
         setSearch={setSearch}
         events={events}
+        timezone={timezone ? timezone : undefined}
       />
 
       <FullCalendar
         ref={calendarRef}
-        plugins={[dayGridPlugin, timeGridPlugin, listPlugin]}
+        plugins={[dayGridPlugin, timeGridPlugin, listPlugin, luxonPlugin]}
         events={events}
         initialView={view}
         weekends={true}
-        timeZone={false}
+        timeZone={timezone}
         firstDay={days[startday]}
         eventColor={eventColor}
         headerToolbar={false}
@@ -285,8 +314,15 @@ export function Calendar({
             setAnchorPos(null);
           }}
           ignoreNextOutsideClick={ignoreNextOutsideClick}
+          timezone={timezone ? timezone : undefined}
         />
       )}
+
+      {/* Timezone info footer */}
+      <div className="pt-[30px] text-center text-sm text-muted-foreground">
+        All event times above are shown in:{" "}
+        <TimezonePicker timezone={timezone} setTimezone={setTimezone} />
+      </div>
     </div>
   );
 }
