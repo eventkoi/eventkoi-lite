@@ -1,29 +1,38 @@
 "use client";
 
+import { ContinuousEventDates } from "@/components/event/continuous-event-dates";
+import { StandardTypeSelector } from "@/components/event/standard-type-selector";
 import { ShortcodeBox } from "@/components/ShortcodeBox";
 import { TimeInput } from "@/components/time-input";
 import { Button } from "@/components/ui/button";
 import { FloatingDatePicker } from "@/components/ui/FloatingDatePicker";
 import { Switch } from "@/components/ui/switch";
 import { useEventEditContext } from "@/hooks/EventEditContext";
-import { getDateInTimezone, getUtcISOString } from "@/lib/date-utils";
+import {
+  ensureUtcZ,
+  getDateInTimezone,
+  getUtcISOString,
+} from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
-import { isBefore } from "date-fns";
 import { MoveRight, Plus, Trash2 } from "lucide-react";
+import { DateTime } from "luxon";
 import { useState } from "react";
 
 export function EventDateMultiple({ showAttributes }) {
   const { event, setEvent } = useEventEditContext();
   const days = event.event_days || [];
   const tbc = event?.tbc ?? false;
-  const timezone = event?.timezone || "UTC";
+  const wpTz =
+    event?.timezone || window.eventkoi_params?.timezone_string || "UTC";
 
   const [errors, setErrors] = useState({});
 
   const getPreviousEndDate = (index) => {
     if (index === 0) return null;
     const previousDay = days[index - 1];
-    return previousDay?.end_date ? new Date(previousDay.end_date) : null;
+    return previousDay?.end_date
+      ? DateTime.fromISO(previousDay.end_date, { zone: "utc" }).setZone(wpTz)
+      : null;
   };
 
   const toWallTimeString = (date) => {
@@ -38,8 +47,8 @@ export function EventDateMultiple({ showAttributes }) {
   const updateDayDateAndTimes = (index, newStart, newEnd) => {
     const updatedDays = [...days];
     const day = { ...updatedDays[index] };
-    day.start_date = getUtcISOString(toWallTimeString(newStart), timezone);
-    day.end_date = getUtcISOString(toWallTimeString(newEnd), timezone);
+    day.start_date = getUtcISOString(toWallTimeString(newStart), wpTz);
+    day.end_date = getUtcISOString(toWallTimeString(newEnd), wpTz);
     updatedDays[index] = day;
     setEvent((prev) => ({
       ...prev,
@@ -53,61 +62,97 @@ export function EventDateMultiple({ showAttributes }) {
     const newErrors = { ...errors };
     const previousEnd = getPreviousEndDate(index);
 
-    const currentStart = day.start_date ? new Date(day.start_date) : null;
-    const currentEnd = day.end_date ? new Date(day.end_date) : null;
+    // Parse current values in WP time for comparison/manipulation
+    const currentStart = day.start_date
+      ? DateTime.fromISO(day.start_date, { zone: "utc" }).setZone(wpTz)
+      : null;
+    const currentEnd = day.end_date
+      ? DateTime.fromISO(day.end_date, { zone: "utc" }).setZone(wpTz)
+      : null;
 
+    // --- ALL DAY TOGGLE ---
     if (key === "all_day") {
       day.all_day = value;
 
       if (currentStart && currentEnd) {
-        const newStart = getDateInTimezone(currentStart, timezone);
-        const newEnd = getDateInTimezone(currentEnd, timezone);
+        let newStart = currentStart;
+        let newEnd = currentEnd;
 
         if (value) {
-          newStart.setHours(0, 0, 0, 0);
-          newEnd.setHours(23, 59, 59, 999);
+          newStart = newStart.set({
+            hour: 0,
+            minute: 0,
+            second: 0,
+            millisecond: 0,
+          });
+          newEnd = newEnd.set({
+            hour: 23,
+            minute: 59,
+            second: 59,
+            millisecond: 999,
+          });
         } else {
-          if (newStart.getHours() === 0) newStart.setHours(9, 0, 0, 0);
-          if (newEnd.getHours() >= 23) newEnd.setHours(17, 0, 0, 0);
+          if (newStart.hour === 0)
+            newStart = newStart.set({ hour: 9, minute: 0 });
+          if (newEnd.hour >= 23) newEnd = newEnd.set({ hour: 17, minute: 0 });
         }
 
-        day.start_date = getUtcISOString(toWallTimeString(newStart), timezone);
-        day.end_date = getUtcISOString(toWallTimeString(newEnd), timezone);
+        day.start_date = newStart
+          .setZone("utc")
+          .toISO({ suppressMilliseconds: true });
+        day.end_date = newEnd
+          .setZone("utc")
+          .toISO({ suppressMilliseconds: true });
       }
     }
 
     if (key === "start_date") {
-      const newStart = new Date(value);
-
-      if (previousEnd && isBefore(newStart, previousEnd)) {
-        newErrors[index] = "Start must be after previous event.";
+      if (/[+-]\d\d:\d\d|Z$/.test(value)) {
+        // Already has offset → assume UTC or explicit tz
+        day.start_date = DateTime.fromISO(value)
+          .toUTC()
+          .toISO({ suppressMilliseconds: true });
       } else {
-        day.start_date = getUtcISOString(toWallTimeString(newStart), timezone);
-
-        if (currentEnd && isBefore(currentEnd, newStart)) {
-          const newEnd = new Date(newStart);
-          newEnd.setHours(newEnd.getHours() + 8);
-          day.end_date = getUtcISOString(toWallTimeString(newEnd), timezone);
-        }
-
-        delete newErrors[index];
+        // Only wall-time string → interpret in WP tz
+        const wallTime = DateTime.fromISO(value, { zone: wpTz });
+        day.start_date = wallTime.toUTC().toISO({ suppressMilliseconds: true });
       }
+
+      if (currentEnd && DateTime.fromISO(day.start_date) > currentEnd) {
+        const newEnd = DateTime.fromISO(day.start_date).plus({ hours: 8 });
+        day.end_date = newEnd.toUTC().toISO({ suppressMilliseconds: true });
+      }
+
+      delete newErrors[index];
     }
 
     if (key === "end_date") {
-      const newEnd = new Date(value);
+      const wallTime = DateTime.fromISO(value, { zone: wpTz });
 
-      if (currentStart && isBefore(newEnd, currentStart)) {
+      if (currentStart && wallTime < currentStart) {
         newErrors[index] = "End must be after start.";
       } else {
-        day.end_date = getUtcISOString(toWallTimeString(newEnd), timezone);
+        day.end_date = wallTime
+          .setZone("utc")
+          .toISO({ suppressMilliseconds: true });
+
+        if (
+          (event.standard_type || "selected") === "continuous" &&
+          index === days.length - 1
+        ) {
+          setEvent((prev) => ({
+            ...prev,
+            end_date: wallTime
+              .setZone("utc")
+              .toISO({ suppressMilliseconds: true }),
+          }));
+        }
+
         delete newErrors[index];
       }
     }
 
     updatedDays[index] = day;
-
-    console.log(updatedDays);
 
     setEvent((prev) => ({
       ...prev,
@@ -120,8 +165,8 @@ export function EventDateMultiple({ showAttributes }) {
   const addDay = () => {
     const lastDay = days[days.length - 1];
     const base = lastDay?.end_date
-      ? getDateInTimezone(lastDay.end_date, timezone)
-      : getDateInTimezone(new Date(), timezone);
+      ? getDateInTimezone(lastDay.end_date, wpTz)
+      : getDateInTimezone(new Date().toISOString(), wpTz);
 
     const start = new Date(base);
     start.setDate(start.getDate() + 1);
@@ -152,104 +197,190 @@ export function EventDateMultiple({ showAttributes }) {
     }));
   };
 
+  const standardType = event.standard_type || "selected";
+
   return (
     <div className="flex flex-col gap-6">
-      {days.map((day, index) => {
-        const startDate = day.start_date
-          ? getDateInTimezone(day.start_date, timezone)
-          : undefined;
+      {/* Event Type Selector */}
+      <StandardTypeSelector
+        value={standardType}
+        onChange={(value) => {
+          setEvent((prev) => {
+            return { ...prev, standard_type: value };
+          });
+        }}
+      />
 
-        const endDate = day.end_date
-          ? getDateInTimezone(day.end_date, timezone)
-          : undefined;
+      {standardType === "selected" && (
+        <>
+          {days.map((day, index) => {
+            const startDate = day.start_date
+              ? getDateInTimezone(ensureUtcZ(day.start_date), wpTz)
+              : undefined;
 
-        return (
-          <div
-            key={index}
-            className="flex flex-wrap items-center gap-2 md:gap-4 group"
-          >
-            {/* Date Picker: updates both start and end date parts, preserves time */}
-            <FloatingDatePicker
-              value={startDate}
-              onChange={(date) => {
-                if (!date) return;
-                const startTime = startDate
-                  ? { h: startDate.getHours(), m: startDate.getMinutes() }
-                  : { h: 9, m: 0 };
-                const endTime = endDate
-                  ? { h: endDate.getHours(), m: endDate.getMinutes() }
-                  : { h: 17, m: 0 };
+            const endDate = day.end_date
+              ? getDateInTimezone(ensureUtcZ(day.end_date), wpTz)
+              : undefined;
 
-                const newStart = new Date(date);
-                newStart.setHours(startTime.h, startTime.m, 0, 0);
-                const newEnd = new Date(date);
-                newEnd.setHours(endTime.h, endTime.m, 0, 0);
+            return (
+              <div
+                key={index}
+                className="flex flex-wrap items-center gap-2 md:gap-4 group"
+              >
+                {/* Date Picker: updates both start and end date parts, preserves time */}
+                <FloatingDatePicker
+                  value={startDate}
+                  wpTz={wpTz} // ✅ pass timezone for consistent behavior
+                  onChange={(pickedDate) => {
+                    if (!pickedDate) return;
 
-                updateDayDateAndTimes(index, newStart, newEnd);
-              }}
-              className={cn(
-                "disabled:bg-muted disabled:text-muted-foreground/40 disabled:cursor-not-allowed disabled:opacity-100"
-              )}
-              disabled={tbc}
-            />
+                    const startTime = startDate
+                      ? { h: startDate.getHours(), m: startDate.getMinutes() }
+                      : { h: 9, m: 0 };
+                    const endTime = endDate
+                      ? { h: endDate.getHours(), m: endDate.getMinutes() }
+                      : { h: 17, m: 0 };
 
-            {/* Start Time Input: only updates time of start_date */}
-            {!day.all_day && (
-              <>
-                <TimeInput
-                  date={startDate}
-                  setDate={(time) => {
-                    if (!time || !startDate) return;
-                    // Apply new time to current date
-                    const newStart = new Date(startDate);
-                    newStart.setHours(time.getHours(), time.getMinutes(), 0, 0);
-                    updateDay(index, "start_date", newStart.toISOString());
+                    // ✅ Ensure the picked date is treated as WP wall time
+                    const newStart = DateTime.fromJSDate(pickedDate, {
+                      zone: wpTz,
+                    })
+                      .set({
+                        hour: startTime.h,
+                        minute: startTime.m,
+                        second: 0,
+                        millisecond: 0,
+                      })
+                      .toJSDate();
+
+                    const newEnd = DateTime.fromJSDate(pickedDate, {
+                      zone: wpTz,
+                    })
+                      .set({
+                        hour: endTime.h,
+                        minute: endTime.m,
+                        second: 0,
+                        millisecond: 0,
+                      })
+                      .toJSDate();
+
+                    updateDayDateAndTimes(index, newStart, newEnd);
                   }}
+                  className={cn(
+                    "disabled:bg-muted disabled:text-muted-foreground/40 disabled:cursor-not-allowed disabled:opacity-100"
+                  )}
                   disabled={tbc}
                 />
-                <MoveRight
-                  className="w-6 h-6 text-muted-foreground"
-                  strokeWidth={1.5}
-                />
-                {/* End Time Input: only updates time of end_date, but always keeps the date SAME as startDate */}
-                <TimeInput
-                  date={endDate}
-                  setDate={(time) => {
-                    if (!time || !startDate) return;
-                    const newEnd = new Date(startDate);
-                    newEnd.setHours(time.getHours(), time.getMinutes(), 0, 0);
-                    updateDay(index, "end_date", newEnd.toISOString());
-                  }}
-                  disabled={tbc}
-                />
-              </>
-            )}
 
-            <div className="flex items-center gap-2">
-              <Switch
-                checked={day.all_day}
-                onCheckedChange={(checked) =>
-                  updateDay(index, "all_day", checked)
-                }
-                disabled={tbc}
-              />
-              <span className="text-sm text-muted-foreground">All day</span>
-              {index !== 0 && (
-                <Button
-                  type="button"
-                  size="icon"
-                  variant="ghost"
-                  onClick={() => deleteDay(index)}
-                  className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                  disabled={days.length <= 1}
-                >
-                  <Trash2 className="h-4 w-4 text-muted-foreground" />
-                </Button>
-              )}
-            </div>
-          </div>
-        );
-      })}
+                {/* Start Time Input: only updates time of start_date */}
+                {!day.all_day && (
+                  <>
+                    <TimeInput
+                      date={startDate}
+                      wpTz={wpTz}
+                      setDate={(utcDate) => {
+                        if (!utcDate || !startDate) return;
+
+                        // `utcDate` from TimeInput is already in UTC
+                        const parsedUtc = DateTime.fromJSDate(utcDate, {
+                          zone: "utc",
+                        }).setZone(wpTz);
+
+                        // Take existing WP wall date and replace time
+                        const dtWall = DateTime.fromJSDate(startDate, {
+                          zone: wpTz,
+                        }).set({
+                          hour: parsedUtc.hour,
+                          minute: parsedUtc.minute,
+                          second: 0,
+                          millisecond: 0,
+                        });
+
+                        updateDay(
+                          index,
+                          "start_date",
+                          dtWall.toISO({ suppressMilliseconds: true })
+                        );
+                      }}
+                      disabled={tbc}
+                    />
+                    <MoveRight
+                      className="w-6 h-6 text-muted-foreground"
+                      strokeWidth={1.5}
+                    />
+                    {/* End Time Input: only updates time of end_date, but always keeps the date SAME as startDate */}
+                    <TimeInput
+                      date={endDate}
+                      wpTz={wpTz}
+                      setDate={(utcDate) => {
+                        if (!utcDate || !startDate) return;
+
+                        // Convert the UTC date from TimeInput into WP tz
+                        const parsedUtc = DateTime.fromJSDate(utcDate, {
+                          zone: "utc",
+                        }).setZone(wpTz);
+
+                        // Overlay hours/minutes on the same day as startDate in WP tz
+                        const dtWall = DateTime.fromJSDate(startDate, {
+                          zone: wpTz,
+                        }).set({
+                          hour: parsedUtc.hour,
+                          minute: parsedUtc.minute,
+                          second: 0,
+                          millisecond: 0,
+                        });
+
+                        updateDay(
+                          index,
+                          "end_date",
+                          dtWall.toISO({ suppressMilliseconds: true })
+                        );
+                      }}
+                      disabled={tbc}
+                    />
+                  </>
+                )}
+
+                <div className="flex items-center gap-2">
+                  <Switch
+                    checked={day.all_day}
+                    onCheckedChange={(checked) =>
+                      updateDay(index, "all_day", checked)
+                    }
+                    disabled={tbc}
+                  />
+                  <span className="text-sm text-muted-foreground">All day</span>
+                  {index !== 0 && (
+                    <Button
+                      type="button"
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => deleteDay(index)}
+                      className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                      disabled={days.length <= 1}
+                    >
+                      <Trash2 className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </>
+      )}
+
+      {standardType === "continuous" && (
+        <ContinuousEventDates
+          event={event}
+          updateDay={updateDay}
+          updateEvent={(key, value) =>
+            setEvent((prev) => ({
+              ...prev,
+              [key]: value,
+            }))
+          }
+        />
+      )}
 
       {showAttributes && (
         <ShortcodeBox
@@ -259,19 +390,21 @@ export function EventDateMultiple({ showAttributes }) {
         />
       )}
 
-      <div className="flex">
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={addDay}
-          className="w-auto justify-start text-sm"
-          disabled={tbc}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add day
-        </Button>
-      </div>
+      {standardType === "selected" && (
+        <div className="flex">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={addDay}
+            className="w-auto justify-start text-sm"
+            disabled={tbc}
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            Add day
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
