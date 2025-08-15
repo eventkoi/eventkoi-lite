@@ -150,7 +150,7 @@ export function CalendarNavBar({ loading, setLoading, calendar, setCalendar }) {
               <ChevronDown className="w-4 h-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56 z-[510]" align="end">
+          <DropdownMenuContent className="w-56 z-[510000]" align="end">
             <DropdownMenuItem
               disabled={!calendar?.id}
               onClick={() => {
