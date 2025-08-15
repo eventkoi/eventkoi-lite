@@ -3,13 +3,14 @@
 import { Button } from "@/components/ui/button";
 import { CalendarPicker } from "@/components/ui/calendar-picker";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { DateTime } from "luxon";
 import { useRef, useState } from "react";
 import { useClickAway } from "react-use";
 
 export function FloatingDatePicker({
   value,
   onChange,
+  wpTz = "UTC",
   className,
   disabled = false,
 }) {
@@ -35,17 +36,28 @@ export function FloatingDatePicker({
           className
         )}
       >
-        {value ? format(value, "d MMM yyyy") : "Set date"}
+        {value
+          ? DateTime.fromJSDate(value, { zone: wpTz }).toFormat("d MMM yyyy")
+          : "Set date"}
       </Button>
 
       {open && !disabled && (
         <div className="absolute z-50 mt-2 rounded-md border bg-background shadow-md">
           <CalendarPicker
-            value={value}
+            // Show the date in WP timezone
+            value={
+              value
+                ? DateTime.fromJSDate(value, { zone: wpTz }).toJSDate()
+                : null
+            }
             onChange={(date) => {
               if (date) {
                 setOpen(false);
-                onChange(date);
+                // Pass date back in WP timezone, not shifted to browser local
+                const dtWall = DateTime.fromJSDate(date, {
+                  zone: wpTz,
+                }).toJSDate();
+                onChange(dtWall);
               }
             }}
           />
