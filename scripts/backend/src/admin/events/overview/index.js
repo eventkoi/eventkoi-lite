@@ -1,4 +1,5 @@
 import { AddButton } from "@/components/add-button";
+import { ProLaunch } from "@/components/dashboard/pro-launch";
 import { DataTable } from "@/components/data-table";
 import { Heading } from "@/components/heading";
 import { SortButton } from "@/components/sort-button";
