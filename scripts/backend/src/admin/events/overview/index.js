@@ -128,36 +128,40 @@ export function EventsOverview() {
         cell: ({ row }) => {
           const { id, wp_status, url } = row.original;
           return (
-            <div className="grid space-y-1 group">
-              <div className="flex gap-2 items-start text-foreground">
-                <a
-                  href={`#/events/${parseInt(id)}/main`}
-                  className="font-medium hover:underline hover:decoration-dotted underline-offset-4"
-                >
-                  {row.getValue("title")}
-                </a>
-                <div className="flex flex-wrap gap-1">
-                  {["draft", "trash"].includes(wp_status) && (
-                    <Badge variant="outline" className="font-normal">
-                      {wp_status.charAt(0).toUpperCase() + wp_status.slice(1)}
-                    </Badge>
-                  )}
-                  {row.original.date_type === "recurring" && (
-                    <span className="text-xs font-normal px-2 py-0.5 rounded-full border border-[#D0E6FB] bg-[#F0F8FF] text-foreground">
-                      Recurring
-                    </span>
-                  )}
-                </div>
-
-                {url && (
+            <div className="grid space-y-1">
+              <div className="flex items-center gap-2 text-foreground">
+                {/* Title + frontend link icon */}
+                <span className="inline">
                   <a
-                    href={url}
-                    className="invisible group-hover:visible min-w-5 w-5 h-5 items-center justify-center"
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    href={`#/events/${parseInt(id)}/main`}
+                    className="inline font-medium hover:underline hover:decoration-dotted underline-offset-4 break-words"
                   >
-                    <Link2 className="w-full h-full" />
+                    {row.getValue("title")}
                   </a>
+                  {url && (
+                    <a
+                      href={url}
+                      className="ms-2 text-muted-foreground hover:text-foreground shrink-0"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Link2 className="w-5 h-5 inline-block" />
+                    </a>
+                  )}
+                </span>
+
+                {/* Status badges inline with title */}
+                {["draft", "trash"].includes(wp_status) && (
+                  <Badge variant="outline" className="font-normal">
+                    {wp_status.charAt(0).toUpperCase() + wp_status.slice(1)}
+                  </Badge>
+                )}
+
+                {row.original.date_type === "recurring" && (
+                  <span className="text-xs font-normal px-2 py-0.5 rounded-full border border-[#D0E6FB] bg-[#F0F8FF] text-foreground">
+                    Recurring
+                  </span>
                 )}
               </div>
             </div>

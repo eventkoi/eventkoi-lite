@@ -30,27 +30,29 @@ function CalendarNameCell({ row }) {
 
   return (
     <div className="grid space-y-1">
-      <div className="flex gap-2 items-start text-foreground group">
-        <a
-          href={url}
-          className="font-medium hover:underline hover:decoration-dotted underline-offset-4"
-        >
-          {row.getValue("name")}
-        </a>
+      <div className="flex gap-2 items-start text-foreground">
+        <span className="inline">
+          <a
+            href={url}
+            className="inline font-medium hover:underline hover:decoration-dotted underline-offset-4"
+          >
+            {row.getValue("name")}
+          </a>
+          <a
+            href={row.original.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ms-2 text-muted-foreground hover:text-foreground shrink-0"
+            aria-label="View public calendar"
+          >
+            <Link2 className="w-5 h-5 inline-block" />
+          </a>
+        </span>
         {isDefaultCal && (
           <Badge variant="outline" className="font-normal">
             Default
           </Badge>
         )}
-        <a
-          href={row.original.url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="invisible group-hover:visible min-w-5 w-5 h-5 flex items-center justify-center"
-          aria-label="View public calendar"
-        >
-          <Link2 className="w-full h-full" />
-        </a>
       </div>
     </div>
   );

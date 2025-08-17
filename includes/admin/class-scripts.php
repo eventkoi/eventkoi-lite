@@ -76,6 +76,7 @@ class Scripts {
 			'new_calendar'        => Calendar::get_meta(),
 			'default_cal'         => $default_cal_id,
 			'default_cal_url'     => trailingslashit( $cal_url ),
+			'default_calendar'    => eventkoi_get_default_calendar_url(),
 			'default_color'       => eventkoi_default_calendar_color(),
 			'calendars'           => Calendars::get_calendars(),
 			'timezone_string'     => wp_timezone_string(),

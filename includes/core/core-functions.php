@@ -334,6 +334,34 @@ function eventkoi_date_i18n( $date, $gmt = false ) {
 }
 
 /**
+ * Get the default calendar URL.
+ *
+ * Returns the permalink for the default event calendar, or an empty string if none is set.
+ * Falls back to the main events archive if the default calendar is not valid.
+ *
+ * @return string Default calendar URL.
+ */
+function eventkoi_get_default_calendar_url() {
+	$default_cal_id = (int) get_option( 'default_event_cal', 0 );
+	if ( $default_cal_id <= 0 ) {
+		// Fallback to events archive if no default calendar is set.
+		$archive_url = get_post_type_archive_link( 'event' );
+		return $archive_url ? esc_url( $archive_url ) : '';
+	}
+	$default_cal = get_term_by( 'id', $default_cal_id, 'event_cal' );
+	if ( ! $default_cal || is_wp_error( $default_cal ) ) {
+		// Fallback to events archive if the term is invalid.
+		$archive_url = get_post_type_archive_link( 'event' );
+		return $archive_url ? esc_url( $archive_url ) : '';
+	}
+	$cal_url = get_term_link( $default_cal, 'event_cal' );
+	if ( is_wp_error( $cal_url ) ) {
+		return '';
+	}
+	return esc_url( trailingslashit( $cal_url ) );
+}
+
+/**
  * Returns current date based on GMT and specific format.
  *
  * @param string $format Optional. A date format. Default is the plugin's default format.

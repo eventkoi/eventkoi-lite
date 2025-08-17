@@ -12,6 +12,7 @@ import {
   CirclePlus,
   Image,
   Link as LinkIcon,
+  List,
   MapPin,
 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -126,31 +127,41 @@ export function UpcomingEvents() {
           <div key={`filler-${i}`} />
         ))}
 
-        <div>
-          <AspectRatio ratio={1.5}>
-            <div className="flex flex-col gap-4 justify-between h-full">
-              <Button
-                variant="default"
-                className="flex flex-col grow gap-1 px-4 justify-center h-auto border rounded-xl items-center border-foreground bg-foreground text-white hover:text-card-foreground hover:bg-accent hover:border-foreground/40"
-                asChild
-              >
-                <Link to="/events/add/main">
-                  <CirclePlus className="w-5 h-5" />
-                  Add new event
-                </Link>
-              </Button>
+        <div className="flex flex-col gap-4 justify-between h-full">
+          <Button
+            variant="default"
+            className="flex flex-col grow gap-1 px-4 justify-center h-auto border rounded-xl items-center border-foreground bg-foreground text-white hover:text-card-foreground hover:bg-accent hover:border-foreground/40"
+            asChild
+          >
+            <Link to="/events/add/main">
+              <CirclePlus className="w-5 h-5" />
+              Add new event
+            </Link>
+          </Button>
 
-              <Button
-                className="flex flex-col grow gap-1 px-4 justify-center h-auto border rounded-xl items-center bg-transparent text-card-foreground hover:bg-accent border-foreground/40"
-                asChild
-              >
-                <Link to="/events">
-                  <Calendar className="w-5 h-5" />
-                  View all events
-                </Link>
-              </Button>
-            </div>
-          </AspectRatio>
+          <Button
+            className="flex flex-col grow gap-1 px-4 justify-center h-auto border rounded-xl items-center bg-transparent text-card-foreground hover:bg-accent border-foreground/40"
+            asChild
+          >
+            <Link to="/events">
+              <List className="w-5 h-5" />
+              View all events
+            </Link>
+          </Button>
+
+          <Button
+            className="flex flex-col grow gap-1 px-4 justify-center h-auto border rounded-xl items-center bg-transparent text-card-foreground hover:bg-accent border-foreground/40"
+            asChild
+          >
+            <a
+              href={eventkoi_params?.default_calendar}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              <Calendar className="w-5 h-5" />
+              View default calendar
+            </a>
+          </Button>
         </div>
       </div>
     </Box>
