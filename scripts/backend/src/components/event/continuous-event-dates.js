@@ -56,14 +56,16 @@ export function ContinuousEventDates({ event, updateDay, updateEvent, tbc }) {
       {/* Start date */}
       <FloatingDatePicker
         value={startDate}
-        wpTz={wpTz} // ✅ pass timezone
-        onChange={(date) => {
-          if (!date) return;
-          const base = startDate || new Date();
+        wpTz={wpTz}
+        onChange={(pickedDate) => {
+          if (!pickedDate) return;
+          const base = startDate
+            ? DateTime.fromJSDate(startDate, { zone: wpTz })
+            : DateTime.fromObject({ hour: 9, minute: 0 }, { zone: wpTz });
 
-          const dtWall = DateTime.fromJSDate(date, { zone: wpTz }).set({
-            hour: base.getHours(),
-            minute: base.getMinutes(),
+          const dtWall = pickedDate.set({
+            hour: base.hour,
+            minute: base.minute,
             second: 0,
             millisecond: 0,
           });
@@ -91,14 +93,18 @@ export function ContinuousEventDates({ event, updateDay, updateEvent, tbc }) {
       {/* End date */}
       <FloatingDatePicker
         value={endDate}
-        wpTz={wpTz} // ✅ pass timezone
-        onChange={(date) => {
-          if (!date) return;
-          const base = endDate || startDate || new Date();
+        wpTz={wpTz}
+        onChange={(pickedDate) => {
+          if (!pickedDate) return;
+          const base = endDate
+            ? DateTime.fromJSDate(endDate, { zone: wpTz })
+            : startDate
+            ? DateTime.fromJSDate(startDate, { zone: wpTz })
+            : DateTime.fromObject({ hour: 17, minute: 0 }, { zone: wpTz });
 
-          const dtWall = DateTime.fromJSDate(date, { zone: wpTz }).set({
-            hour: base.getHours(),
-            minute: base.getMinutes(),
+          const dtWall = pickedDate.set({
+            hour: base.hour,
+            minute: base.minute,
             second: 0,
             millisecond: 0,
           });

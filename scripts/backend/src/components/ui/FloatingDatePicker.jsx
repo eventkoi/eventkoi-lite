@@ -44,20 +44,30 @@ export function FloatingDatePicker({
       {open && !disabled && (
         <div className="absolute z-50 mt-2 rounded-md border bg-background shadow-md">
           <CalendarPicker
-            // Show the date in WP timezone
             value={
               value
-                ? DateTime.fromJSDate(value, { zone: wpTz }).toJSDate()
+                ? new Date(
+                    value.getFullYear(),
+                    value.getMonth(),
+                    value.getDate()
+                  )
                 : null
             }
             onChange={(date) => {
               if (date) {
                 setOpen(false);
-                // Pass date back in WP timezone, not shifted to browser local
-                const dtWall = DateTime.fromJSDate(date, {
-                  zone: wpTz,
-                }).toJSDate();
-                onChange(dtWall);
+
+                // ✅ Build the wall date manually from Y/M/D parts
+                const dtWall = DateTime.fromObject(
+                  {
+                    year: date.getFullYear(),
+                    month: date.getMonth() + 1,
+                    day: date.getDate(),
+                  },
+                  { zone: wpTz }
+                );
+
+                onChange(dtWall); // Pass Luxon DateTime in WP timezone
               }
             }}
           />

@@ -1,6 +1,5 @@
 import { ProLaunch } from "@/components/dashboard/pro-launch";
 import { EventDateRecurring } from "@/components/event/event-date-recurring";
-import { EventDateStandard } from "@/components/event/event-date-standard";
 import { Panel } from "@/components/panel";
 import { ProBadge } from "@/components/pro-badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -83,14 +82,6 @@ export function EventDate({ showAttributes }) {
             <ProBadge />
           </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="standard">
-          <EventDateStandard
-            event={event}
-            setEvent={setEvent}
-            showAttributes={showAttributes}
-          />
-        </TabsContent>
 
         <TabsContent value="recurring">
           <ProLaunch

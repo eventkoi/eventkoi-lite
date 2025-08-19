@@ -43,6 +43,8 @@ export function generateInstances(
     const luxonStart = DateTime.fromISO(rule.start_date, { zone: "utc" });
     const luxonEnd = DateTime.fromISO(rule.end_date, { zone: "utc" });
 
+    const duration = luxonEnd.diff(luxonStart);
+
     const start = new Date(
       luxonStart.year,
       luxonStart.month - 1,
@@ -126,16 +128,7 @@ export function generateInstances(
           { zone: "utc" }
         );
 
-        const instanceEnd = DateTime.fromObject(
-          {
-            year: date.getFullYear?.() ?? date.year,
-            month: date.getMonth?.() + 1 ?? date.month,
-            day: date.getDate?.() ?? date.day,
-            hour: endHour,
-            minute: endMinute,
-          },
-          { zone: "utc" }
-        );
+        const instanceEnd = instanceStart.plus(duration);
 
         const instanceTimestamp = Math.floor(instanceStart.toUTC().toSeconds());
 
@@ -254,16 +247,7 @@ export function generateInstances(
           { zone: "utc" }
         );
 
-        const instanceEnd = DateTime.fromObject(
-          {
-            year: date.getFullYear?.() ?? date.year,
-            month: date.getMonth?.() + 1 ?? date.month,
-            day: date.getDate?.() ?? date.day,
-            hour: endHour,
-            minute: endMinute,
-          },
-          { zone: "utc" }
-        );
+        const instanceEnd = instanceStart.plus(duration);
 
         const instanceTimestamp = Math.floor(instanceStart.toUTC().toSeconds());
 
@@ -375,6 +359,8 @@ export function EventEditInstances() {
       textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
     }
   }, [event?.title]);
+
+  console.log(instances);
 
   return (
     <>

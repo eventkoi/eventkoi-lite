@@ -8,11 +8,7 @@ import { Button } from "@/components/ui/button";
 import { FloatingDatePicker } from "@/components/ui/FloatingDatePicker";
 import { Switch } from "@/components/ui/switch";
 import { useEventEditContext } from "@/hooks/EventEditContext";
-import {
-  ensureUtcZ,
-  getDateInTimezone,
-  getUtcISOString,
-} from "@/lib/date-utils";
+import { ensureUtcZ, getDateInTimezone } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
 import { MoveRight, Plus, Trash2 } from "lucide-react";
 import { DateTime } from "luxon";
@@ -20,7 +16,9 @@ import { useState } from "react";
 
 export function EventDateMultiple({ showAttributes }) {
   const { event, setEvent } = useEventEditContext();
-  const days = event.event_days || [];
+  const days = event.event_days?.length
+    ? event.event_days
+    : [{ start_date: null, end_date: null, all_day: false }];
   const tbc = event?.tbc ?? false;
   const wpTz =
     event?.timezone || window.eventkoi_params?.timezone_string || "UTC";
@@ -44,16 +42,13 @@ export function EventDateMultiple({ showAttributes }) {
     return `${year}-${month}-${day}T${hours}:${minutes}:00`;
   };
 
-  const updateDayDateAndTimes = (index, newStart, newEnd) => {
+  const updateDayDateAndTimes = (index, startIso, endIso) => {
     const updatedDays = [...days];
     const day = { ...updatedDays[index] };
-    day.start_date = getUtcISOString(toWallTimeString(newStart), wpTz);
-    day.end_date = getUtcISOString(toWallTimeString(newEnd), wpTz);
+    day.start_date = startIso;
+    day.end_date = endIso;
     updatedDays[index] = day;
-    setEvent((prev) => ({
-      ...prev,
-      event_days: updatedDays,
-    }));
+    setEvent((prev) => ({ ...prev, event_days: updatedDays }));
   };
 
   const updateDay = (index, key, value) => {
@@ -136,15 +131,11 @@ export function EventDateMultiple({ showAttributes }) {
           .setZone("utc")
           .toISO({ suppressMilliseconds: true });
 
-        if (
-          (event.standard_type || "selected") === "continuous" &&
-          index === days.length - 1
-        ) {
+        // Only sync top-level end_date for continuous
+        if (event.standard_type === "continuous" && index === days.length - 1) {
           setEvent((prev) => ({
             ...prev,
-            end_date: wallTime
-              .setZone("utc")
-              .toISO({ suppressMilliseconds: true }),
+            end_date: day.end_date,
           }));
         }
 
@@ -206,7 +197,61 @@ export function EventDateMultiple({ showAttributes }) {
         value={standardType}
         onChange={(value) => {
           setEvent((prev) => {
-            return { ...prev, standard_type: value };
+            if (value === "continuous") {
+              return {
+                ...prev,
+                standard_type: "continuous",
+                start_date: prev.start_date || null,
+                end_date: prev.end_date || null,
+                event_days: [], // clear
+              };
+            }
+
+            if (value === "selected") {
+              let days = [];
+
+              if (prev.start_date) {
+                // Take DATE ONLY from continuous start
+                const startWall = DateTime.fromISO(prev.start_date, {
+                  zone: "utc",
+                })
+                  .setZone(wpTz)
+                  .startOf("day"); // midnight wall-time
+
+                days = [
+                  {
+                    start_date: startWall
+                      .toUTC()
+                      .toISO({ suppressMilliseconds: true }),
+                    end_date: null, // always clear
+                    all_day: false,
+                  },
+                ];
+              } else {
+                // fallback: today at 9:00, but only seed DATE
+                const today = DateTime.now().setZone(wpTz).startOf("day");
+
+                days = [
+                  {
+                    start_date: today
+                      .toUTC()
+                      .toISO({ suppressMilliseconds: true }),
+                    end_date: null,
+                    all_day: false,
+                  },
+                ];
+              }
+
+              return {
+                ...prev,
+                standard_type: "selected",
+                start_date: null, // wipe continuous span
+                end_date: null,
+                event_days: days,
+              };
+            }
+
+            return prev;
           });
         }}
       />
@@ -230,41 +275,38 @@ export function EventDateMultiple({ showAttributes }) {
                 {/* Date Picker: updates both start and end date parts, preserves time */}
                 <FloatingDatePicker
                   value={startDate}
-                  wpTz={wpTz} // ✅ pass timezone for consistent behavior
+                  wpTz={wpTz}
                   onChange={(pickedDate) => {
                     if (!pickedDate) return;
 
                     const startTime = startDate
                       ? { h: startDate.getHours(), m: startDate.getMinutes() }
                       : { h: 9, m: 0 };
+
                     const endTime = endDate
                       ? { h: endDate.getHours(), m: endDate.getMinutes() }
                       : { h: 17, m: 0 };
 
-                    // ✅ Ensure the picked date is treated as WP wall time
-                    const newStart = DateTime.fromJSDate(pickedDate, {
-                      zone: wpTz,
-                    })
-                      .set({
-                        hour: startTime.h,
-                        minute: startTime.m,
-                        second: 0,
-                        millisecond: 0,
-                      })
-                      .toJSDate();
+                    // pickedDate is already Luxon in WP tz
+                    const newStart = pickedDate.set({
+                      hour: startTime.h,
+                      minute: startTime.m,
+                      second: 0,
+                      millisecond: 0,
+                    });
 
-                    const newEnd = DateTime.fromJSDate(pickedDate, {
-                      zone: wpTz,
-                    })
-                      .set({
-                        hour: endTime.h,
-                        minute: endTime.m,
-                        second: 0,
-                        millisecond: 0,
-                      })
-                      .toJSDate();
+                    const newEnd = pickedDate.set({
+                      hour: endTime.h,
+                      minute: endTime.m,
+                      second: 0,
+                      millisecond: 0,
+                    });
 
-                    updateDayDateAndTimes(index, newStart, newEnd);
+                    updateDayDateAndTimes(
+                      index,
+                      newStart.toUTC().toISO({ suppressMilliseconds: true }),
+                      newEnd.toUTC().toISO({ suppressMilliseconds: true })
+                    );
                   }}
                   className={cn(
                     "disabled:bg-muted disabled:text-muted-foreground/40 disabled:cursor-not-allowed disabled:opacity-100"

@@ -120,7 +120,7 @@ export function CalendarEdit() {
         <div
           className={cn(
             "w-full mx-auto items-start gap-6",
-            "grid grid-cols-1 md:grid-cols-[210px_1fr]"
+            "grid grid-cols-1 md:grid-cols-[180px_1fr]"
           )}
         >
           <CalendarTabs

@@ -56,7 +56,7 @@ export function EventNavBar() {
     setLoading,
     setIsPublishing,
     setDisableAutoSave,
-  } = useEventEditContext?.() || {};
+  } = useEventEditContext();
 
   const [saving, setSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
@@ -130,10 +130,10 @@ export function EventNavBar() {
   };
 
   const saveEvent = async (status) => {
+    console.log(event);
     if (!event?.title?.trim()) return;
 
-    if (!event?.id && hasSavedOnce.current) return;
-
+    // Don’t run if we’re already publishing
     if (status === "publish") {
       setDisableAutoSave?.(true);
       setIsPublishing?.(true);
@@ -141,13 +141,24 @@ export function EventNavBar() {
     }
 
     const eventToSave = { ...event, wp_status: status };
+
     const response = await handleAction("update_event", { event: eventToSave });
 
     if (response?.id) {
+      // Always trust the server response for the ID
       setEvent?.(response);
-      if (!event?.id) {
+
+      // Mark that we have a permanent ID now
+      if (!hasSavedOnce.current) {
         hasSavedOnce.current = true;
-        window.location.hash = window.location.hash.replace("add", response.id);
+
+        // Fix the URL only once
+        if (window.location.hash.includes("/events/add/")) {
+          window.location.hash = window.location.hash.replace(
+            "/events/add/",
+            `/events/${response.id}/`
+          );
+        }
       }
     }
 
@@ -280,7 +291,7 @@ export function EventNavBar() {
                   <ChevronDown className="w-4 h-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56 z-[510]" align="end">
+              <DropdownMenuContent className="w-56 z-[510000]" align="end">
                 {/* <DropdownMenuItem>Schedule publish</DropdownMenuItem> */}
                 <DropdownMenuItem
                   disabled={!event?.id}

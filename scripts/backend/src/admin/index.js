@@ -35,6 +35,7 @@ import { TicketsOverview } from "@/admin/tickets/overview";
 
 import { Settings } from "@/admin/settings";
 import { SettingsIntegrations } from "@/admin/settings/integrations";
+import { SettingsLicense } from "@/admin/settings/license";
 import { SettingsOverview } from "@/admin/settings/overview";
 
 import { Nav } from "@/components/nav";
@@ -131,6 +132,7 @@ function AdminLayout() {
           <Route index element={<SettingsOverview />} />
           <Route path="default" element={<SettingsOverview />} />
           <Route path="integrations" element={<SettingsIntegrations />} />
+          <Route path="license" element={<SettingsLicense />} />
         </Route>
 
         <Route path="*" element={<Home />} />

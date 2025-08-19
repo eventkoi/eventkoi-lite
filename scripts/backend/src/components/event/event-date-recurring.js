@@ -23,12 +23,13 @@ import { Switch } from "@/components/ui/switch";
 import { useEventEditContext } from "@/hooks/EventEditContext";
 import { useSettings } from "@/hooks/SettingsContext";
 import {
+  ensureUtcZ,
   getDateInTimezone,
   getOrderedWeekdays,
-  getUtcISOString,
 } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
 import { CheckCheck, Copy, MoveRight, Plus, Trash2, X } from "lucide-react";
+import { DateTime } from "luxon";
 import { memo, useCallback, useState } from "react";
 import { Link } from "react-router-dom";
 
@@ -65,14 +66,7 @@ function getOrdinal(date) {
   return ordinals[ordinalIndex - 1] || `${ordinalIndex}th`;
 }
 
-function getRecurringSummary(rule) {
-  const freqSingular = {
-    day: "day",
-    week: "week",
-    month: "month",
-    year: "year",
-  };
-
+function getRecurringSummary(rule, wpTz) {
   const freqPlural = {
     day: "days",
     week: "weeks",
@@ -80,7 +74,36 @@ function getRecurringSummary(rule) {
     year: "years",
   };
 
-  // Main text: "Daily", "Weekly", ... or "Every 2 weeks"
+  const WEEKDAY_NAMES = [
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+    "Sunday",
+  ];
+
+  const MONTHS = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+
+  const ordinals = ["first", "second", "third", "fourth", "fifth"];
+
+  const mapJsDayToMondayIndex = (jsDay) => (jsDay === 0 ? 6 : jsDay - 1);
+
+  // Frequency text
   let freqText;
   if (rule.every && rule.every > 1) {
     freqText = `Every ${rule.every} ${freqPlural[rule.frequency] || "custom"}`;
@@ -96,47 +119,49 @@ function getRecurringSummary(rule) {
 
   let details = "";
 
-  // Weekly details: which days
+  // WEEKLY
   if (rule.frequency === "week" && rule.weekdays?.length) {
     const days = rule.weekdays.map((i) => WEEKDAY_NAMES[i]).join(", ");
     details = `, on ${days}`;
   }
 
-  // Monthly details
+  // MONTHLY — weekday-of-month
   if (
     rule.frequency === "month" &&
     rule.month_day_rule === "weekday-of-month"
   ) {
-    const startDate = new Date(rule.start_date);
+    const startDate = DateTime.fromISO(rule.start_date, { zone: "utc" })
+      .setZone(wpTz)
+      .toJSDate();
 
-    // Find weekday: 0 (Sunday) to 6 (Saturday)
-    const weekday = startDate.getDay();
-
-    // Find ordinal: (1st, 2nd, etc. Monday in the month)
+    const weekdayIndex = mapJsDayToMondayIndex(startDate.getDay());
     const ordinal = Math.ceil(startDate.getDate() / 7);
+    const dayName = WEEKDAY_NAMES[weekdayIndex];
 
-    // Use the right label directly (no -1 shift)
-    const ordinals = ["first", "second", "third", "fourth", "fifth"];
-    const dayName = WEEKDAY_NAMES[weekday]; // 0=Sunday, 1=Monday, etc.
     details = `, on the ${ordinals[ordinal - 1] || `${ordinal}th`} ${dayName}`;
   }
 
+  // MONTHLY — day-of-month
   if (rule.frequency === "month" && rule.month_day_rule === "day-of-month") {
-    details = `, on day ${new Date(rule.start_date).getDate()}`;
+    details = `, on day ${
+      DateTime.fromISO(rule.start_date, { zone: "utc" }).setZone(wpTz).day
+    }`;
   }
 
-  // Yearly details: months
+  // YEARLY — months
   if (rule.frequency === "year" && rule.months?.length) {
     const monthNames = rule.months.map((m) => MONTHS[m]).join(", ");
     details = `, in ${monthNames}`;
   }
 
-  // Ends
+  // END CONDITIONS
   let endText = "";
   if (rule.ends === "after") {
     endText = `, ${rule.ends_after} events`;
   } else if (rule.ends === "on") {
-    endText = `, until ${new Date(rule.ends_on).toLocaleDateString()}`;
+    endText = `, until ${DateTime.fromISO(rule.ends_on, { zone: "utc" })
+      .setZone(wpTz)
+      .toFormat("d MMM yyyy")}`;
   } else {
     endText = ", forever";
   }
@@ -153,6 +178,9 @@ export const EventDateRecurring = memo(function EventDateRecurring({
   const rules = event.recurrence_rules || [];
   const { settings } = useSettings();
 
+  const wpTz =
+    event?.timezone || window.eventkoi_params?.timezone_string || "UTC";
+
   const addRule = useCallback(() => {
     const now = new Date();
     now.setHours(9, 0, 0, 0);
@@ -164,15 +192,19 @@ export const EventDateRecurring = memo(function EventDateRecurring({
     defaultEnd.setFullYear(defaultEnd.getFullYear() + 2);
 
     const rule = {
-      start_date: now.toISOString(),
-      end_date: end.toISOString(),
+      start_date: DateTime.fromJSDate(now, { zone: wpTz })
+        .setZone("utc")
+        .toISO({ suppressMilliseconds: true }),
+      end_date: null,
       all_day: false,
       every: 1,
       frequency: "day",
       working_days_only: false,
       ends: "after",
       ends_after: 30,
-      ends_on: defaultEnd.toISOString(),
+      ends_on: DateTime.fromJSDate(defaultEnd, { zone: wpTz })
+        .setZone("utc")
+        .toISO({ suppressMilliseconds: true }),
       weekdays: [],
       months: [now.getMonth()],
       month_day_rule: "day-of-month",
@@ -192,7 +224,12 @@ export const EventDateRecurring = memo(function EventDateRecurring({
       const rule = { ...prevRule, [key]: value };
 
       const isStartDateChange = key === "start_date";
-      const date = new Date(isStartDateChange ? value : rule.start_date);
+      const date = DateTime.fromISO(
+        isStartDateChange ? value : rule.start_date,
+        { zone: "utc" }
+      )
+        .setZone(wpTz)
+        .toJSDate();
       const isValidDate = date instanceof Date && !isNaN(date);
 
       if (key === "all_day" && value === true) {
@@ -209,8 +246,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
         isStartDateChange &&
         (!rule.weekdays || rule.weekdays.length === 0)
       ) {
-        const timezone = event?.timezone || "UTC";
-        const dateInTZ = getDateInTimezone(date.toISOString(), timezone);
+        const dateInTZ = getDateInTimezone(date.toISOString(), wpTz);
         const jsDay = dateInTZ.getDay();
         const weekdayIndex = jsDay === 0 ? 6 : jsDay - 1;
         rule.weekdays = [weekdayIndex];
@@ -235,6 +271,24 @@ export const EventDateRecurring = memo(function EventDateRecurring({
         }
       }
 
+      // ✅ preserve duration when start_date changes
+      if (isStartDateChange && prevRule.end_date) {
+        const prevStart = DateTime.fromISO(prevRule.start_date, {
+          zone: "utc",
+        });
+        const prevEnd = DateTime.fromISO(prevRule.end_date, { zone: "utc" });
+        if (prevStart.isValid && prevEnd.isValid) {
+          const duration = prevEnd.diff(prevStart);
+          const newStart = DateTime.fromISO(value, { zone: "utc" });
+          if (newStart.isValid) {
+            rule.end_date = newStart
+              .plus(duration)
+              .toUTC()
+              .toISO({ suppressMilliseconds: true });
+          }
+        }
+      }
+
       updated[index] = rule;
       setEvent((prev) => ({ ...prev, recurrence_rules: updated }));
     },
@@ -248,7 +302,12 @@ export const EventDateRecurring = memo(function EventDateRecurring({
         const current = updated[index] || {};
         const next = { ...current, ...updates };
 
-        const date = new Date(updates.start_date || current.start_date);
+        const date = DateTime.fromISO(
+          updates.start_date || current.start_date,
+          { zone: "utc" }
+        )
+          .setZone(wpTz)
+          .toJSDate();
         const isValidDate = date instanceof Date && !isNaN(date);
 
         if (
@@ -256,11 +315,30 @@ export const EventDateRecurring = memo(function EventDateRecurring({
           next.frequency === "week" &&
           "start_date" in updates
         ) {
-          const timezone = event?.timezone || "UTC";
-          const dateInTZ = getDateInTimezone(date.toISOString(), timezone); // ✅ FIX
+          const dateInTZ = getDateInTimezone(date.toISOString(), wpTz);
           const jsDay = dateInTZ.getDay();
           const weekdayIndex = jsDay === 0 ? 6 : jsDay - 1;
           next.weekdays = [weekdayIndex];
+        }
+
+        // ✅ preserve duration if start_date changes
+        if (updates.start_date && current.end_date) {
+          const prevStart = DateTime.fromISO(current.start_date, {
+            zone: "utc",
+          });
+          const prevEnd = DateTime.fromISO(current.end_date, { zone: "utc" });
+          if (prevStart.isValid && prevEnd.isValid) {
+            const duration = prevEnd.diff(prevStart);
+            const newStart = DateTime.fromISO(updates.start_date, {
+              zone: "utc",
+            });
+            if (newStart.isValid) {
+              next.end_date = newStart
+                .plus(duration)
+                .toUTC()
+                .toISO({ suppressMilliseconds: true });
+            }
+          }
         }
 
         updated[index] = next;
@@ -291,38 +369,52 @@ export const EventDateRecurring = memo(function EventDateRecurring({
     [rules, updateRule]
   );
 
-  console.log(event);
-
   return (
-    <div className="flex flex-col gap-6 opacity-70 pointer-events-none">
+    <div className="flex flex-col gap-6">
       {rules.map((rule, index) => {
-        const timezone = event?.timezone || "UTC";
-
-        const start = getDateInTimezone(rule.start_date, timezone);
-        const end = getDateInTimezone(rule.end_date, timezone);
-        const endsOn = getDateInTimezone(rule.ends_on, timezone);
+        const start = getDateInTimezone(ensureUtcZ(rule.start_date), wpTz);
+        const end = getDateInTimezone(ensureUtcZ(rule.end_date), wpTz);
+        const endsOn = getDateInTimezone(ensureUtcZ(rule.ends_on), wpTz);
 
         return (
           <div key={index} className="border rounded-md p-4 space-y-6">
             <div className="flex flex-wrap items-center gap-2 md:gap-4">
               <FloatingDatePicker
                 value={start}
-                onChange={(date) => {
-                  if (!date) return;
-                  const tz = event?.timezone || "UTC";
-                  const prev = start ?? new Date();
-                  date.setHours(prev.getHours(), prev.getMinutes(), 0, 0);
+                wpTz={wpTz}
+                onChange={(pickedDate) => {
+                  if (!pickedDate) return;
 
-                  const wall = date.toISOString().slice(0, 16); // "YYYY-MM-DDTHH:mm"
-                  const startUTC = getUtcISOString(wall, tz);
+                  const prevWallStart = start
+                    ? DateTime.fromJSDate(start, { zone: wpTz })
+                    : DateTime.fromObject(
+                        { hour: 9, minute: 0 },
+                        { zone: wpTz }
+                      );
 
+                  const dtWallStart = pickedDate.set({
+                    hour: prevWallStart.hour,
+                    minute: prevWallStart.minute,
+                    second: 0,
+                    millisecond: 0,
+                  });
+
+                  // Always preserve duration
                   let endUTC = null;
                   if (!rule.all_day && start && end) {
-                    const e = new Date(date);
-                    e.setHours(end.getHours(), end.getMinutes(), 0, 0);
-                    const wallEnd = e.toISOString().slice(0, 16);
-                    endUTC = getUtcISOString(wallEnd, tz);
+                    const prevWallEnd = DateTime.fromJSDate(end, {
+                      zone: wpTz,
+                    });
+                    const duration = prevWallEnd.diff(prevWallStart); // ✅ actual duration
+                    const newWallEnd = dtWallStart.plus(duration);
+                    endUTC = newWallEnd
+                      .toUTC()
+                      .toISO({ suppressMilliseconds: true });
                   }
+
+                  const startUTC = dtWallStart
+                    .toUTC()
+                    .toISO({ suppressMilliseconds: true });
 
                   updateMultiple(index, {
                     start_date: startUTC,
@@ -339,47 +431,78 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                 <>
                   <TimeInput
                     date={start}
-                    setDate={(date) => {
-                      const tz = event?.timezone || "UTC";
-                      const year = date.getFullYear();
-                      const month = String(date.getMonth() + 1).padStart(
-                        2,
-                        "0"
-                      );
-                      const day = String(date.getDate()).padStart(2, "0");
-                      const hour = String(date.getHours()).padStart(2, "0");
-                      const minute = String(date.getMinutes()).padStart(2, "0");
-                      const wallTime = `${year}-${month}-${day}T${hour}:${minute}`;
-                      updateRule(
-                        index,
-                        "start_date",
-                        getUtcISOString(wallTime, tz)
-                      );
+                    wpTz={wpTz}
+                    setDate={(utcDate) => {
+                      if (!utcDate) return;
+
+                      const newWallStart = DateTime.fromJSDate(utcDate, {
+                        zone: "utc",
+                      }).setZone(wpTz);
+                      const prevWallEnd = end
+                        ? DateTime.fromJSDate(end, { zone: "utc" }).setZone(
+                            wpTz
+                          )
+                        : null;
+
+                      let updates = {
+                        start_date: newWallStart
+                          .toUTC()
+                          .toISO({ suppressMilliseconds: true }),
+                      };
+
+                      // Preserve duration if we have an end
+                      if (prevWallEnd) {
+                        const duration = prevWallEnd.diff(
+                          DateTime.fromJSDate(start, { zone: "utc" }).setZone(
+                            wpTz
+                          )
+                        );
+                        const newWallEnd = newWallStart.plus(duration);
+                        updates.end_date = newWallEnd
+                          .toUTC()
+                          .toISO({ suppressMilliseconds: true });
+                      }
+
+                      updateMultiple(index, updates);
                     }}
                     disabled={tbc}
                   />
+
                   <MoveRight
                     className="w-6 h-6 text-muted-foreground"
                     strokeWidth={1.5}
                   />
+
                   <TimeInput
                     date={end}
-                    setDate={(date) => {
-                      const tz = event?.timezone || "UTC";
-                      const year = date.getFullYear();
-                      const month = String(date.getMonth() + 1).padStart(
-                        2,
-                        "0"
-                      );
-                      const day = String(date.getDate()).padStart(2, "0");
-                      const hour = String(date.getHours()).padStart(2, "0");
-                      const minute = String(date.getMinutes()).padStart(2, "0");
-                      const wallTime = `${year}-${month}-${day}T${hour}:${minute}`;
-                      updateRule(
-                        index,
-                        "end_date",
-                        getUtcISOString(wallTime, tz)
-                      );
+                    wpTz={wpTz}
+                    setDate={(jsDate) => {
+                      if (!jsDate) return;
+
+                      // take rule.start_date as the base calendar day
+                      const base = DateTime.fromISO(rules[index].start_date, {
+                        zone: "utc",
+                      }).setZone(wpTz);
+
+                      // take only the hour/minute from the picked time
+                      const picked = DateTime.fromJSDate(jsDate, {
+                        zone: wpTz,
+                      });
+
+                      const combined = base.set({
+                        hour: picked.hour,
+                        minute: picked.minute,
+                        second: 0,
+                        millisecond: 0,
+                      });
+
+                      const endISO = combined
+                        .toUTC()
+                        .toISO({ suppressMilliseconds: true });
+
+                      console.log("Rule end_date =>", endISO);
+
+                      updateMultiple(index, { end_date: endISO });
                     }}
                     disabled={tbc}
                   />
@@ -665,13 +788,23 @@ export const EventDateRecurring = memo(function EventDateRecurring({
               {rule.ends === "on" && (
                 <FloatingDatePicker
                   value={endsOn}
+                  wpTz={wpTz}
                   onChange={(date) => {
                     if (!date) return;
-                    const tz = event?.timezone || "UTC";
-                    const prev = endsOn ?? new Date();
-                    date.setHours(prev.getHours(), prev.getMinutes(), 0, 0);
-                    const wall = date.toISOString().slice(0, 16);
-                    const utc = getUtcISOString(wall, tz);
+                    const prevWall = DateTime.fromJSDate(endsOn ?? new Date(), {
+                      zone: wpTz,
+                    });
+                    const dtWall = DateTime.fromJSDate(date, {
+                      zone: wpTz,
+                    }).set({
+                      hour: prevWall.hour,
+                      minute: prevWall.minute,
+                      second: 0,
+                      millisecond: 0,
+                    });
+                    const utc = dtWall
+                      .setZone("utc")
+                      .toISO({ suppressMilliseconds: true });
                     updateRule(index, "ends_on", utc);
                   }}
                 />
@@ -686,7 +819,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                 <Input
                   type="text"
                   readOnly
-                  value={getRecurringSummary(rule)}
+                  value={getRecurringSummary(rule, wpTz)}
                   className="w-full text-sm pr-[100px]"
                 />
                 <Button
@@ -695,7 +828,9 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                   className="absolute h-8 px-2 right-[5px] top-[4px] border-none cursor-pointer hover:bg-input text-sm"
                   onClick={() => {
                     setCopyingIndex(index); // See below hook
-                    navigator.clipboard.writeText(getRecurringSummary(rule));
+                    navigator.clipboard.writeText(
+                      getRecurringSummary(rule, wpTz)
+                    );
                     setTimeout(() => setCopyingIndex(null), 1200);
                   }}
                 >

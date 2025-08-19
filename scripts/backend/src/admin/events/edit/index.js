@@ -90,6 +90,40 @@ export function EventEdit() {
   };
 
   useEffect(() => {
+    // only when creating new event
+    if (!event?.id && window.location.hash.includes("/events/add/")) {
+      (async () => {
+        try {
+          const draft = await apiRequest({
+            path: `${eventkoi_params.api}/update_event`,
+            method: "POST",
+            data: {
+              event: {
+                title: "",
+                excerpt: "(auto-draft)",
+                wp_status: "draft",
+              },
+            },
+            headers: { "EVENTKOI-API-KEY": eventkoi_params.api_key },
+          });
+
+          console.log(draft.id);
+
+          if (draft?.id) {
+            setEvent(draft);
+            window.location.hash = window.location.hash.replace(
+              "/events/add/",
+              `/events/${draft.id}/`
+            );
+          }
+        } catch (err) {
+          console.error("❌ Failed to create auto-draft", err);
+        }
+      })();
+    }
+  }, []);
+
+  useEffect(() => {
     if (isEditingInstance && event?.id && timestamp) {
       const instanceWithOverride = buildInstanceData(event, timestamp, true);
       setInstanceData(instanceWithOverride);
@@ -137,7 +171,7 @@ export function EventEdit() {
             "w-full mx-auto items-start gap-6",
             isEditingInstance
               ? "grid grid-cols-1"
-              : "grid md:grid-cols-[210px_1fr] grid-cols-1"
+              : "grid md:grid-cols-[180px_1fr] grid-cols-1"
           )}
         >
           {!isEditingInstance && <EventTabs />}

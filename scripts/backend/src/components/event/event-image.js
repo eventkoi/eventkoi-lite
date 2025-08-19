@@ -93,7 +93,6 @@ export function EventImage({ isInstance = false, value, onChange }) {
         showToastError("Upload failed. Please try again.");
       }
     } catch (err) {
-      console.log(err);
       showToastError("Upload failed. Please try again.");
     } finally {
       setUploading(false);

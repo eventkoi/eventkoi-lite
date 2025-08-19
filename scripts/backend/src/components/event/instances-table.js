@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useEventEditContext } from "@/hooks/EventEditContext";
-import { formatAdminDateCell, formatLocalTimestamp } from "@/lib/date-utils";
+import { formatWPtime } from "@/lib/date-utils";
 import { showToast, showToastError } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import apiRequest from "@wordpress/api-fetch";
@@ -218,6 +218,10 @@ export function EventInstancesTable({
           const overriddenTitle = override?.title;
           const fallbackTitle = row.getValue("title");
 
+          const iso = row.original.start_date;
+          const date = iso.endsWith("Z") ? new Date(iso) : new Date(iso + "Z");
+          const ts = Math.floor(date.getTime() / 1000);
+
           return (
             <div className="group flex items-center gap-2 text-foreground">
               {/* Title link */}
@@ -225,7 +229,6 @@ export function EventInstancesTable({
                 href="#"
                 onClick={(e) => {
                   e.preventDefault();
-                  const ts = Math.floor(new Date(start_date).getTime() / 1000);
                   navigate(`/events/${eventId}/instances/edit/${ts}`);
                 }}
                 className="font-medium hover:underline hover:decoration-dotted underline-offset-4"
@@ -282,7 +285,10 @@ export function EventInstancesTable({
           const isAllDay = row.original.all_day;
           return (
             <div className="text-foreground whitespace-pre-line">
-              {formatLocalTimestamp(raw, timezone, isAllDay)}
+              {formatWPtime(raw, {
+                timezone,
+                format: isAllDay ? "date" : "date-time",
+              })}
             </div>
           );
         },
@@ -296,7 +302,10 @@ export function EventInstancesTable({
           const isAllDay = row.original.all_day;
           return (
             <div className="text-foreground whitespace-pre-line">
-              {formatLocalTimestamp(raw, timezone, isAllDay)}
+              {formatWPtime(raw, {
+                timezone,
+                format: isAllDay ? "date" : "date-time",
+              })}
             </div>
           );
         },
@@ -311,7 +320,7 @@ export function EventInstancesTable({
           const raw = row.original.override?.modified_at;
           return (
             <div className="text-foreground whitespace-pre-line">
-              {formatAdminDateCell(raw, timezone)}
+              {formatWPtime(raw, { timezone })}
             </div>
           );
         },

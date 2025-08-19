@@ -1,10 +1,8 @@
 import { Panel } from "@/components/panel";
 import { Textarea } from "@/components/ui/textarea";
 import { useEventEditContext } from "@/hooks/EventEditContext";
-import { useAutoSave } from "@/hooks/useAutoSave";
 import { formatWallTimeRange } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
-import apiRequest from "@wordpress/api-fetch";
 import { PencilLine } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -17,11 +15,9 @@ export function EventName({
   endDate,
   timezone,
 }) {
-  const { event, setEvent, isPublishing, disableAutoSave } =
-    useEventEditContext();
+  const { event, setEvent, isPublishing } = useEventEditContext();
   const [error, setError] = useState(false);
   const textareaRef = useRef(null);
-  const { triggerAutoSave, cancelAutoSave } = useAutoSave(saveDraft);
 
   const effectiveTimezone = timezone || event?.timezone || "UTC";
 
@@ -33,29 +29,6 @@ export function EventName({
       onChange(val);
     } else {
       setEvent((prev) => ({ ...prev, title: val }));
-      if (!disableAutoSave && event?.wp_status !== "publish") {
-        triggerAutoSave();
-      }
-    }
-  }
-
-  async function saveDraft() {
-    if (!event?.title?.trim()) return;
-    if (!event?.id && isPublishing) return;
-
-    const saveStatus = event?.wp_status === "publish" ? "publish" : "draft";
-
-    try {
-      const response = await apiRequest({
-        path: `${eventkoi_params.api}/update_event`,
-        method: "post",
-        data: { event: { ...event, wp_status: saveStatus } },
-        headers: { "EVENTKOI-API-KEY": eventkoi_params.api_key },
-      });
-
-      setEvent(response);
-    } catch (err) {
-      console.error("❌ Failed to auto-save event.");
     }
   }
 
@@ -71,17 +44,16 @@ export function EventName({
   }, [value, event?.title]);
 
   useEffect(() => {
-    return () => cancelAutoSave();
-  }, []);
-
-  useEffect(() => {
     if (!event?.id && textareaRef.current) {
       textareaRef.current.focus();
       textareaRef.current.selectionStart = textareaRef.current.value.length;
     }
   }, [event?.id]);
 
-  const displayValue = isInstance ? value : event?.title;
+  const rawValue = isInstance ? value : event?.title || "";
+
+  // Hide "Untitled event" in UI
+  const displayValue = rawValue === "Untitled event" ? "" : rawValue;
 
   return (
     <Panel
@@ -105,7 +77,6 @@ export function EventName({
             updateName(e);
             autoResize();
           }}
-          onBlur={updateName}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
               e.preventDefault();
