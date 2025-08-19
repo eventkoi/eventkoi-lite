@@ -67,6 +67,7 @@
     "clsx": "^2.1.0",
     "cmdk": "^1.1.1",
     "date-fns": "^3.6.0",
+    "date-fns-tz": "^3.2.0",
     "embla-carousel-react": "^8.0.4",
     "framer-motion": "^10.16.4",
     "input-otp": "^1.2.4",

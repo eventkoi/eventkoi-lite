@@ -6,7 +6,6 @@ import { EventPopover } from "@/components/calendar/EventPopover";
 import { ListView } from "@/components/calendar/list-view";
 import { TimezonePicker } from "@/components/timezone-picker";
 import { safeNormalizeTimeZone } from "@/lib/date-utils";
-import { groupTimezones } from "@/lib/utils";
 import apiRequest from "@wordpress/api-fetch";
 import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
@@ -48,8 +47,9 @@ export function Calendar({
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [anchorPos, setAnchorPos] = useState(null);
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const tzGroups = groupTimezones();
+  const lastRangeRef = useRef(null);
 
   // Get tz from URL query string (highest priority)
   const urlParams = new URLSearchParams(window.location.search);
@@ -100,10 +100,19 @@ export function Calendar({
     }
   };
 
-  const loadEventsForView = async () => {
+  const loadEventsForView = async (start, end) => {
     try {
+      setLoading(true);
+
+      const params = new URLSearchParams({ id, display });
+      if (start) params.set("start", start.toISOString());
+      if (end) params.set("end", end.toISOString());
+
+      const calendarEndpoint = `${
+        eventkoi_params.api
+      }/calendar_events?${params.toString()}`;
       const response = await apiRequest({
-        path: `${eventkoi_params.api}/calendar_events?id=${id}&display=${display}`,
+        path: calendarEndpoint,
         method: "get",
       });
 
@@ -112,6 +121,8 @@ export function Calendar({
       console.log(response.events);
     } catch (err) {
       console.error("Failed to load events", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -130,6 +141,14 @@ export function Calendar({
       const api = calendarRef.current.getApi();
       api.changeView(view);
       setCalendarApi(api);
+
+      const { activeStart, activeEnd } = api.view;
+      const key = `${activeStart.toISOString()}_${activeEnd.toISOString()}`;
+
+      if (!lastRangeRef.current) {
+        lastRangeRef.current = key; // mark as handled
+        loadEventsForView(activeStart, activeEnd);
+      }
     }
   }, [view]);
 
@@ -259,6 +278,17 @@ export function Calendar({
           meridiem: "short",
         }}
         datesSet={({ start, end, view }) => {
+          // Create a unique key for this range
+          const key = `${start.toISOString()}_${end.toISOString()}`;
+
+          // If we already processed this exact range, do nothing
+          if (lastRangeRef.current === key) {
+            return;
+          }
+
+          // Otherwise, store it and continue
+          lastRangeRef.current = key;
+
           loadEventsForView(start, end);
           setCurrentDate(view.currentStart);
 

@@ -233,16 +233,15 @@ export function EventPopover({
             </Button>
           </div>
 
-          <div className="flex flex-row space-x-2 pe-[80px]">
+          <div className="flex flex-col gap-2 pe-[58px]">
             <a
               href={event.url}
               target="_blank"
               rel="noreferrer"
-              className="text-base font-semibold leading-snug text-foreground hover:underline line-clamp-2 block"
+              className="text-base font-semibold leading-snug text-foreground no-underline hover:underline line-clamp-2 block"
             >
               {event.title}
             </a>
-
             {event.date_type === "recurring" && (
               <Badge
                 variant="secondary"
