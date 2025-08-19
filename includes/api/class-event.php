@@ -151,8 +151,24 @@ class Event {
 
 		$event_id = absint( $event['id'] ?? 0 );
 
-		if ( ! isset( $event['id'] ) ) {
-			return new WP_Error( 'eventkoi_missing_id', __( 'Missing event ID.', 'eventkoi' ), array( 'status' => 400 ) );
+		// If no ID → create new event (auto-draft).
+		if ( ! $event_id ) {
+			$postarr = array(
+				'post_title'  => ! empty( $event['title'] ) ? sanitize_text_field( $event['title'] ) : 'Untitled event',
+				'post_status' => ! empty( $status ) ? $status : 'draft',
+				'post_type'   => 'event',
+			);
+
+			$new_id = wp_insert_post( $postarr, true );
+
+			if ( is_wp_error( $new_id ) ) {
+				return $new_id;
+			}
+
+			$query    = new SingleEvent( $new_id );
+			$response = $query::get_meta();
+
+			return rest_ensure_response( $response );
 		}
 
 		$query    = new SingleEvent( $event_id );
