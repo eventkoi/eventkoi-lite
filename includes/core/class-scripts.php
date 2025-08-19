@@ -79,6 +79,7 @@ class Scripts {
 			'event'     => $event ? $event::get_meta() : array(),
 			'ical'      => $event ? $event::get_ical() : '',
 			'no_events' => __( 'No events were found.', 'eventkoi' ),
+			'timezone'  => wp_timezone_string(),
 			'gmap'      => array(
 				'api_key'   => $settings['gmap_api_key'] ?? '',
 				'connected' => ! empty( $settings['gmap_connection_status'] ),
