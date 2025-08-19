@@ -368,6 +368,14 @@ class Calendar {
 		? array_map( 'intval', $plugin_settings['working_days'] )
 		: array( 0, 1, 2, 3, 4 ); // Default to Mon–Fri.
 
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$start_param = isset( $_GET['start'] ) ? sanitize_text_field( wp_unslash( $_GET['start'] ) ) : '';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$end_param = isset( $_GET['end'] ) ? sanitize_text_field( wp_unslash( $_GET['end'] ) ) : '';
+
+		$window_start = $start_param ? new \DateTimeImmutable( $start_param, new \DateTimeZone( 'UTC' ) ) : null;
+		$window_end   = $end_param ? new \DateTimeImmutable( $end_param, new \DateTimeZone( 'UTC' ) ) : null;
+
 		$events = get_posts(
 			array(
 				'post_type'   => 'event',
@@ -507,9 +515,18 @@ class Calendar {
 						$rrule = new \EKLIB\RRule\RRule( $options );
 
 						foreach ( $rrule as $dt ) {
-							if ( $count++ >= 200 ) {
+							if ( $window_start && $dt < $window_start ) {
+								continue;
+							}
+
+							if ( $window_end && $dt > $window_end ) {
 								break;
 							}
+
+							if ( $count++ >= 50 ) {
+								break;
+							}
+
 							$results[] = self::format_event_instance(
 								$event,
 								$dt,

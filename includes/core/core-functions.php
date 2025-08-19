@@ -330,7 +330,7 @@ function eventkoi_date_i18n( $date, $gmt = false ) {
 
 	$timezone = true === $gmt ? new DateTimeZone( 'GMT' ) : wp_timezone();
 
-	return wp_date( $format, (int) $date, $timezone );
+	return gmdate( $format, (int) $date );
 }
 
 /**
@@ -343,21 +343,27 @@ function eventkoi_date_i18n( $date, $gmt = false ) {
  */
 function eventkoi_get_default_calendar_url() {
 	$default_cal_id = (int) get_option( 'default_event_cal', 0 );
+
 	if ( $default_cal_id <= 0 ) {
 		// Fallback to events archive if no default calendar is set.
 		$archive_url = get_post_type_archive_link( 'event' );
 		return $archive_url ? esc_url( $archive_url ) : '';
 	}
+
 	$default_cal = get_term_by( 'id', $default_cal_id, 'event_cal' );
+
 	if ( ! $default_cal || is_wp_error( $default_cal ) ) {
 		// Fallback to events archive if the term is invalid.
 		$archive_url = get_post_type_archive_link( 'event' );
 		return $archive_url ? esc_url( $archive_url ) : '';
 	}
+
 	$cal_url = get_term_link( $default_cal, 'event_cal' );
+
 	if ( is_wp_error( $cal_url ) ) {
 		return '';
 	}
+
 	return esc_url( trailingslashit( $cal_url ) );
 }
 
