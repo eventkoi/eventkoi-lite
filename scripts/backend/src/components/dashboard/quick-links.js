@@ -2,7 +2,7 @@ import { BigLink } from "@/components/big-link";
 import { Box } from "@/components/box";
 import { Heading } from "@/components/heading";
 
-import { BookOpen, Inbox, Rocket } from "lucide-react";
+import { BookOpen, CircleUser, Inbox, Rocket } from "lucide-react";
 
 export function QuickLinks() {
   return (
@@ -19,6 +19,10 @@ export function QuickLinks() {
       <BigLink href="https://eventkoi.com/docs/request-support/">
         <Inbox className="w-5 h-5 mr-4" />
         <span>Request support</span>
+      </BigLink>
+      <BigLink href="https://pro.eventkoi.com/account">
+        <CircleUser className="w-5 h-5 mr-4" />
+        <span>Go to my account</span>
       </BigLink>
     </Box>
   );
