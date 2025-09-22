@@ -22,7 +22,10 @@ class Menus {
 	 * Init.
 	 */
 	public function __construct() {
-		add_filter( 'plugin_row_meta', array( static::class, 'add_plugin_meta_links' ), 10, 2 );
+		add_filter(
+			'plugin_action_links_' . plugin_basename( EVENTKOI_PLUGIN_FILE ),
+			array( static::class, 'add_plugin_action_links' )
+		);
 
 		add_action( 'in_admin_header', array( static::class, 'remove_admin_notices' ), 99 );
 		add_filter( 'admin_body_class', array( static::class, 'admin_body_class' ), 99 );
@@ -37,30 +40,20 @@ class Menus {
 	}
 
 	/**
-	 * Remove "Visit plugin site" link from plugin row and add custom links.
+	 * Add links before Deactivate in plugin row.
 	 *
-	 * @param array  $links Existing plugin meta links.
-	 * @param string $file  Path to the plugin file.
-	 * @return array Modified plugin meta links.
+	 * @param array $links Existing action links.
+	 * @return array Modified action links.
 	 */
-	public static function add_plugin_meta_links( $links, $file ) {
-		if ( plugin_basename( EVENTKOI_PLUGIN_FILE ) !== $file ) {
-			return $links;
-		}
-
-		// Remove the "Visit plugin site" link using its aria-label, which is always in English.
-		$links = array_filter(
-			$links,
-			function ( $link ) {
-				return false === strpos( $link, 'aria-label="Visit plugin site' );
-			}
+	public static function add_plugin_action_links( $links ) {
+		// Prepend custom links.
+		$custom_links = array(
+			'<a href="' . esc_url( admin_url( 'admin.php?page=eventkoi#/dashboard' ) ) . '">' . esc_html__( 'Dashboard', 'eventkoi' ) . '</a>',
+			'<a href="' . esc_url( admin_url( 'admin.php?page=eventkoi#/settings' ) ) . '">' . esc_html__( 'Settings', 'eventkoi' ) . '</a>',
 		);
 
-		// Add our links.
-		$links[] = '<a href="' . esc_url( admin_url( 'admin.php?page=eventkoi#/dashboard' ) ) . '">' . esc_html__( 'Dashboard', 'eventkoi' ) . '</a>';
-		$links[] = '<a href="' . esc_url( admin_url( 'admin.php?page=eventkoi#/settings' ) ) . '">' . esc_html__( 'Settings', 'eventkoi' ) . '</a>';
-
-		return $links;
+		// Put them before the default links (Activate/Deactivate/Edit).
+		return array_merge( $custom_links, $links );
 	}
 
 	/**
@@ -120,7 +113,6 @@ class Menus {
 				'dashboard' => __( 'Dashboard', 'eventkoi' ),
 				'events'    => __( 'Events', 'eventkoi' ),
 				'calendars' => __( 'Calendars', 'eventkoi' ),
-				// 'tickets'   => __( 'Tickets', 'eventkoi' ),
 				'settings'  => __( 'Settings', 'eventkoi' ),
 			)
 		);

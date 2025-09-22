@@ -12,6 +12,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 use EKLIB\RRule\RRule;
+use EventKoi\Core\Settings;
 
 /**
  * Retrieve the current instance ID from pretty permalink or query param.
@@ -118,6 +119,18 @@ function eventkoi_get_content() {
 
 	$blocks = new \EventKoi\Core\Blocks();
 
+	if ( ! wp_is_block_theme() ) {
+		$page_id = (int) get_option( 'eventkoi_template_page_id' );
+		if ( $page_id ) {
+			$page = get_post( $page_id );
+			if ( $page && ! empty( $page->post_content ) ) {
+				return do_blocks(
+					apply_filters( 'eventkoi_get_content', $page->post_content )
+				);
+			}
+		}
+	}
+
 	if ( ! empty( $template ) && ! empty( $template->post_content ) ) {
 		$event_template = $template->post_content;
 	} else {
@@ -147,7 +160,7 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 	$calendar = new \EventKoi\Core\Calendar( $term_id );
 
 	if ( $calendar::is_invalid() ) {
-		return '<div class="wp-block-group eventkoi-root"><p>' . esc_html__( 'Invalid calendar. Please check the calendar ID.', 'eventkoi' ) . '</p></div>';
+		return '<div class="wp-block-group eventkoi-front"><p>' . esc_html__( 'Invalid calendar. Please check the calendar ID.', 'eventkoi' ) . '</p></div>';
 	}
 
 	// Use calendar settings if no display mode is specified.
@@ -165,11 +178,17 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 	$show_description = isset( $args['show_description'] ) ? esc_attr( $args['show_description'] ) : 'yes';
 	$border_style     = isset( $args['border_style'] ) ? esc_attr( $args['border_style'] ) : 'dotted';
 	$border_size      = isset( $args['border_size'] ) ? esc_attr( $args['border_size'] ) : '2px';
+	$default_month    = isset( $args['default_month'] ) ? sanitize_text_field( $args['default_month'] ) : '';
+	$default_year     = isset( $args['default_year'] ) ? sanitize_text_field( $args['default_year'] ) : '';
 	$container_id     = 'eventkoi-calendar-' . uniqid();
+	$content_size     = ! empty( $args['layout']['contentSize'] ) ? $args['layout']['contentSize'] : '1100px';
+	$wide_size        = ! empty( $args['layout']['wideSize'] ) ? $args['layout']['wideSize'] : '1100px';
+
+	$style = 'max-width:' . esc_attr( $content_size ) . ';margin-left:auto;margin-right:auto;';
 
 	$calendar_template = sprintf(
-		'<!-- wp:group {"className":"eventkoi-root","layout":{"type":"constrained","wideSize":"1100px","contentSize":"1100px"}} -->
-		<div class="wp-block-group eventkoi-root">
+		'<!-- wp:group {"className":"eventkoi-front"} -->
+		<div class="wp-block-group eventkoi-front" style="%13$s">
 			<div id="%12$s"
 				data-calendar-id="%1$d"
 				data-calendars="%2$s"
@@ -181,9 +200,13 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 				data-show-location="%8$s"
 				data-show-description="%9$s"
 				data-border-style="%10$s"
-				data-border-size="%11$s">
+				data-border-size="%11$s"
+				data-context="%14$s"
+				data-default-month="%15$s"
+				data-default-year="%16$s">
 			</div>
-		</div><!-- /wp:group -->',
+		</div>
+	<!-- /wp:group -->',
 		absint( $calendar::get_id() ),
 		esc_attr( $calendars ),
 		esc_attr( $display ),
@@ -195,10 +218,36 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 		esc_attr( $show_description ),
 		esc_attr( $border_style ),
 		esc_attr( $border_size ),
-		esc_attr( $container_id )
+		esc_attr( $container_id ),
+		esc_attr( $style ),
+		esc_attr( $args['context'] ?? 'frontend' ), // %14$s
+		esc_attr( $args['default_month'] ?? '' ),   // %15$s
+		esc_attr( $args['default_year'] ?? '' )     // %16$s
 	);
 
-	return do_blocks( apply_filters( 'eventkoi_get_calendar_content', $calendar_template ) );
+	$output = do_blocks( apply_filters( 'eventkoi_get_calendar_content', $calendar_template ) );
+
+	// Only wrap when viewing a calendar term page.
+	if ( is_tax( 'event_cal' ) ) {
+		$title = sprintf(
+			'<!-- wp:group {"className":"eventkoi-title"} -->
+		<div class="wp-block-group eventkoi-title" style="%2$s">
+			<!-- wp:post-title {"level":1} -->
+			<h1 class="wp-block-post-title">%1$s</h1>
+			<!-- /wp:post-title -->
+		</div>
+		<!-- /wp:group -->',
+			esc_html( $term->name ),
+			esc_attr( $style )
+		);
+
+		$output = '<main class="eventkoi-main wp-block-group has-global-padding">'
+			. $title
+			. $output
+			. '</main>';
+	}
+
+	return $output;
 }
 
 /**
@@ -489,7 +538,7 @@ function eventkoi_get_stripe_webhook_secret() {
 
 	// Use a test webhook secret for local development.
 	if ( str_contains( home_url(), 'localhost' ) ) {
-		$webhook_secret = '';
+		$webhook_secret = 'whsec_55faa71db4e9f10aea76e4c2d1ee7f199aacd3881e85117645f1131036030a48';
 	} else {
 		$settings = \EventKoi\Core\Settings::get();
 
@@ -704,4 +753,87 @@ function eventkoi_generate_instance_starts( $rule, $limit = 500 ) {
 	}
 
 	return $instances;
+}
+
+/**
+ * Locate an EventKoi template.
+ *
+ * Looks in the theme first, then falls back to the plugin.
+ *
+ * @param string $template_name Template filename relative to eventkoi/ folder.
+ * @param string $default_path  Fallback path in the plugin.
+ * @return string Full path to the located template.
+ */
+function eventkoi_locate_template( $template_name, $default_path = '' ) {
+	$default_path = $default_path ? $default_path : EVENTKOI_PLUGIN_DIR . 'templates/parts/';
+
+	// Look inside the theme.
+	$template = locate_template(
+		array(
+			'eventkoi/' . $template_name,
+		)
+	);
+
+	// Allow developers to override via filter.
+	$template = apply_filters( 'eventkoi_locate_template', $template, $template_name, $default_path );
+
+	// Use plugin fallback if nothing found.
+	if ( ! $template || ! file_exists( $template ) ) {
+		$template = $default_path . $template_name;
+	}
+
+	return $template;
+}
+
+/**
+ * EventKoi wrapper for wp_date() that respects settings->time_format.
+ *
+ * @param string                   $format     PHP date format string.
+ * @param int|null                 $timestamp  Unix timestamp. Defaults to now.
+ * @param DateTimeZone|string|null $timezone Optional. WP timezone by default.
+ * @return string
+ */
+function eventkoi_date( $format, $timestamp = null, $timezone = null ) {
+	$settings    = Settings::get();
+	$time_format = ( ! empty( $settings['time_format'] ) && '24' === $settings['time_format'] ) ? '24' : '12';
+
+	// If no timestamp, use current time.
+	if ( null === $timestamp ) {
+		$timestamp = time();
+	}
+
+	// Adjust format if user prefers 24h.
+	if ( '24' === $time_format ) {
+		$format = preg_replace( '/[gh]:i\s*[aA]/', 'H:i', $format );
+		$format = preg_replace( '/[gh]:i/', 'H:i', $format );
+		$format = str_replace( array( 'a', 'A' ), '', $format );
+	}
+
+	return wp_date( $format, $timestamp, $timezone );
+}
+
+/**
+ * EventKoi wrapper for gmdate() that respects settings->time_format.
+ *
+ * @param string $format    PHP date format string.
+ * @param int    $timestamp Unix timestamp. Defaults to now.
+ * @return string
+ */
+function eventkoi_gmdate( $format, $timestamp = null ) {
+	$settings    = Settings::get();
+	$time_format = ( ! empty( $settings['time_format'] ) && '24' === $settings['time_format'] ) ? '24' : '12';
+
+	// If no timestamp, use current time.
+	if ( null === $timestamp ) {
+		$timestamp = time();
+	}
+
+	// Adjust format if user prefers 24h.
+	if ( '24' === $time_format ) {
+		$format = preg_replace( '/[gh]:i\s*[aA]/', 'H:i', $format );
+		$format = preg_replace( '/[gh]:i/', 'H:i', $format );
+		$format = str_replace( array( 'a', 'A' ), '', $format );
+	}
+
+	return gmdate( $format, $timestamp );
 }

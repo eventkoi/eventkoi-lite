@@ -30,6 +30,7 @@ class Scripts {
 	 */
 	public function __construct() {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ), 999 );
+		add_action( 'enqueue_block_editor_assets', array( $this, 'enqueue_block_editor_assets' ) );
 	}
 
 	/**
@@ -44,7 +45,7 @@ class Scripts {
 			&& method_exists( $screen, 'is_block_editor' )
 			&& $screen->is_block_editor();
 
-		if ( empty( $screen ) || ( strpos( $screen->base, 'eventkoi' ) === false && ! $is_block_editor ) ) {
+		if ( empty( $screen ) || ( strpos( $screen->base, 'eventkoi' ) === false && ! $is_block_editor && 'plugins' !== $screen->base ) ) {
 			return;
 		}
 
@@ -55,6 +56,8 @@ class Scripts {
 		$default_cal    = get_term_by( 'id', $default_cal_id, 'event_cal' );
 		$cal_url        = $default_cal ? get_term_link( $default_cal, 'event_cal' ) : '';
 		$cal_url        = $default_cal ? str_replace( $default_cal->slug, '', $cal_url ) : '';
+
+		$settings = Settings::get();
 
 		// Prepare parameters for JS.
 		$eventkoi_params = array(
@@ -69,9 +72,9 @@ class Scripts {
 			'instance_id'         => get_option( 'eventkoi_site_instance_id' ),
 			'ajax_url'            => admin_url( 'admin-ajax.php' ),
 			'api_key'             => REST::get_api_key(),
-			'date_now'            => wp_date( 'j M Y' ),
-			'date_24h'            => wp_date( 'j M Y', strtotime( '+1 day' ) ),
-			'time_now'            => wp_date( 'g:i A', strtotime( '+1 hour' ) ),
+			'date_now'            => eventkoi_date( 'j M Y' ),
+			'date_24h'            => eventkoi_date( 'j M Y', strtotime( '+1 day' ) ),
+			'time_now'            => eventkoi_date( 'g:i A', strtotime( '+1 hour' ) ),
 			'new_event'           => Event::get_meta(),
 			'new_calendar'        => Calendar::get_meta(),
 			'default_cal'         => $default_cal_id,
@@ -80,7 +83,9 @@ class Scripts {
 			'default_color'       => eventkoi_default_calendar_color(),
 			'calendars'           => Calendars::get_calendars(),
 			'timezone_string'     => wp_timezone_string(),
+			'timezone'            => wp_timezone_string(),
 			'timezone_offset'     => ( get_option( 'gmt_offset' ) ?? 0 ) * 3600,
+			'time_format'         => $settings['time_format'] ?? '12',
 		);
 
 		// Load available custom templates (optional: filter by slug prefix or post type).
@@ -116,6 +121,18 @@ class Scripts {
 			apply_filters( 'eventkoi_admin_params', $eventkoi_params )
 		);
 
+		if ( 'plugins' === $screen->base ) {
+			wp_localize_script(
+				'eventkoi-admin',
+				'eventkoiAutoUpdate',
+				array(
+					'restUrl' => esc_url_raw( rest_url( EVENTKOI_API . '/auto-updates' ) ),
+					'nonce'   => wp_create_nonce( 'wp_rest' ),
+					'enabled' => (bool) ( \EventKoi\Core\Settings::get()['auto_updates_enabled'] ?? false ),
+				)
+			);
+		}
+
 		wp_enqueue_editor();
 		wp_enqueue_media();
 
@@ -140,5 +157,22 @@ class Scripts {
 			);
 			wp_enqueue_style( 'eventkoi-admin-tw' );
 		}
+	}
+
+	/**
+	 * Enqueue Tailwind for block editor iframe.
+	 */
+	public function enqueue_block_editor_assets() {
+		$asset_file = include EVENTKOI_PLUGIN_DIR . 'scripts/backend/build/index.asset.php';
+		$build_url  = EVENTKOI_PLUGIN_URL . 'scripts/backend/build/';
+
+		wp_register_style(
+			'eventkoi-editor-tw',
+			$build_url . 'tailwind.css',
+			array(),
+			$asset_file['version']
+		);
+
+		wp_enqueue_style( 'eventkoi-editor-tw' );
 	}
 }
