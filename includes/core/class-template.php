@@ -34,6 +34,7 @@ class Template {
 		add_action( 'wp_head', array( __CLASS__, 'maybe_output_viewport_meta' ), 0 );
 
 		add_action( 'template_redirect', array( __CLASS__, 'maybe_block_trashed_instance' ) );
+		add_action( 'template_redirect', array( __CLASS__, 'maybe_block_recurring_event' ) );
 
 		add_filter( 'template_include', array( __CLASS__, 'force_instance_block_template' ), 50 );
 	}
@@ -225,6 +226,25 @@ class Template {
 		&& 'trash' === $overrides[ $instance_ts ]['status']
 		) {
 			wp_safe_redirect( get_permalink( $post_id ) );
+			exit;
+		}
+	}
+
+	/**
+	 * Prevent access to recurring event single pages.
+	 *
+	 * @return void
+	 */
+	public static function maybe_block_recurring_event() {
+		if ( ! is_singular( 'event' ) || ! get_the_ID() ) {
+			return;
+		}
+
+		$event = new \EventKoi\Core\Event( get_the_ID() );
+		$type  = $event::get_date_type();
+
+		if ( 'recurring' === $type ) {
+			wp_safe_redirect( home_url() );
 			exit;
 		}
 	}
