@@ -7,29 +7,29 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-08-01T02:01:29+00:00\n"
+"POT-Creation-Date: 2025-09-22T13:35:40+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.11.0\n"
 "X-Domain: eventkoi\n"
 
-#: admin/class-menus.php:60
-#: admin/class-menus.php:120
+#: admin/class-menus.php:51
+#: admin/class-menus.php:113
 msgid "Dashboard"
 msgstr ""
 
-#: admin/class-menus.php:61
-#: admin/class-menus.php:124
+#: admin/class-menus.php:52
+#: admin/class-menus.php:116
 msgid "Settings"
 msgstr ""
 
-#: admin/class-menus.php:108
-#: admin/class-menus.php:109
-#: admin/class-menus.php:121
+#: admin/class-menus.php:101
+#: admin/class-menus.php:102
+#: admin/class-menus.php:114
 #: core/class-post-types.php:111
 msgid "Events"
 msgstr ""
 
-#: admin/class-menus.php:122
+#: admin/class-menus.php:115
 #: core/class-post-types.php:54
 msgid "Calendars"
 msgstr ""
@@ -38,19 +38,18 @@ msgstr ""
 msgid "Invalid calendar ID."
 msgstr ""
 
-#: api/class-calendar.php:112
-#: api/class-calendar.php:167
-#: api/class-calendar.php:187
+#: api/class-calendar.php:115
+#: api/class-calendar.php:184
+#: api/class-calendar.php:204
 msgid "Calendar ID is required."
 msgstr ""
 
-#: api/class-calendar.php:145
+#: api/class-calendar.php:162
 msgid "Invalid calendar data."
 msgstr ""
 
 #. translators: %s: Parameter name.
-#: api/class-calendars.php:88
-#: api/class-calendars.php:108
+#: api/class-calendars.php:78
 msgid "No %s provided."
 msgstr ""
 
@@ -63,23 +62,22 @@ msgstr ""
 msgid "Invalid event data."
 msgstr ""
 
-#: api/class-event.php:155
-#: api/class-event.php:175
-#: api/class-event.php:194
-#: api/class-event.php:214
+#: api/class-event.php:198
+#: api/class-event.php:217
+#: api/class-event.php:237
 msgid "Missing event ID."
 msgstr ""
 
-#: api/class-event.php:233
-#: api/class-event.php:342
+#: api/class-event.php:256
+#: api/class-event.php:365
 msgid "Missing event ID or timestamp."
 msgstr ""
 
-#: api/class-event.php:272
+#: api/class-event.php:295
 msgid "Missing or invalid instance override data."
 msgstr ""
 
-#: api/class-event.php:355
+#: api/class-event.php:378
 msgid "Instance overrides reset to defaults."
 msgstr ""
 
@@ -161,11 +159,6 @@ msgstr ""
 msgid "Invalid request."
 msgstr ""
 
-#. translators: %d quantity.
-#: api/class-stripe.php:165
-msgid "Test payment for %d tickets"
-msgstr ""
-
 #: api/class-uploads.php:67
 #: api/class-uploads.php:193
 msgid "Invalid or missing event ID."
@@ -181,14 +174,6 @@ msgstr ""
 
 #: api/class-uploads.php:121
 msgid "File exceeds maximum upload size of %s MB."
-msgstr ""
-
-#: core/class-auto-updater.php:43
-msgid "Every 4 Hours"
-msgstr ""
-
-#: core/class-auto-updater.php:290
-msgid "View full changelog →"
 msgstr ""
 
 #: core/class-bindings.php:36
@@ -253,25 +238,24 @@ msgstr ""
 msgid "EventKoi"
 msgstr ""
 
-#: core/class-calendar.php:228
+#: core/class-calendar.php:276
 msgid "Calendar created."
 msgstr ""
 
-#: core/class-calendar.php:256
+#: core/class-calendar.php:304
 msgid "Calendar updated."
 msgstr ""
 
-#: core/class-calendar.php:300
+#: core/class-calendar.php:352
 msgid "Calendar deleted."
 msgstr ""
 
 #. translators: %s is calendar name
-#: core/class-calendar.php:316
-#: core/class-calendars.php:96
+#: core/class-calendar.php:368
 msgid "[Duplicate] %s"
 msgstr ""
 
-#: core/class-calendar.php:334
+#: core/class-calendar.php:386
 msgid "Calendar duplicated."
 msgstr ""
 
@@ -285,229 +269,251 @@ msgid_plural "Calendars removed permanently."
 msgstr[0] ""
 msgstr[1] ""
 
-#: core/class-calendars.php:108
-msgid "Calendar duplicated permanently."
-msgid_plural "Calendars duplicated permanently."
-msgstr[0] ""
-msgstr[1] ""
-
-#: core/class-event.php:345
-#: core/class-event.php:1655
+#: core/class-event.php:346
+#: core/class-event.php:1678
 msgid "Attend online"
 msgstr ""
 
-#: core/class-event.php:400
+#: core/class-event.php:401
 msgid "Event created."
 msgstr ""
 
-#: core/class-event.php:422
+#: core/class-event.php:423
 msgid "Event updated."
 msgstr ""
 
-#: core/class-event.php:1015
+#: core/class-event.php:1061
 msgid "Date and time to be confirmed"
 msgstr ""
 
 #. translators: %d is the number of extra recurrence rules.
-#: core/class-event.php:1050
+#: core/class-event.php:1096
 msgid "%d more rule"
 msgid_plural "%d more rules"
 msgstr[0] ""
 msgstr[1] ""
 
-#. translators: %1$s is the start date, %2$s is the end date.
-#: core/class-event.php:1097
-msgid "%1$s – %2$s"
-msgstr ""
-
-#: core/class-event.php:1300
-#: core/class-events.php:250
+#: core/class-event.php:1324
+#: core/class-events.php:275
 msgid "Event restored successfully."
 msgid_plural "Events restored successfully."
 msgstr[0] ""
 msgstr[1] ""
 
-#: core/class-event.php:1316
+#: core/class-event.php:1340
 msgid "Event moved to Trash."
 msgstr ""
 
 #. translators: %s event title
-#: core/class-event.php:1330
+#: core/class-event.php:1354
 msgid "[Duplicate]: %s"
 msgstr ""
 
-#: core/class-event.php:1352
+#: core/class-event.php:1376
 msgid "Event duplicated."
 msgstr ""
 
-#: core/class-event.php:1452
+#: core/class-event.php:1476
 msgid "Untitled event"
 msgstr ""
 
-#: core/class-event.php:1470
+#: core/class-event.php:1494
 msgid "No event details."
 msgstr ""
 
-#: core/class-event.php:1611
+#: core/class-event.php:1634
 msgid "No location available."
 msgstr ""
 
-#: core/class-event.php:1725
-#: core/class-event.php:1819
+#: core/class-event.php:1748
+#: core/class-event.php:1862
 msgid "Date and time to be confirmed."
 msgstr ""
 
-#: core/class-event.php:1932
-msgid "Daily"
-msgstr ""
-
-#: core/class-event.php:1934
-msgid "Weekly"
-msgstr ""
-
-#: core/class-event.php:1936
-msgid "Monthly"
-msgstr ""
-
-#: core/class-event.php:1938
-msgid "Yearly"
-msgstr ""
-
-#: core/class-event.php:1957
-msgid "January"
-msgstr ""
-
-#: core/class-event.php:1958
-msgid "February"
-msgstr ""
-
-#: core/class-event.php:1959
-msgid "March"
-msgstr ""
-
 #: core/class-event.php:1960
-msgid "April"
-msgstr ""
-
-#: core/class-event.php:1961
-msgid "May"
-msgstr ""
-
-#: core/class-event.php:1962
-msgid "June"
-msgstr ""
-
-#: core/class-event.php:1963
-msgid "July"
-msgstr ""
-
-#: core/class-event.php:1964
-msgid "August"
-msgstr ""
-
-#: core/class-event.php:1965
-msgid "September"
-msgstr ""
-
-#: core/class-event.php:1966
-msgid "October"
-msgstr ""
-
-#: core/class-event.php:1967
-msgid "November"
-msgstr ""
-
-#: core/class-event.php:1968
-msgid "December"
-msgstr ""
-
-#: core/class-event.php:2019
-msgid "first"
-msgstr ""
-
-#: core/class-event.php:2020
-msgid "second"
-msgstr ""
-
-#: core/class-event.php:2021
-msgid "third"
-msgstr ""
-
-#: core/class-event.php:2022
-msgid "fourth"
-msgstr ""
-
-#: core/class-event.php:2023
-msgid "fifth"
-msgstr ""
-
-#: core/class-event.php:2041
-msgid "Monday"
-msgstr ""
-
-#: core/class-event.php:2042
-msgid "Tuesday"
-msgstr ""
-
-#: core/class-event.php:2043
-msgid "Wednesday"
-msgstr ""
-
-#: core/class-event.php:2044
-msgid "Thursday"
-msgstr ""
-
-#: core/class-event.php:2045
-msgid "Friday"
-msgstr ""
-
-#: core/class-event.php:2046
-msgid "Saturday"
-msgstr ""
-
-#: core/class-event.php:2047
 msgid "Sunday"
 msgstr ""
 
-#: core/class-events.php:209
+#: core/class-event.php:1961
+msgid "Monday"
+msgstr ""
+
+#: core/class-event.php:1962
+msgid "Tuesday"
+msgstr ""
+
+#: core/class-event.php:1963
+msgid "Wednesday"
+msgstr ""
+
+#: core/class-event.php:1964
+msgid "Thursday"
+msgstr ""
+
+#: core/class-event.php:1965
+msgid "Friday"
+msgstr ""
+
+#: core/class-event.php:1966
+msgid "Saturday"
+msgstr ""
+
+#: core/class-event.php:1969
+msgid "first"
+msgstr ""
+
+#: core/class-event.php:1970
+msgid "second"
+msgstr ""
+
+#: core/class-event.php:1971
+msgid "third"
+msgstr ""
+
+#: core/class-event.php:1972
+msgid "fourth"
+msgstr ""
+
+#: core/class-event.php:1973
+msgid "fifth"
+msgstr ""
+
+#: core/class-event.php:1985
+msgid "days"
+msgstr ""
+
+#: core/class-event.php:1986
+msgid "weeks"
+msgstr ""
+
+#: core/class-event.php:1987
+msgid "months"
+msgstr ""
+
+#: core/class-event.php:1988
+msgid "years"
+msgstr ""
+
+#. translators: %1$d: interval number (e.g., 2). %2$s: period plural (e.g., "months").
+#: core/class-event.php:1992
+msgid "Every %1$d %2$s"
+msgstr ""
+
+#: core/class-event.php:1994
+msgid "Daily"
+msgstr ""
+
+#: core/class-event.php:1996
+msgid "Weekly"
+msgstr ""
+
+#: core/class-event.php:1998
+msgid "Monthly"
+msgstr ""
+
+#: core/class-event.php:2000
+msgid "Yearly"
+msgstr ""
+
+#: core/class-event.php:2033
+#: blocks/calendar/controls.js:106
+msgid "January"
+msgstr ""
+
+#: core/class-event.php:2034
+#: blocks/calendar/controls.js:107
+msgid "February"
+msgstr ""
+
+#: core/class-event.php:2035
+#: blocks/calendar/controls.js:108
+msgid "March"
+msgstr ""
+
+#: core/class-event.php:2036
+#: blocks/calendar/controls.js:109
+msgid "April"
+msgstr ""
+
+#: core/class-event.php:2037
+#: blocks/calendar/controls.js:110
+msgid "May"
+msgstr ""
+
+#: core/class-event.php:2038
+#: blocks/calendar/controls.js:111
+msgid "June"
+msgstr ""
+
+#: core/class-event.php:2039
+#: blocks/calendar/controls.js:112
+msgid "July"
+msgstr ""
+
+#: core/class-event.php:2040
+#: blocks/calendar/controls.js:113
+msgid "August"
+msgstr ""
+
+#: core/class-event.php:2041
+#: blocks/calendar/controls.js:114
+msgid "September"
+msgstr ""
+
+#: core/class-event.php:2042
+#: blocks/calendar/controls.js:115
+msgid "October"
+msgstr ""
+
+#: core/class-event.php:2043
+#: blocks/calendar/controls.js:116
+msgid "November"
+msgstr ""
+
+#: core/class-event.php:2044
+#: blocks/calendar/controls.js:117
+msgid "December"
+msgstr ""
+
+#: core/class-events.php:234
 msgid "Event moved to trash."
 msgid_plural "Events moved to trash."
 msgstr[0] ""
 msgstr[1] ""
 
-#: core/class-events.php:228
+#: core/class-events.php:253
 msgid "Event removed permanently."
 msgid_plural "Events removed permanently."
 msgstr[0] ""
 msgstr[1] ""
 
-#: core/class-events.php:353
+#: core/class-events.php:378
 msgid "Event duplicated successfully."
 msgid_plural "Events duplicated successfully."
 msgstr[0] ""
 msgstr[1] ""
 
-#: core/class-hooks.php:149
+#: core/class-hooks.php:148
 msgid "Card"
 msgstr ""
 
-#: core/class-hooks.php:150
+#: core/class-hooks.php:149
 msgid "Invoice"
 msgstr ""
 
-#: core/class-hooks.php:151
+#: core/class-hooks.php:150
 msgid "SEPA Direct Debit"
 msgstr ""
 
-#: core/class-hooks.php:152
+#: core/class-hooks.php:151
 msgid "PayPal"
 msgstr ""
 
-#: core/class-hooks.php:153
+#: core/class-hooks.php:152
 msgid "Cash"
 msgstr ""
 
-#: core/class-hooks.php:154
+#: core/class-hooks.php:153
 msgid "Link"
 msgstr ""
 
@@ -580,7 +586,7 @@ msgid "Events by Calendar"
 msgstr ""
 
 #: core/class-post-types.php:112
-#: core/class-template.php:46
+#: core/class-template.php:48
 #: components/empty-state/NotFound.js:28
 msgid "Event"
 msgstr ""
@@ -686,85 +692,51 @@ msgstr ""
 msgid "No events were found."
 msgstr ""
 
-#: core/class-template.php:47
+#: core/class-template.php:49
 msgid "Default template for a single event view."
 msgstr ""
 
-#: core/core-functions.php:150
+#: core/core-functions.php:163
 msgid "Invalid calendar. Please check the calendar ID."
 msgstr ""
 
-#: core/core-functions.php:226
+#: core/core-functions.php:275
 msgctxt "slug"
 msgid "event"
 msgstr ""
 
-#: core/core-functions.php:227
+#: core/core-functions.php:276
 msgctxt "slug"
 msgid "calendar"
 msgstr ""
 
-#: core/core-functions.php:428
-#: core/core-functions.php:429
-#: components/order/OrderActivity.js:40
-#: lib/utils.js:47
+#: core/core-functions.php:511
+#: core/core-functions.php:512
+#: lib/utils.js:48
 msgid "Completed"
 msgstr ""
 
-#: core/core-functions.php:430
-#: components/order/OrderActivity.js:48
-#: lib/utils.js:51
+#: core/core-functions.php:513
+#: lib/utils.js:52
 msgid "Refunded"
 msgstr ""
 
-#: core/core-functions.php:431
-#: components/order/OrderActivity.js:52
-#: lib/utils.js:53
+#: core/core-functions.php:514
+#: lib/utils.js:54
 msgid "Partially refunded"
 msgstr ""
 
-#: core/core-functions.php:432
-#: components/order/OrderActivity.js:44
+#: core/core-functions.php:515
 msgid "Failed"
 msgstr ""
 
-#: core/core-functions.php:433
-#: components/order/OrderActivity.js:36
-#: lib/utils.js:45
+#: core/core-functions.php:516
+#: lib/utils.js:46
 msgid "Pending payment"
 msgstr ""
 
-#: core/core-functions.php:436
+#: core/core-functions.php:519
 msgid "Incomplete"
-msgstr ""
-
-#: payments/class-stripe.php:160
-#: payments/class-stripe.php:610
-msgid "Invalid Stripe authentication."
-msgstr ""
-
-#: payments/class-stripe.php:325
-msgid "Unknown reason"
-msgstr ""
-
-#: payments/class-stripe.php:575
-msgid "Stripe public key is required."
-msgstr ""
-
-#: payments/class-stripe.php:598
-msgid "Stripe API request failed."
-msgstr ""
-
-#: payments/class-stripe.php:604
-msgid "Invalid API key provided."
-msgstr ""
-
-#: payments/class-stripe.php:633
-msgid "Stripe event listener for EventKoi."
-msgstr ""
-
-#: admin/tickets/orders/view/index.js:91
-msgid "Last updated on %s"
 msgstr ""
 
 #: blocks/calendar/controls.js:37
@@ -772,21 +744,37 @@ msgstr ""
 msgid "Accent"
 msgstr ""
 
-#: blocks/calendar/controls.js:62
-#: blocks/list/controls.js:63
+#: blocks/calendar/controls.js:71
+#: blocks/list/controls.js:72
 msgid "Display options"
 msgstr ""
 
-#: blocks/calendar/controls.js:65
-#: blocks/list/controls.js:66
+#: blocks/calendar/controls.js:74
+#: blocks/list/controls.js:75
 msgid "Select calendar(s)"
 msgstr ""
 
-#: blocks/calendar/controls.js:75
+#: blocks/calendar/controls.js:84
 msgid "Timeframe defaults to"
 msgstr ""
 
-#: blocks/calendar/controls.js:92
+#: blocks/calendar/controls.js:102
+msgid "Default month to display"
+msgstr ""
+
+#: blocks/calendar/controls.js:105
+msgid "Current month"
+msgstr ""
+
+#: blocks/calendar/controls.js:124
+msgid "Default year to display"
+msgstr ""
+
+#: blocks/calendar/controls.js:127
+msgid "Current year"
+msgstr ""
+
+#: blocks/calendar/controls.js:138
 msgid "Week starts on"
 msgstr ""
 
@@ -794,23 +782,23 @@ msgstr ""
 msgid "EK Events Calendar"
 msgstr ""
 
-#: blocks/list/controls.js:77
+#: blocks/list/controls.js:86
 msgid "Show/hide components"
 msgstr ""
 
-#: blocks/list/controls.js:82
+#: blocks/list/controls.js:91
 msgid "Featured image"
 msgstr ""
 
-#: blocks/list/controls.js:88
+#: blocks/list/controls.js:97
 msgid "Location"
 msgstr ""
 
-#: blocks/list/controls.js:94
+#: blocks/list/controls.js:103
 msgid "Description"
 msgstr ""
 
-#: blocks/list/controls.js:99
+#: blocks/list/controls.js:108
 msgid "Design options"
 msgstr ""
 
@@ -823,7 +811,6 @@ msgid "Order"
 msgstr ""
 
 #: components/empty-state/NotFound.js:30
-#: components/order/OrderSummary.js:12
 msgid "Ticket"
 msgstr ""
 
@@ -844,102 +831,6 @@ msgstr ""
 msgid "Back to all %s"
 msgstr ""
 
-#: components/order/CopyableOrderId.js:37
-msgid "Copied!"
-msgstr ""
-
-#: components/order/CopyableOrderId.js:37
-msgid "Click to copy"
-msgstr ""
-
-#: components/order/CustomerInfo.js:10
-msgid "Customer"
-msgstr ""
-
-#: components/order/CustomerInfo.js:15
-msgid "Name"
-msgstr ""
-
-#: components/order/CustomerInfo.js:23
-msgid "Email"
-msgstr ""
-
-#: components/order/CustomerInfo.js:38
-msgid "Billing address"
-msgstr ""
-
-#: components/order/OrderActivity.js:21
-msgid "Admin note:"
-msgstr ""
-
-#: components/order/OrderActivity.js:29
-msgid "Checkout started"
-msgstr ""
-
-#: components/order/OrderActivity.js:62
-msgid "Order status:"
-msgstr ""
-
-#: components/order/OrderActivity.js:87
-msgid "Activity"
-msgstr ""
-
-#: components/order/OrderActivity.js:131
-msgid "Add note..."
-msgstr ""
-
-#: components/order/OrderActivity.js:154
-msgid "Saving..."
-msgstr ""
-
-#: components/order/OrderActivity.js:155
-msgid "Add note"
-msgstr ""
-
-#: components/order/OrderSummary.js:9
-msgid "Order summary"
-msgstr ""
-
-#: components/order/OrderSummary.js:13
-msgid "Price"
-msgstr ""
-
-#: components/order/OrderSummary.js:14
-msgid "Quantity"
-msgstr ""
-
-#: components/order/OrderSummary.js:15
-msgid "Amount"
-msgstr ""
-
-#: components/order/OrderSummary.js:28
-msgid "Total"
-msgstr ""
-
-#: components/order/PaymentMethod.js:15
-msgid "ending in"
-msgstr ""
-
-#: components/order/PaymentMethod.js:31
-msgid "Payment method"
-msgstr ""
-
-#: components/order/PaymentMethod.js:36
-msgid "Payment ID"
-msgstr ""
-
-#: components/order/PaymentMethod.js:56
-msgid "Type"
-msgstr ""
-
-#: components/order/PaymentMethod.js:63
-msgid "Origin"
-msgstr ""
-
-#: components/order/PaymentMethod.js:74
-msgid "IP address"
-msgstr ""
-
-#: lib/utils.js:49
+#: lib/utils.js:50
 msgid "Payment failed"
 msgstr ""

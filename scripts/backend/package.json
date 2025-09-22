@@ -63,8 +63,6 @@
     "@radix-ui/react-toggle": "^1.0.3",
     "@radix-ui/react-toggle-group": "^1.0.4",
     "@radix-ui/react-tooltip": "^1.0.7",
-    "@stripe/react-stripe-js": "^3.3.0",
-    "@stripe/stripe-js": "^5.10.0",
     "@supabase/supabase-js": "^2.49.4",
     "@tanstack/react-table": "^8.16.0",
     "@vis.gl/react-google-maps": "^1.5.0",

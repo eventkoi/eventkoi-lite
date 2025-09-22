@@ -26,13 +26,6 @@ import { CalendarEditEmbed } from "@/admin/calendars/edit/embed";
 import { CalendarEditMain } from "@/admin/calendars/edit/main";
 import { CalendarsOverview } from "@/admin/calendars/overview";
 
-import { Tickets } from "@/admin/tickets";
-import { Attendees } from "@/admin/tickets/attendees";
-import { Customers } from "@/admin/tickets/customers";
-import { Orders } from "@/admin/tickets/orders";
-import { OrderView } from "@/admin/tickets/orders/view";
-import { TicketsOverview } from "@/admin/tickets/overview";
-
 import { Settings } from "@/admin/settings";
 import { SettingsIntegrations } from "@/admin/settings/integrations";
 import { SettingsOverview } from "@/admin/settings/overview";
@@ -117,15 +110,6 @@ function AdminLayout() {
           <Route path="details" element={<CalendarEditDetails />} />
           <Route path="embed" element={<CalendarEditEmbed />} />
         </Route>
-
-        <Route path="tickets" element={<Tickets />}>
-          <Route index element={<TicketsOverview />} />
-          <Route path="" element={<TicketsOverview />} />
-          <Route path="orders" element={<Orders />} />
-          <Route path="customers" element={<Customers />} />
-          <Route path="attendees" element={<Attendees />} />
-        </Route>
-        <Route path="tickets/orders/:id" element={<OrderView />} />
 
         <Route path="settings" element={<Settings />}>
           <Route index element={<SettingsOverview />} />
