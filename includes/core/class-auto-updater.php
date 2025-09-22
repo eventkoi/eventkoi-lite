@@ -56,7 +56,7 @@ class Auto_Updater {
 	public function register_schedule( $schedules ) {
 		$schedules['every_6_hours'] = array(
 			'interval' => 6 * HOUR_IN_SECONDS,
-			'display'  => __( 'Every 6 Hours', 'eventkoi' ),
+			'display'  => 'Every 6 Hours',
 		);
 		return $schedules;
 	}
