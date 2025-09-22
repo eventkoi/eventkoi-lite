@@ -35,7 +35,6 @@ class Hooks {
 
 		// HMAC and OAuth state generation endpoints.
 		add_action( 'wp_ajax_eventkoi_generate_hmac', array( __CLASS__, 'ajax_generate_hmac' ) );
-		add_action( 'wp_ajax_eventkoi_sign_stripe_state', array( __CLASS__, 'ajax_sign_stripe_state' ) );
 
 		add_action( 'save_post_event', array( __CLASS__, 'clear_recurring_cache' ) );
 		add_action( 'before_delete_post', array( __CLASS__, 'clear_recurring_cache' ) );
@@ -190,49 +189,6 @@ class Hooks {
 				'instance_id' => $instance_id,
 				'timestamp'   => $timestamp,
 				'signature'   => $signature,
-			)
-		);
-	}
-
-	/**
-	 * AJAX endpoint to sign the Stripe Connect `state` payload securely.
-	 *
-	 * @return void
-	 */
-	public static function ajax_sign_stripe_state() {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( 'Unauthorized', 403 );
-		}
-
-		$instance_id = get_option( 'eventkoi_site_instance_id' );
-		$secret      = get_option( 'eventkoi_shared_secret' );
-		$site_url    = home_url();
-		$email       = get_bloginfo( 'admin_email' );
-		$timestamp   = time();
-
-		if ( empty( $instance_id ) || empty( $secret ) ) {
-			wp_send_json_error( 'Missing instance ID or secret.', 500 );
-		}
-
-		// Build the signature.
-		$payload   = $instance_id . ':' . $timestamp;
-		$signature = hash_hmac( 'sha256', $payload, $secret );
-
-		// Final state payload.
-		$state_payload = array(
-			'instance_id'   => $instance_id,
-			'timestamp'     => $timestamp,
-			'signature'     => $signature,
-			'site_url'      => $site_url,
-			'email'         => $email,
-			'shared_secret' => $secret,
-		);
-
-		$encoded_state = base64_encode( wp_json_encode( $state_payload ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode -- Used safely for Stripe OAuth state payload.
-
-		wp_send_json_success(
-			array(
-				'encoded_state' => $encoded_state,
 			)
 		);
 	}

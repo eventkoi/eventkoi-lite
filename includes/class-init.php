@@ -103,9 +103,7 @@ class Init {
 			\EventKoi\Core\Shortcodes::class,
 			\EventKoi\Core\Bindings::class,
 			\EventKoi\Core\ICal::class,
-			\EventKoi\Core\Orders::class,
 			\EventKoi\API\REST::class,
-			\EventKoi\Payments\Stripe::class,
 			\EventKoi\Core\Pretty_Instance_URLs::class,
 		);
 	}
@@ -139,10 +137,7 @@ class Init {
 			static function () {
 				Register::tables(
 					array(
-						Orders::class,
-						Charges::class,
 						Customers::class,
-						Order_Notes::class,
 						Recurrence_Overrides::class,
 					)
 				);

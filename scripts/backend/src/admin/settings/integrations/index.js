@@ -9,7 +9,6 @@ export function SettingsIntegrations() {
   return (
     <div className="grid gap-8">
       <SettingsAPI settings={settings} setSettings={setSettings} />
-      {/* <SettingsStripe settings={settings} setSettings={setSettings} /> */}
       <SettingsGoogleMaps settings={settings} setSettings={setSettings} />
     </div>
   );

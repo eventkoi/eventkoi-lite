@@ -530,33 +530,6 @@ function eventkoi_get_status_title( $status = '' ) {
 }
 
 /**
- * Retrieves Stripe's webhook secret.
- *
- * @return string The Stripe webhook secret.
- */
-function eventkoi_get_stripe_webhook_secret() {
-
-	// Use a test webhook secret for local development.
-	if ( str_contains( home_url(), 'localhost' ) ) {
-		$webhook_secret = 'whsec_55faa71db4e9f10aea76e4c2d1ee7f199aacd3881e85117645f1131036030a48';
-	} else {
-		$settings = \EventKoi\Core\Settings::get();
-
-		// Ensure stripe_webhook is an object and has a secret property.
-		$webhook_secret = ( isset( $settings['stripe_webhook'] ) && is_object( $settings['stripe_webhook'] ) && ! empty( $settings['stripe_webhook']->secret ) )
-			? sanitize_text_field( $settings['stripe_webhook']->secret )
-			: '';
-	}
-
-	/**
-	 * Filters the Stripe webhook secret.
-	 *
-	 * @param string $webhook_secret The Stripe webhook secret.
-	 */
-	return apply_filters( 'eventkoi_get_stripe_webhook_secret', $webhook_secret );
-}
-
-/**
  * Checks if live mode is enabled for eCommerce/purchase.
  *
  * @return bool True if live mode is enabled, false otherwise.
