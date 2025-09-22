@@ -370,7 +370,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
   );
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 pointer-events-none opacity-50 select-none">
       {rules.map((rule, index) => {
         const start = getDateInTimezone(ensureUtcZ(rule.start_date), wpTz);
         const end = getDateInTimezone(ensureUtcZ(rule.end_date), wpTz);

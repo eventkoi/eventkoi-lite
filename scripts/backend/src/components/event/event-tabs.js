@@ -1,3 +1,4 @@
+import { ProBadge } from "@/components/pro-badge";
 import { useEventEditContext } from "@/hooks/EventEditContext";
 import { Link, useLocation } from "react-router-dom";
 
@@ -40,6 +41,7 @@ export function EventTabs() {
             }`}
           >
             {tab.title}
+            {tab.name === "instances" && <ProBadge className="ml-0" />}
           </Link>
         );
       })}

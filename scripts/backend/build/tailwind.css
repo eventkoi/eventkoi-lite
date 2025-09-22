@@ -879,6 +879,11 @@ body {
   margin-bottom: 0.25rem !important;
 }
 
+.my-8 {
+  margin-top: 2rem !important;
+  margin-bottom: 2rem !important;
+}
+
 .-ml-4 {
   margin-left: -1rem !important;
 }
@@ -997,6 +1002,18 @@ body {
 
 .mt-auto {
   margin-top: auto !important;
+}
+
+.ml-0 {
+  margin-left: 0px !important;
+}
+
+.mb-8 {
+  margin-bottom: 2rem !important;
+}
+
+.mt-6 {
+  margin-top: 1.5rem !important;
 }
 
 .box-border {
@@ -1573,6 +1590,10 @@ body {
 
 .max-w-md {
   max-width: 28rem !important;
+}
+
+.max-w-2xl {
+  max-width: 42rem !important;
 }
 
 .flex-1 {
@@ -2407,6 +2428,11 @@ body {
 .bg-zinc-900 {
   --tw-bg-opacity: 1 !important;
   background-color: rgb(24 24 27 / var(--tw-bg-opacity, 1)) !important;
+}
+
+.bg-black {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(0 0 0 / var(--tw-bg-opacity, 1)) !important;
 }
 
 .fill-current {

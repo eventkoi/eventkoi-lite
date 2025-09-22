@@ -1,6 +1,8 @@
+import { ProLaunch } from "@/components/dashboard/pro-launch";
 import { EventDateRecurring } from "@/components/event/event-date-recurring";
 import { EventDateStandard } from "@/components/event/event-date-standard";
 import { Panel } from "@/components/panel";
+import { ProBadge } from "@/components/pro-badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEventEditContext } from "@/hooks/EventEditContext";
 import { useEffect } from "react";
@@ -78,6 +80,7 @@ export function EventDate({ showAttributes }) {
           </TabsTrigger>
           <TabsTrigger value="recurring" className="rounded-lg">
             Recurring
+            <ProBadge />
           </TabsTrigger>
         </TabsList>
 
@@ -90,6 +93,11 @@ export function EventDate({ showAttributes }) {
         </TabsContent>
 
         <TabsContent value="recurring">
+          <ProLaunch
+            headline="Upgrade to access Recurring Events"
+            minimal
+            className="mb-8 mt-6"
+          />
           <EventDateRecurring showAttributes={showAttributes} />
         </TabsContent>
       </Tabs>

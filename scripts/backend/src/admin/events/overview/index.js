@@ -1,4 +1,5 @@
 import { AddButton } from "@/components/add-button";
+import { ProLaunch } from "@/components/dashboard/pro-launch";
 import { DataTable } from "@/components/data-table";
 import { Heading } from "@/components/heading";
 import { SortButton } from "@/components/sort-button";
@@ -341,6 +342,8 @@ export function EventsOverview() {
         hideCategories
         defaultSort={[{ id: "modified_date", desc: true }]}
       />
+
+      <ProLaunch className="my-8 max-w-2xl" />
     </div>
   );
 }
