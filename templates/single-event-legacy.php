@@ -30,7 +30,7 @@ if ( eventkoi_current_theme_support() ) : ?>
 	<?php while ( have_posts() ) : ?>
 
 		<?php echo wp_kses_post( $content ); ?>
-		<?php do_action( 'eventkoi_single_event_template', the_post() ); ?>
+		<?php do_action( 'eventkoi_single_event_template', $post ); ?>
 
 	<?php endwhile; ?>
 
@@ -53,9 +53,11 @@ else :
 	do_action( 'eventkoi_before_event_content' );
 
 	while ( have_posts() ) :
+		the_post();
 
 		echo wp_kses_post( eventkoi_get_content() );
-		do_action( 'eventkoi_single_event_template', the_post() );
+
+		do_action( 'eventkoi_single_event_template', get_post() );
 
 	endwhile;
 

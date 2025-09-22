@@ -1,13 +1,16 @@
 <?php
 /**
- * Displays a single event without header/footer.
+ * Event template.
+ *
+ * You can override this template in your theme by copying it to:
+ *   yourtheme/eventkoi/event.php
  *
  * @package EventKoi
  */
 
 ?>
-<!-- wp:group {"className":"eventkoi-root eventkoi-legacy","style":{"spacing":{"margin":{"top":"40px","bottom":"40px"},"blockGap":"30px","padding":{"right":"0","left":"0"}}},"layout":{"type":"constrained","wideSize":"1100px","contentSize":"1100px"}} -->
-<div class="wp-block-group eventkoi-root eventkoi-legacy" style="margin-top:40px;margin-bottom:40px;padding-right:0;padding-left:0"><!-- wp:columns {"style":{"spacing":{"blockGap":{"top":"0","left":"var:preset|spacing|30"}}}} -->
+<!-- wp:group {"className":"eventkoi-front eventkoi-legacy","style":{"spacing":{"margin":{"top":"40px","bottom":"40px"},"blockGap":"30px","padding":{"right":"0","left":"0"}}},"layout":{"type":"constrained","wideSize":"1100px","contentSize":"1100px"}} -->
+<div class="wp-block-group eventkoi-front eventkoi-legacy" style="margin-top:40px;margin-bottom:40px;padding-right:0;padding-left:0"><!-- wp:columns {"style":{"spacing":{"blockGap":{"top":"0","left":"var:preset|spacing|30"}}}} -->
 <div class="wp-block-columns"><!-- wp:column {"width":"65%","style":{"spacing":{"blockGap":"0","padding":{"top":"0","bottom":"0"}}}} -->
 <div class="wp-block-column" style="padding-top:0;padding-bottom:0;flex-basis:65%"><!-- wp:paragraph -->
 <p>← See all events in event_calendar_link</p>
