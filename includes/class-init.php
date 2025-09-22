@@ -48,7 +48,7 @@ class Init {
 			$this->init_admin();
 
 			if ( defined( 'WP_CLI' ) && WP_CLI ) {
-				error_reporting( E_ALL & ~E_DEPRECATED );
+				error_reporting( E_ALL & ~E_DEPRECATED ); // phpcs:ignore.
 				require_once EVENTKOI_PLUGIN_DIR . 'includes/cli/class-commands.php';
 				\EventKoi\Cli\Commands::init();
 			}

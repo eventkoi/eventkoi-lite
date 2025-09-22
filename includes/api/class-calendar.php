@@ -105,11 +105,16 @@ class Calendar {
 	 * @return WP_REST_Response The REST response.
 	 */
 	public static function get_calendar_events( WP_REST_Request $request ) {
-		$ids = array();
-		$id  = sanitize_text_field( $request->get_param( 'id' ) );
+		$ids     = array();
+		$id      = sanitize_text_field( $request->get_param( 'id' ) );
+		$initial = $request->get_param( 'initial' );
 
 		if ( empty( $id ) ) {
-			return new WP_Error( 'eventkoi_missing_id', __( 'Calendar ID is required.', 'eventkoi' ), array( 'status' => 400 ) );
+			return new WP_Error(
+				'eventkoi_missing_id',
+				__( 'Calendar ID is required.', 'eventkoi' ),
+				array( 'status' => 400 )
+			);
 		}
 
 		if ( strpos( $id, ',' ) !== false ) {
@@ -121,7 +126,18 @@ class Calendar {
 
 		$calendar = new SingleCal( $id );
 
-		$display          = sanitize_text_field( $request->get_param( 'display' ) );
+		$display = sanitize_text_field( $request->get_param( 'display' ) );
+
+		// On initial load for "calendar" display → return only calendar meta, no events.
+		if ( 'calendar' === $display && $initial ) {
+			return rest_ensure_response(
+				array(
+					'calendar' => $calendar::get_meta(),
+					'events'   => array(),
+				)
+			);
+		}
+
 		$expand_instances = ( 'calendar' === $display ); // Expand only if display is calendar.
 
 		$response = array(
@@ -131,6 +147,7 @@ class Calendar {
 
 		return rest_ensure_response( $response );
 	}
+
 
 	/**
 	 * Update a calendar.

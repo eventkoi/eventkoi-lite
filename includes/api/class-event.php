@@ -153,10 +153,17 @@ class Event {
 
 		// If no ID → create new event (auto-draft).
 		if ( ! $event_id ) {
+			$now     = current_time( 'mysql', false );
+			$now_gmt = current_time( 'mysql', true );
+
 			$postarr = array(
-				'post_title'  => ! empty( $event['title'] ) ? sanitize_text_field( $event['title'] ) : 'Untitled event',
-				'post_status' => ! empty( $status ) ? $status : 'draft',
-				'post_type'   => 'event',
+				'post_title'        => ! empty( $event['title'] ) ? sanitize_text_field( $event['title'] ) : 'Untitled event',
+				'post_status'       => ! empty( $status ) ? $status : 'draft',
+				'post_type'         => 'event',
+				'post_date'         => $now,
+				'post_date_gmt'     => $now_gmt,
+				'post_modified'     => $now,
+				'post_modified_gmt' => $now_gmt,
 			);
 
 			$new_id = wp_insert_post( $postarr, true );
