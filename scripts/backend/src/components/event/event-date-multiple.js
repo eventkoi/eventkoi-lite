@@ -188,7 +188,7 @@ export function EventDateMultiple({ showAttributes }) {
     }));
   };
 
-  const standardType = event.standard_type || "selected";
+  const standardType = event.standard_type || "continuous";
 
   return (
     <div className="flex flex-col gap-6">
@@ -201,51 +201,26 @@ export function EventDateMultiple({ showAttributes }) {
               return {
                 ...prev,
                 standard_type: "continuous",
-                start_date: prev.start_date || null,
-                end_date: prev.end_date || null,
-                event_days: [], // clear
+                start_date: null,
+                end_date: null,
+                event_days: [],
               };
             }
 
             if (value === "selected") {
-              let days = [];
-
-              if (prev.start_date) {
-                // Take DATE ONLY from continuous start
-                const startWall = DateTime.fromISO(prev.start_date, {
-                  zone: "utc",
-                })
-                  .setZone(wpTz)
-                  .startOf("day"); // midnight wall-time
-
-                days = [
-                  {
-                    start_date: startWall
-                      .toUTC()
-                      .toISO({ suppressMilliseconds: true }),
-                    end_date: null, // always clear
-                    all_day: false,
-                  },
-                ];
-              } else {
-                // fallback: today at 9:00, but only seed DATE
-                const today = DateTime.now().setZone(wpTz).startOf("day");
-
-                days = [
-                  {
-                    start_date: today
-                      .toUTC()
-                      .toISO({ suppressMilliseconds: true }),
-                    end_date: null,
-                    all_day: false,
-                  },
-                ];
-              }
+              // Always start with an empty event_day
+              const days = [
+                {
+                  start_date: null,
+                  end_date: null,
+                  all_day: false,
+                },
+              ];
 
               return {
                 ...prev,
                 standard_type: "selected",
-                start_date: null, // wipe continuous span
+                start_date: null, // clear continuous span
                 end_date: null,
                 event_days: days,
               };

@@ -1,7 +1,7 @@
 {
-  "name": "eventkoi-admin",
+  "name": "eventkoi-front",
   "version": "1.0.0",
-  "description": "Admin/Backend for EventKoi WordPress plugin.",
+  "description": "Frontend for EventKoi WordPress plugin.",
   "author": "EventKoi",
   "license": "GPL-2.0-or-later",
   "main": "build/index.js",
@@ -19,7 +19,8 @@
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.31",
     "postcss-import": "^15.1.0",
-    "tailwindcss": "^3.3.3"
+    "tailwindcss": "^3.3.3",
+    "tailwindcss-scoped-preflight": "^3.4.12"
   },
   "dependencies": {
     "@emotion/react": "^11.11.1",

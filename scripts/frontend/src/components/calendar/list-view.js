@@ -10,7 +10,13 @@ export function ListView({
   showLocation,
   borderSize,
   borderStyle,
+  timeFormat,
+  loading,
 }) {
+  if (events === null || loading) {
+    return <div className="eventkoi-no-events py-8">Loading events…</div>;
+  }
+
   if (events.length === 0) {
     return (
       <div className="eventkoi-no-events py-8">{eventkoi_params.no_events}</div>
@@ -127,7 +133,7 @@ export function ListView({
 
             <div className="ek-meta flex flex-col gap-2 grow min-w-0">
               <div className="flex md:hidden text-muted-foreground">
-                {buildTimeline(event, wpTz)}
+                {buildTimeline(event, wpTz, timeFormat)}
               </div>
 
               <h3 className="m-0">
@@ -146,7 +152,7 @@ export function ListView({
             </div>
 
             <div className="hidden md:block ml-auto text-[14px] text-muted-foreground min-w-[200px] text-right">
-              {buildTimeline(event, wpTz)}
+              {buildTimeline(event, wpTz, timeFormat)}
             </div>
           </div>
         );

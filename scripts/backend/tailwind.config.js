@@ -1,9 +1,18 @@
 /** @type {import('tailwindcss').Config} */
+
+const {
+  scopedPreflightStyles,
+  isolateInsideOfContainer,
+} = require("tailwindcss-scoped-preflight");
+
 module.exports = {
   darkMode: ["class"],
   content: ["./src/**/*.{js,jsx}"],
   prefix: "",
   important: true,
+  corePlugins: {
+    preflight: false,
+  },
   theme: {
     container: {
       center: true,
@@ -72,5 +81,12 @@ module.exports = {
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [
+    require("tailwindcss-animate"),
+    scopedPreflightStyles({
+      isolationStrategy: isolateInsideOfContainer(".eventkoi-admin", {
+        except: ".no-eventkoi",
+      }),
+    }),
+  ],
 };

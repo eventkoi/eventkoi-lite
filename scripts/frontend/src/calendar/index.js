@@ -1,366 +1,147 @@
 "use client";
 
-import { CalendarToolbar } from "@/components/calendar/calendar-toolbar";
-import { CalendarHeaderPopover } from "@/components/calendar/CalendarHeaderPopover";
-import { EventPopover } from "@/components/calendar/EventPopover";
-import { ListView } from "@/components/calendar/list-view";
-import { TimezonePicker } from "@/components/timezone-picker";
-import { safeNormalizeTimeZone } from "@/lib/date-utils";
-import apiRequest from "@wordpress/api-fetch";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 
-import dayGridPlugin from "@fullcalendar/daygrid";
-import listPlugin from "@fullcalendar/list";
-import luxonPlugin from "@fullcalendar/luxon3";
-import FullCalendar from "@fullcalendar/react";
-import timeGridPlugin from "@fullcalendar/timegrid";
+import { CalendarToolbar } from "@/components/calendar/calendar-toolbar";
+import { TimezonePicker } from "@/components/timezone-picker";
+import { Skeleton } from "@/components/ui/skeleton";
+import { safeNormalizeTimeZone } from "@/lib/date-utils";
 
-const days = {
-  sunday: 0,
-  monday: 1,
-  tuesday: 2,
-  wednesday: 3,
-  thursday: 4,
-  friday: 5,
-  saturday: 6,
-};
+import { CalendarGridMode } from "@/components/calendar/CalendarGridMode";
+import { CalendarListMode } from "@/components/calendar/CalendarListMode";
+import { useCalendarData } from "@/components/calendar/useCalendarData";
+import { useEventPopover } from "@/components/calendar/useEventPopover";
 
-export function Calendar({
-  id,
-  display = "calendar",
-  calendars = "",
-  startday = "",
-  timeframe = "",
-  color = "",
-  showImage = "yes",
-  showDescription = "yes",
-  showLocation = "yes",
-  borderStyle = "dotted",
-  borderSize = "2px",
-}) {
-  const [calendar, setCalendar] = useState({});
-  const [events, setEvents] = useState([]);
-  const [view, setView] = useState();
-  const [calendarApi, setCalendarApi] = useState(null);
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedEvent, setSelectedEvent] = useState(null);
-  const [anchorPos, setAnchorPos] = useState(null);
-  const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  const lastRangeRef = useRef(null);
-
-  // Get tz from URL query string (highest priority)
-  const urlParams = new URLSearchParams(window.location.search);
-  const tzFromQuery = urlParams.get("tz"); // e.g. "3", "UTC", "Asia/Singapore"
-
-  // Determine initial raw timezone with priority: URL > override > WP > UTC
-  const initialRawTimezone =
-    tzFromQuery ||
-    eventkoi_params?.timezone_override ||
-    eventkoi_params?.timezone ||
-    "UTC";
-
-  // Make it a state so user/components can change it
-  const [timezone, setTimezone] = useState(
-    safeNormalizeTimeZone(initialRawTimezone)
-  );
+export function Calendar(props) {
+  const {
+    display,
+    id,
+    calendars,
+    showImage,
+    showDescription,
+    showLocation,
+    borderStyle,
+    borderSize,
+    startday,
+  } = props;
 
   const calendarRef = useRef(null);
-  const ignoreNextOutsideClick = useRef(false);
 
-  const popoverRootRef = useRef(null);
-  const popoverMountRef = useRef(null);
+  const {
+    calendar,
+    events,
+    allEvents,
+    view,
+    setView,
+    currentDate,
+    setCurrentDate,
+    initialDate,
+    loadEventsForView,
+    lastRangeRef,
+  } = useCalendarData({ ...props, calendarRef });
 
-  const getAdminBarOffset = () => {
-    const bar = document.getElementById("wpadminbar");
-    return bar ? (window.innerWidth <= 782 ? 46 : 32) : 0;
-  };
+  const {
+    selectedEvent,
+    setSelectedEvent,
+    anchorPos,
+    setAnchorPos,
+    ignoreNextOutsideClick,
+  } = useEventPopover();
 
-  const getInitialCalendar = async () => {
-    if (calendars) id = calendars;
+  const [search, setSearch] = useState("");
 
-    try {
-      const response = await apiRequest({
-        path: `${eventkoi_params.api}/calendar_events?id=${id}&display=${display}`,
-        method: "get",
-      });
+  const [timezone, setTimezone] = useState(
+    safeNormalizeTimeZone(
+      eventkoi_params?.timezone_override || eventkoi_params?.timezone || "UTC"
+    )
+  );
+  const [timeFormat, setTimeFormat] = useState(
+    eventkoi_params?.time_format === "24" ? "24" : "12"
+  );
 
-      setCalendar(response.calendar);
-
-      const defaultView =
-        timeframe === "week" || response.calendar.timeframe === "week"
-          ? "timeGridWeek"
-          : "dayGridMonth";
-
-      setView(defaultView);
-    } catch (err) {
-      console.error("Failed to load calendar info", err);
-    }
-  };
-
-  const loadEventsForView = async (start, end) => {
-    try {
-      setLoading(true);
-
-      const params = new URLSearchParams({ id, display });
-      if (start) params.set("start", start.toISOString());
-      if (end) params.set("end", end.toISOString());
-
-      const calendarEndpoint = `${
-        eventkoi_params.api
-      }/calendar_events?${params.toString()}`;
-      const response = await apiRequest({
-        path: calendarEndpoint,
-        method: "get",
-      });
-
-      setEvents(response.events);
-      setCalendar(response.calendar);
-      console.log(response.events);
-    } catch (err) {
-      console.error("Failed to load events", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    getInitialCalendar();
-  }, []);
-
-  useEffect(() => {
-    if (display === "list") {
-      loadEventsForView();
-    }
-  }, [display, id]);
-
-  useEffect(() => {
-    if (calendarRef.current && view) {
-      const api = calendarRef.current.getApi();
-      api.changeView(view);
-      setCalendarApi(api);
-
-      const { activeStart, activeEnd } = api.view;
-      const key = `${activeStart.toISOString()}_${activeEnd.toISOString()}`;
-
-      if (!lastRangeRef.current) {
-        lastRangeRef.current = key; // mark as handled
-        loadEventsForView(activeStart, activeEnd);
-      }
-    }
-  }, [view]);
-
-  useEffect(() => {
-    document.body.style.position = "relative";
-  }, []);
-
-  useEffect(() => {
-    function handleOutsideClick(e) {
-      if (ignoreNextOutsideClick.current) {
-        ignoreNextOutsideClick.current = false;
-        return;
-      }
-
-      const clickedInsidePopover = e.target.closest("[data-event-popover]");
-      const clickedInsideDropdown = e.target.closest(
-        "[data-radix-popper-content-wrapper]"
-      );
-
-      const dropdownIsOpen =
-        document.body.getAttribute("data-calendar-menu-open") === "true";
-
-      const shareModalIsOpen =
-        document.body.getAttribute("data-share-modal-open") === "true";
-
-      if (
-        !clickedInsidePopover &&
-        !clickedInsideDropdown &&
-        !shareModalIsOpen &&
-        !dropdownIsOpen
-      ) {
-        setSelectedEvent(null);
-        setAnchorPos(null);
-      }
-    }
-
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => {
-      document.removeEventListener("mousedown", handleOutsideClick);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!calendarApi || !currentDate) return;
-
-    const interval = setInterval(() => {
-      const todayBtn = document.querySelector(".fc-today-button");
-
-      if (todayBtn && !document.getElementById("eventkoi-month-portal")) {
-        const mount = document.createElement("div");
-        mount.id = "eventkoi-month-portal";
-        mount.className = "flex m-0";
-
-        todayBtn.parentNode.insertBefore(mount, todayBtn);
-
-        popoverMountRef.current = mount;
-        popoverRootRef.current = createRoot(mount);
-
-        popoverRootRef.current.render(
-          <CalendarHeaderPopover
-            calendarApi={calendarApi}
-            currentDate={currentDate}
-            setCurrentDate={setCurrentDate}
-          />
-        );
-
-        clearInterval(interval);
-      }
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, [calendarApi]);
-
-  if (!view) return null;
+  const isEmpty =
+    !calendar ||
+    (Array.isArray(calendar) && calendar.length === 0) ||
+    (!Array.isArray(calendar) && Object.keys(calendar).length === 0);
 
   if (display === "list") {
     return (
-      <>
-        <ListView
-          events={events}
-          showImage={showImage}
-          showDescription={showDescription}
-          showLocation={showLocation}
-          borderStyle={borderStyle}
-          borderSize={borderSize}
-        />
-        {/* Timezone info footer */}
-        <div className="pt-[30px] text-sm text-muted-foreground">
-          All event times above are shown in:{" "}
-          <TimezonePicker timezone={timezone} setTimezone={setTimezone} />
-        </div>
-      </>
+      <CalendarListMode
+        {...{
+          events: allEvents,
+          timezone,
+          setTimezone,
+          timeFormat,
+          setTimeFormat,
+          showImage,
+          showDescription,
+          showLocation,
+          borderStyle,
+          borderSize,
+        }}
+      />
     );
   }
-
-  startday = startday || calendar?.startday;
-  const eventColor = color || calendar?.color;
 
   return (
     <div className="relative">
       <CalendarToolbar
-        calendarApi={calendarApi}
+        calendar={calendar}
+        calendarApi={calendarRef.current?.getApi()}
         currentDate={currentDate}
         setCurrentDate={setCurrentDate}
         view={view}
         setView={setView}
+        events={allEvents}
+        timezone={timezone}
+        timeFormat={timeFormat}
         search={search}
         setSearch={setSearch}
-        events={events}
-        timezone={timezone ? timezone : undefined}
       />
 
-      <FullCalendar
-        ref={calendarRef}
-        plugins={[dayGridPlugin, timeGridPlugin, listPlugin, luxonPlugin]}
-        events={events}
-        initialView={view}
-        weekends={true}
-        timeZone={timezone}
-        firstDay={days[startday]}
-        eventColor={eventColor}
-        headerToolbar={false}
-        eventTimeFormat={{
-          hour: "numeric",
-          minute: "2-digit",
-          omitZeroMinute: true,
-          meridiem: "short",
-        }}
-        datesSet={({ start, end, view }) => {
-          // Create a unique key for this range
-          const key = `${start.toISOString()}_${end.toISOString()}`;
-
-          // If we already processed this exact range, do nothing
-          if (lastRangeRef.current === key) {
-            return;
-          }
-
-          // Otherwise, store it and continue
-          lastRangeRef.current = key;
-
-          loadEventsForView(start, end);
-          setCurrentDate(view.currentStart);
-
-          // Trigger popover re-render
-          if (popoverRootRef.current && popoverMountRef.current) {
-            popoverRootRef.current.render(
-              <CalendarHeaderPopover
-                calendarApi={calendarApi}
-                currentDate={view.currentStart}
-                setCurrentDate={setCurrentDate}
-              />
-            );
-          }
-        }}
-        eventClick={(info) => {
-          info.jsEvent.preventDefault();
-          info.jsEvent.stopPropagation();
-
-          const enriched = {
-            ...info.event.extendedProps,
-            title: info.event.title,
-            start: info.event.startStr,
-            end: info.event.endStr,
-            allDay: info.event.allDay,
-            url: info.event.url,
-          };
-
-          const anchorEl = info.el.closest(".fc-daygrid-event") || info.el;
-          if (!anchorEl) return;
-
-          requestAnimationFrame(() => {
-            setTimeout(() => {
-              const rect = anchorEl.getBoundingClientRect();
-              const adminBarOffset = getAdminBarOffset();
-
-              setAnchorPos({
-                x: rect.left + window.scrollX,
-                y: rect.bottom + window.scrollY + 8 - adminBarOffset,
-              });
-            }, 0);
-          });
-
-          setSelectedEvent(enriched);
-        }}
-      />
-
-      {selectedEvent && anchorPos && (
-        <EventPopover
-          event={selectedEvent}
-          anchor={anchorPos}
-          onClose={() => {
-            setSelectedEvent(null);
-            setAnchorPos(null);
-          }}
-          ignoreNextOutsideClick={ignoreNextOutsideClick}
-          timezone={timezone ? timezone : undefined}
-        />
-      )}
-
-      {/* Timezone info footer */}
-      <div className="pt-[30px] text-center text-sm text-muted-foreground">
-        All event times above are shown in:{" "}
-        <TimezonePicker timezone={timezone} setTimezone={setTimezone} />
+      <div className="flex justify-start md:justify-end py-4 text-sm text-foreground">
+        {isEmpty ? (
+          <Skeleton className="h-5 w-40 rounded-md" />
+        ) : (
+          <TimezonePicker
+            timezone={timezone}
+            setTimezone={setTimezone}
+            timeFormat={timeFormat}
+            setTimeFormat={setTimeFormat}
+          />
+        )}
       </div>
+
+      <CalendarGridMode
+        {...{
+          calendarRef,
+          events,
+          view,
+          timezone,
+          setCurrentDate,
+          lastRangeRef,
+          loadEventsForView,
+          selectedEvent,
+          setSelectedEvent,
+          anchorPos,
+          setAnchorPos,
+          ignoreNextOutsideClick,
+          calendar,
+          isEmpty,
+          eventColor: props.color || calendar?.color,
+          timeFormat,
+          startday,
+          initialDate,
+        }}
+      />
     </div>
   );
 }
 
-// Mount all calendar blocks
+// Auto-mount
 document.querySelectorAll('[id^="eventkoi-calendar-"]').forEach((el) => {
   const root = createRoot(el);
-
   root.render(
     <Calendar
       id={el.getAttribute("data-calendar-id")}
@@ -374,6 +155,9 @@ document.querySelectorAll('[id^="eventkoi-calendar-"]').forEach((el) => {
       showDescription={el.getAttribute("data-show-description")}
       borderStyle={el.getAttribute("data-border-style")}
       borderSize={el.getAttribute("data-border-size")}
+      context={el.getAttribute("data-context")}
+      defaultMonth={el.getAttribute("data-default-month")}
+      defaultYear={el.getAttribute("data-default-year")}
     />
   );
 });

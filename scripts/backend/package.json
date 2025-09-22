@@ -21,7 +21,8 @@
     "postcss-import": "^15.1.0",
     "sass": "^1.45.2",
     "sass-loader": "^12.6.0",
-    "tailwindcss": "^3.3.3"
+    "tailwindcss": "^3.3.3",
+    "tailwindcss-scoped-preflight": "^3.4.12"
   },
   "dependencies": {
     "@codeamp/block-components": "^0.0.1-beta.13",
@@ -30,6 +31,7 @@
     "@fullcalendar/core": "^6.1.15",
     "@fullcalendar/daygrid": "^6.1.15",
     "@fullcalendar/list": "^6.1.15",
+    "@fullcalendar/luxon3": "^6.1.19",
     "@fullcalendar/react": "^6.1.15",
     "@fullcalendar/timegrid": "^6.1.15",
     "@hookform/resolvers": "^3.3.4",

@@ -33,7 +33,15 @@ function getFirstInstance(event) {
 // --- Utility: parse ?instance= param and apply duration ---
 function getActiveInstance(event) {
   const urlParams = new URLSearchParams(window.location.search);
-  const instanceTimestamp = urlParams.get("instance");
+  let instanceTimestamp = urlParams.get("instance");
+
+  // Fallback: check URL path ending with /{timestamp}/
+  if (!instanceTimestamp) {
+    const match = window.location.pathname.match(/\/(\d+)\/?$/);
+    if (match) {
+      instanceTimestamp = match[1];
+    }
+  }
 
   if (
     event.date_type === "recurring" &&

@@ -44,7 +44,11 @@ export function groupTimezones() {
 
   const siteDefault = {
     value: siteDefaultValue,
-    label: `Site Default (${formatTimezoneLabel(siteDefaultValue)})`,
+    label: `Site Default (${formatTimezoneLabel(
+      siteDefaultValue,
+      "24",
+      false
+    )})`,
   };
 
   // Browser-detected local timezone

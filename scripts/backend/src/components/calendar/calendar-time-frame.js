@@ -14,7 +14,7 @@ export function CalendarTimeFrame({ calendar, setCalendar }) {
   const isDisabled = calendar?.display === "list";
 
   return (
-    <Panel>
+    <Panel className="p-0">
       <Label>Default time frame to display</Label>
       <Tabs
         defaultValue={calendar?.timeframe}

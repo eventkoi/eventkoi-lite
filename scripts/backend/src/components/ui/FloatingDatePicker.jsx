@@ -57,7 +57,7 @@ export function FloatingDatePicker({
               if (date) {
                 setOpen(false);
 
-                // ✅ Build the wall date manually from Y/M/D parts
+                // Build the wall date manually from Y/M/D parts
                 const dtWall = DateTime.fromObject(
                   {
                     year: date.getFullYear(),

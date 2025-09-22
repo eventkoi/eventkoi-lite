@@ -18,8 +18,7 @@ export function StandardTypeSelector({ value, onChange }) {
             htmlFor="continuous"
             className="text-sm font-medium cursor-pointer"
           >
-            Continuous{" "}
-            <span className="font-normal">(spans consecutive days)</span>
+            Consecutive Days
           </Label>
         </div>
 

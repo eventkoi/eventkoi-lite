@@ -18,7 +18,7 @@ export function EventNavBack() {
 
   return (
     <div className="flex flex-col gap-[1px] flex-shrink-0 min-w-0 overflow-hidden">
-      {/* ✅ Desktop breadcrumb (hidden on small screens) */}
+      {/* Desktop breadcrumb (hidden on small screens) */}
       <div className="flex items-center gap-1 text-muted-foreground text-sm font-normal">
         {isEditingInstance ? (
           <div className="hidden md:flex items-center gap-2 pl-6">
@@ -52,7 +52,7 @@ export function EventNavBack() {
         )}
       </div>
 
-      {/* ✅ Mobile back link (only visible on small screens) */}
+      {/* Mobile back link (only visible on small screens) */}
       {isEditingInstance && (
         <div className="flex sm:hidden items-center text-sm text-muted-foreground font-normal pl-0">
           <Link

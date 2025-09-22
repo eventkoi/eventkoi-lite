@@ -1,8 +1,6 @@
-import { useEffect, useState } from "react";
-
 import apiRequest from "@wordpress/api-fetch";
-
 import { InspectorControls, useBlockProps } from "@wordpress/block-editor";
+import { useEffect, useState } from "react";
 
 import { Controls } from "./controls.js";
 import { ListView } from "./list-view";
@@ -14,9 +12,25 @@ export default function Edit({
   isSelected,
   clientId,
 }) {
-  var attrs = {};
+  useEffect(() => {
+    if (isSelected) {
+      document.body.classList.add("eventkoi-active");
+    } else {
+      document.body.classList.remove("eventkoi-active");
+    }
+  }, [isSelected]);
 
-  const blockProps = useBlockProps(attrs);
+  const { layout } = attributes;
+  const fallbackWidth = "1100px";
+
+  const blockProps = useBlockProps({
+    className: "eventkoi-admin",
+    style: {
+      // maxWidth: layout?.contentSize || fallbackWidth,
+      marginLeft: "auto",
+      marginRight: "auto",
+    },
+  });
 
   const [calendar, setCalendar] = useState({});
   const [events, setEvents] = useState([]);
@@ -58,7 +72,7 @@ export default function Edit({
   }, [attributes.calendars]);
 
   return (
-    <>
+    <div {...blockProps}>
       <InspectorControls>
         <Controls
           calendar={calendar}
@@ -70,9 +84,7 @@ export default function Edit({
         />
       </InspectorControls>
 
-      <div {...blockProps}>
-        <ListView attributes={attributes} events={events} />
-      </div>
-    </>
+      <ListView attributes={attributes} events={events} />
+    </div>
   );
 }

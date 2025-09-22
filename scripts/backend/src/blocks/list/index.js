@@ -17,6 +17,13 @@ registerBlockType("eventkoi/list", {
   description: __("Add an EventKoi list of events.", "newsletter-glue"),
   keywords: ["eventkoi", "events"],
   attributes: attributes,
+  supports: {
+    layout: {
+      type: "constrained",
+      allowJustification: false,
+      allowWide: false,
+    },
+  },
   edit: Edit,
   save,
 });

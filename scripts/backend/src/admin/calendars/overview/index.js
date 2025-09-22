@@ -1,5 +1,8 @@
+import apiRequest from "@wordpress/api-fetch";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+
 import { AddButton } from "@/components/add-button";
-import { ProLaunch } from "@/components/dashboard/pro-launch";
 import { DataTable } from "@/components/data-table";
 import { Heading } from "@/components/heading";
 import { SortButton } from "@/components/sort-button";
@@ -13,10 +16,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import apiRequest from "@wordpress/api-fetch";
+
 import { CheckCheck, Copy, Link2 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
 
 const multiColumnSearch = (row, columnId, filterValue) => {
   const searchableRowContent = `${row.original.name} ${row.original.slug}`;
@@ -197,7 +198,7 @@ export function CalendarsOverview() {
     <div className="flex flex-col gap-8">
       <div className="mx-auto flex w-full gap-2 justify-between">
         <Heading>Calendars</Heading>
-        <AddButton title="Add calendar" url="/calendars/add" locked />
+        <AddButton title="Add calendar" url="/calendars/add" />
       </div>
       <DataTable
         data={data}
@@ -209,11 +210,6 @@ export function CalendarsOverview() {
         fetchResults={fetchResults}
         hideCategories
         hideDateRange
-      />
-
-      <ProLaunch
-        headline="Upgrade now to add multiple calendars"
-        className="my-8 max-w-2xl"
       />
     </div>
   );

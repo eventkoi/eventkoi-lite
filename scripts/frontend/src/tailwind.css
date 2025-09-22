@@ -10,9 +10,9 @@
     --destructive-foreground: 0 0% 100%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 96%;
-    --muted: 0 0% 96%;
-    --accent: 0 0% 96%;
+    --secondary: 0 0% 90%;
+    --muted: 0 0% 90%;
+    --accent: 0 0% 90%;
 
     --primary: 0 1% 22%;
     --foreground: 0 1% 22%;
@@ -21,8 +21,8 @@
     --secondary-foreground: 0 1% 22%;
     --accent-foreground: 0 1% 22%;
 
-    --border: 0 0% 92%;
-    --input: 0 0% 92%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
     --ring: 0 0% 50%;
     --muted-foreground: 0 0% 43%;
 

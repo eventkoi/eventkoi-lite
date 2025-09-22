@@ -12,7 +12,7 @@ export function CalendarLink({ calendar, setCalendar }) {
   const [copying, setCopying] = useState(false);
 
   return (
-    <Panel>
+    <Panel className="p-0">
       <Label>Calendar link</Label>
       <div className="relative max-w-[422px]">
         <Input

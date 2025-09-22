@@ -19,11 +19,11 @@ export function CalendarEditEmbed() {
           <Heading level={3}>Embed</Heading>
         </Panel>
         <Separator />
-        <CalendarLink calendar={calendar} setCalendar={setCalendar} />
-        <Separator />
-        <CalendarShortcode calendar={calendar} setCalendar={setCalendar} />
-        <Separator />
-        <CalendarBlock calendar={calendar} setCalendar={setCalendar} />
+        <div className="flex flex-col px-6 py-8 w-full gap-10">
+          <CalendarLink calendar={calendar} setCalendar={setCalendar} />
+          <CalendarShortcode calendar={calendar} setCalendar={setCalendar} />
+          <CalendarBlock calendar={calendar} setCalendar={setCalendar} />
+        </div>
       </div>
     </Box>
   );

@@ -4,7 +4,7 @@ import { Panel } from "@/components/panel";
 
 export function CalendarBlock({ calendar, setCalendar }) {
   return (
-    <Panel>
+    <Panel className="p-0">
       <Label>Block</Label>
       <div className="relative max-w-[422px] space-y-4">
         <div className="text-base text-muted-foreground">

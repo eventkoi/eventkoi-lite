@@ -12,8 +12,8 @@ export function CalendarDisplay({ calendar, setCalendar }) {
   };
 
   return (
-    <Panel>
-      <Label>Default display type</Label>
+    <Panel className="p-0">
+      <Label>Default calendar display</Label>
       <Tabs
         defaultValue={calendar?.display}
         onValueChange={onTabChange}
@@ -28,6 +28,9 @@ export function CalendarDisplay({ calendar, setCalendar }) {
           </TabsTrigger>
         </TabsList>
       </Tabs>
+      <div className="text-muted-foreground">
+        Choose the default view visitors see.
+      </div>
     </Panel>
   );
 }

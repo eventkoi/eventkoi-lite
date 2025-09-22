@@ -1,5 +1,5 @@
 import apiRequest from "@wordpress/api-fetch";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { Box } from "@/components/box";
 import { Heading } from "@/components/heading";
@@ -14,6 +14,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSettings } from "@/hooks/SettingsContext";
 import { showToast, showToastError } from "@/lib/toast";
 import { cn } from "@/lib/utils";
@@ -33,6 +34,21 @@ const dayLabels = {
 export function SettingsOverview() {
   const { settings, refreshSettings } = useSettings();
   const [isSaving, setIsSaving] = useState(false);
+  const [timeFormat, setTimeFormat] = useState(settings?.time_format || "12");
+
+  useEffect(() => {
+    if (settings?.time_format && settings.time_format !== timeFormat) {
+      setTimeFormat(settings.time_format);
+    }
+  }, [settings?.time_format]);
+
+  const handleTimeFormatChange = (val) => {
+    setTimeFormat(val);
+    if (val !== settings?.time_format) {
+      saveSettings({ time_format: val });
+    }
+  };
+
   const workingDays = useMemo(() => {
     return Array.isArray(settings?.working_days)
       ? settings.working_days.map((v) => parseInt(v, 10))
@@ -64,7 +80,7 @@ export function SettingsOverview() {
         },
       });
 
-      await refreshSettings(); // sync context
+      await refreshSettings();
       showToast({ ...response, message: "Settings updated." });
     } catch (error) {
       showToastError(error?.message ?? "Failed to update setting.");
@@ -97,7 +113,7 @@ export function SettingsOverview() {
 
           <Separator />
 
-          <Panel className="gap-6">
+          <Panel className="gap-10">
             {/* Week Start Dropdown */}
             <div className="grid gap-2">
               <Label htmlFor="week-start">Week starts on</Label>
@@ -117,12 +133,15 @@ export function SettingsOverview() {
                   ))}
                 </SelectContent>
               </Select>
+              <div className="text-muted-foreground">
+                Select the day calendars use as the start of the week.
+              </div>
             </div>
 
             {/* Working Days Toggle */}
-            <div className="grid gap-3">
-              <Label className="text-sm font-medium">Select working days</Label>
-              <div className="flex items-center gap-2 flex-wrap pt-1">
+            <div className="grid gap-2">
+              <Label className="text-sm font-medium">Working days</Label>
+              <div className="flex items-center gap-4 flex-wrap">
                 {orderedWeekdays.map((label, i) => {
                   const realIndex = (startDayIndex + i) % 7;
                   return (
@@ -147,6 +166,38 @@ export function SettingsOverview() {
                     </Button>
                   );
                 })}
+              </div>
+              <div className="text-muted-foreground">
+                Select your working days. These are used for recurring event
+                rules.
+              </div>
+            </div>
+
+            {/* Time format */}
+            <div className="grid gap-2">
+              <Label className="text-sm font-medium">Time format</Label>
+              <Tabs
+                value={timeFormat}
+                onValueChange={handleTimeFormatChange}
+                className="w-[350px]"
+              >
+                <TabsList className="border border-input rounded-lg w-full flex">
+                  <TabsTrigger
+                    value="12"
+                    className="flex-1 rounded-lg text-center"
+                  >
+                    12-hour (AM/PM) clock
+                  </TabsTrigger>
+                  <TabsTrigger
+                    value="24"
+                    className="flex-1 rounded-lg text-center"
+                  >
+                    24-hour clock
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <div className="text-muted-foreground">
+                Select how event times are displayed (e.g. 2:00 PM or 14:00).
               </div>
             </div>
           </Panel>

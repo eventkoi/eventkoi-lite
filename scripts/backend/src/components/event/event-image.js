@@ -76,7 +76,7 @@ export function EventImage({ isInstance = false, value, onChange }) {
       } else {
         options.body = JSON.stringify({
           post_id: event.id,
-          set_thumbnail: !isInstance, // ✅ do not set featured image for instance
+          set_thumbnail: !isInstance,
           ...(url && { url }),
           ...(attachment_id && { attachment_id }),
         });

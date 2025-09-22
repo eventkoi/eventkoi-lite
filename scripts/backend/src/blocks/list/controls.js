@@ -56,6 +56,15 @@ export const Controls = (props) => {
     getCalendars();
   }, []);
 
+  useEffect(() => {
+    if (
+      items.length > 0 &&
+      (!attributes.calendars || attributes.calendars.length === 0)
+    ) {
+      setAttributes({ calendars: [Number(eventkoi_params.default_cal)] });
+    }
+  }, [items, attributes.calendars]);
+
   const units = [{ value: "px", label: "px", default: 0 }];
 
   return (

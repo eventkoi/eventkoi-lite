@@ -2,18 +2,30 @@
   --fc-border-color: #dddddd;
   --fc-daygrid-event-dot-width: 6px;
   --fc-today-bg-color: transparent;
+  --fc-page-bg-color: transparent;
 }
 
 .fc {
+  position: relative !important;
+  table {
+    margin-bottom: 0;
+  }
+  .fc-timegrid-body {
+    border-left: 1px solid var(--fc-border-color);
+  }
+  a {
+    color: inherit;
+  }
   .fc-daygrid-event {
     border-radius: 0;
     border-top-width: 0;
     border-right-width: 0;
     border-bottom-width: 0;
-    border-left-width: 3px;
+    border-left-width: 0;
     outline: 0;
     font-size: 13px;
     box-shadow: none !important;
+    margin-top: 3px;
     .fc-event-main {
       color: inherit !important;
     }
@@ -54,15 +66,16 @@
   }
   .fc-event-main {
     font-size: 13px;
-    padding-left: 6px;
+    padding-left: 3px;
   }
   .fc-col-header {
+    border: none;
     th {
       border: 0;
     }
   }
   .fc-col-header-cell {
-    padding-top: 20px;
+    padding-top: 0;
     padding-bottom: 20px;
     font-size: 0.9em;
     text-align: left;
@@ -73,7 +86,6 @@
     text-transform: uppercase;
     padding: 0 0 0 6px;
     font-size: 14px;
-    color: #999999;
   }
   .fc-toolbar.fc-header-toolbar {
     margin-bottom: 0;
@@ -160,5 +172,76 @@
     .fc-scroller {
       overflow: hidden !important;
     }
+  }
+  .fc-event-title {
+    padding: 0;
+  }
+  .fc-event-time {
+    flex-shrink: 0;
+    padding: 0;
+  }
+  .fc-timegrid {
+    tbody
+      > tr.fc-scrollgrid-section.fc-scrollgrid-section-body:nth-of-type(3)
+      > td {
+      border-top: 0 !important;
+    }
+    .fc-scrollgrid-section:not(.fc-scrollgrid-section-body) {
+      display: none;
+    }
+  }
+  .fc-timegrid .fc-event-main {
+    font-size: 14px;
+  }
+  .fc-timegrid-slot {
+    font-size: 14px;
+  }
+  .fc-timegrid-slot-minor {
+    border-top: 0;
+  }
+  .fc-timegrid-axis-cushion {
+    font-size: 15px;
+  }
+  .fc-timegrid-col .fc-event-main {
+    padding: 4px;
+    .fc-event-title {
+      font-weight: 500;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .fc .fc-col-header-cell {
+    text-align: center !important;
+    padding-left: 0 !important;
+    padding-bottom: 10px !important;
+    padding-top: 0 !important;
+  }
+
+  .fc .fc-col-header-cell-cushion {
+    padding-left: 0 !important;
+    display: inline-block;
+    width: 100%;
+    text-align: center;
+  }
+
+  [data-event-popover] {
+    left: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+
+  .fc .fc-event-main,
+  .fc .fc-daygrid-dot-event {
+    font-size: 10px;
+  }
+
+  .fc-timegrid th.fc-day .fc-scrollgrid-sync-inner {
+    margin: 0 10px;
+  }
+
+  .fc .fc-timegrid .fc-event-main {
+    font-size: 13px;
+    padding: 2px;
   }
 }

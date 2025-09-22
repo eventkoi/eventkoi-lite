@@ -23,7 +23,7 @@ export function CalendarColor({ calendar, setCalendar }) {
   const [color, setColor] = useState();
 
   return (
-    <Panel>
+    <Panel className="p-0">
       <Label htmlFor="color">Color</Label>
       <Popover>
         <PopoverTrigger className="flex gap-4 items-center h-10 w-[150px] rounded-md border border-input bg-background shadow-none px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
@@ -47,6 +47,9 @@ export function CalendarColor({ calendar, setCalendar }) {
           />
         </PopoverContent>
       </Popover>
+      <div className="text-muted-foreground">
+        Used for accent colors in your calendar.
+      </div>
     </Panel>
   );
 }

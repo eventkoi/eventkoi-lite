@@ -1,6 +1,5 @@
 import { Heading } from "@/components/heading";
 
-import { ProLaunch } from "@/components/dashboard/pro-launch";
 import { QuickLinks } from "@/components/dashboard/quick-links";
 import { UpcomingEvents } from "@/components/dashboard/upcoming-events";
 
@@ -15,7 +14,6 @@ export function DashboardOverview() {
       </div>
       <div className="grid gap-8 md:grid-cols-2">
         <QuickLinks />
-        <ProLaunch />
       </div>
     </div>
   );

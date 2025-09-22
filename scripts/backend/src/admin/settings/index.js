@@ -1,10 +1,10 @@
-import apiRequest from "@wordpress/api-fetch";
-import { useEffect, useMemo, useState } from "react";
-import { Outlet, useLocation } from "react-router-dom";
-
 import { SettingsTabs } from "@/components/settings/settings-tabs";
 import { Subnav } from "@/components/sub-nav";
 import { Wrapper } from "@/components/wrapper";
+import { cn } from "@/lib/utils";
+import apiRequest from "@wordpress/api-fetch";
+import { useEffect, useMemo, useState } from "react";
+import { Outlet, useLocation } from "react-router-dom";
 
 export function Settings() {
   const location = useLocation();
@@ -20,6 +20,7 @@ export function Settings() {
         },
       });
       setSettings(response);
+      console.log(response);
     } catch (error) {
       console.error("Failed to load settings:", error);
     }
@@ -35,7 +36,12 @@ export function Settings() {
     <>
       <Subnav root="settings" />
       <Wrapper className="max-w-[1180px]">
-        <div className="w-full mx-auto items-start gap-6 md:flex-1 md:gap-[80px] grid grid-cols-1 md:grid-cols-[200px_1fr]">
+        <div
+          className={cn(
+            "w-full mx-auto items-start gap-6",
+            "grid grid-cols-1 md:grid-cols-[180px_1fr]"
+          )}
+        >
           <SettingsTabs
             settings={settings}
             setSettings={setSettings}

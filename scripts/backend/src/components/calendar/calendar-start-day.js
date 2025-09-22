@@ -54,7 +54,7 @@ export function CalendarStartDay({ calendar, setCalendar }) {
   const currentValue = calendar?.startday || globalDefault;
 
   return (
-    <Panel>
+    <Panel className="p-0">
       <Label htmlFor="startday">Week starts on</Label>
       <Select
         value={currentValue}
@@ -81,12 +81,13 @@ export function CalendarStartDay({ calendar, setCalendar }) {
       </Select>
 
       {!isDisabled && (
-        <div className="text-sm text-muted-foreground mt-1">
+        <div className="text-muted-foreground">
+          Select the day calendar use as the start of the week.{" "}
           <Link
             to="/settings"
             className="underline hover:text-primary transition-colors"
           >
-            Edit in global settings
+            Edit global settings
           </Link>
           .
         </div>

@@ -7,12 +7,19 @@ import {
   useState,
 } from "react";
 
+let latestSettings = null; // global copy of settings
+
 const SettingsContext = createContext({
   settings: null,
   refreshSettings: () => Promise.resolve(null),
 });
 
 export const useSettings = () => useContext(SettingsContext);
+
+// Non-hook accessor for utilities (usable outside React)
+export function getSettings() {
+  return latestSettings;
+}
 
 export function SettingsProvider({ children }) {
   const [settings, setSettings] = useState(null);
@@ -28,11 +35,12 @@ export function SettingsProvider({ children }) {
       });
 
       setSettings(response);
+      latestSettings = response; // keep global copy in sync
 
-      return response; // ✅ Fix: return fetched settings
+      return response; // return fetched settings
     } catch (error) {
       console.error("Failed to load settings:", error);
-      return null; // ✅ Always return a value
+      return null;
     }
   }, []);
 
@@ -44,7 +52,7 @@ export function SettingsProvider({ children }) {
     <SettingsContext.Provider
       value={{
         settings,
-        refreshSettings: fetchSettings, // ✅ Now returns Promise<settings>
+        refreshSettings: fetchSettings,
       }}
     >
       {children}

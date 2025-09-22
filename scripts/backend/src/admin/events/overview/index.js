@@ -1,5 +1,4 @@
 import { AddButton } from "@/components/add-button";
-import { ProLaunch } from "@/components/dashboard/pro-launch";
 import { DataTable } from "@/components/data-table";
 import { Heading } from "@/components/heading";
 import { SortButton } from "@/components/sort-button";
@@ -299,9 +298,12 @@ export function EventsOverview() {
           );
         },
         filterFn: multiColumnSearch,
-        sortingFn: "alphanumeric",
+        sortingFn: (rowA, rowB, columnId) => {
+          const a = Date.parse(rowA.getValue(columnId)) || 0;
+          const b = Date.parse(rowB.getValue(columnId)) || 0;
+          return a - b;
+        },
         sortUndefined: "last",
-        invertSorting: true,
       },
     ],
     []
@@ -337,10 +339,8 @@ export function EventsOverview() {
         from={from}
         to={to}
         hideCategories
-        defaultSort={[{ id: "status", desc: false }]}
+        defaultSort={[{ id: "modified_date", desc: true }]}
       />
-
-      <ProLaunch className="my-8 max-w-2xl" />
     </div>
   );
 }

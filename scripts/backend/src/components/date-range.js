@@ -5,6 +5,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useSettings } from "@/hooks/SettingsContext";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
@@ -122,6 +123,21 @@ export function DateWithRange() {
     setDate(range || {});
   }
 
+  const { settings } = useSettings();
+
+  const mapWeekStart = (stored) => {
+    if (stored === undefined || stored === null || stored === "") {
+      stored = 0; // fallback = Monday
+    }
+    const n = Number(stored);
+
+    if (n === 6) return 0; // your Sunday → RD Picker Sunday
+    if (n >= 0 && n <= 5) return n + 1; // shift forward
+    return 1; // fallback Monday
+  };
+
+  const weekStartsOn = mapWeekStart(settings?.week_starts_on);
+
   return (
     <div className={cn("grid")}>
       <Popover>
@@ -164,6 +180,7 @@ export function DateWithRange() {
             defaultMonth={date?.from}
             selected={date}
             numberOfMonths={2}
+            weekStartsOn={weekStartsOn}
             onSelect={handleDateSelect}
           />
           {date && Object.keys(date).length > 0 && (

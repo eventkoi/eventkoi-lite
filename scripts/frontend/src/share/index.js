@@ -60,7 +60,7 @@ export function ShareButton({ base, html }) {
       />
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent
-          className="sm:max-w-[685px] p-0"
+          className="w-full max-w-[685px] p-0"
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
           <DialogHeader className="flex items-center justify-center p-4 border-0 border-solid border-b-2 border-input">
@@ -70,7 +70,7 @@ export function ShareButton({ base, html }) {
             <DialogDescription className="hidden"></DialogDescription>
           </DialogHeader>
           <div className="flex flex-col pt-[30px] pb-[60px] px-[60px]">
-            <div className="flex gap-4 items-center justify-between pb-[60px]">
+            <div className="flex gap-4 items-center flex-wrap justify-center pb-[60px]">
               <ShareLink
                 event={event}
                 name="whatsapp"

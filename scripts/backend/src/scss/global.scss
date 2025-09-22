@@ -8,6 +8,14 @@
   }
 }
 
+/* Keep only the first block-editor-hooks__layout-constrained inside the Layout panel */
+body.eventkoi-active
+  .components-panel__body.is-opened
+  .block-editor-hooks__layout-constrained
+  + .block-editor-hooks__layout-constrained {
+  display: none !important;
+}
+
 .eventkoi-admin {
   font-family:
     inter,

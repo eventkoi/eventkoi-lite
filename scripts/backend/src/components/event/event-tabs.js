@@ -1,6 +1,4 @@
-import { ProBadge } from "@/components/pro-badge";
 import { useEventEditContext } from "@/hooks/EventEditContext";
-import { cn } from "@/lib/utils";
 import { Link, useLocation } from "react-router-dom";
 
 /**
@@ -37,13 +35,11 @@ export function EventTabs() {
           <Link
             key={tab.name}
             to={tab.name}
-            className={cn(
-              "flex flex-col items-start gap-1 font-medium px-3 py-3 rounded-lg",
+            className={`font-medium px-3 py-3 rounded-lg ${
               isActive ? "text-foreground bg-foreground/5" : ""
-            )}
+            }`}
           >
             {tab.title}
-            {tab.name === "instances" && <ProBadge className="ml-0" />}
           </Link>
         );
       })}

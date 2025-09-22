@@ -12,7 +12,7 @@ export function CalendarShortcode({ calendar, setCalendar }) {
   const [copying, setCopying] = useState(false);
 
   return (
-    <Panel>
+    <Panel className="p-0">
       <Label>Shortcode</Label>
       <div className="relative max-w-[260px]">
         <Input

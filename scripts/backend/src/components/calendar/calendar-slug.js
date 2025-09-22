@@ -9,7 +9,7 @@ export function CalendarSlug({ calendar, setCalendar }) {
     : "";
 
   return (
-    <Panel>
+    <Panel className="p-0">
       <Label htmlFor="slug">Slug</Label>
       <Input
         type="text"
@@ -24,12 +24,12 @@ export function CalendarSlug({ calendar, setCalendar }) {
           }));
         }}
       />
-      <div className="pt-1 text-muted-foreground">
-        This determines the URL of your calendar:
+      <div className="text-muted-foreground">
+        Define the URL of your calendar
         <br />
         <>
-          {eventkoi_params.default_cal_url}
-          {calendar.slug ? calendar.slug : sanitizedSlug}
+          (e.g. {eventkoi_params.default_cal_url}
+          {calendar.slug ? calendar.slug : sanitizedSlug})
         </>
       </div>
     </Panel>

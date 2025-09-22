@@ -25,11 +25,16 @@ export function ContinuousEventDates({ event, updateDay, updateEvent, tbc }) {
     ? getDateInTimezone(ensureUtcZ(event.end_date), wpTz)
     : undefined;
 
-  const ensureDayAt = (index) => {
+  const ensureDayAt = (index, which) => {
     if (!len && index === 0) {
       const nowUtc = getUtcISOString(new Date().toISOString(), wpTz);
-      updateDay(0, "start_date", nowUtc);
-      updateDay(0, "end_date", nowUtc);
+
+      if (which === "start") {
+        updateDay(0, "start_date", nowUtc);
+      }
+      if (which === "end") {
+        updateDay(0, "end_date", nowUtc);
+      }
     }
   };
 
@@ -41,11 +46,11 @@ export function ContinuousEventDates({ event, updateDay, updateEvent, tbc }) {
     );
 
     if (which === "start") {
-      ensureDayAt(startIndex);
+      ensureDayAt(startIndex, "start");
       updateDay(startIndex, "start_date", utcIso);
       updateEvent("start_date", utcIso);
     } else {
-      ensureDayAt(endIndex);
+      ensureDayAt(endIndex, "end");
       updateDay(endIndex, "end_date", utcIso);
       updateEvent("end_date", utcIso);
     }
@@ -85,7 +90,7 @@ export function ContinuousEventDates({ event, updateDay, updateEvent, tbc }) {
           newStart.setHours(time.getHours(), time.getMinutes(), 0, 0);
           updateContinuous("start", newStart);
         }}
-        wpTz={wpTz} // ✅ pass timezone
+        wpTz={wpTz}
       />
 
       <MoveRight className="w-6 h-6 text-muted-foreground" strokeWidth={1.5} />
@@ -124,7 +129,7 @@ export function ContinuousEventDates({ event, updateDay, updateEvent, tbc }) {
           newEnd.setHours(time.getHours(), time.getMinutes(), 0, 0);
           updateContinuous("end", newEnd);
         }}
-        wpTz={wpTz} // ✅ pass timezone
+        wpTz={wpTz}
       />
     </div>
   );

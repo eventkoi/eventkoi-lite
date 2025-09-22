@@ -95,7 +95,7 @@ export function EventInstancesTable({
         })
       );
 
-      // ✅ Patch recurrence_overrides in event context by removing `status`
+      // Patch recurrence_overrides in event context by removing `status`
       setEvent((prev) => {
         const updated = { ...(prev.recurrence_overrides || {}) };
 
@@ -160,7 +160,7 @@ export function EventInstancesTable({
         })
       );
 
-      // ✅ Patch recurrence_overrides in event context
+      // Patch recurrence_overrides in event context
       setEvent((prev) => ({
         ...prev,
         recurrence_overrides: {

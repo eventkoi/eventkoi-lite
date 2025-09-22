@@ -5,36 +5,46 @@ import { DateTime } from "luxon";
  *
  * @param {Object} event Event object from API (UTC dates)
  * @param {string} wpTz  WP/site timezone string
+ * @param {"12"|"24"} timeFormat Preferred time format
  * @returns {string|null}
  */
-export function buildTimeline(event, wpTz) {
+export function buildTimeline(event, wpTz, timeFormat = "12") {
   if (event.tbc) {
     return event.tbc_note || "Date and time to be confirmed";
   }
 
   const tz = normalizeTimeZone(wpTz || "UTC");
 
+  // --- Helpers ---
+  const formatTime = (dt) => {
+    if (!dt?.isValid) return "";
+    if (timeFormat === "24") return dt.toFormat("HH:mm");
+    return dt
+      .toFormat(dt.minute === 0 ? "ha" : "h:mma")
+      .toLowerCase()
+      .replace(":00", "");
+  };
+
+  const parseDate = (iso) => {
+    if (!iso) return null;
+    const dt = DateTime.fromISO(iso, { zone: "utc" }).setZone(tz);
+    return dt.isValid ? dt : null;
+  };
+
   // --- Recurring ---
   if (event.date_type === "recurring" && event.timeline) {
-    const start = DateTime.fromISO(event.start, { zone: "utc" }).setZone(tz);
-    const end = event.end_real
-      ? DateTime.fromISO(event.end_real, { zone: "utc" }).setZone(tz)
-      : event.end
-      ? DateTime.fromISO(event.end, { zone: "utc" }).setZone(tz)
-      : null;
+    const start = parseDate(event.start);
+    const end = parseDate(event.end_real) || parseDate(event.end);
+
+    if (!start) return null;
 
     const allDay = !!event.allDay;
     const isSameDay = end && start.hasSame(end, "day");
 
     if (isSameDay && !allDay) {
-      const datePart = start.toFormat("d MMM yyyy");
-      const startTime = start
-        .toFormat(start.minute === 0 ? "ha" : "h:mma")
-        .toLowerCase();
-      const endTime = end
-        .toFormat(end.minute === 0 ? "ha" : "h:mma")
-        .toLowerCase();
-      return `${datePart}, ${startTime} – ${endTime}`;
+      return `${start.toFormat("d MMM yyyy")}, ${formatTime(
+        start
+      )} – ${formatTime(end)}`;
     }
 
     if (!end || isSameDay) {
@@ -46,49 +56,43 @@ export function buildTimeline(event, wpTz) {
 
   // --- Standard / multi-day ---
   if (event.date_type === "standard" || event.date_type === "multi") {
-    const start = DateTime.fromISO(event.start, { zone: "utc" }).setZone(tz);
-    const end = event.end_real
-      ? DateTime.fromISO(event.end_real, { zone: "utc" }).setZone(tz)
-      : event.end
-      ? DateTime.fromISO(event.end, { zone: "utc" }).setZone(tz)
-      : null;
+    const start = parseDate(event.start);
+    const end = parseDate(event.end_real) || parseDate(event.end);
+
+    if (!start) return null;
 
     const allDay = !!event.allDay;
     const isSameDay = end && start.hasSame(end, "day");
 
     if (isSameDay && !allDay) {
-      const datePart = start.toFormat("d MMM yyyy");
-      const startTime = start
-        .toFormat(start.minute === 0 ? "ha" : "h:mma")
-        .toLowerCase();
-      const endTime = end
-        .toFormat(end.minute === 0 ? "ha" : "h:mma")
-        .toLowerCase();
-      return `${datePart}, ${startTime} – ${endTime}`;
+      return `${start.toFormat("d MMM yyyy")}, ${formatTime(
+        start
+      )} – ${formatTime(end)}`;
     }
 
     if (!end) {
-      // Single-day open-ended
       return allDay
         ? start.toFormat("d MMM yyyy")
-        : `${start.toFormat("d MMM yyyy, ")}${start
-            .toFormat(start.minute === 0 ? "ha" : "h:mma")
-            .toLowerCase()}`;
+        : `${start.toFormat("d MMM yyyy, ")}${formatTime(start)}`;
     }
 
-    // Multi-day: always show both date & time
-    return `${start.toFormat("d MMM yyyy, ")}${start
-      .toFormat(start.minute === 0 ? "ha" : "h:mma")
-      .toLowerCase()} – ${end.toFormat("d MMM yyyy, ")}${end
-      .toFormat(end.minute === 0 ? "ha" : "h:mma")
-      .toLowerCase()}`;
+    return `${start.toFormat("d MMM yyyy, ")}${formatTime(
+      start
+    )} – ${end.toFormat("d MMM yyyy, ")}${formatTime(end)}`;
   }
 
   return null;
 }
 
-export function formatTimezoneLabel(tz) {
-  if (!tz) return "UTC";
+export function formatTimezoneLabel(tz, timeFormat = "24", withFormat = true) {
+  if (!tz) return timeFormat === "12" ? "UTC, AM/PM" : "UTC, 24hr";
+
+  const appendSuffix = (label) =>
+    withFormat
+      ? timeFormat === "12"
+        ? `${label}, AM/PM`
+        : `${label}, 24hr`
+      : label;
 
   // Handle ISO-style offset like +02:00 or -0530
   const isoOffsetMatch = tz.match(/^([+-])(\d{2}):?(\d{2})$/);
@@ -96,26 +100,27 @@ export function formatTimezoneLabel(tz) {
     const sign = isoOffsetMatch[1];
     const hours = parseInt(isoOffsetMatch[2], 10);
     const mins = parseInt(isoOffsetMatch[3], 10);
-    if (mins === 0) {
-      return `UTC${sign}${hours}`;
-    }
-    return `UTC${sign}${hours}:${mins.toString().padStart(2, "0")}`;
+    let label =
+      mins === 0
+        ? `UTC${sign}${hours}`
+        : `UTC${sign}${hours}:${mins.toString().padStart(2, "0")}`;
+    return appendSuffix(label);
   }
 
   // Handle normalized Etc/GMT±N
   if (tz.startsWith("Etc/GMT")) {
     const offset = tz.replace("Etc/GMT", "");
     const num = parseInt(offset, 10);
-    if (num === 0) return "UTC";
-    // Reverse sign for display
-    return `UTC${num >= 0 ? "+" : "-"}${Math.abs(num)}`;
+    let label =
+      num === 0 ? "UTC" : `UTC${num >= 0 ? "+" : "-"}${Math.abs(num)}`;
+    return appendSuffix(label);
   }
 
   // Raw numeric like +3 or -2
   if (!isNaN(parseFloat(tz)) && isFinite(tz)) {
     const offset = parseFloat(tz);
-    if (offset === 0) return "UTC";
-    return `UTC${offset >= 0 ? "+" : ""}${offset}`;
+    let label = offset === 0 ? "UTC" : `UTC${offset >= 0 ? "+" : ""}${offset}`;
+    return appendSuffix(label);
   }
 
   // Browser local
@@ -123,12 +128,13 @@ export function formatTimezoneLabel(tz) {
     const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     let offsetStr = DateTime.now().setZone(zone).toFormat("ZZ");
     offsetStr = offsetStr.replace(":00", "").replace(/^(\+|-)0/, "$1");
-    return `${zone} (UTC${offsetStr})`;
+    let label = `${zone} (UTC${offsetStr})`;
+    return appendSuffix(label);
   }
 
   // Explicit UTC
   if (tz.toUpperCase() === "UTC") {
-    return "UTC";
+    return appendSuffix("UTC");
   }
 
   // Assume IANA → append offset
@@ -136,10 +142,11 @@ export function formatTimezoneLabel(tz) {
   if (dt.isValid) {
     let offsetStr = dt.toFormat("ZZ");
     offsetStr = offsetStr.replace(":00", "").replace(/^(\+|-)0/, "$1");
-    return `${tz} (UTC${offsetStr})`;
+    let label = `${tz} (UTC${offsetStr})`;
+    return appendSuffix(label);
   }
 
-  return tz;
+  return appendSuffix(tz);
 }
 
 export function normalizeTimeZone(tz) {
@@ -231,4 +238,81 @@ export function safeNormalizeTimeZone(tz) {
   if (!tz) return "UTC";
   const normalized = normalizeTimeZone(tz);
   return DateTime.now().setZone(normalized).isValid ? normalized : "UTC";
+}
+
+/**
+ * Build the initial calendar date for FullCalendar.
+ *
+ * @param {Object} options
+ * @param {"block"|"calendar"} options.context Source type
+ * @param {string} [options.defaultMonth] Block-level default month (name)
+ * @param {string|number} [options.defaultYear] Block-level default year
+ * @param {Object} [options.calendar] Calendar object (default_month, default_year)
+ * @returns {string} ISO date string (YYYY-MM-DD) in UTC, safe for FullCalendar
+ */
+export function getInitialCalendarDate({
+  context,
+  defaultMonth,
+  defaultYear,
+  calendar,
+}) {
+  const now = DateTime.utc(); // use UTC baseline, not local tz
+
+  const safeParseYear = (value, fallback) => {
+    const num = parseInt(value, 10);
+    return Number.isFinite(num) ? num : fallback;
+  };
+
+  const monthNameToNumber = (month) => {
+    const months = {
+      january: 1,
+      february: 2,
+      march: 3,
+      april: 4,
+      may: 5,
+      june: 6,
+      july: 7,
+      august: 8,
+      september: 9,
+      october: 10,
+      november: 11,
+      december: 12,
+    };
+    return months[month?.toLowerCase()] || null;
+  };
+
+  // -- Block context
+  if (context === "block") {
+    const monthNum = monthNameToNumber(defaultMonth);
+    const yearNum =
+      defaultYear && defaultYear !== ""
+        ? safeParseYear(defaultYear, now.year)
+        : now.year;
+
+    if (monthNum) {
+      return DateTime.utc(yearNum, monthNum, 1).toISODate();
+    }
+    if (yearNum !== now.year) {
+      return DateTime.utc(yearNum, now.month, 1).toISODate();
+    }
+    // default → first day of current month in UTC
+    return DateTime.utc(now.year, now.month, 1).toISODate();
+  }
+
+  // -- Calendar context (API object)
+  const monthNum = monthNameToNumber(calendar?.default_month);
+  const yearNum =
+    calendar?.default_year && calendar.default_year !== ""
+      ? safeParseYear(calendar.default_year, now.year)
+      : now.year;
+
+  if (monthNum) {
+    return DateTime.utc(yearNum, monthNum, 1).toISODate();
+  }
+  if (calendar?.default_year && yearNum !== now.year) {
+    return DateTime.utc(yearNum, now.month, 1).toISODate();
+  }
+
+  // default → first day of current month in UTC
+  return DateTime.utc(now.year, now.month, 1).toISODate();
 }

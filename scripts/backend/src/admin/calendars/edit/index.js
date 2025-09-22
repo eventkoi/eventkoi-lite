@@ -86,7 +86,7 @@ export function CalendarEdit() {
 
       setCalendar({
         ...eventkoi_params.new_calendar,
-        startday: defaultStartDay, // ✅ inject fresh default
+        startday: defaultStartDay, // inject fresh default
       });
 
       setLoading(false);
@@ -99,7 +99,7 @@ export function CalendarEdit() {
     }
   }, []);
 
-  // ✅ BLOCK render until everything is ready
+  // BLOCK render until everything is ready
   if (loading || !settings || (!calendar && !calendarId)) {
     return null;
   }

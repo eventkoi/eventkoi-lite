@@ -271,7 +271,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
         }
       }
 
-      // ✅ preserve duration when start_date changes
+      // preserve duration when start_date changes
       if (isStartDateChange && prevRule.end_date) {
         const prevStart = DateTime.fromISO(prevRule.start_date, {
           zone: "utc",
@@ -321,7 +321,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
           next.weekdays = [weekdayIndex];
         }
 
-        // ✅ preserve duration if start_date changes
+        // preserve duration if start_date changes
         if (updates.start_date && current.end_date) {
           const prevStart = DateTime.fromISO(current.start_date, {
             zone: "utc",
