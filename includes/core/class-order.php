@@ -92,10 +92,10 @@ class Order {
 			// Format timestamps.
 			$notes[ $key ]->formatted = array(
 				'created'     => esc_html(
-					wp_date( 'j F Y, g:ia', $note->created )
+					gmdate( 'j F Y, g:ia', $note->created )
 				),
 				'created_gmt' => esc_html(
-					wp_date(
+					gmdate(
 						'j F Y, g:ia',
 						$note->created,
 						new \DateTimeZone( 'UTC' )

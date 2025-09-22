@@ -146,12 +146,32 @@ class Events {
 				}
 				if ( $from && $to ) {
 					$date = array(
-						'relation' => 'AND',
+						'relation' => 'OR',
 						array(
 							'key'     => 'start_timestamp',
-							'value'   => array( strtotime( $from ), strtotime( $to . '+24 hours - 1 minute' ) ),
-							'compare' => 'between',
+							'value'   => array( strtotime( $from ), strtotime( $to . ' +23 hours 59 minutes' ) ),
+							'compare' => 'BETWEEN',
 							'type'    => 'numeric',
+						),
+						array(
+							'relation' => 'AND',
+							array(
+								'key'     => 'date_type',
+								'value'   => 'recurring',
+								'compare' => '=',
+							),
+							array(
+								'key'     => 'start_timestamp',
+								'value'   => strtotime( $to . ' +23 hours 59 minutes' ),
+								'compare' => '<=',
+								'type'    => 'numeric',
+							),
+							array(
+								'key'     => 'end_timestamp',
+								'value'   => strtotime( $from ),
+								'compare' => '>=',
+								'type'    => 'numeric',
+							),
 						),
 					);
 				}

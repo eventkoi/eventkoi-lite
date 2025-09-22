@@ -74,16 +74,17 @@ class Scripts {
 		$settings = Settings::get();
 
 		$params = array(
-			'version'   => EVENTKOI_VERSION,
-			'api'       => EVENTKOI_API,
-			'event'     => $event ? $event::get_meta() : array(),
-			'ical'      => $event ? $event::get_ical() : '',
-			'no_events' => __( 'No events were found.', 'eventkoi' ),
-			'timezone'  => wp_timezone_string(),
-			'gmap'      => array(
+			'version'     => EVENTKOI_VERSION,
+			'api'         => EVENTKOI_API,
+			'event'       => $event ? $event::get_meta() : array(),
+			'ical'        => $event ? $event::get_ical() : '',
+			'no_events'   => __( 'No events were found.', 'eventkoi' ),
+			'timezone'    => wp_timezone_string(),
+			'gmap'        => array(
 				'api_key'   => $settings['gmap_api_key'] ?? '',
 				'connected' => ! empty( $settings['gmap_connection_status'] ),
 			),
+			'time_format' => $settings['time_format'] ?? '12',
 		);
 
 		wp_localize_script(

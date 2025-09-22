@@ -34,8 +34,11 @@ class Pretty_Instance_URLs {
 	 */
 	public function add_rewrite_rules() {
 		if ( get_option( 'permalink_structure' ) ) {
+			$permalinks = eventkoi_get_permalink_structure();
+			$slug       = $permalinks['event_rewrite_slug'];
+
 			add_rewrite_rule(
-				'^event/([^/]+)/([0-9]+)/?$',
+				'^' . preg_quote( $slug, '/' ) . '/([^/]+)/([0-9]+)/?$',
 				'index.php?post_type=event&name=$matches[1]&instance=$matches[2]',
 				'top'
 			);

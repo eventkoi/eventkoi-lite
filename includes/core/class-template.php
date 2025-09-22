@@ -31,6 +31,7 @@ class Template {
 
 		add_action( 'wp_head', array( __CLASS__, 'maybe_output_canonical_tag' ) );
 		add_action( 'wp_head', array( __CLASS__, 'maybe_output_robots_tag' ), 1 );
+		add_action( 'wp_head', array( __CLASS__, 'maybe_output_viewport_meta' ), 0 );
 
 		add_action( 'template_redirect', array( __CLASS__, 'maybe_block_trashed_instance' ) );
 
@@ -183,6 +184,17 @@ class Template {
 		}
 
 		echo '<meta name="robots" content="noindex,follow" />' . "\n";
+	}
+
+	/**
+	 * Output viewport meta tag for responsive layouts.
+	 *
+	 * @return void
+	 */
+	public static function maybe_output_viewport_meta() {
+		?>
+		<meta name="viewport" content="<?php echo esc_attr( 'width=device-width, initial-scale=1' ); ?>" />
+		<?php
 	}
 
 	/**

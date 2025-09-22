@@ -127,13 +127,13 @@ class Blocks {
 		// Add data-event attribute if needed.
 		if (
 			! empty( $block['attrs']['className'] ) &&
-			strpos( $block['attrs']['className'], 'eventkoi-root' ) !== false &&
+			strpos( $block['attrs']['className'], 'eventkoi-front' ) !== false &&
 			strpos( $block_content, 'data-event=' ) === false
 		) {
 			$id = $event->get_id();
 
 			$block_content = preg_replace_callback(
-				'/<(?P<tag>\w+)(?P<before_class>[^>]*)class="(?P<class>[^"]*eventkoi-root[^"]*)"(?P<after_class>[^>]*)>/',
+				'/<(?P<tag>\w+)(?P<before_class>[^>]*)class="(?P<class>[^"]*eventkoi-front[^"]*)"(?P<after_class>[^>]*)>/',
 				function ( $matches ) use ( $id ) {
 					return sprintf(
 						'<%1$s%2$sclass="%3$s" data-event="%4$d"%5$s>',
@@ -224,10 +224,13 @@ class Blocks {
 
 		if ( 'calendar' === $type ) {
 			$args = array(
-				'calendars' => $attrs['calendars'] ?? '',
-				'startday'  => ! empty( $attrs['startday'] ) ? esc_attr( $attrs['startday'] ) : $calendar::get_startday(),
-				'timeframe' => ! empty( $attrs['timeframe'] ) ? esc_attr( $attrs['timeframe'] ) : $calendar::get_timeframe(),
-				'color'     => ! empty( $attrs['color'] ) ? esc_attr( $attrs['color'] ) : eventkoi_default_calendar_color(),
+				'calendars'     => $attrs['calendars'] ?? '',
+				'startday'      => ! empty( $attrs['startday'] ) ? esc_attr( $attrs['startday'] ) : $calendar::get_startday(),
+				'timeframe'     => ! empty( $attrs['timeframe'] ) ? esc_attr( $attrs['timeframe'] ) : $calendar::get_timeframe(),
+				'color'         => ! empty( $attrs['color'] ) ? esc_attr( $attrs['color'] ) : eventkoi_default_calendar_color(),
+				'default_month' => ! empty( $attrs['default_month'] ) ? esc_attr( $attrs['default_month'] ) : '',
+				'default_year'  => ! empty( $attrs['default_year'] ) ? esc_attr( $attrs['default_year'] ) : '',
+				'context'       => 'block',
 			);
 		} else {
 			$args = array(
@@ -239,6 +242,9 @@ class Blocks {
 				'border_size'      => $attrs['borderSize'] ?? '2px',
 			);
 		}
+
+		$args['layout'] = $attrs['layout'] ?? array();
+		$args['align']  = $attrs['align'] ?? '';
 
 		return eventkoi_get_calendar_content( $cal_id, $type, $args );
 	}
@@ -293,7 +299,6 @@ class Blocks {
 		);
 	}
 
-
 	/**
 	 * Get default block-based event template.
 	 *
@@ -302,7 +307,11 @@ class Blocks {
 	public static function get_default_template() {
 		ob_start();
 
-		include_once EVENTKOI_PLUGIN_DIR . 'templates/parts/event.php';
+		// Use the new helper.
+		$template_path = eventkoi_locate_template( 'event.php' );
+
+		// Include the resolved template file.
+		include $template_path;
 
 		$content = ob_get_clean();
 

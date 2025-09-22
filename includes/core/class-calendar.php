@@ -64,16 +64,18 @@ class Calendar {
 	public static function get_meta() {
 
 		$meta = array(
-			'id'        => self::get_id(),
-			'name'      => self::get_name(),
-			'slug'      => self::get_slug(),
-			'url'       => self::get_url(),
-			'count'     => self::get_count(),
-			'display'   => self::get_display(),
-			'timeframe' => self::get_timeframe(),
-			'startday'  => self::get_startday(),
-			'shortcode' => self::get_shortcode(),
-			'color'     => self::get_color(),
+			'id'            => self::get_id(),
+			'name'          => self::get_name(),
+			'slug'          => self::get_slug(),
+			'url'           => self::get_url(),
+			'count'         => self::get_count(),
+			'display'       => self::get_display(),
+			'timeframe'     => self::get_timeframe(),
+			'startday'      => self::get_startday(),
+			'shortcode'     => self::get_shortcode(),
+			'color'         => self::get_color(),
+			'default_month' => self::get_default_month(),
+			'default_year'  => self::get_default_year(),
 		);
 
 		return apply_filters( 'eventkoi_get_calendar_meta', $meta, self::$calendar_id, self::$calendar );
@@ -126,6 +128,52 @@ class Calendar {
 		$count = isset( self::$calendar->count ) ? self::$calendar->count : 0;
 
 		return apply_filters( 'eventkoi_get_calendar_count', $count, self::$calendar_id, self::$calendar );
+	}
+
+	/**
+	 * Get default month to display.
+	 *
+	 * @return string Default month value (e.g. 'january').
+	 */
+	public static function get_default_month() {
+		$month = get_term_meta( self::$calendar_id, 'default_month', true );
+
+		if ( empty( $month ) ) {
+			// Sensible fallback if no value is stored.
+			$month = '';
+		}
+
+		/**
+		 * Filters the default month for the calendar.
+		 *
+		 * @param string     $month        Default month value.
+		 * @param int        $calendar_id  Calendar term ID.
+		 * @param \WP_Term   $calendar     Calendar term object.
+		 */
+		return apply_filters( 'eventkoi_get_calendar_default_month', $month, self::$calendar_id, self::$calendar );
+	}
+
+	/**
+	 * Get default year to display.
+	 *
+	 * @return string Default year value (e.g. '2025').
+	 */
+	public static function get_default_year() {
+		$year = get_term_meta( self::$calendar_id, 'default_year', true );
+
+		if ( empty( $year ) ) {
+			// Sensible fallback if no value is stored.
+			$year = '';
+		}
+
+		/**
+		 * Filters the default year for the calendar.
+		 *
+		 * @param string     $year         Default year value.
+		 * @param int        $calendar_id  Calendar term ID.
+		 * @param \WP_Term   $calendar     Calendar term object.
+		 */
+		return apply_filters( 'eventkoi_get_calendar_default_year', $year, self::$calendar_id, self::$calendar );
 	}
 
 	/**
@@ -211,8 +259,23 @@ class Calendar {
 		$slug = ! empty( $meta['slug'] ) ? sanitize_text_field( $meta['slug'] ) : '';
 
 		if ( 0 === $id ) {
-			return array(
-				'message' => __( 'Calendar creation is a Pro feature.', 'eventkoi' ),
+			$args = array(
+				'slug' => ! empty( $slug ) ? $slug : '',
+			);
+
+			$last_id           = wp_insert_term( $name, 'event_cal', $args );
+			$calendar          = get_term_by( 'id', $last_id['term_id'], 'event_cal' );
+			self::$calendar    = $calendar;
+			self::$calendar_id = ! empty( $calendar->term_id ) ? $calendar->term_id : 0;
+
+			self::update_meta( $meta );
+
+			return array_merge(
+				array(
+					'update_endpoint' => true,
+					'message'         => __( 'Calendar created.', 'eventkoi' ),
+				),
+				self::get_meta(),
 			);
 		}
 
@@ -255,15 +318,19 @@ class Calendar {
 
 		do_action( 'eventkoi_before_update_calendar_meta', $meta, self::$calendar_id, self::$calendar );
 
-		$display   = ! empty( $meta['display'] ) ? sanitize_text_field( $meta['display'] ) : 'calendar';
-		$timeframe = ! empty( $meta['timeframe'] ) ? sanitize_text_field( $meta['timeframe'] ) : 'month';
-		$startday  = ! empty( $meta['startday'] ) ? sanitize_text_field( $meta['startday'] ) : 'monday';
-		$color     = ! empty( $meta['color'] ) ? sanitize_text_field( $meta['color'] ) : eventkoi_default_calendar_color();
+		$display       = ! empty( $meta['display'] ) ? sanitize_text_field( $meta['display'] ) : 'calendar';
+		$timeframe     = ! empty( $meta['timeframe'] ) ? sanitize_text_field( $meta['timeframe'] ) : 'month';
+		$startday      = ! empty( $meta['startday'] ) ? sanitize_text_field( $meta['startday'] ) : 'monday';
+		$color         = ! empty( $meta['color'] ) ? sanitize_text_field( $meta['color'] ) : eventkoi_default_calendar_color();
+		$default_month = ! empty( $meta['default_month'] ) ? sanitize_text_field( $meta['default_month'] ) : '';
+		$default_year  = ! empty( $meta['default_year'] ) ? sanitize_text_field( $meta['default_year'] ) : '';
 
 		update_term_meta( self::$calendar_id, 'display', (string) $display );
 		update_term_meta( self::$calendar_id, 'timeframe', (string) $timeframe );
 		update_term_meta( self::$calendar_id, 'startday', (string) $startday );
 		update_term_meta( self::$calendar_id, 'color', (string) $color );
+		update_term_meta( self::$calendar_id, 'default_month', (string) $default_month );
+		update_term_meta( self::$calendar_id, 'default_year', (string) $default_year );
 
 		do_action( 'eventkoi_after_update_calendar_meta', $meta, self::$calendar_id, self::$calendar );
 	}
@@ -430,9 +497,238 @@ class Calendar {
 			}
 
 			if ( 'recurring' === $event::get_date_type() && true === $expand_instances ) {
-				$results[] = array();
+				$rules = $event::get_recurrence_rules();
+
+				foreach ( $rules as $rule ) {
+					if ( empty( $rule['start_date'] ) || empty( $rule['frequency'] ) ) {
+						continue;
+					}
+
+					try {
+						// Now re-create as wall time (why? to avoid any internal offsetting).
+						$start_wall = new \DateTimeImmutable( $rule['start_date'] );
+						$dt_local   = $start_wall;
+
+						$end_dt = ! empty( $rule['end_date'] )
+						? new \DateTimeImmutable( $rule['end_date'] )
+						: null;
+
+						$duration = $end_dt ? $end_dt->getTimestamp() - $start_wall->getTimestamp() : 0;
+						$count    = 0;
+
+						$freq_map = array(
+							'day'   => 'DAILY',
+							'week'  => 'WEEKLY',
+							'month' => 'MONTHLY',
+							'year'  => 'YEARLY',
+						);
+
+						if ( ! isset( $freq_map[ $rule['frequency'] ] ) ) {
+							continue;
+						}
+
+						$options = array(
+							'FREQ'     => $freq_map[ $rule['frequency'] ],
+							'DTSTART'  => $start_wall, // this is the *true* wall time.
+							'INTERVAL' => isset( $rule['every'] ) ? absint( $rule['every'] ) : 1,
+						);
+
+						if ( isset( $rule['ends'] ) && 'after' === $rule['ends'] ) {
+							$options['COUNT'] = absint( $rule['ends_after'] );
+						} elseif ( isset( $rule['ends'] ) && 'on' === $rule['ends'] ) {
+							$options['UNTIL'] = new \DateTimeImmutable( $rule['ends_on'] );
+						}
+
+						// Weekly BYDAY.
+						if ( 'week' === $rule['frequency'] && ! empty( $rule['weekdays'] ) ) {
+							$map              = array( 'MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU' );
+							$options['BYDAY'] = implode(
+								',',
+								array_map(
+									static function ( $i ) use ( $map ) {
+										return $map[ (int) $i ] ?? '';
+									},
+									$rule['weekdays']
+								)
+							);
+						}
+
+						// Yearly BYMONTH.
+						if ( 'year' === $rule['frequency'] && ! empty( $rule['months'] ) ) {
+							$options['BYMONTH'] = array_map(
+								static function ( $m ) {
+									return (int) $m + 1;
+								},
+								$rule['months']
+							);
+						}
+
+						if ( 'month' === $rule['frequency'] ) {
+							$weekday_map = array( 'SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA' );
+
+							if ( 'weekday-of-month' === $rule['month_day_rule'] ) {
+								// Always derive from start date — ignore provided month_day_value or weekdays array.
+								$js_day  = (int) $start_wall->format( 'w' ); // 0=Sun
+								$ordinal = (int) ceil( (int) $start_wall->format( 'j' ) / 7 );
+
+								$options['BYDAY']    = $weekday_map[ $js_day ];
+								$options['BYSETPOS'] = $ordinal;
+
+							} elseif ( 'day-of-month' === $rule['month_day_rule'] ) {
+								$options['BYMONTHDAY'] = (int) $rule['month_day_value'];
+							}
+						}
+
+						$rrule = new \EKLIB\RRule\RRule( $options );
+
+						foreach ( $rrule as $dt ) {
+							if ( $window_start && $dt < $window_start ) {
+								continue;
+							}
+
+							if ( $window_end && $dt > $window_end ) {
+								break;
+							}
+
+							if ( $count++ >= 50 ) {
+								break;
+							}
+
+							$results[] = self::format_event_instance(
+								$event,
+								$dt,
+								$duration,
+								$timezone,
+								$primary,
+								$primary_type,
+								$virtual_url,
+								$link_text,
+								$location_fallback,
+								$locations
+							);
+						}
+					} catch ( \Exception $e ) {
+						continue;
+					}
+				}
 			} elseif ( 'recurring' === $event::get_date_type() && false === $expand_instances ) {
-				$$results[] = array();
+				$rules = $event::get_recurrence_rules();
+
+				foreach ( $rules as $rule ) {
+					if ( empty( $rule['start_date'] ) || empty( $rule['frequency'] ) ) {
+						continue;
+					}
+
+					try {
+						// Normalize start/end to UTC ISO with Z.
+						$start_str = self::normalize_utc_iso( $rule['start_date'] );
+						$end_str   = self::normalize_utc_iso( $rule['end_date'] ?? null );
+
+						if ( ! $start_str ) {
+							continue;
+						}
+
+						// Parse original UTC start/end.
+						$orig_start = new \DateTimeImmutable( $start_str );
+						$orig_end   = $end_str ? new \DateTimeImmutable( $end_str ) : null;
+
+						// Duration in seconds.
+						$duration = $orig_end ? $orig_end->getTimestamp() - $orig_start->getTimestamp() : 0;
+
+						// Anchor DTSTART to midnight UTC for recurrence generation.
+						$anchor_start = $orig_start->setTime( 0, 0, 0 );
+
+						$freq_map = array(
+							'day'   => 'DAILY',
+							'week'  => 'WEEKLY',
+							'month' => 'MONTHLY',
+							'year'  => 'YEARLY',
+						);
+
+						if ( ! isset( $freq_map[ $rule['frequency'] ] ) ) {
+							continue;
+						}
+
+						$options = array(
+							'FREQ'     => $freq_map[ $rule['frequency'] ],
+							'DTSTART'  => $anchor_start,
+							'INTERVAL' => isset( $rule['every'] ) ? absint( $rule['every'] ) : 1,
+						);
+
+						if ( isset( $rule['ends'] ) && 'after' === $rule['ends'] ) {
+							$options['COUNT'] = absint( $rule['ends_after'] );
+						} elseif ( isset( $rule['ends'] ) && 'on' === $rule['ends'] ) {
+							$options['UNTIL'] = new \DateTimeImmutable( $rule['ends_on'], new \DateTimeZone( 'UTC' ) );
+						}
+
+						// Weekly recurrence.
+						if ( 'week' === $rule['frequency'] && ! empty( $rule['weekdays'] ) ) {
+							$map              = array( 'MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU' );
+							$options['BYDAY'] = implode(
+								',',
+								array_map(
+									static function ( $i ) use ( $map ) {
+										return $map[ (int) $i ] ?? '';
+									},
+									$rule['weekdays']
+								)
+							);
+						}
+
+						// Monthly recurrence.
+						if ( 'month' === $rule['frequency'] ) {
+							$weekday_map = array( 'SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA' );
+
+							if ( 'weekday-of-month' === $rule['month_day_rule'] ) {
+								// Always derive from start date — ignore month_day_value completely.
+								$js_day  = (int) $anchor_start->format( 'w' ); // 0=Sun
+								$ordinal = (int) ceil( (int) $anchor_start->format( 'j' ) / 7 );
+
+								$options['BYDAY']    = $weekday_map[ $js_day ];
+								$options['BYSETPOS'] = $ordinal;
+
+							} elseif ( 'day-of-month' === $rule['month_day_rule'] ) {
+								$options['BYMONTHDAY'] = (int) $rule['month_day_value'];
+							}
+						}
+
+						// Create RRule.
+						$rrule = new \EKLIB\RRule\RRule( $options );
+
+						// Get the *next* logical occurrence in UTC (include today if matches).
+						$now  = new \DateTimeImmutable( 'now', new \DateTimeZone( 'UTC' ) );
+						$next = $rrule->getOccurrencesAfter( $now, true );
+
+						// If the library returns an array, take the first item.
+						if ( is_array( $next ) ) {
+							$next = $next[0] ?? null;
+						}
+
+						if ( $next instanceof \DateTimeInterface ) {
+
+							$next = $next->setTime(
+								(int) $orig_start->format( 'H' ),
+								(int) $orig_start->format( 'i' ),
+								(int) $orig_start->format( 's' )
+							);
+
+							$results[] = self::format_event_instance(
+								$event,
+								$next,
+								$duration,
+								$timezone,
+								$primary,
+								$primary_type,
+								$virtual_url,
+								$link_text,
+								$location_fallback,
+								$locations
+							);
+						}
+					} catch ( \Exception $e ) {
+						continue;
+					}
+				}
 			} elseif ( 'recurring' !== $event::get_date_type() ) {
 				$days = $event::get_event_days();
 
@@ -463,7 +759,9 @@ class Calendar {
 							'id'            => $event::get_id() . '-span',
 							'title'         => $event::get_title(),
 							'date_type'     => $event::get_date_type(),
+							'standard_type' => $event::get_standard_type(),
 							'start'         => $start_dt_utc->format( 'Y-m-d\TH:i:s\Z' ),
+							'start_real'    => $start_dt_utc->format( 'Y-m-d\TH:i:s\Z' ),
 							'end'           => $end_all_day_utc->format( 'Y-m-d\TH:i:s\Z' ),
 							'end_real'      => $end_dt_utc->format( 'Y-m-d\TH:i:s\Z' ),
 							'start_time'    => $start_time,
@@ -514,6 +812,7 @@ class Calendar {
 						'id'            => $event::get_id() . '-span',
 						'title'         => $event::get_title(),
 						'date_type'     => $event::get_date_type(),
+						'standard_type' => $event::get_standard_type(),
 						'start'         => $start,
 						'end'           => $end,
 						'allDay'        => ! empty( $first['all_day'] ),
@@ -560,6 +859,7 @@ class Calendar {
 							'id'            => $event::get_id() . '-day' . $i,
 							'title'         => $event::get_title(),
 							'date_type'     => $event::get_date_type(),
+							'standard_type' => $event::get_standard_type(),
 							'start'         => $start,
 							'end'           => $end,
 							'allDay'        => ! empty( $instance['all_day'] ),
@@ -669,6 +969,7 @@ class Calendar {
 			'id'            => $event::get_id() . '-' . $dt->format( 'YmdHis' ),
 			'title'         => $event::get_title(),
 			'date_type'     => $event::get_date_type(),
+			'standard_type' => $event::get_standard_type(),
 			'start'         => $start,
 			'end'           => $end,
 			'allDay'        => ! empty( $event::get_first_instance()['all_day'] ),

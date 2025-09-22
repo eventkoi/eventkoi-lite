@@ -226,13 +226,13 @@ class Event {
 				}
 
 				if ( $is_all_day ) {
-					return wp_date( 'M j, Y', $start_ts );
+					return eventkoi_date( 'M j, Y', $start_ts );
 				}
 
-				$start_str = wp_date( 'M j, Y, g:ia', $start_ts );
+				$start_str = eventkoi_date( 'M j, Y, g:ia', $start_ts );
 
 				if ( $end_ts ) {
-					$end_str    = wp_date( 'g:ia', $end_ts );
+					$end_str    = eventkoi_date( 'g:ia', $end_ts );
 					$start_str .= ' - ' . $end_str;
 				}
 
@@ -1176,7 +1176,7 @@ class Event {
 		$standard_type = get_post_meta( self::$event_id, 'standard_type', true );
 
 		if ( empty( $standard_type ) ) {
-			$standard_type = 'selected';
+			$standard_type = 'continuous';
 		}
 
 		return apply_filters( 'eventkoi_get_event_standard_type', (string) $standard_type, self::$event_id, self::$event );
@@ -1750,7 +1750,7 @@ class Event {
 			return apply_filters( 'eventkoi_rendered_event_datetime', $message, self::$event_id, self::$event );
 		}
 
-		// ✅ Render specific instance from ?instance=timestamp
+		// Render specific instance from ?instance=timestamp.
 		if ( $instance_ts && 'recurring' === $type ) {
 			$rules = self::get_recurrence_rules();
 
@@ -1763,10 +1763,10 @@ class Event {
 
 				// Render using WP timezone.
 				if ( $is_all_day ) {
-					$line = wp_date( 'M j, Y', $instance_ts );
+					$line = eventkoi_date( 'M j, Y', $instance_ts );
 				} else {
-					$start_str = wp_date( 'M j, Y, g:ia', $instance_ts );
-					$line      = $end_ts ? $start_str . ' - ' . wp_date( 'g:ia', $end_ts ) : $start_str;
+					$start_str = eventkoi_date( 'M j, Y, g:ia', $instance_ts );
+					$line      = $end_ts ? $start_str . ' - ' . eventkoi_date( 'g:ia', $end_ts ) : $start_str;
 				}
 
 				$summary = self::render_rule_summary_single( $rule, $instance_ts );
@@ -1783,7 +1783,7 @@ class Event {
 			}
 		}
 
-		// ✅ Fallback: full set of standard or recurring rules
+		// Fallback: full set of standard or recurring rules.
 		$data = ( 'recurring' === $type ) ? self::get_recurrence_rules() : self::get_event_days();
 
 		if ( empty( $data ) || ! is_array( $data ) ) {
@@ -1802,10 +1802,10 @@ class Event {
 			$is_all_day = false;
 
 			if ( $is_all_day ) {
-				$line = wp_date( 'M j, Y', $start_ts ) . ( $end_ts ? ' — ' . wp_date( 'M j, Y', $end_ts ) : '' );
+				$line = eventkoi_date( 'M j, Y', $start_ts ) . ( $end_ts ? ' — ' . eventkoi_date( 'M j, Y', $end_ts ) : '' );
 			} else {
-				$start_str = wp_date( 'M j, Y, g:ia', $start_ts );
-				$line      = $end_ts ? $start_str . ' — ' . wp_date( 'M j, Y, g:ia', $end_ts ) : $start_str;
+				$start_str = eventkoi_date( 'M j, Y, g:ia', $start_ts );
+				$line      = $end_ts ? $start_str . ' — ' . eventkoi_date( 'M j, Y, g:ia', $end_ts ) : $start_str;
 			}
 
 			$outputs[] = $line;
@@ -1821,10 +1821,10 @@ class Event {
 				$is_all_day = ! empty( $item['all_day'] );
 
 				if ( $is_all_day ) {
-					$line = wp_date( 'M j, Y', $start_ts );
+					$line = eventkoi_date( 'M j, Y', $start_ts );
 				} else {
-					$start_str = wp_date( 'M j, Y, g:ia', $start_ts );
-					$line      = $end_ts ? $start_str . ' - ' . wp_date( 'g:ia', $end_ts ) : $start_str;
+					$start_str = eventkoi_date( 'M j, Y, g:ia', $start_ts );
+					$line      = $end_ts ? $start_str . ' - ' . eventkoi_date( 'g:ia', $end_ts ) : $start_str;
 				}
 
 				if ( 'recurring' === $type ) {
@@ -1896,12 +1896,12 @@ class Event {
 			}
 
 			if ( $is_all_day ) {
-				$line = wp_date( 'M j, Y', $start_ts );
+				$line = eventkoi_date( 'M j, Y', $start_ts );
 			} else {
-				$start_str = wp_date( 'M j, Y, g:ia', $start_ts );
+				$start_str = eventkoi_date( 'M j, Y, g:ia', $start_ts );
 
 				if ( $end_ts ) {
-					$end_str    = wp_date( 'g:ia', $end_ts );
+					$end_str    = eventkoi_date( 'g:ia', $end_ts );
 					$start_str .= ' - ' . $end_str;
 				}
 

@@ -44,10 +44,10 @@ class ICal {
 
 		$event = new Event( $event_id );
 
-		if ( $instance && 'recurring' === $event::get_date_type() ) {
+		if ( $instance_ts && 'recurring' === $event::get_date_type() ) {
 			// Build dynamic single-instance iCal.
 			$rule  = $event::get_recurrence_rules()[0] ?? null;
-			$start = (int) $instance;
+			$start = (int) $instance_ts;
 			$end   = $start;
 
 			if ( ! empty( $rule['start_date'] ) && ! empty( $rule['end_date'] ) ) {
@@ -72,7 +72,7 @@ class ICal {
 			$content .= $vevent . "\nEND:VCALENDAR\n";
 
 			$this->send_headers(
-				sanitize_title_with_dashes( $event->get_title() ) . '-' . $start . '.ics'
+				sanitize_title_with_dashes( $event->get_title() ) . '-' . bin2hex( random_bytes( 2 ) ) . '.ics'
 			);
 			echo wp_kses_post( trim( $content ) );
 			exit;
