@@ -80,14 +80,16 @@ export function BulkActions({ table, base, fetchResults, addTo, queryStatus }) {
           </>
         ) : (
           <>
-            <DropdownMenuItem
-              disabled={table.getFilteredSelectedRowModel().rows.length == 0}
-              onClick={() => {
-                runAction("duplicate");
-              }}
-            >
-              <span>Duplicate</span>
-            </DropdownMenuItem>
+            {base !== "calendars" && (
+              <DropdownMenuItem
+                disabled={table.getFilteredSelectedRowModel().rows.length == 0}
+                onClick={() => {
+                  runAction("duplicate");
+                }}
+              >
+                <span>Duplicate</span>
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem
               disabled={table.getFilteredSelectedRowModel().rows.length == 0}
               onClick={() => {
