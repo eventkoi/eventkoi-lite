@@ -47,16 +47,6 @@ class Calendars {
 				'permission_callback' => array( REST::class, 'private_api' ),
 			)
 		);
-
-		register_rest_route(
-			EVENTKOI_API,
-			'/duplicate_calendars',
-			array(
-				'methods'             => 'POST',
-				'callback'            => array( __CLASS__, 'duplicate_calendars' ),
-				'permission_callback' => array( REST::class, 'private_api' ),
-			)
-		);
 	}
 
 	/**
@@ -89,26 +79,6 @@ class Calendars {
 		}
 
 		$response = Query::delete_calendars( $ids );
-
-		return rest_ensure_response( $response );
-	}
-
-	/**
-	 * Duplicate multiple calendars.
-	 *
-	 * @param WP_REST_Request $request The request object.
-	 * @return WP_REST_Response|WP_Error The REST response.
-	 */
-	public static function duplicate_calendars( WP_REST_Request $request ) {
-		$data = json_decode( $request->get_body(), true );
-		$ids  = isset( $data['ids'] ) ? array_map( 'absint', (array) $data['ids'] ) : array();
-
-		if ( empty( $ids ) ) {
-			// translators: %s: Parameter name.
-			return new WP_Error( 'eventkoi_no_ids', sprintf( __( 'No %s provided.', 'eventkoi' ), 'calendar IDs' ), array( 'status' => 400 ) );
-		}
-
-		$response = Query::duplicate_calendars( $ids );
 
 		return rest_ensure_response( $response );
 	}

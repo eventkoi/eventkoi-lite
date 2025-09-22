@@ -81,33 +81,4 @@ class Calendars {
 
 		return $result;
 	}
-
-	/**
-	 * Duplicate calendars.
-	 *
-	 * @param array $ids An array of events IDs to duplicate.
-	 */
-	public static function duplicate_calendars( $ids = array() ) {
-
-		foreach ( $ids as $id ) {
-			$term = get_term_by( 'id', $id, 'event_cal' );
-
-			/* translators: %s is calendar name */
-			$name = sprintf( __( '[Duplicate] %s', 'eventkoi' ), $term->name );
-
-			$args = array(
-				'slug'        => wp_unique_term_slug( $term->name, $term ),
-				'description' => $term->description,
-			);
-
-			$new_term = wp_insert_term( $name, 'event_cal', $args );
-		}
-
-		$result = array(
-			'ids'     => $ids,
-			'success' => _n( 'Calendar duplicated permanently.', 'Calendars duplicated permanently.', count( $ids ), 'eventkoi' ),
-		);
-
-		return $result;
-	}
 }
