@@ -4,7 +4,7 @@ Contributors: eventkoi
 Donate link: https://donate.stripe.com/fZubJ1auN86Y1PU8cSdUY01
 Tags: events, calendar, event management, schedules, calendar block
 Requires at least: 6.7  
-Tested up to: 6.7  
+Tested up to: 6.8 
 Requires PHP: 8.0  
 Stable tag: 0.9.0  
 License: GPLv2 or later
