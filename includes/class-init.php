@@ -61,7 +61,6 @@ class Init {
 	private function init_core() {
 		// Include core functions.
 		include_once EVENTKOI_PLUGIN_DIR . 'includes/core/core-functions.php';
-		require_once EVENTKOI_PLUGIN_DIR . 'includes/core/i18n.php';
 		require_once EVENTKOI_PLUGIN_DIR . 'includes/helpers/instance.php';
 		\EventKoi\Core\register_i18n();
 
@@ -93,7 +92,6 @@ class Init {
 	private function get_core_components() {
 		return array(
 			\EventKoi\Core\Install::class,
-			\EventKoi\Core\Auto_Updater::class,
 			\EventKoi\Core\Hooks::class,
 			\EventKoi\Core\Post_Types::class,
 			\EventKoi\Core\Template::class,
