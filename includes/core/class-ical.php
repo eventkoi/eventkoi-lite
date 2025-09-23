@@ -39,7 +39,7 @@ class ICal {
 
 		$event_id = absint( get_the_ID() );
 		if ( ! $event_id ) {
-			wp_die( esc_html__( 'Invalid event ID.', 'eventkoi' ), 400 );
+			wp_die( esc_html__( 'Invalid event ID.', 'eventkoi-lite' ), 400 );
 		}
 
 		$event = new Event( $event_id );

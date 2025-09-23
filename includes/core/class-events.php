@@ -231,7 +231,7 @@ class Events {
 
 		$result = array(
 			'ids'     => $ids,
-			'success' => _n( 'Event moved to trash.', 'Events moved to trash.', count( $ids ), 'eventkoi' ),
+			'success' => _n( 'Event moved to trash.', 'Events moved to trash.', count( $ids ), 'eventkoi-lite' ),
 		);
 
 		return $result;
@@ -250,7 +250,7 @@ class Events {
 
 		$result = array(
 			'ids'     => $ids,
-			'success' => _n( 'Event removed permanently.', 'Events removed permanently.', count( $ids ), 'eventkoi' ),
+			'success' => _n( 'Event removed permanently.', 'Events removed permanently.', count( $ids ), 'eventkoi-lite' ),
 		);
 
 		return $result;
@@ -272,7 +272,7 @@ class Events {
 
 		$result = array(
 			'ids'     => $ids,
-			'success' => _n( 'Event restored successfully.', 'Events restored successfully.', count( $ids ), 'eventkoi' ),
+			'success' => _n( 'Event restored successfully.', 'Events restored successfully.', count( $ids ), 'eventkoi-lite' ),
 		);
 
 		return $result;
@@ -375,7 +375,7 @@ class Events {
 
 		$response = array(
 			'ids'     => $results,
-			'success' => _n( 'Event duplicated successfully.', 'Events duplicated successfully.', count( $results ), 'eventkoi' ),
+			'success' => _n( 'Event duplicated successfully.', 'Events duplicated successfully.', count( $results ), 'eventkoi-lite' ),
 		);
 
 		return $response;

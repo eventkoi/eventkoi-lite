@@ -64,7 +64,7 @@ class Uploads {
 		$set_thumbnail = ( null === $raw_value || '1' === $raw_value || 1 === $raw_value || true === $raw_value );
 
 		if ( ! $post_id || 'event' !== get_post_type( $post_id ) ) {
-			return new \WP_Error( 'eventkoi_invalid_post', __( 'Invalid or missing event ID.', 'eventkoi' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'eventkoi_invalid_post', __( 'Invalid or missing event ID.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
 		// Reuse existing attachment directly.
@@ -103,22 +103,24 @@ class Uploads {
 
 		// Handle file upload (e.g. drag/drop or camera).
 		if ( empty( $file_obj['uploadedfile'] ) || ! is_array( $file_obj['uploadedfile'] ) ) {
-			return new \WP_Error( 'eventkoi_no_file', __( 'No image file uploaded.', 'eventkoi' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'eventkoi_no_file', __( 'No image file uploaded.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
 		$file = $file_obj['uploadedfile'];
 
 		if ( ! file_exists( $file['tmp_name'] ) || false === getimagesize( $file['tmp_name'] ) ) {
-			return new \WP_Error( 'eventkoi_invalid_image', __( 'Uploaded file is not a valid image.', 'eventkoi' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'eventkoi_invalid_image', __( 'Uploaded file is not a valid image.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
 		$max_size_mb = apply_filters( 'eventkoi_max_upload_size_mb', 5 );
 		$max_bytes   = $max_size_mb * 1024 * 1024;
 
+		// Translators: %s is the maximum file size allowed in megabytes.
 		if ( filesize( $file['tmp_name'] ) > $max_bytes ) {
 			return new \WP_Error(
 				'eventkoi_file_too_large',
-				sprintf( __( 'File exceeds maximum upload size of %s MB.', 'eventkoi' ), $max_size_mb ),
+				/* translators: %s is the maximum file size allowed in megabytes. */
+				sprintf( __( 'File exceeds maximum upload size of %s MB.', 'eventkoi-lite' ), $max_size_mb ),
 				array( 'status' => 413 )
 			);
 		}
@@ -176,7 +178,7 @@ class Uploads {
 		if ( ! ( $request instanceof \WP_REST_Request ) ) {
 			return new \WP_Error(
 				'eventkoi_invalid_request',
-				__( 'Invalid request.', 'eventkoi' ),
+				__( 'Invalid request.', 'eventkoi-lite' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -190,7 +192,7 @@ class Uploads {
 		if ( ! $post_id || get_post_type( $post_id ) !== 'event' ) {
 			return new \WP_Error(
 				'eventkoi_invalid_post',
-				__( 'Invalid or missing event ID.', 'eventkoi' ),
+				__( 'Invalid or missing event ID.', 'eventkoi-lite' ),
 				array( 'status' => 400 )
 			);
 		}

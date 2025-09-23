@@ -142,12 +142,12 @@ class Hooks {
 				// Format billing type as payment method label.
 				if ( 'billing_type' === $field ) {
 					$billing_type_map = array(
-						'card'       => __( 'Card', 'eventkoi' ),
-						'invoice'    => __( 'Invoice', 'eventkoi' ),
-						'sepa_debit' => __( 'SEPA Direct Debit', 'eventkoi' ),
-						'paypal'     => __( 'PayPal', 'eventkoi' ),
-						'cash'       => __( 'Cash', 'eventkoi' ),
-						'link'       => __( 'Link', 'eventkoi' ),
+						'card'       => __( 'Card', 'eventkoi-lite' ),
+						'invoice'    => __( 'Invoice', 'eventkoi-lite' ),
+						'sepa_debit' => __( 'SEPA Direct Debit', 'eventkoi-lite' ),
+						'paypal'     => __( 'PayPal', 'eventkoi-lite' ),
+						'cash'       => __( 'Cash', 'eventkoi-lite' ),
+						'link'       => __( 'Link', 'eventkoi-lite' ),
 					);
 
 					$results[ $key ]->formatted['payment_method'] = esc_html(

@@ -273,7 +273,7 @@ class Calendar {
 			return array_merge(
 				array(
 					'update_endpoint' => true,
-					'message'         => __( 'Calendar created.', 'eventkoi' ),
+					'message'         => __( 'Calendar created.', 'eventkoi-lite' ),
 				),
 				self::get_meta(),
 			);
@@ -301,7 +301,7 @@ class Calendar {
 
 		return array_merge(
 			array(
-				'message' => __( 'Calendar updated.', 'eventkoi' ),
+				'message' => __( 'Calendar updated.', 'eventkoi-lite' ),
 			),
 			self::get_meta(),
 		);
@@ -349,7 +349,7 @@ class Calendar {
 		wp_delete_term( $calendar_id, 'event_cal' );
 
 		$result = array(
-			'message' => __( 'Calendar deleted.', 'eventkoi' ),
+			'message' => __( 'Calendar deleted.', 'eventkoi-lite' ),
 		);
 
 		return $result;
@@ -365,7 +365,7 @@ class Calendar {
 		$calendar = get_term_by( 'id', self::get_id(), 'event_cal' );
 
 		/* translators: %s is calendar name */
-		$name = sprintf( __( '[Duplicate] %s', 'eventkoi' ), $calendar->name );
+		$name = sprintf( __( '[Duplicate] %s', 'eventkoi-lite' ), $calendar->name );
 
 		$args = array(
 			'slug'        => wp_unique_term_slug( $calendar->name, $calendar ),
@@ -383,7 +383,7 @@ class Calendar {
 		$result = array_merge(
 			array(
 				'update_endpoint' => true,
-				'message'         => __( 'Calendar duplicated.', 'eventkoi' ),
+				'message'         => __( 'Calendar duplicated.', 'eventkoi-lite' ),
 			),
 			self::get_meta(),
 		);

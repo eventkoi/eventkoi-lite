@@ -160,7 +160,7 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 	$calendar = new \EventKoi\Core\Calendar( $term_id );
 
 	if ( $calendar::is_invalid() ) {
-		return '<div class="wp-block-group eventkoi-front"><p>' . esc_html__( 'Invalid calendar. Please check the calendar ID.', 'eventkoi' ) . '</p></div>';
+		return '<div class="wp-block-group eventkoi-front"><p>' . esc_html__( 'Invalid calendar. Please check the calendar ID.', 'eventkoi-lite' ) . '</p></div>';
 	}
 
 	// Use calendar settings if no display mode is specified.
@@ -272,8 +272,8 @@ function eventkoi_get_permalink_structure() {
 	$saved_permalinks = (array) get_option( 'eventkoi_permalinks', array() );
 
 	$default_permalinks = array(
-		'event_base'             => _x( 'event', 'slug', 'eventkoi' ),
-		'category_base'          => _x( 'calendar', 'slug', 'eventkoi' ),
+		'event_base'             => _x( 'event', 'slug', 'eventkoi-lite' ),
+		'category_base'          => _x( 'calendar', 'slug', 'eventkoi-lite' ),
 		'use_verbose_page_rules' => false,
 	);
 
@@ -508,15 +508,15 @@ function eventkoi_default_calendar_color() {
  */
 function eventkoi_get_status_title( $status = '' ) {
 	$map = array(
-		'complete'           => __( 'Completed', 'eventkoi' ),
-		'succeeded'          => __( 'Completed', 'eventkoi' ),
-		'refunded'           => __( 'Refunded', 'eventkoi' ),
-		'partially_refunded' => __( 'Partially refunded', 'eventkoi' ),
-		'failed'             => __( 'Failed', 'eventkoi' ),
-		'pending'            => __( 'Pending payment', 'eventkoi' ),
+		'complete'           => __( 'Completed', 'eventkoi-lite' ),
+		'succeeded'          => __( 'Completed', 'eventkoi-lite' ),
+		'refunded'           => __( 'Refunded', 'eventkoi-lite' ),
+		'partially_refunded' => __( 'Partially refunded', 'eventkoi-lite' ),
+		'failed'             => __( 'Failed', 'eventkoi-lite' ),
+		'pending'            => __( 'Pending payment', 'eventkoi-lite' ),
 	);
 
-	$label = $map[ $status ] ?? __( 'Incomplete', 'eventkoi' );
+	$label = $map[ $status ] ?? __( 'Incomplete', 'eventkoi-lite' );
 
 	/**
 	 * Filter the human-readable label for a status.

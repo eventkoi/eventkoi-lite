@@ -48,8 +48,8 @@ class Menus {
 	public static function add_plugin_action_links( $links ) {
 		// Prepend custom links.
 		$custom_links = array(
-			'<a href="' . esc_url( admin_url( 'admin.php?page=eventkoi#/dashboard' ) ) . '">' . esc_html__( 'Dashboard', 'eventkoi' ) . '</a>',
-			'<a href="' . esc_url( admin_url( 'admin.php?page=eventkoi#/settings' ) ) . '">' . esc_html__( 'Settings', 'eventkoi' ) . '</a>',
+			'<a href="' . esc_url( admin_url( 'admin.php?page=eventkoi#/dashboard' ) ) . '">' . esc_html__( 'Dashboard', 'eventkoi-lite' ) . '</a>',
+			'<a href="' . esc_url( admin_url( 'admin.php?page=eventkoi#/settings' ) ) . '">' . esc_html__( 'Settings', 'eventkoi-lite' ) . '</a>',
 		);
 
 		// Put them before the default links (Activate/Deactivate/Edit).
@@ -98,8 +98,8 @@ class Menus {
 		}
 
 		add_menu_page(
-			__( 'Events', 'eventkoi' ),
-			__( 'Events', 'eventkoi' ),
+			__( 'Events', 'eventkoi-lite' ),
+			__( 'Events', 'eventkoi-lite' ),
 			'manage_options',
 			'eventkoi',
 			array( static::class, 'load_admin' ),
@@ -110,10 +110,10 @@ class Menus {
 		$menu_items = apply_filters(
 			'eventkoi_admin_menu_items',
 			array(
-				'dashboard' => __( 'Dashboard', 'eventkoi' ),
-				'events'    => __( 'Events', 'eventkoi' ),
-				'calendars' => __( 'Calendars', 'eventkoi' ),
-				'settings'  => __( 'Settings', 'eventkoi' ),
+				'dashboard' => __( 'Dashboard', 'eventkoi-lite' ),
+				'events'    => __( 'Events', 'eventkoi-lite' ),
+				'calendars' => __( 'Calendars', 'eventkoi-lite' ),
+				'settings'  => __( 'Settings', 'eventkoi-lite' ),
 			)
 		);
 

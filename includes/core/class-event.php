@@ -343,7 +343,7 @@ class Event {
 			if ( ! empty( $name ) ) {
 				$title = $name;
 			} else {
-				$title = __( 'Attend online', 'eventkoi' );
+				$title = __( 'Attend online', 'eventkoi-lite' );
 			}
 
 			if ( ! empty( $link_text ) ) {
@@ -398,7 +398,7 @@ class Event {
 			return array_merge(
 				array(
 					'update_endpoint' => true,
-					'message'         => __( 'Event created.', 'eventkoi' ),
+					'message'         => __( 'Event created.', 'eventkoi-lite' ),
 				),
 				self::get_meta(),
 			);
@@ -420,7 +420,7 @@ class Event {
 
 		return array_merge(
 			array(
-				'message' => __( 'Event updated.', 'eventkoi' ),
+				'message' => __( 'Event updated.', 'eventkoi-lite' ),
 			),
 			self::get_meta(),
 		);
@@ -1058,7 +1058,7 @@ class Event {
 	public static function get_timeline() {
 		if ( self::get_tbc() ) {
 			$tbc_note = self::get_tbc_note();
-			return $tbc_note ? $tbc_note : __( 'Date and time to be confirmed', 'eventkoi' );
+			return $tbc_note ? $tbc_note : __( 'Date and time to be confirmed', 'eventkoi-lite' );
 		}
 
 		$date_type = self::get_date_type();
@@ -1093,7 +1093,7 @@ class Event {
 
 					if ( $extra_count > 0 ) {
 						/* translators: %d is the number of extra recurrence rules. */
-						$line .= ' +' . sprintf( _n( '%d more rule', '%d more rules', $extra_count, 'eventkoi' ), $extra_count );
+						$line .= ' +' . sprintf( _n( '%d more rule', '%d more rules', $extra_count, 'eventkoi-lite' ), $extra_count );
 					}
 
 					return $line;
@@ -1321,7 +1321,7 @@ class Event {
 
 		$result = array(
 			'event'   => self::get_event( $event_id ),
-			'message' => __( 'Event restored successfully.', 'eventkoi' ),
+			'message' => __( 'Event restored successfully.', 'eventkoi-lite' ),
 		);
 
 		return $result;
@@ -1337,7 +1337,7 @@ class Event {
 		wp_trash_post( $event_id );
 
 		$result = array(
-			'message' => __( 'Event moved to Trash.', 'eventkoi' ),
+			'message' => __( 'Event moved to Trash.', 'eventkoi-lite' ),
 		);
 
 		return $result;
@@ -1351,7 +1351,7 @@ class Event {
 		$meta = self::get_meta();
 
 		/* translators: %s event title */
-		$title = sprintf( __( '[Duplicate]: %s', 'eventkoi' ), $meta['title'] );
+		$title = sprintf( __( '[Duplicate]: %s', 'eventkoi-lite' ), $meta['title'] );
 
 		$args = array(
 			'post_type'   => 'event',
@@ -1373,7 +1373,7 @@ class Event {
 		$result = array_merge(
 			array(
 				'update_endpoint' => true,
-				'message'         => __( 'Event duplicated.', 'eventkoi' ),
+				'message'         => __( 'Event duplicated.', 'eventkoi-lite' ),
 			),
 			self::get_meta(),
 		);
@@ -1473,7 +1473,7 @@ class Event {
 		$title = wp_kses_post( $title );
 
 		if ( empty( $title ) ) {
-			return __( 'Untitled event', 'eventkoi' );
+			return __( 'Untitled event', 'eventkoi-lite' );
 		}
 
 		return apply_filters( 'eventkoi_rendered_event_title', $title, self::$event_id, self::$event );
@@ -1491,7 +1491,7 @@ class Event {
 			// Allow safe HTML output, since this content comes from an RTE.
 			$details = wp_kses_post( $details );
 		} else {
-			$details = __( 'No event details.', 'eventkoi' );
+			$details = __( 'No event details.', 'eventkoi-lite' );
 		}
 
 		return apply_filters( 'eventkoi_rendered_event_details', $details, self::$event_id, self::$event );
@@ -1631,7 +1631,7 @@ class Event {
 		$locations = self::get_instance_field( 'locations' );
 
 		if ( ! is_array( $locations ) || empty( $locations ) ) {
-			return '<span class="eventkoi-no-location">' . esc_html__( 'No location available.', 'eventkoi' ) . '</span>';
+			return '<span class="eventkoi-no-location">' . esc_html__( 'No location available.', 'eventkoi-lite' ) . '</span>';
 		}
 
 		$outputs = array();
@@ -1675,7 +1675,7 @@ class Event {
 					$lines[] = esc_html( $country );
 				}
 			} elseif ( 'online' === $type && ! empty( $url ) ) {
-				$online_title = ! empty( $name ) ? $name : __( 'Attend online', 'eventkoi' );
+				$online_title = ! empty( $name ) ? $name : __( 'Attend online', 'eventkoi-lite' );
 				$online_label = ! empty( $link_text ) ? $link_text : $url;
 
 				$lines[] = '<strong>' . esc_html( $online_title ) . '</strong>';
@@ -1745,7 +1745,7 @@ class Event {
 
 			$message = ! empty( $tbc_note )
 			? esc_html( $tbc_note )
-			: esc_html__( 'Date and time to be confirmed.', 'eventkoi' );
+			: esc_html__( 'Date and time to be confirmed.', 'eventkoi-lite' );
 
 			return apply_filters( 'eventkoi_rendered_event_datetime', $message, self::$event_id, self::$event );
 		}
@@ -1859,7 +1859,7 @@ class Event {
 
 			$message = ! empty( $tbc_note )
 			? esc_html( $tbc_note )
-			: esc_html__( 'Date and time to be confirmed.', 'eventkoi' );
+			: esc_html__( 'Date and time to be confirmed.', 'eventkoi-lite' );
 
 			return apply_filters( 'eventkoi_rendered_event_datetime', $message, self::$event_id, self::$event );
 		}
@@ -1957,20 +1957,20 @@ class Event {
 		$outputs = array();
 		// Standard PHP weekday names: 0=Sunday, 1=Monday, ...
 		$weekday_names = array(
-			0 => __( 'Sunday', 'eventkoi' ),
-			1 => __( 'Monday', 'eventkoi' ),
-			2 => __( 'Tuesday', 'eventkoi' ),
-			3 => __( 'Wednesday', 'eventkoi' ),
-			4 => __( 'Thursday', 'eventkoi' ),
-			5 => __( 'Friday', 'eventkoi' ),
-			6 => __( 'Saturday', 'eventkoi' ),
+			0 => __( 'Sunday', 'eventkoi-lite' ),
+			1 => __( 'Monday', 'eventkoi-lite' ),
+			2 => __( 'Tuesday', 'eventkoi-lite' ),
+			3 => __( 'Wednesday', 'eventkoi-lite' ),
+			4 => __( 'Thursday', 'eventkoi-lite' ),
+			5 => __( 'Friday', 'eventkoi-lite' ),
+			6 => __( 'Saturday', 'eventkoi-lite' ),
 		);
 		$ordinals      = array(
-			1 => __( 'first', 'eventkoi' ),
-			2 => __( 'second', 'eventkoi' ),
-			3 => __( 'third', 'eventkoi' ),
-			4 => __( 'fourth', 'eventkoi' ),
-			5 => __( 'fifth', 'eventkoi' ),
+			1 => __( 'first', 'eventkoi-lite' ),
+			2 => __( 'second', 'eventkoi-lite' ),
+			3 => __( 'third', 'eventkoi-lite' ),
+			4 => __( 'fourth', 'eventkoi-lite' ),
+			5 => __( 'fifth', 'eventkoi-lite' ),
 		);
 		foreach ( $rules as $rule ) {
 			if ( empty( $rule['start_date'] ) || empty( $rule['frequency'] ) ) {
@@ -1982,22 +1982,22 @@ class Event {
 
 			if ( $every > 1 ) {
 				$plural_map = array(
-					'day'   => __( 'days', 'eventkoi' ),
-					'week'  => __( 'weeks', 'eventkoi' ),
-					'month' => __( 'months', 'eventkoi' ),
-					'year'  => __( 'years', 'eventkoi' ),
+					'day'   => __( 'days', 'eventkoi-lite' ),
+					'week'  => __( 'weeks', 'eventkoi-lite' ),
+					'month' => __( 'months', 'eventkoi-lite' ),
+					'year'  => __( 'years', 'eventkoi-lite' ),
 				);
 				$plural     = isset( $plural_map[ $frequency ] ) ? $plural_map[ $frequency ] : $frequency . 's';
 				/* translators: %1$d: interval number (e.g., 2). %2$s: period plural (e.g., "months"). */
-				$label = sprintf( __( 'Every %1$d %2$s', 'eventkoi' ), $every, $plural );
+				$label = sprintf( __( 'Every %1$d %2$s', 'eventkoi-lite' ), $every, $plural );
 			} elseif ( 'day' === $frequency ) {
-				$label = __( 'Daily', 'eventkoi' );
+				$label = __( 'Daily', 'eventkoi-lite' );
 			} elseif ( 'week' === $frequency ) {
-				$label = __( 'Weekly', 'eventkoi' );
+				$label = __( 'Weekly', 'eventkoi-lite' );
 			} elseif ( 'month' === $frequency ) {
-				$label = __( 'Monthly', 'eventkoi' );
+				$label = __( 'Monthly', 'eventkoi-lite' );
 			} elseif ( 'year' === $frequency ) {
-				$label = __( 'Yearly', 'eventkoi' );
+				$label = __( 'Yearly', 'eventkoi-lite' );
 			} else {
 				$label = ucfirst( $frequency );
 			}
@@ -2030,18 +2030,18 @@ class Event {
 			// 4. Yearly months (e.g. "in May, June")
 			if ( 'year' === $frequency && ! empty( $rule['months'] ) && is_array( $rule['months'] ) ) {
 				$month_names     = array(
-					1  => __( 'January', 'eventkoi' ),
-					2  => __( 'February', 'eventkoi' ),
-					3  => __( 'March', 'eventkoi' ),
-					4  => __( 'April', 'eventkoi' ),
-					5  => __( 'May', 'eventkoi' ),
-					6  => __( 'June', 'eventkoi' ),
-					7  => __( 'July', 'eventkoi' ),
-					8  => __( 'August', 'eventkoi' ),
-					9  => __( 'September', 'eventkoi' ),
-					10 => __( 'October', 'eventkoi' ),
-					11 => __( 'November', 'eventkoi' ),
-					12 => __( 'December', 'eventkoi' ),
+					1  => __( 'January', 'eventkoi-lite' ),
+					2  => __( 'February', 'eventkoi-lite' ),
+					3  => __( 'March', 'eventkoi-lite' ),
+					4  => __( 'April', 'eventkoi-lite' ),
+					5  => __( 'May', 'eventkoi-lite' ),
+					6  => __( 'June', 'eventkoi-lite' ),
+					7  => __( 'July', 'eventkoi-lite' ),
+					8  => __( 'August', 'eventkoi-lite' ),
+					9  => __( 'September', 'eventkoi-lite' ),
+					10 => __( 'October', 'eventkoi-lite' ),
+					11 => __( 'November', 'eventkoi-lite' ),
+					12 => __( 'December', 'eventkoi-lite' ),
 				);
 				$selected_months = array();
 				$sorted          = array_map( 'intval', $rule['months'] );

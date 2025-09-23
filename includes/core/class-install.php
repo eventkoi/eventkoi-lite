@@ -90,7 +90,7 @@ class Install {
 			return;
 		}
 
-		$term_name = esc_html_x( 'Default calendar', 'Default category slug', 'eventkoi' );
+		$term_name = esc_html_x( 'Default calendar', 'Default category slug', 'eventkoi-lite' );
 		$slug      = sanitize_title( $term_name );
 
 		$existing = get_term_by( 'slug', $slug, 'event_cal' );

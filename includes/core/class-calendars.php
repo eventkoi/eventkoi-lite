@@ -38,7 +38,7 @@ class Calendars {
 		if ( $include_all ) {
 			$results[] = array(
 				'id'   => 0,
-				'name' => __( 'All', 'eventkoi' ),
+				'name' => __( 'All', 'eventkoi-lite' ),
 			);
 		}
 
@@ -76,7 +76,7 @@ class Calendars {
 
 		$result = array(
 			'ids'     => $ids,
-			'success' => _n( 'Calendar removed permanently.', 'Calendars removed permanently.', count( $ids ), 'eventkoi' ),
+			'success' => _n( 'Calendar removed permanently.', 'Calendars removed permanently.', count( $ids ), 'eventkoi-lite' ),
 		);
 
 		return $result;

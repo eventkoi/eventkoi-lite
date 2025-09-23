@@ -17,7 +17,7 @@ if ( eventkoi_current_theme_support() ) : ?>
 	?>
 	<?php wp_head(); ?>
 	<?php /* translators: %1$s calendar title, %2$s site name */ ?>
-	<title><?php printf( esc_attr__( '%1$s &#8211; %2$s', 'eventkoi' ), esc_attr( single_term_title() ), esc_attr( get_bloginfo( 'name' ) ) ); ?></title>
+	<title><?php printf( esc_attr__( '%1$s &#8211; %2$s', 'eventkoi-lite' ), esc_attr( single_term_title() ), esc_attr( get_bloginfo( 'name' ) ) ); ?></title>
 </head>
 
 <body <?php body_class(); ?>>

@@ -50,7 +50,7 @@ class Stats {
 		if ( ! ( $request instanceof WP_REST_Request ) ) {
 			return new WP_Error(
 				'eventkoi_invalid_request',
-				__( 'Invalid request.', 'eventkoi' ),
+				__( 'Invalid request.', 'eventkoi-lite' ),
 				array( 'status' => 400 )
 			);
 		}

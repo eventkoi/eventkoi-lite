@@ -75,7 +75,7 @@ class Calendars {
 
 		if ( empty( $ids ) ) {
 			// translators: %s: Parameter name.
-			return new WP_Error( 'eventkoi_no_ids', sprintf( __( 'No %s provided.', 'eventkoi' ), 'calendar IDs' ), array( 'status' => 400 ) );
+			return new WP_Error( 'eventkoi_no_ids', sprintf( __( 'No %s provided.', 'eventkoi-lite' ), 'calendar IDs' ), array( 'status' => 400 ) );
 		}
 
 		$response = Query::delete_calendars( $ids );

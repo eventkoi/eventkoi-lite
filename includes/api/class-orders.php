@@ -54,7 +54,7 @@ class Orders {
 	 */
 	public static function get_orders( $request ) {
 		if ( ! ( $request instanceof \WP_REST_Request ) ) {
-			return new \WP_Error( 'invalid_request', __( 'Invalid request object.', 'eventkoi' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'invalid_request', __( 'Invalid request object.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
 		$orders = new \EventKoi\Core\Orders();
@@ -63,7 +63,7 @@ class Orders {
 			$response = $orders->get( true );
 			return rest_ensure_response( $response );
 		} catch ( Exception $e ) {
-			return new \WP_Error( 'orders_fetch_error', __( 'Error retrieving orders.', 'eventkoi' ), array( 'status' => 500 ) );
+			return new \WP_Error( 'orders_fetch_error', __( 'Error retrieving orders.', 'eventkoi-lite' ), array( 'status' => 500 ) );
 		}
 	}
 
@@ -75,7 +75,7 @@ class Orders {
 	 */
 	public static function add_order_note( $request ) {
 		if ( ! ( $request instanceof \WP_REST_Request ) ) {
-			return new \WP_Error( 'invalid_request', __( 'Invalid request object.', 'eventkoi' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'invalid_request', __( 'Invalid request object.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
 		$order_id = absint( $request->get_param( 'order_id' ) );
@@ -83,7 +83,7 @@ class Orders {
 		$note     = $request->get_param( 'note' );
 
 		if ( empty( $order_id ) || empty( $note_key ) || ! isset( $note ) ) {
-			return new \WP_Error( 'missing_params', __( 'Missing required parameters.', 'eventkoi' ), array( 'status' => 400 ) );
+			return new \WP_Error( 'missing_params', __( 'Missing required parameters.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
 		$orders = new \EventKoi\Core\Orders();
@@ -95,7 +95,7 @@ class Orders {
 		} catch ( \Exception $e ) {
 			return new \WP_Error(
 				'note_add_failed',
-				__( 'Failed to add note.', 'eventkoi' ),
+				__( 'Failed to add note.', 'eventkoi-lite' ),
 				array(
 					'status'  => 500,
 					'message' => $e->getMessage(),

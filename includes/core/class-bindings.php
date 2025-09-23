@@ -33,20 +33,20 @@ class Bindings {
 	 */
 	public static function get_allowed_keys() {
 		return array(
-			'event_title'                 => __( 'Event title', 'eventkoi' ),
-			'event_details'               => __( 'Event details', 'eventkoi' ),
-			'event_timezone'              => __( 'Event timezone', 'eventkoi' ),
-			'event_gmap'                  => __( 'Event Google Map', 'eventkoi' ),
-			'event_image'                 => __( 'Event image', 'eventkoi' ),
-			'event_image_url'             => __( 'Event image URL', 'eventkoi' ),
-			'event_calendar_url'          => __( 'Event calendar URL', 'eventkoi' ),
-			'event_calendar'              => __( 'Event calendar', 'eventkoi' ),
-			'event_calendar_link'         => __( 'Event calendar link', 'eventkoi' ),
-			'event_location'              => __( 'Event location', 'eventkoi' ),
-			'event_datetime_with_summary' => __( 'Event date time with summary', 'eventkoi' ),
-			'event_datetime'              => __( 'Event date time', 'eventkoi' ),
-			'event_date_type'             => __( 'Event date type', 'eventkoi' ),
-			'event_rulesummary'           => __( 'Recurring rule summary', 'eventkoi' ),
+			'event_title'                 => __( 'Event title', 'eventkoi-lite' ),
+			'event_details'               => __( 'Event details', 'eventkoi-lite' ),
+			'event_timezone'              => __( 'Event timezone', 'eventkoi-lite' ),
+			'event_gmap'                  => __( 'Event Google Map', 'eventkoi-lite' ),
+			'event_image'                 => __( 'Event image', 'eventkoi-lite' ),
+			'event_image_url'             => __( 'Event image URL', 'eventkoi-lite' ),
+			'event_calendar_url'          => __( 'Event calendar URL', 'eventkoi-lite' ),
+			'event_calendar'              => __( 'Event calendar', 'eventkoi-lite' ),
+			'event_calendar_link'         => __( 'Event calendar link', 'eventkoi-lite' ),
+			'event_location'              => __( 'Event location', 'eventkoi-lite' ),
+			'event_datetime_with_summary' => __( 'Event date time with summary', 'eventkoi-lite' ),
+			'event_datetime'              => __( 'Event date time', 'eventkoi-lite' ),
+			'event_date_type'             => __( 'Event date type', 'eventkoi-lite' ),
+			'event_rulesummary'           => __( 'Recurring rule summary', 'eventkoi-lite' ),
 		);
 	}
 

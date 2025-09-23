@@ -214,7 +214,7 @@ class Events {
 		if ( empty( $ids ) ) {
 			return new WP_Error(
 				'eventkoi_no_ids',
-				__( 'No event IDs provided.', 'eventkoi' ),
+				__( 'No event IDs provided.', 'eventkoi-lite' ),
 				array( 'status' => 400 )
 			);
 		}

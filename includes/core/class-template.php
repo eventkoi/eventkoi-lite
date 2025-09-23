@@ -45,8 +45,8 @@ class Template {
 	public static function register_plugin_templates() {
 
 		$args = array(
-			'title'       => __( 'Event', 'eventkoi' ),
-			'description' => __( 'Default template for a single event view.', 'eventkoi' ),
+			'title'       => __( 'Event', 'eventkoi-lite' ),
+			'description' => __( 'Default template for a single event view.', 'eventkoi-lite' ),
 			'content'     => self::get_default_event_template(),
 		);
 

@@ -51,7 +51,7 @@ class Order {
 		if ( empty( $order_id ) ) {
 			return new WP_Error(
 				'eventkoi_invalid_id',
-				__( 'Invalid order ID.', 'eventkoi' ),
+				__( 'Invalid order ID.', 'eventkoi-lite' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -62,7 +62,7 @@ class Order {
 		if ( empty( $data ) ) {
 			return new WP_Error(
 				'eventkoi_not_found',
-				__( 'Order not found.', 'eventkoi' ),
+				__( 'Order not found.', 'eventkoi-lite' ),
 				array( 'status' => 404 )
 			);
 		}

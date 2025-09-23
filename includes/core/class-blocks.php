@@ -41,7 +41,7 @@ class Blocks {
 		$eventkoi_category = array(
 			'slug'  => 'eventkoi-blocks',
 			/* translators: Custom block category for EventKoi plugin. */
-			'title' => __( 'EventKoi', 'eventkoi' ),
+			'title' => __( 'EventKoi', 'eventkoi-lite' ),
 		);
 
 		return array_merge( array( $eventkoi_category ), $categories );

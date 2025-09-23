@@ -89,7 +89,7 @@ class Calendar {
 		$calendar_id = absint( $request->get_param( 'id' ) );
 
 		if ( empty( $calendar_id ) ) {
-			return new WP_Error( 'eventkoi_invalid_id', __( 'Invalid calendar ID.', 'eventkoi' ), array( 'status' => 400 ) );
+			return new WP_Error( 'eventkoi_invalid_id', __( 'Invalid calendar ID.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
 		$calendar = new SingleCal( $calendar_id );
@@ -112,7 +112,7 @@ class Calendar {
 		if ( empty( $id ) ) {
 			return new WP_Error(
 				'eventkoi_missing_id',
-				__( 'Calendar ID is required.', 'eventkoi' ),
+				__( 'Calendar ID is required.', 'eventkoi-lite' ),
 				array( 'status' => 400 )
 			);
 		}
@@ -159,7 +159,7 @@ class Calendar {
 		$data = json_decode( $request->get_body(), true );
 
 		if ( empty( $data['calendar'] ) || ! is_array( $data['calendar'] ) ) {
-			return new WP_Error( 'eventkoi_invalid_data', __( 'Invalid calendar data.', 'eventkoi' ), array( 'status' => 400 ) );
+			return new WP_Error( 'eventkoi_invalid_data', __( 'Invalid calendar data.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
 		$calendar = $data['calendar'];
@@ -181,7 +181,7 @@ class Calendar {
 		$calendar_id = ! empty( $data['calendar_id'] ) ? absint( $data['calendar_id'] ) : 0;
 
 		if ( ! $calendar_id ) {
-			return new WP_Error( 'eventkoi_invalid_id', __( 'Calendar ID is required.', 'eventkoi' ), array( 'status' => 400 ) );
+			return new WP_Error( 'eventkoi_invalid_id', __( 'Calendar ID is required.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
 		$calendar = new SingleCal( $calendar_id );
@@ -201,7 +201,7 @@ class Calendar {
 		$calendar_id = ! empty( $data['calendar_id'] ) ? absint( $data['calendar_id'] ) : 0;
 
 		if ( ! $calendar_id ) {
-			return new WP_Error( 'eventkoi_invalid_id', __( 'Calendar ID is required.', 'eventkoi' ), array( 'status' => 400 ) );
+			return new WP_Error( 'eventkoi_invalid_id', __( 'Calendar ID is required.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
 		$response = SingleCal::delete_calendar( $calendar_id );

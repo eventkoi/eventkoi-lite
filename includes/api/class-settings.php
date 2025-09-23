@@ -76,7 +76,7 @@ class Settings {
 			return new WP_REST_Response(
 				array(
 					'success' => false,
-					'message' => __( 'Request body is empty.', 'eventkoi' ),
+					'message' => __( 'Request body is empty.', 'eventkoi-lite' ),
 				),
 				400
 			);
@@ -88,7 +88,7 @@ class Settings {
 			return new WP_REST_Response(
 				array(
 					'success' => false,
-					'message' => __( 'Invalid data format. Expected a JSON object.', 'eventkoi' ),
+					'message' => __( 'Invalid data format. Expected a JSON object.', 'eventkoi-lite' ),
 				),
 				400
 			);
@@ -108,7 +108,7 @@ class Settings {
 			return rest_ensure_response(
 				array(
 					'success' => true,
-					'message' => __( 'API key regenerated successfully.', 'eventkoi' ),
+					'message' => __( 'API key regenerated successfully.', 'eventkoi-lite' ),
 					'api_key' => $new_api_key,
 				)
 			);
@@ -134,7 +134,7 @@ class Settings {
 		return rest_ensure_response(
 			array(
 				'success'  => true,
-				'message'  => __( 'Settings updated successfully.', 'eventkoi' ),
+				'message'  => __( 'Settings updated successfully.', 'eventkoi-lite' ),
 				'settings' => $settings,
 			)
 		);

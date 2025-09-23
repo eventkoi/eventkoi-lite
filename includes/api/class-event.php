@@ -122,7 +122,7 @@ class Event {
 		$event_id = absint( $request->get_param( 'id' ) );
 
 		if ( empty( $event_id ) ) {
-			return new WP_Error( 'eventkoi_invalid_id', __( 'Invalid event ID.', 'eventkoi' ), array( 'status' => 400 ) );
+			return new WP_Error( 'eventkoi_invalid_id', __( 'Invalid event ID.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
 		$event    = new SingleEvent( $event_id );
@@ -141,7 +141,7 @@ class Event {
 		$data = json_decode( $request->get_body(), true );
 
 		if ( empty( $data['event'] ) || ! is_array( $data['event'] ) ) {
-			return new WP_Error( 'eventkoi_invalid_event', __( 'Invalid event data.', 'eventkoi' ), array( 'status' => 400 ) );
+			return new WP_Error( 'eventkoi_invalid_event', __( 'Invalid event data.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
 		$event  = $data['event'];
@@ -195,7 +195,7 @@ class Event {
 		$event_id = absint( $data['event_id'] ?? 0 );
 
 		if ( empty( $event_id ) ) {
-			return new WP_Error( 'eventkoi_missing_id', __( 'Missing event ID.', 'eventkoi' ), array( 'status' => 400 ) );
+			return new WP_Error( 'eventkoi_missing_id', __( 'Missing event ID.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
 		$response = SingleEvent::restore_event( $event_id );
@@ -214,7 +214,7 @@ class Event {
 		$event_id = absint( $data['event_id'] ?? 0 );
 
 		if ( empty( $event_id ) ) {
-			return new WP_Error( 'eventkoi_missing_id', __( 'Missing event ID.', 'eventkoi' ), array( 'status' => 400 ) );
+			return new WP_Error( 'eventkoi_missing_id', __( 'Missing event ID.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
 		$event    = new SingleEvent( $event_id );
@@ -234,7 +234,7 @@ class Event {
 		$event_id = absint( $data['event_id'] ?? 0 );
 
 		if ( empty( $event_id ) ) {
-			return new WP_Error( 'eventkoi_missing_id', __( 'Missing event ID.', 'eventkoi' ), array( 'status' => 400 ) );
+			return new WP_Error( 'eventkoi_missing_id', __( 'Missing event ID.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
 		$response = SingleEvent::delete_event( $event_id );
@@ -253,7 +253,7 @@ class Event {
 		$timestamp = absint( $request->get_param( 'timestamp' ) );
 
 		if ( ! $event_id || ! $timestamp ) {
-			return new \WP_Error( 'eventkoi_missing_param', __( 'Missing event ID or timestamp.', 'eventkoi' ) );
+			return new \WP_Error( 'eventkoi_missing_param', __( 'Missing event ID or timestamp.', 'eventkoi-lite' ) );
 		}
 
 		$event = new \EventKoi\Core\Event( $event_id );
@@ -292,7 +292,7 @@ class Event {
 		if ( ! $event_id || ! $timestamp || ! is_array( $overrides ) ) {
 			return new \WP_Error(
 				'eventkoi_invalid_instance_data',
-				__( 'Missing or invalid instance override data.', 'eventkoi' )
+				__( 'Missing or invalid instance override data.', 'eventkoi-lite' )
 			);
 		}
 
@@ -362,7 +362,7 @@ class Event {
 		$timestamp = absint( $data['timestamp'] ?? 0 );
 
 		if ( ! $event_id || ! $timestamp ) {
-			return new \WP_Error( 'eventkoi_invalid_reset', __( 'Missing event ID or timestamp.', 'eventkoi' ) );
+			return new \WP_Error( 'eventkoi_invalid_reset', __( 'Missing event ID or timestamp.', 'eventkoi-lite' ) );
 		}
 
 		DB::table( 'ek_recurrence_overrides' )
@@ -375,7 +375,7 @@ class Event {
 				'success'   => true,
 				'event_id'  => $event_id,
 				'timestamp' => $timestamp,
-				'message'   => __( 'Instance overrides reset to defaults.', 'eventkoi' ),
+				'message'   => __( 'Instance overrides reset to defaults.', 'eventkoi-lite' ),
 			)
 		);
 	}
