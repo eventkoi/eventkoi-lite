@@ -22,6 +22,8 @@ cp -r \
   composer.json \
   eventkoi.php \
   license.txt \
+  uninstall.php \
+  readme.txt \
   "$PLUGIN_SLUG/"
 
 # Copy backend build if exists
