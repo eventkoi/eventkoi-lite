@@ -63,13 +63,11 @@ class Scripts {
 		$eventkoi_params = array(
 			'version'             => EVENTKOI_VERSION,
 			'api'                 => EVENTKOI_API,
-			'supabase_config_url' => EVENTKOI_CONFIG,
 			'settings'            => Settings::get(),
 			'general_options_url' => admin_url( 'options-general.php' ),
 			'site_url'            => get_bloginfo( 'url' ),
 			'theme'               => get_stylesheet(),
 			'admin_email'         => get_bloginfo( 'admin_email' ),
-			'instance_id'         => get_option( 'eventkoi_site_instance_id' ),
 			'ajax_url'            => admin_url( 'admin-ajax.php' ),
 			'api_key'             => REST::get_api_key(),
 			'date_now'            => eventkoi_date( 'j M Y' ),

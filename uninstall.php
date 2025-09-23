@@ -12,3 +12,4 @@ if ( ! defined( 'WP_UNINSTALL_PLUGIN' ) ) {
 
 // Delete plugin options.
 delete_option( 'eventkoi_settings' );
+delete_option( 'eventkoi_api_key' );

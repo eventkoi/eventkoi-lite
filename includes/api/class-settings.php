@@ -105,40 +105,6 @@ class Settings {
 			$new_api_key = 'ek_' . strtolower( preg_replace( '/[^a-z0-9]/i', '', wp_generate_password( 32, false, false ) ) );
 			update_option( 'eventkoi_api_key', $new_api_key );
 
-			// Resend to Supabase.
-			$instance_id   = get_option( 'eventkoi_site_instance_id' );
-			$shared_secret = get_option( 'eventkoi_shared_secret' );
-			$site_url      = home_url();
-
-			$config_res = wp_remote_get( EVENTKOI_CONFIG );
-			if ( ! is_wp_error( $config_res ) ) {
-				$config_body = wp_remote_retrieve_body( $config_res );
-				$config      = json_decode( $config_body, true );
-
-				if ( ! empty( $config['supabase_edge'] ) ) {
-					$register_url = trailingslashit( $config['supabase_edge'] ) . 'register-instance';
-
-					wp_remote_post(
-						$register_url,
-						array(
-							'method'  => 'POST',
-							'headers' => array(
-								'Content-Type' => 'application/json',
-							),
-							'body'    => wp_json_encode(
-								array(
-									'instance_id'   => $instance_id,
-									'shared_secret' => $shared_secret,
-									'api_key'       => $new_api_key,
-									'site_url'      => $site_url,
-								)
-							),
-							'timeout' => 10,
-						)
-					);
-				}
-			}
-
 			return rest_ensure_response(
 				array(
 					'success' => true,

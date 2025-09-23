@@ -33,9 +33,6 @@ class Hooks {
 		// Data filtering.
 		add_filter( 'eventkoi_prepare_raw_db_data', array( __CLASS__, 'prepare_raw_db_data' ), 50, 2 );
 
-		// HMAC and OAuth state generation endpoints.
-		add_action( 'wp_ajax_eventkoi_generate_hmac', array( __CLASS__, 'ajax_generate_hmac' ) );
-
 		add_action( 'save_post_event', array( __CLASS__, 'clear_recurring_cache' ) );
 		add_action( 'before_delete_post', array( __CLASS__, 'clear_recurring_cache' ) );
 
@@ -161,36 +158,6 @@ class Hooks {
 		}
 
 		return $results;
-	}
-
-	/**
-	 * AJAX endpoint to generate signed HMAC token.
-	 *
-	 * @return void
-	 */
-	public static function ajax_generate_hmac() {
-		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_send_json_error( 'Unauthorized', 403 );
-		}
-
-		$instance_id = get_option( 'eventkoi_site_instance_id' );
-		$secret      = get_option( 'eventkoi_shared_secret' );
-		$timestamp   = time();
-
-		if ( empty( $instance_id ) || empty( $secret ) ) {
-			wp_send_json_error( 'Missing instance ID or secret.', 500 );
-		}
-
-		$payload   = $instance_id . ':' . $timestamp;
-		$signature = hash_hmac( 'sha256', $payload, $secret );
-
-		wp_send_json_success(
-			array(
-				'instance_id' => $instance_id,
-				'timestamp'   => $timestamp,
-				'signature'   => $signature,
-			)
-		);
 	}
 
 	/**
