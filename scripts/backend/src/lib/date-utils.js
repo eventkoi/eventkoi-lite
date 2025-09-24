@@ -385,10 +385,17 @@ export function shiftTime(dateString, timeString, targetZone = false, locale) {
 }
 
 export function ensureUtcZ(value) {
-  if (!value) return value;
-  // Already has Z or an explicit offset
+  if (!value) return undefined;
+
+  // Already ISO with offset or Z
   if (/[+-]\d\d:\d\d|Z$/.test(value)) return value;
-  // Append Z to mark it as UTC
+
+  // MySQL DATETIME "YYYY-MM-DD HH:mm:ss"
+  if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(value)) {
+    return value.replace(" ", "T") + "Z";
+  }
+
+  // Last resort, just append Z
   return value + "Z";
 }
 
