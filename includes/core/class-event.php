@@ -1955,17 +1955,18 @@ class Event {
 			return '';
 		}
 		$outputs = array();
-		// Standard PHP weekday names: 0=Sunday, 1=Monday, ...
+
 		$weekday_names = array(
-			0 => __( 'Sunday', 'eventkoi-lite' ),
-			1 => __( 'Monday', 'eventkoi-lite' ),
-			2 => __( 'Tuesday', 'eventkoi-lite' ),
-			3 => __( 'Wednesday', 'eventkoi-lite' ),
-			4 => __( 'Thursday', 'eventkoi-lite' ),
-			5 => __( 'Friday', 'eventkoi-lite' ),
-			6 => __( 'Saturday', 'eventkoi-lite' ),
+			0 => __( 'Monday', 'eventkoi' ),
+			1 => __( 'Tuesday', 'eventkoi' ),
+			2 => __( 'Wednesday', 'eventkoi' ),
+			3 => __( 'Thursday', 'eventkoi' ),
+			4 => __( 'Friday', 'eventkoi' ),
+			5 => __( 'Saturday', 'eventkoi' ),
+			6 => __( 'Sunday', 'eventkoi' ),
 		);
-		$ordinals      = array(
+
+		$ordinals = array(
 			1 => __( 'first', 'eventkoi-lite' ),
 			2 => __( 'second', 'eventkoi-lite' ),
 			3 => __( 'third', 'eventkoi-lite' ),
