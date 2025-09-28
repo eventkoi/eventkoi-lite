@@ -81,6 +81,25 @@ export function CalendarGridMode({
           loadEventsForView(start, end);
           setCurrentDate(view.currentStart);
         }}
+        eventDidMount={(info) => {
+          // Make event focusable
+          info.el.setAttribute("tabindex", "0");
+          info.el.setAttribute("role", "button");
+
+          // Screen reader description
+          info.el.setAttribute(
+            "aria-label",
+            `${info.event.title}, starts ${info.event.start.toLocaleString()}`
+          );
+
+          // Keyboard activation
+          info.el.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              info.el.click();
+            }
+          });
+        }}
         eventClick={(info) => {
           info.jsEvent.preventDefault();
           info.jsEvent.stopPropagation();

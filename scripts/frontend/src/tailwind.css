@@ -33,3 +33,10 @@
     --success: 158 48% 45%;
   }
 }
+
+@layer utilities {
+  .fc .fc-event[tabindex]:focus-visible {
+    outline: 3px solid hsl(var(--primary));
+    outline-offset: 2px;
+  }
+}

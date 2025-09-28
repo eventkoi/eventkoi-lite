@@ -14,12 +14,23 @@ export function ListView({
   loading,
 }) {
   if (events === null || loading) {
-    return <div className="eventkoi-no-events py-8">Loading events…</div>;
+    return (
+      <div
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+        className="eventkoi-no-events py-8"
+      >
+        Loading events…
+      </div>
+    );
   }
 
   if (events.length === 0) {
     return (
-      <div className="eventkoi-no-events py-8">{eventkoi_params.no_events}</div>
+      <div role="status" aria-live="polite" className="eventkoi-no-events py-8">
+        {eventkoi_params.no_events}
+      </div>
     );
   }
 
@@ -111,20 +122,28 @@ export function ListView({
                 <AspectRatio ratio={1.5}>
                   {event.thumbnail ? (
                     <div className="h-full w-full flex items-center justify-center relative">
+                      {/* Decorative image link (avoid duplicate links with aria-hidden) */}
                       <a
                         href={event.url}
                         className="h-full w-full rounded-xl block"
+                        aria-hidden="true"
+                        tabIndex={-1}
                       >
                         <img
                           src={event.thumbnail}
                           className="h-full w-full rounded-xl"
-                          alt={event.title}
+                          alt="" // decorative (title already present)
+                          aria-hidden="true" // prevent screen reader duplication
                         />
                       </a>
                     </div>
                   ) : (
                     <div className="h-full w-full rounded-xl border border-input flex items-center justify-center relative bg-border">
-                      <Image className="w-6 h-6 text-muted-foreground/40" />
+                      <Image
+                        className="w-6 h-6 text-muted-foreground/40"
+                        aria-hidden="true"
+                      />
+                      <span className="sr-only">No event image</span>
                     </div>
                   )}
                 </AspectRatio>
@@ -132,26 +151,43 @@ export function ListView({
             )}
 
             <div className="ek-meta flex flex-col gap-2 grow min-w-0">
-              <div className="flex md:hidden text-muted-foreground">
+              <div
+                className="flex md:hidden text-muted-foreground"
+                role="group"
+                aria-label={`Event time: ${buildTimeline(
+                  event,
+                  wpTz,
+                  timeFormat
+                )}`}
+              >
                 {buildTimeline(event, wpTz, timeFormat)}
               </div>
 
               <h3 className="m-0">
                 <a href={event.url} className="no-underline">
                   {event.title}
+                  <span className="sr-only"> — View event details</span>
                 </a>
               </h3>
 
               {showDescription === "yes" && event.description && (
-                <span className="text-base text-muted-foreground line-clamp-2">
+                <p className="text-base text-muted-foreground line-clamp-2 m-0">
                   {event.description}
-                </span>
+                </p>
               )}
 
               {renderLocation()}
             </div>
 
-            <div className="hidden md:block ml-auto text-[14px] text-muted-foreground min-w-[200px] text-right">
+            <div
+              className="hidden md:block ml-auto text-[14px] text-muted-foreground min-w-[200px] text-right"
+              role="group"
+              aria-label={`Event time: ${buildTimeline(
+                event,
+                wpTz,
+                timeFormat
+              )}`}
+            >
               {buildTimeline(event, wpTz, timeFormat)}
             </div>
           </div>

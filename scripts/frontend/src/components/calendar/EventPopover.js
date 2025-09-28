@@ -192,6 +192,17 @@ export function EventPopover({
     };
   }, [calendarMenuOpen]);
 
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        onClose();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [onClose]);
+
   if (!event || !fixedAnchor) return null;
 
   const calendarContainer = document.querySelector(".fc");
@@ -228,7 +239,7 @@ export function EventPopover({
               size="icon"
               variant="ghost"
               className="h-8 w-8 p-0 shadow-none border-none bg-transparent hover:bg-muted/20 cursor-pointer"
-              onClick={() => window.open(event.url, "_blank")}
+              onClick={() => window.open(event.url, "_self")}
             >
               <Maximize2 className="h-4 w-4" />
             </Button>
@@ -245,8 +256,6 @@ export function EventPopover({
           <div className="flex flex-col gap-2 pe-[58px]">
             <a
               href={event.url}
-              target="_blank"
-              rel="noreferrer"
               className="text-base font-semibold leading-snug text-foreground no-underline hover:underline line-clamp-2 block"
             >
               {event.title}
