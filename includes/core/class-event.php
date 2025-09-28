@@ -1957,13 +1957,13 @@ class Event {
 		$outputs = array();
 
 		$weekday_names = array(
-			0 => __( 'Monday', 'eventkoi' ),
-			1 => __( 'Tuesday', 'eventkoi' ),
-			2 => __( 'Wednesday', 'eventkoi' ),
-			3 => __( 'Thursday', 'eventkoi' ),
-			4 => __( 'Friday', 'eventkoi' ),
-			5 => __( 'Saturday', 'eventkoi' ),
-			6 => __( 'Sunday', 'eventkoi' ),
+			0 => __( 'Monday', 'eventkoi-lite' ),
+			1 => __( 'Tuesday', 'eventkoi-lite' ),
+			2 => __( 'Wednesday', 'eventkoi-lite' ),
+			3 => __( 'Thursday', 'eventkoi-lite' ),
+			4 => __( 'Friday', 'eventkoi-lite' ),
+			5 => __( 'Saturday', 'eventkoi-lite' ),
+			6 => __( 'Sunday', 'eventkoi-lite' ),
 		);
 
 		$ordinals = array(
