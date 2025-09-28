@@ -243,7 +243,7 @@ class Event {
 		$method = 'rendered_' . $name;
 
 		if ( method_exists( __CLASS__, $method ) ) {
-			return self::$method();
+			return apply_filters( 'eventkoi_' . $name . '_output', self::$method(), self::get_id() );
 		} else {
 
 			return self::rendered_meta( $name );
