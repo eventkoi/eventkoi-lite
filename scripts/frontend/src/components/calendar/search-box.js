@@ -26,7 +26,8 @@ export function SearchBox({
   timeFormat,
   setSearchOpen,
 }) {
-  const isEmpty = !events || events.length === 0;
+  const isLoading = events === undefined || events === null;
+  const isEmpty = !isLoading && events.length === 0;
 
   return (
     <div className="relative w-full lg:min-w-[350px]">
@@ -44,10 +45,10 @@ export function SearchBox({
         onChange={(e) => setSearch(e.target.value)}
         className="pl-9 h-10 w-full shadow-none border border-solid box-border rounded disabled:bg-background"
         autoComplete="off"
-        disabled={isEmpty}
+        disabled={isLoading || isEmpty}
       />
       <span className="absolute inset-y-0 left-3 flex items-center text-muted-foreground pointer-events-none">
-        {isEmpty ? (
+        {isLoading ? (
           <Loader2 className="w-4 h-4 animate-spin" />
         ) : (
           <Search className="w-4 h-4" />
