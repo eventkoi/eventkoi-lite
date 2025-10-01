@@ -16,8 +16,8 @@
 <p>← See all events in event_calendar_link</p>
 <!-- /wp:paragraph -->
 
-<!-- wp:heading {"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"event_title"}}}},"style":{"typography":{"fontStyle":"normal","fontWeight":"600"},"color":{"text":"#333333"},"elements":{"link":{"color":{"text":"#333333"}}},"spacing":{"margin":{"top":"0","bottom":"0","left":"0","right":"0"}}},"fontFamily":"body"} -->
-<h2 class="wp-block-heading has-text-color has-link-color has-body-font-family" style="color:#333333;margin-top:0;margin-right:0;margin-bottom:0;margin-left:0;font-style:normal;font-weight:600"></h2>
+<!-- wp:heading {"level":1,"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"event_title"}}}},"style":{"typography":{"fontStyle":"normal","fontWeight":"600"},"color":{"text":"#333333"},"elements":{"link":{"color":{"text":"#333333"}}},"spacing":{"margin":{"top":"0","bottom":"0","left":"0","right":"0"}}},"fontFamily":"body"} -->
+<h1 class="wp-block-heading has-text-color has-link-color has-body-font-family" style="color:#333333;margin-top:0;margin-right:0;margin-bottom:0;margin-left:0;font-style:normal;font-weight:600"></h1>
 <!-- /wp:heading --></div>
 <!-- /wp:column -->
 

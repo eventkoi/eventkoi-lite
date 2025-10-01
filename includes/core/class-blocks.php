@@ -136,7 +136,7 @@ class Blocks {
 				'/<(?P<tag>\w+)(?P<before_class>[^>]*)class="(?P<class>[^"]*eventkoi-front[^"]*)"(?P<after_class>[^>]*)>/',
 				function ( $matches ) use ( $id ) {
 					return sprintf(
-						'<%1$s%2$sclass="%3$s" data-event="%4$d"%5$s>',
+						'<%1$s%2$sclass="%3$s" data-event="%4$d" role="main"%5$s>',
 						$matches['tag'],
 						$matches['before_class'],
 						$matches['class'],
@@ -177,6 +177,23 @@ class Blocks {
 				);
 			}
 		}
+
+		$block_content = str_replace(
+			'share.png" alt=""',
+			'share.png" alt="' . esc_attr__( 'Share this event', 'eventkoi-lite' ) . '"',
+			$block_content
+		);
+
+		$block_content = str_replace(
+			'pin.png" alt=""',
+			'pin.png" alt="" role="presentation" aria-hidden="true"',
+			$block_content
+		);
+		$block_content = str_replace(
+			'date.png" alt=""',
+			'date.png" alt="" role="presentation" aria-hidden="true"',
+			$block_content
+		);
 
 		// Fix protocol duplication.
 		return str_replace(
