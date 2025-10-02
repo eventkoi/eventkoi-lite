@@ -26,16 +26,11 @@ cp -r \
   readme.txt \
   "$PLUGIN_SLUG/"
 
-# Copy backend build if exists
-if [ -d scripts/backend/build ]; then
-  mkdir -p "$PLUGIN_SLUG/scripts/backend"
-  rsync -a --exclude "node_modules" scripts/backend/build "$PLUGIN_SLUG/scripts/backend/"
-fi
-
-# Copy frontend build if exists
-if [ -d scripts/frontend/build ]; then
-  mkdir -p "$PLUGIN_SLUG/scripts/frontend"
-  rsync -a --exclude "node_modules" scripts/frontend/build "$PLUGIN_SLUG/scripts/frontend/"
+# Copy entire scripts folder but exclude node_modules
+if [ -d scripts ]; then
+  rsync -a \
+    --exclude "node_modules" \
+    scripts "$PLUGIN_SLUG/"
 fi
 
 # Zip the whole folder
