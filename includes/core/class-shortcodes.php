@@ -61,14 +61,13 @@ class Shortcodes {
 			echo wp_kses_post( $html );
 		}
 
-		?>
-		<style type="text/css">
-			:root {
-				--fc-event-bg-color: <?php echo esc_attr( $calendar::get_color() ); ?>;
-				--fc-event-border-color: <?php echo esc_attr( $calendar::get_color() ); ?>;
-			}
-		</style>
-		<?php
+		wp_enqueue_style( 'eventkoi-frontend' );
+
+		$css = sprintf(
+			':root { --fc-event-bg-color: %1$s; --fc-event-border-color: %1$s; }',
+			esc_attr( $calendar::get_color() )
+		);
+		wp_add_inline_style( 'eventkoi-frontend', $css );
 
 		return ob_get_clean();
 	}

@@ -177,6 +177,19 @@ class Menus {
 	 * Inline admin CSS for SVG menu icon.
 	 */
 	public static function add_menu_css() {
-		echo '<style>#adminmenu li.toplevel_page_eventkoi div.wp-menu-image.svg { background-size: 12px auto !important; }</style>';
+		if ( ! wp_style_is( 'eventkoi-admin-global', 'registered' ) ) {
+			wp_register_style(
+				'eventkoi-admin-global',
+				false,
+				array(),
+				EVENTKOI_VERSION
+			);
+		}
+
+		wp_enqueue_style( 'eventkoi-admin-global' );
+
+		$css = '#adminmenu li.toplevel_page_eventkoi div.wp-menu-image.svg { background-size: 12px auto !important; }';
+
+		wp_add_inline_style( 'eventkoi-admin-global', $css );
 	}
 }

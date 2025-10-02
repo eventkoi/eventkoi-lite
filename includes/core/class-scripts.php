@@ -21,28 +21,7 @@ class Scripts {
 	 * Constructor: Hooks into front-end actions.
 	 */
 	public function __construct() {
-		add_action( 'wp_head', array( $this, 'add_head_meta' ) );
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ), 999 );
-	}
-
-	/**
-	 * Add calendar meta colors to head.
-	 */
-	public function add_head_meta() {
-		if ( is_tax( 'event_cal' ) ) {
-			$term = get_queried_object();
-			if ( ! empty( $term ) && ! is_wp_error( $term ) && isset( $term->term_id ) ) {
-				$calendar = new Calendar( $term->term_id );
-				$color    = $calendar::get_color();
-
-				echo '<style type="text/css">';
-				echo ':root {';
-				echo '--fc-event-bg-color: ' . esc_attr( $color ) . ';';
-				echo '--fc-event-border-color: ' . esc_attr( $color ) . ';';
-				echo '}';
-				echo '</style>';
-			}
-		}
 	}
 
 	/**
@@ -99,5 +78,21 @@ class Scripts {
 
 		wp_enqueue_style( 'eventkoi-frontend-tw' );
 		wp_enqueue_style( 'eventkoi-frontend' );
+
+		// Inline css.
+		if ( is_tax( 'event_cal' ) ) {
+			$term = get_queried_object();
+			if ( $term && ! is_wp_error( $term ) && isset( $term->term_id ) ) {
+				$calendar = new Calendar( $term->term_id );
+				$color    = $calendar::get_color();
+
+				$css = sprintf(
+					':root { --fc-event-bg-color: %1$s; --fc-event-border-color: %1$s; }',
+					esc_attr( $color )
+				);
+
+				wp_add_inline_style( 'eventkoi-frontend', $css );
+			}
+		}
 	}
 }
