@@ -34,7 +34,7 @@ class Calendars {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( __CLASS__, 'get_calendars' ),
-				'permission_callback' => array( REST::class, 'public_api' ),
+				'permission_callback' => '__return_true',
 			)
 		);
 
@@ -44,7 +44,9 @@ class Calendars {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'delete_calendars' ),
-				'permission_callback' => array( REST::class, 'private_api' ),
+				'permission_callback' => function () {
+					return current_user_can( 'manage_options' );
+				},
 			)
 		);
 	}

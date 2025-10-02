@@ -34,7 +34,9 @@ class Order {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( self::class, 'get_result' ),
-				'permission_callback' => array( REST::class, 'private_api' ),
+				'permission_callback' => function () {
+					return current_user_can( 'manage_options' );
+				},
 			)
 		);
 	}

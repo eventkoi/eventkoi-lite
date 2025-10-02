@@ -105,23 +105,18 @@ class REST {
 	}
 
 	/**
-	 * Check if the current REST request is public.
+	 * Permission callback for private REST endpoints.
 	 *
-	 * @param WP_REST_Request $request The current request.
+	 * Ensures:
+	 * - The current user has manage_options capability.
+	 * - A valid EventKoi API key header is present and matches.
+	 *
+	 * Always returns a boolean true/false.
+	 *
+	 * @param \WP_REST_Request $request
 	 * @return bool
 	 */
-	public static function public_api( WP_REST_Request $request ) {
-		// This can be extended to check for GET method, etc.
-		return ( $request instanceof WP_REST_Request );
-	}
-
-	/**
-	 * Authenticate a private REST API request using API key.
-	 *
-	 * @param WP_REST_Request $request The current request.
-	 * @return bool
-	 */
-	public static function private_api( WP_REST_Request $request ) {
+	public static function private_api( \WP_REST_Request $request ) {
 		$headers = $request->get_headers();
 
 		$api_key       = isset( $headers['eventkoi_api_key'][0] ) ? sanitize_text_field( $headers['eventkoi_api_key'][0] ) : '';
@@ -131,6 +126,7 @@ class REST {
 			return false;
 		}
 
-		return current_user_can( 'manage_options' ) && hash_equals( strtolower( $saved_api_key ), strtolower( $api_key ) );
+		return current_user_can( 'manage_options' )
+		&& hash_equals( strtolower( $saved_api_key ), strtolower( $api_key ) );
 	}
 }

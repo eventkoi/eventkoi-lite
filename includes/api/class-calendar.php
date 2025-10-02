@@ -34,7 +34,7 @@ class Calendar {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( __CLASS__, 'get_calendar' ),
-				'permission_callback' => array( REST::class, 'public_api' ),
+				'permission_callback' => '__return_true',
 			)
 		);
 
@@ -44,7 +44,7 @@ class Calendar {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( __CLASS__, 'get_calendar_events' ),
-				'permission_callback' => array( REST::class, 'public_api' ),
+				'permission_callback' => '__return_true',
 			)
 		);
 
@@ -54,7 +54,9 @@ class Calendar {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'update_calendar' ),
-				'permission_callback' => array( REST::class, 'private_api' ),
+				'permission_callback' => function () {
+					return current_user_can( 'manage_options' );
+				},
 			)
 		);
 
@@ -64,7 +66,9 @@ class Calendar {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'duplicate_calendar' ),
-				'permission_callback' => array( REST::class, 'private_api' ),
+				'permission_callback' => function () {
+					return current_user_can( 'manage_options' );
+				},
 			)
 		);
 
@@ -74,7 +78,9 @@ class Calendar {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'delete_calendar' ),
-				'permission_callback' => array( REST::class, 'private_api' ),
+				'permission_callback' => function () {
+					return current_user_can( 'manage_options' );
+				},
 			)
 		);
 	}

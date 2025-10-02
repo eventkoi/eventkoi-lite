@@ -36,7 +36,7 @@ class Events {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( self::class, 'get_events' ),
-				'permission_callback' => array( REST::class, 'public_api' ),
+				'permission_callback' => '__return_true',
 			)
 		);
 
@@ -46,7 +46,7 @@ class Events {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( self::class, 'get_event_counts' ),
-				'permission_callback' => array( REST::class, 'public_api' ),
+				'permission_callback' => '__return_true',
 			)
 		);
 
@@ -56,7 +56,9 @@ class Events {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( self::class, 'delete_events' ),
-				'permission_callback' => array( REST::class, 'private_api' ),
+				'permission_callback' => function () {
+					return current_user_can( 'manage_options' );
+				},
 			)
 		);
 
@@ -66,7 +68,9 @@ class Events {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( self::class, 'remove_events' ),
-				'permission_callback' => array( REST::class, 'private_api' ),
+				'permission_callback' => function () {
+					return current_user_can( 'manage_options' );
+				},
 			)
 		);
 
@@ -76,7 +80,9 @@ class Events {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( self::class, 'restore_events' ),
-				'permission_callback' => array( REST::class, 'private_api' ),
+				'permission_callback' => function () {
+					return current_user_can( 'manage_options' );
+				},
 			)
 		);
 
@@ -86,7 +92,9 @@ class Events {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( self::class, 'duplicate_events' ),
-				'permission_callback' => array( REST::class, 'private_api' ),
+				'permission_callback' => function () {
+					return current_user_can( 'manage_options' );
+				},
 			)
 		);
 	}

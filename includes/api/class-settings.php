@@ -36,7 +36,9 @@ class Settings {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( self::class, 'get_settings' ),
-				'permission_callback' => array( REST::class, 'private_api' ),
+				'permission_callback' => function () {
+					return current_user_can( 'manage_options' );
+				},
 			)
 		);
 
@@ -46,7 +48,9 @@ class Settings {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( self::class, 'set_settings' ),
-				'permission_callback' => array( REST::class, 'private_api' ),
+				'permission_callback' => function () {
+					return current_user_can( 'manage_options' );
+				},
 			)
 		);
 	}

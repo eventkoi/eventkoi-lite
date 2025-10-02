@@ -31,7 +31,9 @@ class Orders {
 			array(
 				'methods'             => 'get',
 				'callback'            => array( __CLASS__, 'get_orders' ),
-				'permission_callback' => array( '\EventKoi\API\REST', 'private_api' ),
+				'permission_callback' => function () {
+					return current_user_can( 'manage_options' );
+				},
 			)
 		);
 
@@ -41,7 +43,9 @@ class Orders {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'add_order_note' ),
-				'permission_callback' => array( '\EventKoi\API\REST', 'private_api' ),
+				'permission_callback' => function () {
+					return current_user_can( 'manage_options' );
+				},
 			)
 		);
 	}

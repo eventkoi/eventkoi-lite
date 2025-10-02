@@ -29,16 +29,23 @@ class Uploads {
 			EVENTKOI_API,
 			'/upload_image',
 			array(
-				array(
-					'methods'             => 'POST',
-					'callback'            => array( __CLASS__, 'upload_image' ),
-					'permission_callback' => array( REST::class, 'private_api' ),
-				),
-				array(
-					'methods'             => 'DELETE',
-					'callback'            => array( __CLASS__, 'delete_image' ),
-					'permission_callback' => array( REST::class, 'private_api' ),
-				),
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'upload_image' ),
+				'permission_callback' => function () {
+					return current_user_can( 'manage_options' );
+				},
+			)
+		);
+
+		register_rest_route(
+			EVENTKOI_API,
+			'/upload_image',
+			array(
+				'methods'             => 'DELETE',
+				'callback'            => array( __CLASS__, 'delete_image' ),
+				'permission_callback' => function () {
+					return current_user_can( 'manage_options' );
+				},
 			)
 		);
 	}

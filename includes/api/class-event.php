@@ -37,7 +37,7 @@ class Event {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( self::class, 'get_result' ),
-				'permission_callback' => array( REST::class, 'public_api' ),
+				'permission_callback' => '__return_true',
 			)
 		);
 
@@ -47,7 +47,9 @@ class Event {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( self::class, 'update_event' ),
-				'permission_callback' => array( REST::class, 'private_api' ),
+				'permission_callback' => function () {
+					return current_user_can( 'manage_options' );
+				},
 			)
 		);
 
@@ -57,7 +59,9 @@ class Event {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( self::class, 'restore_event' ),
-				'permission_callback' => array( REST::class, 'private_api' ),
+				'permission_callback' => function () {
+					return current_user_can( 'manage_options' );
+				},
 			)
 		);
 
@@ -67,7 +71,9 @@ class Event {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( self::class, 'duplicate_event' ),
-				'permission_callback' => array( REST::class, 'private_api' ),
+				'permission_callback' => function () {
+					return current_user_can( 'manage_options' );
+				},
 			)
 		);
 
@@ -77,7 +83,9 @@ class Event {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( self::class, 'delete_event' ),
-				'permission_callback' => array( REST::class, 'private_api' ),
+				'permission_callback' => function () {
+					return current_user_can( 'manage_options' );
+				},
 			)
 		);
 
@@ -87,7 +95,7 @@ class Event {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( self::class, 'get_instance_data' ),
-				'permission_callback' => array( REST::class, 'public_api' ),
+				'permission_callback' => '__return_true',
 			)
 		);
 
@@ -97,7 +105,9 @@ class Event {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( self::class, 'edit_instance' ),
-				'permission_callback' => array( REST::class, 'private_api' ),
+				'permission_callback' => function () {
+					return current_user_can( 'manage_options' );
+				},
 			)
 		);
 
@@ -107,7 +117,9 @@ class Event {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( self::class, 'reset_instance' ),
-				'permission_callback' => array( REST::class, 'private_api' ),
+				'permission_callback' => function () {
+					return current_user_can( 'manage_options' );
+				},
 			)
 		);
 	}
