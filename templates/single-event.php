@@ -5,6 +5,9 @@
  * @package EventKoi
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 ?>
 <!-- wp:template-part {"slug":"header"} /-->
 

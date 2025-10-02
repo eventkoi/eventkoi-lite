@@ -5,6 +5,10 @@
  * @package EventKoi
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 if ( eventkoi_current_theme_support() ) : ?>
 <!doctype html>
 <html <?php language_attributes(); ?>>

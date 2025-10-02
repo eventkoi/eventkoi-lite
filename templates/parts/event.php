@@ -8,6 +8,9 @@
  * @package EventKoi
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
 ?>
 <!-- wp:group {"className":"eventkoi-front eventkoi-legacy","style":{"spacing":{"margin":{"top":"40px","bottom":"40px"},"blockGap":"30px","padding":{"right":"0","left":"0"}}},"layout":{"type":"constrained","wideSize":"1100px","contentSize":"1100px"}} -->
 <div class="wp-block-group eventkoi-front eventkoi-legacy" style="margin-top:40px;margin-bottom:40px;padding-right:0;padding-left:0"><!-- wp:columns {"style":{"spacing":{"blockGap":{"top":"0","left":"var:preset|spacing|30"}}}} -->

@@ -5,6 +5,10 @@
  * @package EventKoi
  */
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit; // Exit if accessed directly.
+}
+
 spl_autoload_register( 'eventkoi_autoloader' );
 
 /**
