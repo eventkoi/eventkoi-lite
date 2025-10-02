@@ -239,7 +239,7 @@ class Calendar {
 	 * Get shortcode.
 	 */
 	public static function get_shortcode() {
-		$shortcode = '[ek_calendar id=' . absint( self::get_id() ) . ']';
+		$shortcode = '[eventkoi_calendar id=' . absint( self::get_id() ) . ']';
 
 		return apply_filters( 'eventkoi_get_calendar_shortcode', $shortcode, self::$calendar_id, self::$calendar );
 	}
@@ -342,7 +342,7 @@ class Calendar {
 	 */
 	public static function delete_calendar( $calendar_id = 0 ) {
 
-		if ( (int) get_option( 'default_event_cal', 0 ) === (int) $calendar_id ) {
+		if ( (int) get_option( 'eventkoi_default_event_cal', 0 ) === (int) $calendar_id ) {
 			return;
 		}
 

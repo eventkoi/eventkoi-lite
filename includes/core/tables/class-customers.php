@@ -23,14 +23,14 @@ class Customers extends Table {
 	/**
 	 * Schema version.
 	 */
-	const SCHEMA_VERSION = '0.0.255';
+	const SCHEMA_VERSION = '1.0.10';
 
 	/**
 	 * Table name.
 	 *
 	 * @var $base_table_name
 	 */
-	protected static $base_table_name = 'ek_customers';
+	protected static $base_table_name = 'eventkoi_customers';
 
 	/**
 	 * Group.

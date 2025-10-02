@@ -342,7 +342,7 @@ class Event {
 		}
 
 		// Upsert into custom table.
-		DB::table( 'ek_recurrence_overrides' )->upsert(
+		DB::table( 'eventkoi_recurrence_overrides' )->upsert(
 			array(
 				'event_id'    => $event_id,
 				'timestamp'   => $timestamp,
@@ -377,7 +377,7 @@ class Event {
 			return new \WP_Error( 'eventkoi_invalid_reset', __( 'Missing event ID or timestamp.', 'eventkoi-lite' ) );
 		}
 
-		DB::table( 'ek_recurrence_overrides' )
+		DB::table( 'eventkoi_recurrence_overrides' )
 		->where( 'event_id', $event_id )
 		->where( 'timestamp', $timestamp )
 		->delete();

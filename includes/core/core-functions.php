@@ -391,7 +391,7 @@ function eventkoi_date_i18n( $date, $gmt = false ) {
  * @return string Default calendar URL.
  */
 function eventkoi_get_default_calendar_url() {
-	$default_cal_id = (int) get_option( 'default_event_cal', 0 );
+	$default_cal_id = (int) get_option( 'eventkoi_default_event_cal', 0 );
 
 	if ( $default_cal_id <= 0 ) {
 		// Fallback to events archive if no default calendar is set.

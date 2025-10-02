@@ -236,7 +236,7 @@ class Blocks {
 	 * @return string HTML output.
 	 */
 	private static function render_calendar_type( $type, $attrs ) {
-		$cal_id   = (int) get_option( 'default_event_cal', 0 );
+		$cal_id   = (int) get_option( 'eventkoi_default_event_cal', 0 );
 		$calendar = new \EventKoi\Core\Calendar( $cal_id );
 
 		if ( 'calendar' === $type ) {

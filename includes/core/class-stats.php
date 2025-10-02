@@ -98,7 +98,7 @@ class Stats {
 	 * @return int
 	 */
 	public function get_total_orders() {
-		return $this->get_cached_stat( 'ek_total_orders', 'ek_charges', '*', 'COUNT' );
+		return $this->get_cached_stat( 'eventkoi_total_orders', 'eventkoi_charges', '*', 'COUNT' );
 	}
 
 	/**
@@ -107,7 +107,7 @@ class Stats {
 	 * @return float
 	 */
 	public function get_total_earnings() {
-		return $this->get_cached_stat( 'ek_total_earnings', 'ek_charges', 'net' );
+		return $this->get_cached_stat( 'eventkoi_total_earnings', 'eventkoi_charges', 'net' );
 	}
 
 	/**
@@ -116,7 +116,7 @@ class Stats {
 	 * @return int
 	 */
 	public function get_tickets_sold() {
-		return $this->get_cached_stat( 'ek_tickets_sold', 'ek_charges', 'quantity' );
+		return $this->get_cached_stat( 'eventkoi_tickets_sold', 'eventkoi_charges', 'quantity' );
 	}
 
 	/**
@@ -125,6 +125,6 @@ class Stats {
 	 * @return float
 	 */
 	public function get_total_refunded() {
-		return $this->get_cached_stat( 'ek_total_refunded', 'ek_charges', 'amount_refunded' );
+		return $this->get_cached_stat( 'eventkoi_total_refunded', 'eventkoi_charges', 'amount_refunded' );
 	}
 }

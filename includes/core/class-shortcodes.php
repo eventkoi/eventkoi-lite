@@ -22,7 +22,7 @@ class Shortcodes {
 	 * Constructor.
 	 */
 	public function __construct() {
-		add_shortcode( 'ek_calendar', array( __CLASS__, 'render_calendar' ) );
+		add_shortcode( 'eventkoi_calendar', array( __CLASS__, 'render_calendar' ) );
 		add_shortcode( 'eventkoi', array( __CLASS__, 'render_event_data' ) );
 	}
 
@@ -37,7 +37,7 @@ class Shortcodes {
 	public static function render_calendar( $user_attributes, $content, $shortcode_name ) {
 		$attributes = shortcode_atts(
 			array(
-				'id'      => (int) get_option( 'default_event_cal', 0 ),
+				'id'      => (int) get_option( 'eventkoi_default_event_cal', 0 ),
 				'display' => 'calendar',
 			),
 			$user_attributes,

@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @return array|null Array of overrides or null.
  */
 function eventkoi_get_instance_override( $event_id, $timestamp ) {
-	$row = DB::table( 'ek_recurrence_overrides' )
+	$row = DB::table( 'eventkoi_recurrence_overrides' )
 		->where( 'event_id', $event_id )
 		->where( 'timestamp', $timestamp )
 		->get();

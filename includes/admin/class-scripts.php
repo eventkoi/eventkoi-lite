@@ -52,7 +52,7 @@ class Scripts {
 		$asset_file = include EVENTKOI_PLUGIN_DIR . 'scripts/backend/build/index.asset.php';
 		$build_url  = EVENTKOI_PLUGIN_URL . 'scripts/backend/build/';
 
-		$default_cal_id = (int) get_option( 'default_event_cal', 0 );
+		$default_cal_id = (int) get_option( 'eventkoi_default_event_cal', 0 );
 		$default_cal    = get_term_by( 'id', $default_cal_id, 'event_cal' );
 		$cal_url        = $default_cal ? get_term_link( $default_cal, 'event_cal' ) : '';
 		$cal_url        = $default_cal ? str_replace( $default_cal->slug, '', $cal_url ) : '';

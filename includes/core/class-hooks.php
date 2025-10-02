@@ -72,10 +72,10 @@ class Hooks {
 	 * @return void
 	 */
 	public static function reset_caches() {
-		delete_transient( 'ek_total_orders' );
-		delete_transient( 'ek_total_earnings' );
-		delete_transient( 'ek_tickets_sold' );
-		delete_transient( 'ek_total_refunded' );
+		delete_transient( 'eventkoi_total_orders' );
+		delete_transient( 'eventkoi_total_earnings' );
+		delete_transient( 'eventkoi_tickets_sold' );
+		delete_transient( 'eventkoi_total_refunded' );
 	}
 
 	/**

@@ -46,9 +46,9 @@ class Install {
 			return;
 		}
 
-		set_transient( 'ek_installing', 'yes', MINUTE_IN_SECONDS * 10 );
+		set_transient( 'eventkoi_installing', 'yes', MINUTE_IN_SECONDS * 10 );
 
-		self::maybe_define_constant( 'EK_INSTALLING', true );
+		self::maybe_define_constant( 'EVENTKOI_INSTALLING', true );
 
 		self::install_core();
 
@@ -65,7 +65,7 @@ class Install {
 	 * Returns whether installation is running.
 	 */
 	private static function is_installing() {
-		return get_transient( 'ek_installing' ) === 'yes';
+		return get_transient( 'eventkoi_installing' ) === 'yes';
 	}
 
 	/**
@@ -76,14 +76,14 @@ class Install {
 		self::update_version();
 
 		// Clear install flag.
-		delete_transient( 'ek_installing' );
+		delete_transient( 'eventkoi_installing' );
 	}
 
 	/**
 	 * Create default calendar taxonomy term if missing.
 	 */
 	private static function create_terms() {
-		$option_key = 'default_event_cal';
+		$option_key = 'eventkoi_default_event_cal';
 		$current_id = (int) get_option( $option_key, 0 );
 
 		if ( $current_id && term_exists( $current_id, 'event_cal' ) ) {

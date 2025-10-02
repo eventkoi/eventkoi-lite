@@ -20,9 +20,9 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class Recurrence_Overrides extends Table {
 
-	const SCHEMA_VERSION = '1.0.0';
+	const SCHEMA_VERSION = '1.0.10';
 
-	protected static $base_table_name = 'ek_recurrence_overrides';
+	protected static $base_table_name = 'eventkoi_recurrence_overrides';
 	protected static $group           = 'eventkoi';
 	protected static $schema_slug     = 'eventkoi-recurrence-overrides';
 	protected static $uid_column      = 'id';

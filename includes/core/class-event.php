@@ -523,8 +523,8 @@ class Event {
 		$calendars = array();
 
 		if ( empty( $meta['calendar'] ) ) {
-			$default_event_cal = (int) get_option( 'default_event_cal', 0 );
-			$calendars         = array( $default_event_cal );
+			$default_event_cal = (int) get_option( 'eventkoi_default_event_cal', 0 );
+			$calendars         = array( $eventkoi_default_event_cal );
 		} else {
 			foreach ( $meta['calendar'] as $calendar ) {
 				if ( isset( $calendar['id'] ) ) {
@@ -601,7 +601,7 @@ class Event {
 	 * @return array
 	 */
 	public static function get_recurrence_overrides() {
-		$rows = DB::table( 'ek_recurrence_overrides' )
+		$rows = DB::table( 'eventkoi_recurrence_overrides' )
 		->where( 'event_id', self::$event_id )
 		->orderBy( 'timestamp', 'asc' )
 		->getAll();
