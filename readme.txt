@@ -82,6 +82,12 @@ No. Recurring events is available in EventKoi Pro.
 = Does EventKoi Lite include ticketing?
 Coming in 2026!
 
+== External services ==
+
+This plugin can connect to the **Google Maps JavaScript API** in order to display interactive maps inside event and calendar views.
+
+It sends your configured Google Maps API key (if provided) along with requests made by the visitor’s browser when viewing a page that contains an embedded map. No personal data is sent by the plugin itself, but Google may collect usage data in accordance with their policies. This connection only happens if maps are enabled in the plugin settings and a page with an event location map is viewed.
+This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
 
