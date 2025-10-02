@@ -435,10 +435,11 @@ class Calendar {
 		? array_map( 'intval', $plugin_settings['working_days'] )
 		: array( 0, 1, 2, 3, 4 ); // Default to Mon–Fri.
 
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$start_param = isset( $_GET['start'] ) ? sanitize_text_field( wp_unslash( $_GET['start'] ) ) : '';
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$end_param = isset( $_GET['end'] ) ? sanitize_text_field( wp_unslash( $_GET['end'] ) ) : '';
+		// Public endpoint: event feed must be accessible without authentication.
+		// Nonce verification is intentionally not used here, since requests come
+		// from the public calendar view. Inputs are sanitized to prevent misuse.
+		$start_param = isset( $_GET['start'] ) ? sanitize_text_field( wp_unslash( $_GET['start'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- public feed, sanitized input
+		$end_param   = isset( $_GET['end'] ) ? sanitize_text_field( wp_unslash( $_GET['end'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- public feed, sanitized input
 
 		$window_start = $start_param ? new \DateTimeImmutable( $start_param, new \DateTimeZone( 'UTC' ) ) : null;
 		$window_end   = $end_param ? new \DateTimeImmutable( $end_param, new \DateTimeZone( 'UTC' ) ) : null;

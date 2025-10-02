@@ -17,13 +17,18 @@ use EventKoi\Core\Settings;
 /**
  * Retrieve the current instance ID from pretty permalink or query param.
  *
+ * Public endpoint: instance param is used on frontend URLs for recurring events.
+ * Nonce verification is intentionally not applied here, since the parameter
+ * must be publicly accessible. Input is strictly sanitized with absint().
+ *
  * @return int Instance timestamp.
  */
 function eventkoi_get_instance_id() {
 	$instance_ts = absint( get_query_var( 'instance' ) );
 
 	if ( 0 === $instance_ts ) {
-		$instance_ts = absint( filter_input( INPUT_GET, 'instance', FILTER_SANITIZE_NUMBER_INT ) );
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- public URL param, sanitized with absint()
+		$instance_ts = isset( $_GET['instance'] ) ? absint( wp_unslash( $_GET['instance'] ) ) : 0;
 	}
 
 	return $instance_ts;

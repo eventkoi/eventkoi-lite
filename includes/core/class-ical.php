@@ -29,13 +29,12 @@ class ICal {
 	 * Generate .ics file and force download.
 	 */
 	public function generate_ics_download() {
-		$ical        = filter_input( INPUT_GET, 'ical', FILTER_DEFAULT );
-		$instance_ts = eventkoi_get_instance_id();
-		$ical        = sanitize_text_field( $ical );
-
-		if ( empty( $ical ) ) {
-			return;
+		$ical = isset( $_GET['ical'] ) ? absint( wp_unslash( $_GET['ical'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- public download, safe input
+		if ( 1 !== $ical ) {
+			return; // Ignore if not explicitly "1".
 		}
+
+		$instance_ts = eventkoi_get_instance_id();
 
 		$event_id = absint( get_the_ID() );
 		if ( ! $event_id ) {
