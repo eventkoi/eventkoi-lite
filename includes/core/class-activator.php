@@ -26,7 +26,7 @@ class Activator {
 	public static function activate() {
 		// Generate and store a developer-friendly API key.
 		if ( ! get_option( 'eventkoi_api_key' ) ) {
-			update_option( 'eventkoi_api_key', 'ek_' . strtolower( preg_replace( '/[^a-z0-9]/i', '', wp_generate_password( 32, false, false ) ) ) );
+			update_option( 'eventkoi_api_key', 'eventkoi_' . strtolower( preg_replace( '/[^a-z0-9]/i', '', wp_generate_password( 20, false, false ) ) ) );
 		}
 
 		// Queue a one-time rewrite rules flush after activation.

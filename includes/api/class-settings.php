@@ -106,7 +106,7 @@ class Settings {
 
 		// Handle secure API key regeneration.
 		if ( isset( $data['api_key'] ) && 'refresh' === $data['api_key'] ) {
-			$new_api_key = 'ek_' . strtolower( preg_replace( '/[^a-z0-9]/i', '', wp_generate_password( 32, false, false ) ) );
+			$new_api_key = 'eventkoi_' . strtolower( preg_replace( '/[^a-z0-9]/i', '', wp_generate_password( 20, false, false ) ) );
 			update_option( 'eventkoi_api_key', $new_api_key );
 
 			return rest_ensure_response(

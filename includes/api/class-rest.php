@@ -63,7 +63,7 @@ class REST {
 	 * @return string
 	 */
 	public static function generate_api_key() {
-		return 'ek_' . wp_generate_password( 32, false, false );
+		return 'eventkoi_' . wp_generate_password( 20, false, false );
 	}
 
 	/**
