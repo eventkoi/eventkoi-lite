@@ -133,7 +133,7 @@ This service is provided by Google LLC: [Terms of Service](https://cloud.google.
 
 == Changelog ==
 
-= 1.0.0 =
+= 1.0.0 – Initial public release – 2025-10-07 =
 * Initial public release of EventKoi Lite plugin.
 * Core event creation and management features.
 * Built-in support for single-day and multi-day events.
