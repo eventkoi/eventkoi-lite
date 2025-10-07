@@ -72,23 +72,24 @@ Here are the available shortcodes:
 
 Installing EventKoi Lite is easy.
 
-## Installation
+= Installation =
 1. In your WP Admin, select Plugins, then Add plugin.
 2. In the Search Plugins field, type in "EventKoi Lite"
 3. When you find EventKoi Lite, click on Install Now.
 4. The installation will run, then click on Activate.
 
-## Configuring your events calendar
+= Configuring your events calendar =
 1. Once the plugin is activated, head to Events, then Settings. 
 2. From there you can configure when you week starts, your working days, and 12/24-hour clock.
 
-## Create your first event
+= Create your first event =
 1. Head to Events > Events and select Add event
 2. Fill out the form to create your event.
 
-## Add your calendar to your site
+= Add your calendar to your site =
 Head to Events > Calendar and select **Default calendar**. Then select the **Embed** tab.
 There, you will see 3 ways to embed the calendar into your site:
+
 1. Your calendar comes with a default link. Out of the box, the link is: https://yourwebsite.com/calendar/default-calendar/
 2. Using either shortcodes in any page or post: [eventkoi_calendar display=calendar] or [eventkoi_calendar display=list] depending on whether you want a calendar or list view.
 3. Adding a block in any page or post: Type in "/eventkoi" and then select either "EventKoi Calendar" or "EventKoi List" depending on whether you want a list or calendar view.
