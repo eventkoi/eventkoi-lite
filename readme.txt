@@ -19,16 +19,16 @@ Modern, fast WordPress events calendar. Create single or multi-day events and di
 ## Highlights
 - **Calendar Views:** Month, Week, and List
 - **Events:** Consecutive start and end times. Or Multi-day with different times each day.
-- Display calendar: Embed blocks or shortcodes
-- Calendar features: Built-in search, 12/24-hour clock, Timezone switcher, Month or week view, Add to calendar button, and Share button
-- Block editor ready: Block templates (block themes), block attributes, REST API
-- Performance: Lean queries; minimal front-end assets
+- **Embed calendar:** Via blocks or shortcodes
+- **Calendar features:** Built-in search, 12/24-hour clock, Timezone switcher, Month or week view, Add to calendar button, and Share button
+- **Block editor ready:** Block templates (block themes), block attributes, REST API
+- **Performance:** Lean queries; minimal front-end assets
 
 
 ## Additional features
-– **Event options**: Online or physical location, easy Google Maps embed, description, featured image
-– **Event template**: Editable in block editor or via code for classic themes
-– **Additional settings**: Select working days, select day that the week starts on, display specific month and year.
+- **Event options**: Online or physical location, easy Google Maps embed, description, featured image
+- **Event template**: Editable in block editor or via code for classic themes
+- **Additional settings**: Select working days, select day that the week starts on, display specific month and year.
 
 
 ## How to display calendar on your site
@@ -50,10 +50,10 @@ Here are the available shortcodes:
 
 
 ## What’s in Pro (separate upgrade)
-– Recurring/complex events
-– Unlimited calendars
-– Unlimited locations per event
-– Lots more coming soon
+- Recurring/complex events
+- Unlimited calendars
+- Unlimited locations per event
+- Lots more coming soon
 
 ## Additional links
 [Learn more about EventKoi](https://eventkoi.com)
