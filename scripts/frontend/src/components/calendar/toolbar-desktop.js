@@ -60,11 +60,17 @@ export function ToolbarDesktop(props) {
           currentDate={currentDate}
           setCurrentDate={setCurrentDate}
         />
-        <CalendarHeaderPopover
-          calendarApi={calendarApi}
-          currentDate={currentDate}
-          setCurrentDate={setCurrentDate}
-        />
+        {view === "timeGridWeek" || view === "week" ? (
+          <div className="font-medium text-base px-2 w-full block">
+            {calendarApi?.view?.title || ""}
+          </div>
+        ) : (
+          <CalendarHeaderPopover
+            calendarApi={calendarApi}
+            currentDate={currentDate}
+            setCurrentDate={setCurrentDate}
+          />
+        )}
         <TodayButton
           calendarApi={calendarApi}
           setCurrentDate={setCurrentDate}

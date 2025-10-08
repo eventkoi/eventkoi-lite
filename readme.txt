@@ -1,12 +1,12 @@
 == EventKoi Lite ==
 
-Contributors: eventkoi
+Contributors: eventkoi, lesleysim
 Donate link: https://donate.stripe.com/fZubJ1auN86Y1PU8cSdUY01
 Tags: events, calendar, event management, schedules, calendar block
 Requires at least: 6.7  
 Tested up to: 6.8 
 Requires PHP: 8.0  
-Stable tag: 1.0.0 
+Stable tag: 1.0.10 
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -132,6 +132,11 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.0.10 – Calendar View Fixes – 2025-10-09 =
+
+Fix: Resolved layout and navigation issues in the weekly calendar view.
+Improvement: Enhanced responsiveness and overall stability in calendar rendering.
 
 = 1.0.0 – Initial public release – 2025-10-07 =
 * Initial public release of EventKoi Lite plugin.
