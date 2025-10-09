@@ -84,6 +84,7 @@ class Scripts {
 			'timezone'            => wp_timezone_string(),
 			'timezone_offset'     => ( get_option( 'gmt_offset' ) ?? 0 ) * 3600,
 			'time_format'         => $settings['time_format'] ?? '12',
+			'locale'              => determine_locale(),
 		);
 
 		// Load available custom templates (optional: filter by slug prefix or post type).

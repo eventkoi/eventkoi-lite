@@ -64,6 +64,7 @@ class Scripts {
 				'connected' => ! empty( $settings['gmap_connection_status'] ),
 			),
 			'time_format' => $settings['time_format'] ?? '12',
+			'locale'      => determine_locale(),
 		);
 
 		wp_localize_script(

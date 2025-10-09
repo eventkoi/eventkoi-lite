@@ -2,6 +2,7 @@
 
 import { EventPopover } from "@/components/calendar/EventPopover";
 import { Skeleton } from "@/components/ui/skeleton";
+import allLocales from "@fullcalendar/core/locales-all";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import listPlugin from "@fullcalendar/list";
 import luxonPlugin from "@fullcalendar/luxon3";
@@ -17,6 +18,18 @@ const days = {
   friday: 5,
   saturday: 6,
 };
+
+const wpLocale =
+  typeof window !== "undefined" && window.eventkoi_params
+    ? window.eventkoi_params.locale
+    : "en";
+
+// Convert "de_DE" → "de"
+const shortLocale = wpLocale.split("_")[0];
+
+// Optional: verify if the locale exists in the bundle
+const supported = allLocales.some((l) => l.code === shortLocale);
+const localeToUse = supported ? shortLocale : "en";
 
 export function CalendarGridMode({
   calendarRef,
@@ -38,12 +51,25 @@ export function CalendarGridMode({
   startday,
   initialDate,
 }) {
-  const eventTimeFormat = {
-    hour: timeFormat === "24" ? "2-digit" : "numeric",
-    minute: "2-digit",
-    hour12: timeFormat !== "24",
-    ...(timeFormat !== "24" && { omitZeroMinute: true, meridiem: "short" }),
-  };
+  // Determine whether locale uses AM/PM
+  const usesMeridiem = /^en/i.test(localeToUse);
+
+  const eventTimeFormat =
+    timeFormat === "24"
+      ? {
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: false,
+        }
+      : {
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+          ...(usesMeridiem && {
+            omitZeroMinute: true,
+            meridiem: "short", // only for English-style locales
+          }),
+        };
 
   if (isEmpty) {
     return (
@@ -61,6 +87,8 @@ export function CalendarGridMode({
     <>
       <FullCalendar
         ref={calendarRef}
+        locales={allLocales}
+        locale={localeToUse}
         plugins={[dayGridPlugin, timeGridPlugin, listPlugin, luxonPlugin]}
         events={events}
         initialView={view}

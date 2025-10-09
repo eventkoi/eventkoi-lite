@@ -6,6 +6,7 @@ import apiRequest from "@wordpress/api-fetch";
 import { InspectorControls, useBlockProps } from "@wordpress/block-editor";
 import { useEffect, useRef, useState } from "react";
 
+import allLocales from "@fullcalendar/core/locales-all";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import listPlugin from "@fullcalendar/list";
 import luxonPlugin from "@fullcalendar/luxon3";
@@ -23,6 +24,18 @@ const days = {
   friday: 5,
   saturday: 6,
 };
+
+const wpLocale =
+  typeof window !== "undefined" && window.eventkoi_params
+    ? window.eventkoi_params.locale
+    : "en";
+
+// Convert "de_DE" → "de"
+const shortLocale = wpLocale.split("_")[0];
+
+// Optional: verify if the locale exists in the bundle
+const supported = allLocales.some((l) => l.code === shortLocale);
+const localeToUse = supported ? shortLocale : "en";
 
 export default function Edit({
   attributes,
@@ -357,6 +370,8 @@ export default function Edit({
 
           <FullCalendar
             ref={calendarRef}
+            locales={allLocales}
+            locale={localeToUse}
             plugins={[dayGridPlugin, timeGridPlugin, listPlugin, luxonPlugin]}
             events={events}
             initialView={view}

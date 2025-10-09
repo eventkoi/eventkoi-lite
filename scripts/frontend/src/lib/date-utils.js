@@ -15,11 +15,24 @@ export function buildTimeline(event, wpTz, timeFormat = "12") {
 
   const tz = normalizeTimeZone(wpTz || "UTC");
 
+  // Normalize WP locale (de_DE → de-DE)
+  const normalizeLocale = (loc) => {
+    if (!loc) return "en";
+    return loc.replace("_", "-");
+  };
+
+  // Automatically use the plugin/global locale
+  const lang =
+    typeof eventkoi_params !== "undefined" && eventkoi_params.locale
+      ? normalizeLocale(eventkoi_params.locale)
+      : "en";
+
   // --- Helpers ---
   const formatTime = (dt) => {
     if (!dt?.isValid) return "";
-    if (timeFormat === "24") return dt.toFormat("HH:mm");
+    if (timeFormat === "24") return dt.setLocale(lang).toFormat("HH:mm");
     return dt
+      .setLocale(lang)
       .toFormat(dt.minute === 0 ? "ha" : "h:mma")
       .toLowerCase()
       .replace(":00", "");
@@ -27,7 +40,9 @@ export function buildTimeline(event, wpTz, timeFormat = "12") {
 
   const parseDate = (iso) => {
     if (!iso) return null;
-    const dt = DateTime.fromISO(iso, { zone: "utc" }).setZone(tz);
+    const dt = DateTime.fromISO(iso, { zone: "utc" })
+      .setZone(tz)
+      .setLocale(lang);
     return dt.isValid ? dt : null;
   };
 
@@ -42,16 +57,18 @@ export function buildTimeline(event, wpTz, timeFormat = "12") {
     const isSameDay = end && start.hasSame(end, "day");
 
     if (isSameDay && !allDay) {
-      return `${start.toFormat("d MMM yyyy")}, ${formatTime(
-        start
-      )} – ${formatTime(end)}`;
+      return `${start.toLocaleString(
+        DateTime.DATE_MED_WITH_WEEKDAY
+      )}, ${formatTime(start)} – ${formatTime(end)}`;
     }
 
     if (!end || isSameDay) {
-      return start.toFormat("d MMM yyyy");
+      return start.toLocaleString(DateTime.DATE_MED_WITH_WEEKDAY);
     }
 
-    return `${start.toFormat("d MMM yyyy")} – ${end.toFormat("d MMM yyyy")}`;
+    return `${start.toLocaleString(
+      DateTime.DATE_MED_WITH_WEEKDAY
+    )} – ${end.toLocaleString(DateTime.DATE_MED_WITH_WEEKDAY)}`;
   }
 
   // --- Standard / multi-day ---
@@ -65,20 +82,24 @@ export function buildTimeline(event, wpTz, timeFormat = "12") {
     const isSameDay = end && start.hasSame(end, "day");
 
     if (isSameDay && !allDay) {
-      return `${start.toFormat("d MMM yyyy")}, ${formatTime(
-        start
-      )} – ${formatTime(end)}`;
+      return `${start.toLocaleString(
+        DateTime.DATE_MED_WITH_WEEKDAY
+      )}, ${formatTime(start)} – ${formatTime(end)}`;
     }
 
     if (!end) {
       return allDay
-        ? start.toFormat("d MMM yyyy")
-        : `${start.toFormat("d MMM yyyy, ")}${formatTime(start)}`;
+        ? start.toLocaleString(DateTime.DATE_MED_WITH_WEEKDAY)
+        : `${start.toLocaleString(
+            DateTime.DATE_MED_WITH_WEEKDAY
+          )}, ${formatTime(start)}`;
     }
 
-    return `${start.toFormat("d MMM yyyy, ")}${formatTime(
-      start
-    )} – ${end.toFormat("d MMM yyyy, ")}${formatTime(end)}`;
+    return `${start.toLocaleString(
+      DateTime.DATE_MED_WITH_WEEKDAY
+    )}, ${formatTime(start)} – ${end.toLocaleString(
+      DateTime.DATE_MED_WITH_WEEKDAY
+    )}, ${formatTime(end)}`;
   }
 
   return null;

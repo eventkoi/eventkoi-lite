@@ -21,6 +21,17 @@ export function FloatingDatePicker({
     if (open) setOpen(false);
   });
 
+  // Normalize WP locale (e.g. de_DE → de-DE)
+  const normalizeLocale = (loc) => {
+    if (!loc) return "en";
+    return loc.replace("_", "-");
+  };
+
+  const wpLocale =
+    typeof eventkoi_params !== "undefined" && eventkoi_params.locale
+      ? normalizeLocale(eventkoi_params.locale)
+      : "en";
+
   return (
     <div className="relative" ref={ref}>
       <Button
@@ -37,7 +48,10 @@ export function FloatingDatePicker({
         )}
       >
         {value
-          ? DateTime.fromJSDate(value, { zone: wpTz }).toFormat("d MMM yyyy")
+          ? // Localized formatted value using Luxon locale
+            DateTime.fromJSDate(value, { zone: wpTz })
+              .setLocale(wpLocale)
+              .toFormat("d MMM yyyy")
           : "Set date"}
       </Button>
 

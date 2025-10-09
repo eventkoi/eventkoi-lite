@@ -11,20 +11,20 @@ import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { DateTime } from "luxon";
 import { useState } from "react";
 
-const MONTHS = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
+const wpLocale =
+  typeof window !== "undefined" && window.eventkoi_params
+    ? window.eventkoi_params.locale
+    : "en";
+
+// Normalize for Intl (use e.g. "de" instead of "de_DE")
+const shortLocale = wpLocale.split("_")[0];
+
+// Build localized month labels automatically
+const MONTHS = Array.from({ length: 12 }, (_, i) =>
+  new Intl.DateTimeFormat(shortLocale, { month: "short" }).format(
+    new Date(2000, i, 1)
+  )
+);
 
 export function CalendarHeaderPopover({
   calendarApi,

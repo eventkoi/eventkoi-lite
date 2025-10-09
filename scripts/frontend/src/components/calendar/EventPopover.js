@@ -90,7 +90,7 @@ export function EventPopover({
 
   const formattedDate = (() => {
     const tz = normalizeTimeZone(timezone);
-    const locale = eventkoi_params?.locale || "en";
+    const locale = eventkoi_params?.locale?.replace("_", "-") || "en";
     const timeFormat = eventkoi_params?.time_format || "12";
 
     // force override: continuous events should NEVER be treated as allDay
