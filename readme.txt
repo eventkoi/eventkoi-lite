@@ -133,10 +133,11 @@ This service is provided by Google LLC: [Terms of Service](https://cloud.google.
 
 == Changelog ==
 
-= 1.0.10 – Calendar View Fixes – 2025-10-09 =
-
-Fix: Resolved layout and navigation issues in the weekly calendar view.
-Improvement: Enhanced responsiveness and overall stability in calendar rendering.
+= 1.0.10 – Calendar View & Localization Fixes – 2025-10-09 =
+* Fix: Resolved layout and navigation issues in the weekly calendar view.
+* Fix: Corrected locale handling and improved date/time formatting consistency.
+* Improvement: Enhanced localization support across admin and frontend.
+* Improvement: Improved responsiveness and stability in calendar rendering.
 
 = 1.0.0 – Initial public release – 2025-10-07 =
 * Initial public release of EventKoi Lite plugin.
