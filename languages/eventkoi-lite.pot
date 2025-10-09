@@ -7,7 +7,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-09-23T11:28:38+00:00\n"
+"POT-Creation-Date: 2025-10-09T12:49:24+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.11.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -34,118 +34,118 @@ msgstr ""
 msgid "Calendars"
 msgstr ""
 
-#: api/class-calendar.php:92
+#: api/class-calendar.php:98
 msgid "Invalid calendar ID."
 msgstr ""
 
-#: api/class-calendar.php:115
-#: api/class-calendar.php:184
-#: api/class-calendar.php:204
+#: api/class-calendar.php:121
+#: api/class-calendar.php:190
+#: api/class-calendar.php:210
 msgid "Calendar ID is required."
 msgstr ""
 
-#: api/class-calendar.php:162
+#: api/class-calendar.php:168
 msgid "Invalid calendar data."
 msgstr ""
 
 #. translators: %s: Parameter name.
-#: api/class-calendars.php:78
+#: api/class-calendars.php:80
 msgid "No %s provided."
 msgstr ""
 
-#: api/class-event.php:125
-#: core/class-ical.php:42
+#: api/class-event.php:137
+#: core/class-ical.php:41
 msgid "Invalid event ID."
 msgstr ""
 
-#: api/class-event.php:144
+#: api/class-event.php:156
 msgid "Invalid event data."
 msgstr ""
 
-#: api/class-event.php:198
-#: api/class-event.php:217
-#: api/class-event.php:237
+#: api/class-event.php:210
+#: api/class-event.php:229
+#: api/class-event.php:249
 msgid "Missing event ID."
 msgstr ""
 
-#: api/class-event.php:256
-#: api/class-event.php:365
+#: api/class-event.php:268
+#: api/class-event.php:377
 msgid "Missing event ID or timestamp."
 msgstr ""
 
-#: api/class-event.php:295
+#: api/class-event.php:307
 msgid "Missing or invalid instance override data."
 msgstr ""
 
-#: api/class-event.php:378
+#: api/class-event.php:390
 msgid "Instance overrides reset to defaults."
 msgstr ""
 
-#: api/class-events.php:217
+#: api/class-events.php:225
 msgid "No event IDs provided."
 msgstr ""
 
-#: api/class-order.php:54
+#: api/class-order.php:56
 msgid "Invalid order ID."
 msgstr ""
 
-#: api/class-order.php:65
+#: api/class-order.php:67
 msgid "Order not found."
 msgstr ""
 
-#: api/class-orders.php:57
-#: api/class-orders.php:78
+#: api/class-orders.php:61
+#: api/class-orders.php:82
 msgid "Invalid request object."
 msgstr ""
 
-#: api/class-orders.php:66
+#: api/class-orders.php:70
 msgid "Error retrieving orders."
 msgstr ""
 
-#: api/class-orders.php:86
+#: api/class-orders.php:90
 msgid "Missing required parameters."
 msgstr ""
 
-#: api/class-orders.php:98
+#: api/class-orders.php:102
 msgid "Failed to add note."
 msgstr ""
 
-#: api/class-settings.php:79
+#: api/class-settings.php:83
 msgid "Request body is empty."
 msgstr ""
 
-#: api/class-settings.php:91
+#: api/class-settings.php:95
 msgid "Invalid data format. Expected a JSON object."
 msgstr ""
 
-#: api/class-settings.php:111
+#: api/class-settings.php:115
 msgid "API key regenerated successfully."
 msgstr ""
 
-#: api/class-settings.php:137
+#: api/class-settings.php:141
 msgid "Settings updated successfully."
 msgstr ""
 
-#: api/class-stats.php:53
-#: api/class-uploads.php:181
+#: api/class-stats.php:55
+#: api/class-uploads.php:188
 msgid "Invalid request."
 msgstr ""
 
-#: api/class-uploads.php:67
-#: api/class-uploads.php:195
+#: api/class-uploads.php:74
+#: api/class-uploads.php:202
 msgid "Invalid or missing event ID."
 msgstr ""
 
-#: api/class-uploads.php:106
+#: api/class-uploads.php:113
 msgid "No image file uploaded."
 msgstr ""
 
-#: api/class-uploads.php:112
+#: api/class-uploads.php:119
 msgid "Uploaded file is not a valid image."
 msgstr ""
 
 #. translators: %s is the maximum file size allowed in megabytes.
-#: api/class-uploads.php:123
+#: api/class-uploads.php:130
 msgid "File exceeds maximum upload size of %s MB."
 msgstr ""
 
@@ -209,6 +209,10 @@ msgstr ""
 #. translators: Custom block category for EventKoi plugin.
 #: core/class-blocks.php:44
 msgid "EventKoi"
+msgstr ""
+
+#: core/class-blocks.php:183
+msgid "Share this event"
 msgstr ""
 
 #: core/class-calendar.php:276
@@ -304,135 +308,135 @@ msgid "Date and time to be confirmed."
 msgstr ""
 
 #: core/class-event.php:1960
-msgid "Sunday"
-msgstr ""
-
-#: core/class-event.php:1961
 msgid "Monday"
 msgstr ""
 
-#: core/class-event.php:1962
+#: core/class-event.php:1961
 msgid "Tuesday"
 msgstr ""
 
-#: core/class-event.php:1963
+#: core/class-event.php:1962
 msgid "Wednesday"
 msgstr ""
 
-#: core/class-event.php:1964
+#: core/class-event.php:1963
 msgid "Thursday"
 msgstr ""
 
-#: core/class-event.php:1965
+#: core/class-event.php:1964
 msgid "Friday"
 msgstr ""
 
-#: core/class-event.php:1966
+#: core/class-event.php:1965
 msgid "Saturday"
 msgstr ""
 
-#: core/class-event.php:1969
-msgid "first"
+#: core/class-event.php:1966
+msgid "Sunday"
 msgstr ""
 
 #: core/class-event.php:1970
-msgid "second"
+msgid "first"
 msgstr ""
 
 #: core/class-event.php:1971
-msgid "third"
+msgid "second"
 msgstr ""
 
 #: core/class-event.php:1972
-msgid "fourth"
+msgid "third"
 msgstr ""
 
 #: core/class-event.php:1973
+msgid "fourth"
+msgstr ""
+
+#: core/class-event.php:1974
 msgid "fifth"
 msgstr ""
 
-#: core/class-event.php:1985
+#: core/class-event.php:1986
 msgid "days"
 msgstr ""
 
-#: core/class-event.php:1986
+#: core/class-event.php:1987
 msgid "weeks"
 msgstr ""
 
-#: core/class-event.php:1987
+#: core/class-event.php:1988
 msgid "months"
 msgstr ""
 
-#: core/class-event.php:1988
+#: core/class-event.php:1989
 msgid "years"
 msgstr ""
 
 #. translators: %1$d: interval number (e.g., 2). %2$s: period plural (e.g., "months").
-#: core/class-event.php:1992
+#: core/class-event.php:1993
 msgid "Every %1$d %2$s"
 msgstr ""
 
-#: core/class-event.php:1994
+#: core/class-event.php:1995
 msgid "Daily"
 msgstr ""
 
-#: core/class-event.php:1996
+#: core/class-event.php:1997
 msgid "Weekly"
 msgstr ""
 
-#: core/class-event.php:1998
+#: core/class-event.php:1999
 msgid "Monthly"
 msgstr ""
 
-#: core/class-event.php:2000
+#: core/class-event.php:2001
 msgid "Yearly"
 msgstr ""
 
-#: core/class-event.php:2033
+#: core/class-event.php:2034
 msgid "January"
 msgstr ""
 
-#: core/class-event.php:2034
+#: core/class-event.php:2035
 msgid "February"
 msgstr ""
 
-#: core/class-event.php:2035
+#: core/class-event.php:2036
 msgid "March"
 msgstr ""
 
-#: core/class-event.php:2036
+#: core/class-event.php:2037
 msgid "April"
 msgstr ""
 
-#: core/class-event.php:2037
+#: core/class-event.php:2038
 msgid "May"
 msgstr ""
 
-#: core/class-event.php:2038
+#: core/class-event.php:2039
 msgid "June"
 msgstr ""
 
-#: core/class-event.php:2039
+#: core/class-event.php:2040
 msgid "July"
 msgstr ""
 
-#: core/class-event.php:2040
+#: core/class-event.php:2041
 msgid "August"
 msgstr ""
 
-#: core/class-event.php:2041
+#: core/class-event.php:2042
 msgid "September"
 msgstr ""
 
-#: core/class-event.php:2042
+#: core/class-event.php:2043
 msgid "October"
 msgstr ""
 
-#: core/class-event.php:2043
+#: core/class-event.php:2044
 msgid "November"
 msgstr ""
 
-#: core/class-event.php:2044
+#: core/class-event.php:2045
 msgid "December"
 msgstr ""
 
@@ -647,7 +651,7 @@ msgstr ""
 msgid "This is where you can browse events in this site."
 msgstr ""
 
-#: core/class-scripts.php:81
+#: core/class-scripts.php:60
 msgid "No events were found."
 msgstr ""
 
@@ -655,41 +659,41 @@ msgstr ""
 msgid "Default template for a single event view."
 msgstr ""
 
-#: core/core-functions.php:163
+#: core/core-functions.php:168
 msgid "Invalid calendar. Please check the calendar ID."
 msgstr ""
 
-#: core/core-functions.php:275
+#: core/core-functions.php:280
 msgctxt "slug"
 msgid "event"
 msgstr ""
 
-#: core/core-functions.php:276
+#: core/core-functions.php:281
 msgctxt "slug"
 msgid "calendar"
 msgstr ""
 
-#: core/core-functions.php:511
-#: core/core-functions.php:512
+#: core/core-functions.php:516
+#: core/core-functions.php:517
 msgid "Completed"
 msgstr ""
 
-#: core/core-functions.php:513
+#: core/core-functions.php:518
 msgid "Refunded"
 msgstr ""
 
-#: core/core-functions.php:514
+#: core/core-functions.php:519
 msgid "Partially refunded"
 msgstr ""
 
-#: core/core-functions.php:515
+#: core/core-functions.php:520
 msgid "Failed"
 msgstr ""
 
-#: core/core-functions.php:516
+#: core/core-functions.php:521
 msgid "Pending payment"
 msgstr ""
 
-#: core/core-functions.php:519
+#: core/core-functions.php:524
 msgid "Incomplete"
 msgstr ""
