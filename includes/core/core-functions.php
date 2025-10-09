@@ -276,14 +276,11 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 function eventkoi_get_permalink_structure() {
 	$saved_permalinks = (array) get_option( 'eventkoi_permalinks', array() );
 
-	$default_permalinks = array(
+	$permalinks = array(
 		'event_base'             => _x( 'event', 'slug', 'eventkoi-lite' ),
 		'category_base'          => _x( 'calendar', 'slug', 'eventkoi-lite' ),
 		'use_verbose_page_rules' => false,
 	);
-
-	// Merge and sanitize.
-	$permalinks = wp_parse_args( array_filter( $saved_permalinks ), $default_permalinks );
 
 	// Save only if values have changed.
 	if ( $saved_permalinks !== $permalinks ) {
