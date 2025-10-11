@@ -70,7 +70,7 @@ class Uploads {
 		$raw_value     = $request->get_param( 'set_thumbnail' );
 		$set_thumbnail = ( null === $raw_value || '1' === $raw_value || 1 === $raw_value || true === $raw_value );
 
-		if ( ! $post_id || 'event' !== get_post_type( $post_id ) ) {
+		if ( ! $post_id || 'eventkoi_event' !== get_post_type( $post_id ) ) {
 			return new \WP_Error( 'eventkoi_invalid_post', __( 'Invalid or missing event ID.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
@@ -196,7 +196,7 @@ class Uploads {
 			( is_array( $params ) ? ( $params['post_id'] ?? 0 ) : 0 )
 		);
 
-		if ( ! $post_id || get_post_type( $post_id ) !== 'event' ) {
+		if ( ! $post_id || get_post_type( $post_id ) !== 'eventkoi_event' ) {
 			return new \WP_Error(
 				'eventkoi_invalid_post',
 				__( 'Invalid or missing event ID.', 'eventkoi-lite' ),

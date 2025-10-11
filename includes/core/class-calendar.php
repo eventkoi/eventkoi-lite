@@ -446,7 +446,7 @@ class Calendar {
 
 		$events = get_posts(
 			array(
-				'post_type'   => 'event',
+				'post_type'   => 'eventkoi_event',
 				'numberposts' => -1,
 				'tax_query'   => array( // phpcs:ignore WordPress.DB.SlowDBQuery
 					array(

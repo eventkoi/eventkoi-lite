@@ -50,7 +50,7 @@ class Hooks {
 	 * @return string Modified excerpt text for event posts.
 	 */
 	public static function filter_event_excerpt( $excerpt, $post ) {
-		if ( 'event' !== get_post_type( $post ) ) {
+		if ( 'eventkoi_event' !== get_post_type( $post ) ) {
 			return $excerpt;
 		}
 
@@ -167,7 +167,7 @@ class Hooks {
 	 * @return void
 	 */
 	public static function clear_recurring_cache( $post_id ) {
-		if ( 'event' !== get_post_type( $post_id ) ) {
+		if ( 'eventkoi_event' !== get_post_type( $post_id ) ) {
 			return;
 		}
 

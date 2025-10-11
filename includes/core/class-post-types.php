@@ -45,7 +45,7 @@ class Post_Types {
 
 		register_taxonomy(
 			'event_cal',
-			apply_filters( 'eventkoi_taxonomy_objects_event_cal', array( 'event' ) ),
+			apply_filters( 'eventkoi_taxonomy_objects_event_cal', array( 'eventkoi_event' ) ),
 			apply_filters(
 				'eventkoi_taxonomy_args_event_cal',
 				array(
@@ -88,7 +88,7 @@ class Post_Types {
 	 * Register post types.
 	 */
 	public static function register_post_types() {
-		if ( ! is_blog_installed() || post_type_exists( 'event' ) ) {
+		if ( ! is_blog_installed() || post_type_exists( 'eventkoi_event' ) ) {
 			return;
 		}
 
@@ -103,7 +103,7 @@ class Post_Types {
 		}
 
 		register_post_type(
-			'event',
+			'eventkoi_event',
 			apply_filters(
 				'event_register_post_type_args',
 				array(

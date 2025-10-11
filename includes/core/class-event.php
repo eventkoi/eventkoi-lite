@@ -103,7 +103,7 @@ class Event {
 
 		if ( is_numeric( $event ) ) {
 			$event = get_post( $event );
-			if ( ! empty( $event->post_type ) && 'event' !== $event->post_type ) {
+			if ( ! empty( $event->post_type ) && 'eventkoi_event' !== $event->post_type ) {
 				$event = array();
 			}
 		}
@@ -381,7 +381,7 @@ class Event {
 
 		if ( 0 === $id ) {
 			$args = array(
-				'post_type'   => 'event',
+				'post_type'   => 'eventkoi_event',
 				'post_status' => $status,
 				'post_title'  => $title,
 				'post_name'   => sanitize_title_with_dashes( $title, '', 'save' ),
@@ -1354,7 +1354,7 @@ class Event {
 		$title = sprintf( __( '[Duplicate]: %s', 'eventkoi-lite' ), $meta['title'] );
 
 		$args = array(
-			'post_type'   => 'event',
+			'post_type'   => 'eventkoi_event',
 			'post_status' => 'draft',
 			'post_title'  => $title,
 			'post_name'   => sanitize_title_with_dashes( $title, '', 'save' ),

@@ -64,9 +64,9 @@ class Pretty_Instance_URLs {
 	public function maybe_force_post_match( $wp ) {
 		if (
 			isset( $wp->query_vars['post_type'], $wp->query_vars['name'], $wp->query_vars['instance'] ) &&
-			'event' === $wp->query_vars['post_type']
+			'eventkoi_event' === $wp->query_vars['post_type']
 		) {
-			$post = get_page_by_path( $wp->query_vars['name'], OBJECT, 'event' );
+			$post = get_page_by_path( $wp->query_vars['name'], OBJECT, 'eventkoi_event' );
 
 			if ( $post ) {
 				$wp->query_vars['page_id'] = $post->ID;
@@ -85,7 +85,7 @@ class Pretty_Instance_URLs {
 	 * Redirect ?instance=123 to pretty /event/foo/123/.
 	 */
 	public function maybe_redirect_to_pretty_url() {
-		if ( is_singular( 'event' ) && get_query_var( 'instance' ) ) {
+		if ( is_singular( 'eventkoi_event' ) && get_query_var( 'instance' ) ) {
 			$instance  = get_query_var( 'instance' );
 			$permalink = get_permalink();
 

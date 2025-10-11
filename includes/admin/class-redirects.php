@@ -38,7 +38,7 @@ class Redirects {
 		}
 
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		if ( isset( $_GET['post_type'] ) && 'event' === sanitize_key( $_GET['post_type'] ) ) {
+		if ( isset( $_GET['post_type'] ) && 'eventkoi_event' === sanitize_key( $_GET['post_type'] ) ) {
 			// Prevent redirect issues if headers already sent.
 			if ( ! headers_sent() ) {
 				wp_safe_redirect( admin_url( 'admin.php?page=eventkoi#/events/add' ) );

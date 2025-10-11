@@ -29,7 +29,7 @@ class Schema {
 	 * Add event schema to wp_head.
 	 */
 	public static function add_event_schema() {
-		if ( ! is_singular( 'event' ) ) {
+		if ( ! is_singular( 'eventkoi_event' ) ) {
 			return;
 		}
 

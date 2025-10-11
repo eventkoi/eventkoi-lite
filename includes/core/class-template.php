@@ -50,7 +50,7 @@ class Template {
 			'content'     => self::get_default_event_template(),
 		);
 
-		register_block_template( eventkoi_plugin_name() . '//single-event', apply_filters( 'eventkoi_event_template_args', $args ) );
+		register_block_template( eventkoi_plugin_name() . '//single-eventkoi_event', apply_filters( 'eventkoi_event_template_args', $args ) );
 	}
 
 	/**
@@ -65,7 +65,7 @@ class Template {
 			return $single;
 		}
 
-		if ( 'event' === $post->post_type && is_singular( 'event' ) ) {
+		if ( is_singular( 'eventkoi_event' ) && isset( $post->post_type ) && 'eventkoi_event' === $post->post_type ) {
 			$default_file = EVENTKOI_PLUGIN_DIR . 'includes/core/views/single-event-page.php';
 			if ( file_exists( $default_file ) ) {
 				$single = $default_file;
@@ -113,7 +113,7 @@ class Template {
 	 * @return string
 	 */
 	public static function maybe_override_instance_title( $title ) {
-		if ( ! is_singular( 'event' ) ) {
+		if ( ! is_singular( 'eventkoi_event' ) ) {
 			return $title;
 		}
 
@@ -147,7 +147,7 @@ class Template {
 	 * Output canonical tag for recurring event instance.
 	 */
 	public static function maybe_output_canonical_tag() {
-		if ( ! is_singular( 'event' ) ) {
+		if ( ! is_singular( 'eventkoi_event' ) ) {
 			return;
 		}
 
@@ -174,7 +174,7 @@ class Template {
 	 * Output robots noindex for recurring instances.
 	 */
 	public static function maybe_output_robots_tag() {
-		if ( ! is_singular( 'event' ) ) {
+		if ( ! is_singular( 'eventkoi_event' ) ) {
 			return;
 		}
 
@@ -202,7 +202,7 @@ class Template {
 	 * Prevent viewing a trashed recurring instance by redirecting to base event page.
 	 */
 	public static function maybe_block_trashed_instance() {
-		if ( ! is_singular( 'event' ) ) {
+		if ( ! is_singular( 'eventkoi_event' ) ) {
 			return;
 		}
 
@@ -236,7 +236,7 @@ class Template {
 	 * @return void
 	 */
 	public static function maybe_block_recurring_event() {
-		if ( ! is_singular( 'event' ) || ! get_the_ID() ) {
+		if ( ! is_singular( 'eventkoi_event' ) || ! get_the_ID() ) {
 			return;
 		}
 
@@ -256,7 +256,7 @@ class Template {
 	 * @return string
 	 */
 	public static function force_instance_block_template( $template ) {
-		if ( ! is_singular( 'event' ) || ! get_the_ID() ) {
+		if ( ! is_singular( 'eventkoi_event' ) || ! get_the_ID() ) {
 			return $template;
 		}
 

@@ -42,7 +42,7 @@ class Commands {
 		}
 
 		$post = get_post( $event_id );
-		if ( ! $post || 'event' !== $post->post_type ) {
+		if ( ! $post || 'eventkoi_event' !== $post->post_type ) {
 			WP_CLI::error( "No EventKoi event found with ID {$event_id}." );
 		}
 

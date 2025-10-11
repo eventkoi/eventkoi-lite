@@ -23,6 +23,7 @@ class Install {
 	public function __construct() {
 		add_action( 'init', array( $this, 'maybe_install' ), 6 );
 		add_action( 'init', array( $this, 'maybe_flush_rewrite_rules' ), 20 );
+		add_action( 'init', array( $this, 'maybe_migrate_eventkoi_events' ), 25 );
 	}
 
 	/**
@@ -143,5 +144,87 @@ class Install {
 
 			flush_rewrite_rules();
 		}
+	}
+
+	/**
+	 * Migrate old EventKoi posts
+	 *
+	 * Detects EventKoi posts by checking for unique EventKoi meta keys.
+	 * Runs once and stores a flag to prevent repeat execution.
+	 *
+	 * @return void
+	 */
+	public function maybe_migrate_eventkoi_events() {
+		// Only run once.
+		if ( get_option( 'eventkoi_migrated_event_posts' ) ) {
+			return;
+		}
+
+		global $wpdb;
+
+		// EventKoi-specific meta keys used to detect our events.
+		$meta_keys = array(
+			'start_date',
+			'end_date',
+			'date_type',
+			'event_days',
+			'recurrence_rules',
+		);
+
+		// Bail early if list is empty.
+		if ( empty( $meta_keys ) ) {
+			return;
+		}
+
+		// Escape table names (best practice for PHPCS).
+		$postmeta_table = esc_sql( $wpdb->postmeta );
+		$posts_table    = esc_sql( $wpdb->posts );
+
+		// Build a comma-separated list of meta keys, each escaped individually.
+		$in_meta = implode(
+			"', '",
+			array_map( 'esc_sql', $meta_keys )
+		);
+
+		// Build query — PHPCS-safe, with no dynamic placeholders injected directly.
+		$sql = "
+		SELECT DISTINCT pm.post_id
+		FROM {$postmeta_table} AS pm
+		INNER JOIN {$posts_table} AS p ON p.ID = pm.post_id
+		WHERE pm.meta_key IN ( '{$in_meta}' )
+		  AND p.post_type = %s
+	";
+
+		// Prepare safely the variable part (post_type).
+		$prepared_sql = $wpdb->prepare( $sql, 'event' ); // phpcs:ignore.
+
+		// Fetch IDs to migrate.
+		$post_ids = $wpdb->get_col( $prepared_sql ); // phpcs:ignore.
+
+		if ( empty( $post_ids ) ) {
+			update_option( 'eventkoi_migrated_event_posts', 'none_found' );
+			return;
+		}
+
+		foreach ( $post_ids as $post_id ) {
+            // phpcs:ignore.
+			$wpdb->update(
+				$wpdb->posts,
+				array( 'post_type' => 'eventkoi_event' ),
+				array( 'ID' => absint( $post_id ) )
+			);
+			clean_post_cache( $post_id );
+		}
+
+		// Mark as completed and request permalink flush.
+		update_option( 'eventkoi_migrated_event_posts', gmdate( 'Y-m-d H:i:s' ) );
+		update_option( 'eventkoi_flush_needed', 'yes' );
+
+		/**
+		 * Fires after EventKoi post type migration completes.
+		 *
+		 * @param int $count Number of migrated posts.
+		 */
+		do_action( 'eventkoi_event_posts_migrated', count( $post_ids ) );
 	}
 }

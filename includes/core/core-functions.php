@@ -397,7 +397,7 @@ function eventkoi_get_default_calendar_url() {
 
 	if ( $default_cal_id <= 0 ) {
 		// Fallback to events archive if no default calendar is set.
-		$archive_url = get_post_type_archive_link( 'event' );
+		$archive_url = get_post_type_archive_link( 'eventkoi_event' );
 		return $archive_url ? esc_url( $archive_url ) : '';
 	}
 
@@ -405,7 +405,7 @@ function eventkoi_get_default_calendar_url() {
 
 	if ( ! $default_cal || is_wp_error( $default_cal ) ) {
 		// Fallback to events archive if the term is invalid.
-		$archive_url = get_post_type_archive_link( 'event' );
+		$archive_url = get_post_type_archive_link( 'eventkoi_event' );
 		return $archive_url ? esc_url( $archive_url ) : '';
 	}
 

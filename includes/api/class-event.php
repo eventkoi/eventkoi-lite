@@ -171,7 +171,7 @@ class Event {
 			$postarr = array(
 				'post_title'        => ! empty( $event['title'] ) ? sanitize_text_field( $event['title'] ) : 'Untitled event',
 				'post_status'       => ! empty( $status ) ? $status : 'draft',
-				'post_type'         => 'event',
+				'post_type'         => 'eventkoi_event',
 				'post_date'         => $now,
 				'post_date_gmt'     => $now_gmt,
 				'post_modified'     => $now,

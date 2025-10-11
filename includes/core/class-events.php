@@ -34,7 +34,7 @@ class Events {
 		$number       = ! empty( $args['number'] ) ? absint( $args['number'] ) : -1;
 
 		$query_args = array(
-			'post_type'      => 'event',
+			'post_type'      => 'eventkoi_event',
 			'orderby'        => 'modified',
 			'order'          => 'DESC',
 			'posts_per_page' => $number,
@@ -309,7 +309,7 @@ class Events {
 		);
 
 		// Get basic WordPress post counts.
-		$post_counts = wp_count_posts( 'event' );
+		$post_counts = wp_count_posts( 'eventkoi_event' );
 
 		// Efficient recurring count with caching.
 		$cache_key   = 'eventkoi_recurring_event_count';
@@ -327,7 +327,7 @@ class Events {
 				   AND p.post_status IN ('publish', 'draft', 'future')
 				   AND pm.meta_key = %s
 				   AND pm.meta_value = %s",
-					'event',
+					'eventkoi_event',
 					'date_type',
 					'recurring'
 				)
