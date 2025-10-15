@@ -34,11 +34,19 @@ export function TimezonePicker({
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-controls="timezone-listbox"
+          aria-label={`Current timezone: ${formatTimezoneLabel(
+            timezone,
+            timeFormat
+          )}. Press Enter or Space to change.`}
           className="inline-flex bg-transparent border-none cursor-pointer w-auto h-auto p-0 font-normal text-foreground underline"
         >
           {formatTimezoneLabel(timezone, timeFormat)}
         </Button>
       </PopoverTrigger>
+
       <PopoverContent
         align={isMobile ? "start" : "end"}
         className="p-0 w-[280px] border border-border border-solid border-[1px]"
@@ -49,9 +57,10 @@ export function TimezonePicker({
             <Tabs
               value={timeFormat}
               onValueChange={setTimeFormat}
+              aria-label="Time format selection"
               className="w-full bg-muted"
             >
-              <TabsList className="flex bg-muted px-2 gap-2 shdaow-none rounded-none">
+              <TabsList className="flex bg-muted px-2 gap-2 shadow-none rounded-none">
                 <TabsTrigger
                   value="12"
                   className="rounded-sm bg-muted text-foreground hover:text-foreground flex-1 data-[state=active]:font-semibold shadow-none border-none cursor-pointer"
@@ -71,7 +80,12 @@ export function TimezonePicker({
             placeholder="Search timezone..."
             className="h-auto border-none focus:border-none focus:border-transparent focus:border-[0px] focus:shadow-none"
           />
-          <CommandList className="max-h-[300px] overflow-y-auto border-t border-border border-t-[1px] border-solid border-b-0 border-l-0 border-r-0">
+          <CommandList
+            id="timezone-listbox"
+            role="listbox"
+            aria-label="Select a timezone"
+            className="max-h-[300px] overflow-y-auto border-t border-border border-t-[1px] border-solid border-b-0 border-l-0 border-r-0"
+          >
             <CommandEmpty>No timezone found.</CommandEmpty>
 
             {Object.entries(tzGroups).map(([region, tzList], index, array) => (
@@ -86,6 +100,8 @@ export function TimezonePicker({
                   {tzList.map((tz) => (
                     <CommandItem
                       key={tz.value}
+                      role="option"
+                      aria-selected={timezone === tz.value}
                       onSelect={() => {
                         const normalized = safeNormalizeTimeZone(tz.value);
                         setTimezone(normalized);
@@ -98,6 +114,7 @@ export function TimezonePicker({
 
                         setOpen(false);
                       }}
+                      className="cursor-pointer aria-selected:bg-accent aria-selected:text-accent-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none rounded-sm"
                     >
                       {tz.label}
                     </CommandItem>
@@ -110,6 +127,9 @@ export function TimezonePicker({
             ))}
           </CommandList>
         </Command>
+        <span className="sr-only" aria-live="polite">
+          Selected timezone: {formatTimezoneLabel(timezone, timeFormat)}
+        </span>
       </PopoverContent>
     </Popover>
   );
