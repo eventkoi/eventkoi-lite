@@ -11,15 +11,24 @@ export function ViewToggle({ calendarApi, view, setView }) {
         calendarApi?.changeView(val);
         setView(val);
       }}
+      aria-label="Calendar view mode"
+      role="radiogroup"
     >
       <ToggleGroupItem
         value="dayGridMonth"
+        role="radio"
+        aria-checked={view === "dayGridMonth"}
+        aria-label="Month view"
         className="border-none transition-none cursor-pointer shadow-none h-full rounded-sm text-foreground hover:text-foreground data-[state=on]:bg-white data-[state=on]:font-semibold"
       >
         Month
       </ToggleGroupItem>
+
       <ToggleGroupItem
         value="timeGridWeek"
+        role="radio"
+        aria-checked={view === "timeGridWeek"}
+        aria-label="Week view"
         className="border-none transition-none cursor-pointer shadow-none h-full rounded-sm text-foreground hover:text-foreground data-[state=on]:bg-white data-[state=on]:font-semibold"
       >
         Week

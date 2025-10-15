@@ -17,6 +17,9 @@ export function TodayButton({ calendarApi, setCurrentDate, isTodayInRange }) {
       )}
       disabled={isTodayInRange}
       onClick={handleToday}
+      aria-label="Jump to today"
+      aria-pressed={isTodayInRange}
+      title="Jump to today"
     >
       Today
     </Button>
