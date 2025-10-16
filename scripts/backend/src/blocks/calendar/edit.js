@@ -385,6 +385,19 @@ export default function Edit({
             expandRows={true}
             height="auto"
             eventTimeFormat={eventTimeFormat}
+            dayHeaderContent={(args) => {
+              const date = args.date;
+              const dayName = date.toLocaleDateString("en-US", {
+                weekday: "short",
+              });
+              const dayNum = date.getDate();
+              return (
+                <span className="space-x-px sm:space-x-2">
+                  <span>{dayName}</span>
+                  <span>{dayNum}</span>
+                </span>
+              );
+            }}
             datesSet={({ start, end, view }) => {
               // Create a unique key for this range
               const key = `${start.toISOString()}_${end.toISOString()}`;

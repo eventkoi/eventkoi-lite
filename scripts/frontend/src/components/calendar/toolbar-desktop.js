@@ -4,6 +4,7 @@ import { SearchBox } from "@/components/calendar/search-box";
 import { TodayButton } from "@/components/calendar/today-button";
 import { ViewToggle } from "@/components/calendar/view-toggle";
 import { Skeleton } from "@/components/ui/skeleton";
+import { WeekPopover } from "./WeekPopover";
 
 export function ToolbarDesktop(props) {
   const {
@@ -61,9 +62,11 @@ export function ToolbarDesktop(props) {
           setCurrentDate={setCurrentDate}
         />
         {view === "timeGridWeek" || view === "week" ? (
-          <div className="font-medium text-base px-2 w-full block">
-            {calendarApi?.view?.title || ""}
-          </div>
+          <WeekPopover
+            calendarApi={calendarApi}
+            currentDate={currentDate}
+            setCurrentDate={setCurrentDate}
+          />
         ) : (
           <CalendarHeaderPopover
             calendarApi={calendarApi}

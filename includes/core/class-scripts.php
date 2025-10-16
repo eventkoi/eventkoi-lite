@@ -50,6 +50,7 @@ class Scripts {
 		// Prepare localized variables.
 		$event_id = get_the_ID();
 		$event    = $event_id ? new Event( $event_id ) : null;
+		$calendar = Calendar::get_meta();
 		$settings = Settings::get();
 
 		$params = array(
@@ -65,6 +66,7 @@ class Scripts {
 			),
 			'time_format' => $settings['time_format'] ?? '12',
 			'locale'      => determine_locale(),
+			'startday'    => empty( $calendar['startday'] ) ? $settings['week_starts_on'] : $calendar['startday'],
 		);
 
 		wp_localize_script(
