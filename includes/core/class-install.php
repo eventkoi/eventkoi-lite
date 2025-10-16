@@ -1,6 +1,12 @@
 <?php
 /**
- * Handles the plugin installation and updates.
+ * Handles installation, updates, and migration for the EventKoi plugin.
+ *
+ * Responsible for:
+ * - Creating default terms
+ * - Storing plugin version
+ * - Deferring rewrite flush
+ * - Migrating legacy post types
  *
  * @package    EventKoi
  * @subpackage EventKoi\Core
@@ -16,6 +22,14 @@ if ( ! defined( 'ABSPATH' ) ) {
  * Class Install
  */
 class Install {
+
+	private const META_KEYS = array(
+		'start_date',
+		'end_date',
+		'date_type',
+		'event_days',
+		'recurrence_rules',
+	);
 
 	/**
 	 * Constructor: Hooks version check early.
@@ -33,7 +47,11 @@ class Install {
 		$stored  = get_option( 'eventkoi_version', '' );
 		$current = defined( 'EVENTKOI_VERSION' ) ? EVENTKOI_VERSION : '';
 
-		if ( $stored !== $current && ! defined( 'IFRAME_REQUEST' ) ) {
+		if ( ! $current || defined( 'IFRAME_REQUEST' ) ) {
+			return;
+		}
+
+		if ( ! $stored || $stored !== $current ) {
 			self::install();
 			do_action( 'eventkoi_updated', $stored, $current );
 		}
@@ -53,11 +71,9 @@ class Install {
 
 		self::install_core();
 
-		if ( ! has_action( 'eventkoi_flush_rewrite_rules' ) ) {
-			flush_rewrite_rules();
-		}
+		// Flag for rewrite flush on next init after all rewrites are registered.
+		update_option( 'eventkoi_flush_needed', 'yes' );
 
-		do_action( 'eventkoi_flush_rewrite_rules' );
 		do_action( 'eventkoi_installed' );
 		do_action( 'eventkoi_admin_installed' );
 	}
@@ -84,19 +100,20 @@ class Install {
 	 * Create default calendar taxonomy term if missing.
 	 */
 	private static function create_terms() {
-		$option_key = 'eventkoi_default_event_cal';
-		$current_id = (int) get_option( $option_key, 0 );
+		$option_key    = 'eventkoi_default_event_cal';
+		$existing_term = get_term( get_option( $option_key ), 'event_cal' );
 
-		if ( $current_id && term_exists( $current_id, 'event_cal' ) ) {
+		if ( $existing_term && ! is_wp_error( $existing_term ) ) {
 			return;
 		}
 
-		$term_name = esc_html_x( 'Default calendar', 'Default category slug', 'eventkoi-lite' );
+		/* translators: default calendar term name */
+		$term_name = esc_html_x( 'Default calendar', 'Default calendar term', 'eventkoi-lite' );
 		$slug      = sanitize_title( $term_name );
 
 		$existing = get_term_by( 'slug', $slug, 'event_cal' );
 
-		if ( $existing ) {
+		if ( $existing && ! is_wp_error( $existing ) ) {
 			update_option( $option_key, (int) $existing->term_taxonomy_id );
 			return;
 		}
@@ -163,22 +180,15 @@ class Install {
 		global $wpdb;
 
 		// EventKoi-specific meta keys used to detect our events.
-		$meta_keys = array(
-			'start_date',
-			'end_date',
-			'date_type',
-			'event_days',
-			'recurrence_rules',
-		);
+		$meta_keys = self::META_KEYS;
 
 		// Bail early if list is empty.
 		if ( empty( $meta_keys ) ) {
 			return;
 		}
 
-		// Escape table names (best practice for PHPCS).
-		$postmeta_table = esc_sql( $wpdb->postmeta );
-		$posts_table    = esc_sql( $wpdb->posts );
+		$postmeta_table = $wpdb->postmeta;
+		$posts_table    = $wpdb->posts;
 
 		// Build a comma-separated list of meta keys, each escaped individually.
 		$in_meta = implode(
@@ -206,14 +216,16 @@ class Install {
 			return;
 		}
 
-		foreach ( $post_ids as $post_id ) {
-            // phpcs:ignore.
-			$wpdb->update(
-				$wpdb->posts,
-				array( 'post_type' => 'eventkoi_event' ),
-				array( 'ID' => absint( $post_id ) )
-			);
-			clean_post_cache( $post_id );
+		$post_ids = array_map( 'absint', $post_ids );
+
+		if ( ! empty( $post_ids ) ) {
+			$ids_in = implode( ',', $post_ids );
+
+			$wpdb->query( "UPDATE {$wpdb->posts} SET post_type = 'eventkoi_event' WHERE ID IN ($ids_in)" ); // phpcs:ignore
+
+			foreach ( $post_ids as $post_id ) {
+				clean_post_cache( $post_id );
+			}
 		}
 
 		// Mark as completed and request permalink flush.
