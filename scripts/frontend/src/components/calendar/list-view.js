@@ -38,7 +38,7 @@ export function ListView({
   const tzFromQuery = urlParams.get("tz");
 
   return (
-    <div className="grid">
+    <ul className="grid list-none m-0 p-0" role="list">
       {events.map((event) => {
         const wpTz = tzFromQuery
           ? safeNormalizeTimeZone(tzFromQuery)
@@ -104,7 +104,7 @@ export function ListView({
         };
 
         return (
-          <div
+          <li
             key={`event-${event.id}`}
             className="flex gap-8 py-8 border-border min-w-0"
             style={{
@@ -154,6 +154,7 @@ export function ListView({
               <div
                 className="flex md:hidden text-muted-foreground"
                 role="group"
+                aria-hidden="true"
                 aria-label={`Event time: ${buildTimeline(
                   event,
                   wpTz,
@@ -190,9 +191,9 @@ export function ListView({
             >
               {buildTimeline(event, wpTz, timeFormat)}
             </div>
-          </div>
+          </li>
         );
       })}
-    </div>
+    </ul>
   );
 }
