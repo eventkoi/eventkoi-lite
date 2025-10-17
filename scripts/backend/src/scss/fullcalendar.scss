@@ -75,7 +75,7 @@
     }
   }
   .fc-col-header-cell {
-    padding-top: 0;
+    padding-top: 10px;
     padding-bottom: 20px;
     font-size: 0.9em;
     text-align: left;
@@ -205,6 +205,24 @@
       font-weight: 500;
     }
   }
+  .fc-timegrid-axis-cushion::first-letter {
+    text-transform: uppercase;
+  }
+  .fc-scrollgrid-sync-inner {
+    text-align: center;
+  }
+  .fc-daygrid-body-natural .fc-daygrid-day-events {
+    margin-bottom: 0;
+  }
+  [class="fc-scrollgrid-section"] {
+    display: none;
+  }
+  .fc-timegrid-all-day {
+    font-weight: bold;
+  }
+  .fc-scrollgrid-section-sticky > * {
+    background-color: white;
+  }
 }
 
 @media (max-width: 768px) {
@@ -212,7 +230,7 @@
     text-align: center !important;
     padding-left: 0 !important;
     padding-bottom: 10px !important;
-    padding-top: 0 !important;
+    padding-top: 5px !important;
   }
 
   .fc .fc-col-header-cell-cushion {

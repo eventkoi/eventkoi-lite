@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search } from "lucide-react";
 import { useRef, useState } from "react";
+import { WeekPopover } from "./WeekPopover";
 
 export function ToolbarMobile(props) {
   const {
@@ -102,9 +103,11 @@ export function ToolbarMobile(props) {
               setCurrentDate={setCurrentDate}
             />
             {view === "timeGridWeek" || view === "week" ? (
-              <div className="font-medium text-sm px-1 flex-1 text-center break-words leading-tight">
-                {calendarApi?.view?.title || ""}
-              </div>
+              <WeekPopover
+                calendarApi={calendarApi}
+                currentDate={currentDate}
+                setCurrentDate={setCurrentDate}
+              />
             ) : (
               <CalendarHeaderPopover
                 calendarApi={calendarApi}
@@ -117,7 +120,7 @@ export function ToolbarMobile(props) {
           <Button
             variant="outline"
             size="icon"
-            className="rounded shadow-sm border border-solid border-[1px] border-border cursor-pointer"
+            className="rounded shadow-sm border border-solid border-border cursor-pointer"
             onClick={() => {
               setSearchOpen(true);
               setTimeout(() => inputRef.current?.focus(), 50);
