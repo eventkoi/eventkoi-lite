@@ -40,6 +40,12 @@ class Hooks {
 		add_action( 'eventkoi_after_events_removed', array( __CLASS__, 'clear_recurring_cache_bulk' ) );
 		add_action( 'eventkoi_after_events_restored', array( __CLASS__, 'clear_recurring_cache_bulk' ) );
 		add_action( 'eventkoi_after_events_duplicated', array( __CLASS__, 'clear_recurring_cache_bulk' ) );
+
+		// Clear event query caches when events change.
+		add_action( 'save_post_eventkoi_event', array( __CLASS__, 'clear_event_query_cache' ), 10, 3 );
+		add_action( 'deleted_post', array( __CLASS__, 'clear_event_query_cache_generic' ) );
+		add_action( 'trash_post', array( __CLASS__, 'clear_event_query_cache_generic' ) );
+		add_action( 'transition_post_status', array( __CLASS__, 'clear_event_query_cache_on_status_change' ), 10, 3 );
 	}
 
 	/**
@@ -181,5 +187,59 @@ class Hooks {
 	 */
 	public static function clear_recurring_cache_bulk() {
 		wp_cache_delete( 'eventkoi_recurring_event_count', 'eventkoi_counts' );
+	}
+
+	/**
+	 * Clear all cached EventKoi event queries.
+	 *
+	 * @return void
+	 */
+	public static function clear_event_query_cache() {
+		global $wpdb;
+
+		// Remove transients that match our prefix.
+		$wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+				$wpdb->esc_like( '_transient_eventkoi_events_' ) . '%'
+			)
+		);
+
+		$wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM {$wpdb->options} WHERE option_name LIKE %s",
+				$wpdb->esc_like( '_transient_timeout_eventkoi_events_' ) . '%'
+			)
+		);
+	}
+
+	/**
+	 * Clear event query cache on generic post deletions (if post type matches).
+	 *
+	 * @param int $post_id The post ID.
+	 * @return void
+	 */
+	public static function clear_event_query_cache_generic( $post_id ) {
+		if ( 'eventkoi_event' !== get_post_type( $post_id ) ) {
+			return;
+		}
+
+		self::clear_event_query_cache();
+	}
+
+	/**
+	 * Clear cache when post status changes.
+	 *
+	 * @param string   $new_status The new post status.
+	 * @param string   $old_status The old post status.
+	 * @param \WP_Post $post      The post object.
+	 * @return void
+	 */
+	public static function clear_event_query_cache_on_status_change( $new_status, $old_status, $post ) {
+		if ( 'eventkoi_event' !== $post->post_type ) {
+			return;
+		}
+
+		self::clear_event_query_cache();
 	}
 }

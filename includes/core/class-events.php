@@ -21,17 +21,31 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Events {
 
 	/**
-	 * Init.
+	 * Retrieve events based on parameters.
 	 *
-	 * @param array $args Array of arguments to pass.
+	 * Builds a WP_Query with meta and taxonomy filters, optimized for
+	 * performance and readability.
+	 *
+	 * @param array $args Optional. Arguments for filtering events.
+	 * @return array|int Array of event data or count if 'counts_only' is set.
 	 */
 	public static function get_events( $args = array() ) {
+		$now = time();
 
-		$calendar     = ! empty( $args['calendar'] ) ? explode( ',', $args['calendar'] ) : '';
-		$event_status = ! empty( $args['event_status'] ) ? explode( ',', $args['event_status'] ) : array();
-		$from         = ! empty( $args['from'] ) ? $args['from'] : '';
-		$to           = ! empty( $args['to'] ) ? $args['to'] : '';
-		$number       = ! empty( $args['number'] ) ? absint( $args['number'] ) : -1;
+		// Create a unique cache key for this filter combination.
+		$cache_key = 'eventkoi_events_' . md5( wp_json_encode( $args ) );
+
+		// Attempt to load from cache first.
+		$cached = get_transient( $cache_key );
+		if ( false !== $cached ) {
+			return $cached;
+		}
+
+		$calendar = ! empty( $args['calendar'] ) ? array_map( 'absint', explode( ',', $args['calendar'] ) ) : array();
+		$statuses = ! empty( $args['event_status'] ) ? array_map( 'sanitize_text_field', explode( ',', $args['event_status'] ) ) : array();
+		$from     = ! empty( $args['from'] ) ? sanitize_text_field( $args['from'] ) : '';
+		$to       = ! empty( $args['to'] ) ? sanitize_text_field( $args['to'] ) : '';
+		$number   = isset( $args['number'] ) ? absint( $args['number'] ) : -1;
 
 		$query_args = array(
 			'post_type'      => 'eventkoi_event',
@@ -41,13 +55,15 @@ class Events {
 			'post_status'    => array( 'publish', 'draft' ),
 		);
 
-		// Apply WP/core post status filter.
+		// Filter by core post status.
 		if ( ! empty( $args['status'] ) ) {
-			if ( in_array( $args['status'], array( 'draft', 'trash', 'future', 'publish' ), true ) ) {
-				$query_args['post_status'] = array( $args['status'] );
+			$status = sanitize_text_field( $args['status'] );
+
+			if ( in_array( $status, array( 'draft', 'trash', 'future', 'publish' ), true ) ) {
+				$query_args['post_status'] = array( $status );
 			}
 
-			if ( 'recurring' === $args['status'] ) {
+			if ( 'recurring' === $status ) {
 				$query_args['meta_query'][] = array(
 					'key'     => 'date_type',
 					'value'   => 'recurring',
@@ -56,142 +72,108 @@ class Events {
 			}
 		}
 
-		// Event status filter.
-		if ( ! empty( $event_status ) || ! empty( $from ) || ! empty( $to ) ) {
-			$completed = false;
-			$live      = false;
-			$tbc       = false;
-			$upcoming  = false;
-			$date      = false;
+		// Build meta queries for event status.
+		if ( ! empty( $statuses ) || $from || $to ) {
+			$meta_status = array();
+			$date_filter = array();
 
-			if ( in_array( 'completed', $event_status, true ) ) {
-				$completed = array(
-					'relation' => 'OR',
-					array(
-						'key'     => 'end_timestamp',
-						'value'   => time(),
-						'compare' => '<',
-						'type'    => 'numeric',
-					),
-				);
-			}
+			foreach ( $statuses as $status_item ) {
+				switch ( $status_item ) {
+					case 'completed':
+						$meta_status[] = array(
+							'key'     => 'end_timestamp',
+							'value'   => $now,
+							'compare' => '<',
+							'type'    => 'NUMERIC',
+						);
+						break;
 
-			if ( in_array( 'live', $event_status, true ) ) {
-				$live = array(
-					'relation' => 'AND',
-					array(
-						'key'     => 'date_type',
-						'value'   => 'standard',
-						'compare' => '=',
-					),
-					array(
-						'key'     => 'start_timestamp',
-						'value'   => time(),
-						'compare' => '<=',
-						'type'    => 'numeric',
-					),
-					array(
-						'key'     => 'end_timestamp',
-						'value'   => time(),
-						'compare' => '>=',
-						'type'    => 'numeric',
-					),
-					array(
-						'key'     => 'tbc',
-						'value'   => true,
-						'compare' => '!=',
-					),
-				);
-			}
-
-			if ( in_array( 'upcoming', $event_status, true ) ) {
-				$query_args['post_status'] = array( 'publish' );
-				$upcoming                  = array(
-					'relation' => 'OR',
-					array(
-						'key'     => 'start_timestamp',
-						'value'   => time(),
-						'compare' => '>',
-						'type'    => 'numeric',
-					),
-					array(
-						'key'     => 'start_date',
-						'compare' => 'NOT EXISTS',
-					),
-				);
-			}
-
-			if ( in_array( 'tbc', $event_status, true ) ) {
-				$tbc = array(
-					'relation' => 'AND',
-					array(
-						'key'     => 'tbc',
-						'value'   => true,
-						'compare' => 'EQUALS',
-					),
-				);
-			}
-
-			if ( $from || $to ) {
-				if ( $from && ! $to ) {
-					$date = array(
-						'relation' => 'AND',
-						array(
-							'key'     => 'start_timestamp',
-							'value'   => strtotime( $from ),
-							'compare' => '>',
-							'type'    => 'numeric',
-						),
-					);
-				}
-				if ( $from && $to ) {
-					$date = array(
-						'relation' => 'OR',
-						array(
-							'key'     => 'start_timestamp',
-							'value'   => array( strtotime( $from ), strtotime( $to . ' +23 hours 59 minutes' ) ),
-							'compare' => 'BETWEEN',
-							'type'    => 'numeric',
-						),
-						array(
+					case 'live':
+						$meta_status[] = array(
 							'relation' => 'AND',
 							array(
 								'key'     => 'date_type',
-								'value'   => 'recurring',
+								'value'   => 'standard',
 								'compare' => '=',
 							),
 							array(
 								'key'     => 'start_timestamp',
-								'value'   => strtotime( $to . ' +23 hours 59 minutes' ),
+								'value'   => $now,
 								'compare' => '<=',
-								'type'    => 'numeric',
+								'type'    => 'NUMERIC',
 							),
 							array(
 								'key'     => 'end_timestamp',
-								'value'   => strtotime( $from ),
+								'value'   => $now,
 								'compare' => '>=',
-								'type'    => 'numeric',
+								'type'    => 'NUMERIC',
 							),
-						),
-					);
+							array(
+								'key'     => 'tbc',
+								'value'   => true,
+								'compare' => '!=',
+							),
+						);
+						break;
+
+					case 'upcoming':
+						$query_args['post_status'] = array( 'publish' );
+						$meta_status[]             = array(
+							'relation' => 'OR',
+							array(
+								'key'     => 'start_timestamp',
+								'value'   => $now,
+								'compare' => '>',
+								'type'    => 'NUMERIC',
+							),
+							array(
+								'key'     => 'start_date',
+								'compare' => 'NOT EXISTS',
+							),
+						);
+						break;
+
+					case 'tbc':
+						$meta_status[] = array(
+							array(
+								'key'     => 'tbc',
+								'value'   => true,
+								'compare' => 'EQUALS',
+							),
+						);
+						break;
 				}
 			}
 
-			$query_args['meta_query'] = array( // phpcs:ignore
+			// Apply date range filter.
+			if ( $from || $to ) {
+				$date_filter = array(
+					'key'  => 'start_timestamp',
+					'type' => 'NUMERIC',
+				);
+
+				if ( $from && $to ) {
+					$date_filter['value']   = array( strtotime( $from ), strtotime( $to . ' +23 hours 59 minutes' ) );
+					$date_filter['compare'] = 'BETWEEN';
+				} elseif ( $from ) {
+					$date_filter['value']   = strtotime( $from );
+					$date_filter['compare'] = '>=';
+				} elseif ( $to ) {
+					$date_filter['value']   = strtotime( $to . ' +23 hours 59 minutes' );
+					$date_filter['compare'] = '<=';
+				}
+			}
+
+			$query_args['meta_query'] = array(
 				'relation' => 'AND',
-				array(
-					'relation' => 'OR',
-					$completed,
-					$upcoming,
-					$live,
-					$tbc,
-				),
-				$date,
+				array_merge( array( 'relation' => 'OR' ), $meta_status ),
+				$date_filter,
 			);
 		}
 
-		if ( $calendar ) {
-			$query_args['tax_query'] = array( // phpcs:ignore
+		// Filter by calendar taxonomy.
+		if ( ! empty( $calendar ) ) {
+			$query_args['tax_query'] = array(
 				array(
 					'taxonomy' => 'event_cal',
 					'field'    => 'term_id',
@@ -200,20 +182,27 @@ class Events {
 			);
 		}
 
+		// Execute query.
 		$query = new \WP_Query( $query_args );
 
-		// Return counts only.
+		// Return count if requested.
 		if ( ! empty( $args['counts_only'] ) ) {
-			return $query->found_posts;
+			set_transient( $cache_key, (int) $query->found_posts, HOUR_IN_SECONDS );
+			return (int) $query->found_posts;
 		}
 
-		// Return all events including their meta.
+		// Preload post meta to reduce individual lookups.
+		update_postmeta_cache( wp_list_pluck( $query->posts, 'ID' ) );
+
 		$results = array();
 
 		foreach ( $query->posts as $post ) {
 			$event     = new Event( $post );
 			$results[] = $event::get_meta();
 		}
+
+		// Cache the final results.
+		set_transient( $cache_key, $results, HOUR_IN_SECONDS );
 
 		return $results;
 	}

@@ -100,31 +100,28 @@ class Events {
 	}
 
 	/**
-	 * Fetch events based on parameters.
+	 * Handle REST request for fetching events.
 	 *
-	 * @param \WP_REST_Request $request The request containing query parameters.
-	 * @return \WP_REST_Response|\WP_Error The response.
+	 * Retrieves a filtered list of events based on request parameters.
+	 *
+	 * @param \WP_REST_Request $request The REST request containing query parameters.
+	 * @return \WP_REST_Response|\WP_Error The REST response.
 	 */
 	public static function get_events( WP_REST_Request $request ) {
-		$status       = $request->get_param( 'status' );
-		$event_status = $request->get_param( 'event_status' );
-		$calendar     = $request->get_param( 'calendar' );
-		$from         = $request->get_param( 'from' );
-		$to           = $request->get_param( 'to' );
-		$number_param = $request->get_param( 'number' );
-		$number       = $number_param ? $number_param : 0;
-
-		$response = Query::get_events(
-			array(
-				'status'       => $status,
-				'event_status' => $event_status,
-				'calendar'     => $calendar,
-				'from'         => $from,
-				'to'           => $to,
-				'number'       => $number,
-			)
+		// Extract and sanitize request parameters.
+		$params = array(
+			'status'       => sanitize_text_field( $request->get_param( 'status' ) ),
+			'event_status' => sanitize_text_field( $request->get_param( 'event_status' ) ),
+			'calendar'     => sanitize_text_field( $request->get_param( 'calendar' ) ),
+			'from'         => sanitize_text_field( $request->get_param( 'from' ) ),
+			'to'           => sanitize_text_field( $request->get_param( 'to' ) ),
+			'number'       => absint( $request->get_param( 'number' ) ),
 		);
 
+		// Retrieve events using the Query class.
+		$response = Query::get_events( array_filter( $params ) );
+
+		// Ensure the response is properly formatted.
 		return rest_ensure_response( $response );
 	}
 
