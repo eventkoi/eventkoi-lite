@@ -28,7 +28,7 @@ class Redirects {
 	/**
 	 * Redirect users when attempting to create a new event via default WP UI.
 	 *
-	 * Redirects `/wp-admin/post-new.php?post_type=event` to the EventKoi app page.
+	 * Redirects to the EventKoi app page.
 	 */
 	public static function admin_redirect() {
 		global $pagenow;

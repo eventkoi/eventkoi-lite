@@ -39,7 +39,7 @@ class Pretty_Instance_URLs {
 
 			add_rewrite_rule(
 				'^' . preg_quote( $slug, '/' ) . '/([^/]+)/([0-9]+)/?$',
-				'index.php?post_type=event&name=$matches[1]&instance=$matches[2]',
+				'index.php?post_type=eventkoi_event&name=$matches[1]&instance=$matches[2]',
 				'top'
 			);
 		}
