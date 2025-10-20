@@ -6,7 +6,7 @@ Tags: events, calendar, event management, schedules, calendar block
 Requires at least: 6.7  
 Tested up to: 6.8 
 Requires PHP: 8.0  
-Stable tag: 1.0.11 
+Stable tag: 1.0.12 
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -132,6 +132,9 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.0.12 – Important bugfix – 2025-10-20 =
+* Fix: Fixed issue with recurring instances not loading. (May require saving permalinks again)
 
 = 1.0.11 – Performance, Accessibility & Calendar Enhancements – 2025-10-19 =
 * Improvement: Improved weekly view and navigation consistency in the calendar UI.
