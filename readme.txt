@@ -1,6 +1,6 @@
 == EventKoi Lite ==
 
-Contributors: eventkoi, lesleysim
+Contributors: eventkoi, lesleysim, ahmedfouaddev
 Donate link: https://donate.stripe.com/fZubJ1auN86Y1PU8cSdUY01
 Tags: events, calendar, event management, schedules, calendar block
 Requires at least: 6.7  
