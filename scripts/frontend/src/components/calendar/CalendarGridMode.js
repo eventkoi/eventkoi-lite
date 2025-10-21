@@ -25,11 +25,18 @@ const wpLocale =
     : "en";
 
 // Convert "de_DE" → "de"
-const shortLocale = wpLocale.split("_")[0];
+const shortLocale = (wpLocale || "").split("_")[0] || "en";
 
-// Optional: verify if the locale exists in the bundle
+// Verify if locale exists in FullCalendar bundle
 const supported = allLocales.some((l) => l.code === shortLocale);
-const localeToUse = supported ? shortLocale : "en";
+let localeToUse = supported ? shortLocale : "en";
+
+// Final safety check: ensure browser Intl accepts it
+try {
+  new Intl.DateTimeFormat(localeToUse);
+} catch {
+  localeToUse = "en";
+}
 
 export function CalendarGridMode({
   calendarRef,
@@ -103,17 +110,24 @@ export function CalendarGridMode({
         height="auto"
         eventTimeFormat={eventTimeFormat}
         dayHeaderContent={(args) => {
-          const date = args.date;
-          const dayName = date.toLocaleDateString("en-US", {
+          const { date, view } = args;
+          const dayName = date.toLocaleDateString(localeToUse, {
             weekday: "short",
           });
-          const dayNum = date.getDate();
-          return (
-            <span className="space-x-px sm:space-x-2">
-              <span>{dayName}</span>
-              <span>{dayNum}</span>
-            </span>
-          );
+
+          // For week/day views → two lines: weekday + bold number
+          if (view.type.startsWith("timeGrid")) {
+            const dayNum = date.getDate();
+            return (
+              <div className="flex flex-col items-center leading-tight">
+                <span>{dayName}</span>
+                <span className="font-semibold text-base">{dayNum}</span>
+              </div>
+            );
+          }
+
+          // For month or list views → just the weekday name
+          return <span>{dayName}</span>;
         }}
         datesSet={({ start, end, view }) => {
           const key = `${start.toISOString()}_${end.toISOString()}`;

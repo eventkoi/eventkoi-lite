@@ -6,7 +6,7 @@ Tags: events, calendar, event management, schedules, calendar block
 Requires at least: 6.7  
 Tested up to: 6.8 
 Requires PHP: 8.0  
-Stable tag: 1.0.12 
+Stable tag: 1.0.13 
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -132,6 +132,12 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.0.13 – Week View Layout & Header Improvements – 2025-10-21 =
+* Improvement: Redesigned week view header to show weekday names and dates on separate lines for better readability.
+* Improvement: Enhanced alignment and font styling for week/day headers across all screen sizes.
+* Fix: Removed weird day numbers appearing beside months in month view.
+* Fix: Adjusted locale handling to ensure consistent weekday labels across languages.
 
 = 1.0.12 – Important bugfix – 2025-10-20 =
 * Fix: Fixed issue with recurring instances not loading. (May require saving permalinks again)
