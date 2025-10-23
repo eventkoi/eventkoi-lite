@@ -80,27 +80,25 @@ export function EventLocation({ isInstance = false, value, onChange }) {
 
   return (
     <Panel className="p-0">
-      <div className="flex flex-col gap-6">
-        {(event.locations || []).map((location) => (
-          <LocationItem
-            key={location.id}
-            location={location}
-            expandedLocationId={expandedLocationId}
-            setExpandedLocationId={setExpandedLocationId}
-            onChange={(updatedFields) =>
-              updateLocation(location.id, updatedFields)
-            }
-            onDelete={() => removeLocation(location.id)}
-            settings={settings}
-          />
-        ))}
-      </div>
-
-      {(event.locations || []).length === 0 && (
-        <p className="text-muted-foreground text-sm">No locations added yet.</p>
+      {(event.locations || []).length > 0 && (
+        <div className="flex flex-col gap-6">
+          {(event.locations || []).map((location) => (
+            <LocationItem
+              key={location.id}
+              location={location}
+              expandedLocationId={expandedLocationId}
+              setExpandedLocationId={setExpandedLocationId}
+              onChange={(updatedFields) =>
+                updateLocation(location.id, updatedFields)
+              }
+              onDelete={() => removeLocation(location.id)}
+              settings={settings}
+            />
+          ))}
+        </div>
       )}
 
-      <div className="flex items-center gap-2 mt-4">
+      <div className="flex items-center gap-2">
         <Select value={newLocationType} onValueChange={setNewLocationType}>
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Select location type" />

@@ -45,11 +45,8 @@ export function EventTemplate({ isInstance = false, value = {}, onChange }) {
   return (
     <Panel className="p-0">
       <Label htmlFor="template">Event template</Label>
-      <div className="text-muted-foreground">
-        Select or edit the design template of your event page.
-      </div>
 
-      <div className="flex items-center gap-4 mt-2">
+      <div className="flex items-center gap-4">
         <Select value={template} onValueChange={handleChange}>
           <SelectTrigger id="template" className="w-[250px]">
             <SelectValue placeholder="Select a template" />
@@ -72,6 +69,9 @@ export function EventTemplate({ isInstance = false, value = {}, onChange }) {
         >
           {isManuallyAssigned ? "Edit in Site Editor" : "View/edit template"}
         </a>
+      </div>
+      <div className="text-muted-foreground">
+        Select or edit the design template of your event page.
       </div>
     </Panel>
   );

@@ -1,40 +1,25 @@
 "use client";
 
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 export function StandardTypeSelector({ value, onChange }) {
   return (
     <div className="flex flex-col gap-2">
-      <Label className="font-medium text-sm">Event Type:</Label>
-      <RadioGroup
-        value={value || "selected"}
-        onValueChange={onChange}
-        className="flex flex-col gap-2"
-      >
-        <div className="flex items-center space-x-2">
-          <RadioGroupItem value="continuous" id="continuous" />
-          <Label
-            htmlFor="continuous"
-            className="text-sm font-medium cursor-pointer"
-          >
-            Consecutive Days
-          </Label>
-        </div>
-
-        <div className="flex items-center space-x-2">
-          <RadioGroupItem value="selected" id="selected" />
-          <Label
-            htmlFor="selected"
-            className="text-sm font-medium cursor-pointer"
-          >
-            Selected Days{" "}
-            <span className="font-normal">
-              (non-consecutive or varied times)
-            </span>
-          </Label>
-        </div>
-      </RadioGroup>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="w-[250px]">
+          <SelectValue placeholder="Select date/time fields" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="continuous">Single date range</SelectItem>
+          <SelectItem value="selected">Multiple times and dates</SelectItem>
+        </SelectContent>
+      </Select>
     </div>
   );
 }

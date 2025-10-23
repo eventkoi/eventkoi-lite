@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 
 const tabs = [
   { name: "main", title: "Main info" },
-  { name: "details", title: "Additional details" },
+  { name: "details", title: "Event details" },
 ];
 
 export function EventTabs({ event, setEvent, location }) {

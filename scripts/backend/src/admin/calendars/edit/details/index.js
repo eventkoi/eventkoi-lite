@@ -16,7 +16,7 @@ export function CalendarEditDetails() {
     <Box>
       <div className="grid w-full">
         <Panel variant="header">
-          <Heading level={3}>Additional details</Heading>
+          <Heading level={3}>Calender details</Heading>
         </Panel>
         <Separator />
         <CalendarDisplay calendar={calendar} setCalendar={setCalendar} />

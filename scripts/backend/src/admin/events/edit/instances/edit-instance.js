@@ -108,7 +108,7 @@ export function EditInstance() {
       </Box>
 
       <Box container className="gap-10">
-        <Heading level={3}>Additional details</Heading>
+        <Heading level={3}>Event details</Heading>
         <EventImage
           isInstance
           value={data}

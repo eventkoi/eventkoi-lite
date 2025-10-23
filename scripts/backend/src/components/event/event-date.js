@@ -5,6 +5,8 @@ import { Panel } from "@/components/panel";
 import { ProBadge } from "@/components/pro-badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useEventEditContext } from "@/hooks/EventEditContext";
+import { cn } from "@/lib/utils";
+import { Calendar, Repeat } from "lucide-react";
 import { useEffect } from "react";
 
 export function EventDate({ showAttributes }) {
@@ -74,17 +76,60 @@ export function EventDate({ showAttributes }) {
   return (
     <Panel className="gap-3 p-0">
       <Tabs value={tabValue} onValueChange={onTabChange} className="w-full">
-        <TabsList className="border border-input rounded-lg mb-4">
-          <TabsTrigger value="standard" className="rounded-lg">
-            Standard
+        <TabsList className="h-auto w-full flex flex-col lg:flex-row space-y-5 lg:space-y-0 [&>*]:w-full lg:space-x-5 p-0 bg-white">
+          <TabsTrigger
+            value="standard"
+            className={cn(
+              "flex justify-start py-6 px-4 space-x-5 bg-white border-border border rounded-2xl",
+              "data-[state=active]:shadow-[inset_0_0_0_1px_black] data-[state=active]:border-primary"
+            )}
+          >
+            <div
+              className={cn(
+                "w-9 h-9 rounded-md flex items-center justify-center",
+                tabValue === "standard"
+                  ? "bg-primary text-white"
+                  : "bg-muted text-primary"
+              )}
+            >
+              <Calendar size={20} />
+            </div>
+            <div className="space-y-1 text-left">
+              <div className="text-black text-base">Standard event</div>
+              <p className="text-sm text-muted-foreground font-normal">
+                A single event with fixed dates
+              </p>
+            </div>
           </TabsTrigger>
-          <TabsTrigger value="recurring" className="rounded-lg">
-            Recurring
-            <ProBadge />
+          <TabsTrigger
+            value="recurring"
+            className={cn(
+              "flex justify-start py-6 px-4 space-x-5 bg-white border-border border rounded-2xl",
+              "data-[state=active]:shadow-[inset_0_0_0_1px_black] data-[state=active]:border-primary"
+            )}
+          >
+            <div
+              className={cn(
+                "w-9 h-9 rounded-md flex items-center justify-center",
+                tabValue === "recurring"
+                  ? "bg-primary text-white"
+                  : "bg-muted text-primary"
+              )}
+            >
+              <Repeat size={20} />
+            </div>
+            <div className="space-y-1 text-left">
+              <div className="text-black text-base">
+                Recurring event <ProBadge />
+              </div>
+              <p className="text-sm text-muted-foreground font-normal">
+                A series of events with repeating rules.
+              </p>
+            </div>
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="standard">
+        <TabsContent value="standard" className="mt-6">
           <EventDateStandard
             event={event}
             setEvent={setEvent}
@@ -92,7 +137,7 @@ export function EventDate({ showAttributes }) {
           />
         </TabsContent>
 
-        <TabsContent value="recurring">
+        <TabsContent value="recurring" className="mt-6">
           <ProLaunch
             headline="Upgrade to access Recurring Events"
             minimal

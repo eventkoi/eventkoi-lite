@@ -65,9 +65,9 @@ export function EventEditMain() {
         )}
       </Box>
 
-      {/* Additional details */}
+      {/* Event details */}
       <Box container className="gap-10">
-        <Heading level={3}>Additional details</Heading>
+        <Heading level={3}>Event details</Heading>
         <EventImage />
         {showAttributes && (
           <div className="text-sm text-muted-foreground -mt-6">

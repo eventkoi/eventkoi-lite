@@ -81,9 +81,6 @@ export function EventCalendar() {
   return (
     <Panel className="p-0">
       <Label htmlFor="calendar">Event calendar</Label>
-      <div className="text-muted-foreground mb-2">
-        Select which calendars your event will show up in.
-      </div>
       {items.length > 0 && (
         <MultiSelect
           options={items}
@@ -94,6 +91,9 @@ export function EventCalendar() {
           onSelectionChange={setCalendars}
         />
       )}
+      <div className="text-muted-foreground">
+        Select which calendars your event will show up in.
+      </div>
     </Panel>
   );
 }
