@@ -1,5 +1,7 @@
+import { cn } from "@/lib/utils";
 import { endOfWeek, setMonth, startOfWeek } from "date-fns";
 import { useEffect, useState } from "react";
+import { buttonVariants } from "../ui/button";
 import { Calendar } from "../ui/calendar";
 
 const dayLabels = {
@@ -94,14 +96,17 @@ export function WeekPicker({ calendarApi, currentDate, setCurrentDate }) {
         day_disabled: "",
         row: "flex w-full mt-2 justify-between [&>*]:flex-1 [&>td:first-child>button]:rounded-l-md [&>td:last-child>button]:rounded-r-md",
         head_cell:
-          "text-muted-foreground w-9 font-bold text-sm transition-colors",
+          "text-muted-foreground w-9 font-bold text-sm transition-colors border-0",
         day_selected: "!bg-accent !text-black",
-        cell: "h-9 w-9 p-0",
+        cell: "h-9 w-9 p-0 border-0",
         day: "h-9 w-full border-0 [&:not([aria-selected='true'])]:bg-white hover:[&:not([aria-selected='true'])]:bg-accent [&:not([aria-selected='true'])]:rounded-md transition-colors",
-        button: "cursor-pointer",
-        nav_button:
-          "bg-white border-0 h-8 w-10 hover:bg-accent rounded-md transition-colors",
+        button: "cursor-pointer p-0 text-sm",
+        nav_button: cn(
+          buttonVariants({ variant: "outline" }),
+          "h-7 w-7 bg-white p-0 hover:bg-accent border-0 rounded-md transition-colors flex justify-center items-center"
+        ),
         nav_icon: "w-2.5 h-2.5",
+        table: "w-full border-collapse space-y-1 border-0",
       }}
     />
   );
