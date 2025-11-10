@@ -6,7 +6,7 @@ Tags: events, calendar, event management, schedules, calendar block
 Requires at least: 6.7  
 Tested up to: 6.8 
 Requires PHP: 8.0  
-Stable tag: 1.0.13 
+Stable tag: 1.0.14 
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -132,6 +132,9 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.0.14 – Admin Event Description Editor Fix – 2025-11-10 =
+* Fix: Resolved issue where the event description editor in the admin sometimes failed to display or save properly.
 
 = 1.0.13 – Week View Layout & Header Improvements – 2025-10-21 =
 * Improvement: Redesigned week view header to show weekday names and dates on separate lines for better readability.
