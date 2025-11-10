@@ -78,6 +78,7 @@ body.eventkoi-active
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04); /* subtle shadow */
     background-color: #f9fafb; /* gray-50 */
     overflow: hidden;
+    box-sizing: border-box;
   }
 
   /* Toolbar container */
@@ -85,6 +86,13 @@ body.eventkoi-active
     background-color: #f9fafb;
     border-bottom: 0;
     padding: 0;
+  }
+
+  .mce-container-body.mce-flow-layout {
+    display: flex;
+    .mce-btn-group.mce-last {
+      margin-left: auto;
+    }
   }
 
   /* Toolbar buttons */
@@ -152,5 +160,27 @@ body.eventkoi-active
   .mce-container-body .mce-btn-group:not(:first-child) {
     border-left: 1px solid #eee !important;
     margin-left: 0;
+  }
+
+  /**
+ * Replace TinyMCE's "remove formatting" button icon with Lucide's version.
+ * Works inside WordPress' wp.editor TinyMCE.
+ */
+  .mce-i-removeformat::before {
+    content: "";
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 7V4h16v3'/%3E%3Cpath d='M5 20h6'/%3E%3Cpath d='M13 4 8 20'/%3E%3Cpath d='m15 15 5 5'/%3E%3Cpath d='m20 15-5 5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 14px 14px;
+    vertical-align: middle;
+  }
+
+  /* Prevent TinyMCE icon font from rendering behind it */
+  .mce-i-removeformat {
+    font-family: none !important;
+    color: currentColor !important;
   }
 }
