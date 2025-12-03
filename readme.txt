@@ -44,7 +44,7 @@ Here are the available blocks:
 - EventKoi Calendar
 - EventKoi List
 - EK Event Query Loop (core/query variation)
-- EK Event Data (for use inside the Query Loop)
+- EK Event Data (can be used alone or inside the Query Loop)
 
 Here are the available shortcodes:
 - [eventkoi_calendar display=calendar]
