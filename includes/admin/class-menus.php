@@ -57,14 +57,28 @@ class Menus {
 	}
 
 	/**
-	 * Remove all admin notices on EventKoi pages.
+	 * Remove all admin notices on EventKoi pages except EventKoi's own.
 	 */
 	public static function remove_admin_notices() {
 		$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
 
 		if ( $screen && 'toplevel_page_eventkoi' === $screen->base ) {
 			if ( apply_filters( 'eventkoi_remove_all_admin_notices', true ) ) {
-				remove_all_actions( 'admin_notices' );
+				global $wp_filter;
+
+				if ( isset( $wp_filter['admin_notices'] ) && ! empty( $wp_filter['admin_notices']->callbacks ) ) {
+					foreach ( $wp_filter['admin_notices']->callbacks as $priority => $callbacks ) {
+						foreach ( $callbacks as $id => $callback ) {
+							// Skip our own EventKoi notice class.
+							if ( is_array( $callback['function'] ) && is_string( $callback['function'][0] ) ) {
+								if ( str_contains( $callback['function'][0], 'EventKoi\\Admin\\Notices' ) ) {
+									continue;
+								}
+							}
+							unset( $wp_filter['admin_notices']->callbacks[ $priority ][ $id ] );
+						}
+					}
+				}
 			}
 		}
 	}
