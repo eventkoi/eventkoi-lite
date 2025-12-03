@@ -579,43 +579,311 @@ class Blocks {
 			return '<p class="ek-no-events">' . esc_html__( 'No events found.', 'eventkoi-lite' ) . '</p>';
 		}
 
-		// Inject events into the post-template context.
-		add_filter(
-			'query_loop_block_context',
-			static function ( $context, $block ) use ( $events ) {
-				if ( isset( $block->attributes['namespace'] ) && 'eventkoi/event-query-loop' === $block->attributes['namespace'] ) {
-					$context['eventkoi_events'] = $events;
-					$context['eventkoi_event']  = $events[0] ?? null;
+		$wrapper_class     = ! empty( $attrs['className'] ) ? $attrs['className'] : 'eventkoi-query-loop';
+		$rendered          = '';
+		$has_post_template = false;
+
+		if ( ! empty( $block['innerBlocks'] ) && is_array( $block['innerBlocks'] ) ) {
+			foreach ( $block['innerBlocks'] as $inner ) {
+				$name = $inner['blockName'] ?? '';
+
+				if ( 'core/post-template' === $name ) {
+					$rendered         .= self::render_eventkoi_post_template( $inner, $events );
+					$has_post_template = true;
+					continue;
 				}
-				return $context;
-			},
-			10,
-			2
-		);
 
-		// Render inner blocks with custom pagination variable (ek_page).
-		$output = $block_content;
+				if ( 'core/query-pagination' === $name && $total_pages > 1 ) {
+					$rendered .= self::render_eventkoi_pagination( $inner, $paged, $total_pages );
+					continue;
+				}
 
-		if ( $total_pages > 1 ) {
-			$current_url = remove_query_arg( 'ek_page' );
-			$pagination  = paginate_links(
-				array(
-					'base'      => add_query_arg( 'ek_page', '%#%', $current_url ),
-					'format'    => '',
-					'current'   => $paged,
-					'total'     => $total_pages,
-					'prev_text' => '&laquo;',
-					'next_text' => '&raquo;',
-					'type'      => 'list',
-				)
-			);
-
-			if ( $pagination ) {
-				$output .= '<nav class="ek-query-pagination" aria-label="' . esc_attr__( 'Event pagination', 'eventkoi-lite' ) . '">' . $pagination . '</nav>';
+				// Render any other saved blocks as-is to preserve order.
+				$rendered .= render_block( $inner );
 			}
 		}
 
-		return $output;
+		if ( ! $has_post_template ) {
+			return $block_content;
+		}
+
+		return self::normalize_preset_styles(
+			sprintf(
+				'<div class="%1$s">%2$s</div>',
+				esc_attr( $wrapper_class ),
+				$rendered
+			)
+		);
+	}
+
+	/**
+	 * Normalize preset style shorthands (e.g., var:preset|spacing|20) into CSS variables.
+	 *
+	 * @param string $html HTML string potentially containing shorthand preset vars.
+	 * @return string Normalized HTML.
+	 */
+	private static function normalize_preset_styles( $html ) {
+		if ( empty( $html ) ) {
+			return $html;
+		}
+
+		// Convert shorthand var:preset|spacing|20 to CSS variable var(--wp--preset--spacing--20).
+		$html = preg_replace_callback(
+			'/var:preset\|([a-z0-9_-]+)\|([a-z0-9_-]+)/i',
+			static function ( $matches ) {
+				return 'var(--wp--preset--' . $matches[1] . '--' . $matches[2] . ')';
+			},
+			$html
+		);
+
+		// Also normalize occurrences with optional whitespace.
+		$html = preg_replace_callback(
+			'/var\s*:\s*preset\s*\|\s*([a-z0-9_-]+)\s*\|\s*([a-z0-9_-]+)/i',
+			static function ( $matches ) {
+				return 'var(--wp--preset--' . $matches[1] . '--' . $matches[2] . ')';
+			},
+			$html
+		);
+
+		return $html;
+	}
+
+	/**
+	 * Render pagination respecting the saved block order and attributes.
+	 *
+	 * @param array $pagination_block Parsed pagination block.
+	 * @param int   $paged            Current page number.
+	 * @param int   $total_pages      Total pages.
+	 * @return string
+	 */
+	protected static function render_eventkoi_pagination( $pagination_block, $paged, $total_pages ) {
+		$attrs       = $pagination_block['attrs'] ?? array();
+		$children    = $pagination_block['innerBlocks'] ?? array();
+		$class       = array( 'wp-block-query-pagination', 'eventkoi-pagination' );
+		$layout      = $attrs['layout']['type'] ?? 'flex';
+		$justify     = $attrs['layout']['justifyContent'] ?? '';
+		$orientation = $attrs['layout']['orientation'] ?? '';
+		$arrow_opt   = $attrs['paginationArrow'] ?? '';
+		$show_label  = true;
+
+		if ( isset( $pagination_block['context']['showLabel'] ) ) {
+			$show_label = (bool) $pagination_block['context']['showLabel'];
+		} elseif ( isset( $attrs['showLabel'] ) ) {
+			$show_label = (bool) $attrs['showLabel'];
+		}
+
+		if ( ! empty( $attrs['className'] ) ) {
+			$class[] = sanitize_html_class( $attrs['className'] );
+		}
+
+		if ( 'flex' === $layout ) {
+			$class[] = 'is-layout-flex';
+			$class[] = 'wp-block-query-pagination-is-layout-flex';
+		}
+
+		if ( 'vertical' === $orientation ) {
+			$class[] = 'is-layout-vertical';
+		}
+
+		if ( ! empty( $justify ) ) {
+			$class[] = 'is-content-justification-' . sanitize_html_class( $justify );
+		}
+
+		if ( empty( $children ) ) {
+			$children = array(
+				array(
+					'blockName' => 'core/query-pagination-previous',
+					'attrs'     => array(),
+				),
+				array(
+					'blockName' => 'core/query-pagination-numbers',
+					'attrs'     => array(),
+				),
+				array(
+					'blockName' => 'core/query-pagination-next',
+					'attrs'     => array(),
+				),
+			);
+		}
+
+		$segments = array();
+		foreach ( $children as $child ) {
+			$name  = $child['blockName'] ?? '';
+			$cattr = $child['attrs'] ?? array();
+
+			if ( 'core/query-pagination-previous' === $name ) {
+				$label      = ! empty( $cattr['label'] ) ? $cattr['label'] : __( 'Previous', 'eventkoi-lite' );
+				$target     = $paged > 1 ? $paged - 1 : 0;
+				$segments[] = self::build_pagination_link( 'previous', $label, $arrow_opt, $target, $show_label );
+			} elseif ( 'core/query-pagination-next' === $name ) {
+				$label      = ! empty( $cattr['label'] ) ? $cattr['label'] : __( 'Next', 'eventkoi-lite' );
+				$target     = $paged < $total_pages ? $paged + 1 : 0;
+				$segments[] = self::build_pagination_link( 'next', $label, $arrow_opt, $target, $show_label );
+			} elseif ( 'core/query-pagination-numbers' === $name ) {
+				$segments[] = self::build_pagination_numbers( $paged, $total_pages );
+			}
+		}
+
+		return sprintf(
+			'<nav class="%1$s" aria-label="%2$s">%3$s</nav>',
+			esc_attr( implode( ' ', array_filter( $class ) ) ),
+			esc_attr__( 'Pagination', 'eventkoi-lite' ),
+			implode( '', $segments )
+		);
+	}
+
+	/**
+	 * Build numbered pagination links.
+	 *
+	 * @param int $current Current page.
+	 * @param int $total   Total pages.
+	 * @return string
+	 */
+	protected static function build_pagination_numbers( $current, $total ) {
+		$links = paginate_links(
+			array(
+				'base'      => add_query_arg( 'ek_page', '%#%' ),
+				'format'    => '',
+				'current'   => $current,
+				'total'     => $total,
+				'prev_next' => false,
+				'type'      => 'array',
+			)
+		);
+
+		if ( empty( $links ) || ! is_array( $links ) ) {
+			return '';
+		}
+
+		return '<div class="wp-block-query-pagination-numbers">' . implode( '', $links ) . '</div>';
+	}
+
+	/**
+	 * Build previous/next pagination link HTML.
+	 *
+	 * @param string $type       Link type (previous|next).
+	 * @param string $label      Link label.
+	 * @param string $arrow_opt  Arrow style key.
+	 * @param int    $target     Target page number (0 = disabled).
+	 * @param bool   $show_label Whether to output the label text.
+	 * @return string
+	 */
+	protected static function build_pagination_link( $type, $label, $arrow_opt, $target, $show_label ) {
+		$is_disabled = ( 0 === $target );
+		$classes     = array( 'wp-block-query-pagination-' . $type );
+		$arrow_html  = '';
+
+		if ( 'arrow' === $arrow_opt || 'chevron' === $arrow_opt ) {
+			$arrow_class = ( 'chevron' === $arrow_opt ) ? 'is-arrow-chevron' : 'is-arrow-arrow';
+			$arrow_char  = 'previous' === $type
+				? ( 'chevron' === $arrow_opt ? '«' : '←' )
+				: ( 'chevron' === $arrow_opt ? '»' : '→' );
+
+			$arrow_html = sprintf(
+				'<span class="wp-block-query-pagination-%1$s-arrow %2$s" aria-hidden="true">%3$s</span>',
+				esc_attr( $type ),
+				esc_attr( $arrow_class ),
+				esc_html( $arrow_char )
+			);
+		}
+
+		$label_output = $show_label ? esc_html( $label ) : '';
+
+		if ( $is_disabled ) {
+			return sprintf(
+				'<span class="%1$s" aria-disabled="true">%2$s%3$s</span>',
+				esc_attr( implode( ' ', $classes ) ),
+				'previous' === $type ? $arrow_html : '',
+				$label_output . ( 'next' === $type ? $arrow_html : '' )
+			);
+		}
+
+		$url = add_query_arg( 'ek_page', $target );
+
+		return sprintf(
+			'<a class="%1$s" href="%2$s">%3$s%4$s</a>',
+			esc_attr( implode( ' ', $classes ) ),
+			esc_url( $url ),
+			'previous' === $type ? $arrow_html : '',
+			$label_output . ( 'next' === $type ? $arrow_html : '' )
+		);
+	}
+
+	/**
+	 * Render the post template block with injected event data.
+	 *
+	 * @param array $post_template_block Parsed post-template block.
+	 * @param array $events              Events to render.
+	 * @return string
+	 */
+	protected static function render_eventkoi_post_template( $post_template_block, $events ) {
+		$post_template_attrs = $post_template_block['attrs'] ?? array();
+
+		$layout         = $post_template_attrs['layout'] ?? array();
+		$layout_type    = $layout['type'] ?? 'default';
+		$layout_cols    = isset( $layout['columnCount'] ) ? absint( $layout['columnCount'] ) : 1;
+		$template_cls   = array( 'wp-block-post-template' );
+		$template_style = '';
+
+		if ( 'grid' === $layout_type ) {
+			$template_cls[] = 'is-layout-grid';
+			if ( $layout_cols ) {
+				$template_cls[] = 'columns-' . $layout_cols;
+				$template_style = sprintf( 'display:grid;grid-template-columns:repeat(%d,minmax(0,1fr));gap:var(--wp--style--block-gap,1.5rem);', $layout_cols );
+			}
+		} else {
+			$template_cls[] = 'is-layout-flow';
+		}
+
+		if ( ! empty( $post_template_attrs['className'] ) ) {
+			$template_cls[] = sanitize_html_class( $post_template_attrs['className'] );
+		}
+
+		$template_class_attr = implode( ' ', array_filter( $template_cls ) );
+
+		ob_start();
+		?>
+		<ul class="<?php echo esc_attr( $template_class_attr ); ?>"<?php echo $template_style ? ' style="' . esc_attr( $template_style ) . '"' : ''; ?>>
+			<?php foreach ( $events as $event ) : ?>
+				<li class="wp-block-post">
+					<?php
+					if ( ! empty( $post_template_block['innerBlocks'] ) ) {
+						foreach ( $post_template_block['innerBlocks'] as $row_block ) {
+							$prepared = self::inject_event_context( $row_block, $event );
+							echo render_block( $prepared ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						}
+					}
+					?>
+				</li>
+			<?php endforeach; ?>
+		</ul>
+		<?php
+
+		return ob_get_clean();
+	}
+
+	/**
+	 * Inject event-specific context and attributes into a block tree.
+	 *
+	 * @param array $block  Parsed block array.
+	 * @param array $event  Event data to inject.
+	 * @return array Prepared block with context.
+	 */
+	protected static function inject_event_context( $block, $event ) {
+		// Inject context for EventKoi blocks.
+		if ( 'eventkoi/event-data' === ( $block['blockName'] ?? '' ) ) {
+			$block['context']            = $block['context'] ?? array();
+			$block['context']['eventkoi_event'] = $event;
+		}
+
+		// Recurse into inner blocks.
+		if ( ! empty( $block['innerBlocks'] ) && is_array( $block['innerBlocks'] ) ) {
+			foreach ( $block['innerBlocks'] as $idx => $inner ) {
+				$block['innerBlocks'][ $idx ] = self::inject_event_context( $inner, $event );
+			}
+		}
+
+		return $block;
 	}
 
 	/**
