@@ -4,9 +4,9 @@ Contributors: eventkoi, lesleysim, ahmedfouaddev
 Donate link: https://donate.stripe.com/fZubJ1auN86Y1PU8cSdUY01
 Tags: events, calendar, event management, schedules, calendar block
 Requires at least: 6.7  
-Tested up to: 6.8 
+Tested up to: 6.9 
 Requires PHP: 8.0  
-Stable tag: 1.0.14 
+Stable tag: 1.1.0 
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -43,6 +43,8 @@ There, you will see 3 ways to embed the calendar into your site:
 Here are the available blocks:
 - EventKoi Calendar
 - EventKoi List
+- EK Event Query Loop (core/query variation)
+- EK Event Data (for use inside the Query Loop)
 
 Here are the available shortcodes:
 - [eventkoi_calendar display=calendar]
@@ -132,6 +134,11 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.1.0 – Query Loop Blocks & Data Enhancements – 2025-12-3 =
+* New: Added EK Event Query Loop variation (with EK Event Data child block) to display events using core/query controls and pagination.
+* New: Added `/eventkoi/v1/query_events` endpoint and expanded `/calendar_events` to support paging, ordering, and date filters for block previews.
+* Improvement: Query Loop server render now injects EventKoi event data.
 
 = 1.0.14 – Admin Event Description Editor Fix – 2025-11-10 =
 * Fix: Resolved issue where the event description editor in the admin sometimes failed to display or save properly.
