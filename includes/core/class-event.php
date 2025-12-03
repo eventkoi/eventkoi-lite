@@ -665,6 +665,13 @@ class Event {
 	public static function get_image() {
 		$image = get_post_meta( self::$event_id, 'image', true );
 
+		if ( empty( $image ) ) {
+			$thumb_id = get_post_thumbnail_id( self::$event_id );
+			if ( $thumb_id ) {
+				$image = wp_get_attachment_image_url( $thumb_id, 'full' );
+			}
+		}
+
 		return apply_filters( 'eventkoi_get_event_image', esc_url( $image ), self::$event_id, self::$event );
 	}
 

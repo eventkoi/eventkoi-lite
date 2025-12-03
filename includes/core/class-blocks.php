@@ -870,20 +870,67 @@ class Blocks {
 	 * @return array Prepared block with context.
 	 */
 	protected static function inject_event_context( $block, $event ) {
-		// Inject context for EventKoi blocks.
-		if ( 'eventkoi/event-data' === ( $block['blockName'] ?? '' ) ) {
-			$block['context']            = $block['context'] ?? array();
-			$block['context']['eventkoi_event'] = $event;
+		if ( empty( $block ) || ! is_array( $block ) ) {
+			return $block;
 		}
 
-		// Recurse into inner blocks.
-		if ( ! empty( $block['innerBlocks'] ) && is_array( $block['innerBlocks'] ) ) {
-			foreach ( $block['innerBlocks'] as $idx => $inner ) {
-				$block['innerBlocks'][ $idx ] = self::inject_event_context( $inner, $event );
+		$block['context']                   = isset( $block['context'] ) && is_array( $block['context'] ) ? $block['context'] : array();
+		$block['context']['eventkoi_event'] = $event;
+
+		$block_name = $block['blockName'] ?? '';
+
+		if ( 'eventkoi/event-data' === $block_name ) {
+			// Already injected above; no further processing needed here.
+		} elseif ( 'core/image' === $block_name ) {
+			$block['attrs'] = isset( $block['attrs'] ) && is_array( $block['attrs'] ) ? $block['attrs'] : array();
+			if ( ! empty( $event['thumbnail'] ) ) {
+				$block['attrs']['url'] = $event['thumbnail'];
+				if ( empty( $block['attrs']['alt'] ) ) {
+					$block['attrs']['alt'] = $event['title'] ?? '';
+				}
+
+				if ( ! empty( $block['innerHTML'] ) ) {
+					$block['innerHTML'] = self::replace_img_src(
+						$block['innerHTML'],
+						$event['thumbnail'],
+						$event['title'] ?? ''
+					);
+				}
 			}
 		}
 
+		if ( ! empty( $block['innerBlocks'] ) && is_array( $block['innerBlocks'] ) ) {
+			$block['innerBlocks'] = array_map(
+				function ( $inner ) use ( $event ) {
+					return self::inject_event_context( $inner, $event );
+				},
+				$block['innerBlocks']
+			);
+		}
+
 		return $block;
+	}
+
+	/**
+	 * Replace the first img src in HTML with provided URL/alt.
+	 *
+	 * @param string $html  Original HTML.
+	 * @param string $src   New src URL.
+	 * @param string $alt   New alt text.
+	 * @return string Modified HTML.
+	 */
+	private static function replace_img_src( $html, $src, $alt ) {
+		if ( empty( $html ) || empty( $src ) ) {
+			return $html;
+		}
+
+		$replacement = sprintf(
+			'<img src="%s" alt="%s" loading="lazy" decoding="async" />',
+			esc_url( $src ),
+			esc_attr( $alt )
+		);
+
+		return preg_replace( '#<img[^>]+>#', $replacement, $html, 1 );
 	}
 
 	/**
