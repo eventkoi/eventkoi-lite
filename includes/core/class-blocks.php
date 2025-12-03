@@ -37,6 +37,7 @@ class Blocks {
 	 * Constructor.
 	 */
 	public function __construct() {
+		add_filter( 'render_block', array( __CLASS__, 'render_eventkoi_image' ), 9, 2 );
 		add_filter( 'pre_render_block', array( __CLASS__, 'mark_eventkoi_query_loop' ), 5, 2 );
 		add_filter( 'query_loop_block_query_vars', array( __CLASS__, 'filter_event_query_loop' ), 10, 2 );
 		add_filter( 'register_block_type_args', array( __CLASS__, 'register_core_query_attributes' ), 10, 2 );
@@ -301,6 +302,67 @@ class Blocks {
 			array( 'http://', 'https://', 'https://' ),
 			$block_content
 		);
+	}
+
+	/**
+	 * Override core/image when eventkoi_event is in context to use event thumbnail.
+	 *
+	 * @param string $block_content Original content.
+	 * @param array  $block         Parsed block.
+	 * @return string
+	 */
+	public static function render_eventkoi_image( $block_content, $block ) {
+		if ( ( $block['blockName'] ?? '' ) !== 'core/image' ) {
+			return $block_content;
+		}
+
+		$event = $block['context']['eventkoi_event'] ?? null;
+
+		if ( empty( $event ) || empty( $event['thumbnail'] ) ) {
+			return $block_content;
+		}
+
+		$attrs = $block['attrs'] ?? array();
+		$url   = $event['thumbnail'];
+		$alt   = ! empty( $attrs['alt'] ) ? $attrs['alt'] : ( $event['title'] ?? '' );
+
+		$classes = array();
+		if ( ! empty( $attrs['className'] ) ) {
+			$class_list = preg_split( '/\s+/', $attrs['className'] );
+			foreach ( (array) $class_list as $cls ) {
+				if ( $cls ) {
+					$classes[] = sanitize_html_class( $cls );
+				}
+			}
+		}
+
+		$style_attr = '';
+		if ( ! empty( $attrs['style'] ) && is_array( $attrs['style'] ) ) {
+			$style_pairs = self::style_array_to_css( $attrs['style'] );
+			if ( ! empty( $style_pairs ) ) {
+				$style_attr = ' style="' . esc_attr( implode( ';', $style_pairs ) ) . '"';
+			}
+		}
+
+		$img_html = sprintf(
+			'<img src="%1$s" alt="%2$s"%3$s />',
+			esc_url( $url ),
+			esc_attr( $alt ),
+			$style_attr
+		);
+
+		// Wrap in link if event URL present.
+		if ( ! empty( $event['url'] ) ) {
+			$img_html = sprintf(
+				'<a href="%1$s" class="ek-event-image-link" rel="bookmark">%2$s</a>',
+				esc_url( $event['url'] ),
+				$img_html
+			);
+		}
+
+		$class_attr = ! empty( $classes ) ? ' class="' . esc_attr( implode( ' ', $classes ) ) . '"' : '';
+
+		return sprintf( '<figure%1$s>%2$s</figure>', $class_attr, $img_html );
 	}
 
 	/**
