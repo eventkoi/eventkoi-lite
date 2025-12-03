@@ -37,12 +37,12 @@ class Blocks {
 	 * Constructor.
 	 */
 	public function __construct() {
-		add_filter( 'render_block', array( __CLASS__, 'render_eventkoi_image' ), 9, 2 );
+		add_filter( 'render_block_eventkoi/event-data', array( __CLASS__, 'render_event_data_block' ), 10, 2 );
 		add_filter( 'pre_render_block', array( __CLASS__, 'mark_eventkoi_query_loop' ), 5, 2 );
 		add_filter( 'query_loop_block_query_vars', array( __CLASS__, 'filter_event_query_loop' ), 10, 2 );
 		add_filter( 'register_block_type_args', array( __CLASS__, 'register_core_query_attributes' ), 10, 2 );
+		add_filter( 'render_block', array( __CLASS__, 'render_eventkoi_image' ), 9, 2 );
 		add_filter( 'render_block', array( __CLASS__, 'render_eventkoi_query_loop' ), 10, 2 );
-		add_filter( 'render_block_eventkoi/event-data', array( __CLASS__, 'render_event_data_block' ), 10, 2 );
 
 		add_filter( 'block_categories_all', array( __CLASS__, 'register_block_category' ), 99, 2 );
 		add_filter( 'wp_kses_allowed_html', array( __CLASS__, 'allow_svg_in_content' ), 10, 2 );
