@@ -41,12 +41,94 @@ class Blocks {
 		add_filter( 'query_loop_block_query_vars', array( __CLASS__, 'filter_event_query_loop' ), 10, 2 );
 		add_filter( 'register_block_type_args', array( __CLASS__, 'register_core_query_attributes' ), 10, 2 );
 		add_filter( 'render_block', array( __CLASS__, 'render_eventkoi_query_loop' ), 10, 2 );
+		add_filter( 'render_block_eventkoi/event-data', array( __CLASS__, 'render_event_data_block' ), 10, 2 );
 
 		add_filter( 'block_categories_all', array( __CLASS__, 'register_block_category' ), 99, 2 );
 		add_filter( 'wp_kses_allowed_html', array( __CLASS__, 'allow_svg_in_content' ), 10, 2 );
 		add_filter( 'render_block_eventkoi/calendar', array( __CLASS__, 'render_calendar_block' ), 88, 2 );
 		add_filter( 'render_block_eventkoi/list', array( __CLASS__, 'render_list_block' ), 89, 2 );
 		add_filter( 'render_block', array( __CLASS__, 'render_event_block' ), 99, 2 );
+	}
+
+	/**
+	 * Render standalone Event Data blocks (e.g., inside Query Loop).
+	 *
+	 * @param string $block_content Default block content.
+	 * @param array  $block         Parsed block data.
+	 * @return string
+	 */
+	public static function render_event_data_block( $block_content, $block ) {
+		$attributes = $block['attrs'] ?? array();
+		$field      = isset( $attributes['field'] ) ? sanitize_key( $attributes['field'] ) : 'title';
+		$event_id   = isset( $attributes['eventId'] ) ? absint( $attributes['eventId'] ) : 0;
+
+		// Prefer event from context (injected by EventKoi Query Loop).
+		$context_event = $block['context']['eventkoi_event'] ?? null;
+
+		if ( ! $event_id ) {
+			$post = get_post();
+			if ( $post instanceof \WP_Post && 'eventkoi_event' === $post->post_type ) {
+				$event_id = $post->ID;
+			}
+		}
+
+		if ( empty( $context_event ) && ! $event_id ) {
+			return '';
+		}
+
+		$event = $context_event ? $context_event : eventkoi_get_event( $event_id );
+
+		if ( empty( $event ) || is_wp_error( $event ) ) {
+			return '';
+		}
+
+		$value = self::get_event_field_value( $field, $event, array() );
+
+		if ( '' === trim( (string) $value ) ) {
+			return '';
+		}
+
+		$field_key = sanitize_html_class( $field );
+		$classes   = array(
+			'wp-block-eventkoi-event-data',
+			'ek-event-' . $field_key,
+		);
+
+		// Add font-size utility class when set via block supports (e.g., has-small-font-size).
+		if ( ! empty( $attributes['fontSize'] ) ) {
+			$classes[] = 'has-' . sanitize_html_class( $attributes['fontSize'] ) . '-font-size';
+		}
+		if ( ! empty( $attributes['fontFamily'] ) ) {
+			$classes[] = 'has-' . sanitize_html_class( $attributes['fontFamily'] ) . '-font-family';
+		}
+
+		if ( ! empty( $attributes['className'] ) ) {
+			$extra_classes = preg_split( '/\s+/', (string) $attributes['className'] );
+			if ( is_array( $extra_classes ) ) {
+				foreach ( $extra_classes as $extra_class ) {
+					$classes[] = sanitize_html_class( $extra_class );
+				}
+			}
+		}
+
+		// Prefer saved markup so block supports classes/styles carry over.
+		if ( ! empty( $block_content ) ) {
+			// Replace the first inner HTML segment with the dynamic value.
+			$rendered = preg_replace(
+				'#>(.*?)</#s',
+				'>' . wp_kses_post( $value ) . '</',
+				$block_content,
+				1
+			);
+
+			return $rendered ? $rendered : $block_content;
+		}
+
+		return sprintf(
+			'<div class="%1$s">%2$s</div>',
+			esc_attr( implode( ' ', array_unique( $classes ) ) ),
+			wp_kses_post( $value )
+		);
 	}
 
 	/**
@@ -59,7 +141,7 @@ class Blocks {
 		$eventkoi_category = array(
 			'slug'  => 'eventkoi-blocks',
 			/* translators: Custom block category for EventKoi plugin. */
-			'title' => __( 'EventKoi', 'eventkoi-lite' ),
+			'title' => __( 'EventKoi', 'eventkoi' ),
 		);
 
 		return array_merge( array( $eventkoi_category ), $categories );
@@ -502,7 +584,8 @@ class Blocks {
 			'query_loop_block_context',
 			static function ( $context, $block ) use ( $events ) {
 				if ( isset( $block->attributes['namespace'] ) && 'eventkoi/event-query-loop' === $block->attributes['namespace'] ) {
-					$context['ek_events'] = $events;
+					$context['eventkoi_events'] = $events;
+					$context['eventkoi_event']  = $events[0] ?? null;
 				}
 				return $context;
 			},
@@ -533,6 +616,80 @@ class Blocks {
 		}
 
 		return $output;
+	}
+
+	/**
+	 * Retrieve event field markup for a given event-data block.
+	 *
+	 * Defaults to rendering the title if no field attribute is provided.
+	 *
+	 * @param string $field      Field name from the event-data block (e.g. title, timeline, excerpt, location, image).
+	 * @param array  $event      The event data array.
+	 * @param array  $attributes The parent block attributes.
+	 * @return string HTML for the given event field, or empty string if hidden.
+	 */
+	private static function get_event_field_value( $field, $event, $attributes ) {
+		// Default to title if missing or empty.
+		if ( empty( $field ) ) {
+			$field = 'title';
+		}
+
+		$field = strtolower( $field );
+
+		// Normalize aliases.
+		$aliases = array(
+			'description' => 'excerpt',
+			'datetime'    => 'timeline',
+		);
+
+		if ( isset( $aliases[ $field ] ) ) {
+			$field = $aliases[ $field ];
+		}
+
+		if ( empty( $event ) || is_wp_error( $event ) || ! is_array( $event ) ) {
+			return '';
+		}
+
+		$map = array(
+			'title'    => ! empty( $event['title'] )
+				? sprintf(
+					'<h3 class="ek-event-title--inner"><a href="%1$s" rel="bookmark">%2$s</a></h3>',
+					esc_url( $event['url'] ?? '' ),
+					esc_html( $event['title'] )
+				)
+				: '',
+			'timeline' => ! empty( $event['datetime'] )
+				? '<div class="ek-event-timeline--inner">' . wp_kses_post( $event['datetime'] ) . '</div>'
+				: '',
+			'excerpt'  => ! empty( $event['description'] )
+				? '<div class="ek-event-excerpt--inner ek-event-excerpt-default">' . wp_kses_post( $event['description'] ) . '</div>'
+				: '',
+			'location' => ! empty( $event['location_line'] )
+				? '<div class="ek-event-location--inner">' . esc_html( $event['location_line'] ) . '</div>'
+				: '',
+			'image'    => ! empty( $event['thumbnail'] )
+				? sprintf(
+					'<a href="%1$s" class="ek-event-image-link" rel="bookmark"><img src="%2$s" alt="%3$s" class="rounded-xl w-full h-auto object-cover ek-event-image-default" loading="lazy" decoding="async" /></a>',
+					esc_url( $event['url'] ?? '' ),
+					esc_url( $event['thumbnail'] ),
+					esc_attr( $event['title'] ?? '' )
+				)
+				: '',
+		);
+
+		$visibility = array(
+			'title'    => $attributes['showTitle'] ?? true,
+			'timeline' => $attributes['showDatetime'] ?? true,
+			'excerpt'  => $attributes['showDescription'] ?? true,
+			'location' => $attributes['showLocation'] ?? true,
+			'image'    => $attributes['showImage'] ?? true,
+		);
+
+		if ( empty( $visibility[ $field ] ) ) {
+			return '';
+		}
+
+		return $map[ $field ] ?? '';
 	}
 
 	/**

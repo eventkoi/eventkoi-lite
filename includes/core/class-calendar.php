@@ -626,7 +626,9 @@ class Calendar {
 						continue;
 					}
 
-					$results[] = $record;
+						$record['timeline']  = $event::get_datetime() ? $event::get_datetime() : $event::get_timeline();
+						$record['datetime']  = $record['timeline'];
+						$results[]           = $record;
 					}
 				} elseif ( 'selected' === $event::get_standard_type() && false === $expand_instances && ! empty( $days ) ) {
 					// Use the first day's start and the last day's end.
@@ -682,7 +684,9 @@ class Calendar {
 						continue;
 					}
 
-					$results[] = $record;
+					$record['timeline']  = $event::get_datetime() ? $event::get_datetime() : $event::get_timeline();
+					$record['datetime']  = $record['timeline'];
+					$results[]           = $record;
 				} else {
 					// Original loop for other cases.
 					foreach ( $days as $i => $instance ) {
@@ -735,7 +739,9 @@ class Calendar {
 							continue;
 						}
 
-						$results[] = $record;
+						$record['timeline']  = $event::get_datetime() ? $event::get_datetime() : $event::get_timeline();
+						$record['datetime']  = $record['timeline'];
+						$results[]           = $record;
 					}
 				}
 			}

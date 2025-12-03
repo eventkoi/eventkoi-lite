@@ -9,6 +9,7 @@
 namespace EventKoi\Core;
 
 use EKLIB\StellarWP\DB\DB;
+use EventKoi\Core\Settings;
 
 // Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -1154,6 +1155,164 @@ class Event {
 		$tbc_note = get_post_meta( self::$event_id, 'tbc_note', true );
 
 		return apply_filters( 'eventkoi_get_event_tbc_note', (string) $tbc_note, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Build a human-readable event timeline.
+	 *
+	 * Mirrors frontend JS buildTimeline() behavior.
+	 *
+	 * @return string|null Timeline string or null if invalid.
+	 */
+	public static function get_datetime() {
+		// Handle TBC.
+		if ( self::get_tbc() ) {
+			$tbc_note = self::get_tbc_note();
+
+			if ( ! empty( $tbc_note ) ) {
+				return $tbc_note;
+			}
+
+			return __( 'Date and time to be confirmed', 'eventkoi-lite' );
+		}
+
+		// Context / formatting settings.
+		$settings    = Settings::get();
+		$wp_timezone = wp_timezone();
+		$date_format = get_option( 'date_format', 'F j, Y' );
+		$time_format = get_option( 'time_format', 'g:i a' );
+		$time_pref   = isset( $settings['time_format'] ) ? $settings['time_format'] : '12';
+
+		$parse = static function ( $iso ) use ( $wp_timezone ) {
+			if ( empty( $iso ) ) {
+				return null;
+			}
+			try {
+				$dt = new \DateTimeImmutable( $iso, new \DateTimeZone( 'UTC' ) );
+				return $dt->setTimezone( $wp_timezone );
+			} catch ( \Exception $e ) {
+				return null;
+			}
+		};
+
+		$fmt_time = static function ( $dt ) use ( $time_pref, $time_format ) {
+			if ( ! $dt instanceof \DateTimeInterface ) {
+				return '';
+			}
+
+			if ( '24' === $time_pref ) {
+				$fmt = 'H:i';
+			} elseif ( '12' === $time_pref ) {
+				$fmt = 'g:i a';
+			} else {
+				$fmt = $time_format;
+			}
+
+			$out = wp_date( $fmt, $dt->getTimestamp() );
+
+			if ( str_contains( $time_format, 'A' ) ) {
+				$out = preg_replace_callback(
+					'/\b(am|pm)\b/i',
+					static function ( $m ) {
+						return strtoupper( $m[0] );
+					},
+					$out
+				);
+			} elseif ( str_contains( $time_format, 'a' ) ) {
+				$out = preg_replace_callback(
+					'/\b(AM|PM)\b/',
+					static function ( $m ) {
+						return strtolower( $m[0] );
+					},
+					$out
+				);
+			}
+
+			return $out;
+		};
+
+		$fmt_date = static function ( $dt ) use ( $date_format ) {
+			if ( $dt instanceof \DateTimeInterface ) {
+				return wp_date( $date_format, $dt->getTimestamp() );
+			}
+			return '';
+		};
+
+		$fmt = static function ( $dt, $type = 'datetime' ) use ( $fmt_date, $fmt_time ) {
+			if ( ! $dt instanceof \DateTimeInterface ) {
+				return '';
+			}
+
+			if ( 'date' === $type ) {
+				return $fmt_date( $dt );
+			}
+
+			if ( 'time' === $type ) {
+				return $fmt_time( $dt );
+			}
+
+			return sprintf( '%s, %s', $fmt_date( $dt ), $fmt_time( $dt ) );
+		};
+
+		$start_iso = self::get_start_date_iso();
+		$end_iso   = self::get_end_date_iso();
+
+		$start = $parse( $start_iso );
+		$end   = $parse( $end_iso );
+
+		if ( ! $start ) {
+			return null;
+		}
+
+		$all_day   = (bool) get_post_meta( self::$event_id, 'all_day', true );
+		$date_type = self::get_date_type();
+		$is_same   = ( $end instanceof \DateTimeInterface ) && ( $start->format( 'Y-m-d' ) === $end->format( 'Y-m-d' ) );
+
+		if ( 'recurring' === $date_type ) {
+			if ( $is_same && ! $all_day ) {
+				return sprintf(
+					'%s, %s – %s',
+					$fmt( $start, 'date' ),
+					$fmt( $start, 'time' ),
+					$fmt( $end, 'time' )
+				);
+			}
+
+			if ( ! $end || $is_same ) {
+				return $fmt( $start, 'date' );
+			}
+
+			return sprintf( '%s – %s', $fmt( $start, 'date' ), $fmt( $end, 'date' ) );
+		}
+
+		if ( in_array( $date_type, array( 'standard', 'multi' ), true ) ) {
+			if ( $is_same && ! $all_day ) {
+				return sprintf(
+					'%s, %s – %s',
+					$fmt( $start, 'date' ),
+					$fmt( $start, 'time' ),
+					$fmt( $end, 'time' )
+				);
+			}
+
+			if ( ! $end ) {
+				if ( $all_day ) {
+					return $fmt( $start, 'date' );
+				}
+
+				return sprintf( '%s, %s', $fmt( $start, 'date' ), $fmt( $start, 'time' ) );
+			}
+
+			return sprintf(
+				'%s, %s – %s, %s',
+				$fmt( $start, 'date' ),
+				$fmt( $start, 'time' ),
+				$fmt( $end, 'date' ),
+				$fmt( $end, 'time' )
+			);
+		}
+
+		return null;
 	}
 
 	/**

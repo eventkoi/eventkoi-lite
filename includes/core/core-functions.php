@@ -11,6 +11,51 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+/**
+ * Retrieve a single enriched event structure.
+ *
+ * Returns the same normalized event object as Calendar::get_events(),
+ * including recurring data, timezone, and formatted meta.
+ *
+ * @param int $event_id Event post ID.
+ * @return array|\WP_Error Single event array or error.
+ */
+function eventkoi_get_event( $event_id ) {
+	$event_id = absint( $event_id );
+
+	if ( ! $event_id ) {
+		return new \WP_Error(
+			'eventkoi_invalid_id',
+			__( 'Invalid event ID.', 'eventkoi-lite' ),
+			array( 'status' => 400 )
+		);
+	}
+
+	$event_data = \EventKoi\Core\Calendar::get_events(
+		array(),
+		false,
+		array(
+			'include'  => array( $event_id ),
+			'per_page' => 1,
+		)
+	);
+
+	// Support both new and legacy return formats.
+	$events = ( isset( $event_data['items'] ) && is_array( $event_data['items'] ) )
+		? $event_data['items']
+		: (array) $event_data;
+
+	if ( empty( $events ) || ! isset( $events[0] ) ) {
+		return new \WP_Error(
+			'eventkoi_not_found',
+			__( 'Event not found.', 'eventkoi-lite' ),
+			array( 'status' => 404 )
+		);
+	}
+
+	return $events[0];
+}
+
 use EKLIB\RRule\RRule;
 use EventKoi\Core\Settings;
 
@@ -32,6 +77,15 @@ function eventkoi_get_instance_id() {
 	}
 
 	return $instance_ts;
+}
+
+/**
+ * Public helper to check if the current request is for a recurring instance.
+ *
+ * @return bool
+ */
+function eventkoi_is_recurring_instance() {
+	return (bool) eventkoi_get_instance_id();
 }
 
 /**
