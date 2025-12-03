@@ -1,0 +1,201 @@
+/**
+ * Editor styles for the EventKoi Event Query block.
+ * Keeps layout and visual parity between editable and readonly items.
+ */
+
+.wp-block-eventkoi-event-query {
+  .ek-event-row {
+    width: 100%;
+    display: flex;
+    gap: 2rem;
+  }
+  /* Base container */
+  .ek-event-item {
+    display: flex;
+    gap: 2rem;
+    padding: 2rem 0;
+    width: 100%;
+    box-sizing: border-box;
+    transition: none;
+    margin: 0 !important;
+    .block-editor-inner-blocks {
+      width: 100%;
+    }
+  }
+
+  .ek-event-item__rendered {
+    width: 100%;
+  }
+
+  /* Readonly clones */
+  .ek-event-item__readonly {
+    width: 100%;
+    pointer-events: none;
+    opacity: 0.95;
+
+    .block-editor-block-list__block {
+      outline: none !important;
+      box-shadow: none !important;
+    }
+  }
+
+  /* Single outer highlight for selected item */
+  .ek-event-item.is-selected {
+    outline: 2px solid var(--wp-admin-theme-color, #3858e9);
+    outline-offset: 0;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* Columns consistency */
+  .wp-block-columns {
+    display: flex;
+    flex-wrap: nowrap;
+    width: 100%;
+    gap: 2rem;
+  }
+
+  .wp-block-column {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .ek-event-item__readonly {
+    opacity: 0.9;
+    pointer-events: none;
+  }
+
+  .ek-event-preview {
+    display: block;
+    width: 100%;
+  }
+
+  /* Your own highlight for active event item */
+  .ek-event-item.is-active {
+    outline: 1px solid var(--wp-admin-theme-color, #3858e9);
+    outline-offset: 0;
+    position: relative;
+    z-index: 2;
+  }
+
+  .ek-event-image img {
+    display: block;
+    max-width: 100%;
+  }
+
+  .ek-event-row > div > * + * {
+    margin-top: 1.2rem;
+  }
+
+  /**
+    * Frontend styles for EventKoi Event Data blocks.
+    * Mirrors editor defaults for title, timeline, and location fields.
+    */
+  .wp-block-eventkoi-event-data {
+    > div {
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Title */
+    &.ek-event-title {
+      font-weight: 600;
+
+      h3 {
+        margin: 0;
+        font-weight: 600;
+        font-size: inherit;
+
+        a {
+          color: inherit;
+          text-decoration: none;
+
+          &:hover,
+          &:focus {
+            text-decoration: underline;
+          }
+        }
+      }
+    }
+
+    /* Timeline */
+    &.ek-event-timeline {
+      font-size: 0.9em;
+      opacity: 0.85;
+    }
+
+    /* Location */
+    &.ek-event-location {
+      display: flex;
+      align-items: center;
+      font-size: 0.9em;
+      opacity: 0.85;
+
+      a,
+      span {
+        display: flex;
+        align-items: center;
+        gap: 0.4em;
+        text-decoration: none;
+        color: inherit;
+      }
+
+      svg {
+        width: 1em;
+        height: 1em;
+        opacity: 0.7;
+        margin-top: 1px;
+      }
+    }
+  }
+
+  /* ----------------------------------------------
+   * Grid layout (displayFormat === "grid")
+   * ---------------------------------------------- */
+  &.is-grid {
+    display: grid;
+    gap: 2rem;
+    align-items: stretch;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+
+    /* Specific column overrides */
+    &.cols-1 {
+      grid-template-columns: 1fr;
+    }
+    &.cols-2 {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    &.cols-3 {
+      grid-template-columns: repeat(3, 1fr);
+    }
+    &.cols-4 {
+      grid-template-columns: repeat(4, 1fr);
+    }
+    &.cols-5 {
+      grid-template-columns: repeat(5, 1fr);
+    }
+    &.cols-6 {
+      grid-template-columns: repeat(6, 1fr);
+    }
+
+    .ek-event-row {
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    /* Only event items participate in the grid. */
+    > .ek-event-item {
+      flex-direction: column;
+      gap: 1rem;
+      padding: 1rem;
+      margin: 0;
+      border-radius: 8px;
+      overflow: hidden;
+      transition: box-shadow 0.2s ease;
+      background: #fff;
+      &:hover {
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+      }
+    }
+  }
+}

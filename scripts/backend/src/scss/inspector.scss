@@ -1,0 +1,43 @@
+.eventkoi-inspector-tabs {
+  .components-tab-panel__tabs {
+    display: flex;
+    border-bottom: 1px solid #ddd;
+    margin-bottom: 0;
+
+    button {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 48px;
+      background: none;
+      border: none;
+      position: relative;
+      cursor: pointer;
+      color: var(--wp-components-color-foreground, #1e1e1e);
+
+      svg {
+        width: 24px;
+        height: 24px;
+      }
+
+      &:hover {
+        color: var(--wp-components-color-foreground, #1e1e1e);
+      }
+
+      &.is-active {
+        color: var(--wp-components-color-foreground, #1e1e1e);
+
+        &::after {
+          content: "";
+          position: absolute;
+          left: 0;
+          right: 0;
+          bottom: -1px;
+          height: 2px;
+          background: var(--wp-admin-theme-color);
+        }
+      }
+    }
+  }
+}

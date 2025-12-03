@@ -1,0 +1,64 @@
+.ek-layout-type-control {
+  .ek-layout-selector {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .ek-layout-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    padding: 6px 8px;
+    background: var(--wp--preset--color--background, #fff);
+    cursor: pointer;
+    transition: all 0.15s ease-in-out;
+
+    &:hover {
+      border-color: var(--wp-admin-theme-color, #3858e9);
+    }
+
+    &.is-active {
+      border-color: var(--wp-admin-theme-color, #3858e9);
+      box-shadow: 0 0 0 1px var(--wp-admin-theme-color, #3858e9);
+      background: #f6faff;
+    }
+  }
+
+  .ek-layout-preview {
+    display: flex;
+    width: 60px;
+    height: 28px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    overflow: hidden;
+    background: #f8f8f8;
+  }
+
+  .ek-layout-col {
+    height: 100%;
+    background: #bbb;
+    &:first-child {
+      border-right: 1px solid #eee;
+    }
+  }
+
+  .ek-layout-label {
+    font-size: 12px;
+  }
+}
+
+/* EventKoi Query Loop (editor) */
+.wp-block-query.eventkoi-query-loop {
+  .eventkoi-event-image-default img {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  .eventkoi-event-image-default {
+    width: 100%;
+  }
+}

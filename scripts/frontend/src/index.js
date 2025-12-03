@@ -3,6 +3,10 @@
  */
 import "@/scss/fullcalendar.scss";
 import "@/scss/global.scss";
+import "@/scss/blocks.scss";
+import "@/scss/event-query.scss";
+import "@/scss/event-data.scss";
+import "@/scss/pagination.scss";
 
 /*
  * Frontend JS.

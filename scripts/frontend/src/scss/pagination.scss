@@ -1,0 +1,108 @@
+/**
+ * EventKoi Pagination.
+ *
+ * Minimal, borderless layout matching modern WordPress Query Loop styling.
+ * Inherits all colors and typography from the active theme.
+ */
+
+.eventkoi-pagination {
+  margin: 1.5rem 0;
+  display: flex;
+  width: 100%;
+  justify-content: center;
+
+  &.is-content-justification-left {
+    justify-content: flex-start;
+  }
+
+  &.is-content-justification-right {
+    justify-content: flex-end;
+  }
+
+  &.is-content-justification-space-between {
+    justify-content: space-between;
+  }
+
+  &.is-content-justification-space-around {
+    justify-content: space-around;
+  }
+
+  &.is-layout-vertical {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  .wp-block-query-pagination-numbers {
+    ul.page-numbers {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .page-numbers {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 2.25rem;
+      height: 2.25rem;
+      padding: 0 0.6rem;
+      font-size: 0.95rem;
+      line-height: 1.2;
+      text-decoration: none;
+      color: inherit;
+      border: none;
+      background: none;
+      box-sizing: border-box;
+      transition: opacity 0.15s ease;
+
+      &.current {
+        font-weight: 600;
+        text-decoration: underline;
+        cursor: default;
+      }
+
+      &.prev,
+      &.next {
+        font-weight: 500;
+      }
+
+      &:hover,
+      &:focus {
+        text-decoration: underline;
+        opacity: 0.85;
+      }
+    }
+
+    a.page-numbers {
+      cursor: pointer;
+    }
+
+    span.page-numbers {
+      cursor: default;
+    }
+  }
+
+  .wp-block-query-pagination-previous[aria-disabled="true"],
+  .wp-block-query-pagination-next[aria-disabled="true"] {
+    opacity: 0.25;
+    pointer-events: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .eventkoi-pagination .wp-block-query-pagination-numbers ul.page-numbers {
+    gap: 0.5rem;
+  }
+
+  .eventkoi-pagination .wp-block-query-pagination-numbers .page-numbers {
+    min-width: 1.9rem;
+    height: 1.9rem;
+    font-size: 0.85rem;
+  }
+}

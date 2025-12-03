@@ -1,0 +1,26 @@
+/* EventKoi Query Loop frontend spacing */
+.eventkoi-event-loop-card > * + * {
+  margin-top: 1.2rem;
+}
+
+/* Consistent image sizing inside grid templates */
+.eventkoi-query-loop {
+  .wp-block-post-template {
+    &.is-layout-grid {
+      .eventkoi-event-image-default img {
+        width: 100%;
+        aspect-ratio: 16 / 9;
+        height: auto;
+        object-fit: cover;
+        display: block;
+      }
+    }
+  }
+  .ek-event-image-link {
+    img {
+      box-sizing: border-box;
+      width: 100%;
+      height: auto;
+    }
+  }
+}

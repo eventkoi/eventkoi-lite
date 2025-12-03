@@ -1,0 +1,52 @@
+/**
+ * Shared styles for EventKoi Event Data blocks on the frontend.
+ * Mirrors the backend editor defaults so Query Loop templates match legacy output.
+ */
+
+.wp-block-eventkoi-event-data.ek-event-title.ek-event-title-default {
+  font-weight: 600;
+  font-size: 1.25em;
+
+  .ek-event-title--inner {
+    margin: 0;
+    font-weight: inherit;
+    font-size: inherit;
+
+    a {
+      text-decoration: none;
+
+      &:hover,
+      &:focus {
+        text-decoration: underline;
+      }
+    }
+  }
+}
+
+.wp-block-eventkoi-event-data.ek-event-timeline.ek-event-timeline-default {
+  font-size: 0.9em;
+  opacity: 0.85;
+}
+
+.wp-block-eventkoi-event-data.ek-event-location.ek-event-location-default {
+  display: flex;
+  align-items: center;
+  font-size: 0.9em;
+  opacity: 0.85;
+
+  a,
+  span {
+    display: flex;
+    align-items: center;
+    gap: 0.4em;
+    text-decoration: none;
+    color: inherit;
+  }
+
+  svg {
+    width: 1em;
+    height: 1em;
+    opacity: 0.7;
+    margin-top: 1px;
+  }
+}

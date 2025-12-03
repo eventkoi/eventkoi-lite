@@ -421,13 +421,18 @@ class Calendar {
 	}
 
 	/**
-	 * Get all events in calendar.
+	 * Get all events in calendar with optional paging and sorting.
 	 *
-	 * @param array $ids              Array of calendar IDs to get events from.
-	 * @param bool  $expand_instances Whether to expand recurring instances or not.
-	 * @return array Events array.
+	 * @param array $ids              Array of calendar IDs.
+	 * @param bool  $expand_instances Whether to expand recurring instances.
+	 * @param array $args             Optional query arguments:
+	 *                                - per_page (int)
+	 *                                - page (int)
+	 *                                - order ('asc'|'desc')
+	 *                                - orderby ('date'|'modified'|'title').
+	 * @return array Paged & sorted events.
 	 */
-	public static function get_events( $ids = array(), $expand_instances = false ) {
+	public static function get_events( $ids = array(), $expand_instances = false, $args = array() ) {
 		$results         = array();
 		$timezone        = wp_timezone(); // Use site timezone.
 		$plugin_settings = get_option( 'eventkoi_settings', array() );
@@ -435,28 +440,87 @@ class Calendar {
 		? array_map( 'intval', $plugin_settings['working_days'] )
 		: array( 0, 1, 2, 3, 4 ); // Default to Mon–Fri.
 
-		// Public endpoint: event feed must be accessible without authentication.
-		// Nonce verification is intentionally not used here, since requests come
-		// from the public calendar view. Inputs are sanitized to prevent misuse.
-		$start_param = isset( $_GET['start'] ) ? sanitize_text_field( wp_unslash( $_GET['start'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- public feed, sanitized input
-		$end_param   = isset( $_GET['end'] ) ? sanitize_text_field( wp_unslash( $_GET['end'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- public feed, sanitized input
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$start_param = isset( $_GET['start'] ) ? sanitize_text_field( wp_unslash( $_GET['start'] ) ) : '';
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$end_param = isset( $_GET['end'] ) ? sanitize_text_field( wp_unslash( $_GET['end'] ) ) : '';
 
 		$window_start = $start_param ? new \DateTimeImmutable( $start_param, new \DateTimeZone( 'UTC' ) ) : null;
 		$window_end   = $end_param ? new \DateTimeImmutable( $end_param, new \DateTimeZone( 'UTC' ) ) : null;
 
-		$events = get_posts(
+		// Merge optional args for pagination & sorting.
+		$args = wp_parse_args(
+			$args ?? array(),
 			array(
-				'post_type'   => 'eventkoi_event',
-				'numberposts' => -1,
-				'tax_query'   => array( // phpcs:ignore WordPress.DB.SlowDBQuery
+				'per_page' => -1,
+				'include'  => array(),
+				'page'     => 1,
+				'orderby'  => 'modified',
+				'order'    => 'DESC',
+			)
+		);
+
+		// Extract optional date filters from REST args.
+		$start_date = ! empty( $args['start_date'] ) ? sanitize_text_field( $args['start_date'] ) : '';
+		$end_date   = ! empty( $args['end_date'] ) ? sanitize_text_field( $args['end_date'] ) : '';
+
+		if ( $start_date && strpos( $start_date, 'T' ) !== false ) {
+			$start_date = substr( $start_date, 0, 10 );
+		}
+		if ( $end_date && strpos( $end_date, 'T' ) !== false ) {
+			$end_date = substr( $end_date, 0, 10 );
+		}
+
+		// Normalize query vars.
+		$per_page = isset( $args['per_page'] ) ? (int) $args['per_page'] : -1;
+		$per_page = ( 0 === $per_page ) ? -1 : $per_page;
+		$paged    = max( 1, (int) $args['page'] );
+		$orderby  = sanitize_key( $args['orderby'] );
+		$order    = strtoupper( $args['order'] );
+
+		$allowed_orderby = array( 'modified', 'date', 'title', 'start_date', 'event_start' );
+		if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
+			$orderby = 'modified';
+		}
+
+		// Map custom orderby values to valid WP_Query keys.
+		$post_orderby = $orderby;
+		if ( in_array( $orderby, array( 'start_date', 'event_start' ), true ) ) {
+			$post_orderby = 'date';
+		}
+
+		// Build query arguments.
+		$query_args = array(
+			'post_type'      => 'eventkoi_event',
+			'post_status'    => 'publish',
+			// Fetch all base events; pagination occurs after recurrence expansion.
+			'posts_per_page' => -1,
+			'orderby'        => $post_orderby,
+			'order'          => $order,
+			'no_found_rows'  => true,
+		);
+
+		// Handle include mode.
+		if ( ! empty( $args['include'] ) ) {
+			$query_args['post__in'] = array_map( 'absint', (array) $args['include'] );
+			$query_args['orderby']  = 'post__in';
+		} else {
+			// Only filter by calendars when explicit IDs are provided.
+			$term_ids = ! empty( $ids ) ? $ids : array();
+
+			// Default: taxonomy filter, but only when specific calendars are provided.
+			if ( ! empty( $term_ids ) ) {
+				$query_args['tax_query'] = array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- Tax query required to filter events by calendar assignment.
 					array(
 						'taxonomy' => 'event_cal',
 						'field'    => 'term_id',
-						'terms'    => ! empty( $ids ) ? $ids : self::get_id(),
+						'terms'    => $term_ids,
 					),
-				),
-			)
-		);
+				);
+			}
+		}
+
+		$events = get_posts( $query_args );
 
 		foreach ( $events as $item ) {
 			$event = new \EventKoi\Core\Event( $item->ID );
@@ -498,6 +562,7 @@ class Calendar {
 			}
 
 			if ( 'recurring' === $event::get_date_type() && true === $expand_instances ) {
+				// Recurring expansion omitted in lite for now.
 				continue;
 			} elseif ( 'recurring' === $event::get_date_type() && false === $expand_instances ) {
 				continue;
@@ -527,35 +592,41 @@ class Calendar {
 							? gmdate( 'ga', $end_dt_utc->getTimestamp() )
 							: $end_time_full;
 
-						$results[] = array(
-							'id'            => $event::get_id() . '-span',
-							'title'         => $event::get_title(),
-							'date_type'     => $event::get_date_type(),
-							'standard_type' => $event::get_standard_type(),
-							'start'         => $start_dt_utc->format( 'Y-m-d\TH:i:s\Z' ),
-							'start_real'    => $start_dt_utc->format( 'Y-m-d\TH:i:s\Z' ),
-							'end'           => $end_all_day_utc->format( 'Y-m-d\TH:i:s\Z' ),
-							'end_real'      => $end_dt_utc->format( 'Y-m-d\TH:i:s\Z' ),
-							'start_time'    => $start_time,
-							'end_time'      => $end_time,
-							'allDay'        => true,
-							'url'           => $event::get_url(),
-							'description'   => $event::get_summary(),
-							'address1'      => $primary['address1'] ?? '',
-							'address2'      => $primary['address2'] ?? '',
-							'latitude'      => $event::get_latitude(),
-							'longitude'     => $event::get_longitude(),
-							'embed_gmap'    => $event::get_embed_gmap(),
-							'gmap_link'     => $event::get_gmap_link(),
-							'thumbnail'     => $event::get_image(),
-							'type'          => ! empty( $primary_type ) ? $primary_type : $event::get_type(),
-							'virtual_url'   => $virtual_url,
-							'link_text'     => $link_text,
-							'location_line' => $location_fallback,
-							'locations'     => $locations,
-							'timeline'      => $event::get_timeline(),
-							'timezone'      => $event::get_timezone(),
-						);
+					$record = array(
+						'id'            => $event::get_id() . '-span',
+						'title'         => $event::get_title(),
+						'date_type'     => $event::get_date_type(),
+						'standard_type' => $event::get_standard_type(),
+						'start'         => $start_dt_utc->format( 'Y-m-d\TH:i:s\Z' ),
+						'start_real'    => $start_dt_utc->format( 'Y-m-d\TH:i:s\Z' ),
+						'end'           => $end_all_day_utc->format( 'Y-m-d\TH:i:s\Z' ),
+						'end_real'      => $end_dt_utc->format( 'Y-m-d\TH:i:s\Z' ),
+						'start_time'    => $start_time,
+						'end_time'      => $end_time,
+						'allDay'        => true,
+						'url'           => $event::get_url(),
+						'description'   => $event::get_summary(),
+						'address1'      => $primary['address1'] ?? '',
+						'address2'      => $primary['address2'] ?? '',
+						'latitude'      => $event::get_latitude(),
+						'longitude'     => $event::get_longitude(),
+						'embed_gmap'    => $event::get_embed_gmap(),
+						'gmap_link'     => $event::get_gmap_link(),
+						'thumbnail'     => $event::get_image(),
+						'type'          => ! empty( $primary_type ) ? $primary_type : $event::get_type(),
+						'virtual_url'   => $virtual_url,
+						'link_text'     => $link_text,
+						'location_line' => $location_fallback,
+						'locations'     => $locations,
+						'timeline'      => $event::get_timeline(),
+						'timezone'      => $event::get_timezone(),
+					);
+
+					if ( ! empty( $args['exclude'] ) && in_array( $record['id'], (array) $args['exclude'], true ) ) {
+						continue;
+					}
+
+					$results[] = $record;
 					}
 				} elseif ( 'selected' === $event::get_standard_type() && false === $expand_instances && ! empty( $days ) ) {
 					// Use the first day's start and the last day's end.
@@ -580,7 +651,7 @@ class Calendar {
 						$end = $end_dt->format( 'Y-m-d\TH:i:s\Z' );
 					}
 
-					$results[] = array(
+					$record = array(
 						'id'            => $event::get_id() . '-span',
 						'title'         => $event::get_title(),
 						'date_type'     => $event::get_date_type(),
@@ -606,6 +677,12 @@ class Calendar {
 						'timeline'      => $event::get_timeline(),
 						'timezone'      => $event::get_timezone(),
 					);
+
+					if ( ! empty( $args['exclude'] ) && in_array( $record['id'], (array) $args['exclude'], true ) ) {
+						continue;
+					}
+
+					$results[] = $record;
 				} else {
 					// Original loop for other cases.
 					foreach ( $days as $i => $instance ) {
@@ -627,7 +704,7 @@ class Calendar {
 							$end = $end_dt->format( 'Y-m-d\TH:i:s\Z' );
 						}
 
-						$results[] = array(
+						$record = array(
 							'id'            => $event::get_id() . '-day' . $i,
 							'title'         => $event::get_title(),
 							'date_type'     => $event::get_date_type(),
@@ -653,12 +730,53 @@ class Calendar {
 							'timeline'      => $event::get_timeline(),
 							'timezone'      => $event::get_timezone(),
 						);
+
+						if ( ! empty( $args['exclude'] ) && in_array( $record['id'], (array) $args['exclude'], true ) ) {
+							continue;
+						}
+
+						$results[] = $record;
 					}
 				}
 			}
 		}
 
-		return $results;
+		// Apply optional start/end date filters (YYYY-MM-DD).
+		if ( $start_date || $end_date ) {
+			$results = array_filter(
+				$results,
+				static function ( $item ) use ( $start_date, $end_date ) {
+					if ( empty( $item['start'] ) ) {
+						return false;
+					}
+
+					$date_only = substr( $item['start'], 0, 10 );
+
+					if ( $start_date && $date_only < $start_date ) {
+						return false;
+					}
+
+					if ( $end_date && $date_only > $end_date ) {
+						return false;
+					}
+
+					return true;
+				}
+			);
+		}
+
+		$results = array_values( $results );
+		$total   = count( $results );
+
+		if ( $per_page > -1 ) {
+			$offset  = max( 0, ( $paged - 1 ) * $per_page );
+			$results = array_slice( $results, $offset, $per_page );
+		}
+
+		return array(
+			'items' => $results,
+			'total' => $total,
+		);
 	}
 
 	/**
