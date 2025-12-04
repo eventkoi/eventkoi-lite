@@ -6,7 +6,7 @@ Tags: events, calendar, event management, schedules, calendar block
 Requires at least: 6.7  
 Tested up to: 6.9 
 Requires PHP: 8.0  
-Stable tag: 1.1.0 
+Stable tag: 1.1.0.1 
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -134,6 +134,9 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.1.0.1 – JS Import Fix – 2025-12-04 =
+* Fix: Added missing JavaScript imports so frontend assets load reliably.
 
 = 1.1.0 – Query Loop Blocks & Data Enhancements – 2025-12-3 =
 * New: Added EK Event Query Loop variation (with EK Event Data child block) to display events using core/query controls and pagination.
