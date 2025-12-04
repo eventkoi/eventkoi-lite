@@ -135,7 +135,7 @@ This service is provided by Google LLC: [Terms of Service](https://cloud.google.
 
 == Changelog ==
 
-= 1.1.0.1 – JS Import Fix – 2025-12-04 =
+= 1.1.0.1 – JS Import Fix – 2025-12-4 =
 * Fix: Added missing JavaScript imports so frontend assets load reliably.
 
 = 1.1.0 – Query Loop Blocks & Data Enhancements – 2025-12-3 =
