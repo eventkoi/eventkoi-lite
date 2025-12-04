@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Wrapper } from "@/components/wrapper";
-import { __ } from "@wordpress/i18n";
+import { __, sprintf } from "@wordpress/i18n";
 import { AlertCircle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
