@@ -135,10 +135,10 @@ This service is provided by Google LLC: [Terms of Service](https://cloud.google.
 
 == Changelog ==
 
-= 1.1.0.1 – JS Import Fix – 2025-12-4 =
+= 1.1.0.1 – JS Import Fix – 2025-12-04 =
 * Fix: Added missing JavaScript imports so frontend assets load reliably.
 
-= 1.1.0 – Query Loop Blocks & Data Enhancements – 2025-12-3 =
+= 1.1.0 – Query Loop Blocks & Data Enhancements – 2025-12-03 =
 * New: Added EK Event Query Loop variation (with EK Event Data child block) to display events using core/query controls and pagination.
 * New: Added `/eventkoi/v1/query_events` endpoint and expanded `/calendar_events` to support paging, ordering, and date filters for block previews.
 * Improvement: Query Loop server render now injects EventKoi event data.
