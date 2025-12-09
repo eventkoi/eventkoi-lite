@@ -1,5 +1,6 @@
 import { Heading } from "@/components/heading";
 
+import { GettingStarted } from "@/components/dashboard/getting-started";
 import { ProLaunch } from "@/components/dashboard/pro-launch";
 import { QuickLinks } from "@/components/dashboard/quick-links";
 import { UpcomingEvents } from "@/components/dashboard/upcoming-events";
@@ -13,9 +14,12 @@ export function DashboardOverview() {
       <div className="grid">
         <UpcomingEvents />
       </div>
-      <div className="grid gap-8 md:grid-cols-2">
-        <QuickLinks />
+      <div className="grid">
         <ProLaunch />
+      </div>
+      <div className="grid gap-8 md:grid-cols-2">
+        <GettingStarted />
+        <QuickLinks />
       </div>
     </div>
   );

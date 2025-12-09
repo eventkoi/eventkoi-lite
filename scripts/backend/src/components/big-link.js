@@ -1,8 +1,14 @@
-export function BigLink({ href, children, disabled = false }) {
+export function BigLink({
+  href,
+  children,
+  disabled = false,
+  className = "",
+  target = "_blank",
+}) {
   return (
     <a
       href={disabled ? undefined : href}
-      target={disabled ? undefined : "_blank"}
+      target={disabled ? undefined : target}
       aria-disabled={disabled}
       className={`
         flex border rounded-xl items-center text-base px-6 py-4 h-[70px]
@@ -11,6 +17,7 @@ export function BigLink({ href, children, disabled = false }) {
             ? "bg-muted text-muted-foreground border-muted opacity-50 cursor-not-allowed pointer-events-none"
             : "bg-transparent text-card-foreground hover:bg-accent border-input hover:border-foreground/40"
         }
+        ${className}
       `}
     >
       {children}
