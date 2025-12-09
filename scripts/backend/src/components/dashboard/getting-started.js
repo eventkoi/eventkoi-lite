@@ -31,16 +31,16 @@ function BinocularsIcon({ className }) {
 export function GettingStarted() {
   return (
     <Box container>
-      <Heading level={3}>{__("Getting started", "eventkoi")}</Heading>
+      <Heading level={3}>{__("Getting started", "eventkoi-lite")}</Heading>
       <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 w-full">
         <BigLink
-          href="#/dashboard/onboarding?step=license"
+          href="#/dashboard/onboarding?step=calendar"
           className="flex-1 flex-col items-center text-center w-full h-auto justify-center py-8"
           target="_self"
         >
           <Rocket className="min-w-5 min-h-5 w-5 h-5 mb-2" />
           <span className="block">
-            {__("Launch onboarding wizard", "eventkoi")}
+            {__("Launch onboarding wizard", "eventkoi-lite")}
           </span>
         </BigLink>
         <BigLink
@@ -49,7 +49,9 @@ export function GettingStarted() {
           target="_self"
         >
           <BinocularsIcon className="min-w-5 min-h-5 w-5 h-5 mb-2" />
-          <span className="block">{__("Begin plugin tour", "eventkoi")}</span>
+          <span className="block">
+            {__("Begin plugin tour", "eventkoi-lite")}
+          </span>
         </BigLink>
       </div>
     </Box>

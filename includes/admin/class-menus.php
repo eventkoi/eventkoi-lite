@@ -48,6 +48,7 @@ class Menus {
 	public static function add_plugin_action_links( $links ) {
 		// Prepend custom links.
 		$custom_links = array(
+			'<a href="' . esc_url( admin_url( 'admin.php?page=eventkoi#/dashboard/onboarding' ) ) . '">' . esc_html__( 'Quick Start Guide', 'eventkoi-lite' ) . '</a>',
 			'<a href="' . esc_url( admin_url( 'admin.php?page=eventkoi#/dashboard' ) ) . '">' . esc_html__( 'Dashboard', 'eventkoi-lite' ) . '</a>',
 			'<a href="' . esc_url( admin_url( 'admin.php?page=eventkoi#/settings' ) ) . '">' . esc_html__( 'Settings', 'eventkoi-lite' ) . '</a>',
 		);

@@ -8,6 +8,7 @@ import {
 } from "react-router-dom";
 
 import { Dashboard } from "@/admin/dashboard";
+import { DashboardOnboarding } from "@/admin/dashboard/onboarding";
 import { DashboardOverview } from "@/admin/dashboard/overview";
 import { Home } from "@/admin/home";
 
@@ -87,6 +88,7 @@ function AdminLayout() {
         <Route path="dashboard" element={<Dashboard />}>
           <Route index element={<DashboardOverview />} />
           <Route path="overview" element={<DashboardOverview />} />
+          <Route path="onboarding" element={<DashboardOnboarding />} />
           <Route path="*" element={<Home />} />
         </Route>
 

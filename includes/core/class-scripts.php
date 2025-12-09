@@ -54,25 +54,37 @@ class Scripts {
 		$settings = Settings::get();
 
 		$params = array(
-			'version'     => EVENTKOI_VERSION,
-			'api'         => EVENTKOI_API,
-			'event'       => $event ? $event::get_meta() : array(),
-			'ical'        => $event ? $event::get_ical() : '',
-			'no_events'   => __( 'No events were found.', 'eventkoi-lite' ),
-			'timezone'    => wp_timezone_string(),
-			'gmap'        => array(
+			'is_admin'          => current_user_can( 'manage_options' ),
+			'admin_page'        => admin_url( 'admin.php?page=eventkoi' ),
+			'demo_event_id'     => (int) get_option( 'eventkoi_demo_event_id', 0 ),
+			'default_cal_id'    => (int) get_option( 'eventkoi_default_event_cal', 0 ),
+			'version'           => EVENTKOI_VERSION,
+			'api'               => EVENTKOI_API,
+			'event'             => $event ? $event::get_meta() : array(),
+			'ical'              => $event ? $event::get_ical() : '',
+			'no_events'         => __( 'No events were found.', 'eventkoi-lite' ),
+			'timezone'          => wp_timezone_string(),
+			'date_format'       => get_option( 'date_format' ),
+			'time_format_string'=> get_option( 'time_format' ),
+			'gmap'              => array(
 				'api_key'   => $settings['gmap_api_key'] ?? '',
 				'connected' => ! empty( $settings['gmap_connection_status'] ),
 			),
-			'time_format' => $settings['time_format'] ?? '12',
-			'locale'      => determine_locale(),
-			'startday'    => empty( $calendar['startday'] ) ? $settings['week_starts_on'] : $calendar['startday'],
+			'time_format'       => $settings['time_format'] ?? '12',
+			'locale'            => determine_locale(),
+			'startday'          => empty( $calendar['startday'] ) ? $settings['week_starts_on'] : $calendar['startday'],
 		);
 
 		wp_localize_script(
 			'eventkoi-frontend',
 			'eventkoi_params',
 			apply_filters( 'eventkoi_frontend_params', $params )
+		);
+
+		wp_set_script_translations(
+			'eventkoi-frontend',
+			'eventkoi-lite',
+			WP_LANG_DIR . '/plugins'
 		);
 
 		// Enqueue styles.

@@ -17,8 +17,8 @@ require_once EVENTKOI_PLUGIN_DIR . 'autoload.php';
 require_once EVENTKOI_PLUGIN_DIR . 'vendor-prefixed/autoload.php';
 
 // Hooks for activation and deactivation.
-register_activation_hook( __FILE__, array( __NAMESPACE__ . '\\Core\\Activator', 'activate' ) );
-register_deactivation_hook( __FILE__, array( __NAMESPACE__ . '\\Core\\Deactivator', 'deactivate' ) );
+register_activation_hook( EVENTKOI_PLUGIN_FILE, array( __NAMESPACE__ . '\\Core\\Activator', 'activate' ) );
+register_deactivation_hook( EVENTKOI_PLUGIN_FILE, array( __NAMESPACE__ . '\\Core\\Deactivator', 'deactivate' ) );
 
 /**
  * Initialize the plugin.

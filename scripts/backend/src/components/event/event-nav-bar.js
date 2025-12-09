@@ -9,9 +9,10 @@ import {
 import { useEventEditContext } from "@/hooks/EventEditContext";
 import { useInstanceEditContext } from "@/hooks/InstanceEditContext";
 import { showToast } from "@/lib/toast";
+import { cn } from "@/lib/utils";
 import apiRequest from "@wordpress/api-fetch";
 import { ChevronDown, Loader2 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 // Optional: Replace this with lodash.isequal if needed
@@ -39,6 +40,8 @@ function deepEqual(a, b) {
 export function EventNavBar() {
   const location = useLocation();
   const isInstanceEdit = location.pathname.includes("/instances/edit/");
+  const search = new URLSearchParams(location.search);
+  const onboardingActive = search.get("onboarding") === "demo-event";
 
   let instanceCtx = null;
   try {
@@ -61,6 +64,7 @@ export function EventNavBar() {
   const [saving, setSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const hasSavedOnce = useRef(false);
+  const [highlightPreview, setHighlightPreview] = useState(false);
 
   const isDisabled = isInstanceEdit
     ? saving || loading
@@ -108,6 +112,15 @@ export function EventNavBar() {
     }
   };
 
+  useEffect(() => {
+    const handler = (event) => {
+      const step = event?.detail?.step;
+      setHighlightPreview(onboardingActive && step === 3);
+    };
+    window.addEventListener("eventkoi:onboardingStep", handler);
+    return () => window.removeEventListener("eventkoi:onboardingStep", handler);
+  }, [onboardingActive]);
+
   const handleAction = async (path, data = {}) => {
     setSaving(true);
     try {
@@ -130,7 +143,6 @@ export function EventNavBar() {
   };
 
   const saveEvent = async (status) => {
-    console.log(event);
     if (!event?.title?.trim()) return;
 
     // Don’t run if we’re already publishing
@@ -258,7 +270,17 @@ export function EventNavBar() {
           <Button
             variant="link"
             disabled={isDisabled || !event?.url}
-            onClick={() => window.open(event?.url, "_blank")}
+            onClick={() => {
+              const url =
+                onboardingActive && highlightPreview
+                  ? `${event?.url || ""}?onboarding=demo-event`
+                  : event?.url;
+              window.open(url, "_blank");
+            }}
+            className={cn(
+              highlightPreview &&
+                "ring-2 ring-[#fb4409] ring-offset-2 ring-offset-white rounded-sm"
+            )}
           >
             Preview
           </Button>
@@ -267,7 +289,14 @@ export function EventNavBar() {
               variant="default"
               className="rounded-r-none"
               disabled={isDisabled}
-              onClick={() => saveEvent("publish")}
+              onClick={() => {
+                saveEvent("publish");
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(
+                    new CustomEvent("eventkoi:onboardingPublish")
+                  );
+                }
+              }}
             >
               {saving ? (
                 <span className="flex items-center gap-2">

@@ -17,6 +17,7 @@ use EventKoi\API\Orders;
 use EventKoi\API\Order;
 use EventKoi\API\Stats;
 use EventKoi\API\Calendar;
+use EventKoi\API\Onboarding;
 use EventKoi\Core\Settings as CoreSettings;
 use WP_REST_Request;
 
@@ -82,6 +83,7 @@ class REST {
 			Orders::class,
 			Order::class,
 			Stats::class,
+			Onboarding::class,
 		);
 
 		foreach ( $api_classes as $api_class ) {

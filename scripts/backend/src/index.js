@@ -19,3 +19,5 @@ import "@/blocks/list";
 
 import "@/plugins/auto-update-toggle";
 import "@/plugins/event-query-loop-controls";
+import "@/plugins/quick-start-snackbar";
+import "@/plugins/admin-checklist";

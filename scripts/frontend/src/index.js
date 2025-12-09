@@ -15,3 +15,5 @@ import "@/add-to-cal";
 import "@/calendar";
 import "@/googlemap";
 import "@/share";
+import "@/onboarding-widget";
+import "@/onboarding-done";
