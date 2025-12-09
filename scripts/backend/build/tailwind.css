@@ -2074,6 +2074,16 @@ body {
   border-top-right-radius: 10px !important;
 }
 
+.rounded-b-lg {
+  border-bottom-right-radius: var(--radius) !important;
+  border-bottom-left-radius: var(--radius) !important;
+}
+
+.rounded-t-lg {
+  border-top-left-radius: var(--radius) !important;
+  border-top-right-radius: var(--radius) !important;
+}
+
 .rounded-tl-sm {
   border-top-left-radius: calc(var(--radius) - 4px) !important;
 }
@@ -2472,6 +2482,11 @@ body {
 .bg-zinc-900 {
   --tw-bg-opacity: 1 !important;
   background-color: rgb(24 24 27 / var(--tw-bg-opacity, 1)) !important;
+}
+
+.bg-\[\#EDFBF8\] {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(237 251 248 / var(--tw-bg-opacity, 1)) !important;
 }
 
 .fill-current {
@@ -3166,6 +3181,11 @@ body {
 .text-white {
   --tw-text-opacity: 1 !important;
   color: rgb(255 255 255 / var(--tw-text-opacity, 1)) !important;
+}
+
+.text-\[\#0D5342\] {
+  --tw-text-opacity: 1 !important;
+  color: rgb(13 83 66 / var(--tw-text-opacity, 1)) !important;
 }
 
 .underline {

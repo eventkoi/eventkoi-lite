@@ -335,7 +335,6 @@ export function CalendarsOverview() {
     setDemoStepComplete(flag);
   }, []);
 
-
   useEffect(() => {
     if (onboardingFlag === "demo-event") {
       if (tourCancelled) {
@@ -382,18 +381,17 @@ export function CalendarsOverview() {
   const renderSidebarSteps = () => {
     return (
       <div className="space-y-1">
-      <div className="h-[1px] w-full bg-border" />
-      <div className="h-1" />
-      {sidebarSteps.map((step, index) => {
-        const effectiveKey = step.sidebarKey ?? step.key;
-        const isComplete =
-          effectiveKey === "event" && demoStepComplete;
-        const isActive = effectiveKey === "view";
+        <div className="h-[1px] w-full bg-border" />
+        <div className="h-1" />
+        {sidebarSteps.map((step, index) => {
+          const effectiveKey = step.sidebarKey ?? step.key;
+          const isComplete = effectiveKey === "event" && demoStepComplete;
+          const isActive = effectiveKey === "view";
 
-        return (
-          <button
-            key={step.key}
-            type="button"
+          return (
+            <button
+              key={step.key}
+              type="button"
               className={cn(
                 "w-full h-9 rounded-lg cursor-default border px-3 py-3 text-left transition bg-white text-[#161616] text-[14px] font-medium",
                 "border-none flex items-center focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0",
@@ -458,14 +456,8 @@ export function CalendarsOverview() {
 
     const rect = target.getBoundingClientRect();
     setHintPosition({
-      top:
-        hintStep === 2
-          ? rect.top - 27
-          : rect.top - 17,
-      left:
-        hintStep === 2
-          ? rect.right + 14
-          : rect.right + 22,
+      top: hintStep === 2 ? rect.top - 27 : rect.top - 17,
+      left: hintStep === 2 ? rect.right + 14 : rect.right + 22,
     });
   }, [showTourHints, hintStep]);
 
@@ -529,60 +521,50 @@ export function CalendarsOverview() {
     window?.localStorage?.setItem("eventkoi_onboarding_demo_complete", "1");
   }, []);
 
-  const onboardingToast = showDemoToast
-    ? showDoneWidget
-      ? (
-        <div
-          className="eventkoi-onboarding-widget fixed bottom-8 right-8 z-50 w-[250px] rounded-lg border border-solid border-border bg-white shadow-xl p-4 space-y-4"
-          style={{
-            boxSizing: "border-box",
-            fontFamily: "Inter, system-ui, sans-serif",
-          }}
-        >
-          <div className="flex items-center gap-2">
-            <LogoIcon width="18" height="23" />
-            <div className="text-[14px] font-semibold text-black">
-              <span className="block">
-                {__("EventKoi Plugin Tour", "eventkoi-lite")}
-              </span>
-            </div>
-            <button
-              type="button"
-              className="ml-auto text-[#555] hover:text-black transition-colors leading-none -mt-1"
-              aria-label={__("Close", "eventkoi-lite")}
-              style={{
-                background: "transparent",
-                border: "none",
-                fontSize: "20px",
-                cursor: "pointer",
-              }}
-              onClick={() => {
-                setShowDemoToast(false);
-                clearOnboardingParams();
-              }}
-            >
-              ×
-            </button>
+  const onboardingToast = showDemoToast ? (
+    showDoneWidget ? (
+      <div
+        className="eventkoi-onboarding-widget fixed bottom-8 right-8 z-50 w-[250px] rounded-lg shadow-md"
+        style={{
+          boxSizing: "border-box",
+          fontFamily: "Inter, system-ui, sans-serif",
+        }}
+      >
+        <div className="flex items-center gap-2 bg-[#EDFBF8] p-4 rounded-t-lg">
+          <span className="text-[18px]" aria-hidden="true">
+            🥳
+          </span>
+          <div className="text-[14px] font-semibold text-[#0D5342] leading-tight">
+            <span className="block">
+              {__("EventKoi Plugin Tour Completed!", "eventkoi")}
+            </span>
           </div>
-          <div className="h-[1px] w-full bg-border" />
-          <div
-            className="flex flex-col gap-3 rounded-md p-3"
-            style={{ background: "#EDFBF8" }}
+          <button
+            type="button"
+            className="ml-auto p-0 text-[#555] hover:text-black transition-colors leading-none -mt-1"
+            aria-label={__("Close", "eventkoi")}
+            style={{
+              background: "transparent",
+              border: "none",
+              fontSize: "24px",
+              cursor: "pointer",
+            }}
+            onClick={() => {
+              setShowDemoToast(false);
+              clearOnboardingParams();
+            }}
           >
-            <div className="flex items-start gap-2">
-              <span className="text-[16px]" aria-hidden="true">
-                🥳
-              </span>
-              <p
-                className="text-[14px] font-medium m-0"
-                style={{ color: "#137C63", fontWeight: 500 }}
-              >
-                {__("Hooray! You’ve completed the Quick Start Guide.", "eventkoi-lite")}
-              </p>
+            ×
+          </button>
+        </div>
+        <div className="p-4 border border-solid border-border bg-white rounded-b-lg flex flex-col gap-4">
+          <div className="flex flex-col gap-4">
+            <div className="text-[14px] text-[#161616] font-medium text-center w-full">
+              {__("What you can do next:", "eventkoi")}
             </div>
             <Button
               asChild
-              className="w-full h-8 text-[14px] rounded-sm font-medium text-[#FBFBFB] bg-[#161616] hover:bg-black"
+              className="w-full h-10 text-[12px] rounded-sm font-medium text-[#FBFBFB] bg-[#161616] hover:bg-black"
               data-eventkoi-dashboard
               style={{ boxSizing: "border-box" }}
             >
@@ -593,13 +575,13 @@ export function CalendarsOverview() {
                   "/wp-admin/admin.php?page=eventkoi"
                 }#/dashboard`}
               >
-                {__("Go to EventKoi Dashboard", "eventkoi-lite")}
+                {__("Go to EventKoi Dashboard", "eventkoi")}
               </a>
             </Button>
             <Button
               asChild
               variant="outline"
-              className="w-full rounded-sm border border-solid border-input py-2 h-12 text-[14px] font-medium hover:bg-white text-[#161616] whitespace-normal"
+              className="w-full rounded-sm border border-solid border-[#161616] py-2 h-10 text-[12px] font-medium hover:bg-white text-[#161616] whitespace-normal"
               style={{ boxSizing: "border-box" }}
             >
               <a
@@ -608,7 +590,7 @@ export function CalendarsOverview() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {__("Learn how to edit Event Template", "eventkoi-lite")}
+                {__("Learn how to customize an Event Template", "eventkoi")}
               </a>
             </Button>
           </div>
@@ -616,23 +598,23 @@ export function CalendarsOverview() {
           <p className="text-[12px] text-[#555] m-0">
             {__(
               "You can restart this Guide any time in the EventKoi Dashboard.",
-              "eventkoi-lite"
+              "eventkoi"
             )}
           </p>
         </div>
-      )
-      : (
-        <div className="fixed bottom-8 right-8 z-50 w-[250px] rounded-lg border border-border bg-white shadow-xl p-4 space-y-4">
-          <div className="flex items-center gap-2">
-            <LogoIcon width="18" height="23" />
-            <div className="text-[14px] font-semibold text-black">
-              <span className="block">
-                {__("EventKoi Plugin Tour", "eventkoi-lite")}
-              </span>
-            </div>
-            <button
-              type="button"
-              className="ml-auto text-[#555] hover:text-black transition-colors text-2xl leading-none -mt-1"
+      </div>
+    ) : (
+      <div className="fixed bottom-8 right-8 z-50 w-[250px] rounded-lg border border-border bg-white shadow-xl p-4 space-y-4">
+        <div className="flex items-center gap-2">
+          <LogoIcon width="18" height="23" />
+          <div className="text-[14px] font-semibold text-black">
+            <span className="block">
+              {__("EventKoi Plugin Tour", "eventkoi-lite")}
+            </span>
+          </div>
+          <button
+            type="button"
+            className="ml-auto text-[#555] hover:text-black transition-colors text-2xl leading-none -mt-1"
             onClick={() => {
               setShowDemoToast(false);
               clearOnboardingParams();
@@ -647,19 +629,19 @@ export function CalendarsOverview() {
             }}
             aria-label={__("Close", "eventkoi-lite")}
           >
-              ×
-            </button>
-          </div>
-          {renderSidebarSteps()}
-          <div className="text-[12px] text-[#555]">
-            {__(
-              "You can restart this Guide any time in the EventKoi Dashboard.",
-              "eventkoi-lite"
-            )}
-          </div>
+            ×
+          </button>
         </div>
-      )
-    : null;
+        {renderSidebarSteps()}
+        <div className="text-[12px] text-[#555]">
+          {__(
+            "You can restart this Guide any time in the EventKoi Dashboard.",
+            "eventkoi-lite"
+          )}
+        </div>
+      </div>
+    )
+  ) : null;
 
   const onboardingHint =
     showTourHints && hintPosition ? (
@@ -748,7 +730,10 @@ export function CalendarsOverview() {
                   "Here, you can create new calendars, edit existing ones, and more.",
                   "eventkoi-lite"
                 )
-              : __("Click the icon to view the frontend calendar.", "eventkoi-lite")}
+              : __(
+                  "Click the icon to view the frontend calendar.",
+                  "eventkoi-lite"
+                )}
           </p>
           <div className="flex items-center justify-between mt-2">
             <span className="text-[14px] text-[#FBFBFB]">
@@ -766,7 +751,10 @@ export function CalendarsOverview() {
                     params.set("hint", "1");
                     const targetId =
                       demoEventId ||
-                      parseInt(window?.eventkoi_params?.demo_event_id ?? 0, 10) ||
+                      parseInt(
+                        window?.eventkoi_params?.demo_event_id ?? 0,
+                        10
+                      ) ||
                       0;
                     if (targetId) {
                       params.set("demo_event_id", String(targetId));
