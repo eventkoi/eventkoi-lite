@@ -212,7 +212,7 @@ function GlobalOnboardingWidget() {
       <div style={dividerStyle} />
 
       <div style={footerStyle}>
-        You can restart this Guide any time in the EventKoi Dashboard.
+        You can restart this Tour any time in the EventKoi Dashboard.
       </div>
     </div>
   );

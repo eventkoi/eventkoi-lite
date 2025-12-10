@@ -94,7 +94,7 @@ const Widget = ({ steps }) => (
         <div className="h-[1px] w-full bg-border" />
       </div>
       <div className="text-[12px] text-[#555]">
-        You can restart this Guide any time in the EventKoi Dashboard.
+        You can restart this Tour any time in the EventKoi Dashboard.
       </div>
     </div>
   </div>

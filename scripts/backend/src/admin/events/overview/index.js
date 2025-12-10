@@ -558,7 +558,7 @@ export function EventsOverview() {
           {renderSidebarSteps()}
           <div className="text-[12px] text-[#555]">
             {__(
-              "You can restart this Guide any time in the EventKoi Dashboard.",
+              "You can restart this Tour any time in the EventKoi Dashboard.",
               "eventkoi-lite"
             )}
           </div>

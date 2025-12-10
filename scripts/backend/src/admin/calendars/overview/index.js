@@ -597,7 +597,7 @@ export function CalendarsOverview() {
           <div className="h-[1px] w-full bg-border" />
           <p className="text-[12px] text-[#555] m-0">
             {__(
-              "You can restart this Guide any time in the EventKoi Dashboard.",
+              "You can restart this Tour any time in the EventKoi Dashboard.",
               "eventkoi"
             )}
           </p>
@@ -635,7 +635,7 @@ export function CalendarsOverview() {
         {renderSidebarSteps()}
         <div className="text-[12px] text-[#555]">
           {__(
-            "You can restart this Guide any time in the EventKoi Dashboard.",
+            "You can restart this Tour any time in the EventKoi Dashboard.",
             "eventkoi-lite"
           )}
         </div>

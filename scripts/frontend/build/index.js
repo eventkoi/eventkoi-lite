@@ -70347,7 +70347,7 @@ const Widget = () => /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_
       className: "h-[1px] w-full bg-border"
     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("p", {
       className: "text-[12px] text-[#555] m-0",
-      children: "You can restart this Guide any time in the EventKoi Dashboard."
+      children: "You can restart this Tour any time in the EventKoi Dashboard."
     })]
   })]
 });
@@ -70495,7 +70495,7 @@ const Widget = ({
       })]
     }), /*#__PURE__*/(0,react_jsx_runtime__WEBPACK_IMPORTED_MODULE_2__.jsx)("div", {
       className: "text-[12px] text-[#555]",
-      children: "You can restart this Guide any time in the EventKoi Dashboard."
+      children: "You can restart this Tour any time in the EventKoi Dashboard."
     })]
   })]
 });

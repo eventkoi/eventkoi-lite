@@ -389,16 +389,12 @@ export function DashboardOnboarding() {
             <div className="flex flex-col py-10 max-w-[325px] m-auto">
               <div className="space-y-2">
                 <div className="text-[24px] font-medium leading-7 text-black">
-                  {__("Onboarding complete!", "eventkoi-lite")}
+                  {__("You're ready to start using EventKoi!", "eventkoi-lite")}
                 </div>
                 <div className="text-[14px] text-[#808080] leading-7 font-normal">
                   <span>
-                    {__("You have successfully set up EventKoi.", "eventkoi-lite")}
-                  </span>
-                  <br />
-                  <span>
                     {__(
-                      "Next, start 2 minute plugin tour and learn how to:",
+                      "Take a quick 2-minute tour to learn how to:",
                       "eventkoi-lite"
                     )}
                   </span>
@@ -406,7 +402,7 @@ export function DashboardOnboarding() {
                 <div className="space-y-2 pt-3">
                   {[
                     __("Publish demo event", "eventkoi-lite"),
-                    __("View default calendar", "eventkoi-lite"),
+                    __("View your ready-made calendar", "eventkoi-lite"),
                   ].map((title) => (
                     <div
                       key={title}
