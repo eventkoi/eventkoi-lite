@@ -76,7 +76,7 @@ const Widget = () => (
         </Button>
       </div>
       <div className="h-[1px] w-full bg-border" />
-      <p className="text-[12px] text-[#555] m-0">
+      <p className="text-[12px] text-[#555] m-0 font-sans">
         You can restart this Tour any time in the EventKoi Dashboard.
       </p>
     </div>

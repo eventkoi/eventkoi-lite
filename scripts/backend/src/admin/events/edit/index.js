@@ -544,15 +544,18 @@ export function EventEdit() {
             : __("We’re headed to your Calendars next.", "eventkoi-lite")}
         </p>
         <div className="flex items-center justify-between mt-2 gap-2">
-          {onboardingStep !== 4 && (
+          {onboardingStep !== 4 ? (
             <span className="text-[14px] text-[#FBFBFB]">
               {sprintf(__("%1$s of %2$s", "eventkoi-lite"), onboardingStep, 3)}
             </span>
+          ) : (
+            <span />
           )}
           <div className="flex items-center gap-2">
             {(onboardingStep === 1 ||
               onboardingStep === 2 ||
-              onboardingStep === 3) && (
+              onboardingStep === 3 ||
+              onboardingStep === 4) && (
               <Button
                 size="sm"
                 variant="ghost"
@@ -576,14 +579,15 @@ export function EventEdit() {
                   }
 
                   const params = new URLSearchParams(searchParams);
-                  params.set("hint", onboardingStep === 3 ? "2" : "1");
+                  const previous = onboardingStep === 4 ? 3 : onboardingStep - 1;
+                  params.set("hint", String(previous));
                   navigate(
                     {
                       search: params.toString() ? `?${params.toString()}` : "",
                     },
                     { replace: false }
                   );
-                  setOnboardingStep(onboardingStep === 3 ? 2 : 1);
+                  setOnboardingStep(previous);
                 }}
               >
             {__("Back", "eventkoi-lite")}

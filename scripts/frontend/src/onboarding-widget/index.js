@@ -93,7 +93,7 @@ const Widget = ({ steps }) => (
         })}
         <div className="h-[1px] w-full bg-border" />
       </div>
-      <div className="text-[12px] text-[#555]">
+      <div className="text-[12px] text-[#555] font-sans">
         You can restart this Tour any time in the EventKoi Dashboard.
       </div>
     </div>
