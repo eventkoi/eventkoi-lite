@@ -78,7 +78,7 @@ const createSnackbar = () => {
         <div style="flex:1;display:flex;flex-direction:column;gap:10px;">
           <div style="display:flex;align-items:flex-start;gap:10px;">
             <div style="font-size:15px;line-height:1.4;font-weight:500;letter-spacing:-0.01em;">${__(
-              "Start EventKoi Quick Start Guide?",
+              "Launch EventKoi Onboarding Wizard?",
               "eventkoi-lite"
             )}</div>
             <button type="button" aria-label="Dismiss" data-role="close"
@@ -92,13 +92,13 @@ const createSnackbar = () => {
             }" target="_self" rel="noreferrer"
               data-role="onboarding"
               style="text-align:center;background:#fff;color:#333;border-radius:10px;padding:6px 12px;font-weight:500;text-decoration:none;font-size:13px;">
-              ${__("Get started", "eventkoi-lite")}
+              ${__("Launch wizard", "eventkoi-lite")}
             </a>
             <a href="${
               eventkoiQuickStart.dashboard_url
             }" target="_self" rel="noreferrer"
               style="padding:6px 12px;border-radius:10px;background:#555;color:#fff;font-weight:500;font-size:13px;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;min-width:0;">
-              ${__("Go to EventKoi dashboard", "eventkoi-lite")}
+              ${__("Go to EventKoi Dashboard", "eventkoi-lite")}
             </a>
           </div>
         </div>
@@ -106,22 +106,18 @@ const createSnackbar = () => {
     </div>
   `;
 
-  wrapper
-    .querySelectorAll('[data-role="close"]')
-    .forEach((btn) =>
-      btn.addEventListener("click", () => {
-        markQuickStartComplete();
-        wrapper.remove();
-      })
-    );
+  wrapper.querySelectorAll('[data-role="close"]').forEach((btn) =>
+    btn.addEventListener("click", () => {
+      markQuickStartComplete();
+      wrapper.remove();
+    })
+  );
 
-  wrapper
-    .querySelectorAll('[data-role="onboarding"]')
-    .forEach((btn) =>
-      btn.addEventListener("click", () => {
-        markQuickStartComplete();
-      })
-    );
+  wrapper.querySelectorAll('[data-role="onboarding"]').forEach((btn) =>
+    btn.addEventListener("click", () => {
+      markQuickStartComplete();
+    })
+  );
 
   document.body.appendChild(wrapper);
 

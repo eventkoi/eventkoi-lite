@@ -407,17 +407,17 @@ export function EventEdit() {
         <button
           type="button"
           className="ml-auto text-[#555] hover:text-black transition-colors text-2xl leading-none -mt-1"
-      onClick={() => {
-        setShowOnboardingToast(false);
-        clearOnboardingParams();
-        try {
-          window.localStorage.removeItem("eventkoi_onboarding_active");
-        } catch {
-          // ignore
-        }
-      }}
-      aria-label={__("Close", "eventkoi-lite")}
-    >
+          onClick={() => {
+            setShowOnboardingToast(false);
+            clearOnboardingParams();
+            try {
+              window.localStorage.removeItem("eventkoi_onboarding_active");
+            } catch {
+              // ignore
+            }
+          }}
+          aria-label={__("Close", "eventkoi-lite")}
+        >
           ×
         </button>
       </div>
@@ -436,11 +436,17 @@ export function EventEdit() {
       <div
         className={cn(
           "pointer-events-auto max-w-xs bg-[#161616] border border-border shadow-lg rounded-lg p-4 flex flex-col gap-2",
-          onboardingStep === 4 ? "absolute" : "fixed top-[calc(7rem)] right-8"
+          onboardingStep === 4
+            ? "absolute"
+            : onboardingStep === 3
+            ? "fixed top-[calc(7rem)]"
+            : "fixed top-[calc(7rem)] right-8"
         )}
         style={
           onboardingStep === 4 && hintPosition
             ? { top: hintPosition.top, left: hintPosition.left }
+          : onboardingStep === 3
+            ? { right: "7rem" }
             : undefined
         }
       >
@@ -461,7 +467,7 @@ export function EventEdit() {
           ×
         </button>
         <div className="text-[16px] font-semibold text-[#FBFBFB] flex flex-col pr-6">
-          {(onboardingStep === 2 || onboardingStep === 4) && (
+          {(onboardingStep === 2 || onboardingStep === 3 || onboardingStep === 4) && (
             <span className="mb-2">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -515,7 +521,7 @@ export function EventEdit() {
               : onboardingStep === 2
               ? __('Take action: Click on "Publish"', "eventkoi-lite")
               : onboardingStep === 3
-              ? __("Preview or Save", "eventkoi-lite")
+              ? __('Take action: Click on "Preview" or "Save"', "eventkoi-lite")
               : __('Take action: Click on "Calendars"', "eventkoi-lite")}
           </span>
         </div>
@@ -527,7 +533,7 @@ export function EventEdit() {
               )
             : onboardingStep === 2
             ? __(
-                "Once you have finished editing your event, you can publish, preview or save it.",
+                "Once you have finished editing your event, you can publish it.",
                 "eventkoi-lite"
               )
             : onboardingStep === 3
@@ -544,7 +550,9 @@ export function EventEdit() {
             </span>
           )}
           <div className="flex items-center gap-2">
-            {(onboardingStep === 1 || onboardingStep === 2 || onboardingStep === 3) && (
+            {(onboardingStep === 1 ||
+              onboardingStep === 2 ||
+              onboardingStep === 3) && (
               <Button
                 size="sm"
                 variant="ghost"
@@ -571,16 +579,14 @@ export function EventEdit() {
                   params.set("hint", onboardingStep === 3 ? "2" : "1");
                   navigate(
                     {
-                      search: params.toString()
-                        ? `?${params.toString()}`
-                        : "",
+                      search: params.toString() ? `?${params.toString()}` : "",
                     },
                     { replace: false }
                   );
                   setOnboardingStep(onboardingStep === 3 ? 2 : 1);
                 }}
               >
-                {__("Back", "eventkoi-lite")}
+            {__("Back", "eventkoi-lite")}
               </Button>
             )}
             {onboardingStep === 1 ? (
@@ -591,6 +597,18 @@ export function EventEdit() {
                 onClick={() => {
                   setOnboardingStep(2);
                   updateHintParam(2);
+                }}
+              >
+                {__("Next", "eventkoi-lite")}
+              </Button>
+            ) : onboardingStep === 2 ? (
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-[26px] font-medium"
+                onClick={() => {
+                  setOnboardingStep(3);
+                  updateHintParam(3);
                 }}
               >
                 {__("Next", "eventkoi-lite")}
