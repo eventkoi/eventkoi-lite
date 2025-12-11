@@ -445,8 +445,8 @@ export function EventEdit() {
         style={
           onboardingStep === 4 && hintPosition
             ? { top: hintPosition.top, left: hintPosition.left }
-          : onboardingStep === 3
-            ? { right: "7rem" }
+            : onboardingStep === 3
+            ? { right: "8rem" }
             : undefined
         }
       >
@@ -467,7 +467,9 @@ export function EventEdit() {
           ×
         </button>
         <div className="text-[16px] font-semibold text-[#FBFBFB] flex flex-col pr-6">
-          {(onboardingStep === 2 || onboardingStep === 3 || onboardingStep === 4) && (
+          {(onboardingStep === 2 ||
+            onboardingStep === 3 ||
+            onboardingStep === 4) && (
             <span className="mb-2">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -579,7 +581,8 @@ export function EventEdit() {
                   }
 
                   const params = new URLSearchParams(searchParams);
-                  const previous = onboardingStep === 4 ? 3 : onboardingStep - 1;
+                  const previous =
+                    onboardingStep === 4 ? 3 : onboardingStep - 1;
                   params.set("hint", String(previous));
                   navigate(
                     {
@@ -590,7 +593,7 @@ export function EventEdit() {
                   setOnboardingStep(previous);
                 }}
               >
-            {__("Back", "eventkoi-lite")}
+                {__("Back", "eventkoi-lite")}
               </Button>
             )}
             {onboardingStep === 1 ? (
