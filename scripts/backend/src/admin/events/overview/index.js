@@ -72,7 +72,7 @@ export function EventsOverview() {
       },
       {
         key: "view",
-        title: __("View default calendar", "eventkoi-lite"),
+        title: __("View calendar", "eventkoi-lite"),
       },
     ],
     []
@@ -277,7 +277,10 @@ export function EventsOverview() {
   const hintHeading =
     hintStep === 1
       ? __("Welcome to your Events list", "eventkoi-lite")
-      : __('Take action: Click on "Classical Concert in the Park"', "eventkoi-lite");
+      : __(
+          'Take action: Click on "Classical Concert in the Park"',
+          "eventkoi-lite"
+        );
 
   const hintBody =
     hintStep === 1

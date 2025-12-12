@@ -281,6 +281,7 @@ export function EventNavBar() {
               highlightPreview &&
                 "ring-2 ring-[#fb4409] ring-offset-2 ring-offset-white rounded-sm"
             )}
+            data-eventkoi-onboarding-preview
           >
             Preview
           </Button>

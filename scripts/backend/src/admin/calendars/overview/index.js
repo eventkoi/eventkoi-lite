@@ -420,11 +420,9 @@ export function CalendarsOverview() {
 
     let target = null;
     const ringClasses = [
-      "ring-1",
-      "ring-offset-2",
-      "ring-offset-white",
-      "ring-gray-300",
-      "rounded-md",
+      "ring-2",
+      "ring-[#fb4409]",
+      "rounded-sm",
     ];
 
     if (hintStep === 2) {
@@ -485,11 +483,9 @@ export function CalendarsOverview() {
       if (prev) {
         prev.classList.remove("eventkoi-cal-link-highlight");
         const ringClasses = [
-          "ring-1",
-          "ring-offset-2",
-          "ring-offset-white",
-          "ring-gray-300",
-          "rounded-md",
+          "ring-2",
+          "ring-[#fb4409]",
+          "rounded-sm",
         ];
         ringClasses.forEach((cls) => prev.classList.remove(cls));
       }
@@ -500,11 +496,9 @@ export function CalendarsOverview() {
     if (target) {
       target.classList.add("eventkoi-cal-link-highlight");
       const ringClasses = [
-        "ring-1",
-        "ring-offset-2",
-        "ring-offset-white",
-        "ring-gray-300",
-        "rounded-md",
+        "ring-2",
+        "ring-[#fb4409]",
+        "rounded-sm",
       ];
       ringClasses.forEach((cls) => target.classList.add(cls));
     }
@@ -725,15 +719,22 @@ export function CalendarsOverview() {
             </span>
           </div>
           <p className="text-sm text-[#FBFBFB]">
-            {hintStep === 1
-              ? __(
-                  "Here, you can create new calendars, edit existing ones, and more.",
-                  "eventkoi-lite"
-                )
-              : __(
+            {hintStep === 1 ? (
+              __(
+                "Here, you can create new calendars, edit existing ones, and more.",
+                "eventkoi-lite"
+              )
+            ) : (
+              <>
+                {__(
                   "Click the icon to view the frontend calendar.",
                   "eventkoi-lite"
                 )}
+                <span className="block mt-1">
+                  {__("This is your last step in the tour.", "eventkoi-lite")}
+                </span>
+              </>
+            )}
           </p>
           <div className="flex items-center justify-between mt-2">
             <span className="text-[14px] text-[#FBFBFB]">

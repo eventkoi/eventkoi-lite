@@ -321,6 +321,12 @@ export function DashboardOnboarding() {
 
       // If the modal is closed, return to the regular dashboard.
       if (!nextOpen) {
+        try {
+          window.localStorage.removeItem("eventkoi_onboarding_wizard_active");
+          window.localStorage.removeItem("eventkoi_onboarding_wizard_step");
+        } catch {
+          // Ignore localStorage issues.
+        }
         navigate("/dashboard", { replace: true });
       }
     },
@@ -334,6 +340,13 @@ export function DashboardOnboarding() {
 
     if (isLast) {
       setIsComplete(true);
+      try {
+        window.localStorage.setItem("eventkoi_onboarding_wizard_done", "1");
+        window.localStorage.removeItem("eventkoi_onboarding_wizard_active");
+        window.localStorage.removeItem("eventkoi_onboarding_wizard_step");
+      } catch {
+        // Ignore localStorage issues.
+      }
       const params = new URLSearchParams(location.search);
       params.set("step", "done");
       navigate({ search: `?${params.toString()}` });
@@ -352,12 +365,26 @@ export function DashboardOnboarding() {
     activeIndex,
     createDemoEventAndRedirect,
     goToNext,
+    handleOpenChange,
     isComplete,
     isLast,
     location.search,
     navigate,
     steps,
   ]);
+
+  useEffect(() => {
+    if (isComplete) return;
+    const currentKey = steps[activeIndex]?.sidebarKey ?? steps[activeIndex]?.key;
+    if (!currentKey) return;
+    try {
+      window.localStorage.setItem("eventkoi_onboarding_wizard_active", "1");
+      window.localStorage.removeItem("eventkoi_onboarding_wizard_done");
+      window.localStorage.setItem("eventkoi_onboarding_wizard_step", currentKey);
+    } catch {
+      // Ignore localStorage issues.
+    }
+  }, [activeIndex, isComplete, steps]);
 
   const handleStartTour = useCallback(() => {
     createDemoEventAndRedirect();
@@ -387,11 +414,16 @@ export function DashboardOnboarding() {
 
           {isComplete ? (
             <div className="flex flex-col py-10 max-w-[325px] m-auto">
-              <div className="space-y-2">
+              <div className="">
                 <div className="text-[24px] font-medium leading-7 text-black">
-                  {__("You're ready to start using EventKoi!", "eventkoi-lite")}
+                  <span className="block">
+                    {__("You're ready to", "eventkoi-lite")}
+                  </span>
+                  <span className="block">
+                    {__("start using EventKoi!", "eventkoi-lite")}
+                  </span>
                 </div>
-                <div className="text-[14px] text-[#808080] leading-7 font-normal">
+                <div className="text-[14px] text-[#808080] mt-4 font-normal">
                   <span>
                     {__(
                       "Take a quick 2-minute tour to learn how to:",
@@ -399,21 +431,21 @@ export function DashboardOnboarding() {
                     )}
                   </span>
                 </div>
-                <div className="space-y-2 pt-3">
+                <div className="mt-4 space-y-4">
                   {[
                     __("Publish demo event", "eventkoi-lite"),
                     __("View your ready-made calendar", "eventkoi-lite"),
                   ].map((title) => (
                     <div
                       key={title}
-                      className="flex items-center gap-2 rounded-lg border py-2 bg-white text-[#161616] text-[14px] font-medium"
+                      className="flex items-center gap-2 rounded-lg border bg-white text-[#161616] text-[14px] font-medium"
                     >
                       <CircleCheck className="h-4 w-4 text-[#161616]" />
                       <span>{title}</span>
                     </div>
                   ))}
                 </div>
-                <div className="pt-8">
+                <div className="mt-8">
                   <Button
                     className="w-full bg-[#161616] hover:bg-[#000] focus:bg-[#000] h-9 border-none cursor-pointer"
                     onClick={handleStartTour}

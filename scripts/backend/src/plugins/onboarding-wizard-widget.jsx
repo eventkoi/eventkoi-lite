@@ -4,43 +4,134 @@ import { createRoot } from "react-dom/client";
 
 import { LogoIcon } from "@/components/logo-icon";
 
-const steps = [
-  { key: "event", title: "Publish demo event" },
-  { key: "view", title: "View calendar" },
-];
+const ACTIVE_KEY = "eventkoi_onboarding_wizard_active";
+const DONE_KEY = "eventkoi_onboarding_wizard_done";
+const STEP_KEY = "eventkoi_onboarding_wizard_step";
 
-function GlobalOnboardingWidget() {
+const wizardSteps = [{ key: "calendar", title: "Set calendar defaults" }];
+const stepOrder = ["license", "calendar", "datetime"];
+
+const normalizeStep = (step) => {
+  if (step === "defaults") return "calendar";
+  return step;
+};
+
+const getOnboardingStepFromHash = () => {
+  if (typeof window === "undefined") return null;
+  const hash = window.location.hash || "";
+  const [, search] = hash.split("?");
+  if (!search) return null;
+  const params = new URLSearchParams(search);
+  const step = normalizeStep(params.get("step"));
+  return stepOrder.includes(step) || step === "done" ? step : null;
+};
+
+const isOnboardingRoute = () => {
+  if (typeof window === "undefined") return false;
+  const search = window.location.search || "";
+  const hash = window.location.hash || "";
+  return (
+    search.includes("page=eventkoi") && hash.includes("/dashboard/onboarding")
+  );
+};
+
+const persistStateFromHash = () => {
+  if (!isOnboardingRoute()) return;
+
+  const step = getOnboardingStepFromHash();
+  if (step === "done") {
+    try {
+      window.localStorage.setItem(DONE_KEY, "1");
+      window.localStorage.removeItem(ACTIVE_KEY);
+      window.localStorage.removeItem(STEP_KEY);
+    } catch {
+      // Ignore localStorage issues.
+    }
+    return;
+  }
+
+  if (!step) return;
+
+  try {
+    window.localStorage.setItem(ACTIVE_KEY, "1");
+    window.localStorage.removeItem(DONE_KEY);
+    window.localStorage.setItem(STEP_KEY, step);
+  } catch {
+    // Ignore localStorage issues.
+  }
+};
+
+function WizardWidget() {
   const computeShouldShow = useMemo(() => {
     return () => {
       if (typeof window === "undefined") return false;
-      if (window.location.search.includes("page=eventkoi")) return false;
-      const active =
-        window.localStorage.getItem("eventkoi_onboarding_active") === "1";
-      const done =
-        window.localStorage.getItem("eventkoi_onboarding_demo_complete") ===
-        "1";
-      return active && !done;
+      if (isOnboardingRoute()) return false;
+      try {
+        const active = window.localStorage.getItem(ACTIVE_KEY) === "1";
+        const done = window.localStorage.getItem(DONE_KEY) === "1";
+        return active && !done;
+      } catch {
+        return false;
+      }
     };
   }, []);
 
   const [show, setShow] = useState(computeShouldShow);
+  const [storedStep, setStoredStep] = useState(() => {
+    try {
+      return normalizeStep(window.localStorage.getItem(STEP_KEY) || "license");
+    } catch {
+      return "license";
+    }
+  });
 
   useEffect(() => {
-    const handleStorage = () => setShow(computeShouldShow());
+    const handleStorage = () => {
+      setShow(computeShouldShow());
+      try {
+        setStoredStep(
+          normalizeStep(window.localStorage.getItem(STEP_KEY) || "license")
+        );
+      } catch {
+        // Ignore localStorage issues.
+      }
+    };
     window.addEventListener("storage", handleStorage);
     return () => window.removeEventListener("storage", handleStorage);
   }, [computeShouldShow]);
 
-  if (!show) {
-    return null;
-  }
+  useEffect(() => {
+    const handleHash = () => {
+      persistStateFromHash();
+      setShow(computeShouldShow());
+      try {
+        setStoredStep(
+          normalizeStep(window.localStorage.getItem(STEP_KEY) || "license")
+        );
+      } catch {
+        // ignore
+      }
+    };
+
+    persistStateFromHash();
+    setShow(computeShouldShow());
+    try {
+      setStoredStep(
+        normalizeStep(window.localStorage.getItem(STEP_KEY) || "license")
+      );
+    } catch {
+      // ignore
+    }
+    window.addEventListener("hashchange", handleHash);
+    return () => window.removeEventListener("hashchange", handleHash);
+  }, [computeShouldShow]);
 
   const containerStyle = {
     position: "fixed",
     bottom: "32px",
     right: "32px",
     zIndex: 9999,
-    width: "250px",
+    width: "280px",
     borderRadius: "10px",
     boxSizing: "border-box",
     background: "#ffffff",
@@ -68,6 +159,21 @@ function GlobalOnboardingWidget() {
     color: "#555",
     marginTop: "16px",
   };
+
+  if (!show) {
+    return null;
+  }
+
+  const targetUrlBase =
+    window.eventkoi_params?.admin_page || "/wp-admin/admin.php?page=eventkoi";
+  const currentStep = stepOrder.includes(storedStep)
+    ? storedStep
+    : wizardSteps[0].key;
+  const activeIndex = Math.max(0, stepOrder.indexOf(currentStep));
+  const targetStep = currentStep || "license";
+  const continueUrl = `${targetUrlBase}#/dashboard/onboarding?step=${encodeURIComponent(
+    targetStep
+  )}`;
 
   return (
     <div style={containerStyle} className="eventkoi-onboarding-widget">
@@ -98,33 +204,24 @@ function GlobalOnboardingWidget() {
         onMouseLeave={(e) => (e.currentTarget.style.background = "#161616")}
         onClick={() => {
           try {
-            const params = new URLSearchParams(window.location.search);
-            params.set("onboarding", "demo-event");
-            params.set("hint", "1");
-            const demoId =
-              window.eventkoi_params?.demo_event_id ||
-              window.localStorage.getItem("eventkoi_demo_event_id");
-            if (demoId) {
-              params.set("demo_event_id", demoId);
-            }
-            const base =
-              window.eventkoi_params?.admin_page ||
-              "/wp-admin/admin.php?page=eventkoi";
-            window.location.href = `${base}#/events?${params.toString()}`;
+            window.localStorage.setItem(ACTIVE_KEY, "1");
+            window.localStorage.removeItem(DONE_KEY);
+            window.localStorage.setItem(STEP_KEY, targetStep);
           } catch {
-            // ignore
+            // Ignore localStorage issues.
           }
+          window.location.href = continueUrl;
         }}
         data-eventkoi-continue
       >
         <ArrowLeft style={{ width: "16px", height: "16px" }} />
-        <span>Continue Guide</span>
+        <span>Continue Onboarding Wizard</span>
       </button>
 
       <div style={headerStyle}>
         <LogoIcon width="18" height="23" />
         <div style={{ fontSize: "14px", fontWeight: 600, color: "#111" }}>
-          EventKoi Plugin Tour
+          EventKoi Onboarding Wizard
         </div>
         <button
           type="button"
@@ -141,7 +238,12 @@ function GlobalOnboardingWidget() {
             marginTop: "-4px",
           }}
           onClick={() => {
-            window.localStorage.removeItem("eventkoi_onboarding_active");
+            try {
+              window.localStorage.removeItem(ACTIVE_KEY);
+              window.localStorage.removeItem(STEP_KEY);
+            } catch {
+              // ignore
+            }
             setShow(false);
           }}
           aria-label="Close"
@@ -153,8 +255,8 @@ function GlobalOnboardingWidget() {
       <div style={dividerStyle} />
 
       <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-        {steps.map((step, index) => {
-          const isActive = index === 0;
+        {wizardSteps.map((step, index) => {
+          const isActive = step.key === targetStep;
           const isComplete = false;
           return (
             <button
@@ -167,7 +269,7 @@ function GlobalOnboardingWidget() {
                 padding: "8px 12px",
                 textAlign: "left",
                 transition: "all 0.2s",
-                background: isActive ? "#ffffff" : "#ffffff",
+                background: "#ffffff",
                 color: isComplete ? "#137C63" : "#161616",
                 fontSize: "14px",
                 fontWeight: 500,
@@ -176,6 +278,7 @@ function GlobalOnboardingWidget() {
                 gap: "8px",
                 border: "none",
                 cursor: "default",
+                boxShadow: "none",
               }}
             >
               {isComplete ? (
@@ -200,6 +303,7 @@ function GlobalOnboardingWidget() {
                   fontSize: "14px",
                   fontWeight: 500,
                   textDecoration: isComplete ? "line-through" : "none",
+                  color: isComplete ? "#137C63" : "#161616",
                 }}
               >
                 {step.title}
@@ -219,7 +323,7 @@ function GlobalOnboardingWidget() {
       />
 
       <div style={footerStyle}>
-        You can restart this Tour any time in the EventKoi Dashboard.
+        You can restart the onboarding any time in the EventKoi Dashboard.
       </div>
     </div>
   );
@@ -229,5 +333,5 @@ if (typeof document !== "undefined") {
   const mount = document.createElement("div");
   document.body.appendChild(mount);
   const root = createRoot(mount);
-  root.render(<GlobalOnboardingWidget />);
+  root.render(<WizardWidget />);
 }

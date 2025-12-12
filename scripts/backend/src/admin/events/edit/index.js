@@ -15,7 +15,7 @@ import {
   CircleDotDashed,
   TriangleAlert,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Link,
   Outlet,
@@ -73,6 +73,9 @@ export function EventEdit() {
   const [showOnboardingHint, setShowOnboardingHint] = useState(false);
   const [onboardingStep, setOnboardingStep] = useState(1);
   const [hintPosition, setHintPosition] = useState(null);
+  const [hintBaseTop, setHintBaseTop] = useState(null);
+  const hintMeasureRaf = useRef(null);
+  const previewMeasureRaf = useRef(null);
 
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -286,6 +289,93 @@ export function EventEdit() {
     };
   }, [showOnboardingHint, onboardingStep]);
 
+  useEffect(() => {
+    if (!showOnboardingHint || onboardingStep !== 3) {
+      if (onboardingStep !== 4) {
+        setHintPosition(null);
+      }
+      return;
+    }
+
+    const updatePos = () => {
+      const baseTop = hintBaseTop ?? 112;
+      const target = document.querySelector(
+        "[data-eventkoi-onboarding-preview]"
+      );
+      if (!target) {
+        setHintPosition(null);
+        return;
+      }
+      const rect = target.getBoundingClientRect();
+      const targetRight = Math.max(
+        window.innerWidth - (rect.left + rect.width / 2) - 66,
+        0
+      );
+      setHintPosition({
+        right: targetRight,
+        top: baseTop,
+      });
+    };
+
+    const measure = (attempt = 0) => {
+      updatePos();
+      if (attempt < 10) {
+        previewMeasureRaf.current = requestAnimationFrame(() =>
+          measure(attempt + 1)
+        );
+      }
+    };
+
+    measure();
+    window.addEventListener("resize", updatePos);
+    window.addEventListener("scroll", updatePos, true);
+    return () => {
+      if (previewMeasureRaf.current) {
+        cancelAnimationFrame(previewMeasureRaf.current);
+        previewMeasureRaf.current = null;
+      }
+      window.removeEventListener("resize", updatePos);
+      window.removeEventListener("scroll", updatePos, true);
+    };
+  }, [showOnboardingHint, onboardingStep, hintBaseTop]);
+
+  const updateHintBaseTop = useCallback(() => {
+    const mainEl =
+      document.querySelector("#eventkoi-app-root main") ||
+      document.querySelector(".eventkoi-admin main") ||
+      document.querySelector("main");
+
+    if (!mainEl) return;
+    const rect = mainEl.getBoundingClientRect();
+    setHintBaseTop(Math.max(rect.top, 0));
+  }, []);
+
+  useEffect(() => {
+    if (!showOnboardingHint || onboardingStep === 4) return;
+
+    let attempts = 0;
+    const measure = () => {
+      updateHintBaseTop();
+      attempts += 1;
+      if (attempts < 10) {
+        hintMeasureRaf.current = requestAnimationFrame(measure);
+      }
+    };
+
+    measure();
+    const handler = () => updateHintBaseTop();
+    window.addEventListener("resize", handler);
+    window.addEventListener("scroll", handler, true);
+    return () => {
+      if (hintMeasureRaf.current) {
+        cancelAnimationFrame(hintMeasureRaf.current);
+        hintMeasureRaf.current = null;
+      }
+      window.removeEventListener("resize", handler);
+      window.removeEventListener("scroll", handler, true);
+    };
+  }, [showOnboardingHint, onboardingStep, updateHintBaseTop]);
+
   const onboardingSteps = useMemo(
     () => [
       {
@@ -366,6 +456,8 @@ export function EventEdit() {
 
   console.log(event);
 
+  const computedHintTop = hintBaseTop ?? 112;
+
   const layout = (
     <>
       <EventHeader />
@@ -439,19 +531,24 @@ export function EventEdit() {
           onboardingStep === 4
             ? "absolute"
             : onboardingStep === 3
-            ? "fixed top-[calc(7rem)]"
-            : "fixed top-[calc(7rem)] right-8"
+            ? "fixed"
+            : "fixed right-8"
         )}
         style={
           onboardingStep === 4 && hintPosition
             ? { top: hintPosition.top, left: hintPosition.left }
             : onboardingStep === 3
-            ? { right: "8rem" }
-            : undefined
+            ? {
+                top: computedHintTop,
+                right: hintPosition?.right ?? "8rem",
+              }
+            : { top: computedHintTop }
         }
       >
         {onboardingStep === 4 ? (
           <div className="absolute top-6 -left-2 w-0 h-0 border-y-[10px] border-y-transparent border-r-[10px] border-r-[#161616]" />
+        ) : onboardingStep === 3 ? (
+          <div className="absolute -top-2 right-10 w-0 h-0 border-x-[10px] border-x-transparent border-b-[10px] border-b-[#161616]" />
         ) : onboardingStep >= 2 ? (
           <div className="absolute -top-2 right-16 w-0 h-0 border-x-[10px] border-x-transparent border-b-[10px] border-b-[#161616]" />
         ) : null}
