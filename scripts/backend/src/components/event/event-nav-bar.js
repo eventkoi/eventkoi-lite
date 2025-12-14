@@ -273,7 +273,23 @@ export function EventNavBar() {
             onClick={() => {
               const url =
                 onboardingActive && highlightPreview
-                  ? `${event?.url || ""}?onboarding=demo-event`
+                  ? (() => {
+                      try {
+                        const previewUrl = new URL(
+                          event?.url || "",
+                          window.location?.origin
+                        );
+                        previewUrl.searchParams.set("onboarding", "demo-event");
+                        return previewUrl.toString();
+                      } catch {
+                        const separator = (event?.url || "").includes("?")
+                          ? "&"
+                          : "?";
+                        return `${
+                          event?.url || ""
+                        }${separator}onboarding=demo-event`;
+                      }
+                    })()
                   : event?.url;
               window.open(url, "_blank");
             }}
