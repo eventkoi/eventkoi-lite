@@ -15,7 +15,14 @@ import {
 
 import { EllipsisVertical } from "lucide-react";
 
-export function BulkActions({ table, base, fetchResults, addTo, queryStatus }) {
+export function BulkActions({
+  table,
+  base,
+  fetchResults,
+  addTo,
+  queryStatus,
+  refreshCounts,
+}) {
   const runAction = async (action) => {
     let selectedRows = table.getFilteredSelectedRowModel().rows;
 
@@ -43,6 +50,9 @@ export function BulkActions({ table, base, fetchResults, addTo, queryStatus }) {
       .then((response) => {
         table.setRowSelection({});
         fetchResults(response.success);
+        if (refreshCounts) {
+          refreshCounts();
+        }
       })
       .catch((error) => {});
   };

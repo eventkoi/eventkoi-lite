@@ -54,6 +54,8 @@ export function DataTable({
   hideTableBorder = false,
   tableClassName = "",
   hideSearchBox = false,
+  statusCounts,
+  refreshStatusCounts,
 }) {
   const [sorting, setSorting] = useState(defaultSort);
   const [columnFilters, setColumnFilters] = useState([]);
@@ -97,6 +99,7 @@ export function DataTable({
               fetchResults={fetchResults}
               addTo={addTo}
               queryStatus={queryStatus}
+              refreshCounts={refreshStatusCounts}
             />
           )}
         </div>
@@ -125,6 +128,7 @@ export function DataTable({
               statusFilters={statusFilters}
               base={base}
               data={data}
+              counts={statusCounts}
             />
           </div>
         )}

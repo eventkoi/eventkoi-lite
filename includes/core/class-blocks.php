@@ -37,6 +37,7 @@ class Blocks {
 	 * Constructor.
 	 */
 	public function __construct() {
+		add_action( 'init', array( __CLASS__, 'register_event_data_block_type' ) );
 		add_filter( 'render_block_eventkoi/event-data', array( __CLASS__, 'render_event_data_block' ), 10, 2 );
 		add_filter( 'pre_render_block', array( __CLASS__, 'mark_eventkoi_query_loop' ), 5, 2 );
 		add_filter( 'query_loop_block_query_vars', array( __CLASS__, 'filter_event_query_loop' ), 10, 2 );
@@ -83,7 +84,7 @@ class Blocks {
 			return '';
 		}
 
-		$value = self::get_event_field_value( $field, $event, array() );
+		$value = self::get_event_field_value( $field, $event, array(), ! empty( $context_event ) );
 
 		if ( '' === trim( (string) $value ) ) {
 			return '';
@@ -122,13 +123,127 @@ class Blocks {
 				1
 			);
 
-			return $rendered ? $rendered : $block_content;
+			// Also handle inline style attributes containing preset shorthands.
+			$rendered = preg_replace_callback(
+				'/(style=["\'])([^"\']*)(["\'])/i',
+				static function ( $m ) {
+					return $m[1] . self::normalize_preset_styles( $m[2] ) . $m[3];
+				},
+				$rendered
+			);
+
+			$rendered = $rendered ? $rendered : $block_content;
+
+			return self::normalize_preset_styles( $rendered );
 		}
 
-		return sprintf(
-			'<div class="%1$s">%2$s</div>',
-			esc_attr( implode( ' ', array_unique( $classes ) ) ),
+		$style_pairs = array();
+		if ( ! empty( $attributes['style'] ) && is_array( $attributes['style'] ) ) {
+			$style_pairs = self::style_array_to_css( $attributes['style'] );
+		}
+
+		// Build a sanitized class string.
+		$class_attr = implode(
+			' ',
+			array_filter(
+				array_map(
+					static function ( $class ) {
+						return trim( $class );
+					},
+					array_unique( $classes )
+				)
+			)
+		);
+
+		// Provide block context so block supports (colors, spacing, etc.) are applied.
+		$prev_block_to_render                = \WP_Block_Supports::$block_to_render ?? null;
+		\WP_Block_Supports::$block_to_render = $block;
+		$wrapper_attributes                  = get_block_wrapper_attributes(
+			array_filter(
+				array(
+					'class' => $class_attr,
+					// Block supports generate style; avoid passing our own to prevent duplicates.
+				)
+			)
+		);
+		\WP_Block_Supports::$block_to_render = $prev_block_to_render;
+
+		$output = sprintf(
+			'<div %1$s>%2$s</div>',
+			$wrapper_attributes,
 			wp_kses_post( $value )
+		);
+
+		return self::normalize_preset_styles( $output );
+	}
+
+	/**
+	 * Server-register the event-data block so block supports work on the frontend.
+	 */
+	public static function register_event_data_block_type() {
+		register_block_type(
+			'eventkoi/event-data',
+			array(
+				'api_version' => 2,
+				'attributes'  => array(
+					'field'     => array(
+						'type'    => 'string',
+						'default' => 'title',
+					),
+					'tagName'   => array(
+						'type'    => 'string',
+						'default' => 'div',
+					),
+					'className' => array(
+						'type' => 'string',
+					),
+					'textColor' => array(
+						'type' => 'string',
+					),
+					'backgroundColor' => array(
+						'type' => 'string',
+					),
+					'gradient' => array(
+						'type' => 'string',
+					),
+					'customTextColor' => array(
+						'type' => 'string',
+					),
+					'customBackgroundColor' => array(
+						'type' => 'string',
+					),
+					'customGradient' => array(
+						'type' => 'string',
+					),
+					'align' => array(
+						'type' => 'string',
+					),
+					'eventId'   => array(
+						'type'    => 'integer',
+						'default' => 0,
+					),
+					'style'     => array(
+						'type' => 'object',
+					),
+				),
+				'supports'   => array(
+					'color'      => array(
+						'text'       => true,
+						'background' => true,
+						'link'       => true,
+					),
+					'typography' => array(
+						'fontSize'                 => true,
+						'lineHeight'               => true,
+						'__experimentalFontFamily' => true,
+					),
+					'spacing'    => array(
+						'margin'  => true,
+						'padding' => true,
+					),
+					'align'      => array( 'left', 'center', 'right' ),
+				),
+			)
 		);
 	}
 
@@ -711,6 +826,92 @@ class Blocks {
 	}
 
 	/**
+	 * Convert a Gutenberg style array into simple CSS declarations.
+	 *
+	 * Supports common image-related style keys such as border radius.
+	 *
+	 * @param array $style Style array from block attributes.
+	 * @return array List of CSS declaration strings.
+	 */
+	private static function style_array_to_css( $style ) {
+		if ( empty( $style ) || ! is_array( $style ) ) {
+			return array();
+		}
+
+		$pairs = array();
+
+		foreach ( $style as $key => $value ) {
+			if ( is_array( $value ) ) {
+				switch ( $key ) {
+					case 'color':
+						if ( ! empty( $value['text'] ) ) {
+							$pairs[] = 'color:' . $value['text'];
+						}
+						if ( ! empty( $value['background'] ) ) {
+							$pairs[] = 'background-color:' . $value['background'];
+						}
+						break;
+					case 'typography':
+						if ( ! empty( $value['fontSize'] ) ) {
+							$pairs[] = 'font-size:' . $value['fontSize'];
+						}
+						if ( ! empty( $value['lineHeight'] ) ) {
+							$pairs[] = 'line-height:' . $value['lineHeight'];
+						}
+						break;
+					case 'border':
+						if ( ! empty( $value['radius'] ) ) {
+							$pairs[] = 'border-radius:' . $value['radius'];
+						}
+						if ( ! empty( $value['color'] ) ) {
+							$pairs[] = 'border-color:' . $value['color'];
+						}
+						if ( ! empty( $value['style'] ) ) {
+							$pairs[] = 'border-style:' . $value['style'];
+						}
+						if ( ! empty( $value['width'] ) ) {
+							$pairs[] = 'border-width:' . $value['width'];
+						}
+						break;
+					case 'spacing':
+						if ( ! empty( $value['margin'] ) && is_array( $value['margin'] ) ) {
+							foreach ( $value['margin'] as $dir => $v ) {
+								if ( ! empty( $v ) && ! is_array( $v ) ) {
+									$pairs[] = 'margin-' . $dir . ':' . $v;
+								}
+							}
+						}
+						if ( ! empty( $value['padding'] ) && is_array( $value['padding'] ) ) {
+							foreach ( $value['padding'] as $dir => $v ) {
+								if ( ! empty( $v ) && ! is_array( $v ) ) {
+									$pairs[] = 'padding-' . $dir . ':' . $v;
+								}
+							}
+						}
+						break;
+					default:
+						foreach ( $value as $sub_key => $sub_value ) {
+							if ( empty( $sub_value ) || is_array( $sub_value ) ) {
+								continue;
+							}
+							$pairs[] = $key . '-' . $sub_key . ':' . $sub_value;
+						}
+						break;
+				}
+				continue;
+			}
+
+			if ( empty( $value ) || is_array( $value ) ) {
+				continue;
+			}
+
+			$pairs[] = $key . ':' . $value;
+		}
+
+		return $pairs;
+	}
+
+	/**
 	 * Render pagination respecting the saved block order and attributes.
 	 *
 	 * @param array $pagination_block Parsed pagination block.
@@ -1003,9 +1204,10 @@ class Blocks {
 	 * @param string $field      Field name from the event-data block (e.g. title, timeline, excerpt, location, image).
 	 * @param array  $event      The event data array.
 	 * @param array  $attributes The parent block attributes.
+	 * @param bool   $link_title Whether to wrap titles in a link (used inside Query Loop).
 	 * @return string HTML for the given event field, or empty string if hidden.
 	 */
-	private static function get_event_field_value( $field, $event, $attributes ) {
+	private static function get_event_field_value( $field, $event, $attributes, $link_title = true ) {
 		// Default to title if missing or empty.
 		if ( empty( $field ) ) {
 			$field = 'title';
@@ -1030,7 +1232,9 @@ class Blocks {
 		$map = array(
 			'title'    => ! empty( $event['title'] )
 				? sprintf(
-					'<h3 class="ek-event-title--inner"><a href="%1$s" rel="bookmark">%2$s</a></h3>',
+					$link_title && ! empty( $event['url'] ?? '' )
+					? '<span class="ek-event-title--inner"><a href="%1$s" rel="bookmark">%2$s</a></span>'
+					: '<span class="ek-event-title--inner">%2$s</span>',
 					esc_url( $event['url'] ?? '' ),
 					esc_html( $event['title'] )
 				)

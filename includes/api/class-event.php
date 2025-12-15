@@ -43,6 +43,16 @@ class Event {
 
 		register_rest_route(
 			EVENTKOI_API,
+			'/get_event',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( self::class, 'get_event' ),
+				'permission_callback' => '__return_true',
+			)
+		);
+
+		register_rest_route(
+			EVENTKOI_API,
 			'/update_event',
 			array(
 				'methods'             => 'POST',
@@ -141,6 +151,24 @@ class Event {
 		$response = $event::get_meta();
 
 		return rest_ensure_response( $response );
+	}
+
+	/**
+	 * Retrieve a single enriched event by ID (normalized event object).
+	 *
+	 * @param WP_REST_Request $request The REST request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function get_event( WP_REST_Request $request ) {
+		$event_id = absint( $request->get_param( 'id' ) );
+
+		$event = eventkoi_get_event( $event_id );
+
+		if ( is_wp_error( $event ) ) {
+			return $event;
+		}
+
+		return rest_ensure_response( $event );
 	}
 
 	/**

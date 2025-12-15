@@ -57,6 +57,7 @@ const sortStatusFn = (rowA, rowB) => {
 export function EventsOverview() {
   const [isLoading, setIsLoading] = useState(true);
   const [data, setData] = useState([]);
+  const [statusCounts, setStatusCounts] = useState({});
   const [showDemoToast, setShowDemoToast] = useState(false);
   const [showTourHints, setShowTourHints] = useState(false);
   const [hintPosition, setHintPosition] = useState(null);
@@ -97,6 +98,17 @@ export function EventsOverview() {
     return Math.min(Math.max(parsed, 1), 2);
   }, [searchParams]);
 
+  const fetchStatusCounts = useCallback(async () => {
+    try {
+      const apiBase = window?.eventkoi_params?.api || "/wp-json/eventkoi/v1";
+      const url = `${apiBase}/get_event_counts`;
+      const counts = await apiRequest({ path: url, method: "GET" });
+      setStatusCounts(counts || {});
+    } catch (err) {
+      console.warn("Could not fetch event counts:", err);
+    }
+  }, []);
+
   const fetchResults = useCallback(
     async (toastMessage = null) => {
       setIsLoading(true);
@@ -111,6 +123,7 @@ export function EventsOverview() {
         const apiURL = `${eventkoi_params.api}/events?${params.toString()}`;
         const response = await apiRequest({ path: apiURL, method: "get" });
         setData(response);
+        fetchStatusCounts();
         showStaticToast(toastMessage);
       } catch (error) {
         console.error("Failed to load events:", error);
@@ -118,12 +131,16 @@ export function EventsOverview() {
         setIsLoading(false);
       }
     },
-    [queryStatus, eventStatus, calStatus, from, to]
+    [queryStatus, eventStatus, calStatus, from, to, fetchStatusCounts]
   );
 
   useEffect(() => {
     fetchResults();
   }, [fetchResults]);
+
+  useEffect(() => {
+    fetchStatusCounts();
+  }, [fetchStatusCounts]);
 
   useEffect(() => {
     if (onboardingFlag === "demo-event") {
@@ -711,6 +728,8 @@ export function EventsOverview() {
         to={to}
         hideCategories
         defaultSort={[{ id: "modified_date", desc: true }]}
+        statusCounts={statusCounts}
+        refreshStatusCounts={fetchStatusCounts}
       />
     </div>
   );
