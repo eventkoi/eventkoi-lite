@@ -38,11 +38,13 @@ class Blocks {
 	 */
 	public function __construct() {
 		add_action( 'init', array( __CLASS__, 'register_event_data_block_type' ) );
+		add_action( 'enqueue_block_editor_assets', array( __CLASS__, 'enqueue_shortcode_image_preview_script' ) );
 		add_filter( 'render_block_eventkoi/event-data', array( __CLASS__, 'render_event_data_block' ), 10, 2 );
 		add_filter( 'pre_render_block', array( __CLASS__, 'mark_eventkoi_query_loop' ), 5, 2 );
 		add_filter( 'query_loop_block_query_vars', array( __CLASS__, 'filter_event_query_loop' ), 10, 2 );
 		add_filter( 'register_block_type_args', array( __CLASS__, 'register_core_query_attributes' ), 10, 2 );
 		add_filter( 'render_block', array( __CLASS__, 'render_eventkoi_image' ), 9, 2 );
+		add_filter( 'render_block', array( __CLASS__, 'render_shortcodes_in_image_src' ), 8, 2 );
 		add_filter( 'render_block', array( __CLASS__, 'render_eventkoi_query_loop' ), 10, 2 );
 
 		add_filter( 'block_categories_all', array( __CLASS__, 'register_block_category' ), 99, 2 );
@@ -245,6 +247,113 @@ class Blocks {
 				),
 			)
 		);
+	}
+
+	/**
+	 * Enqueue a tiny editor helper to resolve [eventkoi ... image_url] shortcodes in core/image previews.
+	 */
+	public static function enqueue_shortcode_image_preview_script() {
+		$handle = 'eventkoi-shortcode-image-preview';
+
+		if ( wp_script_is( $handle, 'enqueued' ) ) {
+			return;
+		}
+
+		wp_register_script(
+			$handle,
+			'',
+			array( 'wp-hooks', 'wp-compose', 'wp-element', 'wp-data', 'wp-api-fetch' ),
+			false,
+			true
+		);
+
+		$inline = <<<JS
+( function( wp ) {
+	const { addFilter } = wp.hooks;
+	const { createHigherOrderComponent } = wp.compose;
+	const { useEffect, useState } = wp.element;
+	const apiFetch = wp.apiFetch;
+
+	const shortcodePattern = /\\[eventkoi[^\\]]+\\]/i;
+
+	const withEventkoiShortcodeImage = createHigherOrderComponent( ( BlockEdit ) => {
+		return ( props ) => {
+			if ( props.name !== 'core/image' ) {
+				return wp.element.createElement( BlockEdit, props );
+			}
+
+			const url = props?.attributes?.url;
+			const [ resolvedUrl, setResolvedUrl ] = useState( null );
+			const [ lastRequested, setLastRequested ] = useState( null );
+
+			useEffect( () => {
+				if ( ! url || ! shortcodePattern.test( url ) ) {
+					setResolvedUrl( null );
+					setLastRequested( null );
+					return;
+				}
+
+				const shortcodeMatch = url.match( /\\[eventkoi([^\\]]*)\\]/i );
+				const inner = shortcodeMatch ? shortcodeMatch[1] : '';
+				const dataMatch =
+					inner.match( /data\\s*=\\s*"([^"]+)"/i ) ||
+					inner.match( /data\\s*=\\s*'([^']+)'/i ) ||
+					inner.match( /data\\s*=\\s*([^\\s\\]]+)/i );
+				const dataVal = dataMatch ? ( dataMatch[1] || dataMatch[2] || dataMatch[3] || '' ) : '';
+				const targets = dataVal
+					.toLowerCase()
+					.split( ',' )
+					.map( ( v ) => v.trim() )
+					.filter( Boolean );
+
+				if ( ! targets.some( ( t ) => t === 'image_url' || t === 'event_image_url' ) ) {
+					setResolvedUrl( null );
+					setLastRequested( null );
+					return;
+				}
+
+				if ( url === lastRequested && resolvedUrl ) {
+					return;
+				}
+
+				setLastRequested( url );
+
+				apiFetch( {
+					path: '/eventkoi/v1/shortcode/resolve',
+					method: 'POST',
+					data: { code: url },
+				} ).then( ( res ) => {
+					if ( res && res.value ) {
+						setResolvedUrl( res.value );
+					} else {
+						setResolvedUrl( null );
+					}
+				} ).catch( () => setResolvedUrl( null ) );
+			}, [ url ] );
+
+			if ( resolvedUrl ) {
+				const mergedProps = {
+					...props,
+					attributes: {
+						...props.attributes,
+						url: resolvedUrl,
+						href: props.attributes?.href || resolvedUrl,
+					},
+				};
+
+				return wp.element.createElement( BlockEdit, mergedProps );
+			}
+
+			return wp.element.createElement( BlockEdit, props );
+		};
+	}, 'withEventkoiShortcodeImage' );
+
+	addFilter( 'editor.BlockEdit', 'eventkoi/shortcode-image-preview', withEventkoiShortcodeImage );
+} )( window.wp );
+JS;
+
+		wp_add_inline_script( $handle, $inline );
+		wp_enqueue_script( $handle );
 	}
 
 	/**
@@ -478,6 +587,80 @@ class Blocks {
 		$class_attr = ! empty( $classes ) ? ' class="' . esc_attr( implode( ' ', $classes ) ) . '"' : '';
 
 		return sprintf( '<figure%1$s>%2$s</figure>', $class_attr, $img_html );
+	}
+
+	/**
+	 * Resolve shortcodes used inside core/image src|href attributes.
+	 *
+	 * This lets users drop [eventkoi id=... data=event_image_url] into the URL
+	 * field without breaking markup.
+	 *
+	 * @param string $block_content Original content.
+	 * @param array  $block         Parsed block.
+	 * @return string Modified content.
+	 */
+	public static function render_shortcodes_in_image_src( $block_content, $block ) {
+		if ( ( $block['blockName'] ?? '' ) !== 'core/image' ) {
+			return $block_content;
+		}
+
+		$attrs = $block['attrs'] ?? array();
+		$url   = $attrs['url'] ?? '';
+
+		if ( empty( $url ) || strpos( $url, '[' ) === false ) {
+			return $block_content;
+		}
+
+		// Only resolve when shortcode is eventkoi and data requests an image URL.
+		if ( ! preg_match( '/\\[eventkoi([^\\]]*)\\]/i', $url, $matches ) ) {
+			return $block_content;
+		}
+
+		$inner     = $matches[1];
+		$data_attr = '';
+
+		if ( preg_match( '/data\\s*=\\s*"([^"]+)"/i', $inner, $dmatch ) ) {
+			$data_attr = $dmatch[1];
+		} elseif ( preg_match( "/data\\s*=\\s*'([^']+)'/i", $inner, $dmatch ) ) {
+			$data_attr = $dmatch[1];
+		} elseif ( preg_match( '/data\\s*=\\s*([^\\s\\]]+)/i', $inner, $dmatch ) ) {
+			$data_attr = $dmatch[1];
+		}
+
+		$targets = array_map( 'trim', explode( ',', strtolower( $data_attr ) ) );
+
+		if ( empty( array_intersect( $targets, array( 'image_url', 'event_image_url' ) ) ) ) {
+			return $block_content;
+		}
+
+		$resolved = trim( wp_strip_all_tags( do_shortcode( $url ) ) );
+
+		if ( empty( $resolved ) || $resolved === $url ) {
+			return $block_content;
+		}
+
+		$resolved = esc_url_raw( $resolved );
+
+		if ( ! $resolved ) {
+			return $block_content;
+		}
+
+		// Swap src and href (if present) with the resolved value.
+		$block_content = preg_replace(
+			'~src="[^"]*"~',
+			'src="' . esc_url( $resolved ) . '"',
+			$block_content,
+			1
+		);
+
+		$block_content = preg_replace(
+			'~href="[^"]*"~',
+			'href="' . esc_url( $resolved ) . '"',
+			$block_content,
+			1
+		);
+
+		return $block_content;
 	}
 
 	/**

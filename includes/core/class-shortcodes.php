@@ -97,8 +97,9 @@ class Shortcodes {
 
 		$event = new \EventKoi\Core\Event( $event_id );
 
-		$keys  = array_map( 'trim', explode( ',', $attributes['data'] ) );
-		$parts = array();
+		$keys        = array_map( 'trim', explode( ',', $attributes['data'] ) );
+		$parts       = array();
+		$auto_unwrap = false;
 
 		foreach ( $keys as $key ) {
 			$normalized_key = strtolower( str_replace( '-', '_', $key ) );
@@ -110,11 +111,29 @@ class Shortcodes {
 					\EventKoi\Core\Event::suppress_inline_rulesummary( true );
 				}
 
+				if ( in_array( $normalized_key, array( 'image_url', 'event_image_url' ), true ) ) {
+					$auto_unwrap = true;
+				}
+
 				$parts[] = \EventKoi\Core\Event::render_meta( $normalized_key );
 			}
 		}
 
 		$output = implode(
+			'',
+			array_filter( $parts )
+		);
+
+		if ( empty( $output ) ) {
+			return '';
+		}
+
+		// If only an image URL is requested, return the raw URL for use in attributes.
+		if ( true === $auto_unwrap && 1 === count( array_filter( $parts ) ) ) {
+			return wp_strip_all_tags( reset( $parts ) );
+		}
+
+		$wrapped = implode(
 			'',
 			array_map(
 				function ( $item ) {
@@ -124,10 +143,6 @@ class Shortcodes {
 			)
 		);
 
-		if ( ! empty( $output ) ) {
-			return '<div class="eventkoi-shortcode">' . wp_kses_post( $output ) . '</div>';
-		}
-
-		return '';
+		return '<div class="eventkoi-shortcode">' . wp_kses_post( $wrapped ) . '</div>';
 	}
 }
