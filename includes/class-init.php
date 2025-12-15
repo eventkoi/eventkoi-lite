@@ -101,6 +101,7 @@ class Init {
 			\EventKoi\Core\ICal::class,
 			\EventKoi\API\REST::class,
 			\EventKoi\Core\Pretty_Instance_URLs::class,
+			\EventKoi\Core\Elementor_Widgets::class,
 		);
 	}
 
