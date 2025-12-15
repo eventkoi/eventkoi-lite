@@ -28,6 +28,13 @@ class Scripts {
 	 * Enqueue frontend assets.
 	 */
 	public function enqueue_scripts() {
+		self::enqueue_frontend_assets();
+	}
+
+	/**
+	 * Register and enqueue frontend assets, so they can also be reused elsewhere (Elementor).
+	 */
+	public static function enqueue_frontend_assets() {
 		$asset_path = EVENTKOI_PLUGIN_DIR . 'scripts/frontend/build/index.asset.php';
 
 		if ( ! file_exists( $asset_path ) ) {
