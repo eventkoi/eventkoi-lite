@@ -90,43 +90,38 @@ apiFetch.use((options, next) => {
     const page = parseInt(params.get("page"), 10) || activeConfig.page || 1;
     const order = params.get("order") || activeConfig.order || "desc";
     const orderby = params.get("orderby") || activeConfig.orderBy || "modified";
-    // Debug: track intercepted query.
-    if (typeof window !== "undefined" && window.console) {
-      window.console.log("[EventKoi] intercept query", {
-        page,
-        perPage,
-        order,
-        orderby,
-        calendars: activeConfig.calendars,
-        includeInstances: activeConfig.includeInstances,
-      });
-    }
 
-    let apiPath = `${getApiBase()}/query_events?per_page=${perPage}&page=${page}&order=${order}&orderby=${orderby}&include_instances=${
-      activeConfig.includeInstances ? 1 : 0
-    }`;
+    const base = (getApiBase() || "").replace(/\/$/, "");
+    const qs = new URLSearchParams({
+      per_page: perPage,
+      page,
+      order,
+      orderby,
+      include_instances: activeConfig.includeInstances ? 1 : 0,
+    });
 
     if (activeConfig.startDate) {
-      apiPath += `&start_date=${encodeURIComponent(
-        stripDate(activeConfig.startDate)
-      )}`;
+      qs.set("start_date", stripDate(activeConfig.startDate));
     }
     if (activeConfig.endDate) {
-      apiPath += `&end_date=${encodeURIComponent(
-        stripDate(activeConfig.endDate)
-      )}`;
+      qs.set("end_date", stripDate(activeConfig.endDate));
     }
 
     if (activeConfig.includeInstances && activeConfig.showInstancesForEvent) {
       if (activeConfig.instanceParentId) {
-        apiPath += `&parent_event=${activeConfig.instanceParentId}`;
+        qs.set("parent_event", activeConfig.instanceParentId);
       }
     } else if (activeConfig.calendars?.length) {
-      apiPath += `&id=${activeConfig.calendars.join(",")}`;
+      qs.set("id", activeConfig.calendars.join(","));
     }
 
-    const root = window?.wpApiSettings?.root || "/wp-json/";
-    const normalizedRoot = root.replace(/\/$/, "");
+    // If root uses rest_route, append params with "&" to avoid double "?".
+    const root = window?.wpApiSettings?.root || "";
+    const separator = root.includes("rest_route=") ? "&" : "?";
+    const apiPath = `${base}/query_events${separator}${qs.toString()}`;
+
+    const rootUrl = window?.wpApiSettings?.root || "/wp-json/";
+    const normalizedRoot = rootUrl.replace(/\/$/, "");
     const normalizedPath = apiPath.replace(/^\//, "");
     const fullUrl = apiPath.startsWith("http")
       ? apiPath
@@ -375,7 +370,7 @@ export const withEventKoiQueryData = (BlockEdit) => (props) => {
     props.attributes?.query?.orderBy,
     props.attributes?.query?.perPage,
     props.attributes?.query?.pages,
- ]);
+  ]);
 
   // Hide Gutenberg "Change design" toolbar button for this variation.
   useEffect(() => {
