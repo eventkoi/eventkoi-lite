@@ -7,81 +7,120 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-10-09T12:49:24+00:00\n"
+"POT-Creation-Date: 2025-12-15T16:47:23+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
-"X-Generator: WP-CLI 2.11.0\n"
+"X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
 
 #: admin/class-menus.php:51
-#: admin/class-menus.php:113
-msgid "Dashboard"
+msgid "Launch Onboarding Wizard"
 msgstr ""
 
 #: admin/class-menus.php:52
-#: admin/class-menus.php:116
+#: admin/class-menus.php:128
+msgid "Dashboard"
+msgstr ""
+
+#: admin/class-menus.php:53
+#: admin/class-menus.php:131
 msgid "Settings"
 msgstr ""
 
-#: admin/class-menus.php:101
-#: admin/class-menus.php:102
-#: admin/class-menus.php:114
+#: admin/class-menus.php:116
+#: admin/class-menus.php:117
+#: admin/class-menus.php:129
 #: core/class-post-types.php:111
 msgid "Events"
 msgstr ""
 
-#: admin/class-menus.php:115
+#: admin/class-menus.php:130
 #: core/class-post-types.php:54
 msgid "Calendars"
 msgstr ""
 
-#: api/class-calendar.php:98
+#: admin/class-notices.php:93
+msgid "Warning:"
+msgstr ""
+
+#: admin/class-notices.php:94
+msgid " EventKoi's Events List Block will be removed in the next release."
+msgstr ""
+
+#: admin/class-notices.php:97
+msgid "Action required:"
+msgstr ""
+
+#: admin/class-notices.php:98
+msgid " Please switch your Events List Blocks to the new and more powerful EK Event Query Loop to keep your events displaying correctly."
+msgstr ""
+
+#: admin/class-notices.php:107
+msgid "Learn more"
+msgstr ""
+
+#: admin/class-scripts.php:116
+#: components/calendar/calendar-block.js:9
+msgid "Block"
+msgstr ""
+
+#: admin/class-scripts.php:121
+msgid "Elementor"
+msgstr ""
+
+#: api/class-calendar.php:108
 msgid "Invalid calendar ID."
 msgstr ""
 
-#: api/class-calendar.php:121
-#: api/class-calendar.php:190
-#: api/class-calendar.php:210
+#: api/class-calendar.php:134
+#: api/class-calendar.php:391
+#: api/class-calendar.php:411
 msgid "Calendar ID is required."
 msgstr ""
 
-#: api/class-calendar.php:168
+#: api/class-calendar.php:254
+msgid "Invalid event IDs provided."
+msgstr ""
+
+#: api/class-calendar.php:369
 msgid "Invalid calendar data."
 msgstr ""
 
 #. translators: %s: Parameter name.
 #: api/class-calendars.php:80
+#, php-format
 msgid "No %s provided."
 msgstr ""
 
-#: api/class-event.php:137
+#: api/class-event.php:147
 #: core/class-ical.php:41
+#: core/core-functions.php:29
 msgid "Invalid event ID."
 msgstr ""
 
-#: api/class-event.php:156
+#: api/class-event.php:184
 msgid "Invalid event data."
 msgstr ""
 
-#: api/class-event.php:210
-#: api/class-event.php:229
-#: api/class-event.php:249
+#: api/class-event.php:238
+#: api/class-event.php:257
+#: api/class-event.php:277
 msgid "Missing event ID."
 msgstr ""
 
-#: api/class-event.php:268
-#: api/class-event.php:377
+#: api/class-event.php:296
+#: api/class-event.php:405
 msgid "Missing event ID or timestamp."
 msgstr ""
 
-#: api/class-event.php:307
+#: api/class-event.php:335
 msgid "Missing or invalid instance override data."
 msgstr ""
 
-#: api/class-event.php:390
+#: api/class-event.php:418
 msgid "Instance overrides reset to defaults."
 msgstr ""
 
-#: api/class-events.php:225
+#: api/class-events.php:222
 msgid "No event IDs provided."
 msgstr ""
 
@@ -146,6 +185,7 @@ msgstr ""
 
 #. translators: %s is the maximum file size allowed in megabytes.
 #: api/class-uploads.php:130
+#, php-format
 msgid "File exceeds maximum upload size of %s MB."
 msgstr ""
 
@@ -207,12 +247,33 @@ msgid "Recurring rule summary"
 msgstr ""
 
 #. translators: Custom block category for EventKoi plugin.
-#: core/class-blocks.php:44
+#: core/class-blocks.php:369
 msgid "EventKoi"
 msgstr ""
 
-#: core/class-blocks.php:183
+#: core/class-blocks.php:508
 msgid "Share this event"
+msgstr ""
+
+#: core/class-blocks.php:939
+msgid "No events found."
+msgstr ""
+
+#: core/class-blocks.php:1161
+msgid "Previous"
+msgstr ""
+
+#: core/class-blocks.php:1165
+#: admin/calendars/overview/index.js:799
+#: admin/events/edit/index.js:706
+#: admin/events/edit/index.js:718
+#: admin/events/edit/index.js:730
+#: admin/events/overview/index.js:682
+msgid "Next"
+msgstr ""
+
+#: core/class-blocks.php:1176
+msgid "Pagination"
 msgstr ""
 
 #: core/class-calendar.php:276
@@ -229,6 +290,7 @@ msgstr ""
 
 #. translators: %s is calendar name
 #: core/class-calendar.php:368
+#, php-format
 msgid "[Duplicate] %s"
 msgstr ""
 
@@ -246,244 +308,268 @@ msgid_plural "Calendars removed permanently."
 msgstr[0] ""
 msgstr[1] ""
 
-#: core/class-event.php:346
-#: core/class-event.php:1678
+#: core/class-event.php:347
+#: core/class-event.php:1844
 msgid "Attend online"
 msgstr ""
 
-#: core/class-event.php:401
+#: core/class-event.php:402
 msgid "Event created."
 msgstr ""
 
-#: core/class-event.php:423
+#: core/class-event.php:424
 msgid "Event updated."
 msgstr ""
 
-#: core/class-event.php:1061
+#: core/class-event.php:1069
+#: core/class-event.php:1183
 msgid "Date and time to be confirmed"
 msgstr ""
 
 #. translators: %d is the number of extra recurrence rules.
-#: core/class-event.php:1096
+#: core/class-event.php:1104
+#, php-format
 msgid "%d more rule"
 msgid_plural "%d more rules"
 msgstr[0] ""
 msgstr[1] ""
 
-#: core/class-event.php:1324
-#: core/class-events.php:275
+#: core/class-event.php:1490
+#: core/class-events.php:264
 msgid "Event restored successfully."
 msgid_plural "Events restored successfully."
 msgstr[0] ""
 msgstr[1] ""
 
-#: core/class-event.php:1340
+#: core/class-event.php:1506
 msgid "Event moved to Trash."
 msgstr ""
 
 #. translators: %s event title
-#: core/class-event.php:1354
+#: core/class-event.php:1520
+#, php-format
 msgid "[Duplicate]: %s"
 msgstr ""
 
-#: core/class-event.php:1376
+#: core/class-event.php:1542
 msgid "Event duplicated."
 msgstr ""
 
-#: core/class-event.php:1476
+#: core/class-event.php:1642
 msgid "Untitled event"
 msgstr ""
 
-#: core/class-event.php:1494
+#: core/class-event.php:1660
 msgid "No event details."
 msgstr ""
 
-#: core/class-event.php:1634
+#: core/class-event.php:1800
 msgid "No location available."
 msgstr ""
 
-#: core/class-event.php:1748
-#: core/class-event.php:1862
+#: core/class-event.php:1914
+#: core/class-event.php:2028
 msgid "Date and time to be confirmed."
 msgstr ""
 
-#: core/class-event.php:1960
+#: core/class-event.php:2126
+#: components/onboarding/set-calendar-defaults.jsx:22
 msgid "Monday"
 msgstr ""
 
-#: core/class-event.php:1961
+#: core/class-event.php:2127
+#: components/onboarding/set-calendar-defaults.jsx:23
 msgid "Tuesday"
 msgstr ""
 
-#: core/class-event.php:1962
+#: core/class-event.php:2128
+#: components/onboarding/set-calendar-defaults.jsx:24
 msgid "Wednesday"
 msgstr ""
 
-#: core/class-event.php:1963
+#: core/class-event.php:2129
+#: components/onboarding/set-calendar-defaults.jsx:25
 msgid "Thursday"
 msgstr ""
 
-#: core/class-event.php:1964
+#: core/class-event.php:2130
+#: components/onboarding/set-calendar-defaults.jsx:26
 msgid "Friday"
 msgstr ""
 
-#: core/class-event.php:1965
+#: core/class-event.php:2131
+#: components/onboarding/set-calendar-defaults.jsx:27
 msgid "Saturday"
 msgstr ""
 
-#: core/class-event.php:1966
+#: core/class-event.php:2132
+#: components/onboarding/set-calendar-defaults.jsx:28
 msgid "Sunday"
 msgstr ""
 
-#: core/class-event.php:1970
+#: core/class-event.php:2136
 msgid "first"
 msgstr ""
 
-#: core/class-event.php:1971
+#: core/class-event.php:2137
 msgid "second"
 msgstr ""
 
-#: core/class-event.php:1972
+#: core/class-event.php:2138
 msgid "third"
 msgstr ""
 
-#: core/class-event.php:1973
+#: core/class-event.php:2139
 msgid "fourth"
 msgstr ""
 
-#: core/class-event.php:1974
+#: core/class-event.php:2140
 msgid "fifth"
 msgstr ""
 
-#: core/class-event.php:1986
+#: core/class-event.php:2152
 msgid "days"
 msgstr ""
 
-#: core/class-event.php:1987
+#: core/class-event.php:2153
 msgid "weeks"
 msgstr ""
 
-#: core/class-event.php:1988
+#: core/class-event.php:2154
 msgid "months"
 msgstr ""
 
-#: core/class-event.php:1989
+#: core/class-event.php:2155
 msgid "years"
 msgstr ""
 
 #. translators: %1$d: interval number (e.g., 2). %2$s: period plural (e.g., "months").
-#: core/class-event.php:1993
+#: core/class-event.php:2159
+#, php-format
 msgid "Every %1$d %2$s"
 msgstr ""
 
-#: core/class-event.php:1995
+#: core/class-event.php:2161
 msgid "Daily"
 msgstr ""
 
-#: core/class-event.php:1997
+#: core/class-event.php:2163
 msgid "Weekly"
 msgstr ""
 
-#: core/class-event.php:1999
+#: core/class-event.php:2165
 msgid "Monthly"
 msgstr ""
 
-#: core/class-event.php:2001
+#: core/class-event.php:2167
 msgid "Yearly"
 msgstr ""
 
-#: core/class-event.php:2034
+#: core/class-event.php:2200
+#: components/calendar/calendar-defaults.js:16
 msgid "January"
 msgstr ""
 
-#: core/class-event.php:2035
+#: core/class-event.php:2201
+#: components/calendar/calendar-defaults.js:17
 msgid "February"
 msgstr ""
 
-#: core/class-event.php:2036
+#: core/class-event.php:2202
+#: components/calendar/calendar-defaults.js:18
 msgid "March"
 msgstr ""
 
-#: core/class-event.php:2037
+#: core/class-event.php:2203
+#: components/calendar/calendar-defaults.js:19
 msgid "April"
 msgstr ""
 
-#: core/class-event.php:2038
+#: core/class-event.php:2204
+#: components/calendar/calendar-defaults.js:20
 msgid "May"
 msgstr ""
 
-#: core/class-event.php:2039
+#: core/class-event.php:2205
+#: components/calendar/calendar-defaults.js:21
 msgid "June"
 msgstr ""
 
-#: core/class-event.php:2040
+#: core/class-event.php:2206
+#: components/calendar/calendar-defaults.js:22
 msgid "July"
 msgstr ""
 
-#: core/class-event.php:2041
+#: core/class-event.php:2207
+#: components/calendar/calendar-defaults.js:23
 msgid "August"
 msgstr ""
 
-#: core/class-event.php:2042
+#: core/class-event.php:2208
+#: components/calendar/calendar-defaults.js:24
 msgid "September"
 msgstr ""
 
-#: core/class-event.php:2043
+#: core/class-event.php:2209
+#: components/calendar/calendar-defaults.js:25
 msgid "October"
 msgstr ""
 
-#: core/class-event.php:2044
+#: core/class-event.php:2210
+#: components/calendar/calendar-defaults.js:26
 msgid "November"
 msgstr ""
 
-#: core/class-event.php:2045
+#: core/class-event.php:2211
+#: components/calendar/calendar-defaults.js:27
 msgid "December"
 msgstr ""
 
-#: core/class-events.php:234
+#: core/class-events.php:223
 msgid "Event moved to trash."
 msgid_plural "Events moved to trash."
 msgstr[0] ""
 msgstr[1] ""
 
-#: core/class-events.php:253
+#: core/class-events.php:242
 msgid "Event removed permanently."
 msgid_plural "Events removed permanently."
 msgstr[0] ""
 msgstr[1] ""
 
-#: core/class-events.php:378
+#: core/class-events.php:367
 msgid "Event duplicated successfully."
 msgid_plural "Events duplicated successfully."
 msgstr[0] ""
 msgstr[1] ""
 
-#: core/class-hooks.php:145
+#: core/class-hooks.php:151
 msgid "Card"
 msgstr ""
 
-#: core/class-hooks.php:146
+#: core/class-hooks.php:152
 msgid "Invoice"
 msgstr ""
 
-#: core/class-hooks.php:147
+#: core/class-hooks.php:153
 msgid "SEPA Direct Debit"
 msgstr ""
 
-#: core/class-hooks.php:148
+#: core/class-hooks.php:154
 msgid "PayPal"
 msgstr ""
 
-#: core/class-hooks.php:149
+#: core/class-hooks.php:155
 msgid "Cash"
 msgstr ""
 
-#: core/class-hooks.php:150
+#: core/class-hooks.php:156
 msgid "Link"
 msgstr ""
 
-#: core/class-install.php:93
-msgctxt "Default category slug"
+#. translators: default calendar term name
+#: core/class-install.php:111
+msgctxt "Default calendar term"
 msgid "Default calendar"
 msgstr ""
 
@@ -492,6 +578,7 @@ msgid "Event calendars"
 msgstr ""
 
 #: core/class-post-types.php:57
+#: components/calendar/calendar-display.js:25
 msgid "Calendar"
 msgstr ""
 
@@ -651,7 +738,7 @@ msgstr ""
 msgid "This is where you can browse events in this site."
 msgstr ""
 
-#: core/class-scripts.php:60
+#: core/class-scripts.php:72
 msgid "No events were found."
 msgstr ""
 
@@ -659,41 +746,428 @@ msgstr ""
 msgid "Default template for a single event view."
 msgstr ""
 
-#: core/core-functions.php:168
+#: core/core-functions.php:51
+msgid "Event not found."
+msgstr ""
+
+#: core/core-functions.php:222
 msgid "Invalid calendar. Please check the calendar ID."
 msgstr ""
 
-#: core/core-functions.php:280
+#: core/core-functions.php:334
 msgctxt "slug"
 msgid "event"
 msgstr ""
 
-#: core/core-functions.php:281
+#: core/core-functions.php:335
 msgctxt "slug"
 msgid "calendar"
 msgstr ""
 
-#: core/core-functions.php:516
-#: core/core-functions.php:517
+#: core/core-functions.php:567
+#: core/core-functions.php:568
 msgid "Completed"
 msgstr ""
 
-#: core/core-functions.php:518
+#: core/core-functions.php:569
 msgid "Refunded"
 msgstr ""
 
-#: core/core-functions.php:519
+#: core/core-functions.php:570
 msgid "Partially refunded"
 msgstr ""
 
-#: core/core-functions.php:520
+#: core/core-functions.php:571
 msgid "Failed"
 msgstr ""
 
-#: core/core-functions.php:521
+#: core/core-functions.php:572
 msgid "Pending payment"
 msgstr ""
 
-#: core/core-functions.php:524
+#: core/core-functions.php:575
 msgid "Incomplete"
+msgstr ""
+
+#: admin/calendars/overview/index.js:301
+#: admin/dashboard/onboarding/index.jsx:436
+#: admin/events/edit/index.js:383
+#: admin/events/overview/index.js:72
+msgid "Publish demo event"
+msgstr ""
+
+#: admin/calendars/overview/index.js:305
+#: admin/events/edit/index.js:387
+msgid "View default calendar"
+msgstr ""
+
+#: admin/calendars/overview/index.js:606
+#: admin/events/edit/index.js:496
+#: admin/events/overview/index.js:566
+msgid "EventKoi Plugin Tour"
+msgstr ""
+
+#: admin/calendars/overview/index.js:624
+#: admin/calendars/overview/index.js:662
+#: admin/events/edit/index.js:511
+#: admin/events/edit/index.js:562
+#: admin/events/overview/index.js:573
+#: admin/events/overview/index.js:604
+msgid "Close"
+msgstr ""
+
+#: admin/calendars/overview/index.js:631
+#: admin/events/edit/index.js:518
+#: admin/events/overview/index.js:580
+msgid "You can restart this Tour any time in the EventKoi Dashboard."
+msgstr ""
+
+#: admin/calendars/overview/index.js:717
+msgid "Welcome to your Calendars"
+msgstr ""
+
+#: admin/calendars/overview/index.js:718
+msgid "Take action: Click link icon"
+msgstr ""
+
+#: admin/calendars/overview/index.js:723
+msgid "Here, you can create new calendars, edit existing ones, and more."
+msgstr ""
+
+#: admin/calendars/overview/index.js:729
+msgid "Click the icon to view the frontend calendar."
+msgstr ""
+
+#: admin/calendars/overview/index.js:734
+msgid "This is your last step in the tour."
+msgstr ""
+
+#. translators: 1: current step number, 2: total steps
+#: admin/calendars/overview/index.js:743
+#: admin/events/edit/index.js:648
+#: admin/events/overview/index.js:662
+#, js-format
+msgid "%1$s of %2$s"
+msgstr ""
+
+#: admin/calendars/overview/index.js:778
+#: admin/calendars/overview/index.js:819
+#: admin/dashboard/onboarding/index.jsx:533
+#: admin/events/edit/index.js:693
+#: admin/events/overview/index.js:702
+msgid "Back"
+msgstr ""
+
+#: admin/dashboard/onboarding/index.jsx:35
+msgid "Set calendar defaults"
+msgstr ""
+
+#: admin/dashboard/onboarding/index.jsx:40
+msgid "Confirm timezone and date format"
+msgstr ""
+
+#: admin/dashboard/onboarding/index.jsx:148
+msgid "Classical Concert in the Park"
+msgstr ""
+
+#: admin/dashboard/onboarding/index.jsx:149
+msgid "<p>A serene evening of classical music unfolds at the Singapore Botanic Gardens’ iconic Bandstand. Surrounded by lush greenery and gentle evening breezes, audiences can enjoy a live orchestral performance beneath the open sky. An enchanting blend of nature, culture, and timeless melodies in the heart of the city.</p>"
+msgstr ""
+
+#: admin/dashboard/onboarding/index.jsx:153
+msgid "A ready-made listing to explore."
+msgstr ""
+
+#: admin/dashboard/onboarding/index.jsx:420
+msgid "You're ready to"
+msgstr ""
+
+#: admin/dashboard/onboarding/index.jsx:423
+msgid "start using EventKoi!"
+msgstr ""
+
+#: admin/dashboard/onboarding/index.jsx:428
+msgid "Take a quick 2-minute tour to learn how to:"
+msgstr ""
+
+#: admin/dashboard/onboarding/index.jsx:437
+msgid "View your ready-made calendar"
+msgstr ""
+
+#: admin/dashboard/onboarding/index.jsx:457
+#: admin/dashboard/onboarding/index.jsx:546
+msgid "Creating demo event…"
+msgstr ""
+
+#: admin/dashboard/onboarding/index.jsx:458
+msgid "Start plugin tour"
+msgstr ""
+
+#: admin/dashboard/onboarding/index.jsx:474
+msgid "Onboarding wizard"
+msgstr ""
+
+#: admin/dashboard/onboarding/index.jsx:549
+msgid "Finish setup"
+msgstr ""
+
+#. translators: %s: title of the next onboarding step.
+#: admin/dashboard/onboarding/index.jsx:553
+#, js-format
+msgid "Next: %s"
+msgstr ""
+
+#: admin/events/edit/index.js:619
+msgid "Welcome to your Events settings"
+msgstr ""
+
+#: admin/events/edit/index.js:621
+msgid "Take action: Click on \"Publish\""
+msgstr ""
+
+#: admin/events/edit/index.js:623
+msgid "Take action: Click on \"Preview\" or \"Save\""
+msgstr ""
+
+#: admin/events/edit/index.js:624
+msgid "Take action: Click on \"Calendars\""
+msgstr ""
+
+#: admin/events/edit/index.js:629
+msgid "This particular event is a demo, so we’ve pre-filled everything for you. Feel free to play around."
+msgstr ""
+
+#: admin/events/edit/index.js:634
+msgid "Once you have finished editing your event, you can publish it."
+msgstr ""
+
+#: admin/events/edit/index.js:639
+msgid "View the event you have created or make additional changes and save them."
+msgstr ""
+
+#: admin/events/edit/index.js:643
+msgid "We’re headed to your Calendars next."
+msgstr ""
+
+#: admin/events/overview/index.js:76
+msgid "View calendar"
+msgstr ""
+
+#: admin/events/overview/index.js:296
+msgid "Welcome to your Events list"
+msgstr ""
+
+#: admin/events/overview/index.js:297
+msgid "Take action: Click on \"Classical Concert in the Park\""
+msgstr ""
+
+#: admin/events/overview/index.js:304
+msgid "Here, you can create new events, edit existing ones, search/filter, and more."
+msgstr ""
+
+#: admin/events/overview/index.js:308
+msgid "Click the event to open it. We'll continue on the next page."
+msgstr ""
+
+#: components/calendar/calendar-block.js:12
+msgid "1. In the block editor, add"
+msgstr ""
+
+#: components/calendar/calendar-block.js:16
+msgid "block."
+msgstr ""
+
+#: components/calendar/calendar-block.js:19
+msgid "2. In the right hand side Settings panel, select the relevant calendar from the dropdown menu."
+msgstr ""
+
+#: components/calendar/calendar-color.js:16
+msgid "Accent color"
+msgstr ""
+
+#: components/calendar/calendar-color.js:28
+msgid "Color"
+msgstr ""
+
+#: components/calendar/calendar-color.js:52
+msgid "Used for accent colors in your calendar."
+msgstr ""
+
+#: components/calendar/calendar-defaults.js:15
+msgid "Current month"
+msgstr ""
+
+#. translators: %s: current year
+#: components/calendar/calendar-defaults.js:46
+#, js-format
+msgid "Current year (%s)"
+msgstr ""
+
+#: components/calendar/calendar-defaults.js:66
+msgid "Default month to display"
+msgstr ""
+
+#: components/calendar/calendar-defaults.js:73
+msgid "Select a month"
+msgstr ""
+
+#: components/calendar/calendar-defaults.js:84
+msgid "Select the month visitors see when they first view the calendar."
+msgstr ""
+
+#: components/calendar/calendar-defaults.js:94
+msgid "Default year to display"
+msgstr ""
+
+#: components/calendar/calendar-defaults.js:101
+msgid "Select a year"
+msgstr ""
+
+#: components/calendar/calendar-defaults.js:112
+msgid "Select the year visitors see when they first view the calendar."
+msgstr ""
+
+#: components/calendar/calendar-display.js:17
+msgid "Default calendar display"
+msgstr ""
+
+#: components/calendar/calendar-display.js:28
+msgid "List"
+msgstr ""
+
+#: components/calendar/calendar-display.js:33
+msgid "Choose the default view visitors see."
+msgstr ""
+
+#: components/calendar/calendar-shortcode.js:17
+msgid "Shortcode"
+msgstr ""
+
+#: components/calendar/calendar-shortcode.js:44
+msgid "Copied!"
+msgstr ""
+
+#: components/calendar/calendar-shortcode.js:44
+msgid "Copy"
+msgstr ""
+
+#: components/calendar/calendar-slug.js:15
+msgid "Slug"
+msgstr ""
+
+#: components/calendar/calendar-slug.js:20
+msgid "Address"
+msgstr ""
+
+#: components/calendar/calendar-slug.js:30
+msgid "Define the URL of your calendar"
+msgstr ""
+
+#. translators: 1: calendar base URL, 2: calendar slug
+#: components/calendar/calendar-slug.js:35
+#, js-format
+msgid "(e.g. %1$s%2$s)"
+msgstr ""
+
+#: components/calendar/calendar-time-frame.js:19
+msgid "Default time frame to display"
+msgstr ""
+
+#: components/calendar/calendar-time-frame.js:35
+msgid "Month"
+msgstr ""
+
+#: components/calendar/calendar-time-frame.js:42
+msgid "Week"
+msgstr ""
+
+#: components/calendar/calendar-time-frame.js:50
+msgid "This setting is only available in calendar view."
+msgstr ""
+
+#: components/dashboard/getting-started.js:34
+msgid "Getting started"
+msgstr ""
+
+#: components/dashboard/getting-started.js:43
+msgid "Launch onboarding wizard"
+msgstr ""
+
+#: components/dashboard/getting-started.js:53
+msgid "Begin plugin tour"
+msgstr ""
+
+#: components/onboarding/confirm-timezone-format.jsx:43
+msgid ""
+"EventKoi uses this site’s default timezone and date format.\n"
+"Go to General Settings if you want to change them."
+msgstr ""
+
+#: components/onboarding/confirm-timezone-format.jsx:58
+msgid "Site defaults"
+msgstr ""
+
+#: components/onboarding/confirm-timezone-format.jsx:64
+msgid "Timezone"
+msgstr ""
+
+#: components/onboarding/confirm-timezone-format.jsx:78
+msgid "Date format"
+msgstr ""
+
+#: components/onboarding/confirm-timezone-format.jsx:92
+#: components/onboarding/set-calendar-defaults.jsx:181
+msgid "Time format"
+msgstr ""
+
+#: components/onboarding/confirm-timezone-format.jsx:116
+msgid "Go to General Settings and change"
+msgstr ""
+
+#: components/onboarding/set-calendar-defaults.jsx:107
+msgid "Set your calendar defaults"
+msgstr ""
+
+#: components/onboarding/set-calendar-defaults.jsx:117
+msgid "Week starts on"
+msgstr ""
+
+#: components/onboarding/set-calendar-defaults.jsx:125
+msgid "Select a day"
+msgstr ""
+
+#: components/onboarding/set-calendar-defaults.jsx:136
+msgid "Select the day calendars use as the start of the week."
+msgstr ""
+
+#: components/onboarding/set-calendar-defaults.jsx:145
+msgid "Working days"
+msgstr ""
+
+#: components/onboarding/set-calendar-defaults.jsx:172
+msgid "Select your working days. These are used for recurring event rules."
+msgstr ""
+
+#: components/onboarding/set-calendar-defaults.jsx:193
+msgid "12-hour (AM/PM) clock"
+msgstr ""
+
+#: components/onboarding/set-calendar-defaults.jsx:199
+msgid "24-hour clock"
+msgstr ""
+
+#: components/onboarding/set-calendar-defaults.jsx:204
+msgid "Select how event times are displayed (e.g. 2:00 PM or 14:00)."
+msgstr ""
+
+#: plugins/quick-start-snackbar.js:80
+msgid "Launch EventKoi Onboarding Wizard?"
+msgstr ""
+
+#: plugins/quick-start-snackbar.js:95
+msgid "Launch wizard"
+msgstr ""
+
+#: plugins/quick-start-snackbar.js:101
+msgid "Go to EventKoi Dashboard"
 msgstr ""

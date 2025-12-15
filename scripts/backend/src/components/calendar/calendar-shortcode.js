@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { __ } from "@wordpress/i18n";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +14,7 @@ export function CalendarShortcode({ calendar, setCalendar }) {
 
   return (
     <Panel className="p-0">
-      <Label>Shortcode</Label>
+      <Label>{__("Shortcode", "eventkoi-lite")}</Label>
       <div className="relative max-w-[260px]">
         <Input
           type="text"
@@ -40,7 +41,7 @@ export function CalendarShortcode({ calendar, setCalendar }) {
           ) : (
             <Copy className="mr-2 h-4 w-4" />
           )}
-          {copying ? "Copied!" : "Copy"}
+          {copying ? __("Copied!", "eventkoi-lite") : __("Copy", "eventkoi-lite")}
         </Button>
       </div>
     </Panel>

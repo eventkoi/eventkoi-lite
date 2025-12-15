@@ -1,3 +1,4 @@
+import { __ } from "@wordpress/i18n";
 import { Panel } from "@/components/panel";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,7 +16,7 @@ export function CalendarTimeFrame({ calendar, setCalendar }) {
 
   return (
     <Panel className="p-0">
-      <Label>Default time frame to display</Label>
+      <Label>{__("Default time frame to display", "eventkoi-lite")}</Label>
       <Tabs
         defaultValue={calendar?.timeframe}
         onValueChange={(value) => {
@@ -31,14 +32,14 @@ export function CalendarTimeFrame({ calendar, setCalendar }) {
             className="rounded-lg"
             disabled={isDisabled}
           >
-            Month
+            {__("Month", "eventkoi-lite")}
           </TabsTrigger>
           <TabsTrigger
             value="week"
             className="rounded-lg"
             disabled={isDisabled}
           >
-            Week
+            {__("Week", "eventkoi-lite")}
           </TabsTrigger>
         </TabsList>
       </Tabs>
@@ -46,7 +47,10 @@ export function CalendarTimeFrame({ calendar, setCalendar }) {
       {isDisabled && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
           <Info className="w-4 h-4" />
-          This setting is only available in calendar view.
+          {__(
+            "This setting is only available in calendar view.",
+            "eventkoi-lite",
+          )}
         </div>
       )}
     </Panel>

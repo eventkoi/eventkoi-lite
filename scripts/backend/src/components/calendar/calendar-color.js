@@ -1,5 +1,6 @@
 import { useState } from "react";
 
+import { __ } from "@wordpress/i18n";
 import { ColorPicker } from "@wordpress/components";
 
 import { Label } from "@/components/ui/label";
@@ -12,7 +13,7 @@ import {
 import { Panel } from "@/components/panel";
 
 const colors = {
-  accent: "Accent color",
+  accent: __("Accent color", "eventkoi-lite"),
 };
 
 const values = {
@@ -24,7 +25,7 @@ export function CalendarColor({ calendar, setCalendar }) {
 
   return (
     <Panel className="p-0">
-      <Label htmlFor="color">Color</Label>
+      <Label htmlFor="color">{__("Color", "eventkoi-lite")}</Label>
       <Popover>
         <PopoverTrigger className="flex gap-4 items-center h-10 w-[150px] rounded-md border border-input bg-background shadow-none px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
           <div
@@ -48,7 +49,7 @@ export function CalendarColor({ calendar, setCalendar }) {
         </PopoverContent>
       </Popover>
       <div className="text-muted-foreground">
-        Used for accent colors in your calendar.
+        {__("Used for accent colors in your calendar.", "eventkoi-lite")}
       </div>
     </Panel>
   );

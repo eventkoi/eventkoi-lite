@@ -1,3 +1,4 @@
+import { __ } from "@wordpress/i18n";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -13,7 +14,7 @@ export function CalendarDisplay({ calendar, setCalendar }) {
 
   return (
     <Panel className="p-0">
-      <Label>Default calendar display</Label>
+      <Label>{__("Default calendar display", "eventkoi-lite")}</Label>
       <Tabs
         defaultValue={calendar?.display}
         onValueChange={onTabChange}
@@ -21,15 +22,15 @@ export function CalendarDisplay({ calendar, setCalendar }) {
       >
         <TabsList className="border border-input rounded-lg">
           <TabsTrigger value="calendar" className="rounded-lg">
-            Calendar
+            {__("Calendar", "eventkoi-lite")}
           </TabsTrigger>
           <TabsTrigger value="list" className="rounded-lg">
-            List
+            {__("List", "eventkoi-lite")}
           </TabsTrigger>
         </TabsList>
       </Tabs>
       <div className="text-muted-foreground">
-        Choose the default view visitors see.
+        {__("Choose the default view visitors see.", "eventkoi-lite")}
       </div>
     </Panel>
   );

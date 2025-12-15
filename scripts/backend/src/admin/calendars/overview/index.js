@@ -738,7 +738,12 @@ export function CalendarsOverview() {
           </p>
           <div className="flex items-center justify-between mt-2">
             <span className="text-[14px] text-[#FBFBFB]">
-              {sprintf(__("%1$s of %2$s", "eventkoi-lite"), hintStep, 2)}
+              {sprintf(
+                /* translators: 1: current step number, 2: total steps */
+                __("%1$s of %2$s", "eventkoi-lite"),
+                hintStep,
+                2
+              )}
             </span>
             <div className="flex items-center gap-2">
               {hintStep === 1 && (
