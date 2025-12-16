@@ -19,16 +19,17 @@ Easily embed your events calendar anywhere on your WordPress site using blocks, 
 ## The best events calendar plugin for WordPress
 
 Why choose EventKoi Lite as your WordPress events calendar plugin?
-✓ Free WordPress events calendar plugin with EventKoi Pro version available.
+✓ Free plugin with [EventKoi Pro](https://eventkoi.com/?utm_source=pluginreadme-description&utm_medium=web&utm_campaign=16-12-25) available.
 ✓ Simple, clean event management without the bloat.
 ✓ Fully customizable WordPress event page template.
 ✓ Free Elementor events calendar widget
 ✓ Extensible, developer-friendly.
 ✓ Actively maintained with excellent support and amazing documentation.
 
-## How to add events to a WordPress site
+## How to add events to a WordPress site with EventKoi
 
 Events are created inside EventKoi with a modern, simple UI.
+[See step-by-step guide on creating events with EventKoi (with screenshots).](https://eventkoi.com/docs/knowledge-base/create-your-first-event/?utm_source=pluginreadme-description&utm_medium=web&utm_campaign=16-12-25)
 
 **Event features:**
 
@@ -39,11 +40,11 @@ Events are created inside EventKoi with a modern, simple UI.
 - Date, time and timezone follows WordPress site.
 - Localisation-ready.
 - Fully customisable WordPress event page template in the block editor
-- [See step-by-step guide on creating events with EventKoi (with screenshots).](https://eventkoi.com/docs/knowledge-base/create-your-first-event/?utm_source=pluginreadme-description&utm_medium=web&utm_campaign=16-12-25)
 
-## How to add an events calendar to a WordPress site
+## How to add an events calendar to a WordPress site with EventKoi
 
 Embed an EventKoi calendar using shortcodes or the EventKoi Events Calendar block.
+[See step-by-step guide on embedding a calendar to your site (with screenshots).](https://eventkoi.com/docs/knowledge-base/how-to-add-a-calendar-to-your-site/?utm_source=pluginreadme-description&utm_medium=web&utm_campaign=16-12-25)
 
 **Calendar features:**
 
@@ -56,32 +57,35 @@ Embed an EventKoi calendar using shortcodes or the EventKoi Events Calendar bloc
 - Select 12/24 hour clock
 - Choose specific month and year to display
 - Select which day the week starts on
-- [See step-by-step guide on embedding a calendar to your site (with screenshots).](https://eventkoi.com/docs/knowledge-base/how-to-add-a-calendar-to-your-site/?utm_source=pluginreadme-description&utm_medium=web&utm_campaign=16-12-25)
 
-## How to display an events list in WordPress
+## How to display an events list in WordPress with EventKoi
 
-Any events calendar can be viewed as a list. Display an events list using shortcodes, or the Event Query Loop block.
+Any events calendar can be viewed as a events list or grid. Display an events list using shortcodes, or the Event Query Loop block.
+[See step-by-step guide on using the Event Query Loop block to add an events list to your site.]((https://eventkoi.com/docs/knowledge-base/how-to-use-the-ek-event-query-loop-block/?utm_source=pluginreadme-description&utm_medium=web&utm_campaign=16-12-25))
 
 **Events list features:**
 
-- [Display events list using the Event Query Loop block](https://eventkoi.com/docs/knowledge-base/how-to-use-the-ek-event-query-loop-block/?utm_source=pluginreadme-description&utm_medium=web&utm_campaign=16-12-25)
-- [Display events grid using the Event Query Loop block](https://eventkoi.com/docs/knowledge-base/how-to-use-the-ek-event-query-loop-block/#grid-view?utm_source=pluginreadme-description&utm_medium=web&utm_campaign=16-12-25)
+- Display events list or grid
 - With the Event Query Loop block you can display events list based on:
 	- Date range
 	- Sort by start date, event name
 
-## How to customize a WordPress event page template
+## How to customize a WordPress event page template with EventKoi
+EventKoi Lite comes with a fully customisable event template. You can add event data and design the template from scratch without code in the block editor.
+[See step-by-step guide on customising a WordPress events template (with screenshots and video).](https://eventkoi.com/docs/knowledge-base/how-to-customise-the-default-events-template/?utm_source=pluginreadme-description&utm_medium=web&utm_campaign=16-12-25)
 
-- For block themes, you can use the template editor.
-- Add dynamic data via meta keys or shortcodes.
-- [See step-by-step guide on customising a WordPress events template (with screenshots and video).](https://eventkoi.com/docs/knowledge-base/how-to-customise-the-default-events-template/?utm_source=pluginreadme-description&utm_medium=web&utm_campaign=16-12-25)
+**Template features:**
 
-## FREE integrations in EventKoi Lite
+- Add dynamic data via [meta keys](https://eventkoi.com/docs/knowledge-base/meta-keys-list/?utm_source=pluginreadme-description&utm_medium=web&utm_campaign=16-12-25) or [shortcodes](https://eventkoi.com/docs/knowledge-base/shortcodes/?utm_source=pluginreadme-description&utm_medium=web&utm_campaign=16-12-25).
+- Fully customisable without code.
+
+
+## Free integrations in EventKoi Lite
 
 - Elementor: [Calendar widget](https://eventkoi.com/docs/knowledge-base/eventkoi-calendar-widget-for-elementor/?utm_source=pluginreadme-description&utm_medium=web&utm_campaign=16-12-25) and [Event widget](https://eventkoi.com/docs/knowledge-base/eventkoi-event-widget-for-elementor/?utm_source=pluginreadme-description&utm_medium=web&utm_campaign=16-12-25)
 - More page builder and form builder integrations coming soon!
 
-##EventKoi Pro - advanced events calendar features
+##[EventKoi Pro](https://eventkoi.com/?utm_source=pluginreadme-description&utm_medium=web&utm_campaign=16-12-25) - Advanced events calendar features
 
 - **Recurring events**
 	- Create advanced rules for events that repeat daily, weekly, monthly, yearly, 
