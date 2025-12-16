@@ -85,7 +85,7 @@ EventKoi Lite comes with a fully customisable event template. You can add event 
 - Elementor: [Calendar widget](https://eventkoi.com/docs/knowledge-base/eventkoi-calendar-widget-for-elementor/?utm_source=pluginreadme-description&utm_medium=web&utm_campaign=16-12-25) and [Event widget](https://eventkoi.com/docs/knowledge-base/eventkoi-event-widget-for-elementor/?utm_source=pluginreadme-description&utm_medium=web&utm_campaign=16-12-25)
 - More page builder and form builder integrations coming soon!
 
-##[EventKoi Pro](https://eventkoi.com/?utm_source=pluginreadme-description&utm_medium=web&utm_campaign=16-12-25) - Advanced events calendar features
+## EventKoi Pro - Advanced events calendar features
 
 - **Recurring events**
 	- Create advanced rules for events that repeat daily, weekly, monthly, yearly, 
