@@ -42,6 +42,8 @@ registerBlockType("eventkoi/event-data", {
       fontSize: true,
       lineHeight: true,
       __experimentalFontFamily: true,
+      fontStyle: true,
+      __experimentalFontStyle: true,
     },
     spacing: {
       margin: true,

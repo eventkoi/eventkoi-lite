@@ -94,17 +94,8 @@ class Blocks {
 
 		$field_key = sanitize_html_class( $field );
 		$classes   = array(
-			'wp-block-eventkoi-event-data',
 			'ek-event-' . $field_key,
 		);
-
-		// Add font-size utility class when set via block supports (e.g., has-small-font-size).
-		if ( ! empty( $attributes['fontSize'] ) ) {
-			$classes[] = 'has-' . sanitize_html_class( $attributes['fontSize'] ) . '-font-size';
-		}
-		if ( ! empty( $attributes['fontFamily'] ) ) {
-			$classes[] = 'has-' . sanitize_html_class( $attributes['fontFamily'] ) . '-font-family';
-		}
 
 		if ( ! empty( $attributes['className'] ) ) {
 			$extra_classes = preg_split( '/\s+/', (string) $attributes['className'] );
@@ -137,27 +128,20 @@ class Blocks {
 			return self::normalize_preset_styles( $rendered );
 		}
 
-			$style_pairs = array();
-		if ( ! empty( $attributes['style'] ) && is_array( $attributes['style'] ) ) {
-			$style_pairs = self::style_array_to_css( $attributes['style'] );
-		}
-
-			$extra_attributes = array_filter(
-				array(
-					'class' => implode(
-						' ',
-						array_filter(
-							array_map(
-								static function ( $class ) {
-									return trim( $class );
-								},
-								$classes
-							)
-						)
-					),
-					'style' => ! empty( $style_pairs ) ? implode( ';', $style_pairs ) : '',
+		$normalized_classes = array_unique(
+			array_filter(
+				array_map(
+					static function ( $class ) {
+						return trim( $class );
+					},
+					$classes
 				)
-			);
+			)
+		);
+
+		$extra_attributes = array(
+			'class' => implode( ' ', $normalized_classes ),
+		);
 
 			// Ensure block supports (e.g., colors, spacing) have the current block context.
 			$prev_block_to_render                = \WP_Block_Supports::$block_to_render ?? null;
@@ -233,6 +217,8 @@ class Blocks {
 						'fontSize'                 => true,
 						'lineHeight'               => true,
 						'__experimentalFontFamily' => true,
+						'fontStyle'                => true,
+						'__experimentalFontStyle'  => true,
 					),
 					'spacing'    => array(
 						'margin'  => true,
@@ -1049,6 +1035,9 @@ JS;
 						}
 						if ( ! empty( $value['lineHeight'] ) ) {
 							$pairs[] = 'line-height:' . $value['lineHeight'];
+						}
+						if ( ! empty( $value['fontStyle'] ) ) {
+							$pairs[] = 'font-style:' . $value['fontStyle'];
 						}
 						break;
 					case 'border':
