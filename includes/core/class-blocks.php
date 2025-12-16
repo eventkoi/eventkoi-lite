@@ -134,41 +134,36 @@ class Blocks {
 				$rendered
 			);
 
-			$rendered = $rendered ? $rendered : $block_content;
-
 			return self::normalize_preset_styles( $rendered );
 		}
 
-		$style_pairs = array();
+			$style_pairs = array();
 		if ( ! empty( $attributes['style'] ) && is_array( $attributes['style'] ) ) {
 			$style_pairs = self::style_array_to_css( $attributes['style'] );
 		}
 
-		// Build a sanitized class string.
-		$class_attr = implode(
-			' ',
-			array_filter(
-				array_map(
-					static function ( $class ) {
-						return trim( $class );
-					},
-					array_unique( $classes )
-				)
-			)
-		);
-
-		// Provide block context so block supports (colors, spacing, etc.) are applied.
-		$prev_block_to_render                = \WP_Block_Supports::$block_to_render ?? null;
-		\WP_Block_Supports::$block_to_render = $block;
-		$wrapper_attributes                  = get_block_wrapper_attributes(
-			array_filter(
+			$extra_attributes = array_filter(
 				array(
-					'class' => $class_attr,
-					// Block supports generate style; avoid passing our own to prevent duplicates.
+					'class' => implode(
+						' ',
+						array_filter(
+							array_map(
+								static function ( $class ) {
+									return trim( $class );
+								},
+								$classes
+							)
+						)
+					),
+					'style' => ! empty( $style_pairs ) ? implode( ';', $style_pairs ) : '',
 				)
-			)
-		);
-		\WP_Block_Supports::$block_to_render = $prev_block_to_render;
+			);
+
+			// Ensure block supports (e.g., colors, spacing) have the current block context.
+			$prev_block_to_render                = \WP_Block_Supports::$block_to_render ?? null;
+			\WP_Block_Supports::$block_to_render = $block;
+			$wrapper_attributes                  = get_block_wrapper_attributes( $extra_attributes );
+			\WP_Block_Supports::$block_to_render = $prev_block_to_render;
 
 		$output = sprintf(
 			'<div %1$s>%2$s</div>',
@@ -188,47 +183,47 @@ class Blocks {
 			array(
 				'api_version' => 2,
 				'attributes'  => array(
-					'field'     => array(
+					'field'                 => array(
 						'type'    => 'string',
 						'default' => 'title',
 					),
-					'tagName'   => array(
+					'tagName'               => array(
 						'type'    => 'string',
 						'default' => 'div',
 					),
-					'className' => array(
+					'className'             => array(
 						'type' => 'string',
 					),
-					'textColor' => array(
+					'textColor'             => array(
 						'type' => 'string',
 					),
-					'backgroundColor' => array(
+					'backgroundColor'       => array(
 						'type' => 'string',
 					),
-					'gradient' => array(
+					'gradient'              => array(
 						'type' => 'string',
 					),
-					'customTextColor' => array(
+					'customTextColor'       => array(
 						'type' => 'string',
 					),
 					'customBackgroundColor' => array(
 						'type' => 'string',
 					),
-					'customGradient' => array(
+					'customGradient'        => array(
 						'type' => 'string',
 					),
-					'align' => array(
+					'align'                 => array(
 						'type' => 'string',
 					),
-					'eventId'   => array(
+					'eventId'               => array(
 						'type'    => 'integer',
 						'default' => 0,
 					),
-					'style'     => array(
+					'style'                 => array(
 						'type' => 'object',
 					),
 				),
-				'supports'   => array(
+				'supports'    => array(
 					'color'      => array(
 						'text'       => true,
 						'background' => true,
@@ -1024,6 +1019,20 @@ JS;
 		$pairs = array();
 
 		foreach ( $style as $key => $value ) {
+			// Handle shadow support explicitly (string or array) → box-shadow.
+			if ( 'shadow' === $key ) {
+				if ( is_array( $value ) ) {
+					foreach ( $value as $v ) {
+						if ( ! empty( $v ) && ! is_array( $v ) ) {
+							$pairs[] = 'box-shadow:' . $v;
+						}
+					}
+				} elseif ( ! empty( $value ) && ! is_array( $value ) ) {
+					$pairs[] = 'box-shadow:' . $value;
+				}
+				continue;
+			}
+
 			if ( is_array( $value ) ) {
 				switch ( $key ) {
 					case 'color':
@@ -1044,16 +1053,38 @@ JS;
 						break;
 					case 'border':
 						if ( ! empty( $value['radius'] ) ) {
-							$pairs[] = 'border-radius:' . $value['radius'];
+							if ( is_array( $value['radius'] ) ) {
+								foreach ( $value['radius'] as $dir => $v ) {
+									if ( empty( $v ) || is_array( $v ) ) {
+										continue;
+									}
+									$normalized_dir = strtolower( preg_replace( '/([a-z])([A-Z])/', '$1-$2', $dir ) );
+									$normalized_dir = str_replace( '_', '-', $normalized_dir );
+									$pairs[]        = 'border-' . $normalized_dir . '-radius:' . $v;
+								}
+							} elseif ( ! is_array( $value['radius'] ) ) {
+								$pairs[] = 'border-radius:' . $value['radius'];
+							}
 						}
-						if ( ! empty( $value['color'] ) ) {
+						if ( ! empty( $value['color'] ) && ! is_array( $value['color'] ) ) {
 							$pairs[] = 'border-color:' . $value['color'];
 						}
-						if ( ! empty( $value['style'] ) ) {
+						if ( ! empty( $value['style'] ) && ! is_array( $value['style'] ) ) {
 							$pairs[] = 'border-style:' . $value['style'];
 						}
 						if ( ! empty( $value['width'] ) ) {
-							$pairs[] = 'border-width:' . $value['width'];
+							if ( is_array( $value['width'] ) ) {
+								foreach ( $value['width'] as $dir => $v ) {
+									if ( empty( $v ) || is_array( $v ) ) {
+										continue;
+									}
+									$normalized_dir = strtolower( preg_replace( '/([a-z])([A-Z])/', '$1-$2', $dir ) );
+									$normalized_dir = str_replace( '_', '-', $normalized_dir );
+									$pairs[]        = 'border-' . $normalized_dir . '-width:' . $v;
+								}
+							} elseif ( ! is_array( $value['width'] ) ) {
+								$pairs[] = 'border-width:' . $value['width'];
+							}
 						}
 						break;
 					case 'spacing':
