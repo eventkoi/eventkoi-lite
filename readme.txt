@@ -136,8 +136,8 @@ This service is provided by Google LLC: [Terms of Service](https://cloud.google.
 == Changelog ==
 
 = 1.2.0.0 – Elementor Widgets & Onboarding – 2025-12-16 =
-* New: Added Elementor Event Data widget for Lite to drop event details anywhere.
-* New: Added Elementor Event Calendar widget for Lite to embed calendars visually.
+* New: Added Elementor Event Data widget to drop event details anywhere.
+* New: Added Elementor Event Calendar widget to embed calendars visually.
 * New: Introduced a quick start tour plus onboarding hints to guide first-time setup.
 * Improvement: Added missing translation strings and refreshed the POT file.
 * Fix: Event counts now update correctly in the Events list.
