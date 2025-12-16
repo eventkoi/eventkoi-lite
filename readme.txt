@@ -6,7 +6,7 @@ Tags: events, calendar, event management, schedules, calendar block
 Requires at least: 6.7  
 Tested up to: 6.9 
 Requires PHP: 8.0  
-Stable tag: 1.1.0.1 
+Stable tag: 1.2.0.0 
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -134,6 +134,14 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.2.0.0 – Elementor Widgets & Onboarding – 2025-12-16 =
+* New: Added Elementor Event Data widget for Lite to drop event details anywhere.
+* New: Added Elementor Event Calendar widget for Lite to embed calendars visually.
+* New: Introduced a quick start tour plus onboarding hints to guide first-time setup.
+* Improvement: Added missing translation strings and refreshed the POT file.
+* Fix: Event counts now update correctly in the Events list.
+* Fix: `eventkoi` shortcode now displays the event image reliably.
 
 = 1.1.0.1 – JS Import Fix – 2025-12-04 =
 * Fix: Added missing JavaScript imports so frontend assets load reliably.
