@@ -39,7 +39,7 @@ Events are created inside EventKoi with a modern, simple UI.
 - Date, time and timezone follows WordPress site.
 - Localisation-ready.
 - Fully customisable WordPress event page template in the block editor
-- [See step-by-step guide on creating events with EventKoi (with screenshots).](https://eventkoi.com/docs/knowledge-base/create-your-first-event/)
+- [See step-by-step guide on creating events with EventKoi (with screenshots).](https://eventkoi.com/docs/knowledge-base/create-your-first-event/?utm_source=pluginreadme-description&utm_medium=web&utm_campaign=16-12-25)
 
 ## How to add an events calendar to a WordPress site
 
@@ -56,7 +56,7 @@ Embed an EventKoi calendar using shortcodes or the EventKoi Events Calendar bloc
 - Select 12/24 hour clock
 - Choose specific month and year to display
 - Select which day the week starts on
-- [See step-by-step guide on embedding a calendar to your site (with screenshots).](https://eventkoi.com/docs/knowledge-base/how-to-add-a-calendar-to-your-site/)
+- [See step-by-step guide on embedding a calendar to your site (with screenshots).](https://eventkoi.com/docs/knowledge-base/how-to-add-a-calendar-to-your-site/?utm_source=pluginreadme-description&utm_medium=web&utm_campaign=16-12-25)
 
 ## How to display an events list in WordPress
 
@@ -64,8 +64,8 @@ Any events calendar can be viewed as a list. Display an events list using shortc
 
 **Events list features:**
 
-- [Display events list using the Event Query Loop block](https://eventkoi.com/docs/knowledge-base/how-to-use-the-ek-event-query-loop-block/)
-- [Display events grid using the Event Query Loop block](https://eventkoi.com/docs/knowledge-base/how-to-use-the-ek-event-query-loop-block/#grid-view)
+- [Display events list using the Event Query Loop block](https://eventkoi.com/docs/knowledge-base/how-to-use-the-ek-event-query-loop-block/?utm_source=pluginreadme-description&utm_medium=web&utm_campaign=16-12-25)
+- [Display events grid using the Event Query Loop block](https://eventkoi.com/docs/knowledge-base/how-to-use-the-ek-event-query-loop-block/#grid-view?utm_source=pluginreadme-description&utm_medium=web&utm_campaign=16-12-25)
 - With the Event Query Loop block you can display events list based on:
 	- Date range
 	- Sort by start date, event name
@@ -74,11 +74,11 @@ Any events calendar can be viewed as a list. Display an events list using shortc
 
 - For block themes, you can use the template editor.
 - Add dynamic data via meta keys or shortcodes.
-- [See step-by-step guide on customising a WordPress events template (with screenshots and video).](https://eventkoi.com/docs/knowledge-base/how-to-customise-the-default-events-template/)
+- [See step-by-step guide on customising a WordPress events template (with screenshots and video).](https://eventkoi.com/docs/knowledge-base/how-to-customise-the-default-events-template/?utm_source=pluginreadme-description&utm_medium=web&utm_campaign=16-12-25)
 
 ## FREE integrations in EventKoi Lite
 
-- Elementor: [Calendar widget](https://eventkoi.com/docs/knowledge-base/eventkoi-calendar-widget-for-elementor/) and [Event widget](https://eventkoi.com/docs/knowledge-base/eventkoi-event-widget-for-elementor/)
+- Elementor: [Calendar widget](https://eventkoi.com/docs/knowledge-base/eventkoi-calendar-widget-for-elementor/?utm_source=pluginreadme-description&utm_medium=web&utm_campaign=16-12-25) and [Event widget](https://eventkoi.com/docs/knowledge-base/eventkoi-event-widget-for-elementor/?utm_source=pluginreadme-description&utm_medium=web&utm_campaign=16-12-25)
 - More page builder and form builder integrations coming soon!
 
 ##EventKoi Pro - advanced events calendar features
@@ -87,20 +87,20 @@ Any events calendar can be viewed as a list. Display an events list using shortc
 	- Create advanced rules for events that repeat daily, weekly, monthly, yearly, 
 	-  Edit individual event instances (custom name, location, description, and more)
 	- Includes event series page
-	- [See step-by-step guide on creating recurring events with EventKoi Pro](https://eventkoi.com/docs/knowledge-base/creating-recurring-events/)
+	- [See step-by-step guide on creating recurring events with EventKoi Pro](https://eventkoi.com/docs/knowledge-base/creating-recurring-events/?utm_source=pluginreadme-description&utm_medium=web&utm_campaign=16-12-25)
 - **Unlimited calendars**
 	- Segment your events by calendar (e.g. free events vs paid events) and colour.
 - **Advanced Elementor events calendar integration**
-	-  Use [dynamic tags](https://eventkoi.com/docs/knowledge-base/dynamic-event-tags-for-elementor/) and Elementor Loop Grid widget to build custom events lists in Elementor.
+	-  Use [dynamic tags](https://eventkoi.com/docs/knowledge-base/dynamic-event-tags-for-elementor/?utm_source=pluginreadme-description&utm_medium=web&utm_campaign=16-12-25) and [Elementor Loop Grid widget](https://elementor.com/help/loop-grid/?utm_source=EventKoi-Lite&utm_medium=pluginreadme) to build custom events lists in Elementor.
 - **Priority support**
 - **30-day money-back guarantee**
 
 ## Helpful links
 
--  [EventKoi documentation](https://eventkoi.com/docs/)
-- [EventKoi blog](https://eventkoi.com/blog/)
+-  [EventKoi documentation](https://eventkoi.com/docs/?utm_source=pluginreadme-helpfullink&utm_medium=web&utm_campaign=16-12-25)
+- [EventKoi blog](https://eventkoi.com/blog/?utm_source=pluginreadme-helpfullink&utm_medium=web&utm_campaign=16-12-25)
 - [Get help from our Support Forum](https://wordpress.org/support/plugin/eventkoi-lite/) (please check existing threads before starting a new one)
-- [Contact us](https://eventkoi.com/contact) (for non-support related questions)
+- [Contact us](https://eventkoi.com/contact/?utm_source=pluginreadme-helpfullink&utm_medium=web&utm_campaign=16-12-25) (for non-support related questions)
 
 ## Screenshots
 
@@ -154,13 +154,13 @@ Yes. EventKoi Lite works with both block and classic themes. You can use our blo
 Yes. If you're using a block theme, you can go to Appearance > Editor > Templates and customise the Event template. If you're using a classic theme, you can edit the template files. 
 
 = Does EventKoi Lite include recurring events?
-[Recurring events](https://eventkoi.com/docs/knowledge-base/creating-recurring-events/) is only available in EventKoi Pro. 
+[Recurring events](https://eventkoi.com/docs/knowledge-base/creating-recurring-events/?utm_source=pluginreadme-faq&utm_medium=web&utm_campaign=16-12-25) is only available in EventKoi Pro. 
 
 = Does EventKoi Lite include ticketing?
 Coming in 2026!
 
 = Can I display an events list instead of a calendar? =
-Yes. You can display an event list using [shortcodes](https://eventkoi.com/docs/knowledge-base/shortcodes/) or the [Event Query Loop block](https://eventkoi.com/docs/knowledge-base/how-to-use-the-ek-event-query-loop-block/).
+Yes. You can display an event list using [shortcodes](https://eventkoi.com/docs/knowledge-base/shortcodes/?utm_source=pluginreadme-faq&utm_medium=web&utm_campaign=16-12-25) or the [Event Query Loop block](https://eventkoi.com/docs/knowledge-base/how-to-use-the-ek-event-query-loop-block/?utm_source=pluginreadme-faq&utm_medium=web&utm_campaign=16-12-25).
 
 = Does EventKoi Lite support virtual events and timezones? =
 Yes. You can create virtual events, and the events calendar can auto-detect visitor timezone so visitors see events in their own timezone.
