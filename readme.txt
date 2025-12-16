@@ -19,12 +19,12 @@ Easily embed your events calendar anywhere on your WordPress site using blocks, 
 ## The best events calendar plugin for WordPress
 
 Why choose EventKoi Lite as your WordPress events calendar plugin?
-:white_check_mark: Free WordPress events calendar plugin with EventKoi Pro version available.
-:white_check_mark: Simple, clean event management without the bloat.
-:white_check_mark: Fully customizable WordPress event page template.
-:white_check_mark: Free Elementor events calendar widget
-:white_check_mark: Extensible, developer-friendly.
-:white_check_mark: Actively maintained with excellent support and amazing documentation.
+✓ Free WordPress events calendar plugin with EventKoi Pro version available.
+✓ Simple, clean event management without the bloat.
+✓ Fully customizable WordPress event page template.
+✓ Free Elementor events calendar widget
+✓ Extensible, developer-friendly.
+✓ Actively maintained with excellent support and amazing documentation.
 
 ## How to add events to a WordPress site
 
