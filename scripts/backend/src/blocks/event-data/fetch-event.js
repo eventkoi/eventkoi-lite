@@ -1,5 +1,6 @@
 import apiFetch from "@wordpress/api-fetch";
 import { useEffect, useState } from "@wordpress/element";
+import { decodeEntities } from "@wordpress/html-entities";
 
 /**
  * Fetch a single event by ID via /eventkoi/v1/get_event.
@@ -63,7 +64,7 @@ export function useEventOptions(search = "", selectedId = 0) {
       .then(async (posts) => {
         let opts = posts.map((p) => ({
           value: String(p.id),
-          label: p.title?.rendered || `#${p.id}`,
+          label: decodeEntities(p.title?.rendered || "") || `#${p.id}`,
         }));
 
         // Ensure selected event is in the list.
@@ -79,7 +80,9 @@ export function useEventOptions(search = "", selectedId = 0) {
               opts = [
                 {
                   value: String(selected.id),
-                  label: selected.title?.rendered || `#${selected.id}`,
+                  label:
+                    decodeEntities(selected.title?.rendered || "") ||
+                    `#${selected.id}`,
                 },
                 ...opts,
               ];
