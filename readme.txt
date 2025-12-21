@@ -1,4 +1,4 @@
-== EventKoi Lite - Events Calendar Plugin for WordPress ==
+== Event Koi Lite - Events Calendar Plugin for WordPress ==
 Contributors: eventkoi, lesleysim, ahmedfouaddev
 Donate link: https://donate.stripe.com/fZubJ1auN86Y1PU8cSdUY01
 Tags: events calendar, calendar, event, events, event list
