@@ -5,7 +5,7 @@ Tags: events calendar, calendar, event, events, event list
 Requires at least: 6.7  
 Tested up to: 6.9 
 Requires PHP: 8.0  
-Stable tag: 1.2.0.0 
+Stable tag: 1.2.0.1 
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Events calendar plugin for WordPress. Simple, clean event management. Display events as a calendar, list, or grid.
@@ -176,6 +176,10 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.2.0.1 – Style fixes – 2025-12-23 =
+* Fix: Fixed image styling in the Event Query Loop block.
+* Fix: Fixed Event Data block styling.
 
 = 1.2.0.0 – Elementor Widgets & Onboarding – 2025-12-16 =
 * New: Added Elementor Event Data widget to drop event details anywhere.
