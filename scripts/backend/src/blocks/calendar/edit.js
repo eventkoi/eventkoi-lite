@@ -327,6 +327,18 @@ export default function Edit({
       meridiem: "short",
     }),
   };
+  const calendarTimeZone = timezone && timezone !== "local" ? timezone : null;
+  const formatInCalendarTz = (date, options) => {
+    const opts = calendarTimeZone
+      ? { ...options, timeZone: calendarTimeZone }
+      : options;
+
+    try {
+      return new Intl.DateTimeFormat(localeToUse, opts).format(date);
+    } catch {
+      return new Intl.DateTimeFormat(localeToUse, options).format(date);
+    }
+  };
 
   return (
     <div {...blockProps}>
@@ -394,13 +406,11 @@ export default function Edit({
             eventTimeFormat={eventTimeFormat}
             dayHeaderContent={(args) => {
               const { date, view } = args;
-              const dayName = date.toLocaleDateString(localeToUse, {
-                weekday: "short",
-              });
+              const dayName = formatInCalendarTz(date, { weekday: "short" });
 
               // For week/day views → two lines: weekday + bold number
               if (view.type.startsWith("timeGrid")) {
-                const dayNum = date.getDate();
+                const dayNum = formatInCalendarTz(date, { day: "numeric" });
                 return (
                   <div className="flex flex-col items-center leading-tight">
                     <span>{dayName}</span>
