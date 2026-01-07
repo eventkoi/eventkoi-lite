@@ -1886,6 +1886,11 @@ class Event {
 		}
 
 		$timezone = wp_kses_post( eventkoi_timezone() );
+		$output   = sprintf(
+			'<span class="ek-timezone" data-source-tz="%1$s">%2$s</span>',
+			esc_attr( $timezone ),
+			esc_html( $timezone )
+		);
 
 		/**
 		 * Filter the rendered timezone string for the event.
@@ -1894,7 +1899,7 @@ class Event {
 		 * @param int    $event_id Event ID.
 		 * @param object $event    Event object.
 		 */
-		return apply_filters( 'eventkoi_rendered_event_timezone', $timezone, self::$event_id, self::$event );
+		return apply_filters( 'eventkoi_rendered_event_timezone', $output, self::$event_id, self::$event );
 	}
 
 	/**
@@ -1905,6 +1910,7 @@ class Event {
 	public static function rendered_datetime_with_summary() {
 		$type        = self::get_date_type();
 		$instance_ts = eventkoi_get_instance_id();
+		$event_tz    = self::get_timezone();
 
 		if ( self::get_tbc() ) {
 			$tbc_note = self::get_tbc_note();
@@ -1940,6 +1946,8 @@ class Event {
 					$line .= '<br><span class="eventkoi-rule-summary">' . esc_html( $summary ) . '</span>';
 				}
 
+				$line = self::wrap_datetime_with_data( $line, $instance_ts, $end_ts, $event_tz, $is_all_day );
+
 				return apply_filters(
 					'eventkoi_rendered_event_datetime_with_summary',
 					wp_kses_post( $line ),
@@ -1967,14 +1975,16 @@ class Event {
 			$end_ts     = $end_date ? strtotime( $end_date ) : null;
 			$is_all_day = false;
 
-			if ( $is_all_day ) {
-				$line = eventkoi_date( 'M j, Y', $start_ts ) . ( $end_ts ? ' — ' . eventkoi_date( 'M j, Y', $end_ts ) : '' );
-			} else {
-				$start_str = eventkoi_date( 'M j, Y, g:ia', $start_ts );
-				$line      = $end_ts ? $start_str . ' — ' . eventkoi_date( 'M j, Y, g:ia', $end_ts ) : $start_str;
-			}
+			if ( $start_ts ) {
+				if ( $is_all_day ) {
+					$line = eventkoi_date( 'M j, Y', $start_ts ) . ( $end_ts ? ' — ' . eventkoi_date( 'M j, Y', $end_ts ) : '' );
+				} else {
+					$start_str = eventkoi_date( 'M j, Y, g:ia', $start_ts );
+					$line      = $end_ts ? $start_str . ' — ' . eventkoi_date( 'M j, Y, g:ia', $end_ts ) : $start_str;
+				}
 
-			$outputs[] = $line;
+				$outputs[] = self::wrap_datetime_with_data( $line, $start_ts, $end_ts, $event_tz, $is_all_day );
+			}
 		} else {
 			// Existing per-day rendering.
 			foreach ( $data as $item ) {
@@ -2000,7 +2010,7 @@ class Event {
 					}
 				}
 
-				$outputs[] = $line;
+				$outputs[] = self::wrap_datetime_with_data( $line, $start_ts, $end_ts, $event_tz, $is_all_day );
 			}
 		}
 
@@ -2018,7 +2028,8 @@ class Event {
 	 * @return string
 	 */
 	public static function rendered_datetime() {
-		$type = self::get_date_type();
+		$type     = self::get_date_type();
+		$event_tz = self::get_timezone();
 
 		if ( self::get_tbc() ) {
 			$tbc_note = self::get_tbc_note();
@@ -2074,7 +2085,7 @@ class Event {
 				$line = $start_str;
 			}
 
-			$outputs[] = $line;
+			$outputs[] = self::wrap_datetime_with_data( $line, $start_ts, $end_ts, $event_tz, $is_all_day );
 		}
 
 		return apply_filters(
@@ -2082,6 +2093,40 @@ class Event {
 			wp_kses_post( implode( '<br>', $outputs ) ),
 			self::$event_id,
 			self::$event
+		);
+	}
+
+	/**
+	 * Wrap datetime markup with data attributes for client-side timezone conversion.
+	 *
+	 * @param string $line Rendered HTML string.
+	 * @param int    $start_ts Start timestamp.
+	 * @param int    $end_ts End timestamp.
+	 * @param string $timezone Timezone string.
+	 * @param bool   $is_all_day Whether the event is all-day.
+	 * @return string
+	 */
+	protected static function wrap_datetime_with_data( $line, $start_ts, $end_ts, $timezone, $is_all_day = false ) {
+		$start_dt = new \DateTime( '@' . $start_ts );
+		$start_dt->setTimezone( new \DateTimeZone( $timezone ) );
+		$start_iso = $start_dt->format( \DateTime::ATOM );
+
+		$end_attr = '';
+		if ( ! empty( $end_ts ) ) {
+			$end_dt = new \DateTime( '@' . $end_ts );
+			$end_dt->setTimezone( new \DateTimeZone( $timezone ) );
+			$end_attr = ' data-end="' . esc_attr( $end_dt->format( \DateTime::ATOM ) ) . '"';
+		}
+
+		$all_day_attr = $is_all_day ? ' data-all-day="1"' : '';
+
+		return sprintf(
+			'<span class="ek-datetime" data-start="%1$s"%2$s data-tz="%3$s"%4$s>%5$s</span>',
+			esc_attr( $start_iso ),
+			$end_attr,
+			esc_attr( $timezone ),
+			$all_day_attr,
+			$line
 		);
 	}
 

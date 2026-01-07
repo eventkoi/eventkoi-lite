@@ -71,6 +71,7 @@ class Scripts {
 			'ical'              => $event ? $event::get_ical() : '',
 			'no_events'         => __( 'No events were found.', 'eventkoi-lite' ),
 			'timezone'          => wp_timezone_string(),
+			'timezone_offset'   => ( get_option( 'gmt_offset' ) ?? 0 ) * 3600,
 			'date_format'       => get_option( 'date_format' ),
 			'time_format_string'=> get_option( 'time_format' ),
 			'gmap'              => array(
@@ -80,6 +81,7 @@ class Scripts {
 			'time_format'       => $settings['time_format'] ?? '12',
 			'locale'            => determine_locale(),
 			'startday'          => empty( $calendar['startday'] ) ? $settings['week_starts_on'] : $calendar['startday'],
+			'auto_detect_timezone' => ! empty( $settings['auto_detect_timezone'] ),
 		);
 
 		wp_localize_script(

@@ -7,6 +7,10 @@ import { Panel } from "@/components/panel";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
+  RadioGroup,
+  RadioGroupItem,
+} from "@/components/ui/radio-group";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -35,12 +39,34 @@ export function SettingsOverview() {
   const { settings, refreshSettings } = useSettings();
   const [isSaving, setIsSaving] = useState(false);
   const [timeFormat, setTimeFormat] = useState(settings?.time_format || "12");
+  const [autoDetectTimezone, setAutoDetectTimezone] = useState(
+    settings?.auto_detect_timezone === "1" ||
+      settings?.auto_detect_timezone === true ||
+      settings?.auto_detect_timezone === 1
+      ? "local"
+      : "site"
+  );
 
   useEffect(() => {
     if (settings?.time_format && settings.time_format !== timeFormat) {
       setTimeFormat(settings.time_format);
     }
   }, [settings?.time_format]);
+
+  useEffect(() => {
+    if (typeof settings?.auto_detect_timezone === "undefined") {
+      return;
+    }
+    const next =
+      settings.auto_detect_timezone === "1" ||
+      settings.auto_detect_timezone === true ||
+      settings.auto_detect_timezone === 1
+        ? "local"
+        : "site";
+    if (next !== autoDetectTimezone) {
+      setAutoDetectTimezone(next);
+    }
+  }, [settings?.auto_detect_timezone]);
 
   const handleTimeFormatChange = (val) => {
     setTimeFormat(val);
@@ -101,6 +127,11 @@ export function SettingsOverview() {
     if (!isNaN(parsed)) {
       saveSettings({ week_starts_on: parsed });
     }
+  };
+
+  const handleAutoDetectChange = (value) => {
+    setAutoDetectTimezone(value);
+    saveSettings({ auto_detect_timezone: value === "local" ? "1" : "0" });
   };
 
   return (
@@ -199,6 +230,32 @@ export function SettingsOverview() {
               <div className="text-muted-foreground">
                 Select how event times are displayed (e.g. 2:00 PM or 14:00).
               </div>
+            </div>
+
+            {/* Auto-detect timezone */}
+            <div className="grid gap-2">
+              <Label className="text-sm font-medium mb-0">
+                Auto-detect timezone
+              </Label>
+              <RadioGroup
+                value={autoDetectTimezone}
+                onValueChange={handleAutoDetectChange}
+                className="grid gap-2"
+                disabled={isSaving}
+              >
+                <label className="flex items-start gap-3 text-sm text-foreground">
+                  <RadioGroupItem value="local" id="auto-tz-local" />
+                  <span className="leading-snug">
+                    Visitors see event times in their local timezone.
+                  </span>
+                </label>
+                <label className="flex items-start gap-3 text-sm text-foreground">
+                  <RadioGroupItem value="site" id="auto-tz-site" />
+                  <span className="leading-snug">
+                    Event times use the site&apos;s timezone.
+                  </span>
+                </label>
+              </RadioGroup>
             </div>
           </Panel>
         </div>

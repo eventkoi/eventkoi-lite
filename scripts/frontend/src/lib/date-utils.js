@@ -257,6 +257,7 @@ export function shiftTime(dateString, timeString, targetZone = false, locale) {
 
 export function safeNormalizeTimeZone(tz) {
   if (!tz) return "UTC";
+  if (tz === "local") return "local";
   const normalized = normalizeTimeZone(tz);
   return DateTime.now().setZone(normalized).isValid ? normalized : "UTC";
 }

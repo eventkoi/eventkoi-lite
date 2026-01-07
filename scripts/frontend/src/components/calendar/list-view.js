@@ -42,6 +42,8 @@ export function ListView({
       {events.map((event) => {
         const wpTz = tzFromQuery
           ? safeNormalizeTimeZone(tzFromQuery)
+          : window.eventkoi_params?.auto_detect_timezone
+          ? "local"
           : safeNormalizeTimeZone(
               event?.timezone ||
                 window.eventkoi_params?.timezone_string ||

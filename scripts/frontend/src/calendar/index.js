@@ -51,11 +51,25 @@ export function Calendar(props) {
 
   const [search, setSearch] = useState("");
 
-  const [timezone, setTimezone] = useState(
-    safeNormalizeTimeZone(
+  const getInitialTimezone = () => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tzParam = params.get("tz");
+      if (tzParam) {
+        return safeNormalizeTimeZone(tzParam);
+      }
+    }
+
+    if (eventkoi_params?.auto_detect_timezone) {
+      return "local";
+    }
+
+    return safeNormalizeTimeZone(
       eventkoi_params?.timezone_override || eventkoi_params?.timezone || "UTC"
-    )
-  );
+    );
+  };
+
+  const [timezone, setTimezone] = useState(() => getInitialTimezone());
   const [timeFormat, setTimeFormat] = useState(
     eventkoi_params?.time_format === "24" ? "24" : "12"
   );

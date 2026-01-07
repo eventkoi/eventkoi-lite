@@ -17,3 +17,4 @@ import "@/googlemap";
 import "@/share";
 import "@/onboarding-widget";
 import "@/onboarding-done";
+import "@/local-timezone";

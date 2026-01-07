@@ -1443,7 +1443,71 @@ JS;
 				)
 				: '',
 			'timeline' => ! empty( $event['datetime'] )
-				? '<div class="ek-event-timeline--inner">' . wp_kses_post( $event['datetime'] ) . '</div>'
+				? ( function () use ( $event ) {
+				$start_iso = $event['start_date_iso'] ?? '';
+				$end_iso   = '';
+
+				if ( empty( $start_iso ) && ! empty( $event['event_days'][0]['start_date'] ) ) {
+					$start_dt = new \DateTimeImmutable( $event['event_days'][0]['start_date'], new \DateTimeZone( 'UTC' ) );
+					$start_iso = $start_dt->format( 'Y-m-d\TH:i:s\Z' );
+				}
+
+				if ( empty( $end_iso ) && ! empty( $event['event_days'][0]['end_date'] ) ) {
+					$end_dt = new \DateTimeImmutable( $event['event_days'][0]['end_date'], new \DateTimeZone( 'UTC' ) );
+					if ( ! empty( $event['event_days'][0]['all_day'] ) ) {
+						$end_dt = $end_dt->modify( '+1 day' )->setTime( 0, 0, 0 );
+					}
+					$end_iso = $end_dt->format( 'Y-m-d\TH:i:s\Z' );
+				}
+
+				if ( empty( $start_iso ) && ! empty( $event['start'] ) ) {
+					$start_iso = $event['start'];
+				}
+
+				if ( empty( $end_iso ) && ! empty( $event['end'] ) ) {
+					$end_iso = $event['end'];
+				}
+
+				if ( empty( $start_iso ) && ! empty( $event['recurrence_rules'][0]['start_date'] ) ) {
+					$start_dt = new \DateTimeImmutable( $event['recurrence_rules'][0]['start_date'], new \DateTimeZone( 'UTC' ) );
+					$start_iso = $start_dt->format( 'Y-m-d\TH:i:s\Z' );
+				}
+
+				if ( empty( $end_iso ) && ! empty( $event['recurrence_rules'][0]['end_date'] ) ) {
+					$end_dt = new \DateTimeImmutable( $event['recurrence_rules'][0]['end_date'], new \DateTimeZone( 'UTC' ) );
+					if ( ! empty( $event['recurrence_rules'][0]['all_day'] ) ) {
+						$end_dt = $end_dt->modify( '+1 day' )->setTime( 0, 0, 0 );
+					}
+					$end_iso = $end_dt->format( 'Y-m-d\TH:i:s\Z' );
+				}
+
+				// Absolute fallback to wp_start_ts/wp_end_ts if provided.
+				if ( empty( $start_iso ) && ! empty( $event['wp_start_ts'] ) ) {
+					$start_iso = gmdate( 'Y-m-d\TH:i:s\Z', (int) $event['wp_start_ts'] );
+				}
+				if ( empty( $end_iso ) && ! empty( $event['wp_end_ts'] ) ) {
+					$end_iso = gmdate( 'Y-m-d\TH:i:s\Z', (int) $event['wp_end_ts'] );
+				}
+
+				$tz        = $event['timezone']
+					?? $event['timezone_display']
+					?? wp_timezone_string();
+
+				$is_all_day = ! empty( $event['allDay'] )
+					|| ! empty( $event['event_days'][0]['all_day'] )
+					|| ! empty( $event['recurrence_rules'][0]['all_day'] );
+
+				$wrapped = sprintf(
+					'<span class="ek-datetime" data-start="%1$s" data-end="%2$s" data-tz="%3$s" data-all-day="%4$s">%5$s</span>',
+					esc_attr( $start_iso ),
+					esc_attr( $end_iso ),
+					esc_attr( $tz ),
+					$is_all_day ? '1' : '0',
+					wp_kses_post( $event['datetime'] )
+				);
+
+				return '<div class="ek-event-timeline--inner">' . $wrapped . '</div>';
+				} )()
 				: '',
 			'excerpt'  => ! empty( $event['description'] )
 				? '<div class="ek-event-excerpt--inner ek-event-excerpt-default">' . wp_kses_post( $event['description'] ) . '</div>'
