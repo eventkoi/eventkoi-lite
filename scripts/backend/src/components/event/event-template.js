@@ -32,7 +32,7 @@ export function EventTemplate({ isInstance = false, value = {}, onChange }) {
 
   const templateEditorUrl = isManuallyAssigned
     ? `${eventkoi_params.site_url}/wp-admin/site-editor.php?p=${encodedTemplatePath}&canvas=edit`
-    : `${eventkoi_params.site_url}/wp-admin/site-editor.php?p=/template&activeView=EventKoi`;
+    : `${eventkoi_params.site_url}/wp-admin/site-editor.php?p=/template&activeView=eventkoi`;
 
   const handleChange = (value) => {
     if (isInstance && onChange) {

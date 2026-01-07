@@ -11,6 +11,7 @@ import {
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 import { AddButton } from "@/components/add-button";
+import { ProLaunch } from "@/components/dashboard/pro-launch";
 import { DataTable } from "@/components/data-table";
 import { Heading } from "@/components/heading";
 import { LogoIcon } from "@/components/logo-icon";
@@ -832,7 +833,7 @@ export function CalendarsOverview() {
       <div className="flex flex-col gap-8">
         <div className="mx-auto flex w-full gap-2 justify-between">
           <Heading className="eventkoi-calendars-heading">Calendars</Heading>
-          <AddButton title="Add calendar" url="/calendars/add" />
+          <AddButton title="Add calendar" url="/calendars/add" locked />
         </div>
         <DataTable
           data={data}
@@ -844,6 +845,10 @@ export function CalendarsOverview() {
           fetchResults={fetchResults}
           hideCategories
           hideDateRange
+        />
+        <ProLaunch
+          headline="Upgrade to access Unlimited Calendars"
+          minimal
         />
       </div>
 

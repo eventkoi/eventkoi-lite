@@ -19,6 +19,22 @@ export function AddButton({
     </>
   );
 
+  if (locked) {
+    return (
+      <Button
+        className={cn(
+          "bg-foreground border border-foreground font-normal",
+          "cursor-default border-[#e9e9e9] bg-[#e9e9e9] text-muted-foreground",
+          "hover:border-[#e9e9e9] hover:bg-[#e9e9e9] hover:text-muted-foreground",
+          "disabled:opacity-100"
+        )}
+        disabled
+      >
+        {content}
+      </Button>
+    );
+  }
+
   return (
     <Button
       className={cn(
