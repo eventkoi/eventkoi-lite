@@ -136,7 +136,7 @@ export function DashboardOnboarding() {
       const demoImage = (() => {
         try {
           return new URL(
-            "/wp-content/plugins/eventkoi/templates/assets/demo-event.png",
+            "/wp-content/plugins/eventkoi-lite/templates/assets/demo-event.png",
             window?.eventkoi_params?.site_url || window?.location?.origin
           ).toString();
         } catch {
