@@ -123,6 +123,7 @@ export function EditInstance() {
           isInstance
           value={data}
           onChange={(val) => setData((prev) => ({ ...prev, ...val }))}
+          disabled
         />
       </Box>
     </div>

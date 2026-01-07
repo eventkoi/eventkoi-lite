@@ -2,18 +2,21 @@ import apiRequest from "@wordpress/api-fetch";
 import { useEffect, useState } from "react";
 
 import { Panel } from "@/components/panel";
+import { ProBadge } from "@/components/pro-badge";
 import { Label } from "@/components/ui/label";
 import { MultiSelect } from "@/components/ui/multiselect";
 import { useEventEditContext } from "@/hooks/EventEditContext";
 
-export function EventCalendar() {
+export function EventCalendar({ disabled = false }) {
   const { event, setEvent } = useEventEditContext();
   const [items, setItems] = useState([]);
   const [hasSetDefault, setHasSetDefault] = useState(false);
+  const isDisabled = Boolean(disabled);
 
   const defaultId = parseInt(eventkoi_params?.default_cal ?? 0, 10);
 
-  const setCalendars = (selection) => {
+  const setCalendars = (selection, { force = false } = {}) => {
+    if (isDisabled && !force) return;
     const newCalendars = selection.map((s) => ({
       id: s.id,
       name: s.name,
@@ -55,7 +58,7 @@ export function EventCalendar() {
         ) {
           const defaultItem = calendars.find((item) => item.id === defaultId);
           if (defaultItem) {
-            setCalendars([defaultItem]);
+            setCalendars([defaultItem], { force: true });
             setHasSetDefault(true);
           }
         }
@@ -80,7 +83,10 @@ export function EventCalendar() {
 
   return (
     <Panel className="p-0">
-      <Label htmlFor="calendar">Event calendar</Label>
+      <Label htmlFor="calendar" className="inline-flex items-center">
+        Event calendar
+        <ProBadge />
+      </Label>
       <div className="text-muted-foreground mb-2">
         Select which calendars your event will show up in.
       </div>
@@ -92,6 +98,8 @@ export function EventCalendar() {
           searchPlaceholder="Search calendars"
           value={selected}
           onSelectionChange={setCalendars}
+          disabled={isDisabled}
+          inputClassName="disabled:bg-white"
         />
       )}
     </Panel>

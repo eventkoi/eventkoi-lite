@@ -3966,6 +3966,11 @@ body {
   background-color: hsl(var(--secondary)) !important;
 }
 
+.disabled\:bg-white:disabled {
+  --tw-bg-opacity: 1 !important;
+  background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1)) !important;
+}
+
 .disabled\:text-muted-foreground\/40:disabled {
   color: hsl(var(--muted-foreground) / 0.4) !important;
 }

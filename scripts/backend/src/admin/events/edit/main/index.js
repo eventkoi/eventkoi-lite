@@ -7,6 +7,7 @@ import { EventLocation } from "@/components/event/event-location";
 import { EventName } from "@/components/event/event-name";
 import { EventTemplate } from "@/components/event/event-template";
 import { Heading } from "@/components/heading";
+import { ProLaunch } from "@/components/dashboard/pro-launch";
 import { ShortcodeBox } from "@/components/ShortcodeBox";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -88,8 +89,8 @@ export function EventEditMain() {
             />
           </div>
         )}
-        <EventTemplate />
-        <EventCalendar />
+        <EventTemplate disabled />
+        <EventCalendar disabled />
         {showAttributes && (
           <div className="text-sm text-muted-foreground -mt-6">
             <ShortcodeBox
@@ -99,6 +100,10 @@ export function EventEditMain() {
             />
           </div>
         )}
+        <ProLaunch
+          headline="Upgrade to switch event templates and calendars"
+          minimal
+        />
       </Box>
     </div>
   );

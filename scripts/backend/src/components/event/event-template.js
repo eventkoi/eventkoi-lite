@@ -1,4 +1,5 @@
 import { Panel } from "@/components/panel";
+import { ProBadge } from "@/components/pro-badge";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -12,8 +13,14 @@ import { useEventEditContext } from "@/hooks/EventEditContext";
 const themeSlug = eventkoi_params?.theme || "twentytwentyfive";
 const customTemplates = eventkoi_params?.custom_templates || [];
 
-export function EventTemplate({ isInstance = false, value = {}, onChange }) {
+export function EventTemplate({
+  isInstance = false,
+  value = {},
+  onChange,
+  disabled = false,
+}) {
   const { event, setEvent } = useEventEditContext();
+  const isDisabled = Boolean(disabled);
 
   const template = isInstance
     ? value?.template || "default"
@@ -35,6 +42,7 @@ export function EventTemplate({ isInstance = false, value = {}, onChange }) {
     : `${eventkoi_params.site_url}/wp-admin/site-editor.php?p=/template&activeView=eventkoi`;
 
   const handleChange = (value) => {
+    if (isDisabled) return;
     if (isInstance && onChange) {
       onChange({ template: value });
     } else {
@@ -44,14 +52,25 @@ export function EventTemplate({ isInstance = false, value = {}, onChange }) {
 
   return (
     <Panel className="p-0">
-      <Label htmlFor="template">Event template</Label>
+      <Label htmlFor="template" className="inline-flex items-center">
+        Event template
+        <ProBadge />
+      </Label>
       <div className="text-muted-foreground">
         Select or edit the design template of your event page.
       </div>
 
       <div className="flex items-center gap-4 mt-2">
-        <Select value={template} onValueChange={handleChange}>
-          <SelectTrigger id="template" className="w-[250px]">
+        <Select
+          value={template}
+          onValueChange={handleChange}
+          disabled={isDisabled}
+        >
+          <SelectTrigger
+            id="template"
+            className="w-[250px]"
+            disabled={isDisabled}
+          >
             <SelectValue placeholder="Select a template" />
           </SelectTrigger>
           <SelectContent>
