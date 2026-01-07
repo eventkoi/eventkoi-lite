@@ -211,6 +211,14 @@ export function generateInstances(
       byweekday = [weekdaysMap[weekdayIndex].nth(ordinal)];
     }
 
+    let until;
+    if (rule.ends === "on") {
+      const parsedUntil = new Date(rule.ends_on);
+      if (!Number.isNaN(parsedUntil.getTime())) {
+        until = parsedUntil;
+      }
+    }
+
     const options = {
       freq:
         rule.frequency === "day"
@@ -228,7 +236,7 @@ export function generateInstances(
           : isNeverEnding
           ? MAX_INSTANCES
           : undefined,
-      until: rule.ends === "on" ? new Date(rule.ends_on) : undefined,
+      until,
       byweekday,
       bymonthday:
         rule.frequency === "month" &&
@@ -337,6 +345,20 @@ export function EventEditInstances() {
   const [instances, setInstances] = useState([]);
 
   useEffect(() => {
+    const rules = Array.isArray(event?.recurrence_rules)
+      ? event.recurrence_rules
+      : [];
+    const validRules = rules.filter((rule) => {
+      if (!rule?.start_date) return false;
+      const start = DateTime.fromISO(rule.start_date, { zone: "utc" });
+      if (!start.isValid) return false;
+      if (rule?.end_date) {
+        const end = DateTime.fromISO(rule.end_date, { zone: "utc" });
+        return end.isValid;
+      }
+      return rule?.all_day === true;
+    });
+
     const overrideArray = event?.recurrence_overrides
       ? Object.entries(event.recurrence_overrides).map(
           ([timestamp, override]) => ({
@@ -348,8 +370,13 @@ export function EventEditInstances() {
 
     const showOnlyTrashed = statusFilter === "trash";
 
+    if (!validRules.length) {
+      setInstances([]);
+      return;
+    }
+
     const newInstances = generateInstances(
-      event?.recurrence_rules,
+      validRules,
       event?.title,
       overrideArray,
       workingDays,
