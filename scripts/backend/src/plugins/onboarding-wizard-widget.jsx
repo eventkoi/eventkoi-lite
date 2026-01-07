@@ -170,7 +170,8 @@ function WizardWidget() {
     ? storedStep
     : wizardSteps[0].key;
   const activeIndex = Math.max(0, stepOrder.indexOf(currentStep));
-  const targetStep = currentStep || "license";
+  const targetStep =
+    currentStep === "calendar" ? "datetime" : currentStep || "license";
   const continueUrl = `${targetUrlBase}#/dashboard/onboarding?step=${encodeURIComponent(
     targetStep
   )}`;

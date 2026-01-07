@@ -65,12 +65,19 @@ export function EventNavBar() {
   const [justSaved, setJustSaved] = useState(false);
   const hasSavedOnce = useRef(false);
   const [highlightPreview, setHighlightPreview] = useState(false);
+  const isRecurring = event?.date_type === "recurring";
 
   const isDisabled = isInstanceEdit
     ? saving || loading
     : !event?.title?.trim() || saving || loading;
 
   const handleSaveInstance = async () => {
+    if (isRecurring) {
+      showToast({
+        message: "Recurring events are a Pro feature. Upgrade to save.",
+      });
+      return;
+    }
     if (!instanceCtx?.data || !instanceCtx.eventId || !instanceCtx.timestamp)
       return;
 
@@ -153,6 +160,30 @@ export function EventNavBar() {
     }
 
     const eventToSave = { ...event, wp_status: status };
+    if (eventToSave.date_type === "recurring") {
+      eventToSave.date_type = "standard";
+      eventToSave.recurrence_rules = [];
+      eventToSave.recurrence_overrides = {};
+
+      if (
+        (!Array.isArray(eventToSave.event_days) ||
+          eventToSave.event_days.length === 0) &&
+        (eventToSave.start_date || eventToSave.end_date)
+      ) {
+        const start = eventToSave.start_date || eventToSave.end_date || null;
+        eventToSave.event_days = [
+          {
+            start_date: start,
+            end_date: eventToSave.end_date || start,
+            all_day: false,
+          },
+        ];
+      }
+
+      showToast({
+        message: "Recurring events are a Pro feature.",
+      });
+    }
 
     const response = await handleAction("update_event", { event: eventToSave });
 
@@ -240,7 +271,7 @@ export function EventNavBar() {
           </Button>
 
           <Button
-            disabled={!hasInstanceChanges || saving}
+            disabled={!hasInstanceChanges || saving || isRecurring}
             onClick={handleSaveInstance}
           >
             {saving ? (
@@ -259,13 +290,13 @@ export function EventNavBar() {
       ) : (
         <>
           {event?.wp_status === "draft" && (
-            <Button
-              variant="ghost"
-              disabled={isDisabled}
-              onClick={() => saveEvent("draft")}
-            >
-              Save draft
-            </Button>
+          <Button
+            variant="ghost"
+            disabled={isDisabled}
+            onClick={() => saveEvent("draft")}
+          >
+            Save draft
+          </Button>
           )}
           <Button
             variant="link"
