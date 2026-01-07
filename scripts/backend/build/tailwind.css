@@ -1640,6 +1640,10 @@ body {
   max-width: 20rem !important;
 }
 
+.max-w-\[240px\] {
+  max-width: 240px !important;
+}
+
 .flex-1 {
   flex: 1 1 0% !important;
 }
@@ -1876,6 +1880,10 @@ body {
 
 .gap-\[80px\] {
   gap: 80px !important;
+}
+
+.gap-0 {
+  gap: 0px !important;
 }
 
 .gap-x-1 {
@@ -2793,6 +2801,10 @@ body {
 
 .pt-\[30px\] {
   padding-top: 30px !important;
+}
+
+.pb-6 {
+  padding-bottom: 1.5rem !important;
 }
 
 .text-left {

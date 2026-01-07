@@ -28,6 +28,7 @@ import { CalendarEditMain } from "@/admin/calendars/edit/main";
 import { CalendarsOverview } from "@/admin/calendars/overview";
 
 import { Settings } from "@/admin/settings";
+import { SettingsFields } from "@/admin/settings/fields";
 import { SettingsIntegrations } from "@/admin/settings/integrations";
 import { SettingsOverview } from "@/admin/settings/overview";
 
@@ -116,6 +117,7 @@ function AdminLayout() {
         <Route path="settings" element={<Settings />}>
           <Route index element={<SettingsOverview />} />
           <Route path="default" element={<SettingsOverview />} />
+          <Route path="fields" element={<SettingsFields />} />
           <Route path="integrations" element={<SettingsIntegrations />} />
         </Route>
 

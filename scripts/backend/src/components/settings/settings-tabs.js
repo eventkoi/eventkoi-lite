@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
+import { ProBadge } from "@/components/pro-badge";
 
 const tabs = [
   { name: "default", title: "Default settings" },
+  { name: "fields", title: "Custom fields", pro: true },
   { name: "integrations", title: "API & integrations" },
 ];
 
@@ -28,7 +30,14 @@ export function SettingsTabs({ settings, setSettings, location }) {
             to={item.name}
             className={activeTabClass}
           >
-            {item.title}
+            {item.pro ? (
+              <span className="inline-flex items-center">
+                {item.title}
+                <ProBadge />
+              </span>
+            ) : (
+              item.title
+            )}
           </Link>
         );
       })}
