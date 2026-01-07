@@ -360,12 +360,10 @@ export function EventEditInstances() {
     }
   }, [event?.title]);
 
-  console.log(instances);
-
   return (
     <>
       <ProLaunch className="mb-8" />
-      <div className="flex flex-col w-full gap-8 pointer-events-none opacity-50 select-none">
+      <div className="flex flex-col w-full gap-8">
         <Box container>
           <Panel className="flex gap-2 p-0">
             <div className="relative flex items-center gap-2">
@@ -388,13 +386,15 @@ export function EventEditInstances() {
             </div>
           </Panel>
 
-          <EventInstancesTable
-            instances={instances}
-            isLoading={false}
-            eventId={event?.id}
-            timezone={event?.timezone}
-            status={statusFilter}
-          />
+          <div className="pointer-events-none opacity-60">
+            <EventInstancesTable
+              instances={instances}
+              isLoading={false}
+              eventId={event?.id}
+              timezone={event?.timezone}
+              status={statusFilter}
+            />
+          </div>
         </Box>
       </div>
     </>

@@ -64,8 +64,6 @@ export function UpcomingEvents() {
 
   const fillerCount = events?.length === 1 ? 2 : events?.length === 2 ? 1 : 0;
 
-  console.log(events);
-
   return (
     <Box container>
       <Heading level={3}>Events</Heading>

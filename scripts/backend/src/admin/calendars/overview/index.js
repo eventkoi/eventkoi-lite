@@ -316,7 +316,6 @@ export function CalendarsOverview() {
         method: "get",
       });
       setData(response);
-      console.log("loading calendars...");
     } catch (error) {
       console.error("Failed to load calendars:", error);
     } finally {
@@ -420,11 +419,7 @@ export function CalendarsOverview() {
     if (!showTourHints) return;
 
     let target = null;
-    const ringClasses = [
-      "ring-2",
-      "ring-[#fb4409]",
-      "rounded-sm",
-    ];
+    const ringClasses = ["ring-2", "ring-[#fb4409]", "rounded-sm"];
 
     if (hintStep === 2) {
       target = document.querySelector('[data-default-cal-link="true"]');
@@ -483,11 +478,7 @@ export function CalendarsOverview() {
       const prev = document.querySelector(".eventkoi-cal-link-highlight");
       if (prev) {
         prev.classList.remove("eventkoi-cal-link-highlight");
-        const ringClasses = [
-          "ring-2",
-          "ring-[#fb4409]",
-          "rounded-sm",
-        ];
+        const ringClasses = ["ring-2", "ring-[#fb4409]", "rounded-sm"];
         ringClasses.forEach((cls) => prev.classList.remove(cls));
       }
       return;
@@ -496,11 +487,7 @@ export function CalendarsOverview() {
     const target = document.querySelector('[data-default-cal-link="true"]');
     if (target) {
       target.classList.add("eventkoi-cal-link-highlight");
-      const ringClasses = [
-        "ring-2",
-        "ring-[#fb4409]",
-        "rounded-sm",
-      ];
+      const ringClasses = ["ring-2", "ring-[#fb4409]", "rounded-sm"];
       ringClasses.forEach((cls) => target.classList.add(cls));
     }
   }, [showTourHints, hintStep]);
@@ -846,10 +833,7 @@ export function CalendarsOverview() {
           hideCategories
           hideDateRange
         />
-        <ProLaunch
-          headline="Upgrade to access Unlimited Calendars"
-          minimal
-        />
+        <ProLaunch headline="Upgrade to access Unlimited Calendars" minimal />
       </div>
 
       {onboardingToast}

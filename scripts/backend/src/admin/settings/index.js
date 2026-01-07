@@ -20,7 +20,6 @@ export function Settings() {
         },
       });
       setSettings(response);
-      console.log(response);
     } catch (error) {
       console.error("Failed to load settings:", error);
     }

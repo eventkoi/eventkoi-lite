@@ -454,8 +454,6 @@ export function EventEdit() {
     );
   }
 
-  console.log(event);
-
   const computedHintTop = hintBaseTop ?? 112;
 
   const layout = (

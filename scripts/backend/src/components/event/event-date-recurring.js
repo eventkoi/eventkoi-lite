@@ -500,8 +500,6 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                         .toUTC()
                         .toISO({ suppressMilliseconds: true });
 
-                      console.log("Rule end_date =>", endISO);
-
                       updateMultiple(index, { end_date: endISO });
                     }}
                     disabled={tbc}

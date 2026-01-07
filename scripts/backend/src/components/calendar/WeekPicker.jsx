@@ -73,9 +73,6 @@ export function WeekPicker({ calendarApi, currentDate, setCurrentDate }) {
     if (setCurrentDate) {
       setCurrentDate(newSelected);
     }
-
-    console.log(isNext ? "➡️ Next button clicked" : "⬅️ Prev button clicked");
-    console.log("Selected new date:", newSelected);
   };
 
   return (

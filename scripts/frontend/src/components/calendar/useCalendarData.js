@@ -53,9 +53,6 @@ export function useCalendarData({
 
       setCurrentDate(date);
       setInitialDate(date);
-      console.log(date);
-
-      console.log("EK: initial load for calendar view");
     } catch (err) {
       console.error("Failed to load initial calendar", err);
     }
@@ -77,8 +74,6 @@ export function useCalendarData({
       setEvents(response.events);
       setCalendar(response.calendar);
 
-      console.log("EK: loaded events for view");
-
       if (!hasLoadedView.current) {
         hasLoadedView.current = true;
         loadAllEvents();
@@ -98,8 +93,6 @@ export function useCalendarData({
         method: "get",
       });
       setAllEvents(response.events);
-
-      console.log("EK: loaded all events for search");
     } catch (err) {
       console.error("Failed to load all events", err);
     }

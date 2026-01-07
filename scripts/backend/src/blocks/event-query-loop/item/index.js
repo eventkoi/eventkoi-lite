@@ -110,9 +110,7 @@ const useEventData = (postId, postType, prefetchedEvent = null) => {
           return;
         }
         fallbackFetchStarted.current = true;
-        if (typeof window !== "undefined" && window.console) {
-          window.console.log("[EventKoi] fallback fetch", { postId });
-        }
+
         apiFetch({
           path: `${getApiBase()}/query_events?include=${encodeURIComponent(
             postId
