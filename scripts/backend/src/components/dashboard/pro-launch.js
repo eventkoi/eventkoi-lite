@@ -24,6 +24,7 @@ function ZapFilled({ className }) {
 const features = [
   "Recurring events",
   "Unlimited calendars",
+  "Custom fields",
   "Priority support",
   "30 day money-back guarantee",
 ];
