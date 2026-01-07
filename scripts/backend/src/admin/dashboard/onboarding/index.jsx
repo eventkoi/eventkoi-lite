@@ -133,16 +133,7 @@ export function DashboardOnboarding() {
         tz
       );
 
-      const demoImage = (() => {
-        try {
-          return new URL(
-            "/wp-content/plugins/eventkoi-lite/templates/assets/demo-event.png",
-            window?.eventkoi_params?.site_url || window?.location?.origin
-          ).toString();
-        } catch {
-          return "";
-        }
-      })();
+      const demoImage = window?.eventkoi_params?.demo_event_image || "";
 
       const demoEvent = {
         title: __("Classical Concert in the Park", "eventkoi-lite"),
