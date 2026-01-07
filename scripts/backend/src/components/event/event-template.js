@@ -4,7 +4,9 @@ import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -75,11 +77,36 @@ export function EventTemplate({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="default">Default template</SelectItem>
-            {customTemplates.map((tpl) => (
-              <SelectItem key={tpl.slug} value={tpl.slug}>
-                {tpl.title}
-              </SelectItem>
-            ))}
+            {customTemplates.some((group) => Array.isArray(group?.templates))
+              ? customTemplates
+                  .filter((group) => group?.templates?.length)
+                  .map((group) => (
+                    <SelectGroup
+                      key={group.type || group.label || "templates"}
+                    >
+                      <SelectLabel>{group.label || "Templates"}</SelectLabel>
+                      {group.templates
+                        .filter((tpl) => tpl?.slug || tpl?.id)
+                        .map((tpl) => (
+                          <SelectItem
+                            key={tpl.slug || tpl.id || tpl.title}
+                            value={tpl.slug || tpl.id}
+                          >
+                            {tpl.title || tpl.slug}
+                          </SelectItem>
+                        ))}
+                    </SelectGroup>
+                  ))
+              : customTemplates.map((tpl) => (
+                  (tpl?.slug || tpl?.id) && (
+                    <SelectItem
+                      key={tpl.slug || tpl.id || tpl.title}
+                      value={tpl.slug || tpl.id}
+                    >
+                      {tpl.title || tpl.slug}
+                    </SelectItem>
+                  )
+                ))}
           </SelectContent>
         </Select>
 

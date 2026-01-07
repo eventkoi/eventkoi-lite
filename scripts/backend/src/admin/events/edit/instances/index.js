@@ -40,8 +40,22 @@ export function generateInstances(
   for (let i = 0; i < rules.length; i++) {
     const rule = rules[i];
 
+    if (!rule?.start_date) {
+      continue;
+    }
+
     const luxonStart = DateTime.fromISO(rule.start_date, { zone: "utc" });
-    const luxonEnd = DateTime.fromISO(rule.end_date, { zone: "utc" });
+    if (!luxonStart.isValid) {
+      continue;
+    }
+
+    let luxonEnd = DateTime.fromISO(rule.end_date, { zone: "utc" });
+    if (!luxonEnd.isValid && rule.all_day) {
+      luxonEnd = luxonStart.endOf("day");
+    }
+    if (!luxonEnd.isValid) {
+      continue;
+    }
 
     const duration = luxonEnd.diff(luxonStart);
 
@@ -54,6 +68,9 @@ export function generateInstances(
       luxonStart.second,
       luxonStart.millisecond
     );
+    if (Number.isNaN(start.getTime())) {
+      continue;
+    }
 
     const end = luxonEnd.toUTC().toJSDate(); // end date in UTC
 
