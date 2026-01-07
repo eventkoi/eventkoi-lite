@@ -38,6 +38,7 @@ class Event {
 		'description',
 		'summary',
 		'image',
+		'image_thumb',
 		'image_id',
 		'calendar',
 		'calendar_link',
@@ -673,6 +674,34 @@ class Event {
 		}
 
 		return apply_filters( 'eventkoi_get_event_image', esc_url( $image ), self::$event_id, self::$event );
+	}
+
+	/**
+	 * Get event image thumbnail.
+	 *
+	 * @return string
+	 */
+	public static function get_image_thumb() {
+		$image_id = self::get_image_id();
+
+		if ( empty( $image_id ) ) {
+			$image_id = get_post_thumbnail_id( self::$event_id );
+		}
+
+		if ( empty( $image_id ) ) {
+			$image_url = self::get_image();
+			if ( ! empty( $image_url ) ) {
+				$image_id = attachment_url_to_postid( $image_url );
+			}
+		}
+
+		$thumb = $image_id ? wp_get_attachment_image_url( $image_id, 'medium' ) : '';
+
+		if ( empty( $thumb ) ) {
+			$thumb = self::get_image();
+		}
+
+		return apply_filters( 'eventkoi_get_event_image_thumb', esc_url( $thumb ), self::$event_id, self::$event );
 	}
 
 	/**

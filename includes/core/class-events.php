@@ -33,7 +33,7 @@ class Events {
 		$now = time();
 
 		// Create a unique cache key for this filter combination.
-		$cache_key = 'eventkoi_events_' . md5( wp_json_encode( $args ) );
+		$cache_key = 'eventkoi_events_v2_' . md5( wp_json_encode( $args ) );
 
 		// Attempt to load from cache first.
 		$cached = get_transient( $cache_key );

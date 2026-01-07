@@ -79,11 +79,11 @@ export function UpcomingEvents() {
               to={`/events/${event.id}`}
             >
               <AspectRatio ratio={1.5}>
-                {event.image ? (
+                {event.image_thumb || event.image ? (
                   <div className="h-full w-full flex items-center justify-center relative">
                     <EventBadge status={event.status} />
                     <img
-                      src={event.image}
+                      src={event.image_thumb || event.image}
                       className="h-full w-full rounded-xl object-cover"
                       alt={event.title}
                     />
