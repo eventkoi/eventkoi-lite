@@ -2,14 +2,13 @@ import apiRequest from "@wordpress/api-fetch";
 import { useEffect, useMemo, useState } from "react";
 
 import { Box } from "@/components/box";
+import { ProLaunch } from "@/components/dashboard/pro-launch";
 import { Heading } from "@/components/heading";
 import { Panel } from "@/components/panel";
+import { ProBadge } from "@/components/pro-badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  RadioGroup,
-  RadioGroupItem,
-} from "@/components/ui/radio-group";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -35,10 +34,16 @@ const dayLabels = {
   6: "Sunday",
 };
 
+const themeSlug = eventkoi_params?.theme || "twentytwentyfive";
+const customTemplates = eventkoi_params?.custom_templates || [];
+
 export function SettingsOverview() {
   const { settings, refreshSettings } = useSettings();
   const [isSaving, setIsSaving] = useState(false);
   const [timeFormat, setTimeFormat] = useState(settings?.time_format || "12");
+  const [defaultTemplate, setDefaultTemplate] = useState(
+    settings?.default_event_template || "default"
+  );
   const [autoDetectTimezone, setAutoDetectTimezone] = useState(
     settings?.auto_detect_timezone === "1" ||
       settings?.auto_detect_timezone === true ||
@@ -46,6 +51,11 @@ export function SettingsOverview() {
       ? "local"
       : "site"
   );
+
+  const blockTemplates = useMemo(() => {
+    const group = customTemplates.find((tplGroup) => tplGroup.type === "block");
+    return group?.templates || [];
+  }, []);
 
   useEffect(() => {
     if (settings?.time_format && settings.time_format !== timeFormat) {
@@ -67,6 +77,15 @@ export function SettingsOverview() {
       setAutoDetectTimezone(next);
     }
   }, [settings?.auto_detect_timezone]);
+
+  useEffect(() => {
+    if (
+      settings?.default_event_template &&
+      settings.default_event_template !== defaultTemplate
+    ) {
+      setDefaultTemplate(settings.default_event_template);
+    }
+  }, [settings?.default_event_template]);
 
   const handleTimeFormatChange = (val) => {
     setTimeFormat(val);
@@ -133,6 +152,19 @@ export function SettingsOverview() {
     setAutoDetectTimezone(value);
     saveSettings({ auto_detect_timezone: value === "local" ? "1" : "0" });
   };
+
+  const handleDefaultTemplateChange = (value) => {
+    setDefaultTemplate(value);
+  };
+
+  const templateEditorUrl =
+    defaultTemplate && defaultTemplate !== "default"
+      ? `${
+          eventkoi_params.site_url
+        }/wp-admin/site-editor.php?p=${encodeURIComponent(
+          `/wp_template/${themeSlug}//${defaultTemplate}`
+        )}&canvas=edit`
+      : `${eventkoi_params.site_url}/wp-admin/site-editor.php?p=/template&activeView=eventkoi`;
 
   return (
     <div className="grid gap-8">
@@ -257,6 +289,54 @@ export function SettingsOverview() {
                 </label>
               </RadioGroup>
             </div>
+
+            {/* Default event template */}
+            <div className="grid gap-2">
+              <Label htmlFor="default-event-template">
+                <span className="inline-flex items-center gap-2">
+                  Default event template
+                  <ProBadge />
+                </span>
+              </Label>
+              <Select
+                value={defaultTemplate}
+                onValueChange={handleDefaultTemplateChange}
+                disabled
+              >
+                <SelectTrigger
+                  id="default-event-template"
+                  className="w-[250px]"
+                >
+                  <SelectValue placeholder="Select a template" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="default">Default template</SelectItem>
+                  {blockTemplates.map((tpl) => (
+                    <SelectItem key={tpl.slug} value={tpl.slug}>
+                      {tpl.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="text-muted-foreground">
+                Choose the template used for all event pages by default.
+              </div>
+              <a
+                href={templateEditorUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-sm text-primary underline hover:text-primary/80 transition"
+              >
+                {defaultTemplate && defaultTemplate !== "default"
+                  ? "Edit in Site Editor"
+                  : "View/edit templates"}
+              </a>
+            </div>
+            <ProLaunch
+              headline="Upgrade to switch default event template"
+              minimal
+              className="!mt-0"
+            />
           </Panel>
         </div>
       </Box>
