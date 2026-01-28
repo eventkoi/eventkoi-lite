@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Box } from "@/components/box";
 import { Heading } from "@/components/heading";
 import { Panel } from "@/components/panel";
+import { ProBadge } from "@/components/pro-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,7 +37,6 @@ const DEFAULT_TEMPLATE = [
   "<p>Hi [attendee_name],</p>",
   "<p>Thanks for your RSVP to [event_name].</p>",
   "<p>Check-in code:<br />[checkin_code]</p>",
-  "<p>[qr_code]</p>",
   "<p>Schedule ([event_timezone]):<br />[event_datetime]</p>",
   "<p>Location:<br />[event_location]</p>",
   "<p>[guests_line]</p>",
@@ -74,7 +74,11 @@ const TAGS = [
   { tag: "[guest_count]", description: __("Guest count", "eventkoi-lite") },
   { tag: "[guests_line]", description: __("Guests label line", "eventkoi-lite") },
   { tag: "[checkin_code]", description: __("Check-in code", "eventkoi-lite") },
-  { tag: "[qr_code]", description: __("QR code image", "eventkoi-lite") },
+  {
+    tag: "[qr_code]",
+    description: __("QR code image", "eventkoi-lite"),
+    pro: true,
+  },
   { tag: "[site_name]", description: __("Site name", "eventkoi-lite") },
 ];
 
@@ -377,13 +381,20 @@ export function SettingsEmails() {
                       <Tooltip key={item.tag}>
                         <TooltipTrigger asChild>
                           <span className="inline-flex w-fit">
-                            <Badge
-                              variant="secondary"
-                              className="rounded-none bg-[#E6E6E6] hover:bg-[#e1e1e1] px-1 py-0.5 font-mono font-normal cursor-pointer"
-                              data-disabled={!emailEnabled}
-                              aria-disabled={!emailEnabled}
+                              <Badge
+                                variant="secondary"
+                              className={`rounded-none bg-[#E6E6E6] hover:bg-[#e1e1e1] px-1 py-0.5 font-mono font-normal ${
+                                item.pro ? "cursor-not-allowed" : "cursor-pointer"
+                              }`}
+                              data-disabled={!emailEnabled || item.pro}
+                              aria-disabled={!emailEnabled || item.pro}
                             >
-                              {item.tag}
+                              <span className="inline-flex items-center gap-2">
+                                <span className={item.pro ? "opacity-60" : ""}>
+                                  {item.tag}
+                                </span>
+                                {item.pro && <ProBadge className="ml-0" />}
+                              </span>
                             </Badge>
                           </span>
                         </TooltipTrigger>
@@ -392,7 +403,9 @@ export function SettingsEmails() {
                           sideOffset={8}
                           className="border-transparent bg-foreground text-background px-2 py-1 text-xs"
                         >
-                          {item.description}
+                          {item.pro
+                            ? `${item.description} (${__("Pro", "eventkoi-lite")})`
+                            : item.description}
                         </TooltipContent>
                       </Tooltip>
                     ))}

@@ -602,9 +602,11 @@ function QrCheckinOverlay({ payload }) {
   const statusCode = Number(currentPayload?.status || payload?.status || 0);
   const descriptionText = isSuccess
     ? __("Review the attendance count before closing this screen.", "eventkoi-lite")
-    : statusCode === 403
-      ? __("Check-in is restricted to staff.", "eventkoi-lite")
-      : __("Please check the code and try again.", "eventkoi-lite");
+    : statusCode === 403 && currentPayload?.message
+      ? currentPayload.message
+      : statusCode === 403
+        ? __("Check-in is restricted to staff.", "eventkoi-lite")
+        : __("Please check the code and try again.", "eventkoi-lite");
 
   const handleCountSubmit = async (event) => {
     event.preventDefault();

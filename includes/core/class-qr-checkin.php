@@ -43,6 +43,17 @@ class QR_Checkin {
 			return;
 		}
 
+		// QR check-ins are a Pro feature.
+		$this->queue_qr_payload(
+			__( 'QR check-ins are a Pro feature.', 'eventkoi-lite' ),
+			403,
+			'&#10005;',
+			null,
+			false,
+			false
+		);
+		return;
+
 		$token = sanitize_text_field( wp_unslash( $_GET['eventkoi_qr'] ) );
 		if ( empty( $token ) ) {
 			return;

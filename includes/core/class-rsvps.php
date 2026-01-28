@@ -897,7 +897,7 @@ class Rsvps {
 		$first_name = $name ? trim( strtok( $name, ' ' ) ) : '';
 
 		$event_timezone = eventkoi_timezone();
-		$tags           = array(
+			$tags           = array(
 			'[attendee_name]'      => $first_name ? $first_name : __( 'there', 'eventkoi-lite' ),
 			'[attendee_email]'     => $email,
 			'[event_title]'        => $title,
@@ -913,7 +913,7 @@ class Rsvps {
 			'[guest_count]'        => $guest_count,
 			'[guests_line]'        => $guest_line,
 			'[checkin_code]'       => $token,
-			'[qr_code]'            => $qr_code,
+			'[qr_code]'            => '',
 			'[site_name]'          => get_bloginfo( 'name' ),
 		);
 
@@ -931,7 +931,6 @@ class Rsvps {
 				'<p>Hi [attendee_name],</p>',
 				'<p>Thanks for your RSVP to [event_name].</p>',
 				'<p>Check-in code:<br />[checkin_code]</p>',
-				'<p>[qr_code]</p>',
 				$event_datetime ? '<p>' . esc_html( $schedule_label ) . '<br />[event_datetime]</p>' : '',
 				$event_location ? '<p>' . esc_html__( 'Location:', 'eventkoi-lite' ) . '<br />[event_location]</p>' : '',
 				'<p>[guests_line]</p>',
