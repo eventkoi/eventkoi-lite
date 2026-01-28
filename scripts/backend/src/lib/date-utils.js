@@ -306,49 +306,67 @@ export function buildTimeline(event, wpTz, timeFormat = "12") {
  * @param {string} [options.timezone] IANA timezone name or offset. Defaults to eventkoi_params.timezone_string.
  * @returns {string} Formatted date/time string.
  */
+export function wpToLuxonFormat(phpFormat = "F j, Y") {
+  const map = {
+    Y: "yyyy",
+    y: "yy",
+    F: "LLLL",
+    M: "LLL",
+    m: "LL",
+    n: "L",
+    d: "dd",
+    j: "d",
+    D: "ccc",
+    l: "cccc",
+    g: "h",
+    G: "H",
+    h: "hh",
+    H: "HH",
+    i: "mm",
+    s: "ss",
+    a: "a",
+    A: "a",
+  };
+  return phpFormat.replace(/(\\)?([A-Za-z])/g, (match, esc, char) => {
+    if (esc) return char;
+    return map[char] || char;
+  });
+}
+
 export function formatWPtime(isoString, options = {}) {
-  if (!isoString) {
-    return "";
+  if (!isoString) return "";
+
+  const params = typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
+  const wpLocale = (params.locale || "en").replace("_", "-");
+  const tz = options.timezone || params.timezone_string || "UTC";
+  const fmtType = options.format || "date-time";
+
+  const wpDateFmt = params.date_format || "F j, Y";
+  const wpTimeFmt = params.time_format_string || "g:i a";
+
+  const dateFmt = wpToLuxonFormat(wpDateFmt);
+  const timeFmt = wpToLuxonFormat(wpTimeFmt);
+
+  const dt = DateTime.fromISO(isoString, { zone: "utc" })
+    .setZone(tz)
+    .setLocale(wpLocale);
+
+  const isLowercaseAMPM = /(^|[^A-Za-z])a([^A-Za-z]|$)/.test(wpTimeFmt);
+  const renderedDate = dt.toFormat(dateFmt);
+  let renderedTime = dt.toFormat(timeFmt);
+
+  if (isLowercaseAMPM) {
+    renderedTime = renderedTime.replace(/\b(AM|PM)\b/g, (m) => m.toLowerCase());
   }
 
-  const { time_format } = getSettings() || {};
-
-  // Pick timezone: explicit > WP > UTC.
-  const rawTz =
-    options.timezone ||
-    (typeof eventkoi_params !== "undefined" &&
-      eventkoi_params.timezone_string) ||
-    "UTC";
-
-  const tz = normalizeTimeZone(rawTz);
-  const date = new Date(isoString);
-
-  // Manually build YYYY-MM-DD in WP timezone.
-  const datePart = date.toLocaleDateString("en-CA", {
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-    timeZone: tz,
-  });
-
-  const is24 = time_format === "24";
-
-  const timePart = date.toLocaleTimeString(undefined, {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: !is24,
-    timeZone: tz,
-  });
-
-  if (options.format === "date") {
-    return datePart;
+  switch (fmtType) {
+    case "date":
+      return renderedDate;
+    case "time":
+      return renderedTime;
+    default:
+      return `${renderedDate}\n${renderedTime}`;
   }
-
-  if (options.format === "time") {
-    return timePart;
-  }
-
-  return `${datePart}\n${timePart}`;
 }
 
 /**

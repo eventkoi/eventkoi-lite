@@ -218,7 +218,7 @@ export function DataTable({
                         <Skeleton className="h-4 w-full rounded" />
                       </div>
                     </TableCell>
-                  ))} 
+                  ))}
                 </TableRow>
               ))
             ) : table.getRowModel().rows?.length ? (
@@ -260,7 +260,7 @@ export function DataTable({
                         )}
                       </TableCell>
                     );
-                  ))}
+                  })}
                 </TableRow>
               ))
             ) : (
