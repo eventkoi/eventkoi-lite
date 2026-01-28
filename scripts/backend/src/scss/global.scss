@@ -90,6 +90,7 @@ body.eventkoi-active
 
   .mce-container-body.mce-flow-layout {
     display: flex;
+    flex-wrap: wrap;
     .mce-btn-group.mce-last {
       margin-left: auto;
     }

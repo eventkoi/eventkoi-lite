@@ -428,6 +428,7 @@ body.eventkoi-active .components-panel__body.is-opened .block-editor-hooks__layo
 }
 .eventkoi-admin .mce-container-body.mce-flow-layout {
   display: flex;
+  flex-wrap: wrap;
 }
 .eventkoi-admin .mce-container-body.mce-flow-layout .mce-btn-group.mce-last {
   margin-right: auto;
