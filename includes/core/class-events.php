@@ -33,7 +33,9 @@ class Events {
 		$now = time();
 
 		// Create a unique cache key for this filter combination.
-		$cache_key = 'eventkoi_events_v2_' . md5( wp_json_encode( $args ) );
+		// Bumpable cache key to refresh metrics (RSVP usage, etc.).
+		$cache_version = absint( get_option( 'eventkoi_events_cache_version', 1 ) );
+		$cache_key     = 'eventkoi_events_v3_' . $cache_version . '_' . md5( wp_json_encode( $args ) );
 
 		// Attempt to load from cache first.
 		$cached = get_transient( $cache_key );

@@ -1,12 +1,43 @@
 import { DateTime } from "luxon";
 
 /**
+ * Safely convert a WordPress/PHP date/time format to Luxon.
+ */
+export function wpToLuxonFormat(phpFormat = "F j, Y") {
+  const map = {
+    Y: "yyyy",
+    y: "yy",
+    F: "LLLL",
+    M: "LLL",
+    m: "LL",
+    n: "L",
+    d: "dd",
+    j: "d",
+    D: "ccc",
+    l: "cccc",
+    g: "h",
+    G: "H",
+    h: "hh",
+    H: "HH",
+    i: "mm",
+    s: "ss",
+    a: "a",
+    A: "a",
+  };
+  return phpFormat.replace(/(\\)?([A-Za-z])/g, (match, esc, char) => {
+    if (esc) return char;
+    return map[char] || char;
+  });
+}
+
+/**
  * Build a human-readable event timeline in WP timezone.
  *
- * @param {Object} event Event object from API (UTC dates)
- * @param {string} wpTz  WP/site timezone string
- * @param {"12"|"24"} timeFormat Preferred time format
- * @returns {string|null}
+ * Respects:
+ * - WP date_format and time_format_string
+ * - EventKoi plugin 12/24 preference
+ * - WP/site timezone
+ * - WP locale (de_DE → de-DE)
  */
 export function buildTimeline(event, wpTz, timeFormat = "12") {
   if (event.tbc) {
@@ -15,28 +46,17 @@ export function buildTimeline(event, wpTz, timeFormat = "12") {
 
   const tz = normalizeTimeZone(wpTz || "UTC");
 
-  // Normalize WP locale (de_DE → de-DE)
-  const normalizeLocale = (loc) => {
-    if (!loc) return "en";
-    return loc.replace("_", "-");
-  };
+  const normalizeLocale = (loc) => (loc ? loc.replace("_", "-") : "en");
 
-  // Automatically use the plugin/global locale
   const lang =
     typeof eventkoi_params !== "undefined" && eventkoi_params.locale
       ? normalizeLocale(eventkoi_params.locale)
       : "en";
 
-  // --- Helpers ---
-  const formatTime = (dt) => {
-    if (!dt?.isValid) return "";
-    if (timeFormat === "24") return dt.setLocale(lang).toFormat("HH:mm");
-    return dt
-      .setLocale(lang)
-      .toFormat(dt.minute === 0 ? "ha" : "h:mma")
-      .toLowerCase()
-      .replace(":00", "");
-  };
+  const dateFormat = wpToLuxonFormat(eventkoi_params?.date_format || "F j, Y");
+  const wpTimeFormat = wpToLuxonFormat(
+    eventkoi_params?.time_format_string || "g:i a"
+  );
 
   const parseDate = (iso) => {
     if (!iso) return null;
@@ -46,60 +66,86 @@ export function buildTimeline(event, wpTz, timeFormat = "12") {
     return dt.isValid ? dt : null;
   };
 
-  // --- Recurring ---
+  const formatTime = (dt) => {
+    if (!dt?.isValid) return "";
+
+    let baseFormat;
+    if (timeFormat === "24") {
+      baseFormat = "HH:mm";
+    } else if (timeFormat === "12") {
+      baseFormat = "h:mm a";
+    } else {
+      baseFormat = wpTimeFormat;
+    }
+
+    let formatted = dt.toFormat(baseFormat);
+
+    const wpRawTimeFormat = eventkoi_params?.time_format_string || "g:i a";
+    if (wpRawTimeFormat.includes("A")) {
+      formatted = formatted.replace(/\b(am|pm)\b/g, (m) => m.toUpperCase());
+    } else if (wpRawTimeFormat.includes("a")) {
+      formatted = formatted.replace(/\b(AM|PM)\b/g, (m) => m.toLowerCase());
+    }
+
+    return formatted;
+  };
+
+  const formatDate = (dt) => (dt?.isValid ? dt.toFormat(dateFormat) : "");
+
+  const fmt = (dt, type = "datetime") => {
+    if (!dt?.isValid) return "";
+    if (type === "date") return formatDate(dt);
+    if (type === "time") return formatTime(dt);
+    return `${formatDate(dt)}, ${formatTime(dt)}`;
+  };
+
   if (event.date_type === "recurring" && event.timeline) {
     const start = parseDate(event.start);
     const end = parseDate(event.end_real) || parseDate(event.end);
-
     if (!start) return null;
 
     const allDay = !!event.allDay;
     const isSameDay = end && start.hasSame(end, "day");
 
     if (isSameDay && !allDay) {
-      return `${start.toLocaleString(
-        DateTime.DATE_MED_WITH_WEEKDAY
-      )}, ${formatTime(start)} – ${formatTime(end)}`;
+      return `${fmt(start, "date")}, ${fmt(start, "time")} – ${fmt(
+        end,
+        "time"
+      )}`;
     }
 
     if (!end || isSameDay) {
-      return start.toLocaleString(DateTime.DATE_MED_WITH_WEEKDAY);
+      return fmt(start, "date");
     }
 
-    return `${start.toLocaleString(
-      DateTime.DATE_MED_WITH_WEEKDAY
-    )} – ${end.toLocaleString(DateTime.DATE_MED_WITH_WEEKDAY)}`;
+    return `${fmt(start, "date")} – ${fmt(end, "date")}`;
   }
 
-  // --- Standard / multi-day ---
   if (event.date_type === "standard" || event.date_type === "multi") {
     const start = parseDate(event.start);
     const end = parseDate(event.end_real) || parseDate(event.end);
-
     if (!start) return null;
 
-    const allDay = !!event.allDay;
     const isSameDay = end && start.hasSame(end, "day");
 
-    if (isSameDay && !allDay) {
-      return `${start.toLocaleString(
-        DateTime.DATE_MED_WITH_WEEKDAY
-      )}, ${formatTime(start)} – ${formatTime(end)}`;
+    if (isSameDay) {
+      return `${fmt(start, "date")}, ${fmt(start, "time")} – ${fmt(
+        end,
+        "time"
+      )}`;
     }
 
     if (!end) {
+      const allDay = !!event.allDay;
       return allDay
-        ? start.toLocaleString(DateTime.DATE_MED_WITH_WEEKDAY)
-        : `${start.toLocaleString(
-            DateTime.DATE_MED_WITH_WEEKDAY
-          )}, ${formatTime(start)}`;
+        ? fmt(start, "date")
+        : `${fmt(start, "date")}, ${fmt(start, "time")}`;
     }
 
-    return `${start.toLocaleString(
-      DateTime.DATE_MED_WITH_WEEKDAY
-    )}, ${formatTime(start)} – ${end.toLocaleString(
-      DateTime.DATE_MED_WITH_WEEKDAY
-    )}, ${formatTime(end)}`;
+    return `${fmt(start, "date")}, ${fmt(start, "time")} – ${fmt(
+      end,
+      "date"
+    )}, ${fmt(end, "time")}`;
   }
 
   return null;

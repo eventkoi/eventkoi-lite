@@ -815,27 +815,39 @@ function eventkoi_locate_template( $template_name, $default_path = '' ) {
 }
 
 /**
- * EventKoi wrapper for wp_date() that respects settings->time_format.
+ * Wrapper around wp_date() that respects WordPress date/time settings.
  *
- * @param string                   $format     PHP date format string.
- * @param int|null                 $timestamp  Unix timestamp. Defaults to now.
- * @param DateTimeZone|string|null $timezone Optional. WP timezone by default.
+ * @param string                   $type      'date', 'time', or 'datetime'.
+ * @param int|null                 $timestamp Optional. Unix timestamp. Defaults to now.
+ * @param DateTimeZone|string|null $timezone  Optional. Defaults to WP timezone.
  * @return string
  */
-function eventkoi_date( $format, $timestamp = null, $timezone = null ) {
-	$settings    = Settings::get();
-	$time_format = ( ! empty( $settings['time_format'] ) && '24' === $settings['time_format'] ) ? '24' : '12';
-
-	// If no timestamp, use current time.
+function eventkoi_date( $type = 'datetime', $timestamp = null, $timezone = null ) {
 	if ( null === $timestamp ) {
 		$timestamp = time();
 	}
 
-	// Adjust format if user prefers 24h.
-	if ( '24' === $time_format ) {
-		$format = preg_replace( '/[gh]:i\s*[aA]/', 'H:i', $format );
-		$format = preg_replace( '/[gh]:i/', 'H:i', $format );
-		$format = str_replace( array( 'a', 'A' ), '', $format );
+	// Honor auto-detect setting: use visitor local time when enabled and no explicit timezone passed.
+	if ( null === $timezone ) {
+		$settings = Settings::get();
+		if ( ! empty( $settings['auto_detect_timezone'] ) ) {
+			$timezone = wp_timezone();
+		}
+	}
+
+	$date_format = get_option( 'date_format', 'F j, Y' );
+	$time_format = get_option( 'time_format', 'g:i a' );
+
+	switch ( $type ) {
+		case 'date':
+			$format = $date_format;
+			break;
+		case 'time':
+			$format = $time_format;
+			break;
+		default:
+			$format = "$date_format, $time_format";
+			break;
 	}
 
 	return wp_date( $format, $timestamp, $timezone );
