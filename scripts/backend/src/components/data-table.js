@@ -56,6 +56,7 @@ export function DataTable({
   hideSearchBox = false,
   statusCounts,
   refreshStatusCounts,
+  titleColumnWidth,
 }) {
   const [sorting, setSorting] = useState(defaultSort);
   const [columnFilters, setColumnFilters] = useState([]);
@@ -150,9 +151,20 @@ export function DataTable({
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
+                  const isTitleColumn = ["title", "name", "shortcode"].includes(
+                    header.id
+                  );
                   return (
                     <TableHead
                       key={header.id}
+                      style={
+                        isTitleColumn && titleColumnWidth
+                          ? {
+                              width: titleColumnWidth,
+                              maxWidth: titleColumnWidth,
+                            }
+                          : undefined
+                      }
                       className={cn(
                         "h-10",
                         "font-normal",
@@ -180,8 +192,7 @@ export function DataTable({
                         ].includes(header.id) && "text-right",
                         ["count", "modified_date"].includes(header.id) &&
                           "w-auto",
-                        ["title", "name", "shortcode"].includes(header.id) &&
-                          "w-[30%]"
+                        isTitleColumn && !titleColumnWidth && "w-[30%]"
                       )}
                     >
                       {header.isPlaceholder
@@ -207,7 +218,7 @@ export function DataTable({
                         <Skeleton className="h-4 w-full rounded" />
                       </div>
                     </TableCell>
-                  ))}
+                  ))} 
                 </TableRow>
               ))
             ) : table.getRowModel().rows?.length ? (
@@ -217,25 +228,38 @@ export function DataTable({
                   data-state={row.getIsSelected() && "selected"}
                   className="group"
                 >
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell
-                      key={cell.id}
-                      className={cn(
-                        cell.column.id === "select" &&
-                          tableClassName.includes("no-checkbox-padding") &&
-                          "pl-0 w-[36px]",
-                        activeId == row.original.id &&
-                          cell.id.indexOf("name") >= 1 &&
-                          "font-medium underline decoration-dotted",
-                        cell.id.indexOf("modified") >= 1 && "text-right",
-                        cell.id.indexOf("created") >= 1 && "text-right"
-                      )}
-                    >
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
-                    </TableCell>
+                  {row.getVisibleCells().map((cell) => {
+                    const isTitleCell = ["title", "name", "shortcode"].includes(
+                      cell.column.id
+                    );
+                    const titleCellStyle =
+                      isTitleCell && titleColumnWidth
+                        ? {
+                            width: titleColumnWidth,
+                            maxWidth: titleColumnWidth,
+                          }
+                        : undefined;
+                    return (
+                      <TableCell
+                        key={cell.id}
+                        style={titleCellStyle}
+                        className={cn(
+                          cell.column.id === "select" &&
+                            tableClassName.includes("no-checkbox-padding") &&
+                            "pl-0 w-[36px]",
+                          activeId == row.original.id &&
+                            cell.id.indexOf("name") >= 1 &&
+                            "font-medium underline decoration-dotted",
+                          cell.id.indexOf("modified") >= 1 && "text-right",
+                          cell.id.indexOf("created") >= 1 && "text-right"
+                        )}
+                      >
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    );
                   ))}
                 </TableRow>
               ))

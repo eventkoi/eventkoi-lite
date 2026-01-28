@@ -80,6 +80,13 @@ class Event {
 		'recurrence_overrides',
 		'rulesummary',
 		'standard_type',
+		'rsvp_enabled',
+		'rsvp_capacity',
+		'rsvp_show_remaining',
+		'rsvp_allow_guests',
+		'rsvp_max_guests',
+		'rsvp_allow_edit',
+		'rsvp_auto_account',
 	);
 
 	/**
@@ -464,6 +471,13 @@ class Event {
 		$recurrence_rules = ! empty( $meta['recurrence_rules'] ) && is_array( $meta['recurrence_rules'] )
 		? array_values( array_filter( $meta['recurrence_rules'], 'is_array' ) )
 		: array();
+		$rsvp_enabled        = ! empty( $meta['rsvp_enabled'] );
+		$rsvp_capacity       = isset( $meta['rsvp_capacity'] ) ? absint( $meta['rsvp_capacity'] ) : 0;
+		$rsvp_show_remaining = array_key_exists( 'rsvp_show_remaining', $meta ) ? (bool) $meta['rsvp_show_remaining'] : true;
+		$rsvp_allow_guests   = ! empty( $meta['rsvp_allow_guests'] );
+		$rsvp_max_guests     = isset( $meta['rsvp_max_guests'] ) ? absint( $meta['rsvp_max_guests'] ) : 0;
+		$rsvp_allow_edit     = ! empty( $meta['rsvp_allow_edit'] );
+		$rsvp_auto_account   = ! empty( $meta['rsvp_auto_account'] );
 
 		update_post_meta( self::$event_id, 'timezone_display', (bool) $timezone_display );
 		update_post_meta( self::$event_id, 'tbc', (bool) $tbc );
@@ -486,6 +500,13 @@ class Event {
 		update_post_meta( self::$event_id, 'locations', (array) $locations );
 		update_post_meta( self::$event_id, 'standard_type', (string) $standard_type );
 		update_post_meta( self::$event_id, 'recurrence_rules', $recurrence_rules );
+		update_post_meta( self::$event_id, 'rsvp_enabled', (bool) $rsvp_enabled );
+		update_post_meta( self::$event_id, 'rsvp_capacity', $rsvp_capacity );
+		update_post_meta( self::$event_id, 'rsvp_show_remaining', $rsvp_show_remaining ? 1 : 0 );
+		update_post_meta( self::$event_id, 'rsvp_allow_guests', (bool) $rsvp_allow_guests );
+		update_post_meta( self::$event_id, 'rsvp_max_guests', $rsvp_max_guests );
+		update_post_meta( self::$event_id, 'rsvp_allow_edit', (bool) $rsvp_allow_edit );
+		update_post_meta( self::$event_id, 'rsvp_auto_account', (bool) $rsvp_auto_account );
 
 		// Set FSE page template if provided.
 		$template = ! empty( $meta['template'] ) ? sanitize_key( $meta['template'] ) : '';
@@ -1434,6 +1455,86 @@ class Event {
 		$virtual_url = get_post_meta( self::$event_id, 'virtual_url', true );
 
 		return apply_filters( 'eventkoi_get_event_virtual_url', (string) $virtual_url, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Returns whether RSVPs are enabled for the event.
+	 *
+	 * @return bool
+	 */
+	public static function get_rsvp_enabled() {
+		$enabled = get_post_meta( self::$event_id, 'rsvp_enabled', true );
+
+		return apply_filters( 'eventkoi_get_event_rsvp_enabled', (bool) $enabled, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Get RSVP capacity (0 = unlimited).
+	 *
+	 * @return int
+	 */
+	public static function get_rsvp_capacity() {
+		$capacity = get_post_meta( self::$event_id, 'rsvp_capacity', true );
+
+		return apply_filters( 'eventkoi_get_event_rsvp_capacity', absint( $capacity ), self::$event_id, self::$event );
+	}
+
+	/**
+	 * Whether to show remaining spots.
+	 *
+	 * @return bool
+	 */
+	public static function get_rsvp_show_remaining() {
+		$show_remaining = get_post_meta( self::$event_id, 'rsvp_show_remaining', true );
+		if ( '' === $show_remaining ) {
+			$show_remaining = true;
+		}
+
+		return apply_filters( 'eventkoi_get_event_rsvp_show_remaining', (bool) $show_remaining, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Whether guests are allowed on RSVP.
+	 *
+	 * @return bool
+	 */
+	public static function get_rsvp_allow_guests() {
+		$allow_guests = get_post_meta( self::$event_id, 'rsvp_allow_guests', true );
+
+		return apply_filters( 'eventkoi_get_event_rsvp_allow_guests', (bool) $allow_guests, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Max guests per RSVP (0 = none).
+	 *
+	 * @return int
+	 */
+	public static function get_rsvp_max_guests() {
+		$max_guests = get_post_meta( self::$event_id, 'rsvp_max_guests', true );
+
+		return apply_filters( 'eventkoi_get_event_rsvp_max_guests', absint( $max_guests ), self::$event_id, self::$event );
+	}
+
+	/**
+	 * Whether users can edit their RSVP.
+	 *
+	 * @return bool
+	 */
+	public static function get_rsvp_allow_edit() {
+		$allow_edit = get_post_meta( self::$event_id, 'rsvp_allow_edit', true );
+
+		return apply_filters( 'eventkoi_get_event_rsvp_allow_edit', (bool) $allow_edit, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Whether to auto-create WP users for RSVPs.
+	 *
+	 * @return bool
+	 */
+	public static function get_rsvp_auto_account() {
+		$auto_account = get_post_meta( self::$event_id, 'rsvp_auto_account', true );
+
+		return apply_filters( 'eventkoi_get_event_rsvp_auto_account', (bool) $auto_account, self::$event_id, self::$event );
 	}
 
 	/**

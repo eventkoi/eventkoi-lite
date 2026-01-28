@@ -17,6 +17,8 @@ import { EventEdit } from "@/admin/events/edit";
 import { EventEditInstances } from "@/admin/events/edit/instances";
 import { EditInstance } from "@/admin/events/edit/instances/edit-instance";
 import { EventEditMain } from "@/admin/events/edit/main";
+import { EventEditRsvp } from "@/admin/events/edit/rsvp";
+import { EventEditAttendees } from "@/admin/events/edit/attendees";
 import { EventsOverview } from "@/admin/events/overview";
 import { EventTemplates } from "@/admin/events/templates";
 
@@ -31,6 +33,7 @@ import { Settings } from "@/admin/settings";
 import { SettingsFields } from "@/admin/settings/fields";
 import { SettingsIntegrations } from "@/admin/settings/integrations";
 import { SettingsOverview } from "@/admin/settings/overview";
+import { SettingsEmails } from "@/admin/settings/emails";
 
 import { Nav } from "@/components/nav";
 import { Toaster } from "@/components/ui/sonner";
@@ -102,6 +105,8 @@ function AdminLayout() {
           <Route path="main" element={<EventEditMain />} />
           <Route path="instances" element={<EventEditInstances />} />
           <Route path="instances/edit/:timestamp" element={<EditInstance />} />
+          <Route path="rsvp" element={<EventEditRsvp />} />
+          <Route path="attendees" element={<EventEditAttendees />} />
         </Route>
 
         <Route path="calendars" element={<Calendars />}>
@@ -119,6 +124,7 @@ function AdminLayout() {
           <Route path="default" element={<SettingsOverview />} />
           <Route path="fields" element={<SettingsFields />} />
           <Route path="integrations" element={<SettingsIntegrations />} />
+          <Route path="emails" element={<SettingsEmails />} />
         </Route>
 
         <Route path="*" element={<Home />} />

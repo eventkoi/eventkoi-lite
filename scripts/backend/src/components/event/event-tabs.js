@@ -26,6 +26,8 @@ export function EventTabs() {
     ...(event?.date_type === "recurring"
       ? [{ name: "instances", title: "Recurring instances" }]
       : []),
+    { name: "rsvp", title: "RSVP & Tickets" },
+    { name: "attendees", title: "Attendees" },
   ];
 
   return (

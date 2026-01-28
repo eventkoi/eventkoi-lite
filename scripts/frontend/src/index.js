@@ -18,3 +18,5 @@ import "@/share";
 import "@/onboarding-widget";
 import "@/onboarding-done";
 import "@/local-timezone";
+import "@/rsvp";
+import "@/checkin";

@@ -379,6 +379,21 @@ export function formatLocalTimestamp(
   return `${dateStr}\n${timeStr}`;
 }
 
+export function formatShortDate(isoString, options = {}) {
+  if (!isoString) return "";
+
+  const params =
+    typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
+  const wpLocale = (params.locale || "en").replace("_", "-");
+  const tz = options.timezone || params.timezone_string || "UTC";
+
+  const dt = DateTime.fromISO(isoString, { zone: "utc" })
+    .setZone(tz)
+    .setLocale(wpLocale);
+
+  return dt.isValid ? dt.toFormat("d LLL yy") : "";
+}
+
 /**
  * Shift a date + time combo (from UTC) into target timezone with compact format.
  * @param {string} dateString e.g. "2025-08-11"

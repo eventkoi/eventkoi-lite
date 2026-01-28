@@ -24,6 +24,8 @@ class Shortcodes {
 	public function __construct() {
 		add_shortcode( 'eventkoi_calendar', array( __CLASS__, 'render_calendar' ) );
 		add_shortcode( 'eventkoi', array( __CLASS__, 'render_event_data' ) );
+		add_shortcode( 'eventkoi_rsvp', array( __CLASS__, 'render_rsvp' ) );
+		add_shortcode( 'eventkoi_checkin', array( __CLASS__, 'render_checkin' ) );
 	}
 
 	/**
@@ -37,25 +39,54 @@ class Shortcodes {
 	public static function render_calendar( $user_attributes, $content, $shortcode_name ) {
 		$attributes = shortcode_atts(
 			array(
-				'id'      => (int) get_option( 'eventkoi_default_event_cal', 0 ),
+				'id'      => '',
 				'display' => 'calendar',
 			),
 			$user_attributes,
 			$shortcode_name
 		);
 
-		$cal_id  = absint( $attributes['id'] );
-		$display = sanitize_text_field( $attributes['display'] );
+		$ids_raw = trim( $attributes['id'] );
 
-		$calendar = new \EventKoi\Core\Calendar( $cal_id );
+		// "all" keyword = load all calendars.
+		if ( 'all' === strtolower( $ids_raw ) ) {
+			$all_terms = get_terms(
+				array(
+					'taxonomy'   => 'event_cal',
+					'hide_empty' => false,
+					'fields'     => 'ids',
+				)
+			);
+
+			$ids = is_wp_error( $all_terms ) ? array() : array_map( 'absint', $all_terms );
+
+		} else {
+			$ids = array_filter(
+				array_map( 'absint', explode( ',', $ids_raw ) )
+			);
+		}
+
+		// Default fallback.
+		if ( empty( $ids ) ) {
+			$ids = array( (int) get_option( 'eventkoi_default_event_cal', 0 ) );
+		}
+
+		$primary_id = $ids[0];
+		$display    = sanitize_text_field( $attributes['display'] );
+
+		$calendar = new \EventKoi\Core\Calendar( $primary_id );
 
 		if ( true === $calendar::is_invalid() ) {
-			return ''; // Return empty string if calendar is invalid.
+			return '';
 		}
 
 		ob_start();
 
-		$html = eventkoi_get_calendar_content( $cal_id, $display );
+		$html = eventkoi_get_calendar_content(
+			$primary_id,
+			$display,
+			array( 'calendars' => $ids )
+		);
 
 		if ( ! empty( $html ) ) {
 			echo wp_kses_post( $html );
@@ -67,10 +98,12 @@ class Shortcodes {
 			':root { --fc-event-bg-color: %1$s; --fc-event-border-color: %1$s; }',
 			esc_attr( $calendar::get_color() )
 		);
+
 		wp_add_inline_style( 'eventkoi-frontend', $css );
 
 		return ob_get_clean();
 	}
+
 
 	/**
 	 * Render event meta via shortcode.
@@ -83,14 +116,27 @@ class Shortcodes {
 	public static function render_event_data( $user_attributes, $content, $shortcode_name ) {
 		$attributes = shortcode_atts(
 			array(
-				'id'   => 0,
-				'data' => '',
+				'id'       => 0,
+				'data'     => '',
+				'with_name' => false,
 			),
 			$user_attributes,
 			$shortcode_name
 		);
 
+		// Prefer explicitly passed ID.
 		$event_id = absint( $attributes['id'] );
+
+		// Attempt to detect event ID from current post when none provided.
+		if ( 0 === $event_id ) {
+			global $post;
+
+			if ( isset( $post->ID ) && 'eventkoi_event' === get_post_type( $post->ID ) ) {
+				$event_id = (int) $post->ID;
+			}
+		}
+
+		// Bail if still no valid event ID or missing data parameter.
 		if ( 0 === $event_id || empty( $attributes['data'] ) ) {
 			return '';
 		}
@@ -100,6 +146,7 @@ class Shortcodes {
 		$keys        = array_map( 'trim', explode( ',', $attributes['data'] ) );
 		$parts       = array();
 		$auto_unwrap = false;
+		$show_label  = ! empty( $attributes['with_name'] ) || ( is_array( $user_attributes ) && in_array( 'with_name', $user_attributes, true ) );
 
 		foreach ( $keys as $key ) {
 			$normalized_key = strtolower( str_replace( '-', '_', $key ) );
@@ -115,7 +162,32 @@ class Shortcodes {
 					$auto_unwrap = true;
 				}
 
-				$parts[] = \EventKoi\Core\Event::render_meta( $normalized_key );
+				$value = \EventKoi\Core\Event::render_meta( $normalized_key );
+				if ( '' === $value ) {
+					continue;
+				}
+
+				if ( $show_label ) {
+					if ( 0 === strpos( $normalized_key, 'event_field_' ) ) {
+						$field_key = substr( $normalized_key, 12 );
+						$label = $field_key;
+
+						if ( class_exists( '\EventKoi\Core\Fields' ) ) {
+							$field = Fields::get_field_by_key( $field_key );
+							$label = $field['name'] ?? $label;
+						}
+						$value     = sprintf(
+							'<span class="eventkoi-label">%1$s:</span> <span class="eventkoi-value">%2$s</span>',
+							esc_html( $label ),
+							wp_kses_post( $value )
+						);
+					} elseif ( 0 === strpos( $normalized_key, 'event_fieldgroup_' ) && ! preg_match( '/_with_name$/', $normalized_key ) ) {
+						$normalized_key = $normalized_key . '_with_name';
+						$value          = \EventKoi\Core\Event::render_meta( $normalized_key );
+					}
+				}
+
+				$parts[] = $value;
 			}
 		}
 
@@ -128,7 +200,7 @@ class Shortcodes {
 			return '';
 		}
 
-		// If only an image URL is requested, return the raw URL for use in attributes.
+		// Automatically avoid wrapping when only an image URL is requested.
 		if ( true === $auto_unwrap && 1 === count( array_filter( $parts ) ) ) {
 			return wp_strip_all_tags( reset( $parts ) );
 		}
@@ -144,5 +216,95 @@ class Shortcodes {
 		);
 
 		return '<div class="eventkoi-shortcode">' . wp_kses_post( $wrapped ) . '</div>';
+	}
+
+	/**
+	 * Render RSVP block via shortcode.
+	 *
+	 * @param array  $user_attributes Shortcode attributes.
+	 * @param string $content         Shortcode content.
+	 * @param string $shortcode_name  Shortcode name.
+	 * @return string Rendered output.
+	 */
+	public static function render_rsvp( $user_attributes, $content, $shortcode_name ) {
+		$attributes = shortcode_atts(
+			array(
+				'event_id'    => 0,
+				'instance_ts' => 0,
+				'instance'    => 0,
+			),
+			$user_attributes,
+			$shortcode_name
+		);
+
+		$event_id = absint( $attributes['event_id'] );
+
+		if ( 0 === $event_id ) {
+			global $post;
+
+			if ( isset( $post->ID ) && 'eventkoi_event' === get_post_type( $post->ID ) ) {
+				$event_id = (int) $post->ID;
+			}
+		}
+
+		if ( 0 === $event_id ) {
+			return '';
+		}
+
+		$instance_ts = absint( $attributes['instance_ts'] );
+		if ( 0 === $instance_ts && ! empty( $attributes['instance'] ) ) {
+			$instance_ts = absint( $attributes['instance'] );
+		}
+		if ( 0 === $instance_ts ) {
+			$instance_ts = function_exists( 'eventkoi_get_instance_id' )
+				? absint( eventkoi_get_instance_id() )
+				: 0;
+
+			if ( 0 === $instance_ts && isset( $_GET['instance'] ) ) {
+				$instance_ts = absint( wp_unslash( $_GET['instance'] ) );
+			}
+		}
+
+		Scripts::enqueue_frontend_assets();
+
+		$attrs = sprintf(
+			'data-event-id="%1$d" data-instance-ts="%2$d"',
+			(int) $event_id,
+			(int) $instance_ts
+		);
+
+		return sprintf(
+			'<div class="eventkoi-front"><div id="eventkoi-rsvp-%1$d" class="eventkoi-rsvp" %2$s></div></div>',
+			(int) $event_id,
+			$attrs
+		);
+	}
+
+	/**
+	 * Render check-in lookup via shortcode.
+	 *
+	 * @param array  $user_attributes Shortcode attributes.
+	 * @param string $content         Shortcode content.
+	 * @param string $shortcode_name  Shortcode name.
+	 * @return string Rendered output.
+	 */
+	public static function render_checkin( $user_attributes, $content, $shortcode_name ) {
+		$attributes = shortcode_atts(
+			array(
+				'token' => '',
+			),
+			$user_attributes,
+			$shortcode_name
+		);
+
+		Scripts::enqueue_frontend_assets();
+
+		$token = sanitize_text_field( $attributes['token'] );
+		$attrs = $token ? sprintf( 'data-token="%s"', esc_attr( $token ) ) : '';
+
+		return sprintf(
+			'<div class="eventkoi-front"><div class="eventkoi-checkin" %1$s></div></div>',
+			$attrs
+		);
 	}
 }

@@ -60,6 +60,21 @@ class Scripts {
 		$calendar = Calendar::get_meta();
 		$settings = Settings::get();
 
+		$current_user = wp_get_current_user();
+		$rsvp_user    = array();
+
+		if ( $current_user && $current_user->ID ) {
+			$first_name = isset( $current_user->first_name ) ? sanitize_text_field( $current_user->first_name ) : '';
+			$last_name  = isset( $current_user->last_name ) ? sanitize_text_field( $current_user->last_name ) : '';
+			$full_name  = trim( $first_name . ' ' . $last_name );
+
+			$rsvp_user = array(
+				'id'    => (int) $current_user->ID,
+				'name'  => $full_name,
+				'email' => sanitize_email( $current_user->user_email ),
+			);
+		}
+
 		$params = array(
 			'is_admin'          => current_user_can( 'manage_options' ),
 			'admin_page'        => admin_url( 'admin.php?page=eventkoi' ),
@@ -67,6 +82,7 @@ class Scripts {
 			'default_cal_id'    => (int) get_option( 'eventkoi_default_event_cal', 0 ),
 			'version'           => EVENTKOI_VERSION,
 			'api'               => EVENTKOI_API,
+			'rest_url'          => esc_url_raw( rest_url( EVENTKOI_API ) ),
 			'event'             => $event ? $event::get_meta() : array(),
 			'ical'              => $event ? $event::get_ical() : '',
 			'no_events'         => __( 'No events were found.', 'eventkoi-lite' ),
@@ -82,6 +98,8 @@ class Scripts {
 			'locale'            => determine_locale(),
 			'startday'          => empty( $calendar['startday'] ) ? $settings['week_starts_on'] : $calendar['startday'],
 			'auto_detect_timezone' => ! empty( $settings['auto_detect_timezone'] ),
+			'nonce'             => wp_create_nonce( 'wp_rest' ),
+			'rsvp_user'         => $rsvp_user,
 		);
 
 		wp_localize_script(

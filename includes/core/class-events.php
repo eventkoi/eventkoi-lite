@@ -194,11 +194,35 @@ class Events {
 		// Preload post meta to reduce individual lookups.
 		update_postmeta_cache( wp_list_pluck( $query->posts, 'ID' ) );
 
+		$event_ids   = wp_list_pluck( $query->posts, 'ID' );
+		$rsvp_counts = array();
+
+		if ( ! empty( $event_ids ) ) {
+			global $wpdb;
+			$table_name   = $wpdb->prefix . 'eventkoi_rsvps';
+			$placeholders = implode( ',', array_fill( 0, count( $event_ids ), '%d' ) );
+			$sql          = "SELECT event_id, SUM(CASE WHEN status = 'going' THEN 1 + COALESCE(guests, 0) ELSE 0 END) AS used
+				FROM {$table_name}
+				WHERE event_id IN ({$placeholders})
+				GROUP BY event_id";
+			$prepared     = call_user_func_array( array( $wpdb, 'prepare' ), array_merge( array( $sql ), $event_ids ) );
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- Bulk lookup for event list metrics.
+			$rows         = $wpdb->get_results( $prepared );
+
+			if ( ! empty( $rows ) ) {
+				foreach ( $rows as $row ) {
+					$rsvp_counts[ absint( $row->event_id ) ] = absint( $row->used );
+				}
+			}
+		}
+
 		$results = array();
 
 		foreach ( $query->posts as $post ) {
 			$event     = new Event( $post );
-			$results[] = $event::get_meta();
+			$meta      = $event::get_meta();
+			$meta['rsvp_used'] = isset( $rsvp_counts[ $post->ID ] ) ? $rsvp_counts[ $post->ID ] : 0;
+			$results[] = $meta;
 		}
 
 		// Cache the final results.

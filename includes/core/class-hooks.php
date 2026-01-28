@@ -25,6 +25,11 @@ class Hooks {
 	 */
 	public function __construct() {
 		add_filter( 'get_the_excerpt', array( __CLASS__, 'filter_event_excerpt' ), 10, 2 );
+		add_filter( 'eventkoi_rsvp_email_template', array( __CLASS__, 'filter_rsvp_email_template' ), 10, 4 );
+		add_filter( 'eventkoi_rsvp_email_subject', array( __CLASS__, 'filter_rsvp_email_subject' ), 10, 4 );
+		add_action( 'wp_mail_failed', array( __CLASS__, 'log_mail_failed' ) );
+		add_filter( 'wp_mail_from', array( __CLASS__, 'filter_mail_from' ) );
+		add_filter( 'wp_mail_from_name', array( __CLASS__, 'filter_mail_from_name' ) );
 
 		// Order hooks.
 		add_action( 'eventkoi_after_order_created', array( __CLASS__, 'reset_caches' ), 20, 2 );
@@ -82,6 +87,96 @@ class Hooks {
 		delete_transient( 'eventkoi_total_earnings' );
 		delete_transient( 'eventkoi_tickets_sold' );
 		delete_transient( 'eventkoi_total_refunded' );
+	}
+
+	/**
+	 * Apply saved RSVP email template.
+	 *
+	 * @param string $template Default template.
+	 * @return string
+	 */
+	public static function filter_rsvp_email_template( $template ) {
+		$settings = Settings::get();
+		$saved    = isset( $settings['rsvp_email_template'] ) ? (string) $settings['rsvp_email_template'] : '';
+
+		return $saved ? $saved : $template;
+	}
+
+	/**
+	 * Apply saved RSVP email subject.
+	 *
+	 * @param string $subject Default subject.
+	 * @return string
+	 */
+	public static function filter_rsvp_email_subject( $subject ) {
+		$settings = Settings::get();
+		$saved    = isset( $settings['rsvp_email_subject'] ) ? (string) $settings['rsvp_email_subject'] : '';
+
+		return $saved ? $saved : $subject;
+	}
+
+	/**
+	 * Log wp_mail failures when WP_DEBUG is enabled.
+	 *
+	 * @param \WP_Error $wp_error Mail error.
+	 * @return void
+	 */
+	public static function log_mail_failed( $wp_error ) {
+		if ( ! defined( 'WP_DEBUG' ) || ! WP_DEBUG ) {
+			return;
+		}
+
+		if ( ! is_wp_error( $wp_error ) ) {
+			return;
+		}
+
+		$message = $wp_error->get_error_message();
+		$data    = $wp_error->get_error_data();
+
+		error_log( sprintf( '[EventKoi] wp_mail_failed: %s', $message ) );
+
+		if ( empty( $data ) ) {
+			return;
+		}
+
+		if ( is_scalar( $data ) ) {
+			error_log( sprintf( '[EventKoi] wp_mail_failed data: %s', (string) $data ) );
+			return;
+		}
+
+		if ( is_array( $data ) ) {
+			error_log( sprintf( '[EventKoi] wp_mail_failed data: %s', wp_json_encode( $data ) ) );
+		}
+	}
+
+	/**
+	 * Ensure a valid From address for wp_mail.
+	 *
+	 * @param string $from From email.
+	 * @return string
+	 */
+	public static function filter_mail_from( $from ) {
+		if ( is_email( $from ) ) {
+			return $from;
+		}
+
+		$admin_email = get_option( 'admin_email' );
+		if ( is_email( $admin_email ) ) {
+			return $admin_email;
+		}
+
+		return $from;
+	}
+
+	/**
+	 * Ensure a From name for wp_mail.
+	 *
+	 * @param string $from_name From name.
+	 * @return string
+	 */
+	public static function filter_mail_from_name( $from_name ) {
+		$site_name = get_bloginfo( 'name' );
+		return $site_name ? $site_name : $from_name;
 	}
 
 	/**

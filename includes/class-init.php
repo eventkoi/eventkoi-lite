@@ -16,6 +16,7 @@ use EventKoi\Core\Tables\Charges;
 use EventKoi\Core\Tables\Customers;
 use EventKoi\Core\Tables\Order_Notes;
 use EventKoi\Core\Tables\Recurrence_Overrides;
+use EventKoi\Core\Tables\Rsvps;
 
 // Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
@@ -97,6 +98,7 @@ class Init {
 			\EventKoi\Core\Blocks::class,
 			\EventKoi\Core\Scripts::class,
 			\EventKoi\Core\Shortcodes::class,
+			\EventKoi\Core\QR_Checkin::class,
 			\EventKoi\Core\Bindings::class,
 			\EventKoi\Core\ICal::class,
 			\EventKoi\API\REST::class,
@@ -137,6 +139,7 @@ class Init {
 					array(
 						Customers::class,
 						Recurrence_Overrides::class,
+						Rsvps::class,
 					)
 				);
 			}

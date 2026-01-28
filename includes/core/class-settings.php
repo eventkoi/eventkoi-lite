@@ -49,14 +49,60 @@ class Settings {
 	 * @param mixed $data Data to sanitize.
 	 * @return mixed Sanitized data.
 	 */
-	protected static function deep_sanitize( $data ) {
+	protected static function deep_sanitize( $data, $key = '' ) {
+		$rich_text_keys = array(
+			'rsvp_email_template',
+		);
+
 		if ( is_array( $data ) ) {
 			foreach ( $data as $key => $value ) {
-				$data[ $key ] = self::deep_sanitize( $value );
+				$data[ $key ] = self::deep_sanitize( $value, (string) $key );
 			}
 			return $data;
 		}
 
-		return is_scalar( $data ) ? sanitize_text_field( $data ) : $data;
+		if ( is_scalar( $data ) ) {
+			if ( in_array( $key, $rich_text_keys, true ) ) {
+				return wp_kses( $data, self::get_email_template_allowed_tags() );
+			}
+
+			return sanitize_text_field( $data );
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Allowed tags for email templates.
+	 *
+	 * @return array
+	 */
+	public static function get_email_template_allowed_tags() {
+		return array(
+			'a'      => array(
+				'href'   => true,
+				'rel'    => true,
+				'target' => true,
+			),
+			'br'     => array(),
+			'div'    => array(),
+			'em'     => array(),
+			'h1'     => array(),
+			'h2'     => array(),
+			'h3'     => array(),
+			'h4'     => array(),
+			'p'      => array(),
+			'span'   => array(),
+			'strong' => array(),
+			'ul'     => array(),
+			'ol'     => array(),
+			'li'     => array(),
+			'img'    => array(
+				'src'    => true,
+				'alt'    => true,
+				'width'  => true,
+				'height' => true,
+			),
+		);
 	}
 }

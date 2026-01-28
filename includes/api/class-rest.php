@@ -19,6 +19,7 @@ use EventKoi\API\Stats;
 use EventKoi\API\Calendar;
 use EventKoi\API\Onboarding;
 use EventKoi\API\Shortcode;
+use EventKoi\API\Rsvps;
 use EventKoi\Core\Settings as CoreSettings;
 use WP_REST_Request;
 
@@ -86,6 +87,7 @@ class REST {
 			Stats::class,
 			Onboarding::class,
 			Shortcode::class,
+			Rsvps::class,
 		);
 
 		foreach ( $api_classes as $api_class ) {
@@ -106,6 +108,16 @@ class REST {
 		$api_key      = $settings['api_key'] ?? '';
 
 		return apply_filters( 'eventkoi_get_private_api_key', esc_attr( $api_key ) );
+	}
+
+	/**
+	 * Check if the current REST request is public.
+	 *
+	 * @param WP_REST_Request $request The current request.
+	 * @return bool
+	 */
+	public static function public_api( WP_REST_Request $request ) {
+		return ( $request instanceof WP_REST_Request );
 	}
 
 	/**

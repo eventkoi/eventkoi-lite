@@ -3,6 +3,7 @@ import { ProBadge } from "@/components/pro-badge";
 
 const tabs = [
   { name: "default", title: "Default settings" },
+  { name: "emails", title: "Emails" },
   { name: "fields", title: "Custom fields", pro: true },
   { name: "integrations", title: "API & integrations" },
 ];

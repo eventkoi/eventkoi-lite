@@ -432,6 +432,27 @@ export function EventsOverview() {
         sortingFn: sortStatusFn,
       },
       {
+        accessorKey: "rsvp_used",
+        header: ({ column }) => (
+          <SortButton title="RSVPs/Tickets" column={column} />
+        ),
+        cell: ({ row }) => {
+          const used = row.original.rsvp_used ?? 0;
+          const capacity = row.original.rsvp_capacity ?? 0;
+          const isEnabled = row.original.rsvp_enabled !== false;
+          return (
+            <div className="text-foreground tabular-nums">
+              {!isEnabled ? "—" : capacity > 0 ? `${used}/${capacity}` : used}
+            </div>
+          );
+        },
+        sortingFn: (rowA, rowB) => {
+          const a = Number(rowA.original.rsvp_used || 0);
+          const b = Number(rowB.original.rsvp_used || 0);
+          return a - b;
+        },
+      },
+      {
         accessorKey: "start_date_iso",
         header: ({ column }) => <SortButton title="Starts" column={column} />,
         cell: ({ row }) => {
@@ -718,6 +739,7 @@ export function EventsOverview() {
         columns={columns}
         empty={"No events are found."}
         base="events"
+        titleColumnWidth="24%"
         statusFilters={statusFilters}
         isLoading={isLoading}
         fetchResults={fetchResults}

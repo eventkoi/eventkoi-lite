@@ -37,6 +37,8 @@ class Template {
 		add_action( 'template_redirect', array( __CLASS__, 'maybe_block_recurring_event' ) );
 
 		add_filter( 'template_include', array( __CLASS__, 'force_instance_block_template' ), 50 );
+		add_filter( 'template_include', array( __CLASS__, 'maybe_inject_rsvp_block_template_content' ), 60 );
+		add_filter( 'eventkoi_get_content', array( __CLASS__, 'maybe_inject_rsvp_shortcode' ), 20 );
 	}
 
 	/**
@@ -104,6 +106,65 @@ class Template {
 		$content = ob_get_clean();
 
 		return apply_filters( 'eventkoi_get_default_event_template', $content );
+	}
+
+	/**
+	 * Inject the RSVP shortcode into event templates when missing.
+	 *
+	 * @param string $content Template markup.
+	 * @return string
+	 */
+	public static function maybe_inject_rsvp_shortcode( $content ) {
+		if ( ! is_singular( 'eventkoi_event' ) ) {
+			return $content;
+		}
+
+		return self::inject_rsvp_shortcode( $content );
+	}
+
+	/**
+	 * Inject the RSVP shortcode into block template content when missing.
+	 *
+	 * @param string $template Template file path.
+	 * @return string
+	 */
+	public static function maybe_inject_rsvp_block_template_content( $template ) {
+		if ( ! wp_is_block_theme() || ! is_singular( 'eventkoi_event' ) ) {
+			return $template;
+		}
+
+		global $_wp_current_template_content;
+
+		if ( empty( $_wp_current_template_content ) ) {
+			return $template;
+		}
+
+		$_wp_current_template_content = self::inject_rsvp_shortcode(
+			$_wp_current_template_content
+		);
+
+		return $template;
+	}
+
+	/**
+	 * Inject the RSVP shortcode markup into template content.
+	 *
+	 * @param string $content Template markup.
+	 * @return string
+	 */
+	private static function inject_rsvp_shortcode( $content ) {
+		if ( false !== strpos( $content, 'eventkoi_rsvp' ) ) {
+			return $content;
+		}
+
+		$shortcode_block = "\n<!-- wp:shortcode -->\n[eventkoi_rsvp]\n<!-- /wp:shortcode -->\n";
+		$marker          = '<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"event_gmap"}}}}} -->';
+
+		if ( false !== strpos( $content, $marker ) ) {
+			return str_replace( $marker, $shortcode_block . $marker, $content );
+		}
+
+		return $content . $shortcode_block;
 	}
 
 	/**

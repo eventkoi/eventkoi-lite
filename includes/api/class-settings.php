@@ -119,16 +119,24 @@ class Settings {
 		}
 
 		// Fallback: Update settings normally.
+		$html_keys = array( 'rsvp_email_template' );
+
 		foreach ( $data as $key => $value ) {
 			if ( in_array( $key, array( 'api_key' ), true ) ) {
 				continue;
 			}
 
+			if ( in_array( $key, $html_keys, true ) ) {
+				$sanitized = wp_kses( $value, \EventKoi\Core\Settings::get_email_template_allowed_tags() );
+			} else {
+				$sanitized = is_array( $value )
+				? array_map( 'sanitize_text_field', $value )
+				: sanitize_text_field( $value );
+			}
+
 			$settings[ $key ] = apply_filters(
 				'eventkoi_pre_setting_value',
-				is_array( $value )
-				? array_map( 'sanitize_text_field', $value )
-				: sanitize_text_field( $value ),
+				$sanitized,
 				$key
 			);
 		}

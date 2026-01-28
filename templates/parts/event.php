@@ -83,6 +83,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 <!-- /wp:columns --></div>
 <!-- /wp:group -->
 
+<!-- wp:shortcode -->
+[eventkoi_rsvp]
+<!-- /wp:shortcode -->
+
 <!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"event_gmap"}}}}} -->
 <p></p>
 <!-- /wp:paragraph --></div>
