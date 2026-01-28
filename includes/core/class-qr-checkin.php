@@ -29,8 +29,7 @@ class QR_Checkin {
 	 * Constructor.
 	 */
 	public function __construct() {
-		add_action( 'template_redirect', array( $this, 'maybe_handle_qr_checkin' ) );
-		add_action( 'wp_footer', array( $this, 'render_qr_overlay' ) );
+		// QR check-ins are Pro-only; disable handlers in Lite.
 	}
 
 	/**
