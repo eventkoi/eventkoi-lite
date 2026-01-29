@@ -5,7 +5,7 @@ Tags: events calendar, calendar, event, events, event list
 Requires at least: 6.7  
 Tested up to: 6.9 
 Requires PHP: 8.0  
-Stable tag: 1.2.1.0 
+Stable tag: 1.3.0.0 
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Events calendar plugin for WordPress. Simple, clean event management. Display events as a calendar, list, or grid.
@@ -176,6 +176,9 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.0.0 – RSVP – 2026-01-29 =
+* New: Added RSVP creation and management.
 
 = 1.2.1.0 – Local timezone display & settings – 2026-01-13 =
 * New: Added auto-detect timezone setting so visitors can see event times in their local timezone.
