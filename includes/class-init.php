@@ -123,7 +123,6 @@ class Init {
 		return array(
 			\EventKoi\Admin\Menus::class,
 			\EventKoi\Admin\Redirects::class,
-			\EventKoi\Admin\Notices::class,
 			\EventKoi\Admin\Scripts::class,
 		);
 	}

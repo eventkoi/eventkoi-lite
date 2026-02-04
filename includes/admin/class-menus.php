@@ -70,12 +70,6 @@ class Menus {
 				if ( isset( $wp_filter['admin_notices'] ) && ! empty( $wp_filter['admin_notices']->callbacks ) ) {
 					foreach ( $wp_filter['admin_notices']->callbacks as $priority => $callbacks ) {
 						foreach ( $callbacks as $id => $callback ) {
-							// Skip our own EventKoi notice class.
-							if ( is_array( $callback['function'] ) && is_string( $callback['function'][0] ) ) {
-								if ( str_contains( $callback['function'][0], 'EventKoi\\Admin\\Notices' ) ) {
-									continue;
-								}
-							}
 							unset( $wp_filter['admin_notices']->callbacks[ $priority ][ $id ] );
 						}
 					}
