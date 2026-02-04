@@ -7,7 +7,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2025-12-16T09:30:08+00:00\n"
+"POT-Creation-Date: 2026-02-04T15:08:01+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -17,53 +17,33 @@ msgid "Launch Onboarding Wizard"
 msgstr ""
 
 #: admin/class-menus.php:52
-#: admin/class-menus.php:128
+#: admin/class-menus.php:122
 msgid "Dashboard"
 msgstr ""
 
 #: admin/class-menus.php:53
-#: admin/class-menus.php:131
+#: admin/class-menus.php:125
 msgid "Settings"
 msgstr ""
 
-#: admin/class-menus.php:116
-#: admin/class-menus.php:117
-#: admin/class-menus.php:129
+#: admin/class-menus.php:110
+#: admin/class-menus.php:111
+#: admin/class-menus.php:123
 #: core/class-post-types.php:111
 msgid "Events"
 msgstr ""
 
-#: admin/class-menus.php:130
+#: admin/class-menus.php:124
 #: core/class-post-types.php:54
 msgid "Calendars"
 msgstr ""
 
-#: admin/class-notices.php:93
-msgid "Warning:"
-msgstr ""
-
-#: admin/class-notices.php:94
-msgid " EventKoi's Events List Block will be removed in the next release."
-msgstr ""
-
-#: admin/class-notices.php:97
-msgid "Action required:"
-msgstr ""
-
-#: admin/class-notices.php:98
-msgid " Please switch your Events List Blocks to the new and more powerful EK Event Query Loop to keep your events displaying correctly."
-msgstr ""
-
-#: admin/class-notices.php:107
-msgid "Learn more"
-msgstr ""
-
-#: admin/class-scripts.php:116
+#: admin/class-scripts.php:117
 #: components/calendar/calendar-block.js:9
 msgid "Block"
 msgstr ""
 
-#: admin/class-scripts.php:121
+#: admin/class-scripts.php:122
 msgid "Elementor"
 msgstr ""
 
@@ -104,6 +84,9 @@ msgstr ""
 #: api/class-event.php:238
 #: api/class-event.php:257
 #: api/class-event.php:277
+#: api/class-rsvps.php:147
+#: api/class-rsvps.php:245
+#: api/class-rsvps.php:395
 msgid "Missing event ID."
 msgstr ""
 
@@ -149,6 +132,63 @@ msgstr ""
 msgid "Failed to add note."
 msgstr ""
 
+#: api/class-rsvps.php:99
+msgid "Invalid RSVP data."
+msgstr ""
+
+#: api/class-rsvps.php:152
+#: api/class-rsvps.php:250
+#: api/class-rsvps.php:400
+#: api/class-rsvps.php:493
+#: core/class-rsvps.php:62
+msgid "Invalid event."
+msgstr ""
+
+#: api/class-rsvps.php:160
+#: api/class-rsvps.php:167
+#: api/class-rsvps.php:258
+#: api/class-rsvps.php:265
+#: api/class-rsvps.php:417
+#: api/class-rsvps.php:424
+#: core/class-rsvps.php:69
+msgid "Missing event instance."
+msgstr ""
+
+#: api/class-rsvps.php:193
+#: api/class-stats.php:55
+#: api/class-uploads.php:188
+msgid "Invalid request."
+msgstr ""
+
+#: api/class-rsvps.php:200
+msgid "Missing required fields."
+msgstr ""
+
+#: api/class-rsvps.php:217
+msgid "Invalid action."
+msgstr ""
+
+#: api/class-rsvps.php:270
+#: core/class-rsvps.php:478
+msgid "Invalid RSVP status."
+msgstr ""
+
+#: api/class-rsvps.php:482
+msgid "Missing check-in code."
+msgstr ""
+
+#: api/class-rsvps.php:487
+#: core/class-qr-checkin.php:76
+msgid "Invalid check-in code."
+msgstr ""
+
+#: api/class-rsvps.php:676
+#: core/class-post-types.php:112
+#: core/class-rsvps.php:1066
+#: core/class-template.php:50
+msgid "Event"
+msgstr ""
+
 #: api/class-settings.php:83
 msgid "Request body is empty."
 msgstr ""
@@ -161,13 +201,8 @@ msgstr ""
 msgid "API key regenerated successfully."
 msgstr ""
 
-#: api/class-settings.php:141
+#: api/class-settings.php:149
 msgid "Settings updated successfully."
-msgstr ""
-
-#: api/class-stats.php:55
-#: api/class-uploads.php:188
-msgid "Invalid request."
 msgstr ""
 
 #: api/class-uploads.php:74
@@ -227,6 +262,7 @@ msgid "Event calendar link"
 msgstr ""
 
 #: core/class-bindings.php:45
+#: admin/settings/emails/index.js:59
 msgid "Event location"
 msgstr ""
 
@@ -247,32 +283,33 @@ msgid "Recurring rule summary"
 msgstr ""
 
 #. translators: Custom block category for EventKoi plugin.
-#: core/class-blocks.php:369
+#: core/class-blocks.php:350
+#: admin/settings/emails/index.js:304
 msgid "EventKoi"
 msgstr ""
 
-#: core/class-blocks.php:508
+#: core/class-blocks.php:489
 msgid "Share this event"
 msgstr ""
 
-#: core/class-blocks.php:939
+#: core/class-blocks.php:920
 msgid "No events found."
 msgstr ""
 
-#: core/class-blocks.php:1161
+#: core/class-blocks.php:1181
 msgid "Previous"
 msgstr ""
 
-#: core/class-blocks.php:1165
-#: admin/calendars/overview/index.js:799
-#: admin/events/edit/index.js:706
-#: admin/events/edit/index.js:718
-#: admin/events/edit/index.js:730
-#: admin/events/overview/index.js:682
+#: core/class-blocks.php:1185
+#: admin/calendars/overview/index.js:787
+#: admin/events/edit/index.js:704
+#: admin/events/edit/index.js:716
+#: admin/events/edit/index.js:728
+#: admin/events/overview/index.js:703
 msgid "Next"
 msgstr ""
 
-#: core/class-blocks.php:1176
+#: core/class-blocks.php:1196
 msgid "Pagination"
 msgstr ""
 
@@ -299,6 +336,7 @@ msgid "Calendar duplicated."
 msgstr ""
 
 #: core/class-calendars.php:41
+#: admin/events/edit/attendees/index.js:1296
 msgid "All"
 msgstr ""
 
@@ -308,262 +346,262 @@ msgid_plural "Calendars removed permanently."
 msgstr[0] ""
 msgstr[1] ""
 
-#: core/class-event.php:347
-#: core/class-event.php:1844
+#: core/class-event.php:355
+#: core/class-event.php:1974
 msgid "Attend online"
 msgstr ""
 
-#: core/class-event.php:402
+#: core/class-event.php:410
 msgid "Event created."
 msgstr ""
 
-#: core/class-event.php:424
+#: core/class-event.php:432
 msgid "Event updated."
 msgstr ""
 
-#: core/class-event.php:1069
-#: core/class-event.php:1183
+#: core/class-event.php:1119
+#: core/class-event.php:1233
 msgid "Date and time to be confirmed"
 msgstr ""
 
 #. translators: %d is the number of extra recurrence rules.
-#: core/class-event.php:1104
+#: core/class-event.php:1154
 #, php-format
 msgid "%d more rule"
 msgid_plural "%d more rules"
 msgstr[0] ""
 msgstr[1] ""
 
-#: core/class-event.php:1490
-#: core/class-events.php:264
+#: core/class-event.php:1620
+#: core/class-events.php:290
 msgid "Event restored successfully."
 msgid_plural "Events restored successfully."
 msgstr[0] ""
 msgstr[1] ""
 
-#: core/class-event.php:1506
+#: core/class-event.php:1636
 msgid "Event moved to Trash."
 msgstr ""
 
 #. translators: %s event title
-#: core/class-event.php:1520
+#: core/class-event.php:1650
 #, php-format
 msgid "[Duplicate]: %s"
 msgstr ""
 
-#: core/class-event.php:1542
+#: core/class-event.php:1672
 msgid "Event duplicated."
 msgstr ""
 
-#: core/class-event.php:1642
+#: core/class-event.php:1772
 msgid "Untitled event"
 msgstr ""
 
-#: core/class-event.php:1660
+#: core/class-event.php:1790
 msgid "No event details."
 msgstr ""
 
-#: core/class-event.php:1800
+#: core/class-event.php:1930
 msgid "No location available."
 msgstr ""
 
-#: core/class-event.php:1914
-#: core/class-event.php:2028
+#: core/class-event.php:2050
+#: core/class-event.php:2169
 msgid "Date and time to be confirmed."
 msgstr ""
 
-#: core/class-event.php:2126
+#: core/class-event.php:2301
 #: components/onboarding/set-calendar-defaults.jsx:22
 msgid "Monday"
 msgstr ""
 
-#: core/class-event.php:2127
+#: core/class-event.php:2302
 #: components/onboarding/set-calendar-defaults.jsx:23
 msgid "Tuesday"
 msgstr ""
 
-#: core/class-event.php:2128
+#: core/class-event.php:2303
 #: components/onboarding/set-calendar-defaults.jsx:24
 msgid "Wednesday"
 msgstr ""
 
-#: core/class-event.php:2129
+#: core/class-event.php:2304
 #: components/onboarding/set-calendar-defaults.jsx:25
 msgid "Thursday"
 msgstr ""
 
-#: core/class-event.php:2130
+#: core/class-event.php:2305
 #: components/onboarding/set-calendar-defaults.jsx:26
 msgid "Friday"
 msgstr ""
 
-#: core/class-event.php:2131
+#: core/class-event.php:2306
 #: components/onboarding/set-calendar-defaults.jsx:27
 msgid "Saturday"
 msgstr ""
 
-#: core/class-event.php:2132
+#: core/class-event.php:2307
 #: components/onboarding/set-calendar-defaults.jsx:28
 msgid "Sunday"
 msgstr ""
 
-#: core/class-event.php:2136
+#: core/class-event.php:2311
 msgid "first"
 msgstr ""
 
-#: core/class-event.php:2137
+#: core/class-event.php:2312
 msgid "second"
 msgstr ""
 
-#: core/class-event.php:2138
+#: core/class-event.php:2313
 msgid "third"
 msgstr ""
 
-#: core/class-event.php:2139
+#: core/class-event.php:2314
 msgid "fourth"
 msgstr ""
 
-#: core/class-event.php:2140
+#: core/class-event.php:2315
 msgid "fifth"
 msgstr ""
 
-#: core/class-event.php:2152
+#: core/class-event.php:2327
 msgid "days"
 msgstr ""
 
-#: core/class-event.php:2153
+#: core/class-event.php:2328
 msgid "weeks"
 msgstr ""
 
-#: core/class-event.php:2154
+#: core/class-event.php:2329
 msgid "months"
 msgstr ""
 
-#: core/class-event.php:2155
+#: core/class-event.php:2330
 msgid "years"
 msgstr ""
 
 #. translators: %1$d: interval number (e.g., 2). %2$s: period plural (e.g., "months").
-#: core/class-event.php:2159
+#: core/class-event.php:2334
 #, php-format
 msgid "Every %1$d %2$s"
 msgstr ""
 
-#: core/class-event.php:2161
+#: core/class-event.php:2336
 msgid "Daily"
 msgstr ""
 
-#: core/class-event.php:2163
+#: core/class-event.php:2338
 msgid "Weekly"
 msgstr ""
 
-#: core/class-event.php:2165
+#: core/class-event.php:2340
 msgid "Monthly"
 msgstr ""
 
-#: core/class-event.php:2167
+#: core/class-event.php:2342
 msgid "Yearly"
 msgstr ""
 
-#: core/class-event.php:2200
+#: core/class-event.php:2375
 #: components/calendar/calendar-defaults.js:16
 msgid "January"
 msgstr ""
 
-#: core/class-event.php:2201
+#: core/class-event.php:2376
 #: components/calendar/calendar-defaults.js:17
 msgid "February"
 msgstr ""
 
-#: core/class-event.php:2202
+#: core/class-event.php:2377
 #: components/calendar/calendar-defaults.js:18
 msgid "March"
 msgstr ""
 
-#: core/class-event.php:2203
+#: core/class-event.php:2378
 #: components/calendar/calendar-defaults.js:19
 msgid "April"
 msgstr ""
 
-#: core/class-event.php:2204
+#: core/class-event.php:2379
 #: components/calendar/calendar-defaults.js:20
 msgid "May"
 msgstr ""
 
-#: core/class-event.php:2205
+#: core/class-event.php:2380
 #: components/calendar/calendar-defaults.js:21
 msgid "June"
 msgstr ""
 
-#: core/class-event.php:2206
+#: core/class-event.php:2381
 #: components/calendar/calendar-defaults.js:22
 msgid "July"
 msgstr ""
 
-#: core/class-event.php:2207
+#: core/class-event.php:2382
 #: components/calendar/calendar-defaults.js:23
 msgid "August"
 msgstr ""
 
-#: core/class-event.php:2208
+#: core/class-event.php:2383
 #: components/calendar/calendar-defaults.js:24
 msgid "September"
 msgstr ""
 
-#: core/class-event.php:2209
+#: core/class-event.php:2384
 #: components/calendar/calendar-defaults.js:25
 msgid "October"
 msgstr ""
 
-#: core/class-event.php:2210
+#: core/class-event.php:2385
 #: components/calendar/calendar-defaults.js:26
 msgid "November"
 msgstr ""
 
-#: core/class-event.php:2211
+#: core/class-event.php:2386
 #: components/calendar/calendar-defaults.js:27
 msgid "December"
 msgstr ""
 
-#: core/class-events.php:223
+#: core/class-events.php:249
 msgid "Event moved to trash."
 msgid_plural "Events moved to trash."
 msgstr[0] ""
 msgstr[1] ""
 
-#: core/class-events.php:242
+#: core/class-events.php:268
 msgid "Event removed permanently."
 msgid_plural "Events removed permanently."
 msgstr[0] ""
 msgstr[1] ""
 
-#: core/class-events.php:367
+#: core/class-events.php:393
 msgid "Event duplicated successfully."
 msgid_plural "Events duplicated successfully."
 msgstr[0] ""
 msgstr[1] ""
 
-#: core/class-hooks.php:151
+#: core/class-hooks.php:246
 msgid "Card"
 msgstr ""
 
-#: core/class-hooks.php:152
+#: core/class-hooks.php:247
 msgid "Invoice"
 msgstr ""
 
-#: core/class-hooks.php:153
+#: core/class-hooks.php:248
 msgid "SEPA Direct Debit"
 msgstr ""
 
-#: core/class-hooks.php:154
+#: core/class-hooks.php:249
 msgid "PayPal"
 msgstr ""
 
-#: core/class-hooks.php:155
+#: core/class-hooks.php:250
 msgid "Cash"
 msgstr ""
 
-#: core/class-hooks.php:156
+#: core/class-hooks.php:251
 msgid "Link"
 msgstr ""
 
@@ -634,11 +672,6 @@ msgstr ""
 #: core/class-post-types.php:70
 msgctxt "Template name"
 msgid "Events by Calendar"
-msgstr ""
-
-#: core/class-post-types.php:112
-#: core/class-template.php:48
-msgid "Event"
 msgstr ""
 
 #: core/class-post-types.php:113
@@ -738,11 +771,121 @@ msgstr ""
 msgid "This is where you can browse events in this site."
 msgstr ""
 
-#: core/class-scripts.php:72
+#: core/class-qr-checkin.php:47
+msgid "QR check-ins are a Pro feature."
+msgstr ""
+
+#: core/class-qr-checkin.php:63
+msgid "Not authorized."
+msgstr ""
+
+#: core/class-qr-checkin.php:93
+msgid "RSVP is not marked as going."
+msgstr ""
+
+#: core/class-qr-checkin.php:105
+msgid "Check-in denied."
+msgstr ""
+
+#: core/class-qr-checkin.php:118
+msgid "Already checked in."
+msgstr ""
+
+#: core/class-qr-checkin.php:132
+msgid "Check-in failed."
+msgstr ""
+
+#: core/class-qr-checkin.php:145
+msgid "Checked in."
+msgstr ""
+
+#: core/class-rsvps.php:57
+msgid "Missing RSVP fields."
+msgstr ""
+
+#: core/class-rsvps.php:82
+msgid "RSVP is disabled for this event."
+msgstr ""
+
+#: core/class-rsvps.php:131
+msgid "RSVP capacity reached."
+msgstr ""
+
+#: core/class-rsvps.php:141
+msgid "RSVP already exists."
+msgstr ""
+
+#: core/class-rsvps.php:521
+msgid "Failed to update RSVP status."
+msgstr ""
+
+#: core/class-rsvps.php:545
+msgid "Invalid check-in status."
+msgstr ""
+
+#: core/class-rsvps.php:586
+msgid "Failed to update check-in status."
+msgstr ""
+
+#: core/class-rsvps.php:649
+msgid "Failed to update check-in count."
+msgstr ""
+
+#: core/class-rsvps.php:752
+msgid "Failed to delete RSVPs."
+msgstr ""
+
+#: core/class-rsvps.php:822
+#, php-format
+msgid "Your RSVP for %s"
+msgstr ""
+
+#. translators: %d: guest count
+#: core/class-rsvps.php:875
+#: checkin/index.js:370
+#, php-format,js-format
+msgid "Guests: %d"
+msgstr ""
+
+#: core/class-rsvps.php:882
+msgid "there"
+msgstr ""
+
+#: core/class-rsvps.php:893
+#: admin/events/edit/attendees/index.js:166
+#: admin/events/edit/attendees/index.js:1040
+#: admin/events/edit/attendees/index.js:1284
+#: checkin/index.js:66
+#: checkin/index.js:73
+#: rsvp/index.js:91
+#: rsvp/index.js:313
+#: rsvp/index.js:356
+msgid "Going"
+msgstr ""
+
+#: core/class-rsvps.php:905
+#, php-format
+msgid "Schedule (%s):"
+msgstr ""
+
+#: core/class-rsvps.php:906
+msgid "Schedule:"
+msgstr ""
+
+#: core/class-rsvps.php:916
+#: core/class-rsvps.php:927
+msgid "Location:"
+msgstr ""
+
+#: core/class-rsvps.php:918
+msgid "View / manage your RSVP:"
+msgstr ""
+
+#: core/class-scripts.php:88
 msgid "No events were found."
 msgstr ""
 
-#: core/class-template.php:49
+#: core/class-template.php:51
 msgid "Default template for a single event view."
 msgstr ""
 
@@ -789,72 +932,72 @@ msgstr ""
 msgid "Incomplete"
 msgstr ""
 
-#: admin/calendars/overview/index.js:301
-#: admin/dashboard/onboarding/index.jsx:436
+#: admin/calendars/overview/index.js:302
+#: admin/dashboard/onboarding/index.jsx:427
 #: admin/events/edit/index.js:383
 #: admin/events/overview/index.js:72
 msgid "Publish demo event"
 msgstr ""
 
-#: admin/calendars/overview/index.js:305
+#: admin/calendars/overview/index.js:306
 #: admin/events/edit/index.js:387
 msgid "View default calendar"
 msgstr ""
 
-#: admin/calendars/overview/index.js:606
-#: admin/events/edit/index.js:496
-#: admin/events/overview/index.js:566
+#: admin/calendars/overview/index.js:594
+#: admin/events/edit/index.js:494
+#: admin/events/overview/index.js:587
 msgid "EventKoi Plugin Tour"
 msgstr ""
 
-#: admin/calendars/overview/index.js:624
-#: admin/calendars/overview/index.js:662
-#: admin/events/edit/index.js:511
-#: admin/events/edit/index.js:562
-#: admin/events/overview/index.js:573
-#: admin/events/overview/index.js:604
+#: admin/calendars/overview/index.js:612
+#: admin/calendars/overview/index.js:650
+#: admin/events/edit/index.js:509
+#: admin/events/edit/index.js:560
+#: admin/events/overview/index.js:594
+#: admin/events/overview/index.js:625
 msgid "Close"
 msgstr ""
 
-#: admin/calendars/overview/index.js:631
-#: admin/events/edit/index.js:518
-#: admin/events/overview/index.js:580
+#: admin/calendars/overview/index.js:619
+#: admin/events/edit/index.js:516
+#: admin/events/overview/index.js:601
 msgid "You can restart this Tour any time in the EventKoi Dashboard."
 msgstr ""
 
-#: admin/calendars/overview/index.js:717
+#: admin/calendars/overview/index.js:705
 msgid "Welcome to your Calendars"
 msgstr ""
 
-#: admin/calendars/overview/index.js:718
+#: admin/calendars/overview/index.js:706
 msgid "Take action: Click link icon"
 msgstr ""
 
-#: admin/calendars/overview/index.js:723
+#: admin/calendars/overview/index.js:711
 msgid "Here, you can create new calendars, edit existing ones, and more."
 msgstr ""
 
-#: admin/calendars/overview/index.js:729
+#: admin/calendars/overview/index.js:717
 msgid "Click the icon to view the frontend calendar."
 msgstr ""
 
-#: admin/calendars/overview/index.js:734
+#: admin/calendars/overview/index.js:722
 msgid "This is your last step in the tour."
 msgstr ""
 
 #. translators: 1: current step number, 2: total steps
-#: admin/calendars/overview/index.js:743
-#: admin/events/edit/index.js:648
-#: admin/events/overview/index.js:662
+#: admin/calendars/overview/index.js:731
+#: admin/events/edit/index.js:646
+#: admin/events/overview/index.js:683
 #, js-format
 msgid "%1$s of %2$s"
 msgstr ""
 
-#: admin/calendars/overview/index.js:778
-#: admin/calendars/overview/index.js:819
-#: admin/dashboard/onboarding/index.jsx:533
-#: admin/events/edit/index.js:693
-#: admin/events/overview/index.js:702
+#: admin/calendars/overview/index.js:766
+#: admin/calendars/overview/index.js:807
+#: admin/dashboard/onboarding/index.jsx:524
+#: admin/events/edit/index.js:691
+#: admin/events/overview/index.js:723
 msgid "Back"
 msgstr ""
 
@@ -866,87 +1009,326 @@ msgstr ""
 msgid "Confirm timezone and date format"
 msgstr ""
 
-#: admin/dashboard/onboarding/index.jsx:148
+#: admin/dashboard/onboarding/index.jsx:139
 msgid "Classical Concert in the Park"
 msgstr ""
 
-#: admin/dashboard/onboarding/index.jsx:149
+#: admin/dashboard/onboarding/index.jsx:140
 msgid "<p>A serene evening of classical music unfolds at the Singapore Botanic Gardens’ iconic Bandstand. Surrounded by lush greenery and gentle evening breezes, audiences can enjoy a live orchestral performance beneath the open sky. An enchanting blend of nature, culture, and timeless melodies in the heart of the city.</p>"
 msgstr ""
 
-#: admin/dashboard/onboarding/index.jsx:153
+#: admin/dashboard/onboarding/index.jsx:144
 msgid "A ready-made listing to explore."
 msgstr ""
 
-#: admin/dashboard/onboarding/index.jsx:420
+#: admin/dashboard/onboarding/index.jsx:411
 msgid "You're ready to"
 msgstr ""
 
-#: admin/dashboard/onboarding/index.jsx:423
+#: admin/dashboard/onboarding/index.jsx:414
 msgid "start using EventKoi!"
 msgstr ""
 
-#: admin/dashboard/onboarding/index.jsx:428
+#: admin/dashboard/onboarding/index.jsx:419
 msgid "Take a quick 2-minute tour to learn how to:"
 msgstr ""
 
-#: admin/dashboard/onboarding/index.jsx:437
+#: admin/dashboard/onboarding/index.jsx:428
 msgid "View your ready-made calendar"
 msgstr ""
 
-#: admin/dashboard/onboarding/index.jsx:457
-#: admin/dashboard/onboarding/index.jsx:546
+#: admin/dashboard/onboarding/index.jsx:448
+#: admin/dashboard/onboarding/index.jsx:537
 msgid "Creating demo event…"
 msgstr ""
 
-#: admin/dashboard/onboarding/index.jsx:458
+#: admin/dashboard/onboarding/index.jsx:449
 msgid "Start plugin tour"
 msgstr ""
 
-#: admin/dashboard/onboarding/index.jsx:474
+#: admin/dashboard/onboarding/index.jsx:465
 msgid "Onboarding wizard"
 msgstr ""
 
-#: admin/dashboard/onboarding/index.jsx:549
+#: admin/dashboard/onboarding/index.jsx:540
 msgid "Finish setup"
 msgstr ""
 
 #. translators: %s: title of the next onboarding step.
-#: admin/dashboard/onboarding/index.jsx:553
+#: admin/dashboard/onboarding/index.jsx:544
 #, js-format
 msgid "Next: %s"
 msgstr ""
 
-#: admin/events/edit/index.js:619
+#. translators: %d: number of RSVPs
+#: admin/events/edit/attendees/index.js:130
+#, js-format
+msgid "Deleted %d RSVP(s)."
+msgstr ""
+
+#. translators: %d: number of RSVPs
+#: admin/events/edit/attendees/index.js:135
+#, js-format
+msgid "Updated %d RSVP(s)."
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:142
+msgid "Bulk action failed."
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:155
+msgid "Bulk actions"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:161
+msgid "Set status"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:169
+#: admin/events/edit/attendees/index.js:1047
+#: admin/events/edit/attendees/index.js:1287
+#: checkin/index.js:67
+#: checkin/index.js:74
+#: rsvp/index.js:92
+msgid "Maybe"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:174
+#: admin/events/edit/attendees/index.js:1054
+#: admin/events/edit/attendees/index.js:1290
+#: checkin/index.js:68
+#: checkin/index.js:75
+#: rsvp/index.js:93
+msgid "Not going"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:179
+#: admin/events/edit/attendees/index.js:1061
+#: admin/events/edit/attendees/index.js:1293
+#: checkin/index.js:69
+msgid "Cancelled"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:186
+msgid "Set check-in status"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:193
+#: admin/events/edit/attendees/index.js:906
+#: admin/events/edit/attendees/index.js:963
+msgid "Check in"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:198
+#: admin/events/edit/attendees/index.js:903
+#: admin/events/edit/attendees/index.js:971
+msgid "Checked in"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:201
+#: admin/events/edit/attendees/index.js:905
+#: admin/events/edit/attendees/index.js:977
+msgid "Denied"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:210
+#: admin/events/edit/attendees/index.js:237
+#: admin/events/edit/attendees/index.js:340
+msgid "Delete"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:219
+msgid "Delete RSVPs?"
+msgstr ""
+
+#. translators: %d: number of selected RSVPs
+#: admin/events/edit/attendees/index.js:224
+#, js-format
+msgid "This will permanently delete %d RSVP(s)."
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:230
+#: admin/events/edit/attendees/index.js:333
+#: checkin/index.js:560
+#: rsvp/index.js:485
+msgid "Cancel"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:279
+msgid "No email sent."
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:280
+#: admin/events/edit/attendees/index.js:748
+#: admin/events/edit/attendees/index.js:783
+#: admin/events/edit/attendees/index.js:818
+msgid "No RSVP updated."
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:287
+msgid "RSVP deleted."
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:289
+msgid "Confirmation email sent."
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:290
+#: admin/events/edit/attendees/index.js:752
+#: admin/events/edit/attendees/index.js:787
+#: admin/events/edit/attendees/index.js:822
+msgid "RSVP updated."
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:295
+msgid "Action failed."
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:307
+msgid "RSVP actions"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:317
+msgid "Resend confirmation"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:326
+msgid "Delete RSVP?"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:329
+msgid "This will permanently delete this RSVP."
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:406
+#: checkin/index.js:668
+#: checkin/index.js:688
+msgid "Checked-in count"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:609
+msgid "RSVP enabled."
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:613
+msgid "Failed to enable RSVP."
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:661
+msgid "Missing event data."
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:666
+msgid "Select an instance first."
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:721
+msgid "Failed to export CSV."
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:756
+#: admin/events/edit/attendees/index.js:791
+#: admin/events/edit/attendees/index.js:826
+msgid "Failed to update RSVP."
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:950
+msgid "Check-in actions"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:1151
+msgid "RSVP is turned off"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:1154
+msgid "Enable RSVP for this event to start collecting attendees."
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:1165
+msgid "Enabling..."
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:1166
+msgid "Enable RSVP"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:1191
+msgid "Upcoming"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:1206
+msgid "Past instances"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:1229
+msgid "RSVP \"Going\""
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:1242
+msgid "Check-ins"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:1278
+msgid "Exporting..."
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:1279
+msgid "Export"
+msgstr ""
+
+#: admin/events/edit/index.js:617
 msgid "Welcome to your Events settings"
 msgstr ""
 
-#: admin/events/edit/index.js:621
+#: admin/events/edit/index.js:619
 msgid "Take action: Click on \"Publish\""
 msgstr ""
 
-#: admin/events/edit/index.js:623
+#: admin/events/edit/index.js:621
 msgid "Take action: Click on \"Preview\" or \"Save\""
 msgstr ""
 
-#: admin/events/edit/index.js:624
+#: admin/events/edit/index.js:622
 msgid "Take action: Click on \"Calendars\""
 msgstr ""
 
-#: admin/events/edit/index.js:629
+#: admin/events/edit/index.js:627
 msgid "This particular event is a demo, so we’ve pre-filled everything for you. Feel free to play around."
 msgstr ""
 
-#: admin/events/edit/index.js:634
+#: admin/events/edit/index.js:632
 msgid "Once you have finished editing your event, you can publish it."
 msgstr ""
 
-#: admin/events/edit/index.js:639
+#: admin/events/edit/index.js:637
 msgid "View the event you have created or make additional changes and save them."
 msgstr ""
 
-#: admin/events/edit/index.js:643
+#: admin/events/edit/index.js:641
 msgid "We’re headed to your Calendars next."
+msgstr ""
+
+#: admin/events/edit/rsvp/index.js:39
+#: components/event/event-rsvp.js:40
+#: checkin/index.js:434
+#: rsvp/index.js:368
+msgid "RSVP"
+msgstr ""
+
+#: admin/events/edit/rsvp/index.js:42
+msgid "Track who is coming to the event."
+msgstr ""
+
+#: admin/events/edit/rsvp/index.js:60
+msgid "Tickets"
+msgstr ""
+
+#: admin/events/edit/rsvp/index.js:62
+msgid "Coming soon!"
+msgstr ""
+
+#: admin/events/edit/rsvp/index.js:66
+msgid "Sell tickets to the event."
 msgstr ""
 
 #: admin/events/overview/index.js:76
@@ -967,6 +1349,151 @@ msgstr ""
 
 #: admin/events/overview/index.js:308
 msgid "Click the event to open it. We'll continue on the next page."
+msgstr ""
+
+#: admin/settings/emails/index.js:32
+msgid "[event_name]: Ticket details"
+msgstr ""
+
+#: admin/settings/emails/index.js:48
+msgid "Attendee name"
+msgstr ""
+
+#: admin/settings/emails/index.js:49
+msgid "Attendee email"
+msgstr ""
+
+#: admin/settings/emails/index.js:50
+msgid "Event name"
+msgstr ""
+
+#: admin/settings/emails/index.js:53
+msgid "Event schedule in site timezone"
+msgstr ""
+
+#: admin/settings/emails/index.js:57
+msgid "Event timezone label"
+msgstr ""
+
+#: admin/settings/emails/index.js:60
+msgid "Event URL"
+msgstr ""
+
+#: admin/settings/emails/index.js:61
+msgid "RSVP status"
+msgstr ""
+
+#: admin/settings/emails/index.js:62
+msgid "Guest count"
+msgstr ""
+
+#: admin/settings/emails/index.js:63
+msgid "Guests label line"
+msgstr ""
+
+#: admin/settings/emails/index.js:64
+#: checkin/index.js:274
+msgid "Check-in code"
+msgstr ""
+
+#: admin/settings/emails/index.js:67
+msgid "QR code image"
+msgstr ""
+
+#: admin/settings/emails/index.js:70
+msgid "Site name"
+msgstr ""
+
+#: admin/settings/emails/index.js:144
+msgid "Email settings updated."
+msgstr ""
+
+#: admin/settings/emails/index.js:148
+msgid "Failed to update email settings."
+msgstr ""
+
+#: admin/settings/emails/index.js:159
+msgid "Attendee"
+msgstr ""
+
+#: admin/settings/emails/index.js:160
+msgid "Sent to attendees when they RSVP to the event."
+msgstr ""
+
+#: admin/settings/emails/index.js:174
+msgid "Emails"
+msgstr ""
+
+#: admin/settings/emails/index.js:178
+msgid "Select email template"
+msgstr ""
+
+#: admin/settings/emails/index.js:186
+msgid "Choose a template"
+msgstr ""
+
+#: admin/settings/emails/index.js:191
+msgid "RSVP confirmation email"
+msgstr ""
+
+#: admin/settings/emails/index.js:199
+msgid "Recipient:"
+msgstr ""
+
+#: admin/settings/emails/index.js:205
+msgid "Description:"
+msgstr ""
+
+#: admin/settings/emails/index.js:232
+msgid "Enable RSVP confirmation email"
+msgstr ""
+
+#: admin/settings/emails/index.js:264
+msgid "Defaults restored."
+msgstr ""
+
+#: admin/settings/emails/index.js:269
+msgid "Failed to restore defaults."
+msgstr ""
+
+#: admin/settings/emails/index.js:278
+msgid "Restore defaults"
+msgstr ""
+
+#: admin/settings/emails/index.js:286
+msgid "Saving..."
+msgstr ""
+
+#: admin/settings/emails/index.js:287
+msgid "Save changes"
+msgstr ""
+
+#: admin/settings/emails/index.js:298
+msgid "Sender name"
+msgstr ""
+
+#: admin/settings/emails/index.js:313
+msgid "Sender email address"
+msgstr ""
+
+#: admin/settings/emails/index.js:331
+msgid "Subject line"
+msgstr ""
+
+#: admin/settings/emails/index.js:342
+msgid "Email content"
+msgstr ""
+
+#: admin/settings/emails/index.js:357
+msgid "Available tags"
+msgstr ""
+
+#: admin/settings/emails/index.js:360
+msgid "Add these tags to give attendees the event data they need."
+msgstr ""
+
+#: admin/settings/emails/index.js:395
+msgid "Pro"
 msgstr ""
 
 #: components/calendar/calendar-block.js:12
@@ -1048,6 +1575,7 @@ msgid "Copied!"
 msgstr ""
 
 #: components/calendar/calendar-shortcode.js:44
+#: checkin/index.js:403
 msgid "Copy"
 msgstr ""
 
@@ -1095,6 +1623,58 @@ msgstr ""
 
 #: components/dashboard/getting-started.js:53
 msgid "Begin plugin tour"
+msgstr ""
+
+#: components/event/event-rsvp.js:41
+msgid "Allow visitors to RSVP to this event."
+msgstr ""
+
+#: components/event/event-rsvp.js:58
+msgid "Capacity"
+msgstr ""
+
+#: components/event/event-rsvp.js:64
+msgid "Unlimited"
+msgstr ""
+
+#: components/event/event-rsvp.js:77
+msgid "Leave empty for unlimited RSVPs."
+msgstr ""
+
+#: components/event/event-rsvp.js:86
+msgid "Show remaining spots"
+msgstr ""
+
+#: components/event/event-rsvp.js:87
+msgid "Display remaining capacity on the event page."
+msgstr ""
+
+#: components/event/event-rsvp.js:102
+msgid "Allow guests"
+msgstr ""
+
+#: components/event/event-rsvp.js:103
+msgid "Let attendees RSVP for additional guests."
+msgstr ""
+
+#: components/event/event-rsvp.js:125
+msgid "Max guests per RSVP"
+msgstr ""
+
+#: components/event/event-rsvp.js:148
+msgid "Allow RSVP edits"
+msgstr ""
+
+#: components/event/event-rsvp.js:149
+msgid "Let attendees update their RSVP from the event page."
+msgstr ""
+
+#: components/event/event-rsvp.js:164
+msgid "Auto-create attendee account"
+msgstr ""
+
+#: components/event/event-rsvp.js:165
+msgid "Create a WordPress user when someone RSVPs as going."
 msgstr ""
 
 #: components/onboarding/confirm-timezone-format.jsx:43
@@ -1170,4 +1750,143 @@ msgstr ""
 
 #: plugins/quick-start-snackbar.js:101
 msgid "Go to EventKoi Dashboard"
+msgstr ""
+
+#: checkin/index.js:152
+msgid "Local time"
+msgstr ""
+
+#: checkin/index.js:208
+msgid "?"
+msgstr ""
+
+#: checkin/index.js:223
+msgid "Unable to update RSVP."
+msgstr ""
+
+#: checkin/index.js:277
+msgid "Enter your code"
+msgstr ""
+
+#: checkin/index.js:284
+msgid "View RSVP"
+msgstr ""
+
+#: checkin/index.js:390
+msgid "Copy check-in code"
+msgstr ""
+
+#: checkin/index.js:422
+#: rsvp/index.js:355
+msgid "Edit RSVP"
+msgstr ""
+
+#. translators: %s: event title
+#: checkin/index.js:431
+#: rsvp/index.js:365
+#, js-format
+msgid "RSVP for %s"
+msgstr ""
+
+#: checkin/index.js:437
+#: rsvp/index.js:371
+msgid "Let us know you're coming."
+msgstr ""
+
+#: checkin/index.js:450
+#: rsvp/index.js:382
+msgid "Name"
+msgstr ""
+
+#: checkin/index.js:462
+#: rsvp/index.js:393
+msgid "Email"
+msgstr ""
+
+#: checkin/index.js:474
+#: rsvp/index.js:404
+msgid "Status"
+msgstr ""
+
+#: checkin/index.js:497
+#: rsvp/index.js:426
+msgid "Guests"
+msgstr ""
+
+#. translators: %d: maximum guests
+#. translators: %d: maximum count
+#: checkin/index.js:513
+#: checkin/index.js:673
+#: rsvp/index.js:442
+#, js-format
+msgid "Max %d"
+msgstr ""
+
+#: checkin/index.js:540
+#: rsvp/index.js:466
+#, js-format
+msgid "Max %d guest"
+msgstr ""
+
+#: checkin/index.js:541
+#: rsvp/index.js:467
+#, js-format
+msgid "Max %d guests"
+msgstr ""
+
+#: checkin/index.js:552
+#: rsvp/index.js:477
+msgid "Submitting..."
+msgstr ""
+
+#: checkin/index.js:553
+#: rsvp/index.js:478
+msgid "Submit RSVP"
+msgstr ""
+
+#: checkin/index.js:604
+msgid "Review the attendance count before closing this screen."
+msgstr ""
+
+#: checkin/index.js:608
+msgid "Check-in is restricted to staff."
+msgstr ""
+
+#: checkin/index.js:609
+msgid "Please check the code and try again."
+msgstr ""
+
+#: checkin/index.js:654
+msgid "Check-in complete."
+msgstr ""
+
+#: checkin/index.js:696
+msgid "Updating..."
+msgstr ""
+
+#: checkin/index.js:697
+msgid "Update count"
+msgstr ""
+
+#: checkin/index.js:705
+msgid "Count updated."
+msgstr ""
+
+#. translators: %s: RSVP status
+#: rsvp/index.js:127
+#: rsvp/index.js:213
+#, js-format
+msgid "Your RSVP: %s"
+msgstr ""
+
+#: rsvp/index.js:322
+msgid "Remaining"
+msgstr ""
+
+#: rsvp/index.js:496
+msgid "This event is fully booked."
+msgstr ""
+
+#: rsvp/index.js:502
+msgid "Check-in code:"
 msgstr ""
