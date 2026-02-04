@@ -327,7 +327,16 @@ export default function Edit({
       meridiem: "short",
     }),
   };
-  const calendarTimeZone = timezone && timezone !== "local" ? timezone : null;
+  const resolvedLocalTz =
+    typeof window !== "undefined"
+      ? Intl.DateTimeFormat().resolvedOptions().timeZone
+      : null;
+  const calendarTimeZone =
+    timezone === "local"
+      ? resolvedLocalTz || "UTC"
+      : timezone
+      ? timezone
+      : null;
   const formatInCalendarTz = (date, options) => {
     const opts = calendarTimeZone
       ? { ...options, timeZone: calendarTimeZone }
@@ -396,7 +405,7 @@ export default function Edit({
             initialView={view}
             initialDate={initialDate}
             weekends={true}
-            timeZone={timezone}
+            timeZone={calendarTimeZone || "UTC"}
             firstDay={days[startday]}
             eventColor={eventColor}
             headerToolbar={false}

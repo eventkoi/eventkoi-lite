@@ -60,7 +60,16 @@ export function CalendarGridMode({
 }) {
   // Determine whether locale uses AM/PM
   const usesMeridiem = /^en/i.test(localeToUse);
-  const calendarTimeZone = timezone && timezone !== "local" ? timezone : null;
+  const resolvedLocalTz =
+    typeof window !== "undefined"
+      ? Intl.DateTimeFormat().resolvedOptions().timeZone
+      : null;
+  const calendarTimeZone =
+    timezone === "local"
+      ? resolvedLocalTz || "UTC"
+      : timezone && timezone !== "local"
+      ? timezone
+      : null;
   const formatInCalendarTz = (date, options) => {
     const opts = calendarTimeZone
       ? { ...options, timeZone: calendarTimeZone }
@@ -113,7 +122,7 @@ export function CalendarGridMode({
         initialView={view}
         initialDate={initialDate}
         weekends={true}
-        timeZone={timezone}
+        timeZone={calendarTimeZone || "UTC"}
         firstDay={days[startday || calendar?.startday || "sunday"]}
         eventColor={eventColor}
         headerToolbar={false}
