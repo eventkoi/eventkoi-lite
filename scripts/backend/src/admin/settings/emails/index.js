@@ -49,18 +49,6 @@ const TAGS = [
   { tag: "[attendee_email]", description: __("Attendee email", "eventkoi-lite") },
   { tag: "[event_name]", description: __("Event name", "eventkoi-lite") },
   {
-    tag: "[event_date]",
-    description: __("Event start date (UTC)", "eventkoi-lite"),
-  },
-  {
-    tag: "[event_time]",
-    description: __("Event start time (UTC)", "eventkoi-lite"),
-  },
-  {
-    tag: "[event_datetime_utc]",
-    description: __("Event schedule in UTC", "eventkoi-lite"),
-  },
-  {
     tag: "[event_datetime]",
     description: __("Event schedule in site timezone", "eventkoi-lite"),
   },
