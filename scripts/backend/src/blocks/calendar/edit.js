@@ -6,6 +6,7 @@ import apiRequest from "@wordpress/api-fetch";
 import { InspectorControls, useBlockProps } from "@wordpress/block-editor";
 import { useEffect, useRef, useState } from "react";
 
+import { formatDate } from "@fullcalendar/core";
 import allLocales from "@fullcalendar/core/locales-all";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import listPlugin from "@fullcalendar/list";
@@ -397,6 +398,7 @@ export default function Edit({
           </div>
 
           <FullCalendar
+            key={timezone}
             ref={calendarRef}
             locales={allLocales}
             locale={localeToUse}
@@ -415,11 +417,20 @@ export default function Edit({
             eventTimeFormat={eventTimeFormat}
             dayHeaderContent={(args) => {
               const { date, view } = args;
-              const dayName = formatInCalendarTz(date, { weekday: "short" });
+              const headerTz = view?.calendar?.getOption("timeZone") || "UTC";
+              const dayName = formatDate(date, {
+                weekday: "short",
+                locale: localeToUse,
+                timeZone: headerTz,
+              });
 
               // For week/day views → two lines: weekday + bold number
               if (view.type.startsWith("timeGrid")) {
-                const dayNum = formatInCalendarTz(date, { day: "numeric" });
+                const dayNum = formatDate(date, {
+                  day: "numeric",
+                  locale: localeToUse,
+                  timeZone: headerTz,
+                });
                 return (
                   <div className="flex flex-col items-center leading-tight">
                     <span>{dayName}</span>
