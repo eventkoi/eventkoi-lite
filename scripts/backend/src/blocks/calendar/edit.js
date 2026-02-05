@@ -383,11 +383,53 @@ export default function Edit({
     });
   };
 
-  const globalDayStart = eventkoi_params?.day_start_time || "07:00";
+  const globalDayStart = eventkoi_params?.day_start_time || "00:00";
   const dayStartTime = calendar?.day_start_time || globalDayStart;
-  const slotMinTime = normalizeTimeValue(dayStartTime) || "07:00:00";
-  const slotMinHour = parseInt(slotMinTime.slice(0, 2), 10);
-  const slotMaxTime = `${String(slotMinHour + 24).padStart(2, "0")}:00:00`;
+  const slotMinTime = "00:00:00";
+  const slotMaxTime = "24:00:00";
+  const scrollTime = normalizeTimeValue(dayStartTime) || "07:00:00";
+  const isTimeGridView = typeof view === "string" && view.startsWith("timeGrid");
+  const startHour = parseInt(scrollTime.slice(0, 2), 10);
+  const endHour = 23; // 11pm
+  const visibleHours = Number.isFinite(startHour)
+    ? Math.max(1, endHour - startHour + 1)
+    : 17; // fallback 7 AM → 11 PM
+  const slotMinutes = 30;
+  const slotHeightMap = {
+    1: 23.9,
+    2: 24.1,
+    3: 24.2,
+    4: 24.4,
+    5: 24.6,
+    6: 24.8,
+    7: 25.0,
+    8: 25.2,
+    9: 25.5,
+    10: 25.8,
+    11: 26.2,
+    12: 26.6,
+    13: 27.2,
+    14: 27.8,
+    15: 28.6,
+    16: 29.4,
+    17: 30.7,
+    18: 32.4,
+    19: 34.6,
+    20: 38,
+    21: 43,
+    22: 54,
+    23: 89,
+  };
+  const slotHeightPx =
+    Number.isFinite(startHour) && slotHeightMap[startHour]
+      ? slotHeightMap[startHour]
+      : 25;
+  const slotsToShow = visibleHours * (60 / slotMinutes);
+  const useDefaultTimeGrid =
+    !Number.isFinite(startHour) || startHour === 0;
+  const timeGridHeight = useDefaultTimeGrid
+    ? "auto"
+    : slotsToShow * slotHeightPx;
 
   return (
     <div {...blockProps}>
@@ -450,12 +492,13 @@ export default function Edit({
             firstDay={days[startday]}
             eventColor={eventColor}
             headerToolbar={false}
-            contentHeight="auto"
-            expandRows={true}
-            height="auto"
+            contentHeight={isTimeGridView ? timeGridHeight : "auto"}
+            expandRows={!isTimeGridView}
+            height={isTimeGridView ? timeGridHeight : "auto"}
             slotMinTime={slotMinTime}
             slotMaxTime={slotMaxTime}
-            scrollTime={slotMinTime}
+            scrollTime={scrollTime}
+            scrollTimeReset={false}
             eventTimeFormat={eventTimeFormat}
             slotLabelContent={(args) => {
               const label = formatSlotLabel(args.date);
@@ -525,6 +568,12 @@ export default function Edit({
 
               loadEventsForView(start, end, id);
               setCurrentDate(view.currentStart);
+              if (view.type.startsWith("timeGrid")) {
+                setTimeout(() => {
+                  const api = calendarRef?.current?.getApi?.();
+                  api?.scrollToTime?.(scrollTime);
+                }, 0);
+              }
 
               // Trigger popover re-render
               if (popoverRootRef.current && popoverMountRef.current) {

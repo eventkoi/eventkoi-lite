@@ -220,6 +220,25 @@
   .fc-timegrid-all-day {
     font-weight: bold;
   }
+  .fc-timegrid
+    .fc-scrollgrid-section-body:not(.fc-scrollgrid-section-liquid)
+    .fc-scroller {
+    overflow: hidden !important;
+  }
+  .fc-timegrid .fc-scroller {
+    scrollbar-width: thin;
+  }
+  .fc-timegrid .fc-scroller::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .fc-timegrid .fc-scroller::-webkit-scrollbar-thumb {
+    background-color: rgba(0, 0, 0, 0.25);
+    border-radius: 999px;
+  }
+  .fc-timegrid .fc-scroller::-webkit-scrollbar-track {
+    background: transparent;
+  }
   .fc-scrollgrid-section-sticky > * {
     background-color: white;
   }
