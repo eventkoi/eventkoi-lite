@@ -193,10 +193,33 @@ export function CalendarGridMode({
               locale: localeToUse,
               timeZone: headerTz,
             });
+            const dayKey = formatDate(date, {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              timeZone: headerTz,
+            });
+            const todayKey = formatDate(new Date(), {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+              timeZone: headerTz,
+            });
+            const isToday = dayKey === todayKey;
             return (
               <div className="flex flex-col items-center leading-tight">
-                <span>{dayName}</span>
-                <span className="font-semibold text-base">{dayNum}</span>
+                <span className={isToday ? "font-semibold" : undefined}>
+                  {dayName}
+                </span>
+                <span
+                  className={
+                    isToday
+                      ? "mt-0.5 inline-flex min-h-[2rem] min-w-[2rem] items-center justify-center rounded-full bg-muted px-2 text-base font-semibold"
+                      : "mt-0.5 inline-flex min-h-[2rem] min-w-[2rem] items-center justify-center rounded-full bg-transparent px-2 text-base font-semibold"
+                  }
+                >
+                  {dayNum}
+                </span>
               </div>
             );
           }
