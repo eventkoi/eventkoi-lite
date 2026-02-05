@@ -23,6 +23,7 @@ import { showToast, showToastError } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
 const WEEKDAYS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
+const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
 const dayLabels = {
   0: "Monday",
@@ -41,6 +42,9 @@ export function SettingsOverview() {
   const { settings, refreshSettings } = useSettings();
   const [isSaving, setIsSaving] = useState(false);
   const [timeFormat, setTimeFormat] = useState(settings?.time_format || "12");
+  const [dayStartTime, setDayStartTime] = useState(
+    settings?.day_start_time || "07:00"
+  );
   const [defaultTemplate, setDefaultTemplate] = useState(
     settings?.default_event_template || "default"
   );
@@ -62,6 +66,12 @@ export function SettingsOverview() {
       setTimeFormat(settings.time_format);
     }
   }, [settings?.time_format]);
+
+  useEffect(() => {
+    if (settings?.day_start_time && settings.day_start_time !== dayStartTime) {
+      setDayStartTime(settings.day_start_time);
+    }
+  }, [settings?.day_start_time]);
 
   useEffect(() => {
     if (typeof settings?.auto_detect_timezone === "undefined") {
@@ -91,6 +101,22 @@ export function SettingsOverview() {
     setTimeFormat(val);
     if (val !== settings?.time_format) {
       saveSettings({ time_format: val });
+    }
+  };
+
+  const formatHourLabel = (hour) => {
+    if (timeFormat === "24") {
+      return `${String(hour).padStart(2, "0")}:00`;
+    }
+    const suffix = hour >= 12 ? "PM" : "AM";
+    const hour12 = hour % 12 === 0 ? 12 : hour % 12;
+    return `${hour12} ${suffix}`;
+  };
+
+  const handleDayStartTimeChange = (val) => {
+    setDayStartTime(val);
+    if (val !== settings?.day_start_time) {
+      saveSettings({ day_start_time: val });
     }
   };
 
@@ -198,6 +224,33 @@ export function SettingsOverview() {
               </Select>
               <div className="text-muted-foreground">
                 Select the day calendars use as the start of the week.
+              </div>
+            </div>
+
+            {/* Day Start Time */}
+            <div className="grid gap-2">
+              <Label htmlFor="day-start-time">Day starts at</Label>
+              <Select
+                value={dayStartTime}
+                onValueChange={handleDayStartTimeChange}
+                disabled={isSaving}
+              >
+                <SelectTrigger id="day-start-time" className="w-[250px]">
+                  <SelectValue placeholder="Select time" />
+                </SelectTrigger>
+                <SelectContent>
+                  {HOURS.map((hour) => {
+                    const value = `${String(hour).padStart(2, "0")}:00`;
+                    return (
+                      <SelectItem key={value} value={value}>
+                        {formatHourLabel(hour)}
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+              <div className="text-muted-foreground">
+                Set the first visible hour in weekly view.
               </div>
             </div>
 

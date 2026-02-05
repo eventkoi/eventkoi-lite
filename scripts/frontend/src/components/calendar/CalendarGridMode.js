@@ -100,6 +100,44 @@ export function CalendarGridMode({
           }),
         };
 
+  const formatSlotLabel = (date) => {
+    if (timeFormat === "24") {
+      return null;
+    }
+
+    const formatted = formatInCalendarTz(date, {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+    const withoutZeroMinutes = formatted.replace(/:00\b/, "");
+
+    if (!usesMeridiem) {
+      return withoutZeroMinutes;
+    }
+
+    return withoutZeroMinutes.replace(/\s?([ap])\.?m?$/i, (match, part) => {
+      return ` ${part.toUpperCase()}M`;
+    });
+  };
+
+  const normalizeTimeValue = (value) => {
+    if (!value) return null;
+    if (/^\d{2}:\d{2}:\d{2}$/.test(value)) {
+      return value;
+    }
+    if (/^\d{2}:\d{2}$/.test(value)) {
+      return `${value}:00`;
+    }
+    return null;
+  };
+
+  const globalDayStart = eventkoi_params?.day_start_time || "07:00";
+  const dayStartTime = calendar?.day_start_time || globalDayStart;
+  const slotMinTime = normalizeTimeValue(dayStartTime) || "07:00:00";
+  const slotMinHour = parseInt(slotMinTime.slice(0, 2), 10);
+  const slotMaxTime = `${String(slotMinHour + 24).padStart(2, "0")}:00:00`;
+
   if (isEmpty) {
     return (
       <div className="w-full">
@@ -131,7 +169,14 @@ export function CalendarGridMode({
         contentHeight="auto"
         expandRows={true}
         height="auto"
+        slotMinTime={slotMinTime}
+        slotMaxTime={slotMaxTime}
+        scrollTime={slotMinTime}
         eventTimeFormat={eventTimeFormat}
+        slotLabelContent={(args) => {
+          const label = formatSlotLabel(args.date);
+          return label ? <span>{label}</span> : null;
+        }}
         dayHeaderContent={(args) => {
           const { date, view } = args;
           const headerTz = view?.calendar?.getOption("timeZone") || "UTC";

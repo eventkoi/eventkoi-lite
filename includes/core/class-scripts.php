@@ -95,6 +95,7 @@ class Scripts {
 				'connected' => ! empty( $settings['gmap_connection_status'] ),
 			),
 			'time_format'       => $settings['time_format'] ?? '12',
+			'day_start_time'    => $settings['day_start_time'] ?? '07:00',
 			'locale'            => determine_locale(),
 			'startday'          => empty( $calendar['startday'] ) ? $settings['week_starts_on'] : $calendar['startday'],
 			'auto_detect_timezone' => ! empty( $settings['auto_detect_timezone'] ),

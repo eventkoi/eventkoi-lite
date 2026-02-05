@@ -87,6 +87,7 @@ export function CalendarEdit() {
       setCalendar({
         ...eventkoi_params.new_calendar,
         startday: defaultStartDay, // inject fresh default
+        day_start_time: newSettings?.day_start_time || "07:00",
       });
 
       setLoading(false);

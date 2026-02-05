@@ -80,6 +80,7 @@ class Scripts {
 			'timezone'            => wp_timezone_string(),
 			'timezone_offset'     => ( get_option( 'gmt_offset' ) ?? 0 ) * 3600,
 			'time_format'         => $settings['time_format'] ?? '12',
+			'day_start_time'      => $settings['day_start_time'] ?? '07:00',
 			'locale'              => determine_locale(),
 			'date_format'         => get_option( 'date_format' ),
 			'time_format_string'  => get_option( 'time_format' ),

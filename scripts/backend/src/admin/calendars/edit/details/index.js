@@ -4,6 +4,7 @@ import { Separator } from "@/components/ui/separator";
 
 import { Box } from "@/components/box";
 import { CalendarDisplay } from "@/components/calendar/calendar-display";
+import { CalendarDayStartTime } from "@/components/calendar/calendar-day-start-time";
 import { CalendarStartDay } from "@/components/calendar/calendar-start-day";
 import { CalendarTimeFrame } from "@/components/calendar/calendar-time-frame";
 import { Heading } from "@/components/heading";
@@ -22,6 +23,8 @@ export function CalendarEditDetails() {
         <CalendarDisplay calendar={calendar} setCalendar={setCalendar} />
         <Separator />
         <CalendarTimeFrame calendar={calendar} setCalendar={setCalendar} />
+        <Separator />
+        <CalendarDayStartTime calendar={calendar} setCalendar={setCalendar} />
         <Separator />
         <CalendarStartDay calendar={calendar} setCalendar={setCalendar} />
       </div>

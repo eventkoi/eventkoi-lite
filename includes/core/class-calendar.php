@@ -72,6 +72,7 @@ class Calendar {
 			'display'       => self::get_display(),
 			'timeframe'     => self::get_timeframe(),
 			'startday'      => self::get_startday(),
+			'day_start_time' => self::get_day_start_time(),
 			'shortcode'     => self::get_shortcode(),
 			'color'         => self::get_color(),
 			'default_month' => self::get_default_month(),
@@ -223,6 +224,22 @@ class Calendar {
 	}
 
 	/**
+	 * Get calendar day start time.
+	 *
+	 * @return string
+	 */
+	public static function get_day_start_time() {
+		$start_time = get_term_meta( self::$calendar_id, 'day_start_time', true );
+
+		if ( empty( $start_time ) ) {
+			$settings   = \EventKoi\Core\Settings::get();
+			$start_time = ! empty( $settings['day_start_time'] ) ? $settings['day_start_time'] : '07:00';
+		}
+
+		return apply_filters( 'eventkoi_get_calendar_day_start_time', $start_time, self::$calendar_id, self::$calendar );
+	}
+
+	/**
 	 * Get color.
 	 */
 	public static function get_color() {
@@ -318,16 +335,20 @@ class Calendar {
 
 		do_action( 'eventkoi_before_update_calendar_meta', $meta, self::$calendar_id, self::$calendar );
 
-		$display       = ! empty( $meta['display'] ) ? sanitize_text_field( $meta['display'] ) : 'calendar';
-		$timeframe     = ! empty( $meta['timeframe'] ) ? sanitize_text_field( $meta['timeframe'] ) : 'month';
-		$startday      = ! empty( $meta['startday'] ) ? sanitize_text_field( $meta['startday'] ) : 'monday';
-		$color         = ! empty( $meta['color'] ) ? sanitize_text_field( $meta['color'] ) : eventkoi_default_calendar_color();
-		$default_month = ! empty( $meta['default_month'] ) ? sanitize_text_field( $meta['default_month'] ) : '';
-		$default_year  = ! empty( $meta['default_year'] ) ? sanitize_text_field( $meta['default_year'] ) : '';
+		$display        = ! empty( $meta['display'] ) ? sanitize_text_field( $meta['display'] ) : 'calendar';
+		$timeframe      = ! empty( $meta['timeframe'] ) ? sanitize_text_field( $meta['timeframe'] ) : 'month';
+		$startday       = ! empty( $meta['startday'] ) ? sanitize_text_field( $meta['startday'] ) : 'monday';
+		$day_start_time = ! empty( $meta['day_start_time'] ) ? sanitize_text_field( $meta['day_start_time'] ) : '';
+		$color          = ! empty( $meta['color'] ) ? sanitize_text_field( $meta['color'] ) : eventkoi_default_calendar_color();
+		$default_month  = ! empty( $meta['default_month'] ) ? sanitize_text_field( $meta['default_month'] ) : '';
+		$default_year   = ! empty( $meta['default_year'] ) ? sanitize_text_field( $meta['default_year'] ) : '';
 
 		update_term_meta( self::$calendar_id, 'display', (string) $display );
 		update_term_meta( self::$calendar_id, 'timeframe', (string) $timeframe );
 		update_term_meta( self::$calendar_id, 'startday', (string) $startday );
+		if ( '' !== $day_start_time ) {
+			update_term_meta( self::$calendar_id, 'day_start_time', (string) $day_start_time );
+		}
 		update_term_meta( self::$calendar_id, 'color', (string) $color );
 		update_term_meta( self::$calendar_id, 'default_month', (string) $default_month );
 		update_term_meta( self::$calendar_id, 'default_year', (string) $default_year );
