@@ -49,7 +49,7 @@ export function TimezonePicker({
 
       <PopoverContent
         align={isMobile ? "start" : "end"}
-        className="p-0 w-[280px] border border-border border-solid border-[1px]"
+        className="!z-[2147483647] p-0 w-[280px] !border border-border border-solid border-[1px] !bg-white !opacity-100"
       >
         <Command>
           {/* Tabs ABOVE the search input */}

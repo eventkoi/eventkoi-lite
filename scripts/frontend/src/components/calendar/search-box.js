@@ -1,3 +1,9 @@
+/**
+ * SearchBox (i18n-ready)
+ *
+ * @package EventKoi
+ */
+
 import { Button } from "@/components/ui/button";
 import {
   Command,
@@ -7,6 +13,7 @@ import {
 } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { __, sprintf } from "@wordpress/i18n";
 import { Loader2, Search } from "lucide-react";
 import { DateTime } from "luxon";
 
@@ -31,21 +38,21 @@ export function SearchBox({
 
   return (
     <div
-      className="relative w-full lg:min-w-[350px]"
+      className="relative w-full min-w-0 lg:w-[350px] lg:max-w-full"
       aria-busy={isLoading}
       aria-live="polite"
     >
       {/* Hidden accessible label */}
       <label htmlFor="event-search" className="sr-only">
-        Search events
+        {__("Search events", "eventkoi")}
       </label>
 
       <Input
         id="event-search"
         ref={inputRef}
         type="search"
-        placeholder="Search events…"
-        aria-label="Search events"
+        placeholder={__("Search events…", "eventkoi")}
+        aria-label={__("Search events", "eventkoi")}
         role="combobox"
         aria-expanded={open}
         aria-controls="event-search-listbox"
@@ -57,7 +64,7 @@ export function SearchBox({
           const isStillInsidePopover =
             related && e.currentTarget.parentNode?.contains(related);
 
-          if (isStillInsidePopover) return; // don’t close if focusing inside dropdown
+          if (isStillInsidePopover) return;
 
           setTimeout(() => {
             setOpen(false);
@@ -68,11 +75,11 @@ export function SearchBox({
           if (e.key === "Escape") {
             setOpen(false);
             setSearchOpen?.(false);
-            e.currentTarget.blur(); // optional: remove focus from input
+            e.currentTarget.blur();
           }
         }}
         onChange={(e) => setSearch(e.target.value)}
-        className="pl-9 h-10 w-full shadow-none border border-solid box-border rounded disabled:bg-background"
+        className="pl-9 h-10 w-full min-w-0 shadow-none border border-solid box-border rounded disabled:bg-background"
         autoComplete="off"
         disabled={isLoading || isEmpty}
       />
@@ -92,10 +99,14 @@ export function SearchBox({
       {/* Live region for loading/empty states */}
       <div className="sr-only" role="status">
         {isLoading
-          ? "Loading events..."
+          ? __("Loading events...", "eventkoi")
           : isEmpty
-          ? "No events found."
-          : `${filteredResults.length} events found.`}
+          ? __("No events found.", "eventkoi")
+          : sprintf(
+              /* translators: %d: number of events found */
+              __("%d events found.", "eventkoi"),
+              filteredResults.length
+            )}
       </div>
 
       {open && search && (
@@ -112,7 +123,7 @@ export function SearchBox({
           >
             {filteredResults.length === 0 ? (
               <CommandEmpty className="p-4 text-muted-foreground text-sm">
-                No events found.
+                {__("No events found.", "eventkoi")}
               </CommandEmpty>
             ) : (
               <>
@@ -163,15 +174,21 @@ export function SearchBox({
                       size="sm"
                       onClick={() => setPage((p) => Math.max(0, p - 1))}
                       disabled={page === 0}
-                      aria-label="Previous page"
+                      aria-label={__("Previous page", "eventkoi")}
                       aria-disabled={page === 0}
                       className="cursor-pointer box-border border-none text-foreground bg-transparent shadow-none"
                     >
-                      Prev
+                      {__("Prev", "eventkoi")}
                     </Button>
+
                     <span aria-live="polite">
-                      Page {page + 1} of {totalPages}
+                      {sprintf(
+                        __("Page %1$d of %2$d", "eventkoi"),
+                        page + 1,
+                        totalPages
+                      )}
                     </span>
+
                     {/* Next */}
                     <Button
                       variant="ghost"
@@ -180,11 +197,11 @@ export function SearchBox({
                         setPage((p) => Math.min(totalPages - 1, p + 1))
                       }
                       disabled={page >= totalPages - 1}
-                      aria-label="Next page"
+                      aria-label={__("Next page", "eventkoi")}
                       aria-disabled={page >= totalPages - 1}
                       className="cursor-pointer box-border border-none text-foreground bg-transparent shadow-none"
                     >
-                      Next
+                      {__("Next", "eventkoi")}
                     </Button>
                   </div>
                 )}

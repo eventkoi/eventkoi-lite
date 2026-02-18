@@ -27,7 +27,7 @@ export function WeekPopover({ calendarApi, currentDate, setCurrentDate }) {
         side="bottom"
         align="start"
         sideOffset={20}
-        className="w-auto rounded border bg-white shadow-[0_0_4px_#bbb] text-sm overflow-hidden p-1"
+        className="!z-[2147483647] w-auto rounded !border !bg-white !opacity-100 shadow-[0_0_4px_#bbb] text-sm overflow-hidden p-1"
       >
         <WeekPicker
           calendarApi={calendarApi}

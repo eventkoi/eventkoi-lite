@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 
 import { CalendarToolbar } from "@/components/calendar/calendar-toolbar";
@@ -13,6 +13,12 @@ import { CalendarListMode } from "@/components/calendar/CalendarListMode";
 import { useCalendarData } from "@/components/calendar/useCalendarData";
 import { useEventPopover } from "@/components/calendar/useEventPopover";
 
+/**
+ * Main EventKoi Calendar component.
+ *
+ * Handles timezone persistence, time format switching,
+ * and dynamic rendering of either Grid or List mode.
+ */
 export function Calendar(props) {
   const {
     display,
@@ -37,6 +43,11 @@ export function Calendar(props) {
     currentDate,
     setCurrentDate,
     initialDate,
+    loading,
+    listTotal,
+    listHasMore,
+    listLoadingMore,
+    loadMoreListEvents,
     loadEventsForView,
     lastRangeRef,
   } = useCalendarData({ ...props, calendarRef });
@@ -51,6 +62,11 @@ export function Calendar(props) {
 
   const [search, setSearch] = useState("");
 
+  /**
+   * Determine initial timezone from URL (?tz=), override, or site default.
+   *
+   * Falls back to UTC if no valid timezone is found.
+   */
   const getInitialTimezone = () => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
@@ -74,26 +90,47 @@ export function Calendar(props) {
     eventkoi_params?.time_format === "24" ? "24" : "12"
   );
 
+  /**
+   * Keep timezone in sync when navigating via browser back/forward buttons.
+   */
+  useEffect(() => {
+    const handlePopState = () => {
+      const params = new URLSearchParams(window.location.search);
+      const tzParam = params.get("tz");
+      if (tzParam) {
+        setTimezone(safeNormalizeTimeZone(tzParam));
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, []);
+
   const isEmpty =
     !calendar ||
     (Array.isArray(calendar) && calendar.length === 0) ||
     (!Array.isArray(calendar) && Object.keys(calendar).length === 0);
 
+  const eventColor = props.color || calendar?.color;
+
   if (display === "list") {
     return (
       <CalendarListMode
-        {...{
-          events: allEvents,
-          timezone,
-          setTimezone,
-          timeFormat,
-          setTimeFormat,
-          showImage,
-          showDescription,
-          showLocation,
-          borderStyle,
-          borderSize,
-        }}
+        events={allEvents}
+        timezone={timezone}
+        setTimezone={setTimezone}
+        timeFormat={timeFormat}
+        setTimeFormat={setTimeFormat}
+        showImage={showImage}
+        showDescription={showDescription}
+        showLocation={showLocation}
+        borderStyle={borderStyle}
+        borderSize={borderSize}
+        loading={loading}
+        total={listTotal}
+        hasMore={listHasMore}
+        loadingMore={listLoadingMore}
+        onLoadMore={loadMoreListEvents}
       />
     );
   }
@@ -128,50 +165,78 @@ export function Calendar(props) {
       </div>
 
       <CalendarGridMode
-        {...{
-          calendarRef,
-          events,
-          view,
-          timezone,
-          setCurrentDate,
-          lastRangeRef,
-          loadEventsForView,
-          selectedEvent,
-          setSelectedEvent,
-          anchorPos,
-          setAnchorPos,
-          ignoreNextOutsideClick,
-          calendar,
-          isEmpty,
-          eventColor: props.color || calendar?.color,
-          timeFormat,
-          startday,
-          initialDate,
-        }}
+        calendarRef={calendarRef}
+        events={events}
+        view={view}
+        timezone={timezone}
+        setCurrentDate={setCurrentDate}
+        lastRangeRef={lastRangeRef}
+        loadEventsForView={loadEventsForView}
+        selectedEvent={selectedEvent}
+        setSelectedEvent={setSelectedEvent}
+        anchorPos={anchorPos}
+        setAnchorPos={setAnchorPos}
+        ignoreNextOutsideClick={ignoreNextOutsideClick}
+        calendar={calendar}
+        isEmpty={isEmpty}
+        eventColor={eventColor}
+        timeFormat={timeFormat}
+        startday={startday}
+        initialDate={initialDate}
       />
     </div>
   );
 }
 
-// Auto-mount
-document.querySelectorAll('[id^="eventkoi-calendar-"]').forEach((el) => {
-  const root = createRoot(el);
-  root.render(
-    <Calendar
-      id={el.getAttribute("data-calendar-id")}
-      calendars={el.getAttribute("data-calendars")}
-      display={el.getAttribute("data-display")}
-      startday={el.getAttribute("data-startday")}
-      timeframe={el.getAttribute("data-timeframe")}
-      color={el.getAttribute("data-color")}
-      showImage={el.getAttribute("data-show-image")}
-      showLocation={el.getAttribute("data-show-location")}
-      showDescription={el.getAttribute("data-show-description")}
-      borderStyle={el.getAttribute("data-border-style")}
-      borderSize={el.getAttribute("data-border-size")}
-      context={el.getAttribute("data-context")}
-      defaultMonth={el.getAttribute("data-default-month")}
-      defaultYear={el.getAttribute("data-default-year")}
-    />
-  );
-});
+/**
+ * Auto-mount EventKoi Calendar instances.
+ *
+ * Detects all matching DOM elements and mounts the React Calendar.
+ *
+ * @param {HTMLElement|Document} rootElement The root element to search within.
+ */
+export function mountEventKoiCalendars(rootElement = document) {
+  const elements = rootElement.querySelectorAll('[id^="eventkoi-calendar-"]');
+
+  elements.forEach((el) => {
+    // Prevent double mounting.
+    if (el.dataset.eventkoiMounted) {
+      return;
+    }
+
+    const root = createRoot(el);
+    root.render(
+      <Calendar
+        id={el.getAttribute("data-calendar-id")}
+        calendars={el.getAttribute("data-calendars")}
+        display={el.getAttribute("data-display")}
+        startday={el.getAttribute("data-startday")}
+        timeframe={el.getAttribute("data-timeframe")}
+        color={el.getAttribute("data-color")}
+        showImage={el.getAttribute("data-show-image")}
+        showLocation={el.getAttribute("data-show-location")}
+        showDescription={el.getAttribute("data-show-description")}
+        borderStyle={el.getAttribute("data-border-style")}
+        borderSize={el.getAttribute("data-border-size")}
+        context={el.getAttribute("data-context")}
+        defaultMonth={el.getAttribute("data-default-month")}
+        defaultYear={el.getAttribute("data-default-year")}
+        orderby={el.getAttribute("data-orderby")}
+        order={el.getAttribute("data-order")}
+        perPage={el.getAttribute("data-per-page")}
+        maxResults={el.getAttribute("data-max-results")}
+        dateStart={el.getAttribute("data-date-start")}
+        dateEnd={el.getAttribute("data-date-end")}
+      />
+    );
+
+    // Mark as mounted.
+    el.dataset.eventkoiMounted = "true";
+  });
+}
+
+// Mount on load and expose globally.
+if (typeof window !== "undefined") {
+  mountEventKoiCalendars();
+  window.eventkoiInitCalendars = mountEventKoiCalendars;
+}

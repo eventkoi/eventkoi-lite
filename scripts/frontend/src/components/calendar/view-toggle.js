@@ -1,4 +1,11 @@
+/**
+ * View Toggle (i18n-ready)
+ *
+ * @package EventKoi
+ */
+
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { __ } from "@wordpress/i18n";
 
 export function ViewToggle({ calendarApi, view, setView }) {
   return (
@@ -11,27 +18,27 @@ export function ViewToggle({ calendarApi, view, setView }) {
         calendarApi?.changeView(val);
         setView(val);
       }}
-      aria-label="Calendar view mode"
+      aria-label={__("Calendar view mode", "eventkoi")}
       role="radiogroup"
     >
       <ToggleGroupItem
         value="dayGridMonth"
         role="radio"
         aria-checked={view === "dayGridMonth"}
-        aria-label="Month view"
+        aria-label={__("Month view", "eventkoi")}
         className="border-none transition-none cursor-pointer shadow-none h-full rounded-sm text-foreground hover:text-foreground data-[state=on]:bg-white data-[state=on]:font-semibold"
       >
-        Month
+        {__("Month", "eventkoi")}
       </ToggleGroupItem>
 
       <ToggleGroupItem
         value="timeGridWeek"
         role="radio"
         aria-checked={view === "timeGridWeek"}
-        aria-label="Week view"
+        aria-label={__("Week view", "eventkoi")}
         className="border-none transition-none cursor-pointer shadow-none h-full rounded-sm text-foreground hover:text-foreground data-[state=on]:bg-white data-[state=on]:font-semibold"
       >
-        Week
+        {__("Week", "eventkoi")}
       </ToggleGroupItem>
     </ToggleGroup>
   );

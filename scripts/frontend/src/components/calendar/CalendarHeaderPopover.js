@@ -1,3 +1,9 @@
+/**
+ * Calendar Header Popover (i18n-ready)
+ *
+ * @package EventKoi
+ */
+
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -7,6 +13,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { __, sprintf } from "@wordpress/i18n";
 import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { DateTime } from "luxon";
 import { useState } from "react";
@@ -19,7 +26,7 @@ const wpLocale =
 // Normalize for Intl (use e.g. "de" instead of "de_DE")
 const shortLocale = wpLocale.split("_")[0];
 
-// Build localized month labels automatically
+// Build localized month labels automatically via Intl
 const MONTHS = Array.from({ length: 12 }, (_, i) =>
   new Intl.DateTimeFormat(shortLocale, { month: "short" }).format(
     new Date(2000, i, 1)
@@ -77,36 +84,51 @@ export function CalendarHeaderPopover({
         <Button
           variant="ghost"
           className="text-sm box-border text-foreground bg-background shadow-none rounded border-[1px] border-border border-solid px-3 py-1 pr-2 gap-2 h-10 justify-between hover:bg-muted cursor-pointer font-normal"
+          aria-label={__("Select month and year", "eventkoi")}
+          title={__("Select month and year", "eventkoi")}
         >
           {`${MONTHS[selectedMonth]} ${yearView}`}
-          <ChevronDown className="h-4 w-4 min-w-4" />
+          <ChevronDown className="h-4 w-4 min-w-4" aria-hidden="true" />
         </Button>
       </PopoverTrigger>
+
       <PopoverContent
         side="bottom"
         align="start"
         sideOffset={20}
-        className="w-[240px] rounded border bg-white shadow-[0_0_4px_#bbb] text-sm overflow-hidden"
+        className="!z-[2147483647] w-[240px] rounded !border !bg-white !opacity-100 shadow-[0_0_4px_#bbb] text-sm overflow-hidden"
+        aria-label={__("Month and year selection", "eventkoi")}
       >
+        {/* Year header */}
         <div className="flex items-center justify-between mb-2">
           <Button
             variant="ghost"
             size="icon"
             onClick={gotoPrevYear}
             className="bg-transparent p-0 text-[1px] text-foreground border-none shadow-none cursor-pointer hover:bg-muted h-8"
+            aria-label={__("Go to previous year", "eventkoi")}
+            title={__("Go to previous year", "eventkoi")}
           >
-            <ChevronLeft className="w-4 h-4" />
+            <ChevronLeft className="w-4 h-4" aria-hidden="true" />
           </Button>
-          <div className="text-sm font-medium">{yearView}</div>
+
+          <div className="text-sm font-medium" aria-live="polite">
+            {yearView}
+          </div>
+
           <Button
             variant="ghost"
             size="icon"
             onClick={gotoNextYear}
             className="bg-transparent p-0 text-[1px] text-foreground border-none shadow-none cursor-pointer hover:bg-muted h-8"
+            aria-label={__("Go to next year", "eventkoi")}
+            title={__("Go to next year", "eventkoi")}
           >
-            <ChevronRight className="w-4 h-4" />
+            <ChevronRight className="w-4 h-4" aria-hidden="true" />
           </Button>
         </div>
+
+        {/* Month grid */}
         <div className="grid grid-cols-4 gap-2">
           {MONTHS.map((label, i) => (
             <Button
@@ -117,6 +139,11 @@ export function CalendarHeaderPopover({
                 i === selectedMonth && "bg-muted text-foreground font-semibold"
               )}
               onClick={() => gotoMonth(i)}
+              aria-label={sprintf(
+                /* translators: %s: month name */
+                __("Select %s", "eventkoi"),
+                label
+              )}
             >
               {label}
             </Button>

@@ -26,7 +26,7 @@ export function SearchBox({
   setSearchOpen,
 }) {
   return (
-    <div className="relative w-full lg:min-w-[350px]">
+    <div className="relative w-full min-w-0 lg:w-[350px] lg:max-w-full">
       <Input
         ref={inputRef}
         placeholder="Search events…"
@@ -39,7 +39,7 @@ export function SearchBox({
           }, 150);
         }}
         onChange={(e) => setSearch(e.target.value)}
-        className="pl-9 h-10 w-full shadow-none border border-solid box-border rounded"
+        className="pl-9 h-10 w-full min-w-0 shadow-none border border-solid box-border rounded"
         autoComplete="off"
       />
       <span className="absolute inset-y-0 left-3 flex items-center text-muted-foreground pointer-events-none">

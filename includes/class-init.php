@@ -104,6 +104,7 @@ class Init {
 			\EventKoi\API\REST::class,
 			\EventKoi\Core\Pretty_Instance_URLs::class,
 			\EventKoi\Core\Elementor_Widgets::class,
+			\EventKoi\Core\Beaver_Modules::class,
 		);
 	}
 

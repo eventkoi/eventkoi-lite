@@ -174,7 +174,7 @@ export function CalendarGridMode({
     Number.isFinite(startHour) && slotHeightMap[startHour]
       ? slotHeightMap[startHour]
       : 25;
-  const slotsToShow = visibleHours * (60 / slotMinutes);
+  const slotsToShow = visibleHours * (60 / slotMinutes); // 28 for 9am
   const useDefaultTimeGrid =
     !Number.isFinite(startHour) || startHour === 0;
   const timeGridHeight = useDefaultTimeGrid
@@ -193,6 +193,17 @@ export function CalendarGridMode({
     );
   }
 
+  // Apply per-event calendar color
+  const coloredEvents = Array.isArray(events)
+    ? events.map((ev) => ({
+        ...ev,
+        color: ev.calendar_color,
+        borderColor: ev.calendar_color,
+      }))
+    : [];
+
+  let start_day = days[startday || calendar?.startday || "sunday"];
+
   return (
     <>
       <FullCalendar
@@ -201,13 +212,12 @@ export function CalendarGridMode({
         locales={allLocales}
         locale={localeToUse}
         plugins={[dayGridPlugin, timeGridPlugin, listPlugin, luxonPlugin]}
-        events={events}
+        events={coloredEvents}
+        timeZone={calendarTimeZone || "UTC"}
         initialView={view}
         initialDate={initialDate}
         weekends={true}
-        timeZone={calendarTimeZone || "UTC"}
-        firstDay={days[startday || calendar?.startday || "sunday"]}
-        eventColor={eventColor}
+        firstDay={start_day}
         headerToolbar={false}
         contentHeight={isTimeGridView ? timeGridHeight : "auto"}
         expandRows={!isTimeGridView}
@@ -215,7 +225,6 @@ export function CalendarGridMode({
         slotMinTime={slotMinTime}
         slotMaxTime={slotMaxTime}
         scrollTime={scrollTime}
-        scrollTimeReset={false}
         eventTimeFormat={eventTimeFormat}
         slotLabelContent={(args) => {
           const label = formatSlotLabel(args.date);
@@ -224,30 +233,39 @@ export function CalendarGridMode({
         dayHeaderContent={(args) => {
           const { date, view } = args;
           const headerTz = view?.calendar?.getOption("timeZone") || "UTC";
-          const dayName = formatDate(date, {
+          const formatHeaderDate = (value, options) => {
+            if (view?.type?.startsWith("timeGrid") && view?.calendar?.formatDate) {
+              return view.calendar.formatDate(value, {
+                ...options,
+                locale: localeToUse,
+              });
+            }
+
+            return formatDate(value, {
+              ...options,
+              locale: localeToUse,
+              timeZone: headerTz,
+            });
+          };
+
+          const dayName = formatHeaderDate(date, {
             weekday: "short",
-            locale: localeToUse,
-            timeZone: headerTz,
           });
 
           // For week/day views → two lines: weekday + bold number
           if (view.type.startsWith("timeGrid")) {
-            const dayNum = formatDate(date, {
+            const dayNum = formatHeaderDate(date, {
               day: "numeric",
-              locale: localeToUse,
-              timeZone: headerTz,
             });
-            const dayKey = formatDate(date, {
+            const dayKey = formatHeaderDate(date, {
               year: "numeric",
               month: "2-digit",
               day: "2-digit",
-              timeZone: headerTz,
             });
-            const todayKey = formatDate(new Date(), {
+            const todayKey = formatHeaderDate(new Date(), {
               year: "numeric",
               month: "2-digit",
               day: "2-digit",
-              timeZone: headerTz,
             });
             const isToday = dayKey === todayKey;
             return (
@@ -285,61 +303,98 @@ export function CalendarGridMode({
           }
         }}
         eventDidMount={(info) => {
-          // Make event focusable
-          info.el.setAttribute("tabindex", "0");
-          info.el.setAttribute("role", "button");
+          const parent = info.el.parentNode;
 
-          // Screen reader description
+          // If it's an <a>, remove it completely and reinsert our own <div>.
+          if (info.el.tagName === "A") {
+            const div = document.createElement("div");
+
+            // Copy classes and content
+            div.className = info.el.className;
+            div.innerHTML = info.el.innerHTML;
+
+            // Copy all attributes except href
+            for (const attr of info.el.attributes) {
+              if (attr.name !== "href") {
+                div.setAttribute(attr.name, attr.value);
+              }
+            }
+
+            // Replace <a> with <div>
+            parent.replaceChild(div, info.el);
+            info.el = div; // update reference
+          }
+
+          // Add pointer cursor and accessibility attributes
+          info.el.setAttribute("role", "button");
+          info.el.setAttribute("tabindex", "0");
           info.el.setAttribute(
             "aria-label",
-            `${info.event.title}, starts ${info.event.start.toLocaleString()}`
+            `${info.event.title}, starts ${info.event.start.toLocaleString()}`,
           );
 
-          // Keyboard activation
+          // Attach click handler to open your popover
+          info.el.addEventListener("click", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+
+            const rect = info.el.getBoundingClientRect();
+            const containerRect = document
+              .querySelector(".fc")
+              .getBoundingClientRect();
+            const relY = rect.bottom - containerRect.top + 6;
+            const popoverWidth = 370;
+
+            let relX;
+            if (
+              rect.right - containerRect.left + popoverWidth >
+              containerRect.width
+            ) {
+              relX = rect.right - containerRect.left - popoverWidth;
+            } else {
+              relX = rect.left - containerRect.left;
+            }
+
+            if (window.innerWidth < 768) {
+              setAnchorPos({ x: 0, y: relY });
+            } else {
+              setAnchorPos({ x: Math.max(0, relX), y: relY });
+            }
+
+            setSelectedEvent({
+              ...info.event.extendedProps,
+              title: info.event.title,
+              start: info.event.startStr,
+              end: info.event.endStr,
+              allDay: info.event.allDay,
+              url: info.event.url,
+            });
+          });
+
+          // Keyboard accessibility (Enter / Space)
           info.el.addEventListener("keydown", (e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
               info.el.click();
             }
           });
-        }}
-        eventClick={(info) => {
-          info.jsEvent.preventDefault();
-          info.jsEvent.stopPropagation();
 
-          const enriched = {
-            ...info.event.extendedProps,
-            title: info.event.title,
-            start: info.event.startStr,
-            end: info.event.endStr,
-            allDay: info.event.allDay,
-            url: info.event.url,
-          };
+          // Wait for FullCalendar to finish injecting its own <a>
+          setTimeout(() => {
+            const harness = info.el.closest(".fc-daygrid-event-harness");
+            if (!harness) return;
 
-          const rect = info.el.getBoundingClientRect();
-          const containerRect = document
-            .querySelector(".fc")
-            .getBoundingClientRect();
-          const relY = rect.bottom - containerRect.top + 6;
-          const popoverWidth = 370;
-
-          let relX;
-          if (
-            rect.right - containerRect.left + popoverWidth >
-            containerRect.width
-          ) {
-            relX = rect.right - containerRect.left - popoverWidth;
-          } else {
-            relX = rect.left - containerRect.left;
-          }
-
-          if (window.innerWidth < 768) {
-            setAnchorPos({ x: 0, y: relY });
-          } else {
-            setAnchorPos({ x: Math.max(0, relX), y: relY });
-          }
-
-          setSelectedEvent(enriched);
+            // Find all anchors in this harness except our main div (info.el)
+            harness.querySelectorAll("a.fc-daygrid-event").forEach((anchor) => {
+              // Hide only if it's not the same node
+              if (anchor !== info.el) {
+                anchor.setAttribute("aria-hidden", "true");
+                anchor.setAttribute("tabindex", "-1");
+                anchor.style.display = "none";
+                anchor.style.pointerEvents = "none";
+              }
+            });
+          }, 0);
         }}
       />
 
