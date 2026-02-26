@@ -106,12 +106,15 @@ class Schema {
 			);
 		}
 
-		if ( 'mixed' === $type ) {
+		$has_virtual_location = ! empty( $virtual_location );
+		$has_both_locations   = ( $place_valid && $has_virtual_location );
+
+		if ( 'mixed' === $type || $has_both_locations ) {
 			$locations = array();
 			if ( $place_valid ) {
 				$locations[] = $place;
 			}
-			if ( ! empty( $virtual_location ) ) {
+			if ( $has_virtual_location ) {
 				$locations[] = $virtual_location;
 			}
 			if ( 1 === count( $locations ) ) {
@@ -120,7 +123,7 @@ class Schema {
 				$schema['location'] = $locations;
 			}
 		} elseif ( 'virtual' === $type ) {
-			if ( ! empty( $virtual_location ) ) {
+			if ( $has_virtual_location ) {
 				$schema['location'] = $virtual_location;
 			}
 		} elseif ( $place_valid ) {
