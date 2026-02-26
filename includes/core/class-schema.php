@@ -54,57 +54,77 @@ class Schema {
 			},
 		);
 
-		if ( 'virtual' === $event->get_type() ) {
-			$schema['location'] = array(
-				'@type' => 'VirtualLocation',
-				'url'   => $event->get_virtual_url(),
-			);
-		} else {
-			$location = $event->get_location();
-			$place_name = isset( $location['name'] ) ? trim( (string) $location['name'] ) : '';
+		$type          = (string) $event->get_type();
+		$location      = $event->get_location();
+		$virtual_url   = trim( (string) $event->get_virtual_url() );
+		$place_name    = isset( $location['name'] ) ? trim( (string) $location['name'] ) : '';
+		$street_parts  = array_filter(
+			array(
+				isset( $location['address1'] ) ? trim( (string) $location['address1'] ) : '',
+				isset( $location['address2'] ) ? trim( (string) $location['address2'] ) : '',
+			)
+		);
+		$street_address = ! empty( $street_parts ) ? implode( ', ', $street_parts ) : '';
 
-			$street_parts = array_filter(
-				array(
-					isset( $location['address1'] ) ? trim( (string) $location['address1'] ) : '',
-					isset( $location['address2'] ) ? trim( (string) $location['address2'] ) : '',
-				)
-			);
-			$street_address = ! empty( $street_parts ) ? implode( ', ', $street_parts ) : '';
-
-			$address = array_filter(
-				array(
-					'@type'           => 'PostalAddress',
-					'streetAddress'   => $street_address,
-					'addressLocality' => isset( $location['city'] ) ? trim( (string) $location['city'] ) : '',
-					'addressRegion'   => isset( $location['state'] ) ? trim( (string) $location['state'] ) : '',
-					'postalCode'      => isset( $location['zip'] ) ? trim( (string) $location['zip'] ) : '',
-					'addressCountry'  => isset( $location['country'] ) ? trim( (string) $location['country'] ) : '',
-				),
-				static function ( $value ) {
-					return '' !== (string) $value;
-				}
-			);
-
-			$place = array_filter(
-				array(
-					'@type'   => 'Place',
-					'name'    => $place_name,
-					'address' => ( count( $address ) > 1 ? $address : null ),
-				),
-				static function ( $value ) {
-					if ( null === $value ) {
-						return false;
-					}
-					if ( is_array( $value ) ) {
-						return ! empty( $value );
-					}
-					return '' !== (string) $value;
-				}
-			);
-
-			if ( count( $place ) > 1 ) {
-				$schema['location'] = $place;
+		$address = array_filter(
+			array(
+				'@type'           => 'PostalAddress',
+				'streetAddress'   => $street_address,
+				'addressLocality' => isset( $location['city'] ) ? trim( (string) $location['city'] ) : '',
+				'addressRegion'   => isset( $location['state'] ) ? trim( (string) $location['state'] ) : '',
+				'postalCode'      => isset( $location['zip'] ) ? trim( (string) $location['zip'] ) : '',
+				'addressCountry'  => isset( $location['country'] ) ? trim( (string) $location['country'] ) : '',
+			),
+			static function ( $value ) {
+				return '' !== (string) $value;
 			}
+		);
+
+		$place = array_filter(
+			array(
+				'@type'   => 'Place',
+				'name'    => $place_name,
+				'address' => ( count( $address ) > 1 ? $address : null ),
+			),
+			static function ( $value ) {
+				if ( null === $value ) {
+					return false;
+				}
+				if ( is_array( $value ) ) {
+					return ! empty( $value );
+				}
+				return '' !== (string) $value;
+			}
+		);
+		$place_valid = ( count( $place ) > 1 );
+
+		$virtual_location = array();
+		if ( '' !== $virtual_url ) {
+			$virtual_location = array(
+				'@type' => 'VirtualLocation',
+				'url'   => $virtual_url,
+			);
+		}
+
+		if ( 'mixed' === $type ) {
+			$locations = array();
+			if ( $place_valid ) {
+				$locations[] = $place;
+			}
+			if ( ! empty( $virtual_location ) ) {
+				$locations[] = $virtual_location;
+			}
+			if ( 1 === count( $locations ) ) {
+				$schema['location'] = $locations[0];
+			} elseif ( count( $locations ) > 1 ) {
+				$schema['location'] = $locations;
+			}
+		} elseif ( 'virtual' === $type ) {
+			if ( ! empty( $virtual_location ) ) {
+				$schema['location'] = $virtual_location;
+			}
+		} elseif ( $place_valid ) {
+			$schema['location'] = $place;
 		}
 
 		$schema['image']       = $event->get_image();
