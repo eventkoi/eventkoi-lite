@@ -31,12 +31,19 @@ function eventkoi_get_event( $event_id ) {
 		);
 	}
 
+	$post_status = array( 'publish' );
+	if ( current_user_can( 'edit_post', $event_id ) ) {
+		$post_status = array( 'publish', 'draft', 'pending', 'future', 'private' );
+	}
+	$post_status = apply_filters( 'eventkoi_get_event_post_status', $post_status, $event_id );
+
 	$event_data = \EventKoi\Core\Calendar::get_events(
 		array(),
 		false,
 		array(
 			'include'  => array( $event_id ),
 			'per_page' => 1,
+			'post_status' => $post_status,
 		)
 	);
 
@@ -46,14 +53,42 @@ function eventkoi_get_event( $event_id ) {
 		: (array) $event_data;
 
 	if ( empty( $events ) || ! isset( $events[0] ) ) {
-		return new \WP_Error(
-			'eventkoi_not_found',
-			__( 'Event not found.', 'eventkoi-lite' ),
-			array( 'status' => 404 )
-		);
+		$post = get_post( $event_id );
+		if ( empty( $post ) ) {
+			return new \WP_Error(
+				'eventkoi_not_found',
+				__( 'Event not found.', 'eventkoi-lite' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		$allowed_statuses = (array) $post_status;
+		if ( ! in_array( $post->post_status, $allowed_statuses, true ) ) {
+			return new \WP_Error(
+				'eventkoi_not_found',
+				__( 'Event not found.', 'eventkoi-lite' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		$event = new \EventKoi\Core\Event( $event_id );
+		return $event::get_meta();
 	}
 
-	return $events[0];
+	$event = $events[0];
+
+	// Normalize single-location key for consumers that expect `location`.
+	if (
+		( ! isset( $event['location'] ) || empty( $event['location'] ) ) &&
+		! empty( $event['locations'] ) &&
+		is_array( $event['locations'] ) &&
+		! empty( $event['locations'][0] ) &&
+		is_array( $event['locations'][0] )
+	) {
+		$event['location'] = $event['locations'][0];
+	}
+
+	return $event;
 }
 
 use EKLIB\RRule\RRule;
@@ -110,7 +145,9 @@ function eventkoi_plugin_name() {
  * @return string Full URL to the asset.
  */
 function eventkoi_get_template_asset( $asset ) {
-	$url = trailingslashit( EVENTKOI_PLUGIN_URL ) . 'templates/assets/' . ltrim( $asset, '/' );
+	$plugin_root = dirname( __FILE__, 3 );
+	$base_url    = trailingslashit( plugins_url( '', $plugin_root . '/eventkoi.php' ) );
+	$url         = $base_url . 'templates/assets/' . ltrim( $asset, '/' );
 
 	/**
 	 * Filter the template asset URL.
@@ -239,11 +276,67 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 	$border_size      = isset( $args['border_size'] ) ? esc_attr( $args['border_size'] ) : '2px';
 	$default_month    = isset( $args['default_month'] ) ? sanitize_text_field( $args['default_month'] ) : '';
 	$default_year     = isset( $args['default_year'] ) ? sanitize_text_field( $args['default_year'] ) : '';
+	$orderby          = isset( $args['orderby'] ) ? sanitize_key( $args['orderby'] ) : 'date_modified';
+	$order            = isset( $args['order'] ) ? strtolower( sanitize_key( $args['order'] ) ) : 'desc';
+	$per_page         = isset( $args['per_page'] ) ? absint( $args['per_page'] ) : 10;
+	$max_results      = isset( $args['max_results'] ) ? absint( $args['max_results'] ) : 0;
+	$date_start       = isset( $args['date_start'] ) ? sanitize_text_field( $args['date_start'] ) : '';
+	$date_end         = isset( $args['date_end'] ) ? sanitize_text_field( $args['date_end'] ) : '';
+	$expand_instances = isset( $args['expand_instances'] ) ? (bool) $args['expand_instances'] : false;
 	$container_id     = 'eventkoi-calendar-' . uniqid();
-	$content_size     = ! empty( $args['layout']['contentSize'] ) ? $args['layout']['contentSize'] : '1100px';
-	$wide_size        = ! empty( $args['layout']['wideSize'] ) ? $args['layout']['wideSize'] : '1100px';
+	$content_size     = ! empty( $args['layout']['contentSize'] ) ? sanitize_text_field( $args['layout']['contentSize'] ) : '';
+	$wide_size        = ! empty( $args['layout']['wideSize'] ) ? sanitize_text_field( $args['layout']['wideSize'] ) : '';
 
-	$style = 'max-width:' . esc_attr( $content_size ) . ';margin-left:auto;margin-right:auto;';
+	if ( empty( $content_size ) && is_tax( 'event_cal' ) ) {
+		$content_size = '1100px';
+	}
+
+	if ( 'list' === $display ) {
+		$allowed_orderby = array( 'modified', 'date_modified', 'date', 'publish_date', 'title', 'start_date', 'event_start', 'upcoming' );
+		if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
+			$orderby = 'date_modified';
+		}
+		if ( 'modified' === $orderby ) {
+			$orderby = 'date_modified';
+		}
+		if ( 'date' === $orderby ) {
+			$orderby = 'publish_date';
+		}
+		if ( 'start_date' === $orderby ) {
+			$orderby = 'event_start';
+		}
+		if ( ! in_array( $order, array( 'asc', 'desc' ), true ) ) {
+			$order = 'desc';
+		}
+		if ( 'upcoming' === $orderby && empty( $args['order'] ) ) {
+			$order = 'asc';
+		}
+		$per_page    = $per_page > 0 ? min( $per_page, 100 ) : 10;
+		$max_results = $max_results > 0 ? min( $max_results, 1000 ) : 0;
+
+		if ( $expand_instances ) {
+			if ( empty( $calendars ) ) {
+				$calendars = (string) absint( $calendar::get_id() );
+			}
+			$calendars .= '|ek_expand_instances=1';
+		}
+	} else {
+		$orderby = '';
+		$order = '';
+		$per_page = 0;
+		$max_results = 0;
+		$date_start = '';
+		$date_end = '';
+		$expand_instances = false;
+	}
+
+	$style_parts = array();
+	if ( ! empty( $content_size ) ) {
+		$style_parts[] = 'max-width:' . esc_attr( $content_size );
+		$style_parts[] = 'margin-left:auto';
+		$style_parts[] = 'margin-right:auto';
+	}
+	$style = ! empty( $style_parts ) ? implode( ';', $style_parts ) . ';' : '';
 
 	$calendar_template = sprintf(
 		'<!-- wp:group {"className":"eventkoi-front"} -->
@@ -262,7 +355,14 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 				data-border-size="%11$s"
 				data-context="%14$s"
 				data-default-month="%15$s"
-				data-default-year="%16$s">
+				data-default-year="%16$s"
+				data-orderby="%17$s"
+				data-order="%18$s"
+				data-per-page="%19$s"
+				data-max-results="%20$s"
+				data-date-start="%21$s"
+				data-date-end="%22$s"
+				data-expand-instances="%23$s">
 			</div>
 		</div>
 	<!-- /wp:group -->',
@@ -281,7 +381,14 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 		esc_attr( $style ),
 		esc_attr( $args['context'] ?? 'frontend' ), // %14$s
 		esc_attr( $args['default_month'] ?? '' ),   // %15$s
-		esc_attr( $args['default_year'] ?? '' )     // %16$s
+		esc_attr( $args['default_year'] ?? '' ),    // %16$s
+		esc_attr( $orderby ),                       // %17$s
+		esc_attr( $order ),                         // %18$s
+		esc_attr( $per_page ),                      // %19$s
+		esc_attr( $max_results ),                   // %20$s
+		esc_attr( $date_start ),                    // %21$s
+		esc_attr( $date_end ),                      // %22$s
+		$expand_instances ? '1' : '0'               // %23$s
 	);
 
 	$output = do_blocks( apply_filters( 'eventkoi_get_calendar_content', $calendar_template ) );

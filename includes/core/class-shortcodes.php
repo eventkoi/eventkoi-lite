@@ -39,8 +39,16 @@ class Shortcodes {
 	public static function render_calendar( $user_attributes, $content, $shortcode_name ) {
 		$attributes = shortcode_atts(
 			array(
-				'id'      => '',
-				'display' => 'calendar',
+				'id'               => '',
+				'display'          => 'calendar',
+				'orderby'          => 'date_modified',
+				'order'            => 'desc',
+				'per_page'         => 10,
+				'max_results'      => 0,
+				'date_start'       => '',
+				'date_end'         => '',
+				'expand'           => '',
+				'expand_instances' => '',
 			),
 			$user_attributes,
 			$shortcode_name
@@ -73,6 +81,57 @@ class Shortcodes {
 
 		$primary_id = $ids[0];
 		$display    = sanitize_text_field( $attributes['display'] );
+		$orderby    = sanitize_key( $attributes['orderby'] );
+		$order      = strtolower( sanitize_key( $attributes['order'] ) );
+		$per_page   = absint( $attributes['per_page'] );
+		$max_results = absint( $attributes['max_results'] );
+		$date_start = sanitize_text_field( $attributes['date_start'] );
+		$date_end   = sanitize_text_field( $attributes['date_end'] );
+
+		$expand_instances_raw = isset( $attributes['expand_instances'] ) ? $attributes['expand_instances'] : '';
+		$expand_instances     = false;
+		$has_bare_expand      = is_array( $user_attributes ) && in_array( 'expand', $user_attributes, true );
+
+		if ( is_array( $user_attributes ) && array_key_exists( 'expand', $user_attributes ) && ! array_key_exists( 'expand_instances', $user_attributes ) ) {
+			$expand_instances_raw = $user_attributes['expand'];
+		}
+
+		if ( is_array( $user_attributes ) && ( array_key_exists( 'expand', $user_attributes ) || array_key_exists( 'expand_instances', $user_attributes ) || $has_bare_expand ) ) {
+			if ( '' === (string) $expand_instances_raw ) {
+				$expand_instances = true;
+			} else {
+				$expand_instances = (bool) filter_var( $expand_instances_raw, FILTER_VALIDATE_BOOLEAN );
+			}
+		}
+
+		$per_page    = $per_page > 0 ? min( $per_page, 100 ) : 10;
+		$max_results = $max_results > 0 ? min( $max_results, 1000 ) : 0;
+
+		$allowed_orderby = array( 'modified', 'date_modified', 'date', 'publish_date', 'title', 'start_date', 'event_start', 'upcoming' );
+		if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
+			$orderby = 'date_modified';
+		}
+
+		if ( 'modified' === $orderby ) {
+			$orderby = 'date_modified';
+		}
+
+		if ( 'date' === $orderby ) {
+			$orderby = 'publish_date';
+		}
+
+		if ( 'start_date' === $orderby ) {
+			$orderby = 'event_start';
+		}
+
+		if ( ! in_array( $order, array( 'asc', 'desc' ), true ) ) {
+			$order = 'desc';
+		}
+
+		// "upcoming" defaults to nearest first unless explicitly overridden.
+		if ( 'upcoming' === $orderby && ( ! is_array( $user_attributes ) || ! array_key_exists( 'order', $user_attributes ) ) ) {
+			$order = 'asc';
+		}
 
 		$calendar = new \EventKoi\Core\Calendar( $primary_id );
 
@@ -82,11 +141,21 @@ class Shortcodes {
 
 		ob_start();
 
-		$html = eventkoi_get_calendar_content(
-			$primary_id,
-			$display,
-			array( 'calendars' => $ids )
+		$calendar_args = array(
+			'calendars' => $ids,
 		);
+
+		if ( 'list' === $display ) {
+			$calendar_args['orderby']          = $orderby;
+			$calendar_args['order']            = $order;
+			$calendar_args['per_page']         = $per_page;
+			$calendar_args['max_results']      = $max_results;
+			$calendar_args['date_start']       = $date_start;
+			$calendar_args['date_end']         = $date_end;
+			$calendar_args['expand_instances'] = $expand_instances;
+		}
+
+		$html = eventkoi_get_calendar_content( $primary_id, $display, $calendar_args );
 
 		if ( ! empty( $html ) ) {
 			echo wp_kses_post( $html );

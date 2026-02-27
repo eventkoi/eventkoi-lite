@@ -8,6 +8,12 @@
 
 namespace EventKoi\Core;
 
+use EKLIB\StellarWP\Schema\Register;
+use EKLIB\StellarWP\Schema\Activation;
+use EventKoi\Core\Tables\Customers;
+use EventKoi\Core\Tables\Recurrence_Overrides;
+use EventKoi\Core\Tables\Rsvps;
+
 // Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -36,5 +42,31 @@ class Activator {
 
 		// Queue a one-time rewrite rules flush after activation.
 		update_option( 'eventkoi_flush_needed', 'yes' );
+
+		self::create_tables();
+	}
+
+	/**
+	 * Ensure core EventKoi Lite tables are present on activation.
+	 *
+	 * @return void
+	 */
+	private static function create_tables() {
+		try {
+			Register::tables(
+				array(
+					Customers::class,
+					Recurrence_Overrides::class,
+					Rsvps::class,
+				)
+			);
+
+			Activation::activate();
+		} catch ( \Throwable $exception ) {
+			// Avoid hard-failing activation when schema activation throws.
+			if ( defined( 'WP_DEBUG' ) && WP_DEBUG ) {
+				error_log( 'EventKoi Lite schema activation failed: ' . $exception->getMessage() ); // phpcs:ignore WordPress.PHP.DevelopmentFunctions.error_log_error_log
+			}
+		}
 	}
 }

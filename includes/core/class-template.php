@@ -393,7 +393,7 @@ class Template {
 
 		// Render elementor template
 		if ( class_exists( '\Elementor\Plugin' ) ) {
-			$template_slug = $event::get_template();
+			$template_slug = $selected_template_slug;
 			$template_obj  = get_page_by_path( $template_slug, OBJECT, 'elementor_library' );
 
 			if ( $template_obj instanceof \WP_Post ) {
@@ -404,7 +404,7 @@ class Template {
 
 		// Render bricks template
 		if ( defined( 'BRICKS_VERSION' ) ) {
-			$template_slug = $event::get_template();
+			$template_slug = $selected_template_slug;
 			$template_obj  = get_page_by_path( $template_slug, OBJECT, 'bricks_template' );
 
 			if ( $template_obj instanceof \WP_Post ) {

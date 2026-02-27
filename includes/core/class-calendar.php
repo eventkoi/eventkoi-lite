@@ -473,11 +473,13 @@ class Calendar {
 		$args = wp_parse_args(
 			$args ?? array(),
 			array(
-				'per_page' => -1,
-				'include'  => array(),
-				'page'     => 1,
-				'orderby'  => 'modified',
-				'order'    => 'DESC',
+				'per_page'    => -1,
+				'include'     => array(),
+				'page'        => 1,
+				'orderby'     => 'modified',
+				'order'       => 'DESC',
+				'max_results' => 0,
+				'post_status' => array( 'publish' ),
 			)
 		);
 
@@ -493,15 +495,27 @@ class Calendar {
 		}
 
 		// Normalize query vars.
-		$per_page = isset( $args['per_page'] ) ? (int) $args['per_page'] : -1;
-		$per_page = ( 0 === $per_page ) ? -1 : $per_page;
-		$paged    = max( 1, (int) $args['page'] );
-		$orderby  = sanitize_key( $args['orderby'] );
-		$order    = strtoupper( $args['order'] );
+		$per_page    = isset( $args['per_page'] ) ? (int) $args['per_page'] : -1;
+		$per_page    = ( 0 === $per_page ) ? -1 : $per_page;
+		$paged       = max( 1, (int) $args['page'] );
+		$orderby     = sanitize_key( $args['orderby'] );
+		$order       = strtoupper( $args['order'] );
+		$max_results = max( 0, (int) $args['max_results'] );
+		$post_status = isset( $args['post_status'] ) ? (array) $args['post_status'] : array( 'publish' );
 
-		$allowed_orderby = array( 'modified', 'date', 'title', 'start_date', 'event_start' );
+		$allowed_orderby = array( 'modified', 'date_modified', 'date', 'publish_date', 'title', 'start_date', 'event_start', 'upcoming' );
 		if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
 			$orderby = 'modified';
+		}
+
+		if ( 'date_modified' === $orderby ) {
+			$orderby = 'modified';
+		}
+		if ( 'publish_date' === $orderby ) {
+			$orderby = 'date';
+		}
+		if ( 'start_date' === $orderby ) {
+			$orderby = 'event_start';
 		}
 
 		// Map custom orderby values to valid WP_Query keys.
@@ -513,7 +527,7 @@ class Calendar {
 		// Build query arguments.
 		$query_args = array(
 			'post_type'      => 'eventkoi_event',
-			'post_status'    => 'publish',
+			'post_status'    => $post_status,
 			// Fetch all base events; pagination occurs after recurrence expansion.
 			'posts_per_page' => -1,
 			'orderby'        => $post_orderby,
@@ -793,6 +807,28 @@ class Calendar {
 		}
 
 		$results = array_values( $results );
+
+		if ( 'upcoming' === $orderby ) {
+			usort(
+				$results,
+				static function ( $a, $b ) use ( $order ) {
+					$a_ts = ! empty( $a['start'] ) ? strtotime( $a['start'] ) : 0;
+					$b_ts = ! empty( $b['start'] ) ? strtotime( $b['start'] ) : 0;
+					if ( $a_ts === $b_ts ) {
+						return 0;
+					}
+					if ( 'ASC' === $order ) {
+						return ( $a_ts < $b_ts ) ? -1 : 1;
+					}
+					return ( $a_ts > $b_ts ) ? -1 : 1;
+				}
+			);
+		}
+
+		if ( $max_results > 0 ) {
+			$results = array_slice( $results, 0, $max_results );
+		}
+
 		$total   = count( $results );
 
 		if ( $per_page > -1 ) {

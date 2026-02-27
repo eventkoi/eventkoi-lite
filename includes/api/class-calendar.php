@@ -124,6 +124,8 @@ class Calendar {
 		$ids      = array();
 		$id       = sanitize_text_field( $request->get_param( 'id' ) );
 		$initial  = $request->get_param( 'initial' );
+		$expand_instances_marker = ( false !== strpos( $id, '|ek_expand_instances=1' ) );
+		$id = str_replace( '|ek_expand_instances=1', '', $id );
 		$page     = max( 1, absint( $request->get_param( 'page' ) ) );
 		$per_page = $request->get_param( 'per_page' );
 		$per_page = isset( $per_page ) ? absint( $per_page ) : -1;
@@ -145,11 +147,55 @@ class Calendar {
 
 		$calendar = new SingleCal( $id );
 
-		$display    = sanitize_text_field( $request->get_param( 'display' ) );
-		$orderby    = sanitize_text_field( $request->get_param( 'orderby' ) );
-		$order      = sanitize_text_field( $request->get_param( 'order' ) );
-		$start_date = sanitize_text_field( $request->get_param( 'start_date' ) );
-		$end_date   = sanitize_text_field( $request->get_param( 'end_date' ) );
+		$display = sanitize_text_field( $request->get_param( 'display' ) );
+		$order   = 'desc';
+		$orderby = 'date_modified';
+		$max_results = 0;
+		$date_start = '';
+		$date_end   = '';
+
+		if ( 'list' === $display ) {
+			$order   = strtolower( sanitize_key( (string) $request->get_param( 'order' ) ) );
+			$orderby = sanitize_key( (string) $request->get_param( 'orderby' ) );
+			$page    = max( 1, absint( $request->get_param( 'page' ) ) );
+			$per_page = absint( $request->get_param( 'per_page' ) );
+			$max_results = absint( $request->get_param( 'max_results' ) );
+			$date_start = sanitize_text_field( (string) $request->get_param( 'date_start' ) );
+			$date_end   = sanitize_text_field( (string) $request->get_param( 'date_end' ) );
+
+			if ( ! in_array( $order, array( 'asc', 'desc' ), true ) ) {
+				$order = 'desc';
+			}
+
+			$allowed_orderby = array( 'modified', 'date_modified', 'date', 'publish_date', 'title', 'start_date', 'event_start', 'upcoming' );
+			if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
+				$orderby = 'date_modified';
+			}
+
+			if ( 'date_modified' === $orderby || 'modified' === $orderby ) {
+				$orderby = 'modified';
+			}
+
+			if ( 'publish_date' === $orderby || 'date' === $orderby ) {
+				$orderby = 'date';
+			}
+
+			if ( 'event_start' === $orderby || 'start_date' === $orderby ) {
+				$orderby = 'event_start';
+			}
+
+			if ( 'upcoming' === $orderby && ! $request->has_param( 'order' ) ) {
+				$order = 'asc';
+			}
+
+			$per_page    = $per_page > 0 ? min( $per_page, 100 ) : 10;
+			$max_results = $max_results > 0 ? min( $max_results, 1000 ) : 0;
+		} else {
+			$orderby    = sanitize_key( (string) $request->get_param( 'orderby' ) );
+			$order      = strtolower( sanitize_key( (string) $request->get_param( 'order' ) ) );
+			$date_start = sanitize_text_field( (string) $request->get_param( 'start_date' ) );
+			$date_end   = sanitize_text_field( (string) $request->get_param( 'end_date' ) );
+		}
 
 		// On initial load for "calendar" display → return only calendar meta, no events.
 		if ( 'calendar' === $display && $initial ) {
@@ -162,6 +208,12 @@ class Calendar {
 		}
 
 		$expand_instances = ( 'calendar' === $display ); // Expand only if display is calendar.
+		if ( $request->has_param( 'expand_instances' ) ) {
+			$expand_instances = rest_sanitize_boolean( $request->get_param( 'expand_instances' ) );
+		}
+		if ( $expand_instances_marker ) {
+			$expand_instances = true;
+		}
 		$event_data       = $calendar::get_events(
 			$ids,
 			$expand_instances,
@@ -170,8 +222,9 @@ class Calendar {
 				'page'       => $page,
 				'orderby'    => $orderby,
 				'order'      => $order,
-				'start_date' => $start_date,
-				'end_date'   => $end_date,
+				'start_date' => $date_start,
+				'end_date'   => $date_end,
+				'max_results' => $max_results,
 			)
 		);
 
@@ -221,12 +274,28 @@ class Calendar {
 		$order = isset( $order ) ? sanitize_text_field( $order ) : 'desc';
 
 		$orderby = $request->get_param( 'orderby' );
-		$orderby = isset( $orderby ) ? sanitize_text_field( $orderby ) : 'modified';
+		$orderby = isset( $orderby ) ? sanitize_text_field( $orderby ) : 'date_modified';
 
 		// Allow only known orderby values.
-		$allowed_orderby = array( 'modified', 'date', 'title', 'start_date', 'event_start' );
+		$allowed_orderby = array( 'modified', 'date_modified', 'date', 'publish_date', 'title', 'start_date', 'event_start', 'upcoming' );
 		if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
+			$orderby = 'date_modified';
+		}
+
+		if ( 'date_modified' === $orderby || 'modified' === $orderby ) {
 			$orderby = 'modified';
+		}
+
+		if ( 'publish_date' === $orderby || 'date' === $orderby ) {
+			$orderby = 'date';
+		}
+
+		if ( 'event_start' === $orderby || 'start_date' === $orderby ) {
+			$orderby = 'event_start';
+		}
+
+		if ( 'upcoming' === $orderby && ! $request->has_param( 'order' ) ) {
+			$order = 'asc';
 		}
 
 		// Optional calendar IDs (comma-separated).
