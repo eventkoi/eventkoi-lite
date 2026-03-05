@@ -3,6 +3,9 @@ const path = require('path');
 
 module.exports = {
 	...defaultConfig,
+	performance: {
+		hints: false,
+	},
 	resolve: {
 		...defaultConfig.resolve,
 		alias: {
