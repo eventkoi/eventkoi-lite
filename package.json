@@ -1,0 +1,11 @@
+{
+  "name": "eventkoi-lite",
+  "private": true,
+  "scripts": {
+    "dev": "concurrently \"npm --prefix scripts/frontend run dev\" \"npm --prefix scripts/backend run dev\"",
+    "build": "npm --prefix scripts/frontend run build && npm --prefix scripts/backend run build"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.1"
+  }
+}

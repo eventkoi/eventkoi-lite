@@ -7,9 +7,11 @@
   "main": "build/index.js",
   "scripts": {
     "start": "wp-scripts start",
-    "build": "wp-scripts build",
+    "build:wp": "wp-scripts build",
     "start-tw": "npx tailwindcss -i ./src/tailwind.css -o ./build/tailwind.css --watch",
     "build-tw": "npx tailwindcss -i ./src/tailwind.css -o ./build/tailwind.css --minify",
+    "dev": "concurrently \"npm run start\" \"sleep 8 && npm run start-tw\"",
+    "build": "npm run build:wp && npm run build-tw",
     "check-engines": "wp-scripts check-engines",
     "check-licenses": "wp-scripts check-licenses",
     "packages-update": "wp-scripts packages-update"
@@ -17,6 +19,7 @@
   "devDependencies": {
     "@wordpress/scripts": "^30.14.1",
     "autoprefixer": "^10.4.16",
+    "concurrently": "^9.2.1",
     "postcss": "^8.4.31",
     "postcss-import": "^15.1.0",
     "sass": "^1.45.2",
