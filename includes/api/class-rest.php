@@ -135,7 +135,19 @@ class REST {
 	public static function private_api( \WP_REST_Request $request ) {
 		$headers = $request->get_headers();
 
-		$api_key       = isset( $headers['eventkoi_api_key'][0] ) ? sanitize_text_field( $headers['eventkoi_api_key'][0] ) : '';
+		$api_key = '';
+		if ( isset( $headers['eventkoi_api_key'][0] ) ) {
+			$api_key = sanitize_text_field( $headers['eventkoi_api_key'][0] );
+		}
+
+		if ( ! $api_key ) {
+			$api_key = sanitize_text_field( $request->get_header( 'eventkoi-api-key' ) );
+		}
+
+		if ( ! $api_key ) {
+			$api_key = sanitize_text_field( $request->get_header( 'eventkoi_api_key' ) );
+		}
+
 		$saved_api_key = self::get_api_key();
 
 		if ( empty( $api_key ) || empty( $saved_api_key ) ) {

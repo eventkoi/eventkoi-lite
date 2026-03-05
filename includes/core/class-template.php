@@ -52,9 +52,36 @@ class Template {
 		add_filter( 'fl_builder_render_module_content', array( __CLASS__, 'maybe_replace_tokens_in_beaver_module_output' ), 20, 2 );
 		add_filter( 'fl_theme_builder_template_include', array( __CLASS__, 'maybe_override_beaver_themer_template_include' ), 20, 2 );
 		add_filter( 'deprecated_file_trigger_error', array( __CLASS__, 'maybe_disable_deprecated_file_warnings_for_bb_editor' ), 10, 1 );
+		add_filter( 'redirect_canonical', array( __CLASS__, 'maybe_preserve_event_single_pagination' ), 20, 2 );
 
 		add_filter( 'render_block', array( __CLASS__, 'maybe_inject_series_backlink' ), 8, 2 );
 		add_filter( 'eventkoi_get_content', array( __CLASS__, 'maybe_inject_rsvp_shortcode' ), 20 );
+	}
+
+	/**
+	 * Preserve paged URLs on single EventKoi event pages.
+	 *
+	 * WordPress canonical redirects typically strip `/page/{n}` on singular posts.
+	 * Beaver Loop pagination on event singles uses those URLs, so keep them intact.
+	 *
+	 * @param string|false $redirect_url  Canonical redirect URL.
+	 * @param string       $requested_url Original requested URL.
+	 * @return string|false
+	 */
+	public static function maybe_preserve_event_single_pagination( $redirect_url, $requested_url ) {
+		if ( ! is_singular( 'eventkoi_event' ) ) {
+			return $redirect_url;
+		}
+
+		$requested_path   = (string) wp_parse_url( (string) $requested_url, PHP_URL_PATH );
+		$has_page_segment = (bool) preg_match( '#/page/\d+/?$#', $requested_path );
+		$has_paged_query  = isset( $_GET['paged'] ) || isset( $_GET['page'] );
+
+		if ( $has_page_segment || $has_paged_query ) {
+			return false;
+		}
+
+		return $redirect_url;
 	}
 
 	/**

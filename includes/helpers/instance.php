@@ -180,7 +180,19 @@ if ( ! function_exists( 'eventkoi_sanitize_calendar_selection' ) ) {
 		}
 
 		if ( is_string( $calendars ) ) {
-			return array( absint( $calendars ) );
+			$calendars = trim( $calendars );
+
+			// Support comma-delimited values (e.g. "2,5,9") from UI controls.
+			if ( false !== strpos( $calendars, ',' ) ) {
+				return array_values(
+					array_filter(
+						array_map( 'absint', array_map( 'trim', explode( ',', $calendars ) ) )
+					)
+				);
+			}
+
+			$id = absint( $calendars );
+			return $id > 0 ? array( $id ) : array();
 		}
 
 		if ( is_array( $calendars ) ) {
