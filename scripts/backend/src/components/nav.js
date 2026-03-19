@@ -33,7 +33,7 @@ export function Nav({ isEvent = false, isCalendar = false }) {
     <header
       className={cn(
         "relative bg-white shadow-sm md:shadow-none md:bg-transparent border-b px-4 py-4 md:py-2 text-sm",
-        isEvent && "sticky top-8 z-[500] bg-muted h-20 shadow-sm border-none"
+        isEvent && "sticky top-8 z-[500] bg-muted h-20 shadow-sm border-none",
       )}
     >
       {/* Top row */}
@@ -64,7 +64,7 @@ export function Nav({ isEvent = false, isCalendar = false }) {
             <span>Read docs</span>
           </a>
           <a
-            href="https://eventkoi.com/docs/request-support/"
+            href="https://wordpress.org/support/plugin/eventkoi-lite/"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 px-3 py-1.5 text-muted-foreground hover:text-foreground transition-colors"
@@ -90,7 +90,7 @@ export function Nav({ isEvent = false, isCalendar = false }) {
               <span>Read docs</span>
             </a>
             <a
-              href="https://eventkoi.com/docs/request-support/"
+              href="https://wordpress.org/support/plugin/eventkoi-lite/"
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-0 md:px-3 py-1.5 text-muted-foreground hover:text-foreground transition-colors"
