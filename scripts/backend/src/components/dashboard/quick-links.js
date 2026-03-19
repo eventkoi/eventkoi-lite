@@ -12,7 +12,7 @@ export function QuickLinks() {
         <BookOpen className="w-5 h-5 mr-4" />
         <span>Read documentation</span>
       </BigLink>
-      <BigLink href="https://eventkoi.com/docs/request-support/">
+      <BigLink href="https://wordpress.org/support/plugin/eventkoi-lite/">
         <Inbox className="w-5 h-5 mr-4" />
         <span>Request support</span>
       </BigLink>
