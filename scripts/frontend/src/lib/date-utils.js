@@ -238,6 +238,18 @@ export function formatTimeCompact(
   locale = undefined
 ) {
   const tz = normalizeTimeZone(timeZone);
+  const use24h =
+    typeof eventkoi_params !== "undefined" &&
+    eventkoi_params?.time_format === "24";
+
+  if (use24h) {
+    return date.toLocaleTimeString(locale || undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: false,
+      timeZone: tz,
+    });
+  }
 
   let str = date
     .toLocaleTimeString(locale || undefined, {

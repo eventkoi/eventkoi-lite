@@ -1,9 +1,19 @@
 import { DateTime } from "luxon";
+import { wpToLuxonFormat } from "@/lib/date-utils";
 
 const shouldAutoDetect =
   typeof window !== "undefined" &&
   !!window.eventkoi_params?.auto_detect_timezone &&
   window.eventkoi_params.auto_detect_timezone !== "0";
+
+const is24h =
+  typeof window !== "undefined" &&
+  window.eventkoi_params?.time_format === "24";
+
+const dateFmt =
+  typeof window !== "undefined"
+    ? wpToLuxonFormat(window.eventkoi_params?.date_format || "F j, Y")
+    : "LLLL d, yyyy";
 
 const localeToUse =
   typeof window !== "undefined" && window.eventkoi_params?.locale
@@ -15,19 +25,20 @@ function formatRange(startISO, endISO, tz, isAllDay) {
   const start = DateTime.fromISO(startISO, { zone: tz });
   if (!start.isValid) return null;
 
-  const startLocal = start.setZone(localZone);
+  const startLocal = start.setZone(localZone).setLocale(localeToUse);
   if (isAllDay) {
-    return startLocal.toFormat("d LLLL yyyy");
+    return startLocal.toFormat(dateFmt);
   }
 
-  let output = startLocal.toFormat("d LLLL yyyy, h:mm a");
+  const timeFmt = is24h ? "HH:mm" : "h:mm a";
+  let output = startLocal.toFormat(dateFmt + ", " + timeFmt);
   if (endISO) {
     const end = DateTime.fromISO(endISO, { zone: tz });
     if (end.isValid) {
-      const endLocal = end.setZone(localZone);
+      const endLocal = end.setZone(localZone).setLocale(localeToUse);
       const sameDay = startLocal.toISODate() === endLocal.toISODate();
       output +=
-        " – " + endLocal.toFormat(sameDay ? "h:mm a" : "d LLLL yyyy, h:mm a");
+        " — " + endLocal.toFormat(sameDay ? timeFmt : dateFmt + ", " + timeFmt);
     }
   }
   return output;
@@ -48,6 +59,9 @@ function rewriteEventDates() {
       const text = node.textContent.trim();
       const datePart = text.split(/[–-]/)[0].trim();
       const formats = [
+        "d LLLL yyyy, HH:mm",
+        "d LLL yyyy, HH:mm",
+        "dd LLL yyyy, HH:mm",
         "d LLLL yyyy, h:mm a",
         "d LLL yyyy, h:mm a",
         "dd LLL yyyy, h:mm a",

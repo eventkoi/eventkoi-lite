@@ -20,6 +20,8 @@ import { Panel } from "@/components/panel";
 
 import { MoveRight } from "lucide-react";
 
+const is24h = eventkoi_params?.time_format === "24";
+
 export function EventDate({ event, setEvent }) {
   const { date_now, time_now } = eventkoi_params;
 
@@ -77,14 +79,14 @@ export function EventDate({ event, setEvent }) {
   const updateStartDate = (date) => {
     setEvent((prevState) => ({
       ...prevState,
-      start_date: date ? format(date, "yyyy-MM-dd hh:mm a") : "",
+      start_date: date ? format(date, is24h ? "yyyy-MM-dd HH:mm" : "yyyy-MM-dd hh:mm a") : "",
     }));
   };
 
   const updateEndDate = (date) => {
     setEvent((prevState) => ({
       ...prevState,
-      end_date: date ? format(date, "yyyy-MM-dd hh:mm a") : "",
+      end_date: date ? format(date, is24h ? "yyyy-MM-dd HH:mm" : "yyyy-MM-dd hh:mm a") : "",
     }));
   };
 
@@ -110,7 +112,7 @@ export function EventDate({ event, setEvent }) {
                   disabled={event?.tbc}
                 >
                   {startDate ? (
-                    format(startDate, "d MMM yyyy h:mm a")
+                    format(startDate, is24h ? "d MMM yyyy HH:mm" : "d MMM yyyy h:mm a")
                   ) : (
                     <span>
                       {date_now} {time_now}
@@ -162,7 +164,7 @@ export function EventDate({ event, setEvent }) {
                   disabled={event?.tbc}
                 >
                   {endDate ? (
-                    format(endDate, "d MMM yyyy h:mm a")
+                    format(endDate, is24h ? "d MMM yyyy HH:mm" : "d MMM yyyy h:mm a")
                   ) : (
                     <span>
                       {date_now} {time_now}
