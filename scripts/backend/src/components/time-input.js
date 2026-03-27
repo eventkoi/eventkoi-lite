@@ -7,10 +7,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
  * TimeInput: renders and parses wall times in a given timezone (wpTz),
  * but calls setDate() with a UTC Date so parent can store in UTC.
  */
+const is24h = eventkoi_params?.time_format === "24";
+
 export function TimeInput({ date, setDate, disabled, wpTz = "UTC" }) {
-  // Format a Date into h:mma in WP timezone
+  // Format a Date into wall time in WP timezone
   const formatTime = (d) =>
-    DateTime.fromJSDate(d, { zone: wpTz }).toFormat("h:mma").toLowerCase();
+    DateTime.fromJSDate(d, { zone: wpTz })
+      .toFormat(is24h ? "HH:mm" : "h:mma")
+      .toLowerCase();
 
   // Build dropdown options once
   const TIME_OPTIONS = useMemo(() => {
@@ -19,7 +23,7 @@ export function TimeInput({ date, setDate, disabled, wpTz = "UTC" }) {
         { hour: Math.floor(i / 4), minute: (i % 4) * 15 },
         { zone: wpTz }
       );
-      return dt.toFormat("h:mma").toLowerCase();
+      return dt.toFormat(is24h ? "HH:mm" : "h:mma").toLowerCase();
     });
   }, [wpTz]);
 
@@ -37,15 +41,19 @@ export function TimeInput({ date, setDate, disabled, wpTz = "UTC" }) {
     if (!input) return null;
     const cleaned = input.toLowerCase().replace(/\s/g, "");
 
-    // Match 2:30, 2:30pm
+    // Match 2:30, 2:30pm, 14:30
     const colonMatch = cleaned.match(/^(\d{1,2}):(\d{2})(am|pm)?$/);
     if (colonMatch) {
       let [, h, m, ampm] = colonMatch;
       let hour = parseInt(h, 10);
       let minute = parseInt(m, 10);
-      if (!ampm) ampm = hour >= 7 && hour <= 11 ? "am" : "pm";
-      if (ampm === "pm" && hour < 12) hour += 12;
-      if (ampm === "am" && hour === 12) hour = 0;
+      if (is24h) {
+        if (hour > 23 || minute > 59) return null;
+      } else {
+        if (!ampm) ampm = hour >= 7 && hour <= 11 ? "am" : "pm";
+        if (ampm === "pm" && hour < 12) hour += 12;
+        if (ampm === "am" && hour === 12) hour = 0;
+      }
 
       return DateTime.fromJSDate(date || new Date(), { zone: wpTz })
         .set({ hour, minute, second: 0, millisecond: 0 })
@@ -53,16 +61,20 @@ export function TimeInput({ date, setDate, disabled, wpTz = "UTC" }) {
         .toJSDate();
     }
 
-    // Match compact 230, 4pm, 1130am
+    // Match compact 230, 4pm, 1130am, or 14 (meaning 14:00 in 24h)
     const compactMatch = cleaned.match(/^(\d{1,2})(\d{2})?(am|pm)?$/);
     if (compactMatch) {
       let [, h, m, ampm] = compactMatch;
       let hour = parseInt(h, 10);
       let minute = m ? parseInt(m, 10) : 0;
-      if (minute >= 60 || hour > 12) return null;
-      if (!ampm) ampm = hour >= 7 && hour <= 11 ? "am" : "pm";
-      if (ampm === "pm" && hour < 12) hour += 12;
-      if (ampm === "am" && hour === 12) hour = 0;
+      if (is24h) {
+        if (hour > 23 || minute >= 60) return null;
+      } else {
+        if (minute >= 60 || hour > 12) return null;
+        if (!ampm) ampm = hour >= 7 && hour <= 11 ? "am" : "pm";
+        if (ampm === "pm" && hour < 12) hour += 12;
+        if (ampm === "am" && hour === 12) hour = 0;
+      }
 
       return DateTime.fromJSDate(date || new Date(), { zone: wpTz })
         .set({ hour, minute, second: 0, millisecond: 0 })

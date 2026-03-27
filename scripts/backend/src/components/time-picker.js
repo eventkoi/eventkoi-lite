@@ -4,6 +4,8 @@ import { TimePeriodSelect } from "@/components/ui/period-select";
 import { TimePickerInput } from "@/components/ui/time-picker-input";
 import * as React from "react";
 
+const is24h = eventkoi_params?.time_format === "24";
+
 export function TimePicker({ label, date, setDate, period, setPeriod }) {
   const minuteRef = React.useRef(null);
   const hourRef = React.useRef(null);
@@ -15,7 +17,7 @@ export function TimePicker({ label, date, setDate, period, setPeriod }) {
       <span className="font-medium">{label}</span>
       <div className="grid gap-1 text-center">
         <TimePickerInput
-          picker="12hours"
+          picker={is24h ? "hours" : "12hours"}
           period={period}
           date={date}
           setDate={setDate}
@@ -34,16 +36,18 @@ export function TimePicker({ label, date, setDate, period, setPeriod }) {
           onRightFocus={() => secondRef.current?.focus()}
         />
       </div>
-      <div className="grid gap-1 text-center">
-        <TimePeriodSelect
-          period={period}
-          setPeriod={setPeriod}
-          date={date}
-          setDate={setDate}
-          ref={periodRef}
-          onLeftFocus={() => secondRef.current?.focus()}
-        />
-      </div>
+      {!is24h && (
+        <div className="grid gap-1 text-center">
+          <TimePeriodSelect
+            period={period}
+            setPeriod={setPeriod}
+            date={date}
+            setDate={setDate}
+            ref={periodRef}
+            onLeftFocus={() => secondRef.current?.focus()}
+          />
+        </div>
+      )}
     </div>
   );
 }

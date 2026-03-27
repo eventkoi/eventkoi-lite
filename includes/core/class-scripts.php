@@ -89,7 +89,7 @@ class Scripts {
 			'timezone'          => wp_timezone_string(),
 			'timezone_offset'   => ( get_option( 'gmt_offset' ) ?? 0 ) * 3600,
 			'date_format'       => get_option( 'date_format' ),
-			'time_format_string'=> get_option( 'time_format' ),
+			'time_format_string'=> \eventkoi_apply_time_preference( get_option( 'time_format' ) ),
 			'gmap'              => array(
 				'api_key'   => $settings['gmap_api_key'] ?? '',
 				'connected' => ! empty( $settings['gmap_connection_status'] ),

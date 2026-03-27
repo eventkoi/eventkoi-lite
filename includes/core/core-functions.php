@@ -922,6 +922,23 @@ function eventkoi_locate_template( $template_name, $default_path = '' ) {
 }
 
 /**
+ * Apply EventKoi 12/24-hour preference to a PHP date format string.
+ *
+ * @param string $format PHP date format string.
+ * @return string Adjusted format string.
+ */
+function eventkoi_apply_time_preference( string $format ): string {
+	$settings = Settings::get();
+	if ( ! empty( $settings['time_format'] ) && '24' === $settings['time_format'] ) {
+		$format = preg_replace( '/[gh]:i\s*[aA]/', 'H:i', $format );
+		$format = preg_replace( '/[gh]:i/', 'H:i', $format );
+		$format = str_replace( array( 'a', 'A' ), '', $format );
+		$format = trim( $format );
+	}
+	return $format;
+}
+
+/**
  * Wrapper around wp_date() that respects WordPress date/time settings.
  *
  * @param string                   $type      'date', 'time', or 'datetime'.
@@ -944,6 +961,7 @@ function eventkoi_date( $type = 'datetime', $timestamp = null, $timezone = null 
 
 	$date_format = get_option( 'date_format', 'F j, Y' );
 	$time_format = get_option( 'time_format', 'g:i a' );
+	$time_format = eventkoi_apply_time_preference( $time_format );
 
 	switch ( $type ) {
 		case 'date':
@@ -968,20 +986,11 @@ function eventkoi_date( $type = 'datetime', $timestamp = null, $timezone = null 
  * @return string
  */
 function eventkoi_gmdate( $format, $timestamp = null ) {
-	$settings    = Settings::get();
-	$time_format = ( ! empty( $settings['time_format'] ) && '24' === $settings['time_format'] ) ? '24' : '12';
-
-	// If no timestamp, use current time.
 	if ( null === $timestamp ) {
 		$timestamp = time();
 	}
 
-	// Adjust format if user prefers 24h.
-	if ( '24' === $time_format ) {
-		$format = preg_replace( '/[gh]:i\s*[aA]/', 'H:i', $format );
-		$format = preg_replace( '/[gh]:i/', 'H:i', $format );
-		$format = str_replace( array( 'a', 'A' ), '', $format );
-	}
+	$format = eventkoi_apply_time_preference( $format );
 
 	return gmdate( $format, $timestamp );
 }
