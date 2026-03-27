@@ -5,7 +5,7 @@ Tags: events calendar, calendar, event, events, event list
 Requires at least: 6.7  
 Tested up to: 6.9 
 Requires PHP: 8.0  
-Stable tag: 1.3.0.2
+Stable tag: 1.3.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 Events calendar plugin for WordPress. Simple, clean event management. Display events as a calendar, list, or grid.
@@ -176,6 +176,9 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.0.3 – Time Format Fix – 2026-03-27 =
+* Fix: Fixed 12/24-hour time format setting not being respected across event pages, calendar views, admin UI, and auto-detect timezone display.
 
 = 1.3.0.2 – Fixes & Improvements – 2026-03-21 =
 * Fix: Fixed pagination on single event pages being incorrectly redirected by WordPress canonical URL handling (affects Beaver Builder loop pagination).
