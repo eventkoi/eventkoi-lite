@@ -14,7 +14,12 @@ export function getWordPressTimezone() {
   return tz || `Etc/GMT${offset > 0 ? "+" : ""}${-offset}`;
 }
 
-export function formatTimezone(dateString, format = "yyyy-MM-dd hh:mm a") {
+export function formatTimezone(
+  dateString,
+  format = eventkoi_params?.time_format === "24"
+    ? "yyyy-MM-dd HH:mm"
+    : "yyyy-MM-dd hh:mm a"
+) {
   const tz = getWordPressTimezone();
   return formatInTimeZone(dateString, tz, format);
 }

@@ -392,7 +392,8 @@ export function formatLocalTimestamp(
 
   if (isAllDay) return dateStr;
 
-  const timeStr = dt.toFormat("h:mm a");
+  const is24h = eventkoi_params?.time_format === "24";
+  const timeStr = dt.toFormat(is24h ? "HH:mm" : "h:mm a");
 
   return `${dateStr}\n${timeStr}`;
 }
@@ -597,14 +598,15 @@ export function formatDateInTimezone(
     }).format(date);
   }
 
+  const is24h = eventkoi_params?.time_format === "24";
   const formatter = new Intl.DateTimeFormat("en-US", {
     timeZone: safeZone,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-    hour: "numeric",
+    hour: is24h ? "2-digit" : "numeric",
     minute: "2-digit",
-    hour12: true,
+    hour12: !is24h,
   });
 
   const parts = formatter.formatToParts(date).reduce((acc, part) => {
@@ -612,9 +614,11 @@ export function formatDateInTimezone(
     return acc;
   }, {});
 
-  return `${parts.year}-${parts.month}-${parts.day}\n${parts.hour}:${
-    parts.minute
-  } ${parts.dayPeriod.toLowerCase()}`;
+  const timePart = is24h
+    ? `${parts.hour}:${parts.minute}`
+    : `${parts.hour}:${parts.minute} ${parts.dayPeriod.toLowerCase()}`;
+
+  return `${parts.year}-${parts.month}-${parts.day}\n${timePart}`;
 }
 
 /**
@@ -649,11 +653,12 @@ export function formatAdminDateCell(
   }
 
   // Force UTC for time
+  const is24h = eventkoi_params?.time_format === "24";
   const timeStr = new Intl.DateTimeFormat("en-US", {
     timeZone: "UTC",
-    hour: "numeric",
+    hour: is24h ? "2-digit" : "numeric",
     minute: "2-digit",
-    hour12: true,
+    hour12: !is24h,
   }).format(date);
 
   return `${dateStr}\n${timeStr}`;
@@ -675,10 +680,12 @@ export function formatWallTimeRange(start, end, timezone = "UTC") {
   const startDate = typeof start === "string" ? new Date(start) : start;
   const endDate = typeof end === "string" ? new Date(end) : end;
 
+  const is24h = eventkoi_params?.time_format === "24";
+  const timeFmt = is24h ? "HH:mm" : "h:mm a";
   const datePart = formatInTimeZone(startDate, safeZone, "MMM d, yyyy");
-  const startTime = formatInTimeZone(startDate, safeZone, "h:mm a");
+  const startTime = formatInTimeZone(startDate, safeZone, timeFmt);
   const endTime = endDate
-    ? formatInTimeZone(endDate, safeZone, "h:mm a")
+    ? formatInTimeZone(endDate, safeZone, timeFmt)
     : null;
 
   return `${datePart}, ${startTime}${endTime ? ` – ${endTime}` : ""}`;
