@@ -17,6 +17,7 @@ import {
   CircleCheck,
   CircleDotDashed,
   Clock3,
+  Download,
   Link2,
   Repeat,
 } from "lucide-react";
@@ -731,7 +732,13 @@ export function EventsOverview() {
 
       <div className="mx-auto flex w-full gap-2 justify-between">
         <Heading>Events</Heading>
-        <AddButton title="Add event" url="/events/add" />
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="default" className="gap-2 font-normal" onClick={() => navigate("/settings/import")}>
+            <Download className="h-4 w-4" />
+            {__("Import", "eventkoi")}
+          </Button>
+          <AddButton title="Add event" url="/events/add" />
+        </div>
       </div>
 
       <DataTable

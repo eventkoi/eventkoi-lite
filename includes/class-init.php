@@ -105,6 +105,7 @@ class Init {
 			\EventKoi\Core\Pretty_Instance_URLs::class,
 			\EventKoi\Core\Elementor_Widgets::class,
 			\EventKoi\Core\Beaver_Modules::class,
+			\EventKoi\Core\TEC_Importer::class,
 		);
 	}
 

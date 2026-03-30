@@ -34,6 +34,7 @@ import { SettingsFields } from "@/admin/settings/fields";
 import { SettingsIntegrations } from "@/admin/settings/integrations";
 import { SettingsOverview } from "@/admin/settings/overview";
 import { SettingsEmails } from "@/admin/settings/emails";
+import { SettingsImport } from "@/admin/settings/import";
 
 import { Nav } from "@/components/nav";
 import { Toaster } from "@/components/ui/sonner";
@@ -125,6 +126,7 @@ function AdminLayout() {
           <Route path="fields" element={<SettingsFields />} />
           <Route path="integrations" element={<SettingsIntegrations />} />
           <Route path="emails" element={<SettingsEmails />} />
+          <Route path="import" element={<SettingsImport />} />
         </Route>
 
         <Route path="*" element={<Home />} />

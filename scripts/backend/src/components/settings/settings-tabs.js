@@ -19,6 +19,7 @@ const tabs = [
   },
   { key: "emails", label: "Emails", to: "emails" },
   { key: "integrations", label: "API & integrations", to: "integrations" },
+  { key: "import", label: "Import", to: "import" },
 ];
 
 export function SettingsTabs({ settings, setSettings, location }) {
