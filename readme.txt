@@ -69,7 +69,7 @@ Here's what you'll get:
 - Export your attendee list
 
 
-##[Get EventKoi Pro](https://eventkoi.com/pricing?utm_source=pluginreadme-description&utm_medium=web&utm_campaign=30-03-2026)
+##Get advanced features with EventKoi Pro
 
 - **Custom fields**
 	- Add custom fields and groups to any event
@@ -83,6 +83,7 @@ Here's what you'll get:
 	-  Build custom templates and use Loop features to build event lists.
 - **Priority support**
 - **30-day money-back guarantee**
+**[Get EventKoi Pro →](https://eventkoi.com/pricing)**
 
 ## Helpful links
 
