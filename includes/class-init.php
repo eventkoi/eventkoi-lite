@@ -106,6 +106,7 @@ class Init {
 			\EventKoi\Core\Elementor_Widgets::class,
 			\EventKoi\Core\Beaver_Modules::class,
 			\EventKoi\Core\TEC_Importer::class,
+			\EventKoi\Core\ICS_Importer::class,
 		);
 	}
 
