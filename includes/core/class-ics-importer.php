@@ -66,7 +66,7 @@ class ICS_Importer {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function parse( WP_REST_Request $request ) {
-		$data        = json_decode( $request->get_body(), true );
+		$data        = $request->get_json_params();
 		$ics_content = $data['content'] ?? '';
 
 		if ( empty( $ics_content ) ) {
@@ -135,7 +135,7 @@ class ICS_Importer {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function run_import( WP_REST_Request $request ) {
-		$data      = json_decode( $request->get_body(), true );
+		$data      = $request->get_json_params();
 		$cache_key = $data['cache_key'] ?? '';
 
 		if ( empty( $cache_key ) ) {

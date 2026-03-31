@@ -125,7 +125,7 @@ class TEC_Importer {
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public static function run_import( WP_REST_Request $request ) {
-		$data          = json_decode( $request->get_body(), true );
+		$data          = $request->get_json_params();
 		$event_ids     = ! empty( $data['event_ids'] ) && is_array( $data['event_ids'] ) ? array_map( 'absint', $data['event_ids'] ) : array();
 		$import_images = ! empty( $data['import_images'] );
 
@@ -133,17 +133,17 @@ class TEC_Importer {
 			return new WP_Error( 'tec_not_active', __( 'The Events Calendar plugin is not active.', 'eventkoi' ), array( 'status' => 400 ) );
 		}
 
-		// If no specific IDs, import all published events.
+		// If no specific IDs, import all events directly via SQL to bypass TEC date filters.
 		if ( empty( $event_ids ) ) {
-			$posts     = get_posts(
-				array(
-					'post_type'      => 'tribe_events',
-					'post_status'    => array( 'publish', 'draft', 'pending', 'future', 'private' ),
-					'posts_per_page' => -1,
-					'fields'         => 'ids',
-				)
+			global $wpdb;
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$event_ids = $wpdb->get_col(
+				"SELECT ID FROM {$wpdb->posts}
+				 WHERE post_type = 'tribe_events'
+				 AND post_status IN ('publish','draft','pending','future','private')"
 			);
-			$event_ids = $posts;
+			$event_ids = array_map( 'absint', $event_ids );
 		}
 
 		$results  = array();
