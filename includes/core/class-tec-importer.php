@@ -396,13 +396,20 @@ class TEC_Importer {
 
 		return array(
 			array(
-				'type'     => 'physical',
-				'name'     => $venue->post_title,
-				'address1' => $full_address,
-				'address2' => '',
-				'address3' => '',
-				'lat'      => $lat ? (string) $lat : '',
-				'lng'      => $lng ? (string) $lng : '',
+				'id'          => wp_generate_uuid4(),
+				'type'        => 'physical',
+				'name'        => $venue->post_title,
+				'address1'    => $full_address,
+				'address2'    => '',
+				'city'        => ! empty( $city ) ? $city : '',
+				'state'       => ! empty( $state ) ? $state : '',
+				'country'     => ! empty( $country ) ? $country : '',
+				'zip'         => ! empty( $zip ) ? $zip : '',
+				'embed_gmap'  => false,
+				'gmap_link'   => '',
+				'virtual_url' => '',
+				'latitude'    => $lat ? (string) $lat : '',
+				'longitude'   => $lng ? (string) $lng : '',
 			),
 		);
 	}
@@ -514,11 +521,17 @@ class TEC_Importer {
 		);
 
 		foreach ( $tec_rules as $rule ) {
-			if ( empty( $rule['type'] ) || 'Custom' === $rule['type'] ) {
+			if ( empty( $rule['type'] ) ) {
 				continue;
 			}
 
-			$frequency = $freq_map[ $rule['type'] ] ?? '';
+			// TEC stores custom recurrence with type 'Custom' and actual frequency in custom.type.
+			$rule_type = $rule['type'];
+			if ( 'Custom' === $rule_type ) {
+				$rule_type = $rule['custom']['type'] ?? '';
+			}
+
+			$frequency = $freq_map[ $rule_type ] ?? '';
 			if ( empty( $frequency ) ) {
 				continue;
 			}
@@ -526,24 +539,41 @@ class TEC_Importer {
 			$start_iso = self::to_iso_date( $start_date, $timezone );
 			$end_iso   = ! empty( $end_date ) ? self::to_iso_date( $end_date, $timezone ) : '';
 
+			$interval = ! empty( $rule['custom']['interval'] ) ? (int) $rule['custom']['interval'] : 1;
+
 			$ek_rule = array(
-				'start_date' => $start_iso,
-				'end_date'   => $end_iso,
-				'frequency'  => $frequency,
-				'all_day'    => false,
+				'start_date'        => $start_iso,
+				'end_date'          => $end_iso,
+				'frequency'         => $frequency,
+				'every'             => $interval,
+				'all_day'           => false,
+				'working_days_only' => false,
+				'weekdays'          => array(),
+				'months'            => array(),
+				'month_day_rule'    => 'day-of-month',
+				'month_day_value'   => 1,
+				'ends'              => 'never',
+				'ends_after'        => 30,
+				'ends_on'           => '',
 			);
+
+			// Set default month/day from start date.
+			try {
+				$start_dt                   = new \DateTime( $start_iso );
+				$ek_rule['months']          = array( (int) $start_dt->format( 'n' ) - 1 );
+				$ek_rule['month_day_value'] = (int) $start_dt->format( 'j' );
+			} catch ( \Exception $e ) {
+				unset( $e );
+			}
 
 			// Weekly: map day numbers.
 			if ( 'week' === $frequency && ! empty( $rule['custom']['week']['day'] ) ) {
-				// TEC uses day numbers: 1=Mon through 7=Sun.
-				// EventKoi uses 0=Sun through 6=Sat.
 				$tec_days = $rule['custom']['week']['day'];
 				$ek_days  = array();
 
 				foreach ( $tec_days as $d ) {
 					$d = (int) $d;
-					// TEC: 1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat,7=Sun.
-					// EK:  0=Sun,1=Mon,2=Tue,3=Wed,4=Thu,5=Fri,6=Sat.
+					// TEC uses 1=Mon..7=Sun, EK uses 0=Sun..6=Sat.
 					$ek_days[] = ( 7 === $d ) ? 0 : $d;
 				}
 
@@ -553,9 +583,11 @@ class TEC_Importer {
 			// End recurrence handling.
 			if ( ! empty( $rule['end-type'] ) ) {
 				if ( 'After' === $rule['end-type'] && ! empty( $rule['end-count'] ) ) {
-					$ek_rule['count'] = (int) $rule['end-count'];
+					$ek_rule['ends']       = 'after';
+					$ek_rule['ends_after'] = (int) $rule['end-count'];
 				} elseif ( 'On' === $rule['end-type'] && ! empty( $rule['end'] ) ) {
-					$ek_rule['until'] = self::to_iso_date( $rule['end'], $timezone );
+					$ek_rule['ends']    = 'on';
+					$ek_rule['ends_on'] = self::to_iso_date( $rule['end'], $timezone );
 				}
 			}
 
