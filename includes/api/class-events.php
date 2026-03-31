@@ -121,6 +121,23 @@ class Events {
 		// Retrieve events using the Query class.
 		$response = Query::get_events( array_filter( $params ) );
 
+		// Optionally include status counts to avoid a separate API call.
+		$include_counts = $request->get_param( 'include_counts' );
+		if ( ! empty( $include_counts ) ) {
+			$count_params = array(
+				'event_status' => $params['event_status'],
+				'calendar'     => $params['calendar'],
+				'from'         => $params['from'],
+				'to'           => $params['to'],
+				'status_only'  => true,
+			);
+
+			$response = array(
+				'items'  => $response,
+				'counts' => Query::get_counts( array_filter( $count_params ) ),
+			);
+		}
+
 		// Ensure the response is properly formatted.
 		return rest_ensure_response( $response );
 	}

@@ -3,14 +3,15 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useState,
 } from "react";
 
-let latestSettings = null; // global copy of settings
+const inlinedSettings = window.eventkoi_params?.settings || null;
+let latestSettings = inlinedSettings; // global copy of settings
 
 const SettingsContext = createContext({
-  settings: null,
+  settings: inlinedSettings,
+  setSettings: () => {},
   refreshSettings: () => Promise.resolve(null),
 });
 
@@ -22,7 +23,7 @@ export function getSettings() {
 }
 
 export function SettingsProvider({ children }) {
-  const [settings, setSettings] = useState(null);
+  const [settings, setSettings] = useState(inlinedSettings);
 
   const fetchSettings = useCallback(async () => {
     try {
@@ -44,14 +45,19 @@ export function SettingsProvider({ children }) {
     }
   }, []);
 
-  useEffect(() => {
-    fetchSettings(); // Load once on mount
-  }, [fetchSettings]);
+  const updateSettings = useCallback((next) => {
+    setSettings((prev) => {
+      const value = typeof next === "function" ? next(prev) : next;
+      latestSettings = value;
+      return value;
+    });
+  }, []);
 
   return (
     <SettingsContext.Provider
       value={{
         settings,
+        setSettings: updateSettings,
         refreshSettings: fetchSettings,
       }}
     >

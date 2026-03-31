@@ -29,7 +29,7 @@ const dayLabels = {
 };
 
 export function SetCalendarDefaultsStep() {
-  const { settings, refreshSettings } = useSettings();
+  const { settings, setSettings, refreshSettings } = useSettings();
   const [isSaving, setIsSaving] = useState(false);
   const [timeFormat, setTimeFormat] = useState(settings?.time_format || "12");
 
@@ -70,7 +70,11 @@ export function SetCalendarDefaultsStep() {
         },
       });
 
-      await refreshSettings();
+      if (response?.settings) {
+        setSettings(response.settings);
+      } else {
+        await refreshSettings();
+      }
       showToast({ ...response, message: "Settings updated." });
     } catch (error) {
       showToastError(error?.message ?? "Failed to update setting.");

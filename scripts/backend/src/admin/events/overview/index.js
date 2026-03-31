@@ -120,11 +120,15 @@ export function EventsOverview() {
           calendar: calStatus,
           from,
           to,
+          include_counts: "1",
         });
         const apiURL = `${eventkoi_params.api}/events?${params.toString()}`;
         const response = await apiRequest({ path: apiURL, method: "get" });
-        setData(response);
-        fetchStatusCounts();
+        const items = response?.items ?? response;
+        setData(items);
+        if (response?.counts) {
+          setStatusCounts(response.counts);
+        }
         showStaticToast(toastMessage);
       } catch (error) {
         console.error("Failed to load events:", error);
@@ -132,7 +136,7 @@ export function EventsOverview() {
         setIsLoading(false);
       }
     },
-    [queryStatus, eventStatus, calStatus, from, to, fetchStatusCounts]
+    [queryStatus, eventStatus, calStatus, from, to]
   );
 
   useEffect(() => {
@@ -754,7 +758,7 @@ export function EventsOverview() {
         hideCategories
         defaultSort={[{ id: "modified_date", desc: true }]}
         statusCounts={statusCounts}
-        refreshStatusCounts={fetchStatusCounts}
+        refreshStatusCounts={fetchResults}
       />
     </div>
   );

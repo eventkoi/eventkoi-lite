@@ -39,7 +39,7 @@ const themeSlug = eventkoi_params?.theme || "twentytwentyfive";
 const customTemplates = eventkoi_params?.custom_templates || [];
 
 export function SettingsOverview() {
-  const { settings, refreshSettings } = useSettings();
+  const { settings, setSettings, refreshSettings } = useSettings();
   const [isSaving, setIsSaving] = useState(false);
   const [timeFormat, setTimeFormat] = useState(settings?.time_format || "12");
   const [dayStartTime, setDayStartTime] = useState(
@@ -151,7 +151,11 @@ export function SettingsOverview() {
         },
       });
 
-      await refreshSettings();
+      if (response?.settings) {
+        setSettings(response.settings);
+      } else {
+        await refreshSettings();
+      }
       showToast({ ...response, message: "Settings updated." });
     } catch (error) {
       showToastError(error?.message ?? "Failed to update setting.");
