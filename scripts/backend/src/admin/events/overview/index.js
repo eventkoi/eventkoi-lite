@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatWPtime } from "@/lib/date-utils";
-import { showStaticToast } from "@/lib/toast";
+import { showStaticToast, showToast, showToastError } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import apiRequest from "@wordpress/api-fetch";
 import { __, sprintf } from "@wordpress/i18n";
@@ -19,7 +19,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { URLImportDialog } from "@/components/url-import-dialog";
 import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Ban,
+  CalendarDays,
   CircleAlert,
   CircleCheck,
   CircleDotDashed,
@@ -27,8 +37,9 @@ import {
   Download,
   Link2,
   Repeat,
+  Upload,
 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 const statuses = {
@@ -72,6 +83,10 @@ export function EventsOverview() {
   const [hintStep, setHintStep] = useState(1);
   const [demoStepComplete, setDemoStepComplete] = useState(false);
   const [urlImportOpen, setUrlImportOpen] = useState(false);
+  const icsFileRef = useRef(null);
+  const [icsImporting, setIcsImporting] = useState(false);
+  const [tecDialogOpen, setTecDialogOpen] = useState(false);
+  const [tecState, setTecState] = useState({ loading: true, data: null, importing: false, result: null });
   const navigate = useNavigate();
   const location = useLocation();
   const sidebarSteps = useMemo(
@@ -146,6 +161,89 @@ export function EventsOverview() {
     },
     [queryStatus, eventStatus, calStatus, from, to]
   );
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const response = await apiRequest({
+          path: `${eventkoi_params.api}/tec-import/detect`,
+          method: "GET",
+          headers: { "EVENTKOI-API-KEY": eventkoi_params.api_key },
+        });
+        setTecState((s) => ({ ...s, loading: false, data: response }));
+      } catch {
+        setTecState((s) => ({ ...s, loading: false, data: null }));
+      }
+    })();
+  }, []);
+
+  const importTEC = async () => {
+    setTecState((s) => ({ ...s, importing: true, result: null }));
+    try {
+      const response = await apiRequest({
+        path: `${eventkoi_params.api}/tec-import/run`,
+        method: "POST",
+        data: { event_ids: [], import_images: true },
+        headers: { "EVENTKOI-API-KEY": eventkoi_params.api_key },
+      });
+      setTecState((s) => ({ ...s, importing: false, result: response }));
+      if (response?.imported > 0) {
+        showToast({ message: `${response.imported} event${response.imported !== 1 ? "s" : ""} imported.` });
+        fetchResults();
+      }
+      if (response?.errors > 0) {
+        showToastError(`${response.errors} event(s) failed.`);
+      }
+      setTecDialogOpen(false);
+    } catch (err) {
+      showToastError(err?.message ?? __("Import failed.", "eventkoi"));
+      setTecState((s) => ({ ...s, importing: false }));
+    }
+  };
+
+  const tecAvailable = !tecState.loading && tecState.data?.installed && tecState.data?.events_count > 0;
+
+  const handleICSUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const content = await file.text();
+    setIcsImporting(true);
+    try {
+      const parsed = await apiRequest({
+        path: `${eventkoi_params.api}/ics-import/parse`,
+        method: "POST",
+        data: { content },
+        headers: { "EVENTKOI-API-KEY": eventkoi_params.api_key },
+      });
+      if (!parsed?.cache_key || parsed.events_count === 0) {
+        showToastError(
+          parsed?.skipped > 0
+            ? __("All events already imported.", "eventkoi")
+            : __("No events found in file.", "eventkoi")
+        );
+        setIcsImporting(false);
+        e.target.value = "";
+        return;
+      }
+      const response = await apiRequest({
+        path: `${eventkoi_params.api}/ics-import/run`,
+        method: "POST",
+        data: { cache_key: parsed.cache_key },
+        headers: { "EVENTKOI-API-KEY": eventkoi_params.api_key },
+      });
+      if (response?.imported > 0) {
+        showToast({ message: `${response.imported} event${response.imported !== 1 ? "s" : ""} imported.` });
+        fetchResults();
+      }
+      if (response?.errors > 0) {
+        showToastError(`${response.errors} event(s) failed.`);
+      }
+    } catch {
+      showToastError(__("Import failed.", "eventkoi"));
+    }
+    setIcsImporting(false);
+    e.target.value = "";
+  };
 
   useEffect(() => {
     fetchResults();
@@ -753,16 +851,67 @@ export function EventsOverview() {
                 <Link2 className="h-4 w-4 mr-2" />
                 {__("Import from URL", "eventkoi")}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate("/settings/import")}>
-                <Download className="h-4 w-4 mr-2" />
-                {__("Import from file / plugin", "eventkoi")}
+              <DropdownMenuItem onClick={() => icsFileRef.current?.click()} disabled={icsImporting}>
+                <CalendarDays className="h-4 w-4 mr-2" />
+                {icsImporting ? __("Importing...", "eventkoi") : __("Import ICS file", "eventkoi")}
               </DropdownMenuItem>
+              {tecAvailable && (
+                <DropdownMenuItem onClick={() => setTecDialogOpen(true)}>
+                  <Download className="h-4 w-4 mr-2" />
+                  {__("Import from TEC", "eventkoi")}
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
           <URLImportDialog
             open={urlImportOpen}
             onOpenChange={setUrlImportOpen}
             onImported={() => fetchResults()}
+          />
+          <Dialog open={tecDialogOpen} onOpenChange={setTecDialogOpen}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <div className="flex items-center gap-3 mb-1">
+                  <img src={`${eventkoi_params.plugin_url}templates/assets/tec-icon.png`} alt="" className="h-8 w-8 rounded-lg" />
+                  <DialogTitle className="text-base">
+                    {__("Import from The Events Calendar", "eventkoi")}
+                  </DialogTitle>
+                </div>
+                <DialogDescription className="text-sm leading-relaxed">
+                  {__("This will import the following into EventKoi:", "eventkoi")}
+                </DialogDescription>
+                <ul className="text-sm text-muted-foreground mt-2 space-y-1.5 pl-1">
+                  <li className="flex items-center gap-2">
+                    <span className="h-1 w-1 rounded-full bg-muted-foreground/50 flex-shrink-0" />
+                    {`${tecState.data?.events_count ?? 0} event${(tecState.data?.events_count ?? 0) !== 1 ? "s" : ""}`}
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="h-1 w-1 rounded-full bg-muted-foreground/50 flex-shrink-0" />
+                    {__("Venues, categories & featured images", "eventkoi")}
+                  </li>
+                </ul>
+                <p className="text-xs text-muted-foreground/70 mt-3">
+                  {__("Previously imported events will be skipped.", "eventkoi")}
+                </p>
+              </DialogHeader>
+              <DialogFooter className="mt-2">
+                <DialogClose asChild>
+                  <Button variant="outline" className="cursor-pointer shadow-none border-solid">
+                    {__("Cancel", "eventkoi")}
+                  </Button>
+                </DialogClose>
+                <Button onClick={importTEC} disabled={tecState.importing} className="gap-1.5 cursor-pointer shadow-none" style={{ border: "1px solid transparent" }}>
+                  {tecState.importing ? <><span className="h-3.5 w-3.5 mr-1.5 animate-spin rounded-full border-2 border-current border-t-transparent" />{__("Importing...", "eventkoi")}</> : <><Download className="h-3.5 w-3.5" />{__("Import", "eventkoi")}</>}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          <input
+            ref={icsFileRef}
+            type="file"
+            accept=".ics,.ical,.ifb,.icalendar"
+            className="hidden"
+            onChange={handleICSUpload}
           />
           <AddButton title="Add event" url="/events/add" />
         </div>

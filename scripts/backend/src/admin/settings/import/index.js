@@ -253,7 +253,7 @@ function IntegrationCard({
             </span>
             <Dialog>
               <DialogTrigger asChild>
-                <Button size="sm" className="h-8 gap-1.5 text-xs px-3.5">
+                <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs px-3.5">
                   <Download className="h-3.5 w-3.5" />
                   {__("Import", "eventkoi")}
                 </Button>
