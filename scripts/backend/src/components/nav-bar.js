@@ -2,12 +2,12 @@ import { cn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
-export function Navbar({ tabs, isSub, asDiv }) {
+export function Navbar({ tabs, isSub, asDiv, ariaLabel }) {
   const location = useLocation();
 
   const parent = location.pathname?.split("/");
   let page = parent ? parent[1] : null;
-  let defaultRoute = "";
+  const defaultRoute = tabs[0]?.href ?? "";
 
   if (parent[2] && isSub) {
     page = parent[2];
@@ -23,6 +23,7 @@ export function Navbar({ tabs, isSub, asDiv }) {
 
   return (
     <Tag
+      {...(!asDiv && ariaLabel ? { "aria-label": ariaLabel } : {})}
       className={cn(
         // Desktop: row layout | Mobile: column layout
         "flex flex-col md:flex-row text-sm gap-3 md:gap-10 items-start md:items-center"
@@ -35,6 +36,7 @@ export function Navbar({ tabs, isSub, asDiv }) {
           <Link
             key={`tab-${i}`}
             to={item.href}
+            {...(current ? { "aria-current": "page" } : {})}
             className={cn(
               "flex items-center",
               current ? "text-foreground" : "text-muted-foreground",

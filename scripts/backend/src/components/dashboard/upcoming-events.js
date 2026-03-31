@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { buildTimelineFromApi } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
 import apiRequest from "@wordpress/api-fetch";
+import { __ } from "@wordpress/i18n";
 import {
   Calendar,
   CirclePlus,
@@ -56,7 +57,7 @@ export function UpcomingEvents() {
           }
         }}
       >
-        <Icon className="w-4 h-4 shrink-0" />
+        <Icon className="w-4 h-4 shrink-0" aria-hidden="true" />
         <span className="truncate">{event.location_line}</span>
       </span>
     );
@@ -66,10 +67,14 @@ export function UpcomingEvents() {
 
   return (
     <Box container>
-      <Heading level={3}>Events</Heading>
+      <Heading level={3}>{__("Events", "eventkoi-lite")}</Heading>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-10">
-        {!events &&
-          Array.from({ length: 3 }).map((_, i) => <Placeholder key={i} />)}
+        {!events && (
+          <>
+            <span className="sr-only" role="status">{__("Loading events…", "eventkoi-lite")}</span>
+            {Array.from({ length: 3 }).map((_, i) => <Placeholder key={i} />)}
+          </>
+        )}
 
         {events &&
           events.map((event) => (
@@ -91,7 +96,7 @@ export function UpcomingEvents() {
                 ) : (
                   <div className="h-full w-full rounded-xl border border-input flex items-center justify-center relative">
                     <EventBadge status={event.status} />
-                    <Image className="w-6 h-6 text-muted-foreground/40" />
+                    <Image className="w-6 h-6 text-muted-foreground/40" aria-hidden="true" />
                   </div>
                 )}
               </AspectRatio>
@@ -117,7 +122,7 @@ export function UpcomingEvents() {
 
         {events && events.length === 0 && (
           <div className="col-span-3 flex items-center justify-center text-muted-foreground/80 text-base">
-            There are no upcoming events.
+            {__("There are no upcoming events.", "eventkoi-lite")}
           </div>
         )}
 
@@ -133,7 +138,7 @@ export function UpcomingEvents() {
           >
             <Link to="/events/add/main">
               <CirclePlus className="w-5 h-5" />
-              Add new event
+              {__("Add new event", "eventkoi-lite")}
             </Link>
           </Button>
 
@@ -143,7 +148,7 @@ export function UpcomingEvents() {
           >
             <Link to="/events">
               <List className="w-5 h-5" />
-              View all events
+              {__("View all events", "eventkoi-lite")}
             </Link>
           </Button>
 
@@ -157,7 +162,7 @@ export function UpcomingEvents() {
               rel="noopener noreferrer"
             >
               <Calendar className="w-5 h-5" />
-              View default calendar
+              {__("View default calendar", "eventkoi-lite")}
             </a>
           </Button>
         </div>

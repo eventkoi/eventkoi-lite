@@ -45,7 +45,7 @@ export function SideTabs({
 			}
 
 			return (
-				<Link key={item.key || item.to} to={item.to} className={finalClass}>
+				<Link key={item.key || item.to} to={item.to} className={finalClass} aria-current={active ? "page" : undefined}>
 					{item.label}
 				</Link>
 			);

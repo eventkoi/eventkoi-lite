@@ -27,11 +27,11 @@ const loaderVariants = cva("animate-spin text-primary/20", {
   },
 });
 
-export function Spinner({ size, show, children, className }) {
+export function Spinner({ size, show, children, className, label }) {
   return (
-    <span className={spinnerVariants({ show })}>
-      <LoaderCircle className={cn(loaderVariants({ size }), className)} />
-      {children}
+    <span className={spinnerVariants({ show })} role="status">
+      <LoaderCircle className={cn(loaderVariants({ size }), className)} aria-hidden="true" />
+      {children || <span className="sr-only">{label || "Loading…"}</span>}
     </span>
   );
 }
