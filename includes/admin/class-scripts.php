@@ -119,6 +119,7 @@ class Scripts {
 		$eventkoi_params = array(
 			'version'             => EVENTKOI_VERSION,
 			'api'                 => EVENTKOI_API,
+			'plugin_url'          => trailingslashit( EVENTKOI_PLUGIN_URL ),
 			'settings'            => Settings::get(),
 			'general_options_url' => admin_url( 'options-general.php' ),
 			'site_url'            => get_bloginfo( 'url' ),
