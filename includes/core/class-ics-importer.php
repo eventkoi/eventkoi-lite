@@ -241,25 +241,65 @@ class ICS_Importer {
 		);
 
 		// Location.
-		$locations   = array();
-		$event_type  = 'inperson';
+		$locations  = array();
 		$virtual_url = '';
 
 		if ( ! empty( $location ) ) {
 			$locations[] = array(
-				'type'     => 'physical',
-				'name'     => $location,
-				'address1' => $location,
-				'address2' => '',
-				'address3' => '',
-				'lat'      => '',
-				'lng'      => '',
+				'id'        => wp_generate_uuid4(),
+				'type'      => 'physical',
+				'name'      => $location,
+				'address1'  => $location,
+				'address2'  => '',
+				'city'      => '',
+				'state'     => '',
+				'country'   => '',
+				'zip'       => '',
+				'embed_gmap' => false,
+				'gmap_link' => '',
+				'virtual_url' => '',
+				'latitude'  => '',
+				'longitude' => '',
 			);
 		}
 
 		if ( ! empty( $url ) && empty( $locations ) ) {
 			$virtual_url = $url;
-			$event_type  = 'virtual';
+			$locations[] = array(
+				'id'        => wp_generate_uuid4(),
+				'type'      => 'online',
+				'name'      => __( 'Online', 'eventkoi' ),
+				'address1'  => '',
+				'address2'  => '',
+				'city'      => '',
+				'state'     => '',
+				'country'   => '',
+				'zip'       => '',
+				'embed_gmap' => false,
+				'gmap_link' => '',
+				'virtual_url' => $url,
+				'latitude'  => '',
+				'longitude' => '',
+			);
+		}
+
+		// Infer event type from locations.
+		$event_type = 'inperson';
+		if ( ! empty( $locations ) ) {
+			$has_physical = false;
+			$has_online   = false;
+			foreach ( $locations as $loc ) {
+				if ( 'online' === ( $loc['type'] ?? '' ) ) {
+					$has_online = true;
+				} else {
+					$has_physical = true;
+				}
+			}
+			if ( $has_online && $has_physical ) {
+				$event_type = 'hybrid';
+			} elseif ( $has_online ) {
+				$event_type = 'virtual';
+			}
 		}
 
 		// Recurrence.
@@ -555,11 +595,22 @@ class ICS_Importer {
 			return array();
 		}
 
+		$interval = ! empty( $parts['INTERVAL'] ) ? (int) $parts['INTERVAL'] : 1;
+
 		$ek_rule = array(
-			'start_date' => $start_iso,
-			'end_date'   => $end_iso,
-			'frequency'  => $freq_map[ $freq ],
-			'all_day'    => false,
+			'start_date'       => $start_iso,
+			'end_date'         => $end_iso,
+			'frequency'        => $freq_map[ $freq ],
+			'every'            => $interval,
+			'all_day'          => false,
+			'working_days_only' => false,
+			'weekdays'         => array(),
+			'months'           => array(),
+			'month_day_rule'   => 'day-of-month',
+			'month_day_value'  => 1,
+			'ends'             => 'never',
+			'ends_after'       => 30,
+			'ends_on'          => '',
 		);
 
 		// BYDAY → weekdays.
@@ -585,14 +636,25 @@ class ICS_Importer {
 			}
 		}
 
-		// COUNT.
-		if ( ! empty( $parts['COUNT'] ) ) {
-			$ek_rule['count'] = (int) $parts['COUNT'];
+		// Set default month/day from start date.
+		try {
+			$start_dt = new \DateTime( $start_iso );
+			$ek_rule['months']          = array( (int) $start_dt->format( 'n' ) - 1 );
+			$ek_rule['month_day_value'] = (int) $start_dt->format( 'j' );
+		} catch ( \Exception $e ) {
+			// Use defaults.
 		}
 
-		// UNTIL.
+		// COUNT → ends: "after".
+		if ( ! empty( $parts['COUNT'] ) ) {
+			$ek_rule['ends']       = 'after';
+			$ek_rule['ends_after'] = (int) $parts['COUNT'];
+		}
+
+		// UNTIL → ends: "on".
 		if ( ! empty( $parts['UNTIL'] ) ) {
-			$ek_rule['until'] = self::to_iso_date( $parts['UNTIL'], $timezone );
+			$ek_rule['ends']    = 'on';
+			$ek_rule['ends_on'] = self::to_iso_date( $parts['UNTIL'], $timezone );
 		}
 
 		return $ek_rule;

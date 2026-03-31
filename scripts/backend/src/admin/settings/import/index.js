@@ -87,35 +87,35 @@ export function SettingsImport() {
     if (!file) return;
 
     const content = await file.text();
-    setIcsState((s) => ({ ...s, parsing: true, parsed: null, result: null }));
+    setIcsState((s) => ({ ...s, importing: true, parsed: null, result: null }));
 
     try {
-      const response = await apiRequest({
+      // Parse the file.
+      const parsed = await apiRequest({
         path: `${eventkoi_params.api}/ics-import/parse`,
         method: "POST",
         data: { content },
         headers: { "EVENTKOI-API-KEY": eventkoi_params.api_key },
       });
-      setIcsState((s) => ({ ...s, parsing: false, parsed: response }));
-    } catch {
-      showToastError(__("Failed to parse ICS file.", "eventkoi"));
-      setIcsState((s) => ({ ...s, parsing: false }));
-    }
 
-    e.target.value = "";
-  };
+      if (!parsed?.cache_key || parsed.events_count === 0) {
+        const msg = parsed?.skipped > 0
+          ? __("All events already imported.", "eventkoi")
+          : __("No events found in file.", "eventkoi");
+        showToastError(msg);
+        setIcsState((s) => ({ ...s, importing: false, parsed }));
+        e.target.value = "";
+        return;
+      }
 
-  const importICS = async () => {
-    if (!icsState.parsed?.cache_key) return;
-    setIcsState((s) => ({ ...s, importing: true, result: null }));
-
-    try {
+      // Import immediately.
       const response = await apiRequest({
         path: `${eventkoi_params.api}/ics-import/run`,
         method: "POST",
-        data: { cache_key: icsState.parsed.cache_key },
+        data: { cache_key: parsed.cache_key },
         headers: { "EVENTKOI-API-KEY": eventkoi_params.api_key },
       });
+
       setIcsState((s) => ({ ...s, importing: false, result: response, parsed: null }));
       if (response?.imported > 0) {
         showToast({
@@ -125,10 +125,12 @@ export function SettingsImport() {
       if (response?.errors > 0) {
         showToastError(`${response.errors} event(s) failed.`);
       }
-    } catch (err) {
-      showToastError(err?.message ?? __("Import failed.", "eventkoi"));
+    } catch {
+      showToastError(__("Import failed.", "eventkoi"));
       setIcsState((s) => ({ ...s, importing: false }));
     }
+
+    e.target.value = "";
   };
 
   const { data: tec, loading: tecLoading, importing: tecImporting, result: tecResult } = tecState;
@@ -161,12 +163,9 @@ export function SettingsImport() {
         />
 
         <ICSImportCard
-          parsing={icsState.parsing}
-          parsed={icsState.parsed}
           importing={icsState.importing}
           result={icsState.result}
           onUpload={() => icsFileRef.current?.click()}
-          onImport={importICS}
           onViewEvents={() => navigate("/events")}
         />
       </div>
@@ -317,16 +316,11 @@ function IntegrationCard({
 }
 
 function ICSImportCard({
-  parsing,
-  parsed,
   importing,
   result,
   onUpload,
-  onImport,
   onViewEvents,
 }) {
-  const count = parsed?.events_count || 0;
-  const available = count > 0;
   const done = result?.imported > 0;
 
   return (
@@ -348,21 +342,10 @@ function ICSImportCard({
       </div>
 
       <div className="px-5 py-3 mt-auto border-t bg-muted/20 flex items-center justify-between gap-3" style={{ minHeight: 61 }}>
-        {parsing && (
-          <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
-            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            {__("Parsing file...", "eventkoi")}
-          </span>
-        )}
-
-        {!parsing && !available && !done && !importing && (
+        {!importing && !done && (
           <>
             <p className="text-xs text-muted-foreground">
-              {parsed && parsed.events_count === 0
-                ? parsed.skipped > 0
-                  ? __("All events already imported", "eventkoi")
-                  : __("No events found in file", "eventkoi")
-                : __("Upload a .ics file to import", "eventkoi")}
+              {__("Select a .ics file to import", "eventkoi")}
             </p>
             <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs px-3.5 flex-shrink-0" onClick={onUpload}>
               <Upload className="h-3.5 w-3.5" />
@@ -371,70 +354,14 @@ function ICSImportCard({
           </>
         )}
 
-        {!parsing && available && !done && !importing && (
-          <>
-            <span className="text-xs text-muted-foreground">
-              {count} {count === 1 ? __("event", "eventkoi") : __("events", "eventkoi")} {__("found", "eventkoi")}
-              {parsed?.skipped > 0 && (
-                <span className="text-muted-foreground/60">
-                  {" "}({parsed.skipped} {__("already imported", "eventkoi")})
-                </span>
-              )}
-            </span>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button size="sm" className="h-8 gap-1.5 text-xs px-3.5">
-                  <Download className="h-3.5 w-3.5" />
-                  {__("Import", "eventkoi")}
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <div className="flex items-center gap-3 mb-1">
-                    <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                      <CalendarDays className="h-4 w-4 text-primary" />
-                    </div>
-                    <DialogTitle className="text-base">
-                      {__("Import from ICS file", "eventkoi")}
-                    </DialogTitle>
-                  </div>
-                  <DialogDescription className="text-sm leading-relaxed">
-                    {__("This will import the following into EventKoi:", "eventkoi")}
-                  </DialogDescription>
-                  <ul className="text-sm text-muted-foreground mt-2 space-y-1.5 pl-1">
-                    <li className="flex items-center gap-2">
-                      <span className="h-1 w-1 rounded-full bg-muted-foreground/50 flex-shrink-0" />
-                      {`${count} event${count !== 1 ? "s" : ""}`}
-                    </li>
-                  </ul>
-                  <p className="text-xs text-muted-foreground/70 mt-3">
-                    {__("Previously imported events will be skipped.", "eventkoi")}
-                  </p>
-                </DialogHeader>
-                <DialogFooter className="mt-2">
-                  <DialogClose asChild>
-                    <Button variant="outline" className="cursor-pointer shadow-none border-solid">
-                      {__("Cancel", "eventkoi")}
-                    </Button>
-                  </DialogClose>
-                  <Button onClick={onImport} className="gap-1.5 cursor-pointer shadow-none" style={{ border: "1px solid transparent" }}>
-                    <Download className="h-3.5 w-3.5" />
-                    {__("Import", "eventkoi")}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
-          </>
-        )}
-
-        {!parsing && importing && (
+        {importing && (
           <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
             {__("Importing events...", "eventkoi")}
           </span>
         )}
 
-        {!parsing && done && (
+        {!importing && done && (
           <>
             <span className="inline-flex items-center gap-1.5 text-xs text-green-600 font-medium">
               {result?.imported} {result?.imported === 1 ? __("event", "eventkoi") : __("events", "eventkoi")} {__("imported", "eventkoi")}
