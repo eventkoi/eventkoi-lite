@@ -33,19 +33,20 @@ class Schema {
 			return;
 		}
 
-		$event  = new Event( get_the_ID() );
-		$status = $event->get_status();
+		$event     = new Event( get_the_ID() );
+		$status    = $event->get_status();
+		$type      = $event->get_type();
+		$is_online = in_array( $type, array( 'online', 'virtual' ), true );
+		$is_mixed  = ( 'mixed' === $type );
 
 		$schema = array(
 			'@context'            => 'https://schema.org',
 			'@type'               => 'Event',
 			'name'                => $event->get_title(),
 			'url'                 => get_permalink( $event->get_id() ),
-			'startDate'           => $event->get_start_date_iso(),
-			'endDate'             => $event->get_end_date_iso(),
-			'eventAttendanceMode' => 'virtual' === $event->get_type()
+			'eventAttendanceMode' => $is_online
 				? 'https://schema.org/OnlineEventAttendanceMode'
-				: 'https://schema.org/OfflineEventAttendanceMode',
+				: ( $is_mixed ? 'https://schema.org/MixedEventAttendanceMode' : 'https://schema.org/OfflineEventAttendanceMode' ),
 			'eventStatus'         => match ( $status ) {
 				'completed' => 'https://schema.org/EventCompleted',
 				'cancelled' => 'https://schema.org/EventCancelled',
@@ -54,9 +55,41 @@ class Schema {
 			},
 		);
 
-		$type          = (string) $event->get_type();
+		// Dates — output in local timezone with offset for accurate Google display.
+		$start_iso = self::utc_to_local_iso( $event->get_start_date_iso() );
+		$end_iso   = self::utc_to_local_iso( $event->get_end_date_iso() );
+
+		if ( '' !== $start_iso ) {
+			$schema['startDate'] = $start_iso;
+		}
+		if ( '' !== $end_iso ) {
+			$schema['endDate'] = $end_iso;
+		}
+
+		// Location.
 		$location      = $event->get_location();
 		$virtual_url   = trim( (string) $event->get_virtual_url() );
+		$all_locations = $event->get_locations();
+
+		if ( '' === $virtual_url && is_array( $all_locations ) ) {
+			foreach ( $all_locations as $location_row ) {
+				if ( ! is_array( $location_row ) ) {
+					continue;
+				}
+
+				$location_type = sanitize_key( (string) ( $location_row['type'] ?? '' ) );
+				if ( ! in_array( $location_type, array( 'online', 'virtual' ), true ) ) {
+					continue;
+				}
+
+				$candidate_virtual_url = trim( (string) ( $location_row['virtual_url'] ?? '' ) );
+				if ( '' !== $candidate_virtual_url ) {
+					$virtual_url = $candidate_virtual_url;
+					break;
+				}
+			}
+		}
+
 		$place_name    = isset( $location['name'] ) ? trim( (string) $location['name'] ) : '';
 		$street_parts  = array_filter(
 			array(
@@ -109,7 +142,7 @@ class Schema {
 		$has_virtual_location = ! empty( $virtual_location );
 		$has_both_locations   = ( $place_valid && $has_virtual_location );
 
-		if ( 'mixed' === $type || $has_both_locations ) {
+		if ( $is_mixed || $has_both_locations ) {
 			$locations = array();
 			if ( $place_valid ) {
 				$locations[] = $place;
@@ -122,7 +155,7 @@ class Schema {
 			} elseif ( count( $locations ) > 1 ) {
 				$schema['location'] = $locations;
 			}
-		} elseif ( 'virtual' === $type ) {
+		} elseif ( $is_online ) {
 			if ( $has_virtual_location ) {
 				$schema['location'] = $virtual_location;
 			}
@@ -130,14 +163,58 @@ class Schema {
 			$schema['location'] = $place;
 		}
 
-		$schema['image']       = $event->get_image();
-		$schema['description'] = $event->get_summary();
+		// Image — only include if non-empty.
+		$image = $event->get_image();
+		if ( ! empty( $image ) ) {
+			$schema['image'] = $image;
+		}
+
+		// Description — only include if non-empty.
+		$description = $event->get_summary();
+		if ( ! empty( $description ) ) {
+			$schema['description'] = $description;
+		}
+
+		// Organizer — use site name as default.
+		$site_name = get_bloginfo( 'name' );
+		if ( ! empty( $site_name ) ) {
+			$schema['organizer'] = array(
+				'@type' => 'Organization',
+				'name'  => $site_name,
+				'url'   => home_url(),
+			);
+		}
 
 		// Allow developers to modify the schema.
 		$schema = apply_filters( 'eventkoi_get_event_schema', $schema );
 
-		echo '<script type="application/ld+json">' . wp_kses_post(
-			wp_json_encode( $schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE )
-		) . '</script>';
+		// Use wp_json_encode for safe output — no wp_kses_post which can corrupt JSON.
+		$json = wp_json_encode( $schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+		if ( $json ) {
+			echo '<script type="application/ld+json">' . $json . '</script>' . "\n";
+		}
+	}
+
+	/**
+	 * Convert a UTC ISO-8601 date to local timezone with offset.
+	 *
+	 * Google recommends local time with offset (e.g. 2026-04-01T09:00:00+02:00)
+	 * so users see the correct local time in search results.
+	 *
+	 * @param string $utc_iso UTC ISO-8601 date (e.g. 2026-04-01T07:00:00Z).
+	 * @return string Local ISO-8601 date with offset, or empty string.
+	 */
+	private static function utc_to_local_iso( $utc_iso ) {
+		if ( empty( $utc_iso ) ) {
+			return '';
+		}
+
+		try {
+			$dt = new \DateTime( $utc_iso, new \DateTimeZone( 'UTC' ) );
+			$dt->setTimezone( wp_timezone() );
+			return $dt->format( 'Y-m-d\TH:i:sP' );
+		} catch ( \Exception $e ) {
+			return $utc_iso;
+		}
 	}
 }

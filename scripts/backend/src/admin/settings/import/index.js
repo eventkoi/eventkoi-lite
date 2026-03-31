@@ -253,8 +253,7 @@ function IntegrationCard({
             </span>
             <Dialog>
               <DialogTrigger asChild>
-                <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs px-3.5">
-                  <Download className="h-3.5 w-3.5" />
+                <Button size="sm" variant="outline" className="h-8 text-xs px-3.5">
                   {__("Import", "eventkoi")}
                 </Button>
               </DialogTrigger>
@@ -359,8 +358,7 @@ function ICSImportCard({
             <p className="text-xs text-muted-foreground">
               {__("Select a .ics file to import", "eventkoi")}
             </p>
-            <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs px-3.5 flex-shrink-0" onClick={onUpload}>
-              <Upload className="h-3.5 w-3.5" />
+            <Button size="sm" variant="outline" className="h-8 text-xs px-3.5 flex-shrink-0" onClick={onUpload}>
               {__("Upload", "eventkoi")}
             </Button>
           </>
@@ -417,8 +415,7 @@ function URLImportCard({ onOpen }) {
         <p className="text-xs text-muted-foreground">
           {__("Supports structured data & OG tags", "eventkoi")}
         </p>
-        <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs px-3.5 flex-shrink-0" onClick={onOpen}>
-          <Link2 className="h-3.5 w-3.5" />
+        <Button size="sm" variant="outline" className="h-8 text-xs px-3.5 flex-shrink-0" onClick={onOpen}>
           {__("Import", "eventkoi")}
         </Button>
       </div>

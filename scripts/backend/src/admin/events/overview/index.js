@@ -848,16 +848,13 @@ export function EventsOverview() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => setUrlImportOpen(true)}>
-                <Link2 className="h-4 w-4 mr-2" />
                 {__("Import from URL", "eventkoi")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => icsFileRef.current?.click()} disabled={icsImporting}>
-                <CalendarDays className="h-4 w-4 mr-2" />
                 {icsImporting ? __("Importing...", "eventkoi") : __("Import ICS file", "eventkoi")}
               </DropdownMenuItem>
               {tecAvailable && (
                 <DropdownMenuItem onClick={() => setTecDialogOpen(true)}>
-                  <Download className="h-4 w-4 mr-2" />
                   {__("Import from TEC", "eventkoi")}
                 </DropdownMenuItem>
               )}
