@@ -39,10 +39,17 @@ class Schema {
 		$is_online = in_array( $type, array( 'online', 'virtual' ), true );
 		$is_mixed  = ( 'mixed' === $type );
 
+		// startDate is required by Google — skip schema entirely if missing.
+		$start_iso = self::utc_to_local_iso( $event->get_start_date_iso() );
+		if ( '' === $start_iso ) {
+			return;
+		}
+
 		$schema = array(
 			'@context'            => 'https://schema.org',
 			'@type'               => 'Event',
 			'name'                => $event->get_title(),
+			'startDate'           => $start_iso,
 			'url'                 => get_permalink( $event->get_id() ),
 			'eventAttendanceMode' => $is_online
 				? 'https://schema.org/OnlineEventAttendanceMode'
@@ -55,13 +62,7 @@ class Schema {
 			},
 		);
 
-		// Dates — output in local timezone with offset for accurate Google display.
-		$start_iso = self::utc_to_local_iso( $event->get_start_date_iso() );
-		$end_iso   = self::utc_to_local_iso( $event->get_end_date_iso() );
-
-		if ( '' !== $start_iso ) {
-			$schema['startDate'] = $start_iso;
-		}
+		$end_iso = self::utc_to_local_iso( $event->get_end_date_iso() );
 		if ( '' !== $end_iso ) {
 			$schema['endDate'] = $end_iso;
 		}
@@ -188,8 +189,8 @@ class Schema {
 		// Allow developers to modify the schema.
 		$schema = apply_filters( 'eventkoi_get_event_schema', $schema );
 
-		// Use wp_json_encode for safe output — no wp_kses_post which can corrupt JSON.
-		$json = wp_json_encode( $schema, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+		// Encode JSON — slashes are escaped (\/), preventing </script> injection.
+		$json = wp_json_encode( $schema, JSON_UNESCAPED_UNICODE );
 		if ( $json ) {
 			echo '<script type="application/ld+json">' . $json . '</script>' . "\n";
 		}
