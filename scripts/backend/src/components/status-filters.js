@@ -1,5 +1,4 @@
 import { cn } from "@/lib/utils";
-import apiRequest from "@wordpress/api-fetch";
 import { useEffect, useState } from "react";
 import { createSearchParams, Link, useSearchParams } from "react-router-dom";
 
@@ -16,20 +15,8 @@ export function StatusFilters({ statusFilters, base, data, counts }) {
   useEffect(() => {
     if (counts && Object.keys(counts).length) {
       setCountsState(counts);
-      return;
     }
-
-    if (base === "events" && typeof window !== "undefined") {
-      const apiBase = window?.eventkoi_params?.api || "/wp-json/eventkoi/v1";
-      const url = `${apiBase}/get_event_counts`;
-
-      apiRequest({ path: url, method: "GET" })
-        .then(setCountsState)
-        .catch((err) => {
-          console.warn("Could not fetch event counts:", err);
-        });
-    }
-  }, [base, counts]);
+  }, [counts]);
 
   return (
     <>

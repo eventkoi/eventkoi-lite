@@ -140,10 +140,6 @@ export function EventsOverview() {
   }, [fetchResults]);
 
   useEffect(() => {
-    fetchStatusCounts();
-  }, [fetchStatusCounts]);
-
-  useEffect(() => {
     if (onboardingFlag === "demo-event") {
       if (typeof window !== "undefined") {
         window.localStorage.removeItem("eventkoi_onboarding_demo_complete");
