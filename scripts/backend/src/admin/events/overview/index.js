@@ -161,7 +161,7 @@ export function EventsOverview() {
     const params = new URLSearchParams(searchParams);
     params.set("hint", "1");
     setSearchParams(params, { replace: true });
-  }, [onboardingFlag, onboardingHintParam, searchParams, setSearchParams]);
+  }, [onboardingFlag, onboardingHintParam]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

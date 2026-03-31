@@ -118,6 +118,23 @@ class Events {
 			'number'       => absint( $request->get_param( 'number' ) ),
 		);
 
+		// Dashboard shortcut: try upcoming → live → ongoing and return first non-empty set.
+		$dashboard_events = $request->get_param( 'dashboard_events' );
+		if ( ! empty( $dashboard_events ) ) {
+			$number = ! empty( $params['number'] ) ? $params['number'] : 3;
+			foreach ( array( 'upcoming', 'live', 'ongoing' ) as $try_status ) {
+				$try_params                 = $params;
+				$try_params['event_status'] = $try_status;
+				$try_params['number']       = $number;
+				$result = Query::get_events( array_filter( $try_params ) );
+				$items  = is_array( $result ) && isset( $result['items'] ) ? $result['items'] : $result;
+				if ( ! empty( $items ) ) {
+					return rest_ensure_response( $items );
+				}
+			}
+			return rest_ensure_response( array() );
+		}
+
 		// Retrieve events using the Query class.
 		$response = Query::get_events( array_filter( $params ) );
 

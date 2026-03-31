@@ -23,11 +23,11 @@ export function UpcomingEvents() {
 
   useEffect(() => {
     apiRequest({
-      path: `${eventkoi_params.api}/events?number=3`,
+      path: `${eventkoi_params.api}/events?dashboard_events=1&number=3`,
       method: "get",
     })
-      .then(setEvents)
-      .catch(() => {});
+      .then((result) => setEvents(Array.isArray(result) ? result : []))
+      .catch(() => setEvents([]));
   }, []);
 
   const renderLocation = (event) => {

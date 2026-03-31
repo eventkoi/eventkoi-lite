@@ -31,6 +31,67 @@ class Scripts {
 	public function __construct() {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ), 999 );
 		add_action( 'enqueue_block_editor_assets', array( $this, 'enqueue_block_editor_assets' ) );
+
+		// Invalidate template cache when templates change.
+		foreach ( array( 'elementor_library' ) as $pt ) {
+			add_action( "save_post_{$pt}", array( self::class, 'flush_template_cache' ) );
+		}
+		add_action( 'delete_post', array( self::class, 'flush_template_cache' ) );
+		add_action( 'switch_theme', array( self::class, 'flush_template_cache' ) );
+	}
+
+	/**
+	 * Flush the custom-templates transient.
+	 */
+	public static function flush_template_cache() {
+		delete_transient( 'eventkoi_custom_templates' );
+	}
+
+	/**
+	 * Get custom templates, cached in a 30-minute transient.
+	 *
+	 * @return array
+	 */
+	public static function get_custom_templates() {
+		$cached = get_transient( 'eventkoi_custom_templates' );
+		if ( false !== $cached ) {
+			return $cached;
+		}
+
+		$theme = wp_get_theme()->get_stylesheet();
+
+		$templates        = get_block_templates( array( 'post_type' => 'wp_template' ), 'wp_template' );
+		$custom_templates = array();
+
+		foreach ( $templates as $template ) {
+			if ( $template->theme === $theme ) {
+				$custom_templates[] = array(
+					'slug'  => $template->slug,
+					'title' => $template->title->rendered ?? $template->title ?? $template->slug,
+				);
+			}
+		}
+
+		$elementor_templates = function_exists( 'eventkoi_get_template_ids_by_pattern' )
+			? eventkoi_get_template_ids_by_pattern( 'include/singular/eventkoi_event' )
+			: array();
+
+		$result = array(
+			array(
+				'type'      => 'block',
+				'label'     => __( 'Block', 'eventkoi-lite' ),
+				'templates' => $custom_templates,
+			),
+			array(
+				'type'      => 'elementor',
+				'label'     => __( 'Elementor', 'eventkoi-lite' ),
+				'templates' => $elementor_templates,
+			),
+		);
+
+		set_transient( 'eventkoi_custom_templates', $result, 30 * MINUTE_IN_SECONDS );
+
+		return $result;
 	}
 
 	/**
@@ -92,38 +153,7 @@ class Scripts {
 			),
 		);
 
-		// Load available custom templates (optional: filter by slug prefix or post type).
-		$theme = wp_get_theme()->get_stylesheet();
-
-		// Get all block templates in this theme.
-		$templates        = get_block_templates( array( 'post_type' => 'wp_template' ), 'wp_template' );
-		$custom_templates = array();
-
-		foreach ( $templates as $template ) {
-			if ( $template->theme === $theme ) {
-				$custom_templates[] = array(
-					'slug'  => $template->slug,
-					'title' => $template->title->rendered ?? $template->title ?? $template->slug,
-				);
-			}
-		}
-
-		$elementor_templates = function_exists( 'eventkoi_get_template_ids_by_pattern' )
-			? eventkoi_get_template_ids_by_pattern( 'include/singular/eventkoi_event' )
-			: array();
-
-		$eventkoi_params['custom_templates'] = array(
-			array(
-				'type'      => 'block',
-				'label'     => __( 'Block', 'eventkoi-lite' ),
-				'templates' => $custom_templates,
-			),
-			array(
-				'type'      => 'elementor',
-				'label'     => __( 'Elementor', 'eventkoi-lite' ),
-				'templates' => $elementor_templates,
-			),
-		);
+		$eventkoi_params['custom_templates'] = self::get_custom_templates();
 
 		wp_register_script(
 			'eventkoi-admin',
