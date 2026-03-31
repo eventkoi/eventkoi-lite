@@ -27,8 +27,14 @@ const DialogOverlay = React.forwardRef(({ className, ...props }, ref) => (
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const DialogContent = React.forwardRef(
-  ({ className, children, ...props }, ref) => (
-    <DialogPortal>
+  ({ className, children, ...props }, ref) => {
+    const container =
+      typeof document !== "undefined"
+        ? document.querySelector(".eventkoi-admin") || document.body
+        : undefined;
+
+    return (
+    <DialogPortal container={container}>
       <DialogOverlay />
       <DialogPrimitive.Content
         ref={ref}
@@ -53,7 +59,8 @@ const DialogContent = React.forwardRef(
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>
     </DialogPortal>
-  )
+    );
+  }
 );
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 

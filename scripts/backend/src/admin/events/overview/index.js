@@ -12,6 +12,13 @@ import { cn } from "@/lib/utils";
 import apiRequest from "@wordpress/api-fetch";
 import { __, sprintf } from "@wordpress/i18n";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { URLImportDialog } from "@/components/url-import-dialog";
+import {
   Ban,
   CircleAlert,
   CircleCheck,
@@ -64,6 +71,7 @@ export function EventsOverview() {
   const [hintPosition, setHintPosition] = useState(null);
   const [hintStep, setHintStep] = useState(1);
   const [demoStepComplete, setDemoStepComplete] = useState(false);
+  const [urlImportOpen, setUrlImportOpen] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const sidebarSteps = useMemo(
@@ -733,10 +741,29 @@ export function EventsOverview() {
       <div className="mx-auto flex w-full gap-2 justify-between">
         <Heading>Events</Heading>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="default" className="gap-2 font-normal" onClick={() => navigate("/settings/import")}>
-            <Download className="h-4 w-4" />
-            {__("Import", "eventkoi")}
-          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="default" className="gap-2 font-normal">
+                <Download className="h-4 w-4" />
+                {__("Import", "eventkoi")}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => setUrlImportOpen(true)}>
+                <Link2 className="h-4 w-4 mr-2" />
+                {__("Import from URL", "eventkoi")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate("/settings/import")}>
+                <Download className="h-4 w-4 mr-2" />
+                {__("Import from file / plugin", "eventkoi")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <URLImportDialog
+            open={urlImportOpen}
+            onOpenChange={setUrlImportOpen}
+            onImported={() => fetchResults()}
+          />
           <AddButton title="Add event" url="/events/add" />
         </div>
       </div>

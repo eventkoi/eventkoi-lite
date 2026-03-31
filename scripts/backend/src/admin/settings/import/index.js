@@ -15,13 +15,15 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { showToast, showToastError } from "@/lib/toast";
-import { Loader2, Download, ArrowRight, CalendarDays, Upload } from "lucide-react";
+import { Loader2, Download, ArrowRight, CalendarDays, Upload, Link2 } from "lucide-react";
+import { URLImportDialog } from "@/components/url-import-dialog";
 
 const TEC_ICON_URL = `${eventkoi_params.plugin_url}templates/assets/tec-icon.png`;
 
 export function SettingsImport() {
   const navigate = useNavigate();
   const icsFileRef = useRef(null);
+  const [urlImportOpen, setUrlImportOpen] = useState(false);
 
   // TEC state.
   const [tecState, setTecState] = useState({
@@ -167,6 +169,16 @@ export function SettingsImport() {
           result={icsState.result}
           onUpload={() => icsFileRef.current?.click()}
           onViewEvents={() => navigate("/events")}
+        />
+
+        <URLImportCard
+          onOpen={() => setUrlImportOpen(true)}
+        />
+
+        <URLImportDialog
+          open={urlImportOpen}
+          onOpenChange={setUrlImportOpen}
+          onImported={() => navigate("/events")}
         />
       </div>
 
@@ -377,6 +389,38 @@ function ICSImportCard({
             </Button>
           </>
         )}
+      </div>
+    </div>
+  );
+}
+
+function URLImportCard({ onOpen }) {
+  return (
+    <div className="group flex flex-col rounded-xl border bg-card shadow-sm transition-all duration-200 hover:shadow-md">
+      <div className="flex items-start gap-4 p-5 flex-1">
+        <div className="flex-shrink-0">
+          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+            <Link2 className="h-5 w-5 text-primary" />
+          </div>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold truncate">
+            {__("Import from URL", "eventkoi")}
+          </p>
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
+            {__("Paste a link to any event page to import it.", "eventkoi")}
+          </p>
+        </div>
+      </div>
+
+      <div className="px-5 py-3 mt-auto border-t bg-muted/20 flex items-center justify-between gap-3" style={{ minHeight: 61 }}>
+        <p className="text-xs text-muted-foreground">
+          {__("Supports structured data & OG tags", "eventkoi")}
+        </p>
+        <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs px-3.5 flex-shrink-0" onClick={onOpen}>
+          <Link2 className="h-3.5 w-3.5" />
+          {__("Import", "eventkoi")}
+        </Button>
       </div>
     </div>
   );

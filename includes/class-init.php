@@ -107,6 +107,7 @@ class Init {
 			\EventKoi\Core\Beaver_Modules::class,
 			\EventKoi\Core\TEC_Importer::class,
 			\EventKoi\Core\ICS_Importer::class,
+			\EventKoi\Core\URL_Importer::class,
 		);
 	}
 
