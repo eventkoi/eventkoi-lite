@@ -85,8 +85,17 @@ export function Dropzone({
         onDragOver={handleDragOver}
         onDrop={handleDrop}
         onClick={handleButtonClick}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            handleButtonClick();
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label={title || "Upload file"}
       >
-        <Upload className="w-7 h-7" />
+        <Upload aria-hidden="true" className="w-7 h-7" />
         { title && <div className="text-base font-medium pt-2">{title}</div> }
         { tagline && <div className="text-sm pt-0.5">{tagline}</div> }
         <input
@@ -96,6 +105,7 @@ export function Dropzone({
           onChange={handleFileInputChange}
           className="hidden"
           key={ `unique-file-${inputKey}` }
+          aria-label={title || "Upload file"}
         />
       </CardContent>
     </Card>

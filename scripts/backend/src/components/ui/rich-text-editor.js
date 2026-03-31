@@ -138,6 +138,7 @@ export function RichTextEditor({
           onChange={(e) => setHtmlContent(e.target.value)}
           onBlur={(e) => onChange?.(e.target.value)}
           disabled={disabled}
+          aria-label="HTML source editor"
         />
       </div>
     );

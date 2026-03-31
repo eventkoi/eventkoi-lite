@@ -9,7 +9,9 @@ export function BigLink({
     <a
       href={disabled ? undefined : href}
       target={disabled ? undefined : target}
+      rel={target === "_blank" ? "noopener noreferrer" : undefined}
       aria-disabled={disabled}
+      tabIndex={disabled ? -1 : undefined}
       className={`
         flex border rounded-xl items-center text-base px-6 py-4 h-[70px]
         ${

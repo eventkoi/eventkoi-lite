@@ -11,13 +11,14 @@ import {
 
 import { DateWithRange } from "@/components/date-range";
 import { SearchBox } from "@/components/search-box";
+import { __ } from "@wordpress/i18n";
 import { ListFilter } from "lucide-react";
 
 const statuses = {
-  live: "Live",
-  upcoming: "Upcoming",
-  completed: "Completed",
-  tbc: "Date not set",
+  live: __("Live", "eventkoi-lite"),
+  upcoming: __("Upcoming", "eventkoi-lite"),
+  completed: __("Completed", "eventkoi-lite"),
+  tbc: __("Date not set", "eventkoi-lite"),
 };
 
 const calendars = eventkoi_params.calendars;
@@ -62,8 +63,8 @@ export function Filters({
               variant="outline"
               className="flex font-normal w-full sm:w-auto justify-start sm:justify-center"
             >
-              <ListFilter className="mr-2 h-4 w-4" />
-              Status
+              <ListFilter aria-hidden="true" className="mr-2 h-4 w-4" />
+              {__("Status", "eventkoi-lite")}
               {activeStatus.length > 0 && <> ({activeStatus.length})</>}
             </Button>
           </DropdownMenuTrigger>
@@ -78,7 +79,7 @@ export function Filters({
                 setSearchParams(params);
               }}
             >
-              Select all
+              {__("Select all", "eventkoi-lite")}
             </DropdownMenuCheckboxItem>
             <DropdownMenuCheckboxItem
               onClick={() => {
@@ -89,7 +90,7 @@ export function Filters({
                 setSearchParams(params);
               }}
             >
-              Clear selected
+              {__("Clear selected", "eventkoi-lite")}
             </DropdownMenuCheckboxItem>
             <DropdownMenuSeparator />
             {Object.keys(statuses).map((status) => {
@@ -133,8 +134,8 @@ export function Filters({
               variant="outline"
               className="flex font-normal w-full sm:w-auto justify-start sm:justify-center"
             >
-              <ListFilter className="mr-2 h-4 w-4" />
-              Calendar
+              <ListFilter aria-hidden="true" className="mr-2 h-4 w-4" />
+              {__("Calendar", "eventkoi-lite")}
               {activeCal.length > 0 && <> ({activeCal.length})</>}
             </Button>
           </DropdownMenuTrigger>
@@ -149,7 +150,7 @@ export function Filters({
                 setSearchParams(params);
               }}
             >
-              Select all
+              {__("Select all", "eventkoi-lite")}
             </DropdownMenuCheckboxItem>
             <DropdownMenuCheckboxItem
               onClick={() => {
@@ -160,7 +161,7 @@ export function Filters({
                 setSearchParams(params);
               }}
             >
-              Clear selected
+              {__("Clear selected", "eventkoi-lite")}
             </DropdownMenuCheckboxItem>
             <DropdownMenuSeparator />
             {calendars.map((calendar) => {
@@ -204,7 +205,7 @@ export function Filters({
               variant="outline"
               className="flex font-normal w-full sm:w-auto justify-start sm:justify-center"
             >
-              <ListFilter className="mr-2 h-4 w-4" />
+              <ListFilter aria-hidden="true" className="mr-2 h-4 w-4" />
               {filterName}
             </Button>
           </DropdownMenuTrigger>

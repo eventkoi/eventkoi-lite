@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useEventEditContext } from "@/hooks/EventEditContext";
 import { showToastError } from "@/lib/toast";
 import { cn } from "@/lib/utils";
+import { __ } from "@wordpress/i18n";
 import apiRequest from "@wordpress/api-fetch";
 import { MediaUpload } from "@wordpress/media-utils";
 import {
@@ -16,7 +17,7 @@ import {
   Repeat2,
   Trash2,
 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 const ALLOWED_MEDIA_TYPES = ["image"];
 
@@ -27,9 +28,14 @@ export function EventImage({ isInstance = false, value, onChange }) {
   const [urlInput, setUrlInput] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const [dragCounter, setDragCounter] = useState(0);
+  const [imageError, setImageError] = useState(false);
 
   const image = isInstance ? value?.image : event?.image;
   const imageId = isInstance ? value?.image_id : event?.image_id;
+
+  useEffect(() => {
+    setImageError(false);
+  }, [image, imageId]);
 
   const updateImage = (imgUrl, imgId) => {
     if (isInstance && onChange) {
@@ -90,10 +96,10 @@ export function EventImage({ isInstance = false, value, onChange }) {
       if (response.id && response.url) {
         updateImage(response.url, response.id);
       } else {
-        showToastError("Upload failed. Please try again.");
+        showToastError(__("Upload failed. Please try again.", "eventkoi-lite"));
       }
     } catch (err) {
-      showToastError("Upload failed. Please try again.");
+      showToastError(__("Upload failed. Please try again.", "eventkoi-lite"));
     } finally {
       setUploading(false);
       setUrlInput("");
@@ -109,7 +115,7 @@ export function EventImage({ isInstance = false, value, onChange }) {
 
   const handleUrlSubmit = () => {
     if (!urlInput || !urlInput.startsWith("http")) {
-      showToastError("Please enter a valid image URL.");
+      showToastError(__("Please enter a valid image URL.", "eventkoi-lite"));
       return;
     }
     uploadImage({ url: urlInput });
@@ -145,11 +151,13 @@ export function EventImage({ isInstance = false, value, onChange }) {
 
   return (
     <Panel className="p-0">
-      <Label htmlFor="image">Header banner image</Label>
-      <div className="text-muted-foreground">Ideal size: 1600px × 600px</div>
+      <Label htmlFor="image">{__("Header banner image", "eventkoi-lite")}</Label>
+      <div className="text-muted-foreground">
+        {__("Ideal size: 1600px × 600px", "eventkoi-lite")}
+      </div>
 
       <MediaUpload
-        title="Select event image"
+        title={__("Select event image", "eventkoi-lite")}
         onSelect={(media) =>
           uploadImage({ attachment_id: media.id, url: media.url })
         }
@@ -158,6 +166,9 @@ export function EventImage({ isInstance = false, value, onChange }) {
         disabled={uploading}
         render={({ open }) => (
           <div
+            role={!image && !uploading && !urlMode ? "button" : undefined}
+            tabIndex={!image && !uploading && !urlMode ? 0 : undefined}
+            aria-label={!image ? __("Select event image", "eventkoi-lite") : undefined}
             className={cn(
               "relative group rounded overflow-hidden transition",
               image
@@ -165,7 +176,13 @@ export function EventImage({ isInstance = false, value, onChange }) {
                 : "bg-secondary hover:border-muted-foreground/60 p-8 flex flex-col items-center justify-center gap-4 cursor-pointer"
             )}
             onClick={() => {
-              if (!uploading && !urlMode && !image) open();
+              if (!uploading && !urlMode && (!image || imageError)) open();
+            }}
+            onKeyDown={(e) => {
+              if ((e.key === "Enter" || e.key === " ") && !uploading && !urlMode && (!image || imageError)) {
+                e.preventDefault();
+                open();
+              }
             }}
             onDragEnter={handleDragEnter}
             onDragOver={(e) => e.preventDefault()}
@@ -174,7 +191,7 @@ export function EventImage({ isInstance = false, value, onChange }) {
           >
             {dragOver && (
               <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/70 text-xl font-semibold text-primary rounded-2xl">
-                Drop to upload
+                {__("Drop to upload", "eventkoi-lite")}
               </div>
             )}
 
@@ -195,9 +212,15 @@ export function EventImage({ isInstance = false, value, onChange }) {
                 }}
                 uploading={uploading}
               />
-            ) : image ? (
+            ) : image && !imageError ? (
               <ImagePreviewOverlay
                 imageUrl={image}
+                openMediaLibrary={open}
+                deleteImage={deleteImage}
+                onError={() => setImageError(true)}
+              />
+            ) : imageError ? (
+              <MissingImageOverlay
                 openMediaLibrary={open}
                 deleteImage={deleteImage}
               />
@@ -218,9 +241,11 @@ function UploadBox({ onUrlMode }) {
         className="w-10 h-10 text-muted-foreground"
         strokeWidth={1.2}
       />
-      <div className="text-lg font-semibold">Drag and drop an image</div>
+      <div className="text-lg font-semibold">
+        {__("Drag and drop an image", "eventkoi-lite")}
+      </div>
       <div className="text-sm text-muted-foreground">
-        or click to upload from your media library
+        {__("or click to upload from your media library", "eventkoi-lite")}
       </div>
       <Button
         variant="link"
@@ -232,7 +257,7 @@ function UploadBox({ onUrlMode }) {
         }}
       >
         <LinkIcon className="w-3 h-3 mr-1" />
-        Paste image URL instead
+        {__("Paste image URL instead", "eventkoi-lite")}
       </Button>
     </div>
   );
@@ -245,13 +270,15 @@ function UrlInputBox({ urlInput, setUrlInput, onSubmit, onCancel, uploading }) {
         className="w-8 h-8 mx-auto text-muted-foreground"
         strokeWidth={1.2}
       />
-      <div className="text-lg font-semibold">Paste an image URL</div>
+      <div className="text-lg font-semibold">
+        {__("Paste an image URL", "eventkoi-lite")}
+      </div>
       <div className="text-sm text-muted-foreground">
-        Enter a direct link to an image (https://...)
+        {__("Enter a direct link to an image (https://...)", "eventkoi-lite")}
       </div>
       <Input
         type="url"
-        placeholder="https://example.com/banner.jpg"
+        placeholder={__("https://example.com/banner.jpg", "eventkoi-lite")}
         value={urlInput}
         onChange={(e) => setUrlInput(e.target.value)}
         className="w-full"
@@ -270,7 +297,7 @@ function UrlInputBox({ urlInput, setUrlInput, onSubmit, onCancel, uploading }) {
           onClick={onSubmit}
           disabled={uploading}
         >
-          Set Image
+          {__("Set Image", "eventkoi-lite")}
         </Button>
         <Button
           size="sm"
@@ -278,20 +305,21 @@ function UrlInputBox({ urlInput, setUrlInput, onSubmit, onCancel, uploading }) {
           onClick={onCancel}
           disabled={uploading}
         >
-          Cancel
+          {__("Cancel", "eventkoi-lite")}
         </Button>
       </div>
     </div>
   );
 }
 
-function ImagePreviewOverlay({ imageUrl, openMediaLibrary, deleteImage }) {
+function ImagePreviewOverlay({ imageUrl, openMediaLibrary, deleteImage, onError }) {
   return (
     <div className="relative w-full h-auto group">
       <img
         src={imageUrl}
         alt=""
         className="w-full h-auto rounded-2xl object-cover transition duration-300 group-hover:opacity-80"
+        onError={onError}
       />
       <div className="absolute inset-0 flex items-center justify-center bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-2xl">
         <div className="flex flex-col sm:flex-row gap-3">
@@ -306,7 +334,7 @@ function ImagePreviewOverlay({ imageUrl, openMediaLibrary, deleteImage }) {
             }}
           >
             <Repeat2 className="w-4 h-4 mr-1" />
-            Replace
+            {__("Replace", "eventkoi-lite")}
           </Button>
           <Button
             variant="destructive"
@@ -319,9 +347,51 @@ function ImagePreviewOverlay({ imageUrl, openMediaLibrary, deleteImage }) {
             }}
           >
             <Trash2 className="w-4 h-4 mr-1" />
-            Delete
+            {__("Delete", "eventkoi-lite")}
           </Button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function MissingImageOverlay({ openMediaLibrary, deleteImage }) {
+  return (
+    <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border bg-muted/40 px-6 py-10 text-center">
+      <ImageIcon className="h-10 w-10 text-muted-foreground" strokeWidth={1.2} />
+      <div className="text-base font-semibold">
+        {__("Image missing", "eventkoi-lite")}
+      </div>
+      <div className="text-sm text-muted-foreground">
+        {__("This image is no longer available. Replace it to continue.", "eventkoi-lite")}
+      </div>
+      <div className="flex flex-col sm:flex-row gap-2">
+        <Button
+          variant="secondary"
+          size="sm"
+          className="border border-solid cursor-pointer"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openMediaLibrary();
+          }}
+        >
+          <Repeat2 className="w-4 h-4 mr-1" />
+          {__("Replace", "eventkoi-lite")}
+        </Button>
+        <Button
+          variant="destructive"
+          size="sm"
+          className="border border-solid cursor-pointer"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            deleteImage();
+          }}
+        >
+          <Trash2 className="w-4 h-4 mr-1" />
+          {__("Remove", "eventkoi-lite")}
+        </Button>
       </div>
     </div>
   );

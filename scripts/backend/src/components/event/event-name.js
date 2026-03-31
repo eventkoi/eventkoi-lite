@@ -1,3 +1,4 @@
+import { __ } from "@wordpress/i18n";
 import { Panel } from "@/components/panel";
 import { Textarea } from "@/components/ui/textarea";
 import { useEventEditContext } from "@/hooks/EventEditContext";
@@ -83,26 +84,40 @@ export function EventName({
               textareaRef.current.blur();
             }
           }}
-          placeholder="Enter event name"
+          placeholder={__("Enter event name", "eventkoi-lite")}
           rows={1}
         />
-        <div
+        <button
+          type="button"
           onClick={() => {
             textareaRef.current.focus();
             textareaRef.current.selectionStart =
               textareaRef.current.value.length;
           }}
-          className="opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              textareaRef.current.focus();
+              textareaRef.current.selectionStart =
+                textareaRef.current.value.length;
+            }
+          }}
+          className="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity cursor-pointer bg-transparent border-0 p-0"
+          aria-label={__("Edit event name", "eventkoi-lite")}
+          tabIndex={0}
         >
-          <PencilLine className="w-4 h-4 text-ring" />
-        </div>
+          <PencilLine aria-hidden="true" className="w-4 h-4 text-ring" />
+        </button>
       </div>
 
       {/* Right: Instance ID and time range */}
       {isInstance && timestamp && (
         <div className="flex flex-col md:items-end md:pl-4 pt-1 md:text-right text-foreground text-xs whitespace-nowrap min-w-[140px]">
           <div className="text-[13px]">
-            <span className="font-medium">Event ID:</span> {timestamp}
+            <span className="font-medium">
+              {__("Event ID:", "eventkoi-lite")}
+            </span>{" "}
+            {timestamp}
           </div>
           {startDate && endDate && (
             <div className="pt-2 text-base">
@@ -113,8 +128,8 @@ export function EventName({
       )}
 
       {error && (
-        <p className="text-xs text-red-500 font-medium">
-          Event name cannot be blank
+        <p className="text-xs text-red-500 font-medium" role="alert">
+          {__("Event name cannot be blank", "eventkoi-lite")}
         </p>
       )}
     </Panel>

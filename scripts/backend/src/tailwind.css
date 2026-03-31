@@ -43,4 +43,83 @@
   body {
     @apply bg-muted text-foreground;
   }
+
+}
+
+@layer components {
+  .ek-wp-flow {
+    @apply flex flex-col;
+  }
+
+  .ek-wp-flow > * + * {
+    margin-top: 1.2rem; /* Matches WP's :where(.is-layout-flow)>* rule */
+  }
+
+  /* Title */
+  .ek-event-title-default {
+    font-weight: 600;
+    font-size: 1.25em;
+  }
+
+  /* Timeline */
+  .ek-event-timeline-default {
+    font-size: 0.9em;
+    opacity: 0.85;
+  }
+
+  /* Location */
+  .ek-event-location-default {
+    display: flex;
+    align-items: center;
+    font-size: 0.9em;
+    opacity: 0.85;
+
+    a,
+    span {
+      display: flex;
+      align-items: center;
+      gap: 0.4em;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    svg {
+      width: 1em;
+      height: 1em;
+      opacity: 0.7;
+      margin-top: 1px;
+    }
+  }
+
+  .ek-event-item__rendered > [hidden] {
+    display: none !important;
+  }
+
+  /* Hide specific event-data blocks when toggled off in the editor. */
+  .ek-innerblocks-wrapper.hide-image [data-event-field="image"],
+  .ek-innerblocks-wrapper.hide-excerpt [data-event-field="excerpt"],
+  .ek-innerblocks-wrapper.hide-location [data-event-field="location"],
+  .ek-innerblocks-wrapper.hide-title [data-event-field="title"],
+  .ek-innerblocks-wrapper.hide-datetime [data-event-field="timeline"] {
+    display: none !important;
+  }
+}
+
+/*
+ * Global focus-visible ring for all interactive elements inside the admin.
+ * Scoped to .eventkoi-admin so it does not leak into WP chrome.
+ * Placed outside @layer so it is not overridden by WP admin styles.
+ * Tailwind's `important: true` config means utility-level overrides
+ * (e.g. Button's focus-visible:ring-2) still win when explicitly set.
+ */
+.eventkoi-admin a:focus-visible,
+.eventkoi-admin button:focus-visible,
+.eventkoi-admin [role="button"]:focus-visible,
+.eventkoi-admin [tabindex]:focus-visible,
+.eventkoi-admin input:focus-visible,
+.eventkoi-admin select:focus-visible,
+.eventkoi-admin textarea:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+  border-radius: 2px;
 }

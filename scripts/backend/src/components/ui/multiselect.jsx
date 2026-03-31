@@ -122,8 +122,9 @@ export function MultiSelect({
                       e.stopPropagation();
                     }}
                     onClick={() => handleUnselect(option)}
+                    aria-label={`Remove ${option.name}`}
                   >
-                    <X className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
+                    <X aria-hidden="true" className="h-3.5 w-3.5 text-muted-foreground hover:text-foreground" />
                   </button>
                 )}
               </Badge>
