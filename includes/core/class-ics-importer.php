@@ -241,45 +241,45 @@ class ICS_Importer {
 		);
 
 		// Location.
-		$locations  = array();
+		$locations   = array();
 		$virtual_url = '';
 
 		if ( ! empty( $location ) ) {
 			$locations[] = array(
-				'id'        => wp_generate_uuid4(),
-				'type'      => 'physical',
-				'name'      => $location,
-				'address1'  => $location,
-				'address2'  => '',
-				'city'      => '',
-				'state'     => '',
-				'country'   => '',
-				'zip'       => '',
-				'embed_gmap' => false,
-				'gmap_link' => '',
+				'id'          => wp_generate_uuid4(),
+				'type'        => 'physical',
+				'name'        => $location,
+				'address1'    => $location,
+				'address2'    => '',
+				'city'        => '',
+				'state'       => '',
+				'country'     => '',
+				'zip'         => '',
+				'embed_gmap'  => false,
+				'gmap_link'   => '',
 				'virtual_url' => '',
-				'latitude'  => '',
-				'longitude' => '',
+				'latitude'    => '',
+				'longitude'   => '',
 			);
 		}
 
 		if ( ! empty( $url ) && empty( $locations ) ) {
 			$virtual_url = $url;
 			$locations[] = array(
-				'id'        => wp_generate_uuid4(),
-				'type'      => 'online',
-				'name'      => __( 'Online', 'eventkoi' ),
-				'address1'  => '',
-				'address2'  => '',
-				'city'      => '',
-				'state'     => '',
-				'country'   => '',
-				'zip'       => '',
-				'embed_gmap' => false,
-				'gmap_link' => '',
+				'id'          => wp_generate_uuid4(),
+				'type'        => 'online',
+				'name'        => __( 'Online', 'eventkoi' ),
+				'address1'    => '',
+				'address2'    => '',
+				'city'        => '',
+				'state'       => '',
+				'country'     => '',
+				'zip'         => '',
+				'embed_gmap'  => false,
+				'gmap_link'   => '',
 				'virtual_url' => $url,
-				'latitude'  => '',
-				'longitude' => '',
+				'latitude'    => '',
+				'longitude'   => '',
 			);
 		}
 
@@ -443,8 +443,8 @@ class ICS_Importer {
 
 			// Separate property name from parameters (e.g. DTSTART;TZID=...).
 			$semi_pos  = strpos( $prop_part, ';' );
-			$prop_name = $semi_pos !== false ? substr( $prop_part, 0, $semi_pos ) : $prop_part;
-			$params    = $semi_pos !== false ? substr( $prop_part, $semi_pos + 1 ) : '';
+			$prop_name = false !== $semi_pos ? substr( $prop_part, 0, $semi_pos ) : $prop_part;
+			$params    = false !== $semi_pos ? substr( $prop_part, $semi_pos + 1 ) : '';
 
 			$prop_name = strtoupper( $prop_name );
 
@@ -559,7 +559,7 @@ class ICS_Importer {
 				return $dt->format( 'c' );
 			}
 		} catch ( \Exception $e ) {
-			// Fallback: return as-is.
+			unset( $e );
 		}
 
 		return $ics_date;
@@ -598,19 +598,19 @@ class ICS_Importer {
 		$interval = ! empty( $parts['INTERVAL'] ) ? (int) $parts['INTERVAL'] : 1;
 
 		$ek_rule = array(
-			'start_date'       => $start_iso,
-			'end_date'         => $end_iso,
-			'frequency'        => $freq_map[ $freq ],
-			'every'            => $interval,
-			'all_day'          => false,
+			'start_date'        => $start_iso,
+			'end_date'          => $end_iso,
+			'frequency'         => $freq_map[ $freq ],
+			'every'             => $interval,
+			'all_day'           => false,
 			'working_days_only' => false,
-			'weekdays'         => array(),
-			'months'           => array(),
-			'month_day_rule'   => 'day-of-month',
-			'month_day_value'  => 1,
-			'ends'             => 'never',
-			'ends_after'       => 30,
-			'ends_on'          => '',
+			'weekdays'          => array(),
+			'months'            => array(),
+			'month_day_rule'    => 'day-of-month',
+			'month_day_value'   => 1,
+			'ends'              => 'never',
+			'ends_after'        => 30,
+			'ends_on'           => '',
 		);
 
 		// BYDAY → weekdays.
@@ -624,7 +624,7 @@ class ICS_Importer {
 				'FR' => 5,
 				'SA' => 6,
 			);
-			$days = array();
+			$days    = array();
 			foreach ( explode( ',', $parts['BYDAY'] ) as $d ) {
 				$d = preg_replace( '/[^A-Z]/', '', strtoupper( $d ) );
 				if ( isset( $day_map[ $d ] ) ) {
@@ -638,11 +638,11 @@ class ICS_Importer {
 
 		// Set default month/day from start date.
 		try {
-			$start_dt = new \DateTime( $start_iso );
+			$start_dt                   = new \DateTime( $start_iso );
 			$ek_rule['months']          = array( (int) $start_dt->format( 'n' ) - 1 );
 			$ek_rule['month_day_value'] = (int) $start_dt->format( 'j' );
 		} catch ( \Exception $e ) {
-			// Use defaults.
+			unset( $e );
 		}
 
 		// COUNT → ends: "after".

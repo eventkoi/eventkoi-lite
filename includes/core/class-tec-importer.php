@@ -135,7 +135,7 @@ class TEC_Importer {
 
 		// If no specific IDs, import all published events.
 		if ( empty( $event_ids ) ) {
-			$posts = get_posts(
+			$posts     = get_posts(
 				array(
 					'post_type'      => 'tribe_events',
 					'post_status'    => array( 'publish', 'draft', 'pending', 'future', 'private' ),
@@ -166,10 +166,10 @@ class TEC_Importer {
 			} else {
 				++$imported;
 				$results[] = array(
-					'tec_id'    => $tec_id,
-					'success'   => true,
-					'event_id'  => $result['event_id'],
-					'title'     => $result['title'],
+					'tec_id'   => $tec_id,
+					'success'  => true,
+					'event_id' => $result['event_id'],
+					'title'    => $result['title'],
 				);
 			}
 		}
@@ -425,7 +425,7 @@ class TEC_Importer {
 			return '';
 		}
 
-		$parts = array();
+		$parts   = array();
 		$parts[] = '<strong>' . esc_html__( 'Organizer', 'eventkoi' ) . ':</strong> ' . esc_html( $organizer->post_title );
 
 		$email = get_post_meta( $organizer_id, '_OrganizerEmail', true );
@@ -578,8 +578,8 @@ class TEC_Importer {
 		}
 
 		try {
-			$tz  = ! empty( $timezone ) ? new \DateTimeZone( $timezone ) : wp_timezone();
-			$dt  = new \DateTime( $date, $tz );
+			$tz = ! empty( $timezone ) ? new \DateTimeZone( $timezone ) : wp_timezone();
+			$dt = new \DateTime( $date, $tz );
 			return $dt->format( 'c' ); // ISO 8601 format.
 		} catch ( \Exception $e ) {
 			return $date;
