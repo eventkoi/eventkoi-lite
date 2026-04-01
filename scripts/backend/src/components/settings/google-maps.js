@@ -10,6 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { showToast, showToastError } from "@/lib/toast";
 import apiRequest from "@wordpress/api-fetch";
+import { __ } from "@wordpress/i18n";
+import { Info } from "lucide-react";
 
 export function SettingsGoogleMaps({ settings, setSettings }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -103,18 +105,30 @@ export function SettingsGoogleMaps({ settings, setSettings }) {
         </Panel>
         <Separator />
         <Panel className="gap-6">
-          <Alert className="flex gap-x-8 bg-gray-50">
-            <AlertDescription>
-              You need an API key from Google to integrate Google maps. Follow
-              this doc to generate API key.
+          <Alert className="flex items-center gap-x-4 bg-gray-50 border-border">
+            <div className="shrink-0">
+              <Info className="h-4 w-4 text-muted-foreground" />
+            </div>
+            <AlertDescription className="flex-1">
+              {__(
+                "You need an API key from Google to integrate Google Maps.",
+                "eventkoi-lite"
+              )}
             </AlertDescription>
             <Button
+              asChild
               variant="outline"
-              onClick={() => {
-                window.open(supportDocUrl, "_blank");
-              }}
+              size="sm"
+              className="shrink-0"
             >
-              View doc
+              <a
+                href={supportDocUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="no-underline"
+              >
+                {__("View docs", "eventkoi-lite")}
+              </a>
             </Button>
           </Alert>
 

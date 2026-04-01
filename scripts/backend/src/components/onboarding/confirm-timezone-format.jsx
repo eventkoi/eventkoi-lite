@@ -105,7 +105,7 @@ export function ConfirmTimezoneFormatStep() {
         <div className="flex justify-end">
           <Button
             asChild
-            className="border-[#161616] text-[#fff] bg-[#161616] hover:bg-[#000] h-5"
+            className="border-[#161616] text-[#fff] bg-[#161616] hover:bg-[#000] h-9"
           >
             <a
               href={window?.eventkoi_params?.general_options_url}

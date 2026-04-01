@@ -112,7 +112,7 @@ export function SetCalendarDefaultsStep() {
         </h3>
       </div>
 
-      <div className="grid gap-8 bg-white rounded-xl border border-[#e5e5e5]">
+      <div className="grid gap-8">
         <div className="grid gap-2">
           <Label
             htmlFor="week-start"
