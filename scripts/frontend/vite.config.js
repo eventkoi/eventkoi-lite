@@ -45,6 +45,8 @@ export default defineConfig( ( { command } ) => {
 		build: {
 			outDir: 'build',
 			emptyOutDir: false,
+			sourcemap: false,
+			chunkSizeWarningLimit: 1000,
 			rollupOptions: {
 				input: path.resolve( __dirname, 'src/index.js' ),
 				output: {
@@ -52,6 +54,10 @@ export default defineConfig( ( { command } ) => {
 					name: 'eventkoiFrontend',
 					entryFileNames: 'index.js',
 					assetFileNames: 'index.css',
+				},
+				onwarn( warning, warn ) {
+					if ( warning.code === 'MODULE_LEVEL_DIRECTIVE' ) return;
+					warn( warning );
 				},
 			},
 			cssCodeSplit: false,

@@ -186,17 +186,32 @@ export function jsxInJs() {
 			};
 		},
 		async transform( code, id ) {
-			if ( ! /\.js$/.test( id ) || ! /\/src\//.test( id ) ) {
+			if ( ! /\/src\//.test( id ) ) {
 				return null;
 			}
-			if ( ! /<[A-Z]/.test( code ) && ! /<\//.test( code ) ) {
-				return null;
+
+			// Strip "use client" directives from source files to avoid
+			// Rollup MODULE_LEVEL_DIRECTIVE warnings and associated
+			// sourcemap resolution noise during production builds.
+			let stripped = false;
+			if ( /^["']use client["'];?\s*$/m.test( code ) ) {
+				code = code.replace( /^["']use client["'];?\s*\n?/m, '' );
+				stripped = true;
 			}
-			const { transformWithEsbuild } = await import( 'vite' );
-			return transformWithEsbuild( code, id, {
-				loader: 'jsx',
-				jsx: 'automatic',
-			} );
+
+			// Only .js files need the JSX-in-JS esbuild transform.
+			if ( /\.js$/.test( id ) && ( /<[A-Z]/.test( code ) || /<\//.test( code ) ) ) {
+				const { transformWithEsbuild } = await import( 'vite' );
+				return transformWithEsbuild( code, id, {
+					loader: 'jsx',
+					jsx: 'automatic',
+				} );
+			}
+
+			if ( stripped ) {
+				return { code, map: null };
+			}
+			return null;
 		},
 	};
 }
