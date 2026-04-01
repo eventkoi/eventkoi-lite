@@ -46,13 +46,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 <p></p>
 <!-- /wp:paragraph -->
 
-<!-- wp:spacer {"height":"20px"} -->
-<div style="height:20px" aria-hidden="true" class="wp-block-spacer"></div>
-<!-- /wp:spacer -->
-
-<!-- wp:paragraph -->
-<p>event_custom_fields_with_name</p>
-<!-- /wp:paragraph --></div>
+</div>
 <!-- /wp:column -->
 
 <!-- wp:column {"width":"35%","style":{"spacing":{"blockGap":"30px"}}} -->
@@ -60,7 +54,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 <div class="wp-block-group has-border-color has-background" style="border-color:#eeeeee;border-width:1px;border-radius:10px;background-color:#f3f3f3;margin-top:0;margin-bottom:0;padding-top:30px;padding-right:30px;padding-bottom:30px;padding-left:30px"><!-- wp:columns {"isStackedOnMobile":false,"style":{"spacing":{"blockGap":{"top":"0","left":"20px"}}}} -->
 <div class="wp-block-columns is-not-stacked-on-mobile"><!-- wp:column {"width":"20px"} -->
 <div class="wp-block-column" style="flex-basis:20px"><!-- wp:image {"id":10155,"width":"20px","sizeSlug":"full","linkDestination":"none"} -->
-<figure class="wp-block-image size-full is-resized"><img src="<?php echo esc_url( eventkoi_get_template_asset( 'date.png' ) ); ?>" alt="" aria-hidden="true" class="wp-image-10155" style="width:20px"/></figure>
+<figure class="wp-block-image size-full is-resized"><img src="<?php echo esc_url( eventkoi_get_template_asset( 'date.png' ) ); ?>" alt="" class="wp-image-10155" style="width:20px"/></figure>
 <!-- /wp:image --></div>
 <!-- /wp:column -->
 
@@ -78,7 +72,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 <!-- wp:columns {"isStackedOnMobile":false,"style":{"spacing":{"blockGap":{"top":"0px","left":"20px"},"padding":{"top":"0","bottom":"0"}}}} -->
 <div class="wp-block-columns is-not-stacked-on-mobile" style="padding-top:0;padding-bottom:0"><!-- wp:column {"width":"20px"} -->
 <div class="wp-block-column" style="flex-basis:20px"><!-- wp:image {"id":10160,"width":"20px","sizeSlug":"full","linkDestination":"none"} -->
-<figure class="wp-block-image size-full is-resized"><img src="<?php echo esc_url( eventkoi_get_template_asset( 'pin.png' ) ); ?>" alt="" aria-hidden="true" class="wp-image-10160" style="width:20px"/></figure>
+<figure class="wp-block-image size-full is-resized"><img src="<?php echo esc_url( eventkoi_get_template_asset( 'pin.png' ) ); ?>" alt="" class="wp-image-10160" style="width:20px"/></figure>
 <!-- /wp:image --></div>
 <!-- /wp:column -->
 

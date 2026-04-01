@@ -37,6 +37,8 @@ class Menus {
 		add_action( 'admin_menu_editor-menu_replaced', array( static::class, 'menu_order_fix' ), 999 );
 
 		add_action( 'admin_head', array( static::class, 'add_menu_css' ) );
+
+		add_action( 'wp_ajax_eventkoi_dismiss_rating', array( static::class, 'dismiss_rating' ) );
 	}
 
 	/**
@@ -102,7 +104,34 @@ class Menus {
 		$page = isset( $_GET['page'] ) ? sanitize_key( $_GET['page'] ) : '';
 
 		if ( 'eventkoi' === $page ) {
-			add_filter( 'admin_footer_text', '__return_empty_string', 11 );
+			add_filter(
+				'admin_footer_text',
+				function () {
+					if ( get_user_meta( get_current_user_id(), 'eventkoi_dismissed_rating', true ) ) {
+						return sprintf(
+							__( 'Thank you for using %s!', 'eventkoi-lite' ),
+							'<strong>EventKoi</strong>'
+						);
+					}
+
+					$messages = array(
+						__( 'Thank you for using %1$s! Please rate us %2$s to help us spread the word.', 'eventkoi-lite' ),
+						__( 'Thank you for using %1$s! If you enjoy it, please leave us a %2$s rating.', 'eventkoi-lite' ),
+						__( 'Thank you for using %1$s! Please consider leaving a %2$s review.', 'eventkoi-lite' ),
+					);
+
+					$index   = absint( gmdate( 'j' ) ) % count( $messages );
+					$message = $messages[ $index ];
+					$nonce   = wp_create_nonce( 'eventkoi_dismiss_rating' );
+
+					return sprintf(
+						$message,
+						'<strong>EventKoi</strong>',
+						'<a href="https://wordpress.org/support/plugin/eventkoi-lite/reviews/#new-post" target="_blank" rel="noopener noreferrer" id="eventkoi-rating-link">&#9733;&#9733;&#9733;&#9733;&#9733;</a>'
+					) . "<script>document.getElementById('eventkoi-rating-link').addEventListener('click',function(){fetch(ajaxurl+'?action=eventkoi_dismiss_rating&_wpnonce={$nonce}');var p=this.closest('p');if(p)p.innerHTML='" . esc_js( sprintf( __( 'Thank you for using %s!', 'eventkoi-lite' ), '<strong>EventKoi</strong>' ) ) . "'});</script>";
+				},
+				11
+			);
 			remove_filter( 'update_footer', 'core_update_footer' );
 		}
 
@@ -138,6 +167,15 @@ class Menus {
 	}
 
 	/**
+	 * AJAX handler to dismiss the rating prompt.
+	 */
+	public static function dismiss_rating() {
+		check_ajax_referer( 'eventkoi_dismiss_rating' );
+		update_user_meta( get_current_user_id(), 'eventkoi_dismissed_rating', 1 );
+		wp_send_json_success();
+	}
+
+	/**
 	 * Return base64 encoded SVG for the admin menu icon.
 	 *
 	 * @return string Data URI.
@@ -152,7 +190,7 @@ class Menus {
 	 * Renders the EventKoi React app wrapper.
 	 */
 	public static function load_admin() {
-		echo '<div id="eventkoi-admin" class="eventkoi-admin"></div>';
+		echo '<div id="eventkoi-admin" class="eventkoi-admin" style="margin-bottom:60px"></div>';
 	}
 
 	/**

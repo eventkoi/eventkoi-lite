@@ -72,7 +72,7 @@ function AdminLayout() {
   }, [location]);
 
   return (
-    <div className="w-full flex flex-col min-h-[calc(100vh-46px)] md:min-h-[calc(100vh-32px)]">
+    <div className="w-full flex flex-col">
       <Toaster
         expand
         position="bottom-right"
