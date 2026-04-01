@@ -14,7 +14,7 @@ export default defineConfig( ( { command } ) => {
 			'react/jsx-runtime': path.join( shimDir, 'react-jsx-runtime.js' ),
 			'react/jsx-dev-runtime': path.join( shimDir, 'react-jsx-runtime.js' ),
 			'react-dom/client': path.join( shimDir, 'react-dom-client.js' ),
-			'react-dom/server': path.resolve( __dirname, 'node_modules/react-dom/server.js' ),
+			'react-dom/server': path.join( shimDir, 'react-dom-server.js' ),
 			'react-dom': path.join( shimDir, 'react-dom.js' ),
 			'react': path.join( shimDir, 'react.js' ),
 		} );

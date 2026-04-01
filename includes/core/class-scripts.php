@@ -35,6 +35,8 @@ class Scripts {
 	 * Register and enqueue frontend assets, so they can also be reused elsewhere (Elementor).
 	 */
 	public static function enqueue_frontend_assets() {
+		static $registered = false;
+
 		$build_dir  = EVENTKOI_PLUGIN_DIR . 'scripts/frontend/build/';
 		$asset_path = $build_dir . 'index.asset.php';
 
@@ -47,38 +49,42 @@ class Scripts {
 		$hot_file   = $build_dir . '.vite-hot';
 		$is_dev     = file_exists( $hot_file );
 
-		// Register and enqueue JS.
-		if ( $is_dev ) {
-			$vite_url = trim( file_get_contents( $hot_file ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
-			wp_register_script(
-				'eventkoi-frontend',
-				$vite_url . '/src/index.js',
-				$asset_file['dependencies'],
-				null,
-				true
-			);
-			add_filter(
-				'script_loader_tag',
-				function ( $tag, $handle ) use ( $vite_url ) {
-					if ( 'eventkoi-frontend' !== $handle ) {
-						return $tag;
-					}
-					$client = '<script type="module" src="' . esc_url( $vite_url . '/@vite/client' ) . '"></script>' . "\n";
-					$tag    = str_replace( array( " type='text/javascript'", ' type="text/javascript"' ), '', $tag );
-					$tag    = str_replace( '<script ', '<script type="module" ', $tag );
-					return $client . $tag;
-				},
-				10,
-				2
-			);
-		} else {
-			wp_register_script(
-				'eventkoi-frontend',
-				$build_url . 'index.js',
-				$asset_file['dependencies'],
-				$asset_file['version'],
-				true
-			);
+		// Register and enqueue JS (once).
+		if ( ! $registered ) {
+			$registered = true;
+
+			if ( $is_dev ) {
+				$vite_url = trim( file_get_contents( $hot_file ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+				wp_register_script(
+					'eventkoi-frontend',
+					$vite_url . '/src/index.js',
+					$asset_file['dependencies'],
+					null,
+					true
+				);
+				add_filter(
+					'script_loader_tag',
+					function ( $tag, $handle ) use ( $vite_url ) {
+						if ( 'eventkoi-frontend' !== $handle ) {
+							return $tag;
+						}
+						$client = '<script type="module" src="' . esc_url( $vite_url . '/@vite/client' ) . '"></script>' . "\n";
+						$tag    = str_replace( array( " type='text/javascript'", ' type="text/javascript"' ), '', $tag );
+						$tag    = str_replace( '<script ', '<script type="module" ', $tag );
+						return $client . $tag;
+					},
+					10,
+					2
+				);
+			} else {
+				wp_register_script(
+					'eventkoi-frontend',
+					$build_url . 'index.js',
+					$asset_file['dependencies'],
+					$asset_file['version'],
+					true
+				);
+			}
 		}
 		wp_enqueue_script( 'eventkoi-frontend' );
 
