@@ -35,8 +35,23 @@
 }
 
 @layer utilities {
-  .fc .fc-event[tabindex]:focus-visible {
-    outline: 3px solid hsl(var(--primary));
+  .fc .fc-event:focus-visible {
+    outline: 2px solid hsl(var(--primary)) !important;
+    outline-offset: 1px !important;
+    box-shadow: none !important;
+  }
+
+  .fc .fc-daygrid-day-number:focus-visible,
+  .fc .fc-col-header-cell-cushion:focus-visible,
+  .fc .fc-daygrid-more-link:focus-visible {
+    outline: 2px solid hsl(var(--primary));
+    outline-offset: 1px;
+    border-radius: 3px;
+  }
+
+  .fc .fc-button:focus-visible {
+    outline: 2px solid hsl(var(--primary)) !important;
     outline-offset: 2px;
+    box-shadow: none !important;
   }
 }
