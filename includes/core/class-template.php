@@ -56,6 +56,63 @@ class Template {
 
 		add_filter( 'render_block', array( __CLASS__, 'maybe_inject_series_backlink' ), 8, 2 );
 		add_filter( 'eventkoi_get_content', array( __CLASS__, 'maybe_inject_rsvp_shortcode' ), 20 );
+
+		// Fix rewrite conflict: TEC's /event/{slug}/ rule can capture EventKoi slugs.
+		add_filter( 'request', array( __CLASS__, 'fix_tec_rewrite_conflict' ), 5 );
+
+		// Prevent TEC from loading its template on EventKoi events.
+		add_filter( 'tribe_events_views_v2_bootstrap_pre_should_load', array( __CLASS__, 'prevent_tec_template_hijack' ), 10, 2 );
+	}
+
+	/**
+	 * Fix rewrite conflict between TEC and EventKoi.
+	 *
+	 * Both plugins use /event/ as the base slug. TEC's catch-all rewrite rule
+	 * `event/([^/]+)` can match EventKoi slugs, resolving them as tribe_events.
+	 * This filter detects that case and swaps the query vars so WordPress
+	 * loads the correct eventkoi_event post.
+	 *
+	 * @param array $query_vars Parsed query vars from the matched rewrite rule.
+	 * @return array Corrected query vars.
+	 */
+	public static function fix_tec_rewrite_conflict( $query_vars ) {
+		if ( empty( $query_vars['tribe_events'] ) || ! class_exists( 'Tribe__Events__Main' ) ) {
+			return $query_vars;
+		}
+
+		$slug    = sanitize_title( $query_vars['tribe_events'] );
+		$ek_post = get_page_by_path( $slug, OBJECT, 'eventkoi_event' );
+
+		if ( ! $ek_post ) {
+			return $query_vars;
+		}
+
+		// Swap query vars to load the EventKoi event instead.
+		unset( $query_vars['tribe_events'] );
+		$query_vars['post_type']      = 'eventkoi_event';
+		$query_vars['eventkoi_event'] = $slug;
+		$query_vars['name']           = $slug;
+
+		return $query_vars;
+	}
+
+	/**
+	 * Prevent The Events Calendar from loading its template on EventKoi events.
+	 *
+	 * @param bool|null $should_load Current value (null = not yet decided).
+	 * @param \WP_Query $query       The main query object.
+	 * @return bool|null False to prevent TEC template, null to let TEC decide.
+	 */
+	public static function prevent_tec_template_hijack( $should_load, $query ) {
+		if ( ! $query instanceof \WP_Query || ! $query->is_main_query() ) {
+			return $should_load;
+		}
+
+		if ( is_singular( 'eventkoi_event' ) ) {
+			return false;
+		}
+
+		return $should_load;
 	}
 
 	/**

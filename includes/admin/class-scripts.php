@@ -104,8 +104,11 @@ class Scripts {
 			return;
 		}
 
-		$asset_file = include EVENTKOI_PLUGIN_DIR . 'scripts/backend/build/index.asset.php';
+		$build_dir  = EVENTKOI_PLUGIN_DIR . 'scripts/backend/build/';
+		$asset_file = include $build_dir . 'index.asset.php';
 		$build_url  = EVENTKOI_PLUGIN_URL . 'scripts/backend/build/';
+		$hot_file   = $build_dir . '.vite-hot';
+		$is_dev     = file_exists( $hot_file );
 
 		$default_cal_id = (int) get_option( 'eventkoi_default_event_cal', 0 );
 		$default_cal    = get_term_by( 'id', $default_cal_id, 'event_cal' );
@@ -156,13 +159,38 @@ class Scripts {
 
 		$eventkoi_params['custom_templates'] = self::get_custom_templates();
 
-		wp_register_script(
-			'eventkoi-admin',
-			$build_url . 'index.js',
-			$asset_file['dependencies'],
-			$asset_file['version'],
-			true
-		);
+		if ( $is_dev ) {
+			$vite_url = trim( file_get_contents( $hot_file ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			wp_register_script(
+				'eventkoi-admin',
+				$vite_url . '/src/index.js',
+				$asset_file['dependencies'],
+				null,
+				true
+			);
+			add_filter(
+				'script_loader_tag',
+				function ( $tag, $handle ) use ( $vite_url ) {
+					if ( 'eventkoi-admin' !== $handle ) {
+						return $tag;
+					}
+					$client = '<script type="module" src="' . esc_url( $vite_url . '/@vite/client' ) . '"></script>' . "\n";
+					$tag    = str_replace( array( " type='text/javascript'", ' type="text/javascript"' ), '', $tag );
+					$tag    = str_replace( '<script ', '<script type="module" ', $tag );
+					return $client . $tag;
+				},
+				10,
+				2
+			);
+		} else {
+			wp_register_script(
+				'eventkoi-admin',
+				$build_url . 'index.js',
+				$asset_file['dependencies'],
+				$asset_file['version'],
+				true
+			);
+		}
 
 		wp_enqueue_script( 'eventkoi-admin' );
 
@@ -203,14 +231,16 @@ class Scripts {
 		wp_enqueue_editor();
 		wp_enqueue_media();
 
-		wp_register_style(
-			'eventkoi-admin',
-			$build_url . 'index.css',
-			array( 'wp-components' ),
-			$asset_file['version']
-		);
+		if ( ! $is_dev ) {
+			wp_register_style(
+				'eventkoi-admin',
+				$build_url . 'index.css',
+				array( 'wp-components' ),
+				$asset_file['version']
+			);
 
-		wp_enqueue_style( 'eventkoi-admin' );
+			wp_enqueue_style( 'eventkoi-admin' );
+		}
 
 		// Load Tailwind CSS only on main plugin page or edit screens.
 		if (

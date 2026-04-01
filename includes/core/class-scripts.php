@@ -35,7 +35,8 @@ class Scripts {
 	 * Register and enqueue frontend assets, so they can also be reused elsewhere (Elementor).
 	 */
 	public static function enqueue_frontend_assets() {
-		$asset_path = EVENTKOI_PLUGIN_DIR . 'scripts/frontend/build/index.asset.php';
+		$build_dir  = EVENTKOI_PLUGIN_DIR . 'scripts/frontend/build/';
+		$asset_path = $build_dir . 'index.asset.php';
 
 		if ( ! file_exists( $asset_path ) ) {
 			return;
@@ -43,15 +44,42 @@ class Scripts {
 
 		$asset_file = include $asset_path;
 		$build_url  = EVENTKOI_PLUGIN_URL . 'scripts/frontend/build/';
+		$hot_file   = $build_dir . '.vite-hot';
+		$is_dev     = file_exists( $hot_file );
 
 		// Register and enqueue JS.
-		wp_register_script(
-			'eventkoi-frontend',
-			$build_url . 'index.js',
-			$asset_file['dependencies'],
-			$asset_file['version'],
-			true
-		);
+		if ( $is_dev ) {
+			$vite_url = trim( file_get_contents( $hot_file ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
+			wp_register_script(
+				'eventkoi-frontend',
+				$vite_url . '/src/index.js',
+				$asset_file['dependencies'],
+				null,
+				true
+			);
+			add_filter(
+				'script_loader_tag',
+				function ( $tag, $handle ) use ( $vite_url ) {
+					if ( 'eventkoi-frontend' !== $handle ) {
+						return $tag;
+					}
+					$client = '<script type="module" src="' . esc_url( $vite_url . '/@vite/client' ) . '"></script>' . "\n";
+					$tag    = str_replace( array( " type='text/javascript'", ' type="text/javascript"' ), '', $tag );
+					$tag    = str_replace( '<script ', '<script type="module" ', $tag );
+					return $client . $tag;
+				},
+				10,
+				2
+			);
+		} else {
+			wp_register_script(
+				'eventkoi-frontend',
+				$build_url . 'index.js',
+				$asset_file['dependencies'],
+				$asset_file['version'],
+				true
+			);
+		}
 		wp_enqueue_script( 'eventkoi-frontend' );
 
 		// Prepare localized variables.
@@ -117,10 +145,12 @@ class Scripts {
 
 		// Enqueue styles.
 		wp_register_style( 'eventkoi-frontend-tw', $build_url . 'tailwind.css', array(), $asset_file['version'] );
-		wp_register_style( 'eventkoi-frontend', $build_url . 'index.css', array(), $asset_file['version'] );
-
 		wp_enqueue_style( 'eventkoi-frontend-tw' );
-		wp_enqueue_style( 'eventkoi-frontend' );
+
+		if ( ! $is_dev ) {
+			wp_register_style( 'eventkoi-frontend', $build_url . 'index.css', array(), $asset_file['version'] );
+			wp_enqueue_style( 'eventkoi-frontend' );
+		}
 
 		// Inline css.
 		if ( is_tax( 'event_cal' ) ) {

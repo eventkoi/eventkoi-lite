@@ -18,7 +18,7 @@ export function Subnav({ root }) {
   }
 
   return (
-    <div className="flex text-sm h-12 items-center border-b gap-6 px-8">
+    <div className="flex text-sm h-12 items-center border-b gap-6 px-4">
       <Logo invisible />
       <Navbar tabs={tabs[root]} isSub />
     </div>

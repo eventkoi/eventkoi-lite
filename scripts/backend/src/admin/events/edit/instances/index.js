@@ -72,7 +72,7 @@ export function generateInstances(
       continue;
     }
 
-    const end = luxonEnd.toUTC().toJSDate(); // end date in UTC
+    let end = luxonEnd.toUTC().toJSDate(); // end date in UTC
 
     const startHour = luxonStart.hour;
     const startMinute = luxonStart.minute;

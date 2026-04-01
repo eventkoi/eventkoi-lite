@@ -851,11 +851,11 @@ export function EventsOverview() {
                 {__("Import from URL", "eventkoi")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => icsFileRef.current?.click()} disabled={icsImporting}>
-                {icsImporting ? __("Importing...", "eventkoi") : __("Import ICS file", "eventkoi")}
+                {icsImporting ? __("Importing...", "eventkoi") : __("Import from ICS / iCal file", "eventkoi")}
               </DropdownMenuItem>
               {tecAvailable && (
                 <DropdownMenuItem onClick={() => setTecDialogOpen(true)}>
-                  {__("Import from TEC", "eventkoi")}
+                  {__("Import from The Events Calendar", "eventkoi")}
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>

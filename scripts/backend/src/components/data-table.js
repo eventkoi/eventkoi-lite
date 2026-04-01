@@ -104,7 +104,7 @@ export function DataTable({
             />
           )}
         </div>
-        <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:space-x-4">
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-end">
           <Filters
             base={base}
             table={table}
@@ -140,7 +140,7 @@ export function DataTable({
 
       <div
         className={cn(
-          "rounded-lg bg-card text-sm text-card-foreground shadow-sm w-full overflow-x-auto",
+          "rounded-lg bg-card text-sm text-card-foreground shadow-sm w-full overflow-visible",
           !hideTableBorder && "border",
           hideTableBorder && "rounded-none shadow-none border-none",
           tableClassName
