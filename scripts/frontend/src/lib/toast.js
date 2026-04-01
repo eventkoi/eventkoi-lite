@@ -6,22 +6,32 @@ export function showToast(response) {
   }
 
   const toastId = toast(
-    <div
-      className="flex items-center cursor-pointer active:ring-2 active:ring-ring active:ring-offset-2 bg-[#222222] rounded-sm border-0 font-medium justify-between p-4 gap-4 text-sm leading-5 text-primary-foreground w-60"
+    <button
+      type="button"
+      className="flex items-center cursor-pointer active:ring-2 active:ring-ring active:ring-offset-2 bg-[#222222] rounded-sm border-0 font-medium justify-between p-4 gap-4 text-sm leading-5 text-primary-foreground w-60 text-left"
       onClick={() => toast.dismiss(toastId)}
     >
       {response.message}{" "}
       {response.url && (
-        <div
-          onClick={() => {
+        <span
+          role="link"
+          tabIndex={0}
+          onClick={(e) => {
+            e.stopPropagation();
             window.open(response.url, "_blank");
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.stopPropagation();
+              window.open(response.url, "_blank");
+            }
           }}
           className="underline underline-offset-2 hover:no-underline"
         >
           View event
-        </div>
+        </span>
       )}
-    </div>,
+    </button>,
     { duration: 4000 }
   );
 }
@@ -32,12 +42,13 @@ export function showStaticToast(message) {
   }
 
   const toastId = toast(
-    <div
-      className="flex items-center cursor-pointer active:ring-2 active:ring-ring active:ring-offset-2 bg-[#222222] rounded-sm border-0 font-medium justify-between p-4 gap-4 text-sm leading-5 text-primary-foreground w-60"
+    <button
+      type="button"
+      className="flex items-center cursor-pointer active:ring-2 active:ring-ring active:ring-offset-2 bg-[#222222] rounded-sm border-0 font-medium justify-between p-4 gap-4 text-sm leading-5 text-primary-foreground w-60 text-left"
       onClick={() => toast.dismiss(toastId)}
     >
       {message}
-    </div>,
+    </button>,
     { duration: 4000 }
   );
 }

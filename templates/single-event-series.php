@@ -29,7 +29,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 <!-- wp:buttons {"layout":{"type":"flex","flexWrap":"wrap"}} -->
 <div class="wp-block-buttons">
 <!-- wp:button {"backgroundColor":"base-2","textColor":"contrast-2","className":"is-style-outline","style":{"border":{"radius":"10px","color":"#dcdcdc","width":"1px"},"spacing":{"padding":{"left":"20px","right":"20px","top":"10px","bottom":"10px"}},"elements":{"link":{"color":{"text":"var:preset|color|contrast-2"}}}},"fontSize":"small"} -->
-<div class="wp-block-button is-style-outline"><a class="wp-block-button__link has-contrast-2-color has-base-2-background-color has-text-color has-background has-link-color has-border-color has-small-font-size has-custom-font-size wp-element-button" href="#event-share" style="border-color:#dcdcdc;border-width:1px;border-radius:10px;padding-top:10px;padding-right:20px;padding-bottom:10px;padding-left:20px"><img class="wp-image-10184" style="width: 13px;" src="<?php echo esc_url( eventkoi_get_template_asset( 'share.png' ) ); ?>" alt=""> Share</a></div>
+<div class="wp-block-button is-style-outline"><a class="wp-block-button__link has-contrast-2-color has-base-2-background-color has-text-color has-background has-link-color has-border-color has-small-font-size has-custom-font-size wp-element-button" href="#event-share" style="border-color:#dcdcdc;border-width:1px;border-radius:10px;padding-top:10px;padding-right:20px;padding-bottom:10px;padding-left:20px"><img class="wp-image-10184" style="width: 13px;" src="<?php echo esc_url( eventkoi_get_template_asset( 'share.png' ) ); ?>" alt="" aria-hidden="true"> Share</a></div>
 <!-- /wp:button --></div>
 <!-- /wp:buttons -->
 
@@ -37,15 +37,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 <p></p>
 <!-- /wp:paragraph -->
 
-<!-- wp:query {"queryId":197,"query":{"perPage":6,"pages":0,"offset":0,"postType":"eventkoi_event","order":"desc","orderBy":"modified","author":"","search":"","sticky":"","inherit":false,"eventkoiSig":"|||1|1|0|desc|modified|6|1"},"namespace":"eventkoi/event-query-loop","includeInstances":true,"showInstancesForEvent":true,"instanceParentId":0,"className":"eventkoi-query-loop","listLayoutStyle":"image-left"} -->
+<!-- wp:query {"queryId":197,"query":{"perPage":6,"pages":0,"offset":0,"postType":"eventkoi_event","order":"asc","orderBy":"start_date","author":"","search":"","sticky":"","inherit":false,"eventkoiSig":"|||1|1|0|asc|start_date|6|1"},"namespace":"eventkoi/event-query-loop","includeInstances":true,"showInstancesForEvent":true,"instanceParentId":0,"className":"eventkoi-query-loop","listLayoutStyle":"image-left"} -->
 <div class="wp-block-query eventkoi-query-loop"><!-- wp:post-template {"layout":{"type":"default"}} -->
 <!-- wp:eventkoi/event-query-item -->
 <!-- wp:group {"className":"eventkoi-event-loop-card","layout":{"type":"default"}} -->
 <div class="wp-block-group eventkoi-event-loop-card"><!-- wp:columns -->
 <div class="wp-block-columns"><!-- wp:column {"width":"30%"} -->
-<div class="wp-block-column" style="flex-basis:30%"><!-- wp:image {"className":"eventkoi-event-image-default"} -->
-<figure class="wp-block-image eventkoi-event-image-default"><img alt=""/></figure>
-<!-- /wp:image --></div>
+<div class="wp-block-column" style="flex-basis:30%"><!-- wp:post-featured-image {"className":"eventkoi-event-image-default"} /--></div>
 <!-- /wp:column -->
 <!-- wp:column {"width":"70%"} -->
 <div class="wp-block-column" style="flex-basis:70%"><!-- wp:eventkoi/event-data {"className":"ek-event-title-default"} /-->

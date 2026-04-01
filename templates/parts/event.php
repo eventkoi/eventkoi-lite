@@ -13,7 +13,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 ?>
 <!-- wp:group {"className":"eventkoi-front eventkoi-legacy","style":{"spacing":{"margin":{"top":"40px","bottom":"40px"},"blockGap":"30px","padding":{"right":"0","left":"0"}}},"layout":{"type":"constrained","wideSize":"1100px","contentSize":"1100px"}} -->
-<div class="wp-block-group eventkoi-front eventkoi-legacy" style="margin-top:40px;margin-bottom:40px;padding-right:0;padding-left:0"><!-- wp:columns {"style":{"spacing":{"blockGap":{"top":"0","left":"var:preset|spacing|30"}}}} -->
+<div class="wp-block-group eventkoi-front eventkoi-legacy" style="margin-top:40px;margin-bottom:40px;padding-right:30px;padding-left:30px"><!-- wp:columns {"style":{"spacing":{"blockGap":{"top":"0","left":"var:preset|spacing|30"}}}} -->
 <div class="wp-block-columns"><!-- wp:column {"width":"65%","style":{"spacing":{"blockGap":"0","padding":{"top":"0","bottom":"0"}}}} -->
 <div class="wp-block-column" style="padding-top:0;padding-bottom:0;flex-basis:65%"><!-- wp:paragraph -->
 <p>← See all events in event_calendar_link</p>
@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 <!-- /wp:button -->
 
 <!-- wp:button {"backgroundColor":"base-2","textColor":"contrast-2","className":"is-style-outline","style":{"border":{"radius":"10px","color":"#dcdcdc","width":"1px"},"spacing":{"padding":{"left":"20px","right":"20px","top":"10px","bottom":"10px"}},"elements":{"link":{"color":{"text":"var:preset|color|contrast-2"}}}},"fontSize":"small"} -->
-<div class="wp-block-button is-style-outline"><a class="wp-block-button__link has-contrast-2-color has-base-2-background-color has-text-color has-background has-link-color has-border-color has-small-font-size has-custom-font-size wp-element-button" href="#event-share" style="border-color:#dcdcdc;border-width:1px;border-radius:10px;padding-top:10px;padding-right:20px;padding-bottom:10px;padding-left:20px"><img class="wp-image-10184" style="width: 13px;" src="<?php echo esc_url( eventkoi_get_template_asset( 'share.png' ) ); ?>" alt=""> Share</a></div>
+<div class="wp-block-button is-style-outline"><a class="wp-block-button__link has-contrast-2-color has-base-2-background-color has-text-color has-background has-link-color has-border-color has-small-font-size has-custom-font-size wp-element-button" href="#event-share" style="border-color:#dcdcdc;border-width:1px;border-radius:10px;padding-top:10px;padding-right:20px;padding-bottom:10px;padding-left:20px"><img class="wp-image-10184" style="width: 13px;" src="<?php echo esc_url( eventkoi_get_template_asset( 'share.png' ) ); ?>" alt="" aria-hidden="true"> Share</a></div>
 <!-- /wp:button --></div>
 <!-- /wp:buttons --></div>
 <!-- /wp:column --></div>
@@ -40,11 +40,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 <!-- wp:columns {"style":{"spacing":{"blockGap":{"left":"30px"}}}} -->
 <div class="wp-block-columns"><!-- wp:column {"width":"65%","style":{"spacing":{"blockGap":"10px"}}} -->
 <div class="wp-block-column" style="flex-basis:65%"><!-- wp:image {"sizeSlug":"large","metadata":{"bindings":{"url":{"source":"core/post-meta","args":{"key":"event_image_url"}}}},"style":{"border":{"radius":"20px"}}} -->
-<figure class="wp-block-image size-large has-custom-border"><img alt="" style="border-radius:20px"/></figure>
+<figure class="wp-block-image size-large has-custom-border"><img alt="<?php echo esc_attr( get_the_title() ); ?>" style="border-radius:20px"/></figure>
 <!-- /wp:image -->
 
 <!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"event_details"}}}}} -->
 <p></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:spacer {"height":"20px"} -->
+<div style="height:20px" aria-hidden="true" class="wp-block-spacer"></div>
+<!-- /wp:spacer -->
+
+<!-- wp:paragraph -->
+<p>event_custom_fields_with_name</p>
 <!-- /wp:paragraph --></div>
 <!-- /wp:column -->
 
@@ -53,7 +61,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 <div class="wp-block-group has-border-color has-background" style="border-color:#eeeeee;border-width:1px;border-radius:10px;background-color:#f3f3f3;margin-top:0;margin-bottom:0;padding-top:30px;padding-right:30px;padding-bottom:30px;padding-left:30px"><!-- wp:columns {"isStackedOnMobile":false,"style":{"spacing":{"blockGap":{"top":"0","left":"20px"}}}} -->
 <div class="wp-block-columns is-not-stacked-on-mobile"><!-- wp:column {"width":"20px"} -->
 <div class="wp-block-column" style="flex-basis:20px"><!-- wp:image {"id":10155,"width":"20px","sizeSlug":"full","linkDestination":"none"} -->
-<figure class="wp-block-image size-full is-resized"><img src="<?php echo esc_url( eventkoi_get_template_asset( 'date.png' ) ); ?>" alt="" class="wp-image-10155" style="width:20px"/></figure>
+<figure class="wp-block-image size-full is-resized"><img src="<?php echo esc_url( eventkoi_get_template_asset( 'date.png' ) ); ?>" alt="" aria-hidden="true" class="wp-image-10155" style="width:20px"/></figure>
 <!-- /wp:image --></div>
 <!-- /wp:column -->
 
@@ -71,7 +79,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 <!-- wp:columns {"isStackedOnMobile":false,"style":{"spacing":{"blockGap":{"top":"0px","left":"20px"},"padding":{"top":"0","bottom":"0"}}}} -->
 <div class="wp-block-columns is-not-stacked-on-mobile" style="padding-top:0;padding-bottom:0"><!-- wp:column {"width":"20px"} -->
 <div class="wp-block-column" style="flex-basis:20px"><!-- wp:image {"id":10160,"width":"20px","sizeSlug":"full","linkDestination":"none"} -->
-<figure class="wp-block-image size-full is-resized"><img src="<?php echo esc_url( eventkoi_get_template_asset( 'pin.png' ) ); ?>" alt="" class="wp-image-10160" style="width:20px"/></figure>
+<figure class="wp-block-image size-full is-resized"><img src="<?php echo esc_url( eventkoi_get_template_asset( 'pin.png' ) ); ?>" alt="" aria-hidden="true" class="wp-image-10160" style="width:20px"/></figure>
 <!-- /wp:image --></div>
 <!-- /wp:column -->
 
@@ -83,9 +91,9 @@ if ( ! defined( 'ABSPATH' ) ) {
 <!-- /wp:columns --></div>
 <!-- /wp:group -->
 
-<!-- wp:shortcode -->
-[eventkoi_rsvp]
-<!-- /wp:shortcode -->
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"event_ticket_rsvp"}}}}} -->
+<p></p>
+<!-- /wp:paragraph -->
 
 <!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"event_gmap"}}}}} -->
 <p></p>

@@ -12,7 +12,7 @@ import { showToast } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import apiRequest from "@wordpress/api-fetch";
 import { ChevronDown, Loader2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 // Optional: Replace this with lodash.isequal if needed
@@ -40,8 +40,31 @@ function deepEqual(a, b) {
 export function EventNavBar() {
   const location = useLocation();
   const isInstanceEdit = location.pathname.includes("/instances/edit/");
-  const search = new URLSearchParams(location.search);
-  const onboardingActive = search.get("onboarding") === "demo-event";
+  const combinedParams = useMemo(() => {
+    const merged = new URLSearchParams();
+    const sources = [location.search, location.hash];
+    sources.forEach((part) => {
+      if (!part) return;
+      const query = part.startsWith("?")
+        ? part.slice(1)
+        : part.includes("?")
+        ? part.split("?")[1]
+        : "";
+      if (!query) return;
+      const params = new URLSearchParams(query);
+      params.forEach((value, key) => {
+        merged.set(key, value);
+      });
+    });
+    return merged;
+  }, [location.search, location.hash]);
+  const onboardingActive =
+    combinedParams.get("onboarding") === "demo-event" ||
+    combinedParams.get("eventkoi_onboarding") === "demo-event";
+  const onboardingHint = useMemo(() => {
+    const parsed = parseInt(combinedParams.get("hint"), 10);
+    return Number.isFinite(parsed) ? parsed : null;
+  }, [combinedParams]);
 
   let instanceCtx = null;
   try {
@@ -59,25 +82,19 @@ export function EventNavBar() {
     setLoading,
     setIsPublishing,
     setDisableAutoSave,
+    runBeforeSave,
   } = useEventEditContext();
 
   const [saving, setSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const hasSavedOnce = useRef(false);
   const [highlightPreview, setHighlightPreview] = useState(false);
-  const isRecurring = event?.date_type === "recurring";
 
   const isDisabled = isInstanceEdit
     ? saving || loading
     : !event?.title?.trim() || saving || loading;
 
   const handleSaveInstance = async () => {
-    if (isRecurring) {
-      showToast({
-        message: "Recurring events are a Pro feature. Upgrade to save.",
-      });
-      return;
-    }
     if (!instanceCtx?.data || !instanceCtx.eventId || !instanceCtx.timestamp)
       return;
 
@@ -159,31 +176,18 @@ export function EventNavBar() {
       await new Promise((r) => setTimeout(r, 10));
     }
 
-    const eventToSave = { ...event, wp_status: status };
-    if (eventToSave.date_type === "recurring") {
-      eventToSave.date_type = "standard";
-      eventToSave.recurrence_rules = [];
-      eventToSave.recurrence_overrides = {};
-
-      if (
-        (!Array.isArray(eventToSave.event_days) ||
-          eventToSave.event_days.length === 0) &&
-        (eventToSave.start_date || eventToSave.end_date)
-      ) {
-        const start = eventToSave.start_date || eventToSave.end_date || null;
-        eventToSave.event_days = [
-          {
-            start_date: start,
-            end_date: eventToSave.end_date || start,
-            all_day: false,
-          },
-        ];
+    try {
+      await runBeforeSave?.();
+    } catch (error) {
+      showToast({ message: "Failed to save tickets. Please try again." });
+      if (status === "publish") {
+        setIsPublishing?.(false);
+        setDisableAutoSave?.(false);
       }
-
-      showToast({
-        message: "Recurring events are a Pro feature.",
-      });
+      return;
     }
+
+    const eventToSave = { ...event, wp_status: status };
 
     const response = await handleAction("update_event", { event: eventToSave });
 
@@ -235,6 +239,16 @@ export function EventNavBar() {
     instanceCtx?.originalData &&
     !deepEqual(instanceCtx.data, instanceCtx.originalData);
 
+  useEffect(() => {
+    if (!onboardingActive) {
+      setHighlightPreview(false);
+      return;
+    }
+    if (onboardingHint && onboardingHint >= 3) {
+      setHighlightPreview(true);
+    }
+  }, [onboardingActive, onboardingHint]);
+
   return (
     <div className="flex gap-1 md:gap-2">
       {justSaved && (
@@ -271,7 +285,7 @@ export function EventNavBar() {
           </Button>
 
           <Button
-            disabled={!hasInstanceChanges || saving || isRecurring}
+            disabled={!hasInstanceChanges || saving}
             onClick={handleSaveInstance}
           >
             {saving ? (
@@ -290,13 +304,13 @@ export function EventNavBar() {
       ) : (
         <>
           {event?.wp_status === "draft" && (
-          <Button
-            variant="ghost"
-            disabled={isDisabled}
-            onClick={() => saveEvent("draft")}
-          >
-            Save draft
-          </Button>
+            <Button
+              variant="ghost"
+              disabled={isDisabled}
+              onClick={() => saveEvent("draft")}
+            >
+              Save draft
+            </Button>
           )}
           <Button
             variant="link"
@@ -310,15 +324,16 @@ export function EventNavBar() {
                           event?.url || "",
                           window.location?.origin
                         );
-                        previewUrl.searchParams.set("onboarding", "demo-event");
+                        previewUrl.searchParams.set(
+                          "onboarding",
+                          "demo-event"
+                        );
                         return previewUrl.toString();
                       } catch {
                         const separator = (event?.url || "").includes("?")
                           ? "&"
                           : "?";
-                        return `${
-                          event?.url || ""
-                        }${separator}onboarding=demo-event`;
+                        return `${event?.url || ""}${separator}onboarding=demo-event`;
                       }
                     })()
                   : event?.url;
@@ -364,8 +379,9 @@ export function EventNavBar() {
                   size="icon"
                   className="rounded-l-none"
                   disabled={isDisabled}
+                  aria-label={__("More actions", "eventkoi")}
                 >
-                  <ChevronDown className="w-4 h-4" />
+                  <ChevronDown className="w-4 h-4" aria-hidden="true" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56 z-[510000]" align="end">
@@ -383,6 +399,7 @@ export function EventNavBar() {
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem
+                  disabled={!event?.id}
                   className="text-destructive focus:text-destructive"
                   onClick={trashEvent}
                 >

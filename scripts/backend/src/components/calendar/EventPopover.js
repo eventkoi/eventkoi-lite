@@ -1,5 +1,6 @@
 "use client";
 
+import { __ } from "@wordpress/i18n";
 import { ShareLink } from "@/components/share-link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -288,7 +289,7 @@ export function EventPopover({
           {event.thumbnail && (
             <img
               src={event.thumbnail}
-              alt=""
+              alt={event.title || __("Event image", "eventkoi")}
               className="w-full h-auto rounded-none border object-cover max-h-48"
             />
           )}

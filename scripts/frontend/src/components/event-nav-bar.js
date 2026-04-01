@@ -1,4 +1,5 @@
 import apiRequest from "@wordpress/api-fetch";
+import { __ } from "@wordpress/i18n";
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -118,7 +119,7 @@ export function EventNavBar({ loading, setLoading, event, setEvent }) {
             saveEvent("draft");
           }}
         >
-          Save draft
+          {__("Save draft", "eventkoi")}
         </Button>
       )}
       <Button
@@ -126,7 +127,7 @@ export function EventNavBar({ loading, setLoading, event, setEvent }) {
         disabled={disabled}
         onClick={() => window.open(event?.url, "_blank")}
       >
-        Preview
+        {__("Preview", "eventkoi")}
       </Button>
       <div className="flex items-center gap-[1px]">
         <Button
@@ -137,7 +138,9 @@ export function EventNavBar({ loading, setLoading, event, setEvent }) {
             saveEvent("publish");
           }}
         >
-          {event?.wp_status === "draft" ? "Publish" : "Save"}
+          {event?.wp_status === "draft"
+            ? __("Publish", "eventkoi")
+            : __("Save", "eventkoi")}
         </Button>
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
@@ -146,8 +149,9 @@ export function EventNavBar({ loading, setLoading, event, setEvent }) {
               size="icon"
               className="rounded-l-none"
               disabled={disabled}
+              aria-label={__("More actions", "eventkoi")}
             >
-              <ChevronDown className="w-4 h-4" />
+              <ChevronDown className="w-4 h-4" aria-hidden="true" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56 z-[510]" align="end">
@@ -158,7 +162,7 @@ export function EventNavBar({ loading, setLoading, event, setEvent }) {
                 duplicateEvent();
               }}
             >
-              Create duplicate event
+              {__("Create duplicate event", "eventkoi")}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             {event?.wp_status === "publish" && (
@@ -167,7 +171,7 @@ export function EventNavBar({ loading, setLoading, event, setEvent }) {
                   saveEvent("draft");
                 }}
               >
-                Unpublish
+                {__("Unpublish", "eventkoi")}
               </DropdownMenuItem>
             )}
             <DropdownMenuItem
@@ -176,7 +180,7 @@ export function EventNavBar({ loading, setLoading, event, setEvent }) {
                 trashEvent();
               }}
             >
-              Move to trash
+              {__("Move to trash", "eventkoi")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

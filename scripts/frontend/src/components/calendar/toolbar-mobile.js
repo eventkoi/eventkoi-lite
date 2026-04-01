@@ -1,3 +1,4 @@
+import { __ } from "@wordpress/i18n";
 import { CalendarHeaderPopover } from "@/components/calendar/CalendarHeaderPopover";
 import { NavControls } from "@/components/calendar/nav-controls";
 import { SearchBox } from "@/components/calendar/search-box";
@@ -126,7 +127,8 @@ export function ToolbarMobile(props) {
               setTimeout(() => inputRef.current?.focus(), 50);
             }}
           >
-            <Search className="w-4 h-4" />
+            <Search className="w-4 h-4" aria-hidden="true" />
+            <span className="sr-only">{__("Search events", "eventkoi")}</span>
           </Button>
         </div>
       )}

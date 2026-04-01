@@ -260,7 +260,7 @@ function IntegrationCard({
               <DialogContent className="sm:max-w-md">
                 <DialogHeader>
                   <div className="flex items-center gap-3 mb-1">
-                    <img src={TEC_ICON_URL} alt="" className="h-8 w-8 rounded-lg" />
+                    <img src={TEC_ICON_URL} alt="The Events Calendar" className="h-8 w-8 rounded-lg" />
                     <DialogTitle className="text-base">
                       {__("Import from The Events Calendar", "eventkoi")}
                     </DialogTitle>

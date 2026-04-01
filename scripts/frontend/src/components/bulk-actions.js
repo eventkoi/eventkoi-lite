@@ -1,4 +1,5 @@
 import apiRequest from "@wordpress/api-fetch";
+import { __ } from "@wordpress/i18n";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -51,8 +52,8 @@ export function BulkActions({ table, base, fetchResults, addTo, queryStatus }) {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="ml-auto flex font-normal">
-          <EllipsisVertical className="mr-2 h-4 w-4" />
-          Bulk actions
+          <EllipsisVertical className="mr-2 h-4 w-4" aria-hidden="true" />
+          {__("Bulk actions", "eventkoi")}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-[180px]">
@@ -64,7 +65,7 @@ export function BulkActions({ table, base, fetchResults, addTo, queryStatus }) {
                 runAction("restore");
               }}
             >
-              <span>Restore</span>
+              <span>{__("Restore", "eventkoi")}</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               disabled={table.getFilteredSelectedRowModel().rows.length == 0}
@@ -72,7 +73,7 @@ export function BulkActions({ table, base, fetchResults, addTo, queryStatus }) {
                 runAction("remove");
               }}
             >
-              <span>Delete permanently</span>
+              <span>{__("Delete permanently", "eventkoi")}</span>
             </DropdownMenuItem>
           </>
         ) : (
@@ -83,7 +84,7 @@ export function BulkActions({ table, base, fetchResults, addTo, queryStatus }) {
                 runAction("duplicate");
               }}
             >
-              <span>Duplicate</span>
+              <span>{__("Duplicate", "eventkoi")}</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               disabled={table.getFilteredSelectedRowModel().rows.length == 0}
@@ -92,7 +93,9 @@ export function BulkActions({ table, base, fetchResults, addTo, queryStatus }) {
               }}
             >
               <span>
-                {["categories"].includes(base) ? "Delete" : "Move to trash"}
+                {["categories"].includes(base)
+                  ? __("Delete", "eventkoi")
+                  : __("Move to trash", "eventkoi")}
               </span>
             </DropdownMenuItem>
             {addTo && table.getFilteredSelectedRowModel().rows.length > 0 && (
@@ -102,7 +105,9 @@ export function BulkActions({ table, base, fetchResults, addTo, queryStatus }) {
                 </DropdownMenuSubTrigger>
                 <DropdownMenuPortal>
                   <DropdownMenuSubContent>
-                    <DropdownMenuCheckboxItem>Panel</DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem>
+                      {__("Panel", "eventkoi")}
+                    </DropdownMenuCheckboxItem>
                   </DropdownMenuSubContent>
                 </DropdownMenuPortal>
               </DropdownMenuSub>

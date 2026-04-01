@@ -9,7 +9,7 @@ export function SortButton({ title, column }) {
       onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
     >
       {title}
-      <ChevronsUpDown className="ml-1 h-3.5 w-3.5" />
+      <ChevronsUpDown className="ml-1 h-3.5 w-3.5" aria-hidden="true" />
     </Button>
   );
 }

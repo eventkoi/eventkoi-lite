@@ -317,7 +317,7 @@ function ImagePreviewOverlay({ imageUrl, openMediaLibrary, deleteImage, onError 
     <div className="relative w-full h-auto group">
       <img
         src={imageUrl}
-        alt=""
+        alt={__("Event featured image", "eventkoi")}
         className="w-full h-auto rounded-2xl object-cover transition duration-300 group-hover:opacity-80"
         onError={onError}
       />

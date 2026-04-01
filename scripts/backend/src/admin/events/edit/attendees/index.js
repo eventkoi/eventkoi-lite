@@ -868,7 +868,7 @@ export function EventEditAttendees() {
               {row.original.avatar_url ? (
                 <img
                   src={row.original.avatar_url}
-                  alt=""
+                  alt={row.original.name || __("Attendee avatar", "eventkoi")}
                   className="h-full w-full object-cover"
                 />
               ) : null}

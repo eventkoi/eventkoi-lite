@@ -45,9 +45,7 @@ export function WeekPopover({ calendarApi, currentDate, setCurrentDate }) {
 
       <PopoverContent
         id="eventkoi-week-picker"
-        role="dialog"
         aria-label={__("Week picker", "eventkoi")}
-        aria-modal="false"
         side="bottom"
         align="start"
         sideOffset={20}

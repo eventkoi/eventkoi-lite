@@ -2,6 +2,7 @@ import { useState } from "react";
 
 import apiRequest from "@wordpress/api-fetch";
 import { MediaUpload } from "@wordpress/media-utils";
+import { __ } from "@wordpress/i18n";
 
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -78,10 +79,12 @@ export function EventImage({ event, setEvent }) {
 
   return (
     <Panel>
-      <Label htmlFor="image">Header banner image</Label>
-      <div className="text-muted-foreground">Ideal size: 1800px x 900px</div>
+      <Label htmlFor="image">{__("Header banner image", "eventkoi")}</Label>
+      <div className="text-muted-foreground">
+        {__("Ideal size: 1800px x 900px", "eventkoi")}
+      </div>
       <MediaUpload
-        title={"Select event image"}
+        title={__("Select event image", "eventkoi")}
         onSelect={(media) => {
           setEvent((prevState) => ({
             ...prevState,
@@ -104,25 +107,29 @@ export function EventImage({ event, setEvent }) {
               >
                 <Button variant="default" onClick={open}>
                   <Repeat2 className="mr-2 h-4 w-4" />
-                  Replace
+                  {__("Replace", "eventkoi")}
                 </Button>
                 <Button variant="default" onClick={(e) => deleteImage()}>
                   <Trash2 className="mr-2 h-4 w-4" />
-                  Delete
+                  {__("Delete", "eventkoi")}
                 </Button>
               </div>
             )}
             {event?.image && (
               <img
                 src={event?.image}
-                alt=""
+                alt={__("Event image", "eventkoi")}
                 className="rounded-lg w-full h-auto"
               />
             )}
             {!event.image && (
               <div
                 className="flex items-center justify-center flex-col gap-1 p-10 cursor-pointer border border-dashed border-muted-foreground/40 bg-secondary rounded-lg cursor-default"
+                role="button"
+                tabIndex={0}
+                aria-label={__("Upload event image", "eventkoi")}
                 onClick={open}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } }}
                 onDragOver={handleDragOver}
                 onDrop={handleDrop}
               >
@@ -132,10 +139,10 @@ export function EventImage({ event, setEvent }) {
                   <Image className="w-6 h-6" strokeWidth={1} />
                 )}
                 <div className="pt-1 text-lg font-medium">
-                  Drag and drop your image here.
+                  {__("Drag and drop your image here.", "eventkoi")}
                 </div>
                 <div className="text-sm">
-                  Or click to select from media gallery.
+                  {__("Or click to select from media gallery.", "eventkoi")}
                 </div>
               </div>
             )}

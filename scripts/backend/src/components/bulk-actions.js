@@ -64,7 +64,7 @@ export function BulkActions({
           variant="outline"
           className="flex font-normal w-full sm:w-auto justify-start sm:justify-center"
         >
-          <EllipsisVertical className="mr-2 h-4 w-4" />
+          <EllipsisVertical className="mr-2 h-4 w-4" aria-hidden="true" />
           Bulk actions
         </Button>
       </DropdownMenuTrigger>

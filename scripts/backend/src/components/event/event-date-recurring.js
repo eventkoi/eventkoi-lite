@@ -1,3 +1,4 @@
+import { __, sprintf } from "@wordpress/i18n";
 import { EventDateTBCSetting } from "@/components/event/event-date-tbc-setting";
 import { EventDateTimezoneSetting } from "@/components/event/event-date-timezone-setting";
 import { ShortcodeBox } from "@/components/ShortcodeBox";
@@ -33,15 +34,14 @@ import { DateTime } from "luxon";
 import { memo, useCallback, useState } from "react";
 import { Link } from "react-router-dom";
 
-const WEEKDAYS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 const WEEKDAY_NAMES = [
+  "Sunday",
   "Monday",
   "Tuesday",
   "Wednesday",
   "Thursday",
   "Friday",
   "Saturday",
-  "Sunday",
 ];
 const MONTHS = [
   "January",
@@ -66,6 +66,22 @@ function getOrdinal(date) {
   return ordinals[ordinalIndex - 1] || `${ordinalIndex}th`;
 }
 
+function normalizeJsDate(value) {
+  if (!value) return null;
+  if (value instanceof Date) {
+    return isNaN(value) ? null : value;
+  }
+
+  const normalized = new Date(value);
+  return isNaN(normalized) ? null : normalized;
+}
+
+function getJsWeekdayFromLuxon(dt) {
+  if (!dt || !dt.isValid) return null;
+  // Luxon weekday is Mon=1..Sun=7; JS weekday is Sun=0..Sat=6.
+  return dt.weekday % 7;
+}
+
 function getRecurringSummary(rule, wpTz) {
   const freqPlural = {
     day: "days",
@@ -75,13 +91,13 @@ function getRecurringSummary(rule, wpTz) {
   };
 
   const WEEKDAY_NAMES = [
+    "Sunday",
     "Monday",
     "Tuesday",
     "Wednesday",
     "Thursday",
     "Friday",
     "Saturday",
-    "Sunday",
   ];
 
   const MONTHS = [
@@ -101,8 +117,6 @@ function getRecurringSummary(rule, wpTz) {
 
   const ordinals = ["first", "second", "third", "fourth", "fifth"];
 
-  const mapJsDayToMondayIndex = (jsDay) => (jsDay === 0 ? 6 : jsDay - 1);
-
   // Frequency text
   let freqText;
   if (rule.every && rule.every > 1) {
@@ -120,8 +134,27 @@ function getRecurringSummary(rule, wpTz) {
   let details = "";
 
   // WEEKLY
-  if (rule.frequency === "week" && rule.weekdays?.length) {
-    const days = rule.weekdays.map((i) => WEEKDAY_NAMES[i]).join(", ");
+  const weekDays = (() => {
+    const raw = Array.isArray(rule.weekdays)
+      ? rule.weekdays
+          .map((value) => parseInt(value, 10))
+          .filter((value) => Number.isInteger(value) && value >= 0 && value <= 6)
+      : [];
+
+    if (rule.frequency !== "week" || raw.length !== 1 || !rule.start_date) {
+      return raw;
+    }
+
+    const startDay = getJsWeekdayFromLuxon(
+      DateTime.fromISO(rule.start_date, { zone: "utc" }).setZone(wpTz)
+    );
+
+    return Number.isInteger(startDay) && startDay >= 0 && startDay <= 6
+      ? [startDay]
+      : raw;
+  })();
+  if (rule.frequency === "week" && weekDays.length) {
+    const days = weekDays.map((i) => WEEKDAY_NAMES[i]).join(", ");
     details = `, on ${days}`;
   }
 
@@ -130,13 +163,12 @@ function getRecurringSummary(rule, wpTz) {
     rule.frequency === "month" &&
     rule.month_day_rule === "weekday-of-month"
   ) {
-    const startDate = DateTime.fromISO(rule.start_date, { zone: "utc" })
-      .setZone(wpTz)
-      .toJSDate();
-
-    const weekdayIndex = mapJsDayToMondayIndex(startDate.getDay());
-    const ordinal = Math.ceil(startDate.getDate() / 7);
-    const dayName = WEEKDAY_NAMES[weekdayIndex];
+    const startDate = DateTime.fromISO(rule.start_date, { zone: "utc" }).setZone(
+      wpTz
+    );
+    const weekdayIndex = getJsWeekdayFromLuxon(startDate);
+    const ordinal = startDate?.isValid ? Math.ceil(startDate.day / 7) : 1;
+    const dayName = WEEKDAY_NAMES[weekdayIndex ?? 0];
 
     details = `, on the ${ordinals[ordinal - 1] || `${ordinal}th`} ${dayName}`;
   }
@@ -149,8 +181,9 @@ function getRecurringSummary(rule, wpTz) {
   }
 
   // YEARLY — months
-  if (rule.frequency === "year" && rule.months?.length) {
-    const monthNames = rule.months.map((m) => MONTHS[m]).join(", ");
+  const months = Array.isArray(rule.months) ? rule.months : [];
+  if (rule.frequency === "year" && months.length) {
+    const monthNames = months.map((m) => MONTHS[m]).join(", ");
     details = `, in ${monthNames}`;
   }
 
@@ -246,10 +279,14 @@ export const EventDateRecurring = memo(function EventDateRecurring({
         isStartDateChange &&
         (!rule.weekdays || rule.weekdays.length === 0)
       ) {
-        const dateInTZ = getDateInTimezone(date.toISOString(), wpTz);
-        const jsDay = dateInTZ.getDay();
-        const weekdayIndex = jsDay === 0 ? 6 : jsDay - 1;
-        rule.weekdays = [weekdayIndex];
+        const weekday = getJsWeekdayFromLuxon(
+          DateTime.fromISO(isStartDateChange ? value : rule.start_date, {
+            zone: "utc",
+          }).setZone(wpTz)
+        );
+        if (weekday !== null) {
+          rule.weekdays = [weekday];
+        }
       }
 
       if (
@@ -315,10 +352,14 @@ export const EventDateRecurring = memo(function EventDateRecurring({
           next.frequency === "week" &&
           "start_date" in updates
         ) {
-          const dateInTZ = getDateInTimezone(date.toISOString(), wpTz);
-          const jsDay = dateInTZ.getDay();
-          const weekdayIndex = jsDay === 0 ? 6 : jsDay - 1;
-          next.weekdays = [weekdayIndex];
+          const weekday = getJsWeekdayFromLuxon(
+            DateTime.fromISO(updates.start_date || current.start_date, {
+              zone: "utc",
+            }).setZone(wpTz)
+          );
+          if (weekday !== null) {
+            next.weekdays = [weekday];
+          }
         }
 
         // preserve duration if start_date changes
@@ -370,11 +411,37 @@ export const EventDateRecurring = memo(function EventDateRecurring({
   );
 
   return (
-    <div className="flex flex-col gap-6 pointer-events-none opacity-50 select-none">
+    <div className="flex flex-col gap-6">
       {rules.map((rule, index) => {
-        const start = getDateInTimezone(ensureUtcZ(rule.start_date), wpTz);
-        const end = getDateInTimezone(ensureUtcZ(rule.end_date), wpTz);
-        const endsOn = getDateInTimezone(ensureUtcZ(rule.ends_on), wpTz);
+      const start = normalizeJsDate(
+        getDateInTimezone(ensureUtcZ(rule.start_date), wpTz)
+      );
+      const end = normalizeJsDate(
+        getDateInTimezone(ensureUtcZ(rule.end_date), wpTz)
+      );
+      const endsOn = normalizeJsDate(rule.ends_on);
+      const safeWeekdays = (() => {
+        const raw = Array.isArray(rule.weekdays)
+          ? rule.weekdays
+              .map((value) => parseInt(value, 10))
+              .filter(
+                (value) => Number.isInteger(value) && value >= 0 && value <= 6
+              )
+          : [];
+
+        if (rule.frequency !== "week" || raw.length !== 1 || !rule.start_date) {
+          return raw;
+        }
+
+        const startDay = getJsWeekdayFromLuxon(
+          DateTime.fromISO(rule.start_date, { zone: "utc" }).setZone(wpTz)
+        );
+
+        return Number.isInteger(startDay) && startDay >= 0 && startDay <= 6
+          ? [startDay]
+          : raw;
+      })();
+        const safeMonths = Array.isArray(rule.months) ? rule.months : [];
 
         return (
           <div key={index} className="border rounded-md p-4 space-y-6">
@@ -522,8 +589,9 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                 variant="ghost"
                 onClick={() => deleteRule(index)}
                 className="h-7 w-7 ml-auto p-0"
+                aria-label={__("Delete rule", "eventkoi")}
               >
-                <Trash2 className="h-4 w-4 text-muted-foreground" />
+                <Trash2 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               </Button>
             </div>
             {showAttributes && (
@@ -599,11 +667,11 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                     type="button"
                     size="sm"
                     variant={
-                      rule.weekdays.includes(key) ? "default" : "secondary"
+                      safeWeekdays.includes(key) ? "default" : "secondary"
                     }
                     className={cn(
                       "rounded-full w-8 h-8 p-0 transition-none",
-                      rule.weekdays.includes(key)
+                      safeWeekdays.includes(key)
                         ? "bg-foreground"
                         : "bg-secondary border border-input"
                     )}
@@ -628,15 +696,17 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="day-of-month">
-                      day {start?.getDate()}
+                      day {start ? start.getDate() : ""}
                     </SelectItem>
                     <SelectItem value="weekday-of-month">
                       the {getOrdinal(start)}{" "}
-                      {
-                        WEEKDAY_NAMES[
-                          start?.getDay() === 0 ? 6 : start?.getDay() - 1
-                        ]
-                      }
+                      {WEEKDAY_NAMES[
+                        getJsWeekdayFromLuxon(
+                          DateTime.fromISO(rule.start_date, { zone: "utc" }).setZone(
+                            wpTz
+                          )
+                        ) ?? 0
+                      ]}
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -660,13 +730,13 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                           "hover:bg-transparent hover:text-foreground"
                         )}
                       >
-                        {rule.months.length === 0 ? (
+                        {safeMonths.length === 0 ? (
                           <span className="text-muted-foreground">
                             Select months
                           </span>
                         ) : (
                           <div className="flex gap-1.5 items-center">
-                            {[...rule.months]
+                            {[...safeMonths]
                               .sort((a, b) => a - b)
                               .map((i) => (
                                 <div
@@ -677,6 +747,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                                   <span
                                     role="button"
                                     tabIndex={0}
+                                    aria-label={sprintf(__("Remove %s", "eventkoi"), MONTHS[i])}
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       toggleItem(index, "months", i);
@@ -688,9 +759,9 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                                         toggleItem(index, "months", i);
                                       }
                                     }}
-                                    className="ml-1 hover:text-foreground focus:outline-none"
+                                    className="ml-1 hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-ring rounded-sm"
                                   >
-                                    <X className="h-3 w-3" />
+                                    <X className="h-3 w-3" aria-hidden="true" />
                                   </span>
                                 </div>
                               ))}
@@ -702,7 +773,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                       <Command>
                         <CommandGroup>
                           {MONTHS.map((month, i) => {
-                            const selected = rule.months.includes(i);
+                            const selected = safeMonths.includes(i);
                             return (
                               <CommandItem
                                 key={i}
@@ -737,15 +808,17 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="day-of-month">
-                        day {start?.getDate()}
+                      day {start ? start.getDate() : ""}
                       </SelectItem>
                       <SelectItem value="weekday-of-month">
                         the {getOrdinal(start)}{" "}
-                        {
-                          WEEKDAY_NAMES[
-                            start?.getDay() === 0 ? 6 : start?.getDay() - 1
-                          ]
-                        }
+                        {WEEKDAY_NAMES[
+                          getJsWeekdayFromLuxon(
+                            DateTime.fromISO(rule.start_date, { zone: "utc" }).setZone(
+                              wpTz
+                            )
+                          ) ?? 0
+                        ]}
                       </SelectItem>
                     </SelectContent>
                   </Select>
@@ -787,22 +860,14 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                 <FloatingDatePicker
                   value={endsOn}
                   wpTz={wpTz}
-                  onChange={(date) => {
-                    if (!date) return;
-                    const prevWall = DateTime.fromJSDate(endsOn ?? new Date(), {
-                      zone: wpTz,
-                    });
-                    const dtWall = DateTime.fromJSDate(date, {
-                      zone: wpTz,
-                    }).set({
-                      hour: prevWall.hour,
-                      minute: prevWall.minute,
-                      second: 0,
-                      millisecond: 0,
-                    });
-                    const utc = dtWall
-                      .setZone("utc")
+                  onChange={(dt) => {
+                    if (!dt) return;
+
+                    const utc = dt
+                      .startOf("day") // remove time in LOCAL wall-clock
+                      .toUTC() // convert to UTC, but date stays the SAME
                       .toISO({ suppressMilliseconds: true });
+
                     updateRule(index, "ends_on", utc);
                   }}
                 />

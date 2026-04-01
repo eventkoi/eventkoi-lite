@@ -1,3 +1,5 @@
+import { __ } from "@wordpress/i18n";
+
 import { PencilLine } from "lucide-react";
 
 import { Panel } from "@/components/panel";
@@ -15,15 +17,17 @@ export function EventName({ event, setEvent }) {
       <div
         className="inline-flex rounded-md items-center px-2 py-1 cursor-pointer font-medium text-lg border border-transparent hover:border-input"
         contentEditable
+        role="textbox"
+        aria-label={__("Event name", "eventkoi")}
         spellCheck={false}
-        placeholder="Click to add event name"
+        placeholder={__("Click to add event name", "eventkoi")}
         dangerouslySetInnerHTML={{
           __html: event?.title,
         }}
         onBlur={(e) => updateEventName(e)}
         onKeyDown={(e) => e.key === "Enter" && updateEventName(e)}
       />
-      <PencilLine className="w-3.5 h-3.5 text-ring" />
+      <PencilLine className="w-3.5 h-3.5 text-ring" aria-hidden="true" />
     </Panel>
   );
 }
