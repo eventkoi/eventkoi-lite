@@ -28,13 +28,11 @@ export function EventImage({ event, setEvent }) {
     setUploading(false);
   };
 
-  // Function to handle drag over event
   const handleDragOver = (e) => {
     e.preventDefault();
     e.stopPropagation();
   };
 
-  // Function to handle drop event
   const handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -42,13 +40,12 @@ export function EventImage({ event, setEvent }) {
     handleFiles(files);
   };
 
-  // Function to handle processing of uploaded files
   const handleFiles = (files) => {
     setUploading(true);
 
     const uploadedFile = files[0];
 
-    const fileSizeInKB = Math.round(uploadedFile.size / 1024); // Convert to KB
+    const fileSizeInKB = Math.round(uploadedFile.size / 1024);
 
     const fileList = Array.from(files).map((file) => URL.createObjectURL(file));
 

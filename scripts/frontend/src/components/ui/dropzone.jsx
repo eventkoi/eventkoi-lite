@@ -6,7 +6,6 @@ import {
   Upload,
 } from "lucide-react"
 
-// Create the Dropzone component receiving props
 export function Dropzone({
   inputKey,
   title,
@@ -20,16 +19,13 @@ export function Dropzone({
   ...props
 }) {
 
-  // Initialize state variables using the useState hook
-  const fileInputRef = useRef(null); // Reference to file input element
+  const fileInputRef = useRef(null);
 
-  // Function to handle drag over event
   const handleDragOver = (e) => {
     e.preventDefault();
     e.stopPropagation();
   };
 
-  // Function to handle drop event
   const handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -37,7 +33,6 @@ export function Dropzone({
     handleFiles(files);
   };
 
-  // Function to handle file input change event
   const handleFileInputChange = (e) => {
     const { files } = e.target;
     if (files) {
@@ -45,11 +40,9 @@ export function Dropzone({
     }
   };
 
-  // Function to handle processing of uploaded files
   const handleFiles = (files) => {
     const uploadedFile = files[0];
 
-    // Check file extension
     if (fileExtension && !uploadedFile.name.endsWith(`.csv`)) {
       setFileInfo(uploadedFile);
       setFileError( `Invalid file. Please upload a ${fileExtension}` );
@@ -57,18 +50,16 @@ export function Dropzone({
       return;
     }
 
-    const fileSizeInKB = Math.round(uploadedFile.size / 1024); // Convert to KB
+    const fileSizeInKB = Math.round(uploadedFile.size / 1024);
 
     const fileList = Array.from(files).map((file) => URL.createObjectURL(file));
     onChange((prevFiles) => [...prevFiles, ...fileList]);
 
-    // Display file information
     setFileInfo(uploadedFile);
-    setFileError(null); // Reset error state
+    setFileError(null);
     setOpen(true);
   };
 
-  // Function to simulate a click on the file input element
   const handleButtonClick = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();

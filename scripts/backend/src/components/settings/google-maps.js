@@ -20,7 +20,6 @@ export function SettingsGoogleMaps({ settings, setSettings }) {
   const supportDocUrl =
     "https://developers.google.com/maps/documentation/javascript/get-api-key";
 
-  // Function to check if the API key is valid
   const verifyApiKey = async (apiKey) => {
     const url = `https://maps.googleapis.com/maps/api/geocode/json?address=New+York&key=${apiKey}`;
     const response = await fetch(url);
@@ -35,10 +34,8 @@ export function SettingsGoogleMaps({ settings, setSettings }) {
     try {
       setIsSaving(true);
 
-      // verify api key
       await verifyApiKey(settings?.gmap_api_key);
 
-      // save settings
       const response = await apiRequest({
         path: `${eventkoi_params.api}/settings`,
         method: "post",
@@ -51,7 +48,6 @@ export function SettingsGoogleMaps({ settings, setSettings }) {
         },
       });
 
-      // update states
       setSettings(response.settings);
       setIsSaving(false);
       showToast({ ...response, message: "API successfully connected." });
@@ -66,7 +62,6 @@ export function SettingsGoogleMaps({ settings, setSettings }) {
     try {
       setIsLoading(true);
 
-      // save settings
       const response = await apiRequest({
         path: `${eventkoi_params.api}/settings`,
         method: "post",
@@ -79,7 +74,6 @@ export function SettingsGoogleMaps({ settings, setSettings }) {
         },
       });
 
-      // update states
       setSettings(response.settings);
       setIsLoading(false);
       showToast({ ...response, message: "API key removed." });

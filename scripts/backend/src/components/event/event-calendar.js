@@ -47,7 +47,6 @@ export function EventCalendar({ disabled = false }) {
         }));
         setItems(calendars);
 
-        // Set default calendar if needed
         const hasNoCalendar =
           !Array.isArray(event?.calendar) || event.calendar.length === 0;
         if (
@@ -64,7 +63,6 @@ export function EventCalendar({ disabled = false }) {
         }
       }
     } catch (error) {
-      // Handle error if needed
       console.error("Failed to fetch calendars:", error);
     }
   };
