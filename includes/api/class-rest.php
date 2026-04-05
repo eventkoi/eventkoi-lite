@@ -20,6 +20,8 @@ use EventKoi\API\Calendar;
 use EventKoi\API\Onboarding;
 use EventKoi\API\Shortcode;
 use EventKoi\API\Rsvps;
+use EventKoi\API\Tickets;
+use EventKoi\API\Stripe;
 use EventKoi\Core\Settings as CoreSettings;
 use WP_REST_Request;
 
@@ -88,6 +90,8 @@ class REST {
 			Onboarding::class,
 			Shortcode::class,
 			Rsvps::class,
+			Tickets::class,
+			Stripe::class,
 		);
 
 		foreach ( $api_classes as $api_class ) {

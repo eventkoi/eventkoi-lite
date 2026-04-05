@@ -1,6 +1,8 @@
 import { useEffect } from "react";
+import { __ } from "@wordpress/i18n";
 import { createRoot } from "react-dom/client";
 import {
+  Navigate,
   Route,
   HashRouter as Router,
   Routes,
@@ -19,6 +21,8 @@ import { EditInstance } from "@/admin/events/edit/instances/edit-instance";
 import { EventEditMain } from "@/admin/events/edit/main";
 import { EventEditRsvp } from "@/admin/events/edit/rsvp";
 import { EventEditAttendees } from "@/admin/events/edit/attendees";
+import { EventEditManageTickets } from "@/admin/events/edit/tickets/manage-tickets";
+import { EventEditSalesHistory } from "@/admin/events/edit/tickets/sales-history";
 import { EventsOverview } from "@/admin/events/overview";
 import { EventTemplates } from "@/admin/events/templates";
 
@@ -29,14 +33,23 @@ import { CalendarEditEmbed } from "@/admin/calendars/edit/embed";
 import { CalendarEditMain } from "@/admin/calendars/edit/main";
 import { CalendarsOverview } from "@/admin/calendars/overview";
 
+import { Tickets } from "@/admin/tickets";
+import { Attendees } from "@/admin/tickets/attendees";
+import { Customers } from "@/admin/tickets/customers";
+import { Orders } from "@/admin/tickets/orders";
+import { OrderView } from "@/admin/tickets/orders/view";
+import { OrderRefundView } from "@/admin/tickets/orders/refund";
+
 import { Settings } from "@/admin/settings";
 import { SettingsFields } from "@/admin/settings/fields";
 import { SettingsIntegrations } from "@/admin/settings/integrations";
 import { SettingsOverview } from "@/admin/settings/overview";
 import { SettingsEmails } from "@/admin/settings/emails";
+import { SettingsPayments } from "@/admin/settings/payments";
 import { SettingsImport } from "@/admin/settings/import";
 
 import { Nav } from "@/components/nav";
+import { FeatureDisabled } from "@/components/empty-state/FeatureDisabled";
 import { Toaster } from "@/components/ui/sonner";
 
 import { SettingsProvider } from "@/hooks/SettingsContext";
@@ -45,9 +58,10 @@ import { useWindowDimensions } from "@/lib/use-window-dimensions";
 function AdminLayout() {
   const location = useLocation();
   const { width } = useWindowDimensions();
+  const ticketsEnabled = !!window?.eventkoi_params?.tickets_feature_enabled;
 
   const isStandaloneView =
-    /^\/tickets\/orders\/[0-9a-fA-F-]{36}$/.test(location.pathname) ||
+    /^\/tickets\/orders\/([0-9a-fA-F-]{36}|\d+)(\/refund)?$/.test(location.pathname) ||
     /^\/events\/\d+/.test(location.pathname) ||
     /^\/calendars\/\d+/.test(location.pathname);
 
@@ -104,10 +118,37 @@ function AdminLayout() {
         </Route>
         <Route path="events/:id" element={<EventEdit />}>
           <Route path="main" element={<EventEditMain />} />
-          <Route path="instances" element={<EventEditInstances />} />
-          <Route path="instances/edit/:timestamp" element={<EditInstance />} />
           <Route path="rsvp" element={<EventEditRsvp />} />
+          <Route path="instances" element={<EventEditInstances />} />
           <Route path="attendees" element={<EventEditAttendees />} />
+          {ticketsEnabled ? (
+            <>
+              <Route path="manage-tickets" element={<EventEditManageTickets />} />
+              <Route path="sales-history" element={<EventEditSalesHistory />} />
+            </>
+          ) : (
+            <>
+              <Route
+                path="manage-tickets"
+                element={
+                  <FeatureDisabled
+                    actionTo="../main"
+                    actionLabel={__("Back to event", "eventkoi")}
+                  />
+                }
+              />
+              <Route
+                path="sales-history"
+                element={
+                  <FeatureDisabled
+                    actionTo="../main"
+                    actionLabel={__("Back to event", "eventkoi")}
+                  />
+                }
+              />
+            </>
+          )}
+          <Route path="instances/edit/:timestamp" element={<EditInstance />} />
         </Route>
 
         <Route path="calendars" element={<Calendars />}>
@@ -120,12 +161,49 @@ function AdminLayout() {
           <Route path="embed" element={<CalendarEditEmbed />} />
         </Route>
 
+        {ticketsEnabled ? (
+          <>
+            <Route path="tickets" element={<Tickets />}>
+              <Route index element={<Orders />} />
+              <Route path="" element={<Orders />} />
+              <Route path="orders" element={<Orders />} />
+              <Route path="customers" element={<Customers />} />
+              <Route path="attendees" element={<Attendees />} />
+            </Route>
+            <Route path="tickets/orders/:id" element={<OrderView />} />
+            <Route path="tickets/orders/:id/refund" element={<OrderRefundView />} />
+          </>
+        ) : (
+          <>
+            <Route
+              path="tickets/*"
+              element={<Navigate to="/events" replace />}
+            />
+            <Route
+              path="tickets/orders/:id"
+              element={<Navigate to="/events" replace />}
+            />
+            <Route
+              path="tickets/orders/:id/refund"
+              element={<Navigate to="/events" replace />}
+            />
+          </>
+        )}
+
         <Route path="settings" element={<Settings />}>
           <Route index element={<SettingsOverview />} />
           <Route path="default" element={<SettingsOverview />} />
+          {ticketsEnabled ? (
+            <Route path="payments" element={<SettingsPayments />} />
+          ) : (
+            <Route
+              path="payments"
+              element={<Navigate to="/settings/default" replace />}
+            />
+          )}
+          <Route path="emails" element={<SettingsEmails />} />
           <Route path="fields" element={<SettingsFields />} />
           <Route path="integrations" element={<SettingsIntegrations />} />
-          <Route path="emails" element={<SettingsEmails />} />
           <Route path="import" element={<SettingsImport />} />
         </Route>
 
@@ -140,7 +218,12 @@ const rootElement = document.getElementById("eventkoi-admin");
 if (rootElement) {
   const root = createRoot(rootElement);
   root.render(
-    <Router>
+    <Router
+      future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}
+    >
       <SettingsProvider>
         <AdminLayout />
       </SettingsProvider>

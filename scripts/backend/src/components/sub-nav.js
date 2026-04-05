@@ -7,8 +7,13 @@ import { tabs } from "@/data/tabs";
 
 export function Subnav({ root }) {
   const location = useLocation();
+  const ticketsEnabled = !!window?.eventkoi_params?.tickets_feature_enabled;
 
-  if (!tabs[root]) {
+  if (!tabs[root] || tabs[root].length === 0) {
+    return null;
+  }
+
+  if (root === "tickets" && !ticketsEnabled) {
     return null;
   }
 

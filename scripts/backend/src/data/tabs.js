@@ -1,15 +1,13 @@
+import { __ } from "@wordpress/i18n";
+
 export const tabs = {
   main: [
-    { href: "dashboard", title: "Dashboard" },
-    { href: "events", title: "Events" },
-    { href: "calendars", title: "Calendars" },
-    //{ href: "tickets", title: "Tickets", submenu: true },
-    { href: "settings", title: "Settings" },
+    { href: "dashboard", title: __("Dashboard", "eventkoi") },
+    { href: "events", title: __("Events", "eventkoi") },
+    { href: "calendars", title: __("Calendars", "eventkoi") },
+    { href: "tickets", title: __("Ticket sales", "eventkoi") },
+    { href: "settings", title: __("Settings", "eventkoi") },
   ],
   side: [],
-  /*tickets: [
-    { href: "orders", title: "Orders" },
-    { href: "customers", title: "Customers" },
-    { href: "attendees", title: "Attendees" },
-  ],*/
+  tickets: [],
 };

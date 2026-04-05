@@ -151,6 +151,7 @@ class Menus {
 				'dashboard' => __( 'Dashboard', 'eventkoi-lite' ),
 				'events'    => __( 'Events', 'eventkoi-lite' ),
 				'calendars' => __( 'Calendars', 'eventkoi-lite' ),
+				'tickets'   => __( 'Ticket sales', 'eventkoi-lite' ),
 				'settings'  => __( 'Settings', 'eventkoi-lite' ),
 			)
 		);

@@ -37,5 +37,66 @@ define( 'EVENTKOI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'EVENTKOI_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'EVENTKOI_PLUGIN_FILE', __FILE__ );
 define( 'EVENTKOI_API', 'eventkoi/v1' );
+define( 'EVENTKOI_CONFIG', 'https://zgxjadedaiqnjfhxxnjs.supabase.co/functions/v1/config' );
+
+if ( ! function_exists( 'eventkoi_is_tickets_feature_enabled' ) ) {
+	/**
+	 * Determine whether Tickets feature is enabled.
+	 *
+	 * @return bool
+	 */
+	function eventkoi_is_tickets_feature_enabled() {
+		return true;
+	}
+}
+
+add_filter(
+	'eventkoi_admin_params',
+	static function ( $params ) {
+		if ( ! is_array( $params ) ) {
+			$params = array();
+		}
+
+		$params['tickets_feature_enabled'] = eventkoi_is_tickets_feature_enabled();
+		$params['woocommerce_active']      = class_exists( 'WooCommerce' );
+
+		$settings                         = get_option( 'eventkoi_settings', array() );
+		$params['ticket_checkout_method'] = ( is_array( $settings ) && ! empty( $settings['ticket_checkout_method'] ) )
+			? sanitize_key( $settings['ticket_checkout_method'] )
+			: 'stripe';
+
+		return $params;
+	}
+);
+
+add_filter(
+	'eventkoi_admin_menu_items',
+	static function ( $menu_items ) {
+		if ( ! is_array( $menu_items ) ) {
+			return $menu_items;
+		}
+
+		if ( ! eventkoi_is_tickets_feature_enabled() && isset( $menu_items['tickets'] ) ) {
+			unset( $menu_items['tickets'] );
+		}
+
+		return $menu_items;
+	}
+);
+
+add_filter(
+	'eventkoi_get_event_attendance_mode',
+	static function ( $mode, $event_id, $event ) {
+		unset( $event_id, $event );
+
+		if ( 'tickets' === $mode && ! eventkoi_is_tickets_feature_enabled() ) {
+			return 'none';
+		}
+
+		return $mode;
+	},
+	10,
+	3
+);
 
 require_once plugin_dir_path( __FILE__ ) . 'bootstrap.php';

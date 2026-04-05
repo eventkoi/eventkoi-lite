@@ -30,6 +30,11 @@ export function Nav({ isEvent = false, isCalendar = false }) {
 
   if (isCalendar) return null;
 
+  const ticketsEnabled = !!window?.eventkoi_params?.tickets_feature_enabled;
+  const mainTabs = tabs["main"].filter(
+    (item) => item.href !== "tickets" || ticketsEnabled
+  );
+
   return (
     <header
       className={cn(
@@ -59,7 +64,7 @@ export function Nav({ isEvent = false, isCalendar = false }) {
 
         {/* Desktop Nav */}
         <div className="hidden md:flex">
-          <Navbar tabs={tabs["main"]} ariaLabel={__("Main navigation", "eventkoi-lite")} />
+          <Navbar tabs={mainTabs} ariaLabel={__("Main navigation", "eventkoi-lite")} />
         </div>
 
         {/* Desktop right links */}
@@ -90,7 +95,7 @@ export function Nav({ isEvent = false, isCalendar = false }) {
       {/* Mobile menu content */}
       {open && (
         <div id="eventkoi-mobile-menu" className="md:hidden mt-4 space-y-4">
-          <Navbar tabs={tabs["main"]} ariaLabel={__("Main navigation", "eventkoi-lite")} />
+          <Navbar tabs={mainTabs} ariaLabel={__("Main navigation", "eventkoi-lite")} />
           <div className="flex flex-col gap-2 pt-4 border-t">
             <a
               href="https://eventkoi.com/docs/"

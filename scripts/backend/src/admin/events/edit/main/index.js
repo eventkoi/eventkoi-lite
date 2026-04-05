@@ -6,6 +6,7 @@ import { EventImage } from "@/components/event/event-image";
 import { EventLocation } from "@/components/event/event-location";
 import { EventName } from "@/components/event/event-name";
 import { EventTemplate } from "@/components/event/event-template";
+import { AttendanceModeSelector } from "@/components/event/attendance-mode-selector";
 import { Heading } from "@/components/heading";
 import { ProLaunch } from "@/components/dashboard/pro-launch";
 import { ShortcodeBox } from "@/components/ShortcodeBox";
@@ -16,7 +17,7 @@ import { APIProvider } from "@vis.gl/react-google-maps";
 import { useState } from "react";
 
 export function EventEditMain() {
-  const { event, settings } = useEventEditContext();
+  const { event, setEvent, settings } = useEventEditContext();
   const gmapApiKey = settings?.gmap_api_key;
   const [showAttributes, setShowAttributes] = useState(false);
 
@@ -45,6 +46,11 @@ export function EventEditMain() {
       {/* Event Date */}
       <Box container>
         <EventDate showAttributes={showAttributes} />
+      </Box>
+
+      {/* Attendance Mode */}
+      <Box container>
+        <AttendanceModeSelector event={event} setEvent={setEvent} />
       </Box>
 
       {/* Location + optional GMap + shortcode */}

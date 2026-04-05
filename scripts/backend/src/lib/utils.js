@@ -149,3 +149,44 @@ export function groupTimezones() {
     ...sortedGrouped,
   };
 }
+
+export function formatCurrencyBreakdownParts(
+  amountsByCurrency,
+  fallbackCurrency = "USD",
+  fallbackAmount = 0
+) {
+  const entries = Object.entries(amountsByCurrency || {})
+    .map(([code, amount]) => [
+      String(code || "").toUpperCase(),
+      Number(amount || 0),
+    ])
+    .filter(
+      ([code, amount]) =>
+        /^[A-Z]{3}$/.test(code) && Number.isFinite(amount) && amount > 0
+    )
+    .sort(([a], [b]) => a.localeCompare(b));
+
+  if (!entries.length) {
+    return [formatCurrency(Number(fallbackAmount || 0), fallbackCurrency)];
+  }
+
+  return entries.map(([code, amount]) =>
+    formatCurrency(Number(amount || 0), code)
+  );
+}
+
+export function getCurrencySymbol(currency = "USD") {
+  try {
+    const parts = new Intl.NumberFormat(undefined, {
+      style: "currency",
+      currency,
+      currencyDisplay: "narrowSymbol",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).formatToParts(0);
+    const symbol = parts.find((part) => part.type === "currency")?.value;
+    return symbol || currency;
+  } catch {
+    return currency;
+  }
+}

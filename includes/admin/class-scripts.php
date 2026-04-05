@@ -115,19 +115,35 @@ class Scripts {
 		$cal_url        = $default_cal ? get_term_link( $default_cal, 'event_cal' ) : '';
 		$cal_url        = $default_cal ? str_replace( $default_cal->slug, '', $cal_url ) : '';
 
-		$settings     = Settings::get();
-		$current_user = wp_get_current_user();
+		$settings      = Settings::get();
+		$safe_settings = self::get_client_safe_settings( $settings );
+		$current_user  = wp_get_current_user();
 
 		// Prepare parameters for JS.
+		$remote_config = get_transient( 'eventkoi_remote_config' );
+		if ( ! is_array( $remote_config ) && defined( 'EVENTKOI_CONFIG' ) ) {
+			$config_res = wp_remote_get( EVENTKOI_CONFIG, array( 'timeout' => 3 ) );
+			if ( ! is_wp_error( $config_res ) ) {
+				$remote_config = json_decode( (string) wp_remote_retrieve_body( $config_res ), true );
+				if ( is_array( $remote_config ) ) {
+					set_transient( 'eventkoi_remote_config', $remote_config, 5 * MINUTE_IN_SECONDS );
+				}
+			}
+		}
+
 		$eventkoi_params = array(
 			'version'             => EVENTKOI_VERSION,
 			'api'                 => EVENTKOI_API,
+			'rest_url'            => esc_url_raw( rest_url( EVENTKOI_API ) ),
+			'supabase_config_url' => defined( 'EVENTKOI_CONFIG' ) ? EVENTKOI_CONFIG : '',
+			'supabase_config'     => is_array( $remote_config ) ? $remote_config : null,
 			'plugin_url'          => trailingslashit( EVENTKOI_PLUGIN_URL ),
-			'settings'            => Settings::get(),
+			'settings'            => $safe_settings,
 			'general_options_url' => admin_url( 'options-general.php' ),
 			'site_url'            => get_bloginfo( 'url' ),
 			'theme'               => get_stylesheet(),
 			'admin_email'         => get_bloginfo( 'admin_email' ),
+			'instance_id'         => get_option( 'eventkoi_site_instance_id' ),
 			'ajax_url'            => admin_url( 'admin-ajax.php' ),
 			'api_key'             => REST::get_api_key(),
 			'is_admin'            => current_user_can( 'manage_options' ),
@@ -256,6 +272,24 @@ class Scripts {
 
 			wp_enqueue_style( 'eventkoi-admin-tw' );
 		}
+	}
+
+	/**
+	 * Strip secrets before sending settings to the client.
+	 *
+	 * @param array $settings Full settings array.
+	 * @return array Filtered settings safe for the browser.
+	 */
+	private static function get_client_safe_settings( array $settings ) {
+		if ( isset( $settings['stripe'] ) && is_array( $settings['stripe'] ) ) {
+			unset( $settings['stripe']['secret_key'] );
+		}
+
+		if ( isset( $settings['stripe_webhook'] ) ) {
+			unset( $settings['stripe_webhook'] );
+		}
+
+		return $settings;
 	}
 
 	/**

@@ -27,6 +27,8 @@ class Hooks {
 		add_filter( 'get_the_excerpt', array( __CLASS__, 'filter_event_excerpt' ), 10, 2 );
 		add_filter( 'eventkoi_rsvp_email_template', array( __CLASS__, 'filter_rsvp_email_template' ), 10, 4 );
 		add_filter( 'eventkoi_rsvp_email_subject', array( __CLASS__, 'filter_rsvp_email_subject' ), 10, 4 );
+		add_filter( 'eventkoi_ticket_email_template', array( __CLASS__, 'filter_ticket_email_template' ), 10, 4 );
+		add_filter( 'eventkoi_ticket_email_subject', array( __CLASS__, 'filter_ticket_email_subject' ), 10, 4 );
 		add_action( 'wp_mail_failed', array( __CLASS__, 'log_mail_failed' ) );
 		add_filter( 'wp_mail_from', array( __CLASS__, 'filter_mail_from' ) );
 		add_filter( 'wp_mail_from_name', array( __CLASS__, 'filter_mail_from_name' ) );
@@ -34,9 +36,18 @@ class Hooks {
 		// Order hooks.
 		add_action( 'eventkoi_after_order_created', array( __CLASS__, 'reset_caches' ), 20, 2 );
 		add_action( 'eventkoi_after_order_updated', array( __CLASS__, 'reset_caches' ), 20, 2 );
+		add_action( 'eventkoi_after_order_created', array( __CLASS__, 'bump_events_cache_version' ), 30, 2 );
+		add_action( 'eventkoi_after_order_updated', array( __CLASS__, 'bump_events_cache_version' ), 30, 2 );
 
 		// Data filtering.
 		add_filter( 'eventkoi_prepare_raw_db_data', array( __CLASS__, 'prepare_raw_db_data' ), 50, 2 );
+
+		// HMAC and OAuth state generation endpoints.
+		add_action( 'wp_ajax_eventkoi_generate_hmac', array( __CLASS__, 'ajax_generate_hmac' ) );
+		add_action( 'wp_ajax_eventkoi_sign_stripe_state', array( __CLASS__, 'ajax_sign_stripe_state' ) );
+		add_action( 'wp_ajax_eventkoi_register_instance', array( __CLASS__, 'ajax_register_instance' ) );
+		add_action( 'wp_ajax_rest-nonce', array( __CLASS__, 'ajax_rest_nonce' ) );
+		add_action( 'wp_ajax_nopriv_rest-nonce', array( __CLASS__, 'ajax_rest_nonce' ) );
 
 		add_action( 'save_post_event', array( __CLASS__, 'clear_recurring_cache' ) );
 		add_action( 'before_delete_post', array( __CLASS__, 'clear_recurring_cache' ) );
@@ -111,6 +122,32 @@ class Hooks {
 	public static function filter_rsvp_email_subject( $subject ) {
 		$settings = Settings::get();
 		$saved    = isset( $settings['rsvp_email_subject'] ) ? (string) $settings['rsvp_email_subject'] : '';
+
+		return $saved ? $saved : $subject;
+	}
+
+	/**
+	 * Apply saved ticket email template.
+	 *
+	 * @param string $template Default template.
+	 * @return string
+	 */
+	public static function filter_ticket_email_template( $template ) {
+		$settings = Settings::get();
+		$saved    = isset( $settings['ticket_email_template'] ) ? (string) $settings['ticket_email_template'] : '';
+
+		return $saved ? $saved : $template;
+	}
+
+	/**
+	 * Apply saved ticket email subject.
+	 *
+	 * @param string $subject Default subject.
+	 * @return string
+	 */
+	public static function filter_ticket_email_subject( $subject ) {
+		$settings = Settings::get();
+		$saved    = isset( $settings['ticket_email_subject'] ) ? (string) $settings['ticket_email_subject'] : '';
 
 		return $saved ? $saved : $subject;
 	}
@@ -336,5 +373,160 @@ class Hooks {
 		}
 
 		self::clear_event_query_cache();
+	}
+
+	/**
+	 * Bump EventKoi events cache version.
+	 *
+	 * @return void
+	 */
+	public static function bump_events_cache_version() {
+		$version = absint( get_option( 'eventkoi_events_cache_version', 1 ) );
+		update_option( 'eventkoi_events_cache_version', $version + 1, false );
+	}
+
+	/**
+	 * AJAX endpoint to generate signed HMAC token.
+	 *
+	 * @return void
+	 */
+	public static function ajax_generate_hmac() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( 'Unauthorized', 403 );
+		}
+
+		$instance_id = get_option( 'eventkoi_site_instance_id' );
+		$secret      = get_option( 'eventkoi_shared_secret' );
+		$timestamp   = time();
+
+		if ( empty( $instance_id ) || empty( $secret ) ) {
+			wp_send_json_error( 'Missing instance ID or secret.', 500 );
+		}
+
+		$payload   = $instance_id . ':' . $timestamp;
+		$signature = hash_hmac( 'sha256', $payload, $secret );
+
+		wp_send_json_success(
+			array(
+				'instance_id' => $instance_id,
+				'timestamp'   => $timestamp,
+				'signature'   => $signature,
+			)
+		);
+	}
+
+	/**
+	 * AJAX endpoint to sign the Stripe Connect `state` payload securely.
+	 *
+	 * @return void
+	 */
+	public static function ajax_sign_stripe_state() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( 'Unauthorized', 403 );
+		}
+
+		$instance_id = get_option( 'eventkoi_site_instance_id' );
+		$secret      = get_option( 'eventkoi_shared_secret' );
+		$site_url    = home_url();
+		$email       = get_bloginfo( 'admin_email' );
+		$timestamp   = time();
+
+		if ( empty( $instance_id ) || empty( $secret ) ) {
+			wp_send_json_error( 'Missing instance ID or secret.', 500 );
+		}
+
+		$payload   = $instance_id . ':' . $timestamp;
+		$signature = hash_hmac( 'sha256', $payload, $secret );
+
+		$state_payload = array(
+			'instance_id' => $instance_id,
+			'timestamp'   => $timestamp,
+			'signature'   => $signature,
+			'site_url'    => $site_url,
+			'email'       => $email,
+		);
+
+		$encoded_state = base64_encode( wp_json_encode( $state_payload ) ); // phpcs:ignore WordPress.PHP.DiscouragedPHPFunctions.obfuscation_base64_encode
+
+		wp_send_json_success(
+			array(
+				'encoded_state' => $encoded_state,
+			)
+		);
+	}
+
+	/**
+	 * AJAX endpoint to re-register the current instance with EventKoi services.
+	 *
+	 * @return void
+	 */
+	public static function ajax_register_instance() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_send_json_error( 'Unauthorized', 403 );
+		}
+
+		$instance_id   = get_option( 'eventkoi_site_instance_id' );
+		$shared_secret = get_option( 'eventkoi_shared_secret' );
+		$api_key       = get_option( 'eventkoi_api_key' );
+
+		if ( empty( $instance_id ) || empty( $shared_secret ) || empty( $api_key ) ) {
+			wp_send_json_error( 'Missing instance metadata.', 500 );
+		}
+
+		$config_res = wp_remote_get( EVENTKOI_CONFIG );
+		if ( is_wp_error( $config_res ) ) {
+			wp_send_json_error( 'Failed to load config.', 500 );
+		}
+
+		$config_body = wp_remote_retrieve_body( $config_res );
+		$config      = json_decode( $config_body, true );
+
+		if ( empty( $config['supabase_edge'] ) ) {
+			wp_send_json_error( 'Missing remote registration URL.', 500 );
+		}
+
+		$register_url = trailingslashit( $config['supabase_edge'] ) . 'register-instance';
+		$response     = wp_remote_post(
+			$register_url,
+			array(
+				'method'  => 'POST',
+				'headers' => array(
+					'Content-Type' => 'application/json',
+				),
+				'body'    => wp_json_encode(
+					array(
+						'instance_id'   => $instance_id,
+						'shared_secret' => $shared_secret,
+						'api_key'       => $api_key,
+						'site_url'      => home_url(),
+					)
+				),
+				'timeout' => 10,
+			)
+		);
+
+		if ( is_wp_error( $response ) ) {
+			wp_send_json_error( $response->get_error_message(), 500 );
+		}
+
+		$status = wp_remote_retrieve_response_code( $response );
+		if ( $status < 200 || $status >= 300 ) {
+			wp_send_json_error( 'Registration failed.', 500 );
+		}
+
+		wp_send_json_success( array( 'status' => $status ) );
+	}
+
+	/**
+	 * Public AJAX endpoint to provide a REST API nonce.
+	 *
+	 * @return void
+	 */
+	public static function ajax_rest_nonce() {
+		wp_send_json_success(
+			array(
+				'nonce' => wp_create_nonce( 'wp_rest' ),
+			)
+		);
 	}
 }

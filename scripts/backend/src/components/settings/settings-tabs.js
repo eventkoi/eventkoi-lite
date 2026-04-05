@@ -18,17 +18,22 @@ const tabs = [
     to: "fields",
   },
   { key: "emails", label: "Emails", to: "emails" },
+  { key: "payments", label: "Payments", to: "payments" },
   { key: "integrations", label: "API & integrations", to: "integrations" },
   { key: "import", label: "Import", to: "import" },
 ];
 
 export function SettingsTabs({ settings, setSettings, location }) {
+  const ticketsEnabled = !!window?.eventkoi_params?.tickets_feature_enabled;
+  const visibleTabs = tabs.filter(
+    (item) => item.key !== "payments" || ticketsEnabled
+  );
   const segments = location.pathname?.split("/").filter(Boolean) || [];
   const view = segments[1]; // /settings/<view>/...
 
   return (
     <div className="grid gap-2 text-sm text-muted-foreground">
-      {tabs.map((item) => {
+      {visibleTabs.map((item) => {
         const isActiveView =
           (view && view === item.to) || (!view && item.key === "default");
         const classes = getSideTabClasses(isActiveView);
