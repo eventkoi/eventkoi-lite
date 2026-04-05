@@ -104,6 +104,7 @@ class Init {
 			\EventKoi\Core\Bindings::class,
 			\EventKoi\Core\ICal::class,
 			\EventKoi\Core\Orders::class,
+			\EventKoi\Core\WooCommerce_Checkout::class,
 			\EventKoi\API\REST::class,
 			\EventKoi\Core\Pretty_Instance_URLs::class,
 			\EventKoi\Core\Elementor_Widgets::class,

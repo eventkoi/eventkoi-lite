@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Box } from "@/components/box";
 import { Heading } from "@/components/heading";
 import { Panel } from "@/components/panel";
+import { ProBadge } from "@/components/pro-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,7 +45,6 @@ const TEMPLATE_CONFIG = {
         "<p>Hi [attendee_name],</p>",
         "<p>Thanks for your RSVP to [event_name].</p>",
         "<p>Check-in code:<br />[checkin_code]</p>",
-        "<p>[qr_code]</p>",
         "<p>Schedule ([event_timezone]):<br />[event_datetime]</p>",
         "<p>Location:<br />[event_location]</p>",
         "<p>[guests_line]</p>",
@@ -64,7 +64,7 @@ const TEMPLATE_CONFIG = {
       { tag: "[guest_count]", description: __("Guest count", "eventkoi-lite") },
       { tag: "[guests_line]", description: __("Guests label line", "eventkoi-lite") },
       { tag: "[checkin_code]", description: __("Check-in code", "eventkoi-lite") },
-      { tag: "[qr_code]", description: __("QR code image", "eventkoi-lite") },
+      { tag: "[qr_code]", description: __("QR code image", "eventkoi-lite"), pro: true },
       { tag: "[site_name]", description: __("Site name", "eventkoi-lite") },
     ],
   },
@@ -75,7 +75,7 @@ const TEMPLATE_CONFIG = {
     recipient: __("Ticket customer", "eventkoi-lite"),
     description: __(
       "Sent after a completed ticket purchase and when manually resent.",
-      "eventkoi",
+      "eventkoi-lite",
     ),
     defaults: {
       subject: __("[event_name]: Ticket details", "eventkoi-lite"),
@@ -84,7 +84,6 @@ const TEMPLATE_CONFIG = {
         "<p>Thanks for your ticket purchase for [event_name].</p>",
         "<p>Order ID:<br />[order_id]</p>",
         "[checkin_line]",
-        "<p>[qr_code]</p>",
         "<p><strong>Tickets</strong><br />[ticket_lines]</p>",
         "<p><strong>Ticket Codes</strong><br />[ticket_codes]</p>",
         "<p>Schedule ([event_timezone]):<br />[event_datetime]</p>",
@@ -106,7 +105,7 @@ const TEMPLATE_CONFIG = {
       { tag: "[event_url]", description: __("Event URL", "eventkoi-lite") },
       { tag: "[checkin_code]", description: __("Master check-in code", "eventkoi-lite") },
       { tag: "[checkin_line]", description: __("Preformatted check-in line", "eventkoi-lite") },
-      { tag: "[qr_code]", description: __("QR code image for check-in", "eventkoi-lite") },
+      { tag: "[qr_code]", description: __("QR code image for check-in", "eventkoi-lite"), pro: true },
       { tag: "[ticket_lines]", description: __("Purchased ticket lines", "eventkoi-lite") },
       { tag: "[ticket_codes]", description: __("Individual ticket codes", "eventkoi-lite") },
       { tag: "[site_name]", description: __("Site name", "eventkoi-lite") },
@@ -493,7 +492,7 @@ export function SettingsEmails() {
                   <div className="text-xs text-muted-foreground leading-tight -mt-1">
                     {__(
                       "Add these tags to give attendees the event data they need.",
-                      "eventkoi",
+                      "eventkoi-lite",
                     )}
                   </div>
                 </div>
@@ -505,10 +504,13 @@ export function SettingsEmails() {
                           <span className="inline-flex w-fit">
                             <Badge
                               variant="secondary"
-                              className="rounded-none bg-[#E6E6E6] hover:bg-[#e1e1e1] px-1 py-0.5 font-mono font-normal cursor-pointer"
-                              data-disabled={!emailEnabled}
-                              aria-disabled={!emailEnabled}
+                              className={`rounded-none bg-[#E6E6E6] hover:bg-[#e1e1e1] px-1 py-0.5 font-mono font-normal ${
+                                item.pro ? "cursor-not-allowed" : "cursor-pointer"
+                              }`}
+                              data-disabled={!emailEnabled || item.pro}
+                              aria-disabled={!emailEnabled || item.pro}
                               onClick={() => {
+                                if (item.pro) return;
                                 navigator.clipboard.writeText(item.tag).then(() => {
                                   setCopiedTag(item.tag);
                                   clearTimeout(copyTimerRef.current);
@@ -516,7 +518,12 @@ export function SettingsEmails() {
                                 });
                               }}
                             >
-                              {item.tag}
+                              <span className="inline-flex items-center gap-2">
+                                <span className={item.pro ? "opacity-60" : ""}>
+                                  {item.tag}
+                                </span>
+                                {item.pro && <ProBadge className="ml-0" />}
+                              </span>
                             </Badge>
                           </span>
                         </TooltipTrigger>

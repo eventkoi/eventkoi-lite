@@ -460,9 +460,14 @@ export function formatWPtime(isoString, options = {}) {
   const dateFmt = wpToLuxonFormat(wpDateFmt);
   const timeFmt = wpToLuxonFormat(wpTimeFmt);
 
-  const dt = DateTime.fromISO(isoString, { zone: "utc" })
-    .setZone(tz)
-    .setLocale(wpLocale);
+  let dt = DateTime.fromISO(isoString, { zone: "utc" });
+
+  // Support SQL datetime values like "YYYY-MM-DD HH:mm:ss" from API payloads.
+  if (!dt.isValid) {
+    dt = DateTime.fromSQL(isoString, { zone: "utc" });
+  }
+
+  dt = dt.setZone(tz).setLocale(wpLocale);
 
   const isLowercaseAMPM = /(^|[^A-Za-z])a([^A-Za-z]|$)/.test(wpTimeFmt);
   const renderedDate = dt.toFormat(dateFmt);
@@ -519,9 +524,13 @@ export function formatShortDate(isoString, options = {}) {
   const wpLocale = (params.locale || "en").replace("_", "-");
   const tz = options.timezone || params.timezone_string || "UTC";
 
-  const dt = DateTime.fromISO(isoString, { zone: "utc" })
-    .setZone(tz)
-    .setLocale(wpLocale);
+  let dt = DateTime.fromISO(isoString, { zone: "utc" });
+
+  if (!dt.isValid) {
+    dt = DateTime.fromSQL(isoString, { zone: "utc" });
+  }
+
+  dt = dt.setZone(tz).setLocale(wpLocale);
 
   return dt.isValid ? dt.toFormat("d LLL yy") : "";
 }

@@ -25,6 +25,12 @@ class Settings {
 	 */
 	public static function get(): array {
 		$settings = get_option( 'eventkoi_settings', array() );
+		$settings = wp_parse_args(
+			(array) $settings,
+			array(
+				'currency' => 'USD',
+			)
+		);
 
 		return apply_filters( 'eventkoi_get_settings', $settings );
 	}

@@ -1494,6 +1494,89 @@ class Event {
 	}
 
 	/**
+	 * Returns whether tickets are enabled for the event.
+	 *
+	 * @return bool
+	 */
+	public static function get_tickets_enabled() {
+		$enabled = get_post_meta( self::$event_id, 'tickets_enabled', true );
+
+		return apply_filters( 'eventkoi_get_event_tickets_enabled', (bool) $enabled, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Get tickets terms and conditions.
+	 *
+	 * @return string
+	 */
+	public static function get_tickets_terms_conditions() {
+		$terms = get_post_meta( self::$event_id, 'tickets_terms_conditions', true );
+
+		return apply_filters( 'eventkoi_get_event_tickets_terms_conditions', $terms, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Get tickets require account setting.
+	 *
+	 * @return bool
+	 */
+	public static function get_tickets_require_account() {
+		return (bool) get_post_meta( self::$event_id, 'tickets_require_account', true );
+	}
+
+	/**
+	 * Get tickets auto-create account setting.
+	 *
+	 * @return bool
+	 */
+	public static function get_tickets_auto_create_account() {
+		return (bool) get_post_meta( self::$event_id, 'tickets_auto_create_account', true );
+	}
+
+	/**
+	 * Get tickets show remaining setting.
+	 *
+	 * @return bool
+	 */
+	public static function get_tickets_show_remaining() {
+		$value = get_post_meta( self::$event_id, 'tickets_show_remaining', true );
+		if ( '' === $value || null === $value ) {
+			return true;
+		}
+
+		return (bool) $value;
+	}
+
+	/**
+	 * Get tickets show unavailable setting.
+	 *
+	 * @return bool
+	 */
+	public static function get_tickets_show_unavailable() {
+		$value = get_post_meta( self::$event_id, 'tickets_show_unavailable', true );
+
+		if ( '' === $value || null === $value ) {
+			return false;
+		}
+
+		return (bool) $value;
+	}
+
+	/**
+	 * Get tickets display mode.
+	 *
+	 * @return string
+	 */
+	public static function get_tickets_display_mode() {
+		$mode = get_post_meta( self::$event_id, 'tickets_display_mode', true );
+		if ( empty( $mode ) ) {
+			$mode = 'cards';
+		}
+
+		return apply_filters( 'eventkoi_get_event_tickets_display_mode', $mode, self::$event_id, self::$event );
+	}
+
+	/**
 	 * Returns whether RSVPs are enabled for the event.
 	 *
 	 * @return bool

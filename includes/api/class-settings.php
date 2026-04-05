@@ -64,6 +64,14 @@ class Settings {
 		$settings_api = new CoreSettings();
 		$settings     = $settings_api::get();
 
+		// When WooCommerce checkout is active, override currency with WC's currency.
+		if ( class_exists( '\EventKoi\Core\WooCommerce_Checkout' )
+			&& \EventKoi\Core\WooCommerce_Checkout::is_active()
+			&& function_exists( 'get_woocommerce_currency' )
+		) {
+			$settings['currency'] = strtoupper( get_woocommerce_currency() );
+		}
+
 		return rest_ensure_response( $settings );
 	}
 
@@ -160,7 +168,19 @@ class Settings {
 				continue;
 			}
 
-			if ( in_array( $key, $html_keys, true ) ) {
+			if ( 'currency' === $key ) {
+				$currency = strtoupper( sanitize_text_field( (string) $value ) );
+				if ( ! preg_match( '/^[A-Z]{3}$/', $currency ) ) {
+					return new WP_REST_Response(
+						array(
+							'success' => false,
+							'message' => __( 'Invalid currency code.', 'eventkoi-lite' ),
+						),
+						400
+					);
+				}
+				$sanitized = $currency;
+			} elseif ( in_array( $key, $html_keys, true ) ) {
 				$sanitized = wp_kses( $value, \EventKoi\Core\Settings::get_email_template_allowed_tags() );
 			} else {
 				$sanitized = is_array( $value )
@@ -176,6 +196,14 @@ class Settings {
 		}
 
 		$settings_api::set( $settings );
+
+		// When WooCommerce checkout is active, override currency with WC's currency.
+		if ( class_exists( '\EventKoi\Core\WooCommerce_Checkout' )
+			&& 'woocommerce' === ( $settings['ticket_checkout_method'] ?? '' )
+			&& function_exists( 'get_woocommerce_currency' )
+		) {
+			$settings['currency'] = strtoupper( get_woocommerce_currency() );
+		}
 
 		return rest_ensure_response(
 			array(

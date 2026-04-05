@@ -13,11 +13,16 @@ export function RichTextEditor({
   const [showHTML, setShowHTML] = useState(false);
   const [htmlContent, setHtmlContent] = useState(value || "");
   const lastEditorValue = useRef(value || "");
+  const latestValueRef = useRef(value || "");
   const onChangeRef = useRef(onChange);
 
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
+
+  useEffect(() => {
+    latestValueRef.current = value || "";
+  }, [value]);
 
   useEffect(() => {
     if (showHTML) {
@@ -105,7 +110,7 @@ export function RichTextEditor({
         });
 
         ed.on("init", () => {
-          const initialValue = value || "";
+          const initialValue = latestValueRef.current || "";
           lastEditorValue.current = initialValue;
           ed.setContent(initialValue);
         });
