@@ -1,86 +1,113 @@
-== Event Koi Lite - Events Calendar Plugin for WordPress ==
+== Event Koi Lite - Events Calendar & Event Management Plugin for WordPress ==
 Contributors: eventkoi, lesleysim, ahmedfouaddev
 Donate link: https://donate.stripe.com/fZubJ1auN86Y1PU8cSdUY01
-Tags: event calendar, calendar, event, events, event list
+Tags: event calendar, event management, event registration, rsvp, events
 Requires at least: 6.7
 Tested up to: 6.9
 Requires PHP: 8.0
 Stable tag: 1.3.0.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
-Finally, a modern, unbloated events calendar plugin. Display an events calendar or list, and manage RSVPs. Uses shortcodes, blocks and page builders.
+A modern, lightweight WordPress events calendar plugin. Create an events calendar or event list, manage event registration and RSVPs, and track
+attendees.
 
 == Description ==
 
-Frustrated with bloated, outdated events plugins built over a decade ago? EventKoi feels refreshingly modern.
+**EventKoi Lite is a modern WordPress events calendar plugin** built for site owners who are tired of bloated, outdated event management plugins from a decade ago. Create and manage in-person and virtual events, display a beautiful events calendar or event list, and handle event registration and attendee management, all from a clean, intuitive admin.
 
-Here's what you'll get:
-✓ Clean, modern admin settings that are easy to use.
-✓ Display an events calendar, list or grid using blocks, shortcodes, Elementor, or Beaver Builder
-✓ Accessible calendar views with timezone support and flexible time display options
-✓ Track attendees with RSVPs and QR check-in codes
+✓ **Events calendar & event list** — Display events in a calendar, list, or
+  grid view using blocks, shortcodes, Elementor, or Beaver Builder
+✓ **Event registration & RSVP** — Let attendees register for events, manage
+  capacity, and check in with QR codes
+✓ **Attendee management** — Export your attendee list and manage check-ins
+  from your WordPress admin
+✓ **In-person and virtual events** — Supports Google Maps for venues and
+  auto-detects visitor timezone for virtual and international events
+✓ **Google Calendar, iCal & Outlook sync** — Let attendees add events to
+  their own calendar with one click
+✓ **Accessible & responsive** — Keyboard navigation, ARIA labels, and a
+  fully mobile-friendly events calendar
+✓ **Event SEO** — Automatic JSON-LD structured data markup so your events
+  appear in Google search results and rich snippets
+✓ **Blocks, shortcodes & page builders** — Works with Gutenberg, Elementor,
+  and Beaver Builder out of the box
 ✓ Secure, well-built code that follows WordPress coding standards
 ✓ Active development, responsive support, and thorough documentation
 
-**Need more advanced features? Upgrade to EventKoi Pro for custom fields, unlimited calendars, recurring events, and more. [Get EventKoi Pro →](https://eventkoi.com/pricing)**
+**Need recurring events, unlimited calendars, and custom fields? [Upgrade to EventKoi Pro →](https://eventkoi.com/pricing)**
 
 
-##What's included in EventKoi Lite
+##Event management
 
-###Create & Manage Events with an intuitive and modern UI
-
-- Add multiple event days, each with its own time
-- Create in-person and virtual events
-- Embed Google Maps for event locations
+- Add multiple event days, each with its own start and end time
+- Create in-person events with Google Maps venue embedding
+- Create virtual events with automatic visitor timezone detection
 - Use your WordPress site's date, time, and timezone settings
 - Customize event page templates in the block editor
-- Localization-ready
+- Localization-ready for
 
 
-###Accessible Event Calendar
+###Events Calendar & Event Listing
 
-- Display your calendar with a shortcode, block, Elementor widget, or Beaver Builder module
-- Accessible calendar views with keyboard navigation and ARIA labels
-- Auto-detect visitor timezone for virtual and international events
-- Let visitors add events to Google Calendar, iCalendar, Outlook 365, or Outlook Live
-- Choose 12 or 24-hour time display
+- Embed an events calendar using a block, shortcode, Elementor
+  widget, or Beaver Builder module
+- Display an event listing as a list or grid view
+- Filter events by date range or calendar
+- Accessible calendar views with full keyboard navigation and ARIA labels
+- Fully responsive and mobile-friendly for all screen sizes
 - Set the calendar's starting day of the week
-- Choose which month and year to display
+- Choose 12 or 24-hour time display
+- Organize all your events under your events calendar. Upgrade to Pro for multiple calendars to segment events by category, location, or type
 
 
-###Integrations in EventKoi Lite
+## Event Registration & RSVP Management
 
-- Elementor: Embed an event calendar or event data using native Elementor elements
-- Beaver Builder: Embed an event calendar or event data using native Beaver Builder modules
+- Set event capacity and display remaining spots to encourage signups
+- Let attendees submit and update their event registration (RSVP)
+- Send automated confirmation emails with check-in codes
+- Manage attendee registration and check-ins from WordPress admin
+- Export your full attendee list
 
 
-###Display Events List or Grid using Custom Filters
+## Calendar Sync & Sharing
 
-- Display events as a list or grid using a shortcode, block, Elementor widget, or Beaver Builder module
-- Show upcoming events or filter by date range or calendar
-- Build event displays that fit your site's layout and design
+- Let visitors add events to Google Calendar, iCalendar, Outlook 365,
+  or Outlook Live
+- Auto-detect visitor timezone for virtual and international events
+- Social sharing built in
 
-###RSVP: Track who is coming to your events
 
-- Set event capacity and show remaining spots
-- Let attendees RSVP and update their response
-- Send confirmation emails with QR codes for check-in
-- Manage RSVPs and check-ins from WordPress admin
-- Export your attendee list
+## Event SEO & Structured Data
+
+EventKoi Lite automatically outputs JSON-LD structured data for every event, helping your events appear in Google Search rich results and event snippets. Structured data is built in, no configuration needed.
+
+
+## Page Builder Integrations
+
+- **Elementor:** Embed an events calendar or event data using native
+  Elementor widgets
+- **Beaver Builder:** Embed an events calendar or event data using native
+  Beaver Builder modules
+
+
+## Block editor and shortcode support
+- **Shortcode builder:** Build shortcodes with multiple queries to display a calendar or list of events
+- **Block Editor:** Add an events calendar, event query loop block or event data block directly in the WordPress editor
 
 
 ##Get advanced features with EventKoi Pro
 
-- **Custom fields**
-	- Add custom fields and groups to any event
 - **Recurring events**
 	- Create advanced rules for events that repeat daily, weekly, monthly, yearly,
-	-  Edit individual event instances (custom name, location, description, and more)
-	- Includes event series page
-- **Unlimited calendars**
-	- Segment your events by calendar (e.g. free events vs paid events) and colour.
+	- Edit individual event instances (custom name, location, description, and more)
+	- Automatically create a dedicated event series page
+- **Custom fields**
+	- Add custom fields and field groups to any event
+- **Multiple event calendars**
+	- Lite includes one calendar. Pro unlocks unlimited calendars so you can segment events by type, department,
+  location, or audience
 - **Advanced Elementor and Beaver Builder integrations**
-	-  Build custom templates and use Loop features to build event lists.
+	-  Build custom templates and use Loop features to build queryable event lists.
 - **Priority support**
 - **30-day money-back guarantee**
 **[Get EventKoi Pro →](https://eventkoi.com/pricing)**
@@ -89,7 +116,7 @@ Here's what you'll get:
 
 -  [EventKoi documentation](https://eventkoi.com/docs/?utm_source=pluginreadme-helpfullink&utm_medium=web&utm_campaign=16-12-25)
 - [EventKoi blog](https://eventkoi.com/blog/?utm_source=pluginreadme-helpfullink&utm_medium=web&utm_campaign=16-12-25)
-- [Get help from our Support Forum](https://wordpress.org/support/plugin/eventkoi-lite/) (please check existing threads before starting a new one)
+- [Support Forum](https://wordpress.org/support/plugin/eventkoi-lite/) (please check existing threads before starting a new one)
 - [Contact us](https://eventkoi.com/contact/?utm_source=pluginreadme-helpfullink&utm_medium=web&utm_campaign=16-12-25) (for non-support related questions)
 
 ## Screenshots
@@ -134,23 +161,39 @@ There, you will see 3 ways to embed the calendar into your site:
 
 == Frequently Asked Questions ==
 
-= My calendar or event page shows "Page not found."
-Go to Settings > Permalinks and click Save Changes to refresh rewrite rules.
-
 = Does it work with block themes and classic themes?
 Yes. EventKoi Lite works with both block and classic themes. You can use our blocks or shortcodes to build your events calendar.
+
+= Can I display a responsive events calendar on mobile? =
+Yes. The EventKoi events calendar is fully responsive and mobile-friendly, and
+includes accessible keyboard navigation and ARIA labels.
+
+= Does EventKoi Lite include recurring events? =
+Recurring events are available in EventKoi Pro. Pro supports daily, weekly,
+monthly, and yearly recurring events with advanced rules.
+
+= Does EventKoi Lite support virtual events and timezones? =
+Yes. You can create virtual events, and the events calendar automatically
+detects your visitor's timezone so they always see events in their local time.
+
+= Does EventKoi Lite support event registration? =
+Yes. EventKoi Lite includes an RSVP and event registration system. Set
+capacity, collect attendee sign-ups, send confirmation emails with QR codes,
+and manage check-ins from your WordPress admin.
+
+= Does EventKoi Lite include ticketing and paid events? =
+Paid event ticketing is coming soon in 2026. In the meantime, EventKoi Lite handles
+free event registration and RSVP management.
+
+= My calendar or event page shows "Page not found."
+Go to Settings > Permalinks and click Save Changes to refresh rewrite rules.
 
 = Can I customize the event template?
 Yes. If you're using a block theme, you can go to Appearance > Editor > Templates and customise the Event template. If you're using a classic theme, you can edit the template files.
 
-= Does EventKoi Lite include recurring events?
-Recurring events is available in EventKoi Pro.
+= Does EventKoi Lite help my events appear in Google Search? =
+Yes. EventKoi Lite automatically adds JSON-LD structured data markup to every event page. This helps Google understand your events and can display them as rich results in search. No setup required.
 
-= Does EventKoi Lite include ticketing?
-Coming in 2026!
-
-= Does EventKoi Lite support virtual events and timezones? =
-Yes. You can create virtual events, and the events calendar can auto-detect visitor timezone so visitors see events in their own timezone.
 
 == External services ==
 
