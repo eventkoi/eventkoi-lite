@@ -460,8 +460,8 @@ export function EventsOverview() {
             demoEventId &&
             parseInt(id, 10) === demoEventId;
           return (
-            <div className="grid space-y-1">
-              <div className="flex items-center gap-2 text-foreground">
+            <div className="grid space-y-1 min-w-0">
+              <div className="flex items-center gap-2 text-foreground min-w-0">
                 {/* Title + frontend link icon */}
                 <a
                   href={
@@ -475,10 +475,11 @@ export function EventsOverview() {
                       : `#/events/${parseInt(id, 10)}/main`
                   }
                   className={cn(
-                    "inline font-medium hover:underline hover:decoration-dotted underline-offset-4 break-words",
+                    "inline font-medium hover:underline hover:decoration-dotted underline-offset-4 truncate",
                     isHighlighted &&
                       "ring-2 ring-[#fb4409] ring-offset-2 ring-offset-white rounded-sm"
                   )}
+                  title={row.getValue("title")}
                 >
                   {row.getValue("title")}
                 </a>

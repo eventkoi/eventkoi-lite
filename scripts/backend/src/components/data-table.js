@@ -247,6 +247,7 @@ export function DataTable({
                           cell.column.id === "select" &&
                             tableClassName.includes("no-checkbox-padding") &&
                             "pl-0 w-[36px]",
+                          isTitleCell && !titleColumnWidth && "max-w-0 overflow-hidden",
                           activeId == row.original.id &&
                             cell.id.indexOf("name") >= 1 &&
                             "font-medium underline decoration-dotted",
