@@ -576,6 +576,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
 
               <div className="flex items-center gap-2">
                 <Switch
+                  aria-label={__("All day", "eventkoi")}
                   checked={rule.all_day}
                   onCheckedChange={(val) => updateRule(index, "all_day", val)}
                   disabled={tbc}

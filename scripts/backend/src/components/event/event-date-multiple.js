@@ -1,5 +1,6 @@
 "use client";
 
+import { __ } from "@wordpress/i18n";
 import { ContinuousEventDates } from "@/components/event/continuous-event-dates";
 import { StandardTypeSelector } from "@/components/event/standard-type-selector";
 import { ShortcodeBox } from "@/components/ShortcodeBox";
@@ -360,6 +361,7 @@ export function EventDateMultiple({ showAttributes }) {
 
                 <div className="flex items-center gap-2">
                   <Switch
+                    aria-label={__("All day", "eventkoi")}
                     checked={day.all_day}
                     onCheckedChange={(checked) =>
                       updateDay(index, "all_day", checked)

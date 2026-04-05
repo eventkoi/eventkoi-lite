@@ -168,7 +168,10 @@ export function EventNavBar() {
   };
 
   const saveEvent = async (status) => {
-    if (!event?.title?.trim()) return;
+    if (!event?.title?.trim()) {
+      showToast({ message: __("Please enter an event name.", "eventkoi") });
+      return;
+    }
 
     // Don’t run if we’re already publishing
     if (status === "publish") {
