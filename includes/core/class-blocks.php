@@ -470,7 +470,17 @@ JS;
 		$bindings     = new \EventKoi\Core\Bindings();
 		$allowed_keys = array_keys( $bindings->get_allowed_keys() );
 
-		if ( ! has_shortcode( $block_content, 'eventkoi' ) ) {
+		$has_eventkoi_shortcode = has_shortcode( $block_content, 'eventkoi' )
+			|| has_shortcode( $block_content, 'eventkoi_rsvp' )
+			|| has_shortcode( $block_content, 'eventkoi_tickets' )
+			|| has_shortcode( $block_content, 'eventkoi_checkin' )
+			|| has_shortcode( $block_content, 'eventkoi_calendar' );
+
+		if ( $has_eventkoi_shortcode ) {
+			$block_content = do_shortcode( $block_content );
+		}
+
+		if ( ! $has_eventkoi_shortcode ) {
 			foreach ( $allowed_keys as $base_key ) {
 				$pattern = '/\b' . preg_quote( $base_key, '/' ) . '(_\d+)?\b/';
 
@@ -1560,6 +1570,34 @@ JS;
 
 		if ( 'event_gmap' === $key ) {
 			return '<div class="eventkoi-gmap"></div>';
+		}
+
+		if ( 'event_ticket_rsvp' === $key ) {
+			$content = $event::rendered_ticket_rsvp();
+			if ( '' === $content ) {
+				return '';
+			}
+
+			if ( strpos( $content, 'eventkoi-front' ) !== false && strpos( $content, 'data-event=' ) === false ) {
+				$id      = $event->get_id();
+				$content = preg_replace_callback(
+					'/<(?P<tag>\w+)(?P<before_class>[^>]*)class="(?P<class>[^"]*eventkoi-front[^"]*)"(?P<after_class>[^>]*)>/',
+					function ( $matches ) use ( $id ) {
+						return sprintf(
+							'<%1$s%2$sclass="%3$s" data-event="%4$d" role="main"%5$s>',
+							$matches['tag'],
+							$matches['before_class'],
+							$matches['class'],
+							$id,
+							$matches['after_class']
+						);
+					},
+					$content,
+					1
+				);
+			}
+
+			return self::build_div_wrapper( $block['attrs'], 'eventkoi-ticket-rsvp', $content );
 		}
 
 		return null;

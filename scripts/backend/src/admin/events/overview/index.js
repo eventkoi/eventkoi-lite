@@ -547,10 +547,24 @@ export function EventsOverview() {
         cell: ({ row }) => {
           const used = row.original.rsvp_used ?? 0;
           const capacity = row.original.rsvp_capacity ?? 0;
-          const isEnabled = row.original.rsvp_enabled !== false;
+          const attendanceMode = row.original.attendance_mode || 'none';
+          const ticketsTotal = row.original.tickets_total ?? 0;
+          const ticketsSold = row.original.tickets_sold ?? 0;
+          const ticketsUnlimited = row.original.tickets_unlimited === true;
+          const displayValue = attendanceMode === 'tickets'
+            ? ticketsUnlimited
+              ? `${ticketsSold}/Unlimited`
+              : ticketsTotal > 0 || ticketsSold > 0
+              ? `${ticketsSold}/${ticketsTotal}`
+              : ""
+            : attendanceMode === 'rsvp'
+            ? capacity > 0
+              ? `${used}/${capacity}`
+              : `${used}/Unlimited`
+            : "";
           return (
             <div className="text-foreground tabular-nums">
-              {!isEnabled ? "—" : capacity > 0 ? `${used}/${capacity}` : used}
+              {displayValue}
             </div>
           );
         },

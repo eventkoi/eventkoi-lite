@@ -47,6 +47,7 @@ class Bindings {
 			'event_datetime'              => __( 'Event date time', 'eventkoi-lite' ),
 			'event_date_type'             => __( 'Event date type', 'eventkoi-lite' ),
 			'event_rulesummary'           => __( 'Recurring rule summary', 'eventkoi-lite' ),
+			'event_ticket_rsvp'           => __( 'Event RSVP / Tickets', 'eventkoi-lite' ),
 		);
 	}
 

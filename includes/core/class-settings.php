@@ -52,6 +52,8 @@ class Settings {
 	protected static function deep_sanitize( $data, $key = '' ) {
 		$rich_text_keys = array(
 			'rsvp_email_template',
+			'ticket_email_template',
+			'refund_email_template',
 		);
 
 		if ( is_array( $data ) ) {

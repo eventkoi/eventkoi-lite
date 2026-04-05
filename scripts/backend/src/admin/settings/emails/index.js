@@ -1,11 +1,10 @@
 import apiRequest from "@wordpress/api-fetch";
 import { __ } from "@wordpress/i18n";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Box } from "@/components/box";
 import { Heading } from "@/components/heading";
 import { Panel } from "@/components/panel";
-import { ProBadge } from "@/components/pro-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,108 +28,250 @@ import {
 import { useSettings } from "@/hooks/SettingsContext";
 import { showToast, showToastError } from "@/lib/toast";
 
-const DEFAULT_SUBJECT = __("[event_name]: Ticket details", "eventkoi-lite");
 const DEFAULT_SENDER_NAME = "";
 const DEFAULT_SENDER_EMAIL = "";
 
-const DEFAULT_TEMPLATE = [
-  "<p>Hi [attendee_name],</p>",
-  "<p>Thanks for your RSVP to [event_name].</p>",
-  "<p>Check-in code:<br />[checkin_code]</p>",
-  "<p>Schedule ([event_timezone]):<br />[event_datetime]</p>",
-  "<p>Location:<br />[event_location]</p>",
-  "<p>[guests_line]</p>",
-  "<p>View / manage your RSVP:<br />[event_url]</p>",
-  "<p>&mdash;<br />[site_name]</p>",
-].join("\n");
+const TEMPLATE_CONFIG = {
+  rsvp_confirmation: {
+    label: __("RSVP confirmation email", "eventkoi-lite"),
+    prefix: "rsvp",
+    enabledLabel: __("Enable RSVP confirmation email", "eventkoi-lite"),
+    recipient: __("Attendee", "eventkoi-lite"),
+    description: __("Sent to attendees when they RSVP to the event.", "eventkoi-lite"),
+    defaults: {
+      subject: __("Your RSVP for [event_name]", "eventkoi-lite"),
+      template: [
+        "<p>Hi [attendee_name],</p>",
+        "<p>Thanks for your RSVP to [event_name].</p>",
+        "<p>Check-in code:<br />[checkin_code]</p>",
+        "<p>[qr_code]</p>",
+        "<p>Schedule ([event_timezone]):<br />[event_datetime]</p>",
+        "<p>Location:<br />[event_location]</p>",
+        "<p>[guests_line]</p>",
+        "<p>View / manage your RSVP:<br />[event_url]</p>",
+        "<p>&mdash;<br />[site_name]</p>",
+      ].join("\n"),
+    },
+    tags: [
+      { tag: "[attendee_name]", description: __("Attendee name", "eventkoi-lite") },
+      { tag: "[attendee_email]", description: __("Attendee email", "eventkoi-lite") },
+      { tag: "[event_name]", description: __("Event name", "eventkoi-lite") },
+      { tag: "[event_datetime]", description: __("Event schedule in site timezone", "eventkoi-lite") },
+      { tag: "[event_timezone]", description: __("Event timezone label", "eventkoi-lite") },
+      { tag: "[event_location]", description: __("Event location", "eventkoi-lite") },
+      { tag: "[event_url]", description: __("Event URL", "eventkoi-lite") },
+      { tag: "[rsvp_status]", description: __("RSVP status", "eventkoi-lite") },
+      { tag: "[guest_count]", description: __("Guest count", "eventkoi-lite") },
+      { tag: "[guests_line]", description: __("Guests label line", "eventkoi-lite") },
+      { tag: "[checkin_code]", description: __("Check-in code", "eventkoi-lite") },
+      { tag: "[qr_code]", description: __("QR code image", "eventkoi-lite") },
+      { tag: "[site_name]", description: __("Site name", "eventkoi-lite") },
+    ],
+  },
+  ticket_confirmation: {
+    label: __("Ticket confirmation email", "eventkoi-lite"),
+    prefix: "ticket",
+    enabledLabel: __("Enable ticket confirmation email", "eventkoi-lite"),
+    recipient: __("Ticket customer", "eventkoi-lite"),
+    description: __(
+      "Sent after a completed ticket purchase and when manually resent.",
+      "eventkoi",
+    ),
+    defaults: {
+      subject: __("[event_name]: Ticket details", "eventkoi-lite"),
+      template: [
+        "<p>Hi [attendee_name],</p>",
+        "<p>Thanks for your ticket purchase for [event_name].</p>",
+        "<p>Order ID:<br />[order_id]</p>",
+        "[checkin_line]",
+        "<p>[qr_code]</p>",
+        "<p><strong>Tickets</strong><br />[ticket_lines]</p>",
+        "<p><strong>Ticket Codes</strong><br />[ticket_codes]</p>",
+        "<p>Schedule ([event_timezone]):<br />[event_datetime]</p>",
+        "<p>Location:<br />[event_location]</p>",
+        "<p>Event page:<br />[event_url]</p>",
+        "<p>&mdash;<br />[site_name]</p>",
+      ].join("\n"),
+    },
+    tags: [
+      { tag: "[attendee_name]", description: __("Customer first name", "eventkoi-lite") },
+      { tag: "[attendee_email]", description: __("Customer email", "eventkoi-lite") },
+      { tag: "[customer_name]", description: __("Customer full name", "eventkoi-lite") },
+      { tag: "[order_id]", description: __("Order ID", "eventkoi-lite") },
+      { tag: "[order_status]", description: __("Order status", "eventkoi-lite") },
+      { tag: "[event_name]", description: __("Event title", "eventkoi-lite") },
+      { tag: "[event_datetime]", description: __("Event schedule in site timezone", "eventkoi-lite") },
+      { tag: "[event_timezone]", description: __("Event timezone label", "eventkoi-lite") },
+      { tag: "[event_location]", description: __("Event location", "eventkoi-lite") },
+      { tag: "[event_url]", description: __("Event URL", "eventkoi-lite") },
+      { tag: "[checkin_code]", description: __("Master check-in code", "eventkoi-lite") },
+      { tag: "[checkin_line]", description: __("Preformatted check-in line", "eventkoi-lite") },
+      { tag: "[qr_code]", description: __("QR code image for check-in", "eventkoi-lite") },
+      { tag: "[ticket_lines]", description: __("Purchased ticket lines", "eventkoi-lite") },
+      { tag: "[ticket_codes]", description: __("Individual ticket codes", "eventkoi-lite") },
+      { tag: "[site_name]", description: __("Site name", "eventkoi-lite") },
+    ],
+  },
+  refund_confirmation: {
+    label: __("Refund confirmation email", "eventkoi-lite"),
+    prefix: "refund",
+    enabledLabel: __("Enable refund confirmation email", "eventkoi-lite"),
+    recipient: __("Ticket customer", "eventkoi-lite"),
+    description: __("Sent when a refund is issued for a ticket order.", "eventkoi-lite"),
+    defaults: {
+      subject: __("Refund issued for [event_name]", "eventkoi-lite"),
+      template: [
+        "<p>Hi [attendee_name],</p>",
+        "<p>A refund has been issued for your order.</p>",
+        "<p>Order ID:<br />[order_id]</p>",
+        "<p>Event:<br />[event_name]</p>",
+        "<p>Date:<br />[event_datetime]</p>",
+        "<p>Event page:<br />[event_url]</p>",
+        "<p>Refunded items:<br />[refund_items]</p>",
+        "<p>Refund amount:<br />[refund_amount]</p>",
+        "<p>The refund should appear in your account within 5&ndash;10 business days, depending on your payment provider.</p>",
+        "<p>&mdash;<br />[site_name]</p>",
+      ].join("\n"),
+    },
+    tags: [
+      { tag: "[attendee_name]", description: __("Customer first name", "eventkoi-lite") },
+      { tag: "[attendee_email]", description: __("Customer email", "eventkoi-lite") },
+      { tag: "[customer_name]", description: __("Customer full name", "eventkoi-lite") },
+      { tag: "[order_id]", description: __("Order ID", "eventkoi-lite") },
+      { tag: "[event_name]", description: __("Event title", "eventkoi-lite") },
+      { tag: "[event_datetime]", description: __("Event schedule in site timezone", "eventkoi-lite") },
+      { tag: "[event_timezone]", description: __("Event timezone label", "eventkoi-lite") },
+      { tag: "[event_url]", description: __("Event URL", "eventkoi-lite") },
+      { tag: "[refund_amount]", description: __("Formatted refund amount", "eventkoi-lite") },
+      { tag: "[refund_items]", description: __("List of refunded items", "eventkoi-lite") },
+      { tag: "[site_name]", description: __("Site name", "eventkoi-lite") },
+    ],
+  },
+};
 
-const TAGS = [
-  { tag: "[attendee_name]", description: __("Attendee name", "eventkoi-lite") },
-  { tag: "[attendee_email]", description: __("Attendee email", "eventkoi-lite") },
-  { tag: "[event_name]", description: __("Event name", "eventkoi-lite") },
-  {
-    tag: "[event_datetime]",
-    description: __("Event schedule in site timezone", "eventkoi-lite"),
-  },
-  {
-    tag: "[event_timezone]",
-    description: __("Event timezone label", "eventkoi-lite"),
-  },
-  { tag: "[event_location]", description: __("Event location", "eventkoi-lite") },
-  { tag: "[event_url]", description: __("Event URL", "eventkoi-lite") },
-  { tag: "[rsvp_status]", description: __("RSVP status", "eventkoi-lite") },
-  { tag: "[guest_count]", description: __("Guest count", "eventkoi-lite") },
-  { tag: "[guests_line]", description: __("Guests label line", "eventkoi-lite") },
-  { tag: "[checkin_code]", description: __("Check-in code", "eventkoi-lite") },
-  {
-    tag: "[qr_code]",
-    description: __("QR code image", "eventkoi-lite"),
-    pro: true,
-  },
-  { tag: "[site_name]", description: __("Site name", "eventkoi-lite") },
-];
+const getKeys = (prefix) => ({
+  subject: `${prefix}_email_subject`,
+  template: `${prefix}_email_template`,
+  enabled: `${prefix}_email_enabled`,
+  senderName: `${prefix}_email_sender_name`,
+  senderEmail: `${prefix}_email_sender_email`,
+});
+
+const isRichTextEmpty = (value) => {
+  const raw = String(value || "");
+  const stripped = raw
+    .replace(/<br\s*\/?>/gi, "")
+    .replace(/<\/?p[^>]*>/gi, "")
+    .replace(/&nbsp;/gi, "")
+    .trim();
+  return stripped === "";
+};
+
+const isEnabledSetting = (value) => {
+  if (typeof value === "undefined" || value === null || value === "") {
+    return true;
+  }
+
+  return value === true || value === "1" || value === 1;
+};
 
 export function SettingsEmails() {
-  const { settings, refreshSettings } = useSettings();
-  const [subject, setSubject] = useState(DEFAULT_SUBJECT);
-  const [template, setTemplate] = useState(DEFAULT_TEMPLATE);
+  const { settings, setSettings, refreshSettings } = useSettings();
+  const [activeTemplate, setActiveTemplate] = useState("rsvp_confirmation");
+  const [subject, setSubject] = useState("");
+  const [template, setTemplate] = useState("");
   const [emailEnabled, setEmailEnabled] = useState(true);
   const [senderName, setSenderName] = useState(DEFAULT_SENDER_NAME);
   const [senderEmail, setSenderEmail] = useState(DEFAULT_SENDER_EMAIL);
-  const [activeTemplate, setActiveTemplate] = useState("rsvp_confirmation");
   const [isSaving, setIsSaving] = useState(false);
+  const [copiedTag, setCopiedTag] = useState(null);
+  const copyTimerRef = useRef(null);
+
+  const activeConfig = useMemo(
+    () => TEMPLATE_CONFIG[activeTemplate] || TEMPLATE_CONFIG.rsvp_confirmation,
+    [activeTemplate],
+  );
+  const keys = useMemo(() => getKeys(activeConfig.prefix), [activeConfig.prefix]);
 
   useEffect(() => {
-    if (typeof settings?.rsvp_email_subject === "string") {
-      setSubject(settings.rsvp_email_subject || DEFAULT_SUBJECT);
-    }
-  }, [settings?.rsvp_email_subject]);
+    const defaults = activeConfig.defaults;
+    const subjectValue =
+      typeof settings?.[keys.subject] === "string" ? settings[keys.subject] : "";
+    const templateValue =
+      typeof settings?.[keys.template] === "string" ? settings[keys.template] : "";
+    const senderNameValue =
+      typeof settings?.[keys.senderName] === "string" ? settings[keys.senderName] : "";
+    const senderEmailValue =
+      typeof settings?.[keys.senderEmail] === "string" ? settings[keys.senderEmail] : "";
 
-  useEffect(() => {
-    if (typeof settings?.rsvp_email_template === "string") {
-      setTemplate(settings.rsvp_email_template || DEFAULT_TEMPLATE);
-    }
-  }, [settings?.rsvp_email_template]);
-
-  useEffect(() => {
-    if (typeof settings?.rsvp_email_sender_name === "string") {
-      setSenderName(settings.rsvp_email_sender_name || DEFAULT_SENDER_NAME);
-    }
-  }, [settings?.rsvp_email_sender_name]);
-
-  useEffect(() => {
-    if (typeof settings?.rsvp_email_sender_email === "string") {
-      setSenderEmail(settings.rsvp_email_sender_email || DEFAULT_SENDER_EMAIL);
-    }
-  }, [settings?.rsvp_email_sender_email]);
-
-  useEffect(() => {
-    if (typeof settings?.rsvp_email_enabled === "undefined") {
-      setEmailEnabled(true);
-      return;
-    }
-    setEmailEnabled(
-      settings.rsvp_email_enabled === true ||
-        settings.rsvp_email_enabled === "1" ||
-        settings.rsvp_email_enabled === 1,
+    setSubject(
+      String(subjectValue || "").trim() ? subjectValue : defaults.subject,
     );
-  }, [settings?.rsvp_email_enabled]);
+    setTemplate(
+      String(templateValue || "").trim() && !isRichTextEmpty(templateValue)
+        ? templateValue
+        : defaults.template,
+    );
+    setSenderName(
+      String(senderNameValue || "").trim() ? senderNameValue : DEFAULT_SENDER_NAME,
+    );
+    setSenderEmail(
+      String(senderEmailValue || "").trim() ? senderEmailValue : DEFAULT_SENDER_EMAIL,
+    );
+    setEmailEnabled(isEnabledSetting(settings?.[keys.enabled]));
+  }, [activeConfig.defaults, keys, settings]);
+
+  const hydrateTemplateState = (templateKey) => {
+    const cfg = TEMPLATE_CONFIG[templateKey] || TEMPLATE_CONFIG.rsvp_confirmation;
+    const cfgKeys = getKeys(cfg.prefix);
+    const defaults = cfg.defaults;
+    const subjectValue =
+      typeof settings?.[cfgKeys.subject] === "string" ? settings[cfgKeys.subject] : "";
+    const templateValue =
+      typeof settings?.[cfgKeys.template] === "string" ? settings[cfgKeys.template] : "";
+    const senderNameValue =
+      typeof settings?.[cfgKeys.senderName] === "string" ? settings[cfgKeys.senderName] : "";
+    const senderEmailValue =
+      typeof settings?.[cfgKeys.senderEmail] === "string" ? settings[cfgKeys.senderEmail] : "";
+
+    setSubject(
+      String(subjectValue || "").trim() ? subjectValue : defaults.subject,
+    );
+    setTemplate(
+      String(templateValue || "").trim() && !isRichTextEmpty(templateValue)
+        ? templateValue
+        : defaults.template,
+    );
+    setSenderName(
+      String(senderNameValue || "").trim() ? senderNameValue : DEFAULT_SENDER_NAME,
+    );
+    setSenderEmail(
+      String(senderEmailValue || "").trim() ? senderEmailValue : DEFAULT_SENDER_EMAIL,
+    );
+    setEmailEnabled(isEnabledSetting(settings?.[cfgKeys.enabled]));
+  };
+
+  const handleTemplateChange = (nextTemplate) => {
+    hydrateTemplateState(nextTemplate);
+    setActiveTemplate(nextTemplate);
+  };
 
   const handleSave = async (override = {}) => {
     if (!override || typeof override !== "object" || override?.nativeEvent) {
       override = {};
     }
+
     try {
       setIsSaving(true);
       const response = await apiRequest({
         path: `${eventkoi_params.api}/settings`,
         method: "post",
         data: {
-          rsvp_email_subject: subject,
-          rsvp_email_template: template,
-          rsvp_email_enabled: emailEnabled ? "1" : "0",
-          rsvp_email_sender_name: senderName,
-          rsvp_email_sender_email: senderEmail,
+          [keys.subject]: subject,
+          [keys.template]: template,
+          [keys.enabled]: emailEnabled ? "1" : "0",
+          [keys.senderName]: senderName,
+          [keys.senderEmail]: senderEmail,
           ...override,
         },
         headers: {
@@ -138,7 +279,11 @@ export function SettingsEmails() {
         },
       });
 
-      await refreshSettings();
+      if (response?.settings) {
+        setSettings(response.settings);
+      } else {
+        await refreshSettings();
+      }
       showToast({
         ...response,
         message: __("Email settings updated.", "eventkoi-lite"),
@@ -152,19 +297,53 @@ export function SettingsEmails() {
     }
   };
 
-  const tagList = useMemo(() => TAGS, []);
-  const templateMeta = useMemo(() => {
-    const templates = {
-      rsvp_confirmation: {
-        recipient: __("Attendee", "eventkoi-lite"),
-        description: __(
-          "Sent to attendees when they RSVP to the event.",
-          "eventkoi-lite",
-        ),
-      },
-    };
-    return templates[activeTemplate] || templates.rsvp_confirmation;
-  }, [activeTemplate]);
+  const restoreDefaults = async () => {
+    const defaults = activeConfig.defaults;
+    setSubject(defaults.subject);
+    setTemplate(defaults.template);
+    setSenderName(DEFAULT_SENDER_NAME);
+    setSenderEmail(DEFAULT_SENDER_EMAIL);
+
+    try {
+      setIsSaving(true);
+      const response = await apiRequest({
+        path: `${eventkoi_params.api}/settings`,
+        method: "post",
+        data: {
+          [keys.subject]: defaults.subject,
+          [keys.template]: defaults.template,
+          [keys.enabled]: emailEnabled ? "1" : "0",
+          [keys.senderName]: DEFAULT_SENDER_NAME,
+          [keys.senderEmail]: DEFAULT_SENDER_EMAIL,
+        },
+        headers: {
+          "EVENTKOI-API-KEY": eventkoi_params.api_key,
+        },
+      });
+
+      if (response?.settings) {
+        setSettings(response.settings);
+      } else {
+        await refreshSettings();
+      }
+      showToast({
+        ...response,
+        message: __("Defaults restored.", "eventkoi-lite"),
+      });
+    } catch (error) {
+      showToastError(
+        error?.message ?? __("Failed to restore defaults.", "eventkoi-lite"),
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const templateToggleId = `eventkoi-${activeConfig.prefix}-email-enabled`;
+  const templateSubjectId = `eventkoi-${activeConfig.prefix}-email-subject`;
+  const templateSenderNameId = `eventkoi-${activeConfig.prefix}-email-sender-name`;
+  const templateSenderEmailId = `eventkoi-${activeConfig.prefix}-email-sender-email`;
+  const templateEditorId = `eventkoi-${activeConfig.prefix}-email-template`;
 
   return (
     <div className="grid gap-8">
@@ -173,38 +352,33 @@ export function SettingsEmails() {
           <Panel variant="header" className="flex flex-col gap-4">
             <Heading level={3}>{__("Emails", "eventkoi-lite")}</Heading>
             <div className="flex items-end gap-8 py-4">
-              <div className="grid w-full max-w-[220px] gap-2">
+              <div className="grid w-full max-w-[260px] gap-2">
                 <Label htmlFor="eventkoi-email-template">
                   {__("Select email template", "eventkoi-lite")}
                 </Label>
-                <Select
-                  value={activeTemplate}
-                  onValueChange={setActiveTemplate}
-                >
+                <Select value={activeTemplate} onValueChange={handleTemplateChange}>
                   <SelectTrigger id="eventkoi-email-template">
                     <SelectValue
                       placeholder={__("Choose a template", "eventkoi-lite")}
                     />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="rsvp_confirmation">
-                      {__("RSVP confirmation email", "eventkoi-lite")}
-                    </SelectItem>
+                    {Object.entries(TEMPLATE_CONFIG).map(([value, cfg]) => (
+                      <SelectItem key={value} value={value}>
+                        {cfg.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <div>
-                  <span className="font-medium">
-                    {__("Recipient:", "eventkoi-lite")}
-                  </span>{" "}
-                  {templateMeta.recipient}
+                  <span className="font-medium">{__("Recipient:", "eventkoi-lite")}</span>{" "}
+                  {activeConfig.recipient}
                 </div>
                 <div>
-                  <span className="font-medium">
-                    {__("Description:", "eventkoi-lite")}
-                  </span>{" "}
-                  {templateMeta.description}
+                  <span className="font-medium">{__("Description:", "eventkoi-lite")}</span>{" "}
+                  {activeConfig.description}
                 </div>
               </div>
             </div>
@@ -216,89 +390,47 @@ export function SettingsEmails() {
             <div className="flex w-full flex-col gap-4 pb-6 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex flex-wrap items-center gap-3">
                 <Switch
-                  id="eventkoi-rsvp-email-enabled"
+                  id={templateToggleId}
                   checked={emailEnabled}
                   onCheckedChange={(value) => {
                     setEmailEnabled(value);
-                    handleSave({ rsvp_email_enabled: value ? "1" : "0" });
+                    handleSave({ [keys.enabled]: value ? "1" : "0" });
                   }}
                 />
                 <Label
-                  htmlFor="eventkoi-rsvp-email-enabled"
-                  className={`font-normal ${
-                    !emailEnabled ? "text-muted-foreground" : ""
-                  }`}
+                  htmlFor={templateToggleId}
+                  className={`font-normal ${!emailEnabled ? "text-muted-foreground" : ""}`}
                 >
-                  {__("Enable RSVP confirmation email", "eventkoi-lite")}
+                  {activeConfig.enabledLabel}
                 </Label>
               </div>
               <div className="flex flex-wrap items-center gap-3">
                 <Button
                   type="button"
                   variant="link"
-                  onClick={async () => {
-                    setSubject(DEFAULT_SUBJECT);
-                    setTemplate(DEFAULT_TEMPLATE);
-                    setSenderName(DEFAULT_SENDER_NAME);
-                    setSenderEmail(DEFAULT_SENDER_EMAIL);
-                    try {
-                      setIsSaving(true);
-                      const response = await apiRequest({
-                        path: `${eventkoi_params.api}/settings`,
-                        method: "post",
-                        data: {
-                          rsvp_email_subject: DEFAULT_SUBJECT,
-                          rsvp_email_template: DEFAULT_TEMPLATE,
-                          rsvp_email_enabled: emailEnabled ? "1" : "0",
-                          rsvp_email_sender_name: DEFAULT_SENDER_NAME,
-                          rsvp_email_sender_email: DEFAULT_SENDER_EMAIL,
-                        },
-                        headers: {
-                          "EVENTKOI-API-KEY": eventkoi_params.api_key,
-                        },
-                      });
-
-                      await refreshSettings();
-                      showToast({
-                        ...response,
-                        message: __("Defaults restored.", "eventkoi-lite"),
-                      });
-                    } catch (error) {
-                      showToastError(
-                        error?.message ??
-                          __("Failed to restore defaults.", "eventkoi-lite"),
-                      );
-                    } finally {
-                      setIsSaving(false);
-                    }
-                  }}
+                  onClick={restoreDefaults}
                   disabled={isSaving}
                   className="font-normal"
                 >
                   {__("Restore defaults", "eventkoi-lite")}
                 </Button>
-                <Button
-                  type="button"
-                  onClick={() => handleSave()}
-                  disabled={isSaving}
-                >
-                  {isSaving
-                    ? __("Saving...", "eventkoi-lite")
-                    : __("Save changes", "eventkoi-lite")}
+                <Button type="button" onClick={() => handleSave()} disabled={isSaving}>
+                  {isSaving ? __("Saving...", "eventkoi-lite") : __("Save changes", "eventkoi-lite")}
                 </Button>
               </div>
             </div>
+
             <div className="grid w-full max-w-[520px] gap-2 mb-6">
               <div className="flex flex-col gap-8 sm:flex-row sm:items-start">
                 <div className="grid flex-1 gap-2">
                   <Label
-                    htmlFor="eventkoi-rsvp-email-sender-name"
+                    htmlFor={templateSenderNameId}
                     className={!emailEnabled ? "text-muted-foreground" : ""}
                   >
                     {__("Sender name", "eventkoi-lite")}
                   </Label>
                   <Input
-                    id="eventkoi-rsvp-email-sender-name"
+                    id={templateSenderNameId}
                     value={senderName}
                     onChange={(event) => setSenderName(event.target.value)}
                     placeholder={__("EventKoi", "eventkoi-lite")}
@@ -307,13 +439,13 @@ export function SettingsEmails() {
                 </div>
                 <div className="grid flex-1 gap-2">
                   <Label
-                    htmlFor="eventkoi-rsvp-email-sender-email"
+                    htmlFor={templateSenderEmailId}
                     className={!emailEnabled ? "text-muted-foreground" : ""}
                   >
                     {__("Sender email address", "eventkoi-lite")}
                   </Label>
                   <Input
-                    id="eventkoi-rsvp-email-sender-email"
+                    id={templateSenderEmailId}
                     type="email"
                     value={senderEmail}
                     onChange={(event) => setSenderEmail(event.target.value)}
@@ -323,18 +455,19 @@ export function SettingsEmails() {
                 </div>
               </div>
             </div>
+
             <div className="grid w-full max-w-[520px] gap-2 mb-6">
               <Label
-                htmlFor="eventkoi-rsvp-email-subject"
+                htmlFor={templateSubjectId}
                 className={!emailEnabled ? "text-muted-foreground" : ""}
               >
                 {__("Subject line", "eventkoi-lite")}
               </Label>
               <Input
-                id="eventkoi-rsvp-email-subject"
+                id={templateSubjectId}
                 value={subject}
                 onChange={(event) => setSubject(event.target.value)}
-                placeholder={DEFAULT_SUBJECT}
+                placeholder={activeConfig.defaults.subject}
                 disabled={!emailEnabled || isSaving}
               />
             </div>
@@ -343,7 +476,8 @@ export function SettingsEmails() {
             <div className="flex flex-col gap-8 lg:flex-row lg:items-stretch">
               <div className="grid w-full h-full max-w-[520px] gap-2 self-stretch">
                 <RichTextEditor
-                  id="eventkoi-rsvp-email-template"
+                  key={`email-editor-${activeTemplate}`}
+                  id={templateEditorId}
                   value={template}
                   onChange={setTemplate}
                   height={520}
@@ -351,38 +485,38 @@ export function SettingsEmails() {
                 />
               </div>
 
-              <div className="grid flex-1 rounded-lg border border-input p-0">
-                <div className="grid gap-1.5 border-b border-input p-4">
-                  <Label className="text-base">
+              <div className="flex flex-1 flex-col rounded-lg border border-input p-0">
+                <div className="flex flex-col gap-1 border-b border-input p-4">
+                  <Label className="text-base leading-tight">
                     {__("Available tags", "eventkoi-lite")}
                   </Label>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-xs text-muted-foreground leading-tight -mt-1">
                     {__(
                       "Add these tags to give attendees the event data they need.",
-                      "eventkoi-lite",
+                      "eventkoi",
                     )}
                   </div>
                 </div>
                 <TooltipProvider delayDuration={120}>
                   <div className="flex flex-1 flex-col gap-2 p-4">
-                    {tagList.map((item) => (
-                      <Tooltip key={item.tag}>
+                    {activeConfig.tags.map((item) => (
+                      <Tooltip key={item.tag} open={copiedTag === item.tag || undefined}>
                         <TooltipTrigger asChild>
                           <span className="inline-flex w-fit">
-                              <Badge
-                                variant="secondary"
-                              className={`rounded-none bg-[#E6E6E6] hover:bg-[#e1e1e1] px-1 py-0.5 font-mono font-normal ${
-                                item.pro ? "cursor-not-allowed" : "cursor-pointer"
-                              }`}
-                              data-disabled={!emailEnabled || item.pro}
-                              aria-disabled={!emailEnabled || item.pro}
+                            <Badge
+                              variant="secondary"
+                              className="rounded-none bg-[#E6E6E6] hover:bg-[#e1e1e1] px-1 py-0.5 font-mono font-normal cursor-pointer"
+                              data-disabled={!emailEnabled}
+                              aria-disabled={!emailEnabled}
+                              onClick={() => {
+                                navigator.clipboard.writeText(item.tag).then(() => {
+                                  setCopiedTag(item.tag);
+                                  clearTimeout(copyTimerRef.current);
+                                  copyTimerRef.current = setTimeout(() => setCopiedTag(null), 1500);
+                                });
+                              }}
                             >
-                              <span className="inline-flex items-center gap-2">
-                                <span className={item.pro ? "opacity-60" : ""}>
-                                  {item.tag}
-                                </span>
-                                {item.pro && <ProBadge className="ml-0" />}
-                              </span>
+                              {item.tag}
                             </Badge>
                           </span>
                         </TooltipTrigger>
@@ -391,9 +525,7 @@ export function SettingsEmails() {
                           sideOffset={8}
                           className="border-transparent bg-foreground text-background px-2 py-1 text-xs"
                         >
-                          {item.pro
-                            ? `${item.description} (${__("Pro", "eventkoi-lite")})`
-                            : item.description}
+                          {copiedTag === item.tag ? __("Copied!", "eventkoi-lite") : item.description}
                         </TooltipContent>
                       </Tooltip>
                     ))}

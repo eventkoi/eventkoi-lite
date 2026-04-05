@@ -25,7 +25,44 @@ class Shortcodes {
 		add_shortcode( 'eventkoi_calendar', array( __CLASS__, 'render_calendar' ) );
 		add_shortcode( 'eventkoi', array( __CLASS__, 'render_event_data' ) );
 		add_shortcode( 'eventkoi_rsvp', array( __CLASS__, 'render_rsvp' ) );
+		add_shortcode( 'eventkoi_tickets', array( __CLASS__, 'render_tickets' ) );
 		add_shortcode( 'eventkoi_checkin', array( __CLASS__, 'render_checkin' ) );
+	}
+
+	/**
+	 * Resolve event ID from shortcode attribute or post context.
+	 *
+	 * @param int $event_id Event ID from shortcode attribute.
+	 * @return int Resolved event ID or 0.
+	 */
+	private static function resolve_event_id_from_context( $event_id ) {
+		$event_id = absint( $event_id );
+		if ( $event_id > 0 ) {
+			return $event_id;
+		}
+
+		global $post;
+
+		if ( isset( $post->ID ) && 'eventkoi_event' === get_post_type( $post->ID ) ) {
+			return (int) $post->ID;
+		}
+
+		$queried_id = absint( get_queried_object_id() );
+		if ( $queried_id > 0 && 'eventkoi_event' === get_post_type( $queried_id ) ) {
+			return $queried_id;
+		}
+
+		$current_id = absint( get_the_ID() );
+		if ( $current_id > 0 && 'eventkoi_event' === get_post_type( $current_id ) ) {
+			return $current_id;
+		}
+
+		$active_event_id = absint( \EventKoi\Core\Event::get_id() );
+		if ( $active_event_id > 0 && 'eventkoi_event' === get_post_type( $active_event_id ) ) {
+			return $active_event_id;
+		}
+
+		return 0;
 	}
 
 	/**
@@ -306,17 +343,18 @@ class Shortcodes {
 			$shortcode_name
 		);
 
-		$event_id = absint( $attributes['event_id'] );
+		$event_id = self::resolve_event_id_from_context( $attributes['event_id'] );
 
 		if ( 0 === $event_id ) {
-			global $post;
-
-			if ( isset( $post->ID ) && 'eventkoi_event' === get_post_type( $post->ID ) ) {
-				$event_id = (int) $post->ID;
-			}
+			return '';
 		}
 
-		if ( 0 === $event_id ) {
+		$attendance_mode = get_post_meta( $event_id, 'attendance_mode', true );
+		if ( empty( $attendance_mode ) ) {
+			$attendance_mode = 'rsvp';
+		}
+
+		if ( 'rsvp' !== $attendance_mode ) {
 			return '';
 		}
 
@@ -329,8 +367,8 @@ class Shortcodes {
 				? absint( eventkoi_get_instance_id() )
 				: 0;
 
-			if ( 0 === $instance_ts && isset( $_GET['instance'] ) ) {
-				$instance_ts = absint( wp_unslash( $_GET['instance'] ) );
+			if ( 0 === $instance_ts && isset( $_GET['instance'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				$instance_ts = absint( wp_unslash( $_GET['instance'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 			}
 		}
 
@@ -344,6 +382,73 @@ class Shortcodes {
 
 		return sprintf(
 			'<div class="eventkoi-front"><div id="eventkoi-rsvp-%1$d" class="eventkoi-rsvp" %2$s></div></div>',
+			(int) $event_id,
+			$attrs
+		);
+	}
+
+	/**
+	 * Render tickets widget via shortcode.
+	 *
+	 * @param array  $user_attributes Shortcode attributes.
+	 * @param string $content         Shortcode content.
+	 * @param string $shortcode_name  Shortcode name.
+	 * @return string Rendered output.
+	 */
+	public static function render_tickets( $user_attributes, $content, $shortcode_name ) {
+		if ( function_exists( 'eventkoi_is_tickets_feature_enabled' ) && ! eventkoi_is_tickets_feature_enabled() ) {
+			return '';
+		}
+
+		$attributes = shortcode_atts(
+			array(
+				'event_id'    => 0,
+				'instance_ts' => 0,
+				'instance'    => 0,
+			),
+			$user_attributes,
+			$shortcode_name
+		);
+
+		$event_id = self::resolve_event_id_from_context( $attributes['event_id'] );
+
+		if ( 0 === $event_id ) {
+			return '';
+		}
+
+		$attendance_mode = get_post_meta( $event_id, 'attendance_mode', true );
+		if ( empty( $attendance_mode ) ) {
+			$attendance_mode = 'rsvp';
+		}
+
+		if ( 'tickets' !== $attendance_mode ) {
+			return '';
+		}
+
+		$instance_ts = absint( $attributes['instance_ts'] );
+		if ( 0 === $instance_ts && ! empty( $attributes['instance'] ) ) {
+			$instance_ts = absint( $attributes['instance'] );
+		}
+		if ( 0 === $instance_ts ) {
+			$instance_ts = function_exists( 'eventkoi_get_instance_id' )
+				? absint( eventkoi_get_instance_id() )
+				: 0;
+
+			if ( 0 === $instance_ts && isset( $_GET['instance'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				$instance_ts = absint( wp_unslash( $_GET['instance'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			}
+		}
+
+		Scripts::enqueue_frontend_assets();
+
+		$attrs = sprintf(
+			'data-event-id="%1$d" data-instance-ts="%2$d"',
+			(int) $event_id,
+			(int) $instance_ts
+		);
+
+		return sprintf(
+			'<div class="eventkoi-front"><div id="eventkoi-tickets-%1$d" class="eventkoi-tickets" %2$s></div></div>',
 			(int) $event_id,
 			$attrs
 		);

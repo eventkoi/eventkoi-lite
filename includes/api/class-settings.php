@@ -153,7 +153,7 @@ class Settings {
 		}
 
 		// Fallback: Update settings normally.
-		$html_keys = array( 'rsvp_email_template' );
+		$html_keys = array( 'rsvp_email_template', 'ticket_email_template', 'refund_email_template' );
 
 		foreach ( $data as $key => $value ) {
 			if ( in_array( $key, array( 'api_key' ), true ) ) {

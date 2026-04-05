@@ -8,6 +8,7 @@ import { DashboardOverview } from "@/admin/dashboard/overview";
 import { LogoIcon } from "@/components/logo-icon";
 import { ConfirmTimezoneFormatStep } from "@/components/onboarding/confirm-timezone-format";
 import { SetCalendarDefaultsStep } from "@/components/onboarding/set-calendar-defaults";
+import { SetupTicketCheckoutStep } from "@/components/onboarding/setup-ticket-checkout";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -28,6 +29,8 @@ export function DashboardOnboarding() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const ticketsEnabled = !!window?.eventkoi_params?.tickets_feature_enabled;
+
   const steps = useMemo(
     () => [
       {
@@ -42,8 +45,17 @@ export function DashboardOnboarding() {
         sidebarHidden: true,
         sidebarKey: "calendar",
       },
+      ...(ticketsEnabled
+        ? [
+            {
+              key: "ticket-checkout",
+              title: __("Setup ticket payments", "eventkoi-lite"),
+              component: SetupTicketCheckoutStep,
+            },
+          ]
+        : []),
     ],
-    []
+    [ticketsEnabled]
   );
 
   const initialStepIndex = useMemo(() => {
@@ -341,13 +353,6 @@ export function DashboardOnboarding() {
       const params = new URLSearchParams(location.search);
       params.set("step", "done");
       navigate({ search: `?${params.toString()}` });
-      return;
-    }
-
-    const currentKey = steps[activeIndex]?.key;
-
-    if (currentKey === "datetime") {
-      createDemoEventAndRedirect();
       return;
     }
 

@@ -80,6 +80,7 @@ class Event {
 		'recurrence_overrides',
 		'rulesummary',
 		'standard_type',
+		'attendance_mode',
 		'rsvp_enabled',
 		'rsvp_capacity',
 		'rsvp_show_remaining',
@@ -471,7 +472,11 @@ class Event {
 		$recurrence_rules = ! empty( $meta['recurrence_rules'] ) && is_array( $meta['recurrence_rules'] )
 		? array_values( array_filter( $meta['recurrence_rules'], 'is_array' ) )
 		: array();
-		$rsvp_enabled        = ! empty( $meta['rsvp_enabled'] );
+		$stored_attendance_mode      = get_post_meta( self::$event_id, 'attendance_mode', true );
+		$attendance_mode             = isset( $meta['attendance_mode'] )
+			? sanitize_text_field( $meta['attendance_mode'] )
+			: ( ! empty( $stored_attendance_mode ) ? sanitize_text_field( $stored_attendance_mode ) : ( self::$event_id ? 'rsvp' : 'none' ) );
+		$rsvp_enabled                = ( 'rsvp' === $attendance_mode );
 		$rsvp_capacity       = isset( $meta['rsvp_capacity'] ) ? absint( $meta['rsvp_capacity'] ) : 0;
 		$rsvp_show_remaining = array_key_exists( 'rsvp_show_remaining', $meta ) ? (bool) $meta['rsvp_show_remaining'] : true;
 		$rsvp_allow_guests   = ! empty( $meta['rsvp_allow_guests'] );
@@ -507,6 +512,23 @@ class Event {
 		update_post_meta( self::$event_id, 'rsvp_max_guests', $rsvp_max_guests );
 		update_post_meta( self::$event_id, 'rsvp_allow_edit', (bool) $rsvp_allow_edit );
 		update_post_meta( self::$event_id, 'rsvp_auto_account', (bool) $rsvp_auto_account );
+		update_post_meta( self::$event_id, 'attendance_mode', $attendance_mode );
+
+		$tickets_enabled             = ! empty( $meta['tickets_enabled'] );
+		$tickets_require_account     = ! empty( $meta['tickets_require_account'] );
+		$tickets_auto_create_account = ! empty( $meta['tickets_auto_create_account'] );
+		$tickets_show_remaining      = array_key_exists( 'tickets_show_remaining', $meta ) ? (bool) $meta['tickets_show_remaining'] : true;
+		$tickets_show_unavailable    = array_key_exists( 'tickets_show_unavailable', $meta ) ? (bool) $meta['tickets_show_unavailable'] : false;
+		$tickets_terms_conditions    = isset( $meta['tickets_terms_conditions'] ) ? wp_kses_post( $meta['tickets_terms_conditions'] ) : '';
+		$tickets_display_mode        = isset( $meta['tickets_display_mode'] ) ? sanitize_key( $meta['tickets_display_mode'] ) : 'cards';
+
+		update_post_meta( self::$event_id, 'tickets_enabled', (bool) $tickets_enabled );
+		update_post_meta( self::$event_id, 'tickets_require_account', (bool) $tickets_require_account );
+		update_post_meta( self::$event_id, 'tickets_auto_create_account', (bool) $tickets_auto_create_account );
+		update_post_meta( self::$event_id, 'tickets_show_remaining', $tickets_show_remaining ? 1 : 0 );
+		update_post_meta( self::$event_id, 'tickets_show_unavailable', (bool) $tickets_show_unavailable );
+		update_post_meta( self::$event_id, 'tickets_terms_conditions', $tickets_terms_conditions );
+		update_post_meta( self::$event_id, 'tickets_display_mode', $tickets_display_mode );
 
 		// Set FSE page template if provided.
 		$template = ! empty( $meta['template'] ) ? sanitize_key( $meta['template'] ) : '';
@@ -1458,6 +1480,20 @@ class Event {
 	}
 
 	/**
+	 * Returns the attendance mode for the event.
+	 *
+	 * @return string 'none', 'rsvp', or 'tickets'.
+	 */
+	public static function get_attendance_mode() {
+		$mode = get_post_meta( self::$event_id, 'attendance_mode', true );
+		if ( empty( $mode ) ) {
+			$mode = 'rsvp';
+		}
+
+		return apply_filters( 'eventkoi_get_event_attendance_mode', $mode, self::$event_id, self::$event );
+	}
+
+	/**
 	 * Returns whether RSVPs are enabled for the event.
 	 *
 	 * @return bool
@@ -2030,6 +2066,52 @@ class Event {
 		 * @param object $event    Event object.
 		 */
 		return apply_filters( 'eventkoi_rendered_event_timezone', $output, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered RSVP or tickets widget based on attendance mode.
+	 *
+	 * @return string
+	 */
+	public static function rendered_ticket_rsvp() {
+		$mode = self::get_attendance_mode();
+
+		if ( 'tickets' === $mode ) {
+			$event_id = self::get_id();
+			if ( empty( $event_id ) ) {
+				return '';
+			}
+
+			$instance_ts = function_exists( 'eventkoi_get_instance_id' )
+				? absint( eventkoi_get_instance_id() )
+				: 0;
+			if ( 0 === $instance_ts && isset( $_GET['instance'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				$instance_ts = absint( wp_unslash( $_GET['instance'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			}
+
+			Scripts::enqueue_frontend_assets();
+
+			$attrs = sprintf(
+				'data-event-id="%1$d" data-instance-ts="%2$d"',
+				(int) $event_id,
+				(int) $instance_ts
+			);
+
+			$output = sprintf(
+				'<div class="eventkoi-front"><div id="eventkoi-tickets-%1$d" class="eventkoi-tickets" %2$s></div></div>',
+				(int) $event_id,
+				$attrs
+			);
+
+			return apply_filters( 'eventkoi_rendered_event_tickets', $output, self::$event_id, self::$event );
+		}
+
+		if ( 'rsvp' === $mode ) {
+			$output = do_shortcode( '[eventkoi_rsvp]' );
+			return apply_filters( 'eventkoi_rendered_event_rsvp', $output, self::$event_id, self::$event );
+		}
+
+		return '';
 	}
 
 	/**
