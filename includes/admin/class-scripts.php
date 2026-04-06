@@ -289,6 +289,14 @@ class Scripts {
 			unset( $settings['stripe_webhook'] );
 		}
 
+		// When WooCommerce checkout is active, override currency with WC's currency.
+		if ( class_exists( '\EventKoi\Core\WooCommerce_Checkout' )
+			&& \EventKoi\Core\WooCommerce_Checkout::is_active()
+			&& function_exists( 'get_woocommerce_currency' )
+		) {
+			$settings['currency'] = strtoupper( get_woocommerce_currency() );
+		}
+
 		return $settings;
 	}
 
