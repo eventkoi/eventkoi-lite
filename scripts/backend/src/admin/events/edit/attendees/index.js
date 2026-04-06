@@ -1,5 +1,6 @@
 import { DataTable } from "@/components/data-table";
 import { Heading } from "@/components/heading";
+import { OrderStatus } from "@/components/order/OrderStatus";
 import { SearchBox } from "@/components/search-box";
 import { SortButton } from "@/components/sort-button";
 import { Stat } from "@/components/stat";
@@ -25,6 +26,13 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import {
@@ -39,7 +47,8 @@ import {
 } from "@/components/ui/select";
 import { useEventEditContext } from "@/hooks/EventEditContext";
 import { formatShortDate, formatWPtime } from "@/lib/date-utils";
-import { showToast, showToastError } from "@/lib/toast";
+import { callLocalApi } from "@/lib/remote";
+import { BaseToast, showToast, showToastError } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import apiRequest from "@wordpress/api-fetch";
 import { __, sprintf } from "@wordpress/i18n";
@@ -50,10 +59,14 @@ import {
   CircleDotDashed,
   CircleMinus,
   CircleX,
+  Check,
+  Copy,
   EllipsisVertical,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 
 import { generateInstances } from "@/admin/events/edit/instances";
 import { useSettings } from "@/hooks/SettingsContext";
@@ -81,9 +94,10 @@ const statusSortOrder = {
 };
 
 const multiColumnSearch = (row, columnId, filterValue) => {
-  const searchableRowContent = `${row.original.name || ""} ${
-    row.original.email || ""
-  }`;
+  const codes = Array.isArray(row.original.checkin_codes) ? row.original.checkin_codes.join(" ") : "";
+  const searchableRowContent = `${row.original.name || row.original.customer_name || ""} ${
+    row.original.email || row.original.customer_email || ""
+  } ${row.original.order_id || ""} ${row.original.checkin_token || row.original.master_checkin_code || ""} ${codes}`;
   return searchableRowContent.toLowerCase().includes(filterValue.toLowerCase());
 };
 
@@ -94,6 +108,22 @@ const statusFilters = [
   { key: "not_going", title: "Not going" },
   { key: "cancelled", title: "Cancelled" },
 ];
+
+const shortOrderId = (value) => {
+  const orderId = String(value || "");
+  if (!orderId) return "";
+  if (!orderId.includes("-")) return orderId;
+  return orderId.split("-")[0];
+};
+
+const isCompletedOrderStatus = (status) => {
+  const normalized = String(status || "").toLowerCase();
+  return (
+    normalized === "complete" ||
+    normalized === "completed" ||
+    normalized === "succeeded"
+  );
+};
 
 function BulkRsvpActions({ table, onComplete }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -121,7 +151,9 @@ function BulkRsvpActions({ table, onComplete }) {
       });
 
       table.setRowSelection({});
-      onComplete?.();
+      if (!isResendEmail) {
+        onComplete?.();
+      }
 
       const message =
         action === "delete"
@@ -254,6 +286,24 @@ function RowRsvpActions({
 
   const runAction = async (action, status = null) => {
     if (!rsvpId) return;
+    const isResendEmail = action === "resend_email";
+    const toastId = `attendees-rsvp-resend-${rsvpId}`;
+
+    if (isResendEmail) {
+      toast.custom(
+        () => (
+          <div className="flex items-center justify-between gap-4 rounded-md p-3 text-sm font-medium w-[280px] shadow-lg bg-neutral-900 text-white border border-neutral-800">
+            <div className="flex min-w-0 items-center gap-2">
+              <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+              <span className="truncate">
+                {__("Sending confirmation email...", "eventkoi-lite")}
+              </span>
+            </div>
+          </div>
+        ),
+        { id: toastId, duration: Infinity }
+      );
+    }
 
     try {
       const response = await apiRequest({
@@ -271,14 +321,24 @@ function RowRsvpActions({
 
       const updatedCount = Number(response?.count ?? 0);
 
-      onComplete?.();
+      if (!isResendEmail) {
+        onComplete?.();
+      }
 
       if (!updatedCount) {
-        showToastError(
-          action === "resend_email"
-            ? __("No email sent.", "eventkoi-lite")
-            : __("No RSVP updated.", "eventkoi-lite"),
-        );
+        if (isResendEmail) {
+          toast.custom(
+            () => (
+              <BaseToast
+                message={__("No email sent.", "eventkoi-lite")}
+                variant="default"
+              />
+            ),
+            { id: toastId, duration: 4000 }
+          );
+        } else {
+          showToastError(__("No RSVP updated.", "eventkoi-lite"));
+        }
         return;
       }
 
@@ -289,10 +349,29 @@ function RowRsvpActions({
           ? __("Confirmation email sent.", "eventkoi-lite")
           : __("RSVP updated.", "eventkoi-lite");
 
-      showToast({ message });
+      if (isResendEmail) {
+        toast.custom(
+          () => <BaseToast message={message} variant="default" />,
+          { id: toastId, duration: 3000 }
+        );
+      } else {
+        showToast({ message });
+      }
     } catch (error) {
       console.error("RSVP row action error:", error);
-      showToastError(__("Action failed.", "eventkoi-lite"));
+      if (isResendEmail) {
+        toast.custom(
+          () => (
+            <BaseToast
+              message={__("Action failed.", "eventkoi-lite")}
+              variant="default"
+            />
+          ),
+          { id: toastId, duration: 4000 }
+        );
+      } else {
+        showToastError(__("Action failed.", "eventkoi-lite"));
+      }
     }
   };
 
@@ -343,6 +422,124 @@ function RowRsvpActions({
         </AlertDialogContent>
       </AlertDialog>
     </>
+  );
+}
+
+function RowTicketActions({ orderId, paymentStatus, onArchive }) {
+  const canResend = !!orderId && isCompletedOrderStatus(paymentStatus);
+
+  const handleResendConfirmation = async () => {
+    if (!canResend) return;
+    const toastId = `attendees-ticket-resend-${orderId}`;
+
+    toast.custom(
+      () => (
+        <div className="flex items-center justify-between gap-4 rounded-md p-3 text-sm font-medium w-[280px] shadow-lg bg-neutral-900 text-white border border-neutral-800">
+          <div className="flex min-w-0 items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+            <span className="truncate">
+              {__("Sending ticket confirmation...", "eventkoi-lite")}
+            </span>
+          </div>
+        </div>
+      ),
+      { id: toastId, duration: Infinity }
+    );
+
+    try {
+      await callLocalApi("tickets/orders/resend-confirmation", {
+        method: "POST",
+        data: {
+          order_id: orderId,
+        },
+      });
+
+      toast.custom(
+        () => (
+          <BaseToast
+            message={__("Ticket confirmation sent.", "eventkoi-lite")}
+            variant="default"
+          />
+        ),
+        { id: toastId, duration: 3000 }
+      );
+    } catch (error) {
+      console.error("Ticket resend confirmation failed:", error);
+      toast.custom(
+        () => (
+          <BaseToast
+            message={__("Failed to resend confirmation.", "eventkoi-lite")}
+            variant="default"
+          />
+        ),
+        { id: toastId, duration: 4000 }
+      );
+    }
+  };
+
+  const handleArchive = async () => {
+    if (!orderId) return;
+    const toastId = `attendees-ticket-archive-${orderId}`;
+
+    try {
+      await callLocalApi("tickets/orders/archive", {
+        method: "POST",
+        data: { order_id: orderId, mode: "archive" },
+      });
+
+      toast.custom(
+        () => (
+          <BaseToast
+            message={__("Order archived.", "eventkoi-lite")}
+            variant="default"
+          />
+        ),
+        { id: toastId, duration: 3000 }
+      );
+
+      if (onArchive) onArchive();
+    } catch (error) {
+      console.error("Archive failed:", error);
+      toast.custom(
+        () => (
+          <BaseToast
+            message={__("Failed to archive order.", "eventkoi-lite")}
+            variant="default"
+          />
+        ),
+        { id: toastId, duration: 4000 }
+      );
+    }
+  };
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-8 w-8"
+          aria-label={__("Attendee actions", "eventkoi-lite")}
+        >
+          <EllipsisVertical className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-[190px]">
+        <DropdownMenuItem
+          onClick={handleResendConfirmation}
+          disabled={!canResend}
+        >
+          {__("Resend confirmation", "eventkoi-lite")}
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={handleArchive}
+          disabled={!orderId}
+          className="text-destructive focus:text-destructive"
+        >
+          {__("Archive", "eventkoi-lite")}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 
@@ -410,15 +607,160 @@ function CheckinCountInput({ row, onSave, disabled = false }) {
   );
 }
 
+function CopyableCode({ code, copied, onCopy }) {
+  const isCopied = copied === code;
+  return (
+    <button
+      type="button"
+      onClick={() => onCopy(code)}
+      className="group/code relative flex items-center gap-2 w-full rounded-lg px-3 py-2.5 text-left cursor-pointer border-0 bg-transparent hover:bg-accent/50 active:bg-accent transition-colors"
+    >
+      <span className="font-mono text-[13px] tracking-wide text-foreground">
+        {code}
+      </span>
+      <span className="ml-auto shrink-0">
+        {isCopied ? (
+          <Check className="h-3.5 w-3.5 text-green-600" />
+        ) : (
+          <Copy className="h-3.5 w-3.5 text-muted-foreground/0 group-hover/code:text-muted-foreground transition-colors" />
+        )}
+      </span>
+    </button>
+  );
+}
+
+function CheckinCodesDialog({ codes, masterCode, customerName, orderId, checkedInCount, children }) {
+  const [copied, setCopied] = useState(null);
+
+  const handleCopy = (code) => {
+    navigator.clipboard.writeText(code).then(() => {
+      setCopied(code);
+      setTimeout(() => setCopied(null), 1500);
+    });
+  };
+
+  const wcMatch = orderId ? orderId.match(/^wc_(\d+)/) : null;
+  const displayOrderId = wcMatch ? `#${wcMatch[1]}` : orderId;
+
+  return (
+    <Dialog>
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent className="sm:max-w-[360px] p-0 gap-0 rounded-xl overflow-hidden">
+        <DialogHeader className="px-5 pt-5 pb-4 space-y-0">
+          <div className="flex items-center justify-between">
+            <DialogTitle className="text-[15px] font-semibold tracking-[-0.01em]">
+              {__("Check-in codes", "eventkoi-lite")}
+            </DialogTitle>
+            <span className="text-[13px] text-muted-foreground tabular-nums mr-6">
+              {checkedInCount}/{codes.length}
+            </span>
+          </div>
+          <p className="text-[13px] text-muted-foreground !mt-0.5">
+            {customerName}
+            {displayOrderId ? <span className="text-muted-foreground/60"> · {displayOrderId}</span> : ""}
+          </p>
+        </DialogHeader>
+
+        {masterCode && (
+          <div className="px-5 pb-3">
+            <button
+              type="button"
+              onClick={() => handleCopy(masterCode)}
+              className="group/master w-full flex items-center justify-between rounded-xl bg-accent/60 px-4 py-3 cursor-pointer border-0 text-left hover:bg-accent transition-colors"
+            >
+              <div className="min-w-0">
+                <span className="text-[11px] font-medium text-muted-foreground/70 uppercase tracking-widest">
+                  {__("Group check-in", "eventkoi-lite")}
+                </span>
+                <div className="font-mono text-[15px] font-semibold tracking-wide mt-0.5">
+                  {masterCode}
+                </div>
+              </div>
+              <span className="shrink-0 ml-3">
+                {copied === masterCode ? (
+                  <Check className="h-4 w-4 text-green-600" />
+                ) : (
+                  <Copy className="h-4 w-4 text-muted-foreground/0 group-hover/master:text-muted-foreground transition-colors" />
+                )}
+              </span>
+            </button>
+          </div>
+        )}
+
+        <div className="px-2 pb-2 max-h-[45vh] overflow-y-auto">
+          {codes.map((code) => (
+            <CopyableCode key={code} code={code} copied={copied} onCopy={handleCopy} />
+          ))}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function TicketCheckinCountInput({ row, onSave, disabled = false }) {
+  const maxCount = Math.max(1, Number(row.quantity || 1) || 1);
+  const storedCount = Number(row.checked_in_count || 0);
+  const [value, setValue] = useState(storedCount > 0 ? String(storedCount) : "");
+
+  useEffect(() => {
+    setValue(storedCount > 0 ? String(storedCount) : "");
+  }, [storedCount]);
+
+  const commitValue = () => {
+    const parsed = value === "" ? 0 : Math.max(0, parseInt(value, 10) || 0);
+    const capped = Math.min(parsed, maxCount);
+    if (capped === storedCount) {
+      setValue(capped > 0 ? String(capped) : "");
+      return;
+    }
+    setValue(capped > 0 ? String(capped) : "");
+    onSave?.(capped);
+  };
+
+  return (
+    <Input
+      type="number"
+      min={0}
+      max={maxCount}
+      value={value}
+      onChange={(e) => {
+        const v = e.target.value;
+        if (v === "") {
+          setValue("");
+          return;
+        }
+        const num = Math.max(0, Math.min(maxCount, Number(v) || 0));
+        setValue(String(num));
+      }}
+      onBlur={commitValue}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          e.currentTarget.blur();
+        }
+      }}
+      disabled={disabled}
+      placeholder="0"
+      aria-label={__("Checked-in count", "eventkoi-lite")}
+      className="h-9 w-14 px-2 text-center tabular-nums"
+    />
+  );
+}
+
 export function EventEditAttendees() {
   const { event, setEvent } = useEventEditContext();
   const { settings } = useSettings();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Determine if we're viewing RSVP or Tickets attendees based on route
+  const isTicketsAttendees = location.pathname.includes('/attendees') && event?.attendance_mode === 'tickets';
+  
   const statusFilter = searchParams.get("status") || "all";
 
   const [isLoading, setIsLoading] = useState(true);
   const [data, setData] = useState([]);
+  const [ticketsSoldTotal, setTicketsSoldTotal] = useState(0);
   const [instanceTs, setInstanceTs] = useState(null);
   const [isEnabling, setIsEnabling] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
@@ -527,11 +869,14 @@ export function EventEditAttendees() {
   }, [event?.date_type, instanceOptions, instanceTs, groupedInstanceOptions]);
 
   const filteredData = useMemo(() => {
+    if (isTicketsAttendees) {
+      return data;
+    }
     if (statusFilter === "all") return data;
     return data.filter(
       (row) => (row.status || "").toLowerCase() === statusFilter,
     );
-  }, [data, statusFilter]);
+  }, [data, statusFilter, isTicketsAttendees]);
 
   const capacity = useMemo(() => {
     return Number(event?.rsvp_capacity || 0);
@@ -591,7 +936,7 @@ export function EventEditAttendees() {
     try {
       const eventToSave = {
         ...event,
-        rsvp_enabled: true,
+        attendance_mode: 'rsvp',
         wp_status: event?.wp_status || "draft",
       };
 
@@ -622,35 +967,62 @@ export function EventEditAttendees() {
       setIsLoading(false);
       return;
     }
-    if (event?.date_type === "recurring" && !instanceTs) {
-      setData([]);
-      setIsLoading(false);
-      return;
-    }
 
     setIsLoading(true);
 
-    const params = new URLSearchParams({ event_id: String(event.id) });
-    if (instanceTs) {
-      params.set("instance_ts", String(instanceTs));
-    }
-
     try {
-      const response = await apiRequest({
-        path: `${eventkoi_params.api}/rsvps?${params.toString()}`,
-        method: "GET",
-        headers: {
-          "EVENTKOI-API-KEY": eventkoi_params.api_key,
-        },
-      });
+      let response;
+      
+      if (isTicketsAttendees) {
+        // Fetch ticket attendees rows + stats from edge + local WC stats.
+        const params = new URLSearchParams({ event_id: String(event.id) });
+        const [ordersResponse, combinedStats] = await Promise.all([
+          apiRequest({
+            path: `${eventkoi_params.api}/tickets/orders?${params.toString()}`,
+            method: "GET",
+            headers: {
+              "EVENTKOI-API-KEY": eventkoi_params.api_key,
+            },
+          }),
+          apiRequest({
+            path: `${eventkoi_params.api}/tickets/combined-stats?event_id=${event.id}`,
+            method: "GET",
+            headers: { "EVENTKOI-API-KEY": eventkoi_params.api_key },
+          }).catch(() => null),
+        ]);
+        response = ordersResponse;
+        setTicketsSoldTotal(Number(combinedStats?.tickets_sold || 0));
+      } else {
+        // Fetch RSVPs
+        if (event?.date_type === "recurring" && !instanceTs) {
+          setData([]);
+          setIsLoading(false);
+          return;
+        }
+
+        const params = new URLSearchParams({ event_id: String(event.id) });
+        if (instanceTs) {
+          params.set("instance_ts", String(instanceTs));
+        }
+
+        response = await apiRequest({
+          path: `${eventkoi_params.api}/rsvps?${params.toString()}`,
+          method: "GET",
+          headers: {
+            "EVENTKOI-API-KEY": eventkoi_params.api_key,
+          },
+        });
+        setTicketsSoldTotal(0);
+      }
+      
       setData(Array.isArray(response) ? response : []);
     } catch (error) {
-      console.error("RSVPs fetch error:", error);
+      console.error("Fetch error:", error);
       setData([]);
     } finally {
       setIsLoading(false);
     }
-  }, [event?.id, event?.date_type, instanceTs]);
+  }, [event?.id, event?.date_type, instanceTs, isTicketsAttendees]);
 
   useEffect(() => {
     fetchResults();
@@ -724,6 +1096,75 @@ export function EventEditAttendees() {
     }
   };
 
+  const exportTicketAttendeesCsv = async (table) => {
+    setIsExporting(true);
+    try {
+      const rows = table.getFilteredRowModel().rows || [];
+      const csvRows = rows.map((row) => ({
+        name: row.original.customer_name || "",
+        email: row.original.customer_email || "",
+        checkin_code:
+          row.original.checkin_token || row.original.master_checkin_code || "",
+        order_id: row.original.order_id || "",
+        order_status: row.original.payment_status || "",
+        quantity: Number(row.original.quantity || 0) || 0,
+        order_date: row.original.created_at || "",
+      }));
+
+      const headers = [
+        "Name",
+        "Email",
+        "Check-in code",
+        "Order ID",
+        "Order status",
+        "Ticket quantity",
+        "Order date",
+      ];
+
+      const escapeCsv = (value) => {
+        const text = String(value ?? "");
+        if (text.includes(",") || text.includes('"') || text.includes("\n")) {
+          return `"${text.replace(/"/g, '""')}"`;
+        }
+        return text;
+      };
+
+      const lines = [
+        headers.join(","),
+        ...csvRows.map((item) =>
+          [
+            item.name,
+            item.email,
+            item.checkin_code,
+            item.order_id,
+            item.order_status,
+            item.quantity,
+            item.order_date,
+          ]
+            .map(escapeCsv)
+            .join(",")
+        ),
+      ];
+
+      const blob = new Blob([lines.join("\n")], {
+        type: "text/csv;charset=utf-8;",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `eventkoi-ticket-attendees-${event?.id || "event"}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Export ticket attendees failed:", error);
+      showToastError(__("Failed to export CSV.", "eventkoi-lite"));
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const updateRowStatus = useCallback(
     async (rsvpId, status) => {
       if (!rsvpId || !status) return;
@@ -784,14 +1225,25 @@ export function EventEditAttendees() {
           return;
         }
 
+        // Optimistic local update — avoid full table + stats refetch.
+        setData((prev) =>
+          prev.map((row) =>
+            row.id === rsvpId
+              ? {
+                  ...row,
+                  checkin_status: status,
+                  checked_in: status === "checked_in" ? new Date().toISOString() : "",
+                }
+              : row
+          )
+        );
         showToast({ message: __("RSVP updated.", "eventkoi-lite") });
-        fetchResults();
       } catch (error) {
         console.error("RSVP check-in update error:", error);
         showToastError(__("Failed to update RSVP.", "eventkoi-lite"));
       }
     },
-    [fetchResults],
+    [],
   );
 
   const updateRowCheckinCount = useCallback(
@@ -819,14 +1271,81 @@ export function EventEditAttendees() {
           return;
         }
 
+        // Optimistic local update.
+        setData((prev) =>
+          prev.map((row) =>
+            row.id === rsvpId ? { ...row, checked_in_count: count } : row
+          )
+        );
         showToast({ message: __("RSVP updated.", "eventkoi-lite") });
-        fetchResults();
       } catch (error) {
         console.error("RSVP check-in count update error:", error);
         showToastError(__("Failed to update RSVP.", "eventkoi-lite"));
       }
     },
-    [fetchResults],
+    [],
+  );
+
+  const updateTicketCheckin = useCallback(
+    async (orderId, action) => {
+      if (!orderId || !action) return;
+
+      try {
+        const response = await callLocalApi("tickets/orders/checkin", {
+          method: "POST",
+          data: {
+            order_id: orderId,
+            action,
+          },
+        });
+
+        // Optimistic local update — avoid full table + stats refetch.
+        const newCount = Number(response?.checked_in_count ?? 0);
+        setData((prev) =>
+          prev.map((row) =>
+            row.order_id === orderId
+              ? { ...row, checked_in_count: newCount, checked_in: newCount > 0 ? 1 : 0 }
+              : row
+          )
+        );
+        showToast({ message: __("Check-in updated.", "eventkoi-lite") });
+      } catch (error) {
+        console.error("Ticket check-in update error:", error);
+        showToastError(__("Failed to update check-in.", "eventkoi-lite"));
+      }
+    },
+    [],
+  );
+
+  const updateTicketCheckinCount = useCallback(
+    async (orderId, count) => {
+      if (!orderId || count === null || count === undefined) return;
+
+      try {
+        const response = await callLocalApi("tickets/orders/checkin", {
+          method: "POST",
+          data: {
+            order_id: orderId,
+            count,
+          },
+        });
+
+        // Optimistic local update — avoid full table + stats refetch.
+        const newCount = Number(response?.checked_in_count ?? count);
+        setData((prev) =>
+          prev.map((row) =>
+            row.order_id === orderId
+              ? { ...row, checked_in_count: newCount, checked_in: newCount > 0 ? 1 : 0 }
+              : row
+          )
+        );
+        showToast({ message: __("Check-in updated.", "eventkoi-lite") });
+      } catch (error) {
+        console.error("Ticket check-in count update error:", error);
+        showToastError(__("Failed to update check-in.", "eventkoi-lite"));
+      }
+    },
+    [],
   );
 
   const columns = useMemo(
@@ -863,26 +1382,15 @@ export function EventEditAttendees() {
         accessorKey: "name",
         header: ({ column }) => <SortButton title="Name" column={column} />,
         cell: ({ row }) => (
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 shrink-0 overflow-hidden rounded-full bg-muted">
-              {row.original.avatar_url ? (
-                <img
-                  src={row.original.avatar_url}
-                  alt={row.original.name || __("Attendee avatar", "eventkoi")}
-                  className="h-full w-full object-cover"
-                />
-              ) : null}
+          <div className="min-w-0">
+            <div className="text-foreground truncate">
+              {row.original.name || "—"}
             </div>
-            <div className="min-w-0">
-              <div className="text-foreground truncate">
-                {row.original.name || "—"}
-              </div>
-              <div
-                className="text-xs text-muted-foreground truncate"
-                title={row.original.email || ""}
-              >
-                {row.original.email || "—"}
-              </div>
+            <div
+              className="text-xs text-muted-foreground truncate"
+              title={row.original.email || ""}
+            >
+              {row.original.email || "—"}
             </div>
           </div>
         ),
@@ -1088,7 +1596,8 @@ export function EventEditAttendees() {
         sortingFn: "alphanumeric",
       },
       {
-        accessorKey: "created",
+        id: "rsvp_date",
+        accessorFn: (row) => row.created,
         header: ({ column }) => (
           <SortButton title="RSVP date" column={column} />
         ),
@@ -1142,9 +1651,10 @@ export function EventEditAttendees() {
 
   const base = event?.id ? `events/${event.id}/attendees` : "events";
 
-  if (!event?.rsvp_enabled) {
+  // Show "Enable RSVP" message only when viewing RSVP attendees and RSVP is not enabled
+  if (!isTicketsAttendees && event?.attendance_mode !== 'rsvp') {
     return (
-      <div className="flex flex-col w-full gap-8">
+      <div className="flex flex-col w-full min-w-0 gap-8">
         <div className="flex-1 flex items-center justify-center px-4 min-h-[50vh]">
           <div className="w-full max-w-md text-center">
             <h2 className="text-lg font-semibold text-foreground mb-1">
@@ -1170,9 +1680,318 @@ export function EventEditAttendees() {
       </div>
     );
   }
+  
+  // Show ticket attendees table
+  if (isTicketsAttendees) {
+    const ticketColumns = useMemo(
+      () => [
+        {
+          id: "select",
+          header: ({ table }) => (
+            <div className="flex items-center justify-center min-h-6">
+              <Checkbox
+                checked={
+                  table.getIsAllPageRowsSelected() ||
+                  (table.getIsSomePageRowsSelected() && "indeterminate")
+                }
+                onCheckedChange={(value) =>
+                  table.toggleAllPageRowsSelected(!!value)
+                }
+                aria-label="Select all"
+              />
+            </div>
+          ),
+          cell: ({ row }) => (
+            <div className="flex items-center justify-center min-h-6">
+              <Checkbox
+                checked={row.getIsSelected()}
+                onCheckedChange={(value) => row.toggleSelected(!!value)}
+                aria-label="Select row"
+              />
+            </div>
+          ),
+          enableSorting: false,
+          enableHiding: false,
+        },
+        {
+          accessorKey: "customer_name",
+          header: ({ column }) => <SortButton title="Name" column={column} />,
+          cell: ({ row }) => (
+            <div className="min-w-0">
+              <div className="text-foreground truncate">
+                {row.original.customer_name || ""}
+              </div>
+              <div
+                className="text-xs text-muted-foreground truncate"
+                title={row.original.customer_email || ""}
+              >
+                {row.original.customer_email || ""}
+              </div>
+            </div>
+          ),
+          filterFn: multiColumnSearch,
+          sortingFn: "alphanumeric",
+        },
+        {
+          accessorKey: "checked_in",
+          header: () => <div className="text-sm font-normal">{__("Checked in", "eventkoi-lite")}</div>,
+          cell: ({ row }) => {
+            const checkedInCount = Number(row.original.checked_in_count || 0);
+            const totalQty = Number(row.original.quantity || 1);
+            const allCheckedIn = checkedInCount >= totalQty;
+            const status = allCheckedIn ? "checked_in" : "check_in";
+            const buttonLabel = allCheckedIn
+              ? __("Checked in", "eventkoi-lite")
+              : __("Check in", "eventkoi-lite");
+            const nextAction = allCheckedIn ? "check_in" : "checked_in";
+            const checkedInClass = allCheckedIn
+              ? "bg-[#0D5342] text-white hover:bg-[#0D5342]/90 hover:text-white border-[#0D5342]"
+              : "";
+            const orderId = row.original.order_id || "";
+            const controlsDisabled = !isCompletedOrderStatus(row.original.payment_status);
+
+            return (
+              <div className="flex items-center gap-2">
+                <TicketCheckinCountInput
+                  row={row.original}
+                  onSave={(count) => updateTicketCheckinCount(orderId, count)}
+                  disabled={controlsDisabled}
+                />
+                <div className="flex items-center gap-[1px]">
+                  <Button
+                    variant="outline"
+                    className={cn("h-9 px-3 rounded-r-none font-medium", checkedInClass)}
+                    onClick={() => updateTicketCheckin(orderId, nextAction)}
+                    disabled={controlsDisabled}
+                  >
+                    {buttonLabel}
+                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn("h-9 w-8 rounded-l-none p-0", checkedInClass)}
+                        aria-label={__("Check-in actions", "eventkoi-lite")}
+                        disabled={controlsDisabled}
+                      >
+                        <ChevronDown className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-[140px]">
+                      <DropdownMenuItem
+                        onClick={() => updateTicketCheckin(orderId, "check_in")}
+                        disabled={status === "check_in"}
+                      >
+                        {__("Check in", "eventkoi-lite")}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => updateTicketCheckin(orderId, "checked_in")}
+                        disabled={status === "checked_in"}
+                      >
+                        {__("Checked in", "eventkoi-lite")}
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+            );
+          },
+          sortingFn: "alphanumeric",
+        },
+        {
+          accessorKey: "checkin_codes",
+          header: () => <div className="text-sm font-normal">{__("Check-in codes", "eventkoi-lite")}</div>,
+          cell: ({ row }) => {
+            const codes = Array.isArray(row.original.checkin_codes)
+              ? row.original.checkin_codes
+              : [];
+            const masterCode = row.original.master_checkin_code || "";
+            const allCodes = codes.length > 0 ? codes : masterCode ? [masterCode] : [];
+
+            if (allCodes.length === 0) return <div className="text-muted-foreground">—</div>;
+
+            if (allCodes.length === 1) {
+              return (
+                <span className="font-mono text-xs text-foreground">{allCodes[0]}</span>
+              );
+            }
+
+            return (
+              <CheckinCodesDialog
+                codes={allCodes}
+                masterCode={masterCode}
+                customerName={row.original.customer_name || ""}
+                orderId={row.original.order_id || ""}
+                checkedInCount={row.original.checked_in_count || 0}
+              >
+                <button
+                  type="button"
+                  className="text-xs cursor-pointer bg-transparent border-0 p-0 whitespace-nowrap"
+                >
+                  <span className="font-mono text-foreground">{allCodes[0]}</span>{" "}
+                  <span className="text-muted-foreground hover:text-foreground">+{allCodes.length - 1}</span>
+                </button>
+              </CheckinCodesDialog>
+            );
+          },
+          sortingFn: "alphanumeric",
+        },
+        {
+          accessorKey: "order_id",
+          header: ({ column }) => <SortButton title="Order ID" column={column} />,
+          cell: ({ row }) => {
+            const orderId = row.original.order_id || "";
+            if (!orderId) return <div className="text-foreground" />;
+
+            // WC orders link to WooCommerce admin order page.
+            const wcMatch = orderId.match(/^wc_(\d+)/);
+            if (wcMatch) {
+              return (
+                <div className="text-foreground">
+                  <a
+                    href={`${window.location.origin}/wp-admin/admin.php?page=wc-orders&action=edit&id=${wcMatch[1]}`}
+                    className="font-medium hover:underline hover:decoration-dotted underline-offset-4"
+                    title={`WooCommerce Order #${wcMatch[1]}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    #{wcMatch[1]}
+                  </a>
+                </div>
+              );
+            }
+
+            return (
+              <div className="text-foreground">
+                <Link
+                  to={`/tickets/orders/${encodeURIComponent(orderId)}`}
+                  className="font-medium hover:underline hover:decoration-dotted underline-offset-4"
+                  title={orderId}
+                >
+                  {shortOrderId(orderId)}
+                </Link>
+              </div>
+            );
+          },
+          filterFn: multiColumnSearch,
+          sortingFn: "alphanumeric",
+        },
+        {
+          accessorKey: "payment_status",
+          header: ({ column }) => <SortButton title="Order Status" column={column} />,
+          cell: ({ row }) => <OrderStatus order={row.original} />,
+          sortingFn: "alphanumeric",
+        },
+        {
+          accessorKey: "quantity",
+          header: ({ column }) => <SortButton title="Ticket quantity" column={column} />,
+          cell: ({ row }) => (
+            <div className="text-foreground">{row.original.quantity || 0}</div>
+          ),
+          sortingFn: "alphanumeric",
+        },
+        {
+          id: "order_date",
+          accessorFn: (row) => row.created_at,
+          header: ({ column }) => (
+            <SortButton title="Order date" column={column} />
+          ),
+          cell: ({ row }) => {
+            const created = row.original.created_at
+              ? new Date(row.original.created_at).toISOString()
+              : "";
+            return (
+              <div className="text-foreground whitespace-pre-line">
+                {formatWPtime(created)}
+              </div>
+            );
+          },
+          sortingFn: "alphanumeric",
+        },
+        {
+          id: "actions",
+          header: "",
+          cell: ({ row }) => (
+            <div className="flex justify-end">
+              <RowTicketActions
+                orderId={row.original.order_id || ""}
+                paymentStatus={row.original.payment_status || ""}
+                onArchive={fetchResults}
+              />
+            </div>
+          ),
+          enableSorting: false,
+          enableHiding: false,
+        },
+      ],
+      [fetchResults, updateTicketCheckin, updateTicketCheckinCount]
+    );
+
+    return (
+      <div className="flex flex-col w-full min-w-0 gap-8">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="flex flex-col gap-2">
+            <Heading>{__("Attendees", "eventkoi-lite")}</Heading>
+          </div>
+        </div>
+
+        <div className="rounded-lg border bg-card text-sm text-card-foreground shadow-sm w-full overflow-x-auto py-3 flex gap-4">
+          <div className="min-w-[16px]"></div>
+          <div className="grid grid-cols-1 grow">
+            <Stat
+              className="border-l-0 pl-0"
+              labelClassName="normal-case"
+              line1={__("Checked-in/Total tickets sold", "eventkoi-lite")}
+              line2={
+                isLoading ? (
+                  <Skeleton className="h-5 w-16" />
+                ) : (
+                  `${data.reduce(
+                    (sum, row) => sum + (Number(row.checked_in_count) || 0),
+                    0
+                  )}/${ticketsSoldTotal}`
+                )
+              }
+            />
+          </div>
+        </div>
+
+        <DataTable
+          data={filteredData}
+          columns={ticketColumns}
+          empty={__("No attendees yet.", "eventkoi-lite")}
+          base={base}
+          tableLayout="fixed"
+          tableClassName="min-w-0 overflow-x-auto"
+          hideDateRange
+          hideCategories
+          isLoading={isLoading}
+          fetchResults={fetchResults}
+          customTopRight={(table) => (
+            <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+              <SearchBox table={table} />
+              <Button
+                variant="outline"
+                disabled={isExporting}
+                onClick={() => exportTicketAttendeesCsv(table)}
+              >
+                <ArrowDownToLine className="mr-2 h-4 w-4" />
+                {isExporting
+                  ? __("Exporting...", "eventkoi-lite")
+                  : __("Export", "eventkoi-lite")}
+              </Button>
+            </div>
+          )}
+          hideFiltersControl
+          hideBottomSelected
+          defaultSort={[{ id: "order_date", desc: true }]}
+        />
+      </div>
+    );
+  }
 
   return (
-    <div className="flex flex-col w-full gap-8">
+    <div className="flex flex-col w-full min-w-0 gap-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-3">
@@ -1259,6 +2078,7 @@ export function EventEditAttendees() {
         empty={"No RSVPs are found."}
         base={base}
         tableLayout="fixed"
+        tableClassName="min-w-0 overflow-x-auto"
         hideDateRange
         hideCategories
         isLoading={isLoading}

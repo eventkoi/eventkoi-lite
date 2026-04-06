@@ -132,6 +132,16 @@ class Ticket_Order_Sync {
 		}
 
 		if ( $count > 0 ) {
+			// Release any inventory holds for this event once real order rows exist.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->query(
+				$wpdb->prepare(
+					"DELETE FROM {$table} WHERE event_id = %d AND payment_status = 'hold' AND customer_email = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$event_id,
+					$customer_email
+				)
+			);
+
 			self::sync_quantity_sold( $event_id, $items );
 		}
 

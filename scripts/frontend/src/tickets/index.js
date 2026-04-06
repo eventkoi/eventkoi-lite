@@ -539,6 +539,14 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
     return null;
   }
 
+  if (data.event_ended) {
+    return (
+      <div className="eventkoi-tickets__ended text-sm text-muted-foreground">
+        This event has ended and is no longer accepting ticket purchases.
+      </div>
+    );
+  }
+
   if (tickets.length === 0) {
     return null;
   }

@@ -262,7 +262,27 @@ class Ticket_Emails {
 
 		list( $event_datetime, $event_timezone ) = self::get_event_datetime_parts( $event_id, $instance_ts );
 		$event_location                          = self::get_primary_physical_location( $event_id );
-		$checkin_code                            = sanitize_text_field( (string) ( $order['master_checkin_code'] ?? '' ) );
+
+		// Snapshot the event datetime at first send so resends show the original date.
+		$snapshot_key = 'eventkoi_email_snapshot_' . md5( $order_id );
+		$snapshot     = get_option( $snapshot_key );
+		if ( is_array( $snapshot ) ) {
+			$event_datetime = $snapshot['event_datetime'] ?? $event_datetime;
+			$event_timezone = $snapshot['event_timezone'] ?? $event_timezone;
+			$event_location = $snapshot['event_location'] ?? $event_location;
+		} else {
+			update_option(
+				$snapshot_key,
+				array(
+					'event_datetime' => $event_datetime,
+					'event_timezone' => $event_timezone,
+					'event_location' => $event_location,
+				),
+				false
+			);
+		}
+
+		$checkin_code = sanitize_text_field( (string) ( $order['master_checkin_code'] ?? '' ) );
 		$ticket_name_contexts                    = array_filter(
 			array_map(
 				'trim',

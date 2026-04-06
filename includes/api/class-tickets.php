@@ -969,6 +969,22 @@ class Tickets {
 
 		$event = new Event( $event_id );
 
+		// Check if event has already ended.
+		// For recurring events, use the instance timestamp if provided.
+		if ( $instance_ts > 0 ) {
+			$event_bound_ts = $instance_ts;
+		} else {
+			$event_end_ts   = absint( get_post_meta( $event_id, 'end_timestamp', true ) );
+			$event_start_ts = absint( get_post_meta( $event_id, 'start_timestamp', true ) );
+			$event_bound_ts = $event_end_ts ? $event_end_ts : $event_start_ts;
+		}
+		$event_ended = ( $event_bound_ts > 0 && $event_bound_ts < time() );
+
+		$event_status = get_post_meta( $event_id, 'status', true );
+		if ( 'completed' === $event_status || 'cancelled' === $event_status ) {
+			$event_ended = true;
+		}
+
 		$table_name = $wpdb->prefix . 'eventkoi_tickets';
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -1012,9 +1028,10 @@ class Tickets {
 			$local_quantity_sold  = isset( $ticket->quantity_sold ) ? absint( $ticket->quantity_sold ) : 0;
 			$remote_quantity_sold = isset( $remote_ticket_sales[ (int) $ticket->id ] ) ? absint( $remote_ticket_sales[ (int) $ticket->id ] ) : 0;
 			$quantity_sold        = max( $local_quantity_sold, $remote_quantity_sold );
-			$remaining            = null;
+			$remaining = null;
 			if ( null !== $quantity_available ) {
-				$remaining = max( $quantity_available - $quantity_sold, 0 );
+				$held_qty  = self::get_held_quantity( $event_id, (int) $ticket->id );
+				$remaining = max( $quantity_available - $quantity_sold - $held_qty, 0 );
 			}
 
 			$tickets[] = array(
@@ -1046,6 +1063,7 @@ class Tickets {
 				'tickets_show_unavailable'    => $event::get_tickets_show_unavailable(),
 				'tickets_terms_conditions'    => wp_kses_post( $event::get_tickets_terms_conditions() ),
 				'tickets_display_mode'        => $event::get_tickets_display_mode(),
+				'event_ended'                 => $event_ended,
 				'tickets'                     => $tickets,
 			),
 			200
@@ -1135,9 +1153,21 @@ class Tickets {
 			return new WP_Error( 'invalid_event', __( 'Invalid event.', 'eventkoi-lite' ), array( 'status' => 404 ) );
 		}
 
-		// Block purchases for completed or past events.
+		// Block purchases for completed, cancelled, or past events.
 		$event_status = get_post_meta( $event_id, 'status', true );
 		if ( 'completed' === $event_status || 'cancelled' === $event_status ) {
+			return new WP_Error( 'event_ended', __( 'This event has ended and is no longer accepting ticket purchases.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
+		// For recurring events, use the instance timestamp if provided.
+		if ( $instance_ts > 0 ) {
+			$event_bound_ts = $instance_ts;
+		} else {
+			$event_end_ts   = absint( get_post_meta( $event_id, 'end_timestamp', true ) );
+			$event_start_ts = absint( get_post_meta( $event_id, 'start_timestamp', true ) );
+			$event_bound_ts = $event_end_ts ? $event_end_ts : $event_start_ts;
+		}
+		if ( $event_bound_ts > 0 && $event_bound_ts < time() ) {
 			return new WP_Error( 'event_ended', __( 'This event has ended and is no longer accepting ticket purchases.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
@@ -1299,7 +1329,8 @@ class Tickets {
 			}
 
 			if ( null !== $ticket->quantity_available ) {
-				$remaining = max( absint( $ticket->quantity_available ) - absint( $ticket->quantity_sold ), 0 );
+				$held_qty  = self::get_held_quantity( $event_id, $ticket_id );
+				$remaining = max( absint( $ticket->quantity_available ) - absint( $ticket->quantity_sold ) - $held_qty, 0 );
 				if ( $quantity > $remaining ) {
 					return new WP_Error( 'insufficient_quantity', __( 'Not enough tickets remaining for one or more selections.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 				}
@@ -1376,6 +1407,10 @@ class Tickets {
 			'metadata'             => $metadata,
 		);
 
+		// Create inventory holds for all selected tickets.
+		$hold_id = 'hold_' . wp_generate_uuid4();
+		self::create_inventory_holds( $hold_id, $event_id, $sanitized_items, $tickets_by_id, $currency, $email, $customer_name );
+
 		// Branch: WooCommerce checkout.
 		if ( \EventKoi\Core\WooCommerce_Checkout::is_active() ) {
 			$wc_result = \EventKoi\Core\WooCommerce_Checkout::create_checkout_order(
@@ -1396,6 +1431,7 @@ class Tickets {
 			);
 
 			if ( is_wp_error( $wc_result ) ) {
+				self::release_inventory_holds( $hold_id );
 				return $wc_result;
 			}
 
@@ -1416,9 +1452,11 @@ class Tickets {
 		// Default: Stripe checkout via Supabase edge function.
 		$edge_response = self::call_edge_function( 'create-ticket-checkout-session', $payload, 'POST' );
 		if ( is_wp_error( $edge_response ) ) {
+			self::release_inventory_holds( $hold_id );
 			return $edge_response;
 		}
 		if ( ! is_array( $edge_response ) ) {
+			self::release_inventory_holds( $hold_id );
 			return new WP_Error( 'checkout_failed', __( 'Unable to create checkout session right now.', 'eventkoi-lite' ), array( 'status' => 500 ) );
 		}
 
@@ -1437,6 +1475,7 @@ class Tickets {
 		}
 
 		if ( '' === $hosted_url ) {
+			self::release_inventory_holds( $hold_id );
 			return new WP_Error( 'missing_checkout_url', __( 'Checkout URL is missing from gateway response.', 'eventkoi-lite' ), array( 'status' => 500 ) );
 		}
 
@@ -2383,5 +2422,137 @@ class Tickets {
 		}
 
 		return absint( $user_id );
+	}
+
+	/**
+	 * Hold duration in seconds (30 minutes).
+	 *
+	 * @var int
+	 */
+	const HOLD_DURATION = 1800;
+
+	/**
+	 * Create inventory hold rows for a checkout attempt.
+	 *
+	 * @param string $hold_id       Unique hold identifier.
+	 * @param int    $event_id      Event ID.
+	 * @param array  $items         Sanitized checkout items.
+	 * @param array  $tickets_by_id Ticket rows keyed by ID.
+	 * @param string $currency      Currency code.
+	 * @param string $email         Customer email.
+	 * @param string $customer_name Customer name.
+	 */
+	private static function create_inventory_holds( $hold_id, $event_id, $items, $tickets_by_id, $currency, $email, $customer_name ) {
+		global $wpdb;
+
+		$table      = $wpdb->prefix . 'eventkoi_ticket_orders';
+		$created_at = gmdate( 'Y-m-d H:i:s' );
+
+		self::cleanup_expired_holds();
+
+		// Release any previous holds from the same customer for this event
+		// to prevent stacking when someone clicks "Buy" multiple times.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM {$table} WHERE event_id = %d AND customer_email = %s AND payment_status = 'hold'", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$event_id,
+				$email
+			)
+		);
+
+		foreach ( $items as $item ) {
+			$ticket_id = (int) $item['ticket_id'];
+			$quantity  = (int) $item['quantity'];
+			$ticket    = $tickets_by_id[ $ticket_id ] ?? null;
+
+			if ( null === $ticket || null === $ticket->quantity_available ) {
+				continue;
+			}
+
+			$unit_price = (float) ( $ticket->price ?? 0 );
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+			$wpdb->insert(
+				$table,
+				array(
+					'event_id'       => $event_id,
+					'ticket_id'      => $ticket_id,
+					'order_id'       => $hold_id . ':' . $ticket_id,
+					'customer_name'  => $customer_name,
+					'customer_email' => $email,
+					'quantity'       => $quantity,
+					'unit_price'     => $unit_price,
+					'total_amount'   => $unit_price * $quantity,
+					'currency'       => $currency,
+					'payment_status' => 'hold',
+					'created_at'     => $created_at,
+				),
+				array( '%d', '%d', '%s', '%s', '%s', '%d', '%f', '%f', '%s', '%s', '%s' )
+			);
+		}
+	}
+
+	/**
+	 * Release inventory holds for a specific hold ID.
+	 *
+	 * @param string $hold_id Hold identifier.
+	 */
+	private static function release_inventory_holds( $hold_id ) {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'eventkoi_ticket_orders';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM {$table} WHERE order_id LIKE %s AND payment_status = 'hold'", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$wpdb->esc_like( $hold_id ) . '%'
+			)
+		);
+	}
+
+	/**
+	 * Get the total held quantity for a ticket (unexpired holds).
+	 *
+	 * @param int $event_id  Event ID.
+	 * @param int $ticket_id Ticket ID.
+	 * @return int Held quantity.
+	 */
+	private static function get_held_quantity( $event_id, $ticket_id ) {
+		global $wpdb;
+
+		$table     = $wpdb->prefix . 'eventkoi_ticket_orders';
+		$threshold = gmdate( 'Y-m-d H:i:s', time() - self::HOLD_DURATION );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$held = $wpdb->get_var(
+			$wpdb->prepare(
+				"SELECT COALESCE(SUM(quantity), 0) FROM {$table} WHERE event_id = %d AND ticket_id = %d AND payment_status = 'hold' AND created_at > %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$event_id,
+				$ticket_id,
+				$threshold
+			)
+		);
+
+		return absint( $held );
+	}
+
+	/**
+	 * Delete expired hold rows from the ticket orders table.
+	 */
+	private static function cleanup_expired_holds() {
+		global $wpdb;
+
+		$table     = $wpdb->prefix . 'eventkoi_ticket_orders';
+		$threshold = gmdate( 'Y-m-d H:i:s', time() - self::HOLD_DURATION );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->query(
+			$wpdb->prepare(
+				"DELETE FROM {$table} WHERE payment_status = 'hold' AND created_at <= %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$threshold
+			)
+		);
 	}
 }
