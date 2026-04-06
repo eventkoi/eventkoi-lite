@@ -33,7 +33,7 @@ if ( 0 === $event_id ) {
 if ( 0 === $event_id ) {
 	if ( class_exists( 'FLBuilderModel' ) && FLBuilderModel::is_builder_active() ) {
 		echo '<div class="eventkoi-beaver-module-placeholder" style="text-align:center; padding: 20px; background: #f0f0f1; border: 1px dashed #ccc;">';
-		esc_html_e( 'Please select an event to display data.', 'eventkoi' );
+		esc_html_e( 'Please select an event to display data.', 'eventkoi-lite' );
 		echo '</div>';
 	}
 	return;

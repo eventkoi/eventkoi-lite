@@ -9,7 +9,13 @@ namespace EventKoi\Core;
 
 defined( 'ABSPATH' ) || exit;
 
+/**
+ * Register Beaver Builder modules and settings forms.
+ */
 class Beaver_Modules {
+	/**
+	 * Hook Beaver module registration.
+	 */
 	public function __construct() {
 		add_action( 'init', array( $this, 'register_modules' ), 20 );
 	}
@@ -31,31 +37,31 @@ class Beaver_Modules {
 	}
 
 	/**
-	 * Get settings form for Event Data item
+	 * Get settings form for Event Data item.
 	 *
 	 * @return array
 	 */
 	private function get_event_data_item_form() {
 		return array(
-			'title' => __( 'Event Data Item Settings', 'eventkoi' ),
+			'title' => __( 'Event Data Item Settings', 'eventkoi-lite' ),
 			'tabs'  => array(
 				'general' => array(
-					'title'    => __( 'General', 'eventkoi' ),
+					'title'    => __( 'General', 'eventkoi-lite' ),
 					'sections' => array(
 						'general' => array(
 							'title'  => '',
 							'fields' => array(
 								'data_type' => array(
 									'type'    => 'select',
-									'label'   => __( 'Data Type', 'eventkoi' ),
+									'label'   => __( 'Data Type', 'eventkoi-lite' ),
 									'options' => eventkoi_get_event_data_options(),
 								),
 								'show'      => array(
 									'type'    => 'select',
-									'label'   => __( 'Show', 'eventkoi' ),
+									'label'   => __( 'Show', 'eventkoi-lite' ),
 									'options' => array(
-										'yes' => __( 'Yes', 'eventkoi' ),
-										'no'  => __( 'No', 'eventkoi' ),
+										'yes' => __( 'Yes', 'eventkoi-lite' ),
+										'no'  => __( 'No', 'eventkoi-lite' ),
 									),
 									'default' => 'yes',
 								),
@@ -68,50 +74,51 @@ class Beaver_Modules {
 	}
 
 	/**
-	 * Get settings for Event Calendar module
+	 * Get settings for Event Calendar module.
 	 *
-	 * @return array[]
+	 * @return array
 	 */
 	private function get_calendar_module_form() {
 		return array(
 			'general' => array(
-				'title'    => __( 'Calendar Options', 'eventkoi' ),
+				'title'    => __( 'Calendar Options', 'eventkoi-lite' ),
 				'sections' => array(
 					'general' => array(
 						'title'  => '',
 						'fields' => array(
 							'calendars'      => array(
 								'type'    => 'select',
-								'label'   => __( 'Select Calendar', 'eventkoi' ),
+								'label'   => __( 'Select Calendar', 'eventkoi-lite' ),
 								'options' => eventkoi_get_calendar_options(),
-								'help'    => __( 'Leave empty to use the default calendar.', 'eventkoi' ),
+								'help'    => __( 'Leave empty to use the default calendar.', 'eventkoi-lite' ),
 							),
 							'timeframe'      => array(
 								'type'    => 'select',
-								'label'   => __( 'Timeframe defaults to', 'eventkoi' ),
+								'label'   => __( 'Timeframe defaults to', 'eventkoi-lite' ),
 								'default' => 'month',
 								'options' => array(
-									'month' => __( 'Month', 'eventkoi' ),
-									'week'  => __( 'Week', 'eventkoi' ),
+									'month' => __( 'Month', 'eventkoi-lite' ),
+									'week'  => __( 'Week', 'eventkoi-lite' ),
 								),
 							),
 							'default_month'  => array(
 								'type'    => 'select',
-								'label'   => __( 'Default month to display', 'eventkoi' ),
+								'label'   => __( 'Default month to display', 'eventkoi-lite' ),
 								'default' => 'current',
 								'options' => eventkoi_get_month_options(),
-								'help'    => __( 'Choose a fixed month or use the current month.', 'eventkoi' ),
+								'help'    => __( 'Choose a fixed month or use the current month.', 'eventkoi-lite' ),
 							),
 							'default_year'   => array(
 								'type'        => 'text',
-								'label'       => __( 'Default year to display', 'eventkoi' ),
+								'label'       => __( 'Default year to display', 'eventkoi-lite' ),
 								'placeholder' => wp_date( 'Y' ),
-								'help'        => __( 'Leave empty to follow the current year or enter a four-digit year (e.g. 2025).', 'eventkoi' ),
+								/* translators: %s: example year value. */
+								'help'        => sprintf( __( 'Leave empty to follow the current year or enter a four-digit year (e.g. %s).', 'eventkoi-lite' ), '2025' ),
 								'size'        => '10',
 							),
 							'week_starts_on' => array(
 								'type'    => 'select',
-								'label'   => __( 'Week starts on', 'eventkoi' ),
+								'label'   => __( 'Week starts on', 'eventkoi-lite' ),
 								'default' => 'monday',
 								'options' => eventkoi_get_weekday_options(),
 							),
@@ -120,23 +127,23 @@ class Beaver_Modules {
 				),
 			),
 			'style'   => array(
-				'title'    => __( 'Style', 'eventkoi' ),
+				'title'    => __( 'Style', 'eventkoi-lite' ),
 				'sections' => array(
 					'labels' => array(
-						'title'  => __( 'Day\'s Labels', 'eventkoi' ),
+						'title'  => __( 'Day\'s Labels', 'eventkoi-lite' ),
 						'fields' => array(
-							'table_header_label_typography'     => array(
+							'table_header_label_typography' => array(
 								'type'       => 'typography',
-								'label'      => __( 'Typography', 'eventkoi' ),
+								'label'      => __( 'Typography', 'eventkoi-lite' ),
 								'responsive' => true,
 								'preview'    => array(
 									'type'     => 'css',
 									'selector' => 'table.fc-scrollgrid .fc-col-header-cell span',
 								),
 							),
-							'table_header_label_color'          => array(
+							'table_header_label_color'    => array(
 								'type'       => 'color',
-								'label'      => __( 'Color', 'eventkoi' ),
+								'label'      => __( 'Color', 'eventkoi-lite' ),
 								'show_reset' => true,
 								'preview'    => array(
 									'type'     => 'css',
@@ -144,9 +151,9 @@ class Beaver_Modules {
 									'property' => 'color',
 								),
 							),
-							'table_header_label_bg_color'       => array(
+							'table_header_label_bg_color' => array(
 								'type'       => 'color',
-								'label'      => __( 'Background Color', 'eventkoi' ),
+								'label'      => __( 'Background Color', 'eventkoi-lite' ),
 								'show_reset' => true,
 								'preview'    => array(
 									'type'     => 'css',
@@ -154,9 +161,9 @@ class Beaver_Modules {
 									'property' => 'background-color',
 								),
 							),
-							'table_header_label_hover_color'    => array(
+							'table_header_label_hover_color' => array(
 								'type'       => 'color',
-								'label'      => __( 'Hover Color', 'eventkoi' ),
+								'label'      => __( 'Hover Color', 'eventkoi-lite' ),
 								'show_reset' => true,
 								'preview'    => array(
 									'type'     => 'css',
@@ -166,7 +173,7 @@ class Beaver_Modules {
 							),
 							'table_header_label_hover_bg_color' => array(
 								'type'       => 'color',
-								'label'      => __( 'Hover Background Color', 'eventkoi' ),
+								'label'      => __( 'Hover Background Color', 'eventkoi-lite' ),
 								'show_reset' => true,
 								'preview'    => array(
 									'type'     => 'css',
@@ -182,7 +189,7 @@ class Beaver_Modules {
 	}
 
 	/**
-	 * Get settings for Event Data module
+	 * Get settings for Event Data module.
 	 *
 	 * @return array
 	 */
@@ -190,20 +197,20 @@ class Beaver_Modules {
 		$data_types = eventkoi_get_event_data_options();
 		$form       = array(
 			'general' => array(
-				'title'    => __( 'Event Options', 'eventkoi' ),
+				'title'    => __( 'Event Options', 'eventkoi-lite' ),
 				'sections' => array(
 					'general' => array(
 						'title'  => '',
 						'fields' => array(
 							'event_id'         => array(
 								'type'    => 'select',
-								'label'   => __( 'Select Event', 'eventkoi' ),
+								'label'   => __( 'Select Event', 'eventkoi-lite' ),
 								'options' => $this->get_beaver_event_options(),
 								'default' => '',
 							),
 							'event_data_items' => array(
 								'type'         => 'form',
-								'label'        => __( 'Event Data Items', 'eventkoi' ),
+								'label'        => __( 'Event Data Items', 'eventkoi-lite' ),
 								'form'         => 'eventkoi_event_data_item_form',
 								'preview_text' => 'data_type',
 								'multiple'     => true,
@@ -214,7 +221,7 @@ class Beaver_Modules {
 				),
 			),
 			'style'   => array(
-				'title'    => __( 'Style', 'eventkoi' ),
+				'title'    => __( 'Style', 'eventkoi-lite' ),
 				'sections' => array(),
 			),
 		);
@@ -225,7 +232,7 @@ class Beaver_Modules {
 				'fields' => array(
 					$data_type_key . '_typography' => array(
 						'type'       => 'typography',
-						'label'      => __( 'Typography', 'eventkoi' ),
+						'label'      => __( 'Typography', 'eventkoi-lite' ),
 						'responsive' => false,
 						'preview'    => array(
 							'type'     => 'css',
@@ -234,7 +241,7 @@ class Beaver_Modules {
 					),
 					$data_type_key . '_color'      => array(
 						'type'       => 'color',
-						'label'      => __( 'Text Color', 'eventkoi' ),
+						'label'      => __( 'Text Color', 'eventkoi-lite' ),
 						'show_reset' => true,
 						'preview'    => array(
 							'type'     => 'css',
@@ -244,7 +251,7 @@ class Beaver_Modules {
 					),
 					$data_type_key . '_bg_color'   => array(
 						'type'       => 'color',
-						'label'      => __( 'Background Color', 'eventkoi' ),
+						'label'      => __( 'Background Color', 'eventkoi-lite' ),
 						'show_reset' => true,
 						'preview'    => array(
 							'type'     => 'css',
@@ -254,12 +261,12 @@ class Beaver_Modules {
 					),
 					$data_type_key . '_align'      => array(
 						'type'    => 'select',
-						'label'   => __( 'Alignment', 'eventkoi' ),
+						'label'   => __( 'Alignment', 'eventkoi-lite' ),
 						'options' => array(
-							''       => __( 'Default', 'eventkoi' ),
-							'left'   => __( 'Left', 'eventkoi' ),
-							'center' => __( 'Center', 'eventkoi' ),
-							'right'  => __( 'Right', 'eventkoi' ),
+							''       => __( 'Default', 'eventkoi-lite' ),
+							'left'   => __( 'Left', 'eventkoi-lite' ),
+							'center' => __( 'Center', 'eventkoi-lite' ),
+							'right'  => __( 'Right', 'eventkoi-lite' ),
 						),
 						'preview' => array(
 							'type'     => 'css',
@@ -290,7 +297,7 @@ class Beaver_Modules {
 		}
 
 		$options = array(
-			'' => __( 'Use current event context', 'eventkoi' ),
+			'' => __( 'Use current event context', 'eventkoi-lite' ),
 		);
 
 		$events = get_posts(
@@ -308,13 +315,16 @@ class Beaver_Modules {
 		}
 
 		foreach ( $events as $event_post ) {
-			$id    = absint( $event_post->ID );
-			$title = ! empty( $event_post->post_title )
+			$id = absint( $event_post->ID );
+			/* translators: %d: event post ID used as fallback event label. */
+			$fallback_title          = sprintf( __( 'Event #%d', 'eventkoi-lite' ), $id );
+			$title                   = ! empty( $event_post->post_title )
 				? $event_post->post_title
-				: sprintf( __( 'Event #%d', 'eventkoi' ), $id );
+				: $fallback_title;
 			$options[ (string) $id ] = $title;
 		}
 
 		return $options;
 	}
+
 }
