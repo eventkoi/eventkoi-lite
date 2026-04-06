@@ -87,6 +87,6 @@ foreach ( $event_data_items as $item ) {
 
 if ( ! empty( $output ) ) {
 	echo '<div class="eventkoi-beaver-module">';
-	echo implode( '', $output );
+	echo wp_kses_post( implode( '', $output ) );
 	echo '</div>';
 }
