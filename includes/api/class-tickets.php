@@ -737,14 +737,28 @@ class Tickets {
 		$wc_sold     = absint( $wc_row->tickets_sold ?? 0 );
 		$wc_refunds  = (int) round( (float) ( $wc_row->refund_amount ?? 0 ) * 100 );
 
+		// Merge WC earnings/refunds into the per-currency breakdowns.
+		$net_by_currency     = $edge['net_earnings_by_currency'];
+		$refunds_by_currency = $edge['refunds_by_currency'];
+
+		if ( $wc_earnings > 0 && function_exists( 'get_woocommerce_currency' ) ) {
+			$wc_currency = strtoupper( get_woocommerce_currency() );
+			$net_by_currency[ $wc_currency ] = ( $net_by_currency[ $wc_currency ] ?? 0 ) + $wc_earnings;
+		}
+
+		if ( $wc_refunds > 0 && function_exists( 'get_woocommerce_currency' ) ) {
+			$wc_currency = strtoupper( get_woocommerce_currency() );
+			$refunds_by_currency[ $wc_currency ] = ( $refunds_by_currency[ $wc_currency ] ?? 0 ) + $wc_refunds;
+		}
+
 		return rest_ensure_response(
 			array(
 				'total_orders'             => $edge['total_orders'] + $wc_orders,
 				'total_earnings'           => $edge['total_earnings'] + $wc_earnings,
 				'tickets_sold'             => $edge['tickets_sold'] + $wc_sold,
 				'refund_amount'            => $edge['refund_amount'] + $wc_refunds,
-				'net_earnings_by_currency' => $edge['net_earnings_by_currency'],
-				'refunds_by_currency'      => $edge['refunds_by_currency'],
+				'net_earnings_by_currency' => $net_by_currency,
+				'refunds_by_currency'      => $refunds_by_currency,
 			)
 		);
 	}

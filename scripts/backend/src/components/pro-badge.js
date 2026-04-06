@@ -1,14 +1,14 @@
 import { cn } from "@/lib/utils";
 import { Zap } from "lucide-react";
 
-export function ProBadge({ className }) {
+export function ProBadge({ className, style }) {
   return (
     <span
       className={cn(
         "ml-2 inline-flex items-center uppercase px-[6px] py-[3px] rounded-full bg-primary text-xs font-semibold text-white gap-[2px]",
         className
       )}
-      style={{ lineHeight: 1.2 }}
+      style={{ lineHeight: 1.2, ...style }}
     >
       <Zap className="h-3 w-3 fill-white text-white" strokeWidth={0} />
       Pro

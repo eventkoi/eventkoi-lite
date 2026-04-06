@@ -518,11 +518,11 @@ export function SettingsEmails() {
                                 });
                               }}
                             >
-                              <span className="inline-flex items-center gap-2">
+                              <span className="inline-flex items-center gap-1.5">
                                 <span className={item.pro ? "opacity-60" : ""}>
                                   {item.tag}
                                 </span>
-                                {item.pro && <ProBadge className="ml-0" />}
+                                {item.pro && <ProBadge className="ml-0 text-[11px] py-0 h-4 [&_svg]:!h-[10px] [&_svg]:!w-[10px]" />}
                               </span>
                             </Badge>
                           </span>
@@ -532,7 +532,11 @@ export function SettingsEmails() {
                           sideOffset={8}
                           className="border-transparent bg-foreground text-background px-2 py-1 text-xs"
                         >
-                          {copiedTag === item.tag ? __("Copied!", "eventkoi-lite") : item.description}
+                          {copiedTag === item.tag
+                            ? __("Copied!", "eventkoi-lite")
+                            : item.pro
+                              ? `${item.description} (${__("Pro", "eventkoi-lite")})`
+                              : item.description}
                         </TooltipContent>
                       </Tooltip>
                     ))}

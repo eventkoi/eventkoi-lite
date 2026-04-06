@@ -54,10 +54,12 @@ export function RichTextEditor({
       menubar: false,
       branding: false,
       toolbar_mode: "sliding",
+      relative_urls: false,
+      remove_script_host: false,
       readonly: disabled,
-      plugins: "lists link wordpress",
+      plugins: "lists link image wordpress",
       toolbar:
-        "undo redo | heading1 heading2 heading3 heading4 | bold italic underline | bullist numlist | link | removeformat | htmlToggle",
+        "undo redo | heading1 heading2 heading3 heading4 | bold italic underline | bullist numlist | link | insertImage | removeformat | htmlToggle",
       block_formats:
         "Paragraph=p; Heading 1=h1; Heading 2=h2; Heading 3=h3; Heading 4=h4",
       content_style: `
@@ -69,6 +71,7 @@ export function RichTextEditor({
           color: #1f2937;
           background: transparent;
         }
+        img { max-width: 100%; height: auto; }
       `,
       setup: (ed) => {
         const headings = [
@@ -90,6 +93,30 @@ export function RichTextEditor({
               });
             },
           });
+        });
+
+        ed.addButton("insertImage", {
+          tooltip: "Insert image",
+          icon: "image",
+          onclick: () => {
+            const frame = window.wp?.media({
+              title: "Insert image",
+              button: { text: "Insert" },
+              library: { type: "image" },
+              multiple: false,
+            });
+            frame?.on("select", () => {
+              const attachment = frame.state().get("selection").first().toJSON();
+              const url = attachment.url;
+              const alt = attachment.alt || attachment.title || "";
+              ed.execCommand(
+                "mceInsertContent",
+                false,
+                `<img src="${url}" alt="${alt}" />`
+              );
+            });
+            frame?.open();
+          },
         });
 
         ed.addButton("htmlToggle", {
