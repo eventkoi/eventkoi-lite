@@ -607,25 +607,29 @@ function CheckinCountInput({ row, onSave, disabled = false }) {
   );
 }
 
-function CopyableCode({ code, copied, onCopy }) {
+function CopyableCode({ code, index, copied, onCopy }) {
   const isCopied = copied === code;
   return (
-    <button
-      type="button"
-      onClick={() => onCopy(code)}
-      className="group/code relative flex items-center gap-2 w-full rounded-lg px-3 py-2.5 text-left cursor-pointer border-0 bg-transparent hover:bg-accent/50 active:bg-accent transition-colors"
-    >
-      <span className="font-mono text-[13px] tracking-wide text-foreground">
+    <div className="flex items-center gap-3 rounded-lg border px-3 py-2.5">
+      <span className="flex items-center justify-center h-5 w-5 rounded-full bg-muted text-[11px] font-medium text-muted-foreground shrink-0">
+        {index}
+      </span>
+      <span className="font-mono text-[13px] tracking-wide text-foreground min-w-0 truncate">
         {code}
       </span>
-      <span className="ml-auto shrink-0">
+      <button
+        type="button"
+        onClick={() => onCopy(code)}
+        className="shrink-0 ml-auto inline-flex items-center justify-center h-7 w-7 rounded-md border-0 bg-transparent hover:bg-muted cursor-pointer transition-colors"
+        aria-label={__("Copy code", "eventkoi-lite")}
+      >
         {isCopied ? (
           <Check className="h-3.5 w-3.5 text-green-600" />
         ) : (
-          <Copy className="h-3.5 w-3.5 text-muted-foreground/0 group-hover/code:text-muted-foreground transition-colors" />
+          <Copy className="h-3.5 w-3.5 text-muted-foreground" />
         )}
-      </span>
-    </button>
+      </button>
+    </div>
   );
 }
 
@@ -639,23 +643,31 @@ function CheckinCodesDialog({ codes, masterCode, customerName, orderId, checkedI
     });
   };
 
+  const handleCopyAll = () => {
+    const allText = codes.join("\n");
+    navigator.clipboard.writeText(allText).then(() => {
+      setCopied("__all__");
+      setTimeout(() => setCopied(null), 1500);
+    });
+  };
+
   const wcMatch = orderId ? orderId.match(/^wc_(\d+)/) : null;
   const displayOrderId = wcMatch ? `#${wcMatch[1]}` : orderId;
 
   return (
     <Dialog>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[360px] p-0 gap-0 rounded-xl overflow-hidden">
+      <DialogContent className="sm:max-w-[380px] p-0 gap-0 rounded-xl overflow-hidden">
         <DialogHeader className="px-5 pt-5 pb-4 space-y-0">
           <div className="flex items-center justify-between">
             <DialogTitle className="text-[15px] font-semibold tracking-[-0.01em]">
               {__("Check-in codes", "eventkoi-lite")}
             </DialogTitle>
-            <span className="text-[13px] text-muted-foreground tabular-nums mr-6">
-              {checkedInCount}/{codes.length}
+            <span className="text-xs text-muted-foreground tabular-nums bg-muted px-2 py-0.5 rounded-full mr-6">
+              {checkedInCount}/{codes.length} {__("checked in", "eventkoi-lite")}
             </span>
           </div>
-          <p className="text-[13px] text-muted-foreground !mt-0.5">
+          <p className="text-[13px] text-muted-foreground !mt-1">
             {customerName}
             {displayOrderId ? <span className="text-muted-foreground/60"> · {displayOrderId}</span> : ""}
           </p>
@@ -663,11 +675,7 @@ function CheckinCodesDialog({ codes, masterCode, customerName, orderId, checkedI
 
         {masterCode && (
           <div className="px-5 pb-3">
-            <button
-              type="button"
-              onClick={() => handleCopy(masterCode)}
-              className="group/master w-full flex items-center justify-between rounded-xl bg-accent/60 px-4 py-3 cursor-pointer border-0 text-left hover:bg-accent transition-colors"
-            >
+            <div className="flex items-center justify-between rounded-lg bg-accent/60 px-4 py-3">
               <div className="min-w-0">
                 <span className="text-[11px] font-medium text-muted-foreground/70 uppercase tracking-widest">
                   {__("Group check-in", "eventkoi-lite")}
@@ -676,20 +684,42 @@ function CheckinCodesDialog({ codes, masterCode, customerName, orderId, checkedI
                   {masterCode}
                 </div>
               </div>
-              <span className="shrink-0 ml-3">
+              <button
+                type="button"
+                onClick={() => handleCopy(masterCode)}
+                className="shrink-0 ml-3 inline-flex items-center justify-center h-8 w-8 rounded-md border-0 bg-transparent hover:bg-background/60 cursor-pointer transition-colors"
+                aria-label={__("Copy group code", "eventkoi-lite")}
+              >
                 {copied === masterCode ? (
                   <Check className="h-4 w-4 text-green-600" />
                 ) : (
-                  <Copy className="h-4 w-4 text-muted-foreground/0 group-hover/master:text-muted-foreground transition-colors" />
+                  <Copy className="h-4 w-4 text-muted-foreground" />
                 )}
-              </span>
-            </button>
+              </button>
+            </div>
           </div>
         )}
 
-        <div className="px-2 pb-2 max-h-[45vh] overflow-y-auto">
-          {codes.map((code) => (
-            <CopyableCode key={code} code={code} copied={copied} onCopy={handleCopy} />
+        <div className="px-5 pb-2">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-medium text-muted-foreground">
+              {sprintf(__("%d individual codes", "eventkoi-lite"), codes.length)}
+            </span>
+            {codes.length > 1 && (
+              <button
+                type="button"
+                onClick={handleCopyAll}
+                className="text-xs text-muted-foreground hover:text-foreground cursor-pointer bg-transparent border-0 p-0 transition-colors"
+              >
+                {copied === "__all__" ? __("Copied!", "eventkoi-lite") : __("Copy all", "eventkoi-lite")}
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="px-5 pb-5 grid gap-2 max-h-[45vh] overflow-y-auto">
+          {codes.map((code, i) => (
+            <CopyableCode key={code} code={code} index={i + 1} copied={copied} onCopy={handleCopy} />
           ))}
         </div>
       </DialogContent>

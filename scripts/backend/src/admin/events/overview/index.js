@@ -76,6 +76,7 @@ const sortStatusFn = (rowA, rowB) => {
 export function EventsOverview() {
   const [isLoading, setIsLoading] = useState(true);
   const [data, setData] = useState([]);
+  const [fetchError, setFetchError] = useState(false);
   const [statusCounts, setStatusCounts] = useState({});
   const [showDemoToast, setShowDemoToast] = useState(false);
   const [showTourHints, setShowTourHints] = useState(false);
@@ -136,6 +137,7 @@ export function EventsOverview() {
   const fetchResults = useCallback(
     async (toastMessage = null) => {
       setIsLoading(true);
+      setFetchError(false);
       try {
         const params = new URLSearchParams({
           status: queryStatus,
@@ -155,6 +157,7 @@ export function EventsOverview() {
         showStaticToast(toastMessage);
       } catch (error) {
         console.error("Failed to load events:", error);
+        setFetchError(true);
       } finally {
         setIsLoading(false);
       }
@@ -929,6 +932,14 @@ export function EventsOverview() {
         </div>
       </div>
 
+      {fetchError ? (
+        <div className="flex flex-col items-center justify-center py-20 gap-4 text-center">
+          <p className="text-sm text-muted-foreground">{__("Failed to load events.", "eventkoi-lite")}</p>
+          <Button variant="outline" onClick={() => fetchResults()}>
+            {__("Try again", "eventkoi-lite")}
+          </Button>
+        </div>
+      ) : (
       <DataTable
         data={data}
         columns={columns}
@@ -948,6 +959,7 @@ export function EventsOverview() {
         statusCounts={statusCounts}
         refreshStatusCounts={fetchResults}
       />
+      )}
     </div>
   );
 }
