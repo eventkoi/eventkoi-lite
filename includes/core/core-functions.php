@@ -994,3 +994,32 @@ function eventkoi_gmdate( $format, $timestamp = null ) {
 
 	return gmdate( $format, $timestamp );
 }
+
+/**
+ * Retrieves Stripe's webhook secret.
+ *
+ * @return string The Stripe webhook secret.
+ */
+function eventkoi_get_stripe_webhook_secret() {
+	$env_secret = defined( 'EVENTKOI_STRIPE_WEBHOOK_SECRET' ) ? EVENTKOI_STRIPE_WEBHOOK_SECRET : '';
+	if ( ! empty( $env_secret ) ) {
+		$webhook_secret = sanitize_text_field( (string) $env_secret );
+	} else {
+		$settings       = \EventKoi\Core\Settings::get();
+		$webhook        = $settings['stripe_webhook'] ?? null;
+		$webhook_secret = '';
+
+		if ( is_object( $webhook ) && ! empty( $webhook->secret ) ) {
+			$webhook_secret = sanitize_text_field( (string) $webhook->secret );
+		} elseif ( is_array( $webhook ) && ! empty( $webhook['secret'] ) ) {
+			$webhook_secret = sanitize_text_field( (string) $webhook['secret'] );
+		}
+	}
+
+	/**
+	 * Filters the Stripe webhook secret.
+	 *
+	 * @param string $webhook_secret The Stripe webhook secret.
+	 */
+	return apply_filters( 'eventkoi_get_stripe_webhook_secret', $webhook_secret );
+}
