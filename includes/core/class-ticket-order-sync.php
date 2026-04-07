@@ -254,29 +254,55 @@ class Ticket_Order_Sync {
 
 		$table = $wpdb->prefix . 'eventkoi_ticket_orders';
 
-		// Match by edge order_id prefix or by charge_id.
+		// Update payment_status on all matching rows, but set refund_amount
+		// only on the first row to avoid SUM(refund_amount) over-counting
+		// when stats queries aggregate across multi-row orders.
+		$now = gmdate( 'Y-m-d H:i:s' );
+
 		if ( '' !== $order_id ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Updates local cache rows after edge refund.
 			$updated = $wpdb->query(
 				$wpdb->prepare(
-					"UPDATE {$table} SET payment_status = %s, refund_amount = %f, updated_at = %s WHERE order_id LIKE %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					"UPDATE {$table} SET payment_status = %s, refund_amount = 0, updated_at = %s WHERE order_id LIKE %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					sanitize_key( $new_status ),
-					floatval( $refund_amount ),
-					gmdate( 'Y-m-d H:i:s' ),
+					$now,
 					$wpdb->esc_like( $order_id ) . '%'
 				)
 			);
+			// Set the actual refund amount on first row only.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$first_id = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT id FROM {$table} WHERE order_id LIKE %s ORDER BY id ASC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$wpdb->esc_like( $order_id ) . '%'
+				)
+			);
+			if ( $first_id ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+				$wpdb->update( $table, array( 'refund_amount' => floatval( $refund_amount ) ), array( 'id' => absint( $first_id ) ) );
+			}
 		} else {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Updates local cache rows after Stripe refund by charge_id.
 			$updated = $wpdb->query(
 				$wpdb->prepare(
-					"UPDATE {$table} SET payment_status = %s, refund_amount = %f, updated_at = %s WHERE charge_id = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					"UPDATE {$table} SET payment_status = %s, refund_amount = 0, updated_at = %s WHERE charge_id = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					sanitize_key( $new_status ),
-					floatval( $refund_amount ),
-					gmdate( 'Y-m-d H:i:s' ),
+					$now,
 					$charge_id
 				)
 			);
+			// Set the actual refund amount on first row only.
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$first_id = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT id FROM {$table} WHERE charge_id = %s ORDER BY id ASC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$charge_id
+				)
+			);
+			if ( $first_id ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+				$wpdb->update( $table, array( 'refund_amount' => floatval( $refund_amount ) ), array( 'id' => absint( $first_id ) ) );
+			}
 		}
 
 		if ( ! empty( $refund_items ) && is_array( $refund_items ) ) {
@@ -398,7 +424,7 @@ class Ticket_Order_Sync {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Recounts sold qty from local orders for accuracy.
 			$sold = $wpdb->get_var(
 				$wpdb->prepare(
-					"SELECT COALESCE(SUM(quantity), 0) FROM {$orders_table} WHERE ticket_id = %d AND event_id = %d AND payment_status IN ('complete', 'completed', 'succeeded')", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					"SELECT COALESCE(SUM(quantity), 0) FROM {$orders_table} WHERE ticket_id = %d AND event_id = %d AND payment_status IN ('complete', 'completed', 'succeeded', 'partially_refunded')", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					$ticket_id,
 					$event_id
 				)

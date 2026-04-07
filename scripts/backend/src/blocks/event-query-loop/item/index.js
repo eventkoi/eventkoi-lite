@@ -160,7 +160,7 @@ const useEventData = (postId, postType, prefetchedEvent = null) => {
 };
 
 registerBlockType("eventkoi/event-query-item", {
-  apiVersion: 2,
+  apiVersion: 3,
   title: __("EK Event Query Item", "eventkoi"),
   description: __(
     "Provides EventKoi event context inside Query Loop rows.",

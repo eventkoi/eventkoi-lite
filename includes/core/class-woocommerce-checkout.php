@@ -691,6 +691,12 @@ class WooCommerce_Checkout {
 		$refund_amount = $refund ? abs( (float) $refund->get_total() ) : 0;
 		$refund_cents  = (int) round( $refund_amount * 100 );
 
+		// Determine if this is a partial or full refund.
+		$total_refunded = abs( (float) $order->get_total_refunded() );
+		$order_total    = abs( (float) $order->get_total() );
+		$is_full_refund = $total_refunded >= $order_total;
+		$refund_status  = $is_full_refund ? 'refunded' : 'partially_refunded';
+
 		// Notify Supabase.
 		\EventKoi\API\Tickets::call_edge_function(
 			'sync-wc-order',
@@ -706,8 +712,8 @@ class WooCommerce_Checkout {
 		// Sync refund to local (expects major currency units, not cents).
 		Ticket_Order_Sync::sync_refund_to_local(
 			$supabase_order_id,
-			'refunded',
-			$refund_amount
+			$refund_status,
+			$total_refunded
 		);
 	}
 

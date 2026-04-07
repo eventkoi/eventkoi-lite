@@ -632,8 +632,8 @@ class Tickets {
 		$row = $wpdb->get_row(
 			"SELECT
 				COUNT(DISTINCT SUBSTRING_INDEX(order_id, ':', 1)) AS total_orders,
-				COALESCE(SUM(CASE WHEN payment_status IN ('complete','completed','succeeded') THEN total_amount ELSE 0 END), 0) AS total_earnings,
-				COALESCE(SUM(CASE WHEN payment_status IN ('complete','completed','succeeded') THEN quantity ELSE 0 END), 0) AS tickets_sold,
+				COALESCE(SUM(CASE WHEN payment_status IN ('complete','completed','succeeded','partially_refunded') THEN total_amount ELSE 0 END), 0) AS total_earnings,
+				COALESCE(SUM(CASE WHEN payment_status IN ('complete','completed','succeeded','partially_refunded') THEN quantity ELSE 0 END), 0) AS tickets_sold,
 				COALESCE(SUM(refund_amount), 0) AS refund_amount
 			FROM {$orders_tbl} {$where}"
 		);
@@ -725,8 +725,8 @@ class Tickets {
 		$wc_row = $wpdb->get_row(
 			"SELECT
 				COUNT(DISTINCT SUBSTRING_INDEX(order_id, ':', 1)) AS total_orders,
-				COALESCE(SUM(CASE WHEN payment_status IN ('complete','completed','succeeded') THEN total_amount ELSE 0 END), 0) AS total_earnings,
-				COALESCE(SUM(CASE WHEN payment_status IN ('complete','completed','succeeded') THEN quantity ELSE 0 END), 0) AS tickets_sold,
+				COALESCE(SUM(CASE WHEN payment_status IN ('complete','completed','succeeded','partially_refunded') THEN total_amount ELSE 0 END), 0) AS total_earnings,
+				COALESCE(SUM(CASE WHEN payment_status IN ('complete','completed','succeeded','partially_refunded') THEN quantity ELSE 0 END), 0) AS tickets_sold,
 				COALESCE(SUM(refund_amount), 0) AS refund_amount
 			FROM {$orders_tbl} {$where}"
 		);

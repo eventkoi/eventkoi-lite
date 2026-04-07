@@ -7,7 +7,7 @@ import { icon } from "./icon.js";
 import save from "./save";
 
 registerBlockType("eventkoi/list", {
-  apiVersion: 2,
+  apiVersion: 3,
   title: __("EK Events List", "eventkoi"),
   category: "eventkoi-blocks",
   icon: icon,

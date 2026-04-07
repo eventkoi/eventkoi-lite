@@ -13,7 +13,7 @@ import { icon } from "./icon";
 import save from "./save";
 
 registerBlockType("eventkoi/event-data", {
-  apiVersion: 2,
+  apiVersion: 3,
   title: __("EK Event Data", "eventkoi"),
   description: __(
     "Display specific details (title, location, time, etc.) from an event. Can be used alone or inside an Event Query.",
