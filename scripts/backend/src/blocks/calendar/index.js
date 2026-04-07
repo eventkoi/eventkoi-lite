@@ -14,7 +14,7 @@ registerBlockType("eventkoi/calendar", {
   example: {
     attributes: {},
   },
-  description: __("Add an EventKoi calendar.", "newsletter-glue"),
+  description: __("Add an EventKoi calendar.", "eventkoi"),
   keywords: ["eventkoi", "events"],
   attributes: attributes,
   supports: {
