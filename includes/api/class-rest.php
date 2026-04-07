@@ -41,6 +41,53 @@ class REST {
 	public function __construct() {
 		add_action( 'init', array( __CLASS__, 'register_api_key' ), 1 );
 		add_action( 'rest_api_init', array( __CLASS__, 'create_rest_routes' ) );
+		add_action( 'rest_api_init', array( __CLASS__, 'shield_rest_output' ), 1 );
+		add_filter( 'rest_pre_serve_request', array( __CLASS__, 'flush_stray_output' ), 0, 3 );
+	}
+
+	/**
+	 * Prevent PHP notices/warnings from polluting EventKoi REST JSON responses.
+	 *
+	 * WP_DEBUG_DISPLAY=true on dev environments (and noisy third-party plugins
+	 * like The Events Calendar that emit deprecation warnings on first class
+	 * load) will print HTML before the JSON body and trigger an `invalid_json`
+	 * client error on the first request after a cold PHP process.
+	 *
+	 * @return void
+	 */
+	public static function shield_rest_output() {
+		$uri = isset( $_SERVER['REQUEST_URI'] ) ? wp_unslash( $_SERVER['REQUEST_URI'] ) : '';
+		if ( false === strpos( $uri, '/' . EVENTKOI_API . '/' ) ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.PHP.IniSet.display_errors_Disallowed
+		@ini_set( 'display_errors', '0' );
+
+		if ( 0 === ob_get_level() ) {
+			ob_start();
+		}
+	}
+
+	/**
+	 * Discard any stray output captured before the JSON body is written.
+	 *
+	 * @param mixed            $served  Whether the request has been served.
+	 * @param mixed            $result  Result of dispatch.
+	 * @param \WP_REST_Request $request Current REST request.
+	 * @return mixed
+	 */
+	public static function flush_stray_output( $served, $result, $request ) {
+		if ( ! ( $request instanceof \WP_REST_Request ) ) {
+			return $served;
+		}
+		if ( false === strpos( (string) $request->get_route(), '/' . EVENTKOI_API ) ) {
+			return $served;
+		}
+		while ( ob_get_level() > 0 ) {
+			ob_end_clean();
+		}
+		return $served;
 	}
 
 	/**
