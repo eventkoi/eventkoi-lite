@@ -598,7 +598,7 @@ class Event {
 	 * @return string
 	 */
 	public static function get_timezone() {
-		$timezone = eventkoi_timezone();
+		$timezone = eventkoi_php_timezone( eventkoi_timezone() );
 
 		return apply_filters( 'eventkoi_get_event_timezone', (string) $timezone, self::$event_id, self::$event );
 	}
@@ -2403,13 +2403,13 @@ class Event {
 	 */
 	protected static function wrap_datetime_with_data( $line, $start_ts, $end_ts, $timezone, $is_all_day = false ) {
 		$start_dt = new \DateTime( '@' . $start_ts );
-		$start_dt->setTimezone( new \DateTimeZone( $timezone ) );
+		$start_dt->setTimezone( new \DateTimeZone( 'UTC' ) );
 		$start_iso = $start_dt->format( \DateTime::ATOM );
 
 		$end_attr = '';
 		if ( ! empty( $end_ts ) ) {
 			$end_dt = new \DateTime( '@' . $end_ts );
-			$end_dt->setTimezone( new \DateTimeZone( $timezone ) );
+			$end_dt->setTimezone( new \DateTimeZone( 'UTC' ) );
 			$end_attr = ' data-end="' . esc_attr( $end_dt->format( \DateTime::ATOM ) ) . '"';
 		}
 

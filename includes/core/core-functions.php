@@ -629,6 +629,38 @@ function eventkoi_timezone() {
 }
 
 /**
+ * Normalize an EventKoi timezone string into a PHP-compatible timezone identifier.
+ *
+ * WordPress can expose offset-style values like `UTC+0` or `UTC+2`, but
+ * `DateTimeZone` only accepts named zones or offset identifiers such as
+ * `+00:00` and `+02:00`. This helper keeps named timezones unchanged and
+ * normalizes offset-style EventKoi values for runtime date calculations.
+ *
+ * @param string $timezone Raw EventKoi timezone string.
+ * @return string
+ */
+function eventkoi_php_timezone( $timezone ) {
+	$timezone = trim( (string) $timezone );
+
+	if ( '' === $timezone ) {
+		return 'UTC';
+	}
+
+	if ( preg_match( '/^UTC([+-])(\d{1,2})(?::?(\d{2}))?$/', $timezone, $matches ) ) {
+		$hours   = str_pad( $matches[2], 2, '0', STR_PAD_LEFT );
+		$minutes = isset( $matches[3] ) ? $matches[3] : '00';
+
+		if ( '00' === $hours && '00' === $minutes ) {
+			return 'UTC';
+		}
+
+		return sprintf( '%s%s:%s', $matches[1], $hours, $minutes );
+	}
+
+	return $timezone;
+}
+
+/**
  * Define a constant if it is not already defined.
  *
  * @since 1.0.0
