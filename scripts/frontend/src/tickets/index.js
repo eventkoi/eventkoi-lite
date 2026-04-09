@@ -209,7 +209,7 @@ const formatPrice = (value, currency = "USD") => {
     return new Intl.NumberFormat(undefined, {
       style: "currency",
       currency,
-      currencyDisplay: "narrowSymbol",
+      currencyDisplay: "symbol",
       minimumFractionDigits: amount % 1 ? 2 : 0,
       maximumFractionDigits: amount % 1 ? 2 : 0,
     }).format(amount);
@@ -572,7 +572,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
       return new Intl.NumberFormat(undefined, {
         style: "currency",
         currency,
-        currencyDisplay: "narrowSymbol",
+        currencyDisplay: "symbol",
         minimumFractionDigits: 0,
         maximumFractionDigits: 0,
       }).format(amount);

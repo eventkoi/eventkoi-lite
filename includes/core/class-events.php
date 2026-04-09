@@ -225,35 +225,35 @@ class Events {
 		if ( ! empty( $event_ids ) ) {
 			global $wpdb;
 			$tickets_table = $wpdb->prefix . 'eventkoi_tickets';
-			$charges_table = $wpdb->prefix . 'eventkoi_charges';
 			$placeholders  = implode( ',', array_fill( 0, count( $event_ids ), '%d' ) );
 
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $tickets_table ) ) === $tickets_table ) {
-				$ticket_sql = "SELECT t.event_id,
-					SUM(t.quantity_available) AS quantity_available,
-					MAX(CASE WHEN t.quantity_available = 0 THEN 1 ELSE 0 END) AS is_unlimited,
-					COALESCE(SUM(c.quantity_sold), 0) AS quantity_sold
-					FROM {$tickets_table} t
-					LEFT JOIN (
-						SELECT ticket_id, SUM(CASE WHEN payment_status IN ('complete','completed','succeeded') THEN quantity ELSE 0 END) AS quantity_sold
-						FROM {$charges_table}
-						GROUP BY ticket_id
-					) c ON c.ticket_id = t.id
-					WHERE t.event_id IN ({$placeholders}) AND t.status = 'active'
-					GROUP BY t.event_id";
-				$prepared   = call_user_func_array( array( $wpdb, 'prepare' ), array_merge( array( $ticket_sql ), $event_ids ) );
+				$tickets_sql = "SELECT event_id, quantity_available, quantity_sold
+					FROM {$tickets_table}
+					WHERE event_id IN ({$placeholders}) AND status = 'active'";
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Dynamic placeholder list is flattened before prepare().
+				$prepared    = call_user_func_array( array( $wpdb, 'prepare' ), array_merge( array( $tickets_sql ), $event_ids ) );
 				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 				$ticket_rows = $wpdb->get_results( $prepared );
 
 				if ( ! empty( $ticket_rows ) ) {
 					foreach ( $ticket_rows as $row ) {
-						$eid                    = absint( $row->event_id );
-						$tickets_sold[ $eid ]   = absint( $row->quantity_sold );
-						$tickets_total[ $eid ]  = absint( $row->quantity_available );
-						if ( $row->is_unlimited ) {
-							$tickets_unlimited[ $eid ] = true;
+						$eid = absint( $row->event_id );
+
+						if ( ! isset( $tickets_sold[ $eid ] ) ) {
+							$tickets_sold[ $eid ] = 0;
 						}
+						$tickets_sold[ $eid ] += absint( $row->quantity_sold );
+
+						if ( is_null( $row->quantity_available ) ) {
+							$tickets_unlimited[ $eid ] = true;
+							continue;
+						}
+						if ( ! isset( $tickets_total[ $eid ] ) ) {
+							$tickets_total[ $eid ] = 0;
+						}
+						$tickets_total[ $eid ] += absint( $row->quantity_available );
 					}
 				}
 			}

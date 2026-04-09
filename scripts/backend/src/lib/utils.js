@@ -180,7 +180,7 @@ export function getCurrencySymbol(currency = "USD") {
     const parts = new Intl.NumberFormat(undefined, {
       style: "currency",
       currency,
-      currencyDisplay: "narrowSymbol",
+      currencyDisplay: "symbol",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).formatToParts(0);

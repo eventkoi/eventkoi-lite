@@ -125,7 +125,7 @@ export function OrderSummary({ order }) {
       return new Intl.NumberFormat("en-US", {
         style: "currency",
         currency: String(currency || "USD"),
-        currencyDisplay: "narrowSymbol",
+        currencyDisplay: "symbol",
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
       }).format((Number(amount || 0) || 0) / 100);

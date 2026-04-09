@@ -62,6 +62,8 @@ class Hooks {
 		add_action( 'deleted_post', array( __CLASS__, 'clear_event_query_cache_generic' ) );
 		add_action( 'trash_post', array( __CLASS__, 'clear_event_query_cache_generic' ) );
 		add_action( 'transition_post_status', array( __CLASS__, 'clear_event_query_cache_on_status_change' ), 10, 3 );
+		add_action( 'eventkoi_after_update_event_meta', array( __CLASS__, 'clear_event_query_cache' ), 20, 3 );
+		add_action( 'eventkoi_after_update_event_meta', array( __CLASS__, 'bump_events_cache_version' ), 20, 3 );
 	}
 
 	/**

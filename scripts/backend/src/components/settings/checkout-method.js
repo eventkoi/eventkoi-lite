@@ -80,9 +80,12 @@ export function SettingsCheckoutMethod({ settings, setSettings }) {
           "EVENTKOI-API-KEY": eventkoi_params.api_key,
         },
       });
-      if (response?.settings) {
-        setSettings(response.settings);
-      }
+      const nextMethod =
+        response?.settings?.ticket_checkout_method ?? value;
+      setSettings((prev) => ({
+        ...prev,
+        ticket_checkout_method: nextMethod,
+      }));
       showToast({ ...response, message: __("Checkout method updated.", "eventkoi") });
     } catch (error) {
       showToastError(error?.message ?? __("Failed to update checkout method.", "eventkoi"));

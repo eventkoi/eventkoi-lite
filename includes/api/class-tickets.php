@@ -267,26 +267,30 @@ class Tickets {
 			return new WP_Error( 'invalid_event_id', __( 'Invalid event ID.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
+		$is_wc         = \EventKoi\Core\WooCommerce_Checkout::is_active();
 		$force_refresh = (bool) $request->get_param( 'force_refresh' );
 		$cache_key     = 'ek_edge_orders_' . $event_id;
 		$cached_orders = $force_refresh ? false : get_transient( $cache_key );
 		$from_cache    = false;
+		$edge_orders   = $is_wc ? array() : null;
 
-		if ( false !== $cached_orders && is_array( $cached_orders ) ) {
-			$edge_orders = $cached_orders;
-			$from_cache  = true;
-		} else {
-			$edge_orders = self::call_edge_function(
-				'list-orders?event_id=' . rawurlencode( (string) $event_id ),
-				array(),
-				'GET'
-			);
-			if ( ! is_wp_error( $edge_orders ) && is_array( $edge_orders ) ) {
-				set_transient( $cache_key, $edge_orders, 5 * MINUTE_IN_SECONDS );
+		if ( ! $is_wc ) {
+			if ( false !== $cached_orders && is_array( $cached_orders ) ) {
+				$edge_orders = $cached_orders;
+				$from_cache  = true;
+			} else {
+				$edge_orders = self::call_edge_function(
+					'list-orders?event_id=' . rawurlencode( (string) $event_id ),
+					array(),
+					'GET'
+				);
+				if ( ! is_wp_error( $edge_orders ) && is_array( $edge_orders ) ) {
+					set_transient( $cache_key, $edge_orders, 5 * MINUTE_IN_SECONDS );
+				}
 			}
 		}
 
-		if ( ! is_wp_error( $edge_orders ) && is_array( $edge_orders ) ) {
+		if ( ! $is_wc && ! is_wp_error( $edge_orders ) && is_array( $edge_orders ) ) {
 			// Filter out archived or incomplete orders before syncing.
 			$valid_orders = array_filter(
 				$edge_orders,
@@ -345,10 +349,14 @@ class Tickets {
 
 		$table_name = $wpdb->prefix . 'eventkoi_ticket_orders';
 
+		$gateway_clause = $is_wc
+			? " AND order_id LIKE 'wc\\_%'"
+			: " AND order_id NOT LIKE 'wc\\_%'";
+
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$orders = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM {$table_name} WHERE event_id = %d AND payment_status != 'hold' ORDER BY created_at DESC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT * FROM {$table_name} WHERE event_id = %d AND payment_status != 'hold'{$gateway_clause} ORDER BY created_at DESC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$event_id
 			)
 		);
@@ -520,6 +528,10 @@ class Tickets {
 	public static function get_local_wc_orders( WP_REST_Request $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
 		global $wpdb;
 
+		if ( ! \EventKoi\Core\WooCommerce_Checkout::is_active() ) {
+			return rest_ensure_response( array() );
+		}
+
 		$table = $wpdb->prefix . 'eventkoi_ticket_orders';
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -618,6 +630,17 @@ class Tickets {
 	public static function get_local_ticket_stats( WP_REST_Request $request ) {
 		global $wpdb;
 
+		if ( ! \EventKoi\Core\WooCommerce_Checkout::is_active() ) {
+			return rest_ensure_response(
+				array(
+					'total_orders'   => 0,
+					'total_earnings' => 0,
+					'tickets_sold'   => 0,
+					'refund_amount'  => 0,
+				)
+			);
+		}
+
 		$event_id   = absint( $request->get_param( 'event_id' ) );
 		$orders_tbl = $wpdb->prefix . 'eventkoi_ticket_orders';
 
@@ -632,7 +655,7 @@ class Tickets {
 		$row = $wpdb->get_row(
 			"SELECT
 				COUNT(DISTINCT SUBSTRING_INDEX(order_id, ':', 1)) AS total_orders,
-				COALESCE(SUM(CASE WHEN payment_status IN ('complete','completed','succeeded','partially_refunded') THEN total_amount ELSE 0 END), 0) AS total_earnings,
+				COALESCE(SUM(CASE WHEN payment_status IN ('complete','completed','succeeded','partially_refunded') THEN total_amount - refund_amount ELSE 0 END), 0) AS total_earnings,
 				COALESCE(SUM(CASE WHEN payment_status IN ('complete','completed','succeeded','partially_refunded') THEN quantity ELSE 0 END), 0) AS tickets_sold,
 				COALESCE(SUM(refund_amount), 0) AS refund_amount
 			FROM {$orders_tbl} {$where}"
@@ -664,7 +687,9 @@ class Tickets {
 		$from     = sanitize_text_field( (string) ( $request->get_param( 'from' ) ?? '' ) );
 		$to       = sanitize_text_field( (string) ( $request->get_param( 'to' ) ?? '' ) );
 
-		// --- Edge stats with 30s transient cache ---
+		$is_wc = \EventKoi\Core\WooCommerce_Checkout::is_active();
+
+		// --- Edge stats (Stripe) — skipped when WC checkout is active ---
 		$edge = array(
 			'total_orders'             => 0,
 			'total_earnings'           => 0,
@@ -674,68 +699,77 @@ class Tickets {
 			'refunds_by_currency'      => array(),
 		);
 
-		// Build edge query string, forwarding all applicable params.
-		$edge_params = array();
-		if ( $event_id ) {
-			$edge_params['event_id'] = (string) $event_id;
-		}
-		if ( '' !== $from ) {
-			$edge_params['from'] = $from;
-		}
-		if ( '' !== $to ) {
-			$edge_params['to'] = $to;
-		}
-		$force_refresh = (bool) $request->get_param( 'force_refresh' );
-		$edge_qs       = http_build_query( $edge_params );
-		$cache_key     = 'ek_edge_stats_' . md5( $edge_qs );
-		$cached        = $force_refresh ? false : get_transient( $cache_key );
+		if ( ! $is_wc ) {
+			// Build edge query string, forwarding all applicable params.
+			$edge_params = array();
+			if ( $event_id ) {
+				$edge_params['event_id'] = (string) $event_id;
+			}
+			if ( '' !== $from ) {
+				$edge_params['from'] = $from;
+			}
+			if ( '' !== $to ) {
+				$edge_params['to'] = $to;
+			}
+			$force_refresh = (bool) $request->get_param( 'force_refresh' );
+			$edge_qs       = http_build_query( $edge_params );
+			$cache_key     = 'ek_edge_stats_' . md5( $edge_qs );
+			$cached        = $force_refresh ? false : get_transient( $cache_key );
 
-		if ( false !== $cached && is_array( $cached ) ) {
-			$edge_raw = $cached;
-		} else {
-			$edge_raw = self::call_edge_function(
-				'get-stats' . ( $edge_qs ? '?' . $edge_qs : '' ),
-				array(),
-				'GET'
-			);
+			if ( false !== $cached && is_array( $cached ) ) {
+				$edge_raw = $cached;
+			} else {
+				$edge_raw = self::call_edge_function(
+					'get-stats' . ( $edge_qs ? '?' . $edge_qs : '' ),
+					array(),
+					'GET'
+				);
+				if ( ! is_wp_error( $edge_raw ) && is_array( $edge_raw ) ) {
+					set_transient( $cache_key, $edge_raw, 5 * MINUTE_IN_SECONDS );
+				}
+			}
+
 			if ( ! is_wp_error( $edge_raw ) && is_array( $edge_raw ) ) {
-				set_transient( $cache_key, $edge_raw, 5 * MINUTE_IN_SECONDS );
+				$edge = array(
+					'total_orders'             => (int) ( $edge_raw['total_orders'] ?? 0 ),
+					'total_earnings'           => (int) ( $edge_raw['total_earnings'] ?? 0 ),
+					'tickets_sold'             => (int) ( $edge_raw['tickets_sold'] ?? 0 ),
+					'refund_amount'            => (int) ( $edge_raw['refund_amount'] ?? 0 ),
+					'net_earnings_by_currency' => $edge_raw['net_earnings_by_currency'] ?? array(),
+					'refunds_by_currency'      => $edge_raw['refunds_by_currency'] ?? array(),
+				);
 			}
 		}
 
-		if ( ! is_wp_error( $edge_raw ) && is_array( $edge_raw ) ) {
-			$edge = array(
-				'total_orders'             => (int) ( $edge_raw['total_orders'] ?? 0 ),
-				'total_earnings'           => (int) ( $edge_raw['total_earnings'] ?? 0 ),
-				'tickets_sold'             => (int) ( $edge_raw['tickets_sold'] ?? 0 ),
-				'refund_amount'            => (int) ( $edge_raw['refund_amount'] ?? 0 ),
-				'net_earnings_by_currency' => $edge_raw['net_earnings_by_currency'] ?? array(),
-				'refunds_by_currency'      => $edge_raw['refunds_by_currency'] ?? array(),
+		// --- Local WC-only stats — only when WC checkout is active ---
+		$wc_orders   = 0;
+		$wc_earnings = 0;
+		$wc_sold     = 0;
+		$wc_refunds  = 0;
+
+		if ( $is_wc ) {
+			$orders_tbl = $wpdb->prefix . 'eventkoi_ticket_orders';
+			$where      = "WHERE order_id LIKE 'wc\\_%'";
+			if ( $event_id ) {
+				$where .= $wpdb->prepare( ' AND event_id = %d', $event_id );
+			}
+
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			$wc_row = $wpdb->get_row(
+				"SELECT
+					COUNT(DISTINCT SUBSTRING_INDEX(order_id, ':', 1)) AS total_orders,
+					COALESCE(SUM(CASE WHEN payment_status IN ('complete','completed','succeeded','partially_refunded') THEN total_amount - refund_amount ELSE 0 END), 0) AS total_earnings,
+					COALESCE(SUM(CASE WHEN payment_status IN ('complete','completed','succeeded','partially_refunded') THEN quantity ELSE 0 END), 0) AS tickets_sold,
+					COALESCE(SUM(refund_amount), 0) AS refund_amount
+				FROM {$orders_tbl} {$where}"
 			);
+			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+
+			$wc_orders   = absint( $wc_row->total_orders ?? 0 );
+			$wc_earnings = (int) round( (float) ( $wc_row->total_earnings ?? 0 ) * 100 );
+			$wc_sold     = absint( $wc_row->tickets_sold ?? 0 );
+			$wc_refunds  = (int) round( (float) ( $wc_row->refund_amount ?? 0 ) * 100 );
 		}
-
-		// --- Local WC-only stats ---
-		$orders_tbl = $wpdb->prefix . 'eventkoi_ticket_orders';
-		$where      = "WHERE order_id LIKE 'wc\\_%'";
-		if ( $event_id ) {
-			$where .= $wpdb->prepare( ' AND event_id = %d', $event_id );
-		}
-
-		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		$wc_row = $wpdb->get_row(
-			"SELECT
-				COUNT(DISTINCT SUBSTRING_INDEX(order_id, ':', 1)) AS total_orders,
-				COALESCE(SUM(CASE WHEN payment_status IN ('complete','completed','succeeded','partially_refunded') THEN total_amount ELSE 0 END), 0) AS total_earnings,
-				COALESCE(SUM(CASE WHEN payment_status IN ('complete','completed','succeeded','partially_refunded') THEN quantity ELSE 0 END), 0) AS tickets_sold,
-				COALESCE(SUM(refund_amount), 0) AS refund_amount
-			FROM {$orders_tbl} {$where}"
-		);
-		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-
-		$wc_orders   = absint( $wc_row->total_orders ?? 0 );
-		$wc_earnings = (int) round( (float) ( $wc_row->total_earnings ?? 0 ) * 100 );
-		$wc_sold     = absint( $wc_row->tickets_sold ?? 0 );
-		$wc_refunds  = (int) round( (float) ( $wc_row->refund_amount ?? 0 ) * 100 );
 
 		// Merge WC earnings/refunds into the per-currency breakdowns.
 		$net_by_currency     = $edge['net_earnings_by_currency'];
@@ -775,26 +809,30 @@ class Tickets {
 	 */
 	public static function get_all_orders( WP_REST_Request $request ) {
 		$force_refresh = (bool) $request->get_param( 'force_refresh' );
-
-		$cache_key = 'ek_edge_all_orders';
-		$cached    = $force_refresh ? false : get_transient( $cache_key );
-
-		if ( false !== $cached && is_array( $cached ) ) {
-			$edge_orders = $cached;
-		} else {
-			$edge_orders = self::call_edge_function(
-				'list-orders?include_archived=1',
-				array(),
-				'GET'
-			);
-			if ( ! is_wp_error( $edge_orders ) && is_array( $edge_orders ) ) {
-				set_transient( $cache_key, $edge_orders, 5 * MINUTE_IN_SECONDS );
-			}
-		}
+		$is_wc         = \EventKoi\Core\WooCommerce_Checkout::is_active();
 
 		$result = array();
-		if ( ! is_wp_error( $edge_orders ) && is_array( $edge_orders ) ) {
-			$result = $edge_orders;
+
+		if ( ! $is_wc ) {
+			$cache_key = 'ek_edge_all_orders';
+			$cached    = $force_refresh ? false : get_transient( $cache_key );
+
+			if ( false !== $cached && is_array( $cached ) ) {
+				$edge_orders = $cached;
+			} else {
+				$edge_orders = self::call_edge_function(
+					'list-orders?include_archived=1',
+					array(),
+					'GET'
+				);
+				if ( ! is_wp_error( $edge_orders ) && is_array( $edge_orders ) ) {
+					set_transient( $cache_key, $edge_orders, 5 * MINUTE_IN_SECONDS );
+				}
+			}
+
+			if ( ! is_wp_error( $edge_orders ) && is_array( $edge_orders ) ) {
+				$result = $edge_orders;
+			}
 		}
 
 		// --- Merge local WC orders not present in edge response ---
@@ -802,9 +840,11 @@ class Tickets {
 		$table = $wpdb->prefix . 'eventkoi_ticket_orders';
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-		$wc_rows = $wpdb->get_results(
-			"SELECT * FROM {$table} WHERE order_id LIKE 'wc\\_%' ORDER BY created_at DESC" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-		);
+		$wc_rows = $is_wc
+			? $wpdb->get_results(
+				"SELECT * FROM {$table} WHERE order_id LIKE 'wc\\_%' ORDER BY created_at DESC" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			)
+			: array();
 
 		if ( $wc_rows ) {
 			$grouped   = array();

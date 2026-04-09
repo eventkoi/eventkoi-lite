@@ -2,6 +2,12 @@ import apiFetch from "@wordpress/api-fetch";
 import { formatInTimeZone } from "date-fns-tz";
 import { useEffect, useRef, useState } from "react";
 
+// Module-level flag so the one-time currency self-heal does not re-fire when
+// SettingsStripe remounts (which happens every time the user toggles to Stripe
+// in the checkout-method picker). Re-firing races with the checkout-method
+// POST and corrupts the optimistic state.
+let didSelfHealCurrency = false;
+
 import { Box } from "@/components/box";
 import { Heading } from "@/components/heading";
 import { Panel } from "@/components/panel";
@@ -10,7 +16,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
 import { useStripeAccount } from "@/hooks/useStripeAccount"; // shared hook
 import { fetchPluginConfig } from "@/lib/config";
 import { callEdgeFunction } from "@/lib/remote";
@@ -18,10 +23,9 @@ import { callEdgeFunction } from "@/lib/remote";
 export function SettingsStripe({ settings, setSettings }) {
   const [statusMessage, setStatusMessage] = useState(null);
   const [statusType, setStatusType] = useState(null);
-  const [switching, setSwitching] = useState(false);
 
   const configRef = useRef(null);
-  const { data: account, loading, refetch } = useStripeAccount();
+  const { data: account, loading } = useStripeAccount();
 
   const wpTz =
     eventkoi_params?.timezone_string?.trim() ||
@@ -33,6 +37,8 @@ export function SettingsStripe({ settings, setSettings }) {
   const connectedAt = account?.connected_at || null;
   const connectedId = account?.account_id || null;
   const isTestMode = account?.is_test ?? null;
+  const accountCurrency = account?.default_currency || null;
+  const accountCountry = account?.country || null;
 
   const fetchFreshConfig = async () => {
     const url = `${eventkoi_params.supabase_config_url}?t=${Date.now()}`;
@@ -68,30 +74,52 @@ export function SettingsStripe({ settings, setSettings }) {
           console.error("Failed to refresh config after connect:", err);
         }
 
+        let freshAccount = null;
+        try {
+          freshAccount = await callEdgeFunction("get-account");
+        } catch (err) {
+          console.error("Failed to fetch account after connect:", err);
+        }
+
+        const settingsPayload = {};
         if (
           freshConfig?.stripe_publishable_key &&
           !settings?.stripe?.publishable_key
         ) {
+          settingsPayload.stripe = {
+            publishable_key: freshConfig.stripe_publishable_key,
+          };
+          settingsPayload.mode = freshConfig.is_live ? "live" : "test";
+        }
+        if (freshAccount?.default_currency) {
+          settingsPayload.currency = String(
+            freshAccount.default_currency
+          ).toUpperCase();
+        }
+
+        if (Object.keys(settingsPayload).length > 0) {
           try {
             const response = await apiFetch({
               path: `${eventkoi_params.api}/settings`,
               method: "POST",
-              data: {
-                stripe: {
-                  publishable_key: freshConfig.stripe_publishable_key,
-                },
-                mode: freshConfig.is_live ? "live" : "test",
-              },
+              data: settingsPayload,
               headers: {
                 "EVENTKOI-API-KEY": eventkoi_params.api_key,
               },
             });
 
-            if (response?.settings && typeof setSettings === "function") {
-              setSettings(response.settings);
+            if (typeof setSettings === "function") {
+              setSettings((prev) => {
+                const merged = { ...prev };
+                Object.keys(settingsPayload).forEach((key) => {
+                  merged[key] =
+                    response?.settings?.[key] ?? settingsPayload[key];
+                });
+                return merged;
+              });
             }
           } catch (err) {
-            console.error("Failed to sync Stripe publishable key:", err);
+            console.error("Failed to sync Stripe settings after connect:", err);
           }
         }
       } else if (stripeStatus === "cancelled") {
@@ -127,6 +155,47 @@ export function SettingsStripe({ settings, setSettings }) {
     init();
   }, []);
 
+  // Self-heal: when an already-connected account exposes a default currency
+  // that doesn't match the saved one, sync it once. Handles installs that
+  // connected before the auto-sync was wired up. Guarded by a module-level
+  // flag so it never re-fires across remounts.
+  useEffect(() => {
+    if (didSelfHealCurrency) return;
+    if (!account?.connected) return;
+    if (!account?.default_currency) return;
+    // Skip while a checkout-method switch is mid-flight: settings hasn't
+    // been persisted yet, and a concurrent POST would race that update.
+    if (settings?.ticket_checkout_method !== "stripe") return;
+
+    const stripeCurrency = String(account.default_currency).toUpperCase();
+    const savedCurrency = String(settings?.currency || "").toUpperCase();
+    if (!savedCurrency || savedCurrency === stripeCurrency) {
+      didSelfHealCurrency = true;
+      return;
+    }
+
+    didSelfHealCurrency = true;
+    (async () => {
+      try {
+        const response = await apiFetch({
+          path: `${eventkoi_params.api}/settings`,
+          method: "POST",
+          data: { currency: stripeCurrency },
+          headers: {
+            "EVENTKOI-API-KEY": eventkoi_params.api_key,
+          },
+        });
+        if (typeof setSettings === "function") {
+          const nextCurrency =
+            response?.settings?.currency ?? stripeCurrency;
+          setSettings((prev) => ({ ...prev, currency: nextCurrency }));
+        }
+      } catch (err) {
+        console.error("Failed to sync currency from Stripe account:", err);
+      }
+    })();
+  }, [account, settings?.currency, settings?.ticket_checkout_method, setSettings]);
+
   const handleConnect = async () => {
     try {
       const config = configRef.current;
@@ -155,32 +224,6 @@ export function SettingsStripe({ settings, setSettings }) {
       console.error("Error building Stripe Connect URL:", err);
       setStatusMessage("Could not initiate Stripe Connect.");
       setStatusType("error");
-    }
-  };
-
-  const handleModeToggle = async (checked) => {
-    const newMode = checked ? "live" : "test";
-    setSwitching(true);
-    try {
-      const res = await callEdgeFunction("get-account", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ set_mode: newMode }),
-      });
-      if (res?.success) {
-        setStatusMessage(`Switched to ${newMode} mode.`);
-        setStatusType("success");
-        refetch();
-      } else {
-        setStatusMessage(res?.error || "Failed to switch mode.");
-        setStatusType("error");
-      }
-    } catch (err) {
-      const msg = err?.message || err?.error || "Failed to switch mode.";
-      setStatusMessage(msg);
-      setStatusType("error");
-    } finally {
-      setSwitching(false);
     }
   };
 
@@ -266,6 +309,22 @@ export function SettingsStripe({ settings, setSettings }) {
                 <span className="break-all">{connectedId}</span>
                 <span className="text-muted-foreground font-medium">Email</span>
                 <span>{connectedEmail || "unknown"}</span>
+                {accountCountry && (
+                  <>
+                    <span className="text-muted-foreground font-medium">
+                      Country
+                    </span>
+                    <span>{accountCountry}</span>
+                  </>
+                )}
+                {accountCurrency && (
+                  <>
+                    <span className="text-muted-foreground font-medium">
+                      Account currency
+                    </span>
+                    <span>{accountCurrency}</span>
+                  </>
+                )}
                 {connectedAt && (
                   <>
                     <span className="text-muted-foreground font-medium">
@@ -282,34 +341,23 @@ export function SettingsStripe({ settings, setSettings }) {
                     </span>
                   </>
                 )}
+                <span className="text-muted-foreground font-medium">Mode</span>
+                <span className="flex items-center gap-2">
+                  <span className="font-medium">
+                    {isTestMode ? "Test" : "Live"}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {isTestMode
+                      ? "— no real charges. Mode is set by the EventKoi platform."
+                      : "— processing real payments. Mode is set by the EventKoi platform."}
+                  </span>
+                </span>
               </div>
             </div>
           ) : (
             <p>
               Connect your Stripe account to enable ticket payments.
             </p>
-          )}
-
-          {!loading && (isConnected || needsReconnect) && (
-            <div className="flex items-center gap-3 rounded-md border border-muted px-4 py-3 bg-muted/50">
-              <Switch
-                checked={!isTestMode}
-                onCheckedChange={handleModeToggle}
-                disabled={switching}
-                id="stripe-mode-toggle"
-              />
-              <label
-                htmlFor="stripe-mode-toggle"
-                className="text-sm font-medium cursor-pointer select-none"
-              >
-                {isTestMode ? "Test mode" : "Live mode"}
-              </label>
-              <span className="text-xs text-muted-foreground">
-                {isTestMode
-                  ? "No real charges — switch to live when ready"
-                  : "Processing real payments"}
-              </span>
-            </div>
           )}
 
           {!loading && needsReconnect && (

@@ -24,7 +24,6 @@ function SettingToggle({ id, label, description, checked, onCheckedChange }) {
 }
 
 export function EventRsvpSettings({ event, setEvent, className }) {
-  const rsvpEnabled = !!event?.rsvp_enabled;
   const showRemaining =
     typeof event?.rsvp_show_remaining === "boolean"
       ? event.rsvp_show_remaining
@@ -35,25 +34,7 @@ export function EventRsvpSettings({ event, setEvent, className }) {
 
   return (
     <div className={cn("flex flex-col gap-6", className)}>
-      <SettingToggle
-        id="rsvp_enabled"
-        label={__("RSVP", "eventkoi-lite")}
-        description={__("Allow visitors to RSVP to this event.", "eventkoi-lite")}
-        checked={rsvpEnabled}
-        onCheckedChange={(value) =>
-          setEvent((prev) => ({
-            ...prev,
-            rsvp_enabled: value,
-          }))
-        }
-      />
-
-      <div
-        className={cn(
-          "flex flex-col gap-6",
-          !rsvpEnabled && "opacity-70 pointer-events-none"
-        )}
-      >
+      <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-2">
           <Label htmlFor="rsvp_capacity">{__("Capacity", "eventkoi-lite")}</Label>
           <Input
