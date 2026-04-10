@@ -203,12 +203,22 @@ This service is provided by Google LLC: [Terms of Service](https://cloud.google.
 
 == Changelog ==
 
-= 1.3.9.0 – Ticket Sales (Beta) – 2026-04-10 =
+= 1.3.9.0 – Ticket Sales, Import Tools & More – 2026-04-10 =
 * New: Added ticket sales feature (Beta) — sell paid tickets for events via Stripe or WooCommerce.
 * New: Added Payments settings page for Stripe Connect and checkout configuration.
 * New: Added ticket management, sales history, and attendee tracking per event.
 * New: Added order management with real-time updates, filtering, and CSV export.
+* New: Added event import from The Events Calendar (TEC) — full migration tool.
+* New: Added URL-based event import — import events by pasting a URL.
+* New: Added import tools to Events dropdown menu for easy access.
 * Improvement: Added Beta badges to ticket-related UI sections.
+* Improvement: Admin dashboard performance optimizations.
+* Improvement: Updated JSON-LD structured data output.
+* Improvement: Accessibility improvements.
+* Fix: Fixed REST API responses breaking when third-party plugins emit PHP notices.
+* Fix: Fixed Stripe webhook secret handling for array-shaped values.
+* Fix: Fixed wrong text domain in block descriptions.
+* Fix: Fixed Google Maps settings card and onboarding UI.
 
 = 1.3.0.3 – Time Format Fix – 2026-03-27 =
 * Fix: Fixed 12/24-hour time format setting not being respected across event pages, calendar views, admin UI, and auto-detect timezone display.
