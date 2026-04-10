@@ -1,4 +1,3 @@
-import { BetaBadge } from "@/components/beta-badge";
 import { ProBadge } from "@/components/pro-badge";
 import { SideTabs } from "@/components/ui/side-tabs";
 import { useEventEditContext } from "@/hooks/EventEditContext";
@@ -95,11 +94,6 @@ export function EventTabs() {
                   <span className="inline-flex items-center gap-2">
                     {item.label}
                     <ProBadge className="ml-0" />
-                  </span>
-                ) : item.key === "manage-tickets" ? (
-                  <span className="inline-flex items-center gap-2">
-                    {item.label}
-                    <BetaBadge />
                   </span>
                 ) : item.label,
                 disabled: item.disabled,

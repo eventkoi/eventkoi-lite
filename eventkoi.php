@@ -3,7 +3,7 @@
  * Plugin Name:       EventKoi Lite
  * Plugin URI:        https://eventkoi.com
  * Description:       Event and calendar management for WordPress.
- * Version:           1.3.9.0
+ * Version:           1.3.9.1
  * Author:            EventKoi
  * Author URI:        https://eventkoi.com/
  * License:           GPLv2 or later
@@ -32,7 +32,7 @@ if ( is_plugin_active( 'eventkoi/eventkoi.php' ) ) {
 }
 
 // Define constants for the plugin.
-define( 'EVENTKOI_VERSION', '1.3.9.0' );
+define( 'EVENTKOI_VERSION', '1.3.9.1' );
 define( 'EVENTKOI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'EVENTKOI_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'EVENTKOI_PLUGIN_FILE', __FILE__ );
@@ -60,10 +60,7 @@ add_filter(
 		$params['tickets_feature_enabled'] = eventkoi_is_tickets_feature_enabled();
 		$params['woocommerce_active']      = class_exists( 'WooCommerce' );
 
-		$settings                         = get_option( 'eventkoi_settings', array() );
-		$params['ticket_checkout_method'] = ( is_array( $settings ) && ! empty( $settings['ticket_checkout_method'] ) )
-			? sanitize_key( $settings['ticket_checkout_method'] )
-			: 'stripe';
+		$params['ticket_checkout_method'] = 'woocommerce';
 
 		return $params;
 	}
@@ -97,6 +94,23 @@ add_filter(
 	},
 	10,
 	3
+);
+
+// Lite: force WooCommerce as the only checkout method and derive currency from WC.
+add_filter(
+	'option_eventkoi_settings',
+	static function ( $settings ) {
+		if ( is_array( $settings ) ) {
+			$settings['ticket_checkout_method'] = 'woocommerce';
+
+			if ( function_exists( 'get_woocommerce_currency' ) ) {
+				$settings['currency'] = strtoupper( get_woocommerce_currency() );
+			} else {
+				unset( $settings['currency'] );
+			}
+		}
+		return $settings;
+	}
 );
 
 require_once plugin_dir_path( __FILE__ ) . 'bootstrap.php';

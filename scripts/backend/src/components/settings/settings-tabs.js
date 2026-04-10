@@ -3,7 +3,6 @@ import {
   SideTabs,
   getSideTabClasses,
 } from "@/components/ui/side-tabs";
-import { BetaBadge } from "@/components/beta-badge";
 import { ProBadge } from "@/components/pro-badge";
 
 const tabs = [
@@ -19,16 +18,7 @@ const tabs = [
     to: "fields",
   },
   { key: "emails", label: "Emails", to: "emails" },
-  {
-    key: "payments",
-    label: (
-      <span className="inline-flex items-center gap-2">
-        Payments
-        <BetaBadge />
-      </span>
-    ),
-    to: "payments",
-  },
+  { key: "payments", label: "Payments", to: "payments" },
   { key: "integrations", label: "API & integrations", to: "integrations" },
   { key: "import", label: "Import", to: "import" },
 ];

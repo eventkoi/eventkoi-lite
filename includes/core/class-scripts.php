@@ -103,9 +103,11 @@ class Scripts {
 			$full_name  = trim( $first_name . ' ' . $last_name );
 
 			$rsvp_user = array(
-				'id'    => (int) $current_user->ID,
-				'name'  => $full_name,
-				'email' => sanitize_email( $current_user->user_email ),
+				'id'         => (int) $current_user->ID,
+				'name'       => $full_name,
+				'first_name' => $first_name,
+				'last_name'  => $last_name,
+				'email'      => sanitize_email( $current_user->user_email ),
 			);
 		}
 

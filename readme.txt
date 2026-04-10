@@ -5,7 +5,7 @@ Tags: event calendar, event management, event registration, rsvp, events
 Requires at least: 6.7
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.3.9.0
+Stable tag: 1.3.9.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 A modern, lightweight WordPress events calendar plugin. Create an events calendar or event list, manage event registration and RSVPs, and track
@@ -202,6 +202,11 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.9.1 – Payments & UX Improvements – 2026-04-10 =
+* Improvement: Billing information (name, email) is now auto-filled for logged-in users during ticket checkout.
+* Improvement: Clearer error messaging when WooCommerce is not installed.
+* Improvement: Removed Beta badges from ticket-related UI.
 
 = 1.3.9.0 – Ticket Sales, Import Tools & More – 2026-04-10 =
 * New: Added ticket sales feature (Beta) — sell paid tickets for events via Stripe or WooCommerce.

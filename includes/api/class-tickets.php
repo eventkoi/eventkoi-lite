@@ -1451,6 +1451,16 @@ class Tickets {
 		$hold_id = 'hold_' . wp_generate_uuid4();
 		self::create_inventory_holds( $hold_id, $event_id, $sanitized_items, $tickets_by_id, $currency, $email, $customer_name );
 
+		// Lite requires WooCommerce for checkout.
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			self::release_inventory_holds( $hold_id );
+			return new WP_Error(
+				'wc_required',
+				__( 'WooCommerce must be installed and activated to process ticket payments.', 'eventkoi-lite' ),
+				array( 'status' => 400 )
+			);
+		}
+
 		// Branch: WooCommerce checkout.
 		if ( \EventKoi\Core\WooCommerce_Checkout::is_active() ) {
 			$wc_result = \EventKoi\Core\WooCommerce_Checkout::create_checkout_order(

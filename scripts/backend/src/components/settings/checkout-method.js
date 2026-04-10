@@ -1,10 +1,11 @@
-import apiRequest from "@wordpress/api-fetch";
 import { __ } from "@wordpress/i18n";
+import apiRequest from "@wordpress/api-fetch";
 import { useState } from "react";
 
 import { Box } from "@/components/box";
 import { Heading } from "@/components/heading";
 import { Panel } from "@/components/panel";
+import { ProBadge } from "@/components/pro-badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { showToast, showToastError } from "@/lib/toast";
@@ -59,11 +60,11 @@ function WooLogo({ className = "" }) {
 
 export function SettingsCheckoutMethod({ settings, setSettings }) {
   const wooActive = !!window?.eventkoi_params?.woocommerce_active;
-  const method = settings?.ticket_checkout_method || "stripe";
+  const method = settings?.ticket_checkout_method || "woocommerce";
   const [isSaving, setIsSaving] = useState(false);
 
   const handleChange = async (value) => {
-    if (value === method || isSaving) return;
+    if (value === "stripe" || value === method || isSaving) return;
 
     setSettings((prev) => ({
       ...prev,
@@ -111,43 +112,31 @@ export function SettingsCheckoutMethod({ settings, setSettings }) {
           </p>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <button
-              type="button"
-              disabled={isSaving}
-              onClick={() => handleChange("stripe")}
-              className={cn(
-                "flex flex-col items-center gap-3 py-6 px-4 bg-white border rounded-2xl transition-colors",
-                method === "stripe"
-                  ? "shadow-[inset_0_0_0_1px_black] border-primary"
-                  : "border-border hover:border-muted-foreground/30 cursor-pointer"
-              )}
+            <a
+              href="https://eventkoi.com/upgradeqf35m3ref/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-col items-center gap-3 py-6 px-4 bg-white border rounded-2xl border-border opacity-60 hover:opacity-80 transition-opacity no-underline"
             >
-              <StripeLogo className="h-5 w-auto" />
-              <p className="text-xs text-muted-foreground">
+              <div className="inline-flex items-center gap-2">
+                <StripeLogo className="h-5 w-auto" />
+                <ProBadge className="ml-0" />
+              </div>
+              <p className="text-xs text-muted-foreground text-center">
                 {__("Accept credit cards, Apple Pay, and Google Pay directly on your event pages.", "eventkoi")}
               </p>
-            </button>
+            </a>
 
-            <button
-              type="button"
-              disabled={!wooActive || isSaving}
-              onClick={() => handleChange("woocommerce")}
-              className={cn(
-                "flex flex-col items-center gap-3 py-6 px-4 bg-white border rounded-2xl transition-colors",
-                method === "woocommerce"
-                  ? "shadow-[inset_0_0_0_1px_black] border-primary"
-                  : !wooActive
-                    ? "border-border opacity-50 cursor-not-allowed"
-                    : "border-border hover:border-muted-foreground/30 cursor-pointer"
-              )}
+            <div
+              className="flex flex-col items-center gap-3 py-6 px-4 bg-white border rounded-2xl shadow-[inset_0_0_0_1px_black] border-primary"
             >
               <WooLogo className="h-5 w-auto" />
               <p className="text-xs text-muted-foreground">
                 {wooActive
                   ? __("Any WooCommerce gateway", "eventkoi")
-                  : __("Activate the WooCommerce plugin in order to select this option.", "eventkoi")}
+                  : __("Install and activate WooCommerce to start selling tickets.", "eventkoi")}
               </p>
-            </button>
+            </div>
           </div>
         </Panel>
       </div>

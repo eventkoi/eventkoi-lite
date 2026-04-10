@@ -865,8 +865,8 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
       window.location.href = hostedUrl;
     } catch (err) {
       setCheckoutError(
-        err?.message ||
-          err?.response?.message ||
+        err?.response?.message ||
+          err?.message ||
           __("Unable to set up checkout.", "eventkoi"),
       );
       setIsCheckoutLoading(false);
