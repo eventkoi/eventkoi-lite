@@ -1,3 +1,4 @@
+import { BetaBadge } from "@/components/beta-badge";
 import { cn } from "@/lib/utils";
 import { ChevronDown } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
@@ -32,9 +33,8 @@ export function Navbar({ tabs, isSub, asDiv, ariaLabel }) {
       {tabs.map((item, i) => {
         const current = page === item.href;
 
-        return (
+        const link = (
           <Link
-            key={`tab-${i}`}
             to={item.href}
             {...(current ? { "aria-current": "page" } : {})}
             className={cn(
@@ -49,6 +49,17 @@ export function Navbar({ tabs, isSub, asDiv, ariaLabel }) {
             {item.submenu && <ChevronDown className="w-3.5 h-3.5 ml-1" />}
           </Link>
         );
+
+        if (item.badge === "Beta" || item.beta) {
+          return (
+            <div key={`tab-${i}`} className="flex items-center gap-2">
+              {link}
+              <BetaBadge />
+            </div>
+          );
+        }
+
+        return <div key={`tab-${i}`}>{link}</div>;
       })}
     </Tag>
   );

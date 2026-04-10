@@ -45,15 +45,16 @@ export function DashboardOnboarding() {
         sidebarHidden: true,
         sidebarKey: "calendar",
       },
-      ...(ticketsEnabled
-        ? [
-            {
-              key: "ticket-checkout",
-              title: __("Setup ticket payments", "eventkoi-lite"),
-              component: SetupTicketCheckoutStep,
-            },
-          ]
-        : []),
+      // Ticket setup step hidden while feature is in beta.
+      // ...(ticketsEnabled
+      //   ? [
+      //       {
+      //         key: "ticket-checkout",
+      //         title: __("Setup ticket payments", "eventkoi-lite"),
+      //         component: SetupTicketCheckoutStep,
+      //       },
+      //     ]
+      //   : []),
     ],
     [ticketsEnabled]
   );

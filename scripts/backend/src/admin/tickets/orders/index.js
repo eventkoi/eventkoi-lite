@@ -1,4 +1,5 @@
 // src/admin/tickets/orders/index.js
+import { BetaBadge } from "@/components/beta-badge";
 import { DataTable } from "@/components/data-table";
 import { Heading } from "@/components/heading";
 import { OrderStats, getDateRange } from "@/components/order-stats";
@@ -270,7 +271,10 @@ export function Orders() {
   return (
     <div className="flex flex-col gap-8">
       <div className="mx-auto flex w-full gap-2 justify-between">
-        <Heading>{__("Ticket sales", "eventkoi")}</Heading>
+        <div className="flex items-center gap-2">
+          <Heading>{__("Ticket sales", "eventkoi")}</Heading>
+          <BetaBadge />
+        </div>
       </div>
       <TestModeNotice />
       <StripeConnectNotice />

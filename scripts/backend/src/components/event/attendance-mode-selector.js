@@ -1,3 +1,4 @@
+import { BetaBadge } from "@/components/beta-badge";
 import { Heading } from "@/components/heading";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -58,8 +59,9 @@ export function AttendanceModeSelector({ event, setEvent }) {
             <div className="flex items-start space-x-3">
               <RadioGroupItem value="tickets" id="tickets" className="mt-1" />
               <Label htmlFor="tickets" className="cursor-pointer flex-1">
-                <div className="font-medium">
+                <div className="flex items-center gap-2 font-medium">
                   {__("Tickets (Paid)", "eventkoi")}
+                  <BetaBadge />
                 </div>
                 <div className="text-sm text-muted-foreground mt-1">
                   {__(
