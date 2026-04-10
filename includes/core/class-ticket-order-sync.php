@@ -1,6 +1,6 @@
 <?php
 /**
- * Sync edge ticket orders to local WordPress tables.
+ * Sync ticket orders to local WordPress tables.
  *
  * @package    EventKoi
  * @subpackage EventKoi\Core
@@ -16,20 +16,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Ticket Order Sync.
  *
- * Persists Supabase edge order data into the local wp_eventkoi_ticket_orders
- * table so that the admin attendees list, QR check-in, and quantity counters
- * work even when the edge API is unreachable.
+ * Persists order data into the local wp_eventkoi_ticket_orders
+ * table for the admin attendees list, QR check-in, and quantity counters.
  */
 class Ticket_Order_Sync {
 
 	/**
-	 * Sync a completed edge order payload to the local ticket_orders table.
+	 * Sync a completed order payload to the local ticket_orders table.
 	 *
 	 * Each order item with ticket_codes is expanded into one row per code.
 	 * Items without codes get a single row. Check-in tokens are generated
 	 * locally for QR code support.
 	 *
-	 * @param array $order Edge order payload (from list-orders / get-order).
+	 * @param array $order Order payload.
 	 * @return int Number of rows inserted or updated.
 	 */
 	public static function sync_order_to_local( $order ) {
@@ -149,12 +148,12 @@ class Ticket_Order_Sync {
 	}
 
 	/**
-	 * Sync multiple edge orders to local (bulk).
+	 * Sync multiple orders to local (bulk).
 	 *
 	 * Pre-fetches existing order_ids in a single query to avoid N+1 SELECT
 	 * lookups during upsert.
 	 *
-	 * @param array $orders Array of edge order payloads.
+	 * @param array $orders Array of order payloads.
 	 * @return int Total rows inserted or updated.
 	 */
 	public static function sync_orders_to_local( $orders ) {
@@ -232,14 +231,14 @@ class Ticket_Order_Sync {
 	/**
 	 * Update local ticket_orders rows after a successful refund.
 	 *
-	 * Matches rows by edge order ID prefix (order_id LIKE) or by charge_id
+	 * Matches rows by order ID prefix (order_id LIKE) or by charge_id
 	 * when the optional $charge_id parameter is provided.
 	 *
-	 * @param string $order_id      Edge order ID (can be empty when charge_id is provided).
+	 * @param string $order_id      Order ID (e.g. "wc_123").
 	 * @param string $new_status    New payment status (refunded, partially_refunded).
 	 * @param float  $refund_amount Refund amount in major currency units.
 	 * @param array  $refund_items  Refunded items with ticket_id and quantity.
-	 * @param string $charge_id     Optional. Stripe charge ID to match rows when edge order ID is unavailable.
+	 * @param string $charge_id     Optional. Stripe charge ID to match rows.
 	 * @return int Number of rows updated.
 	 */
 	public static function sync_refund_to_local( $order_id, $new_status, $refund_amount, $refund_items = array(), $charge_id = '' ) {
@@ -556,7 +555,7 @@ class Ticket_Order_Sync {
 	/**
 	 * Delete local order rows by order_id.
 	 *
-	 * @param string $order_id Order ID (e.g. "wc_123" or Supabase UUID).
+	 * @param string $order_id Order ID (e.g. "wc_123").
 	 * @return int Number of rows deleted.
 	 */
 	public static function delete_local_order( $order_id ) {

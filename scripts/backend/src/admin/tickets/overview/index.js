@@ -1,6 +1,4 @@
 import { Heading } from "@/components/heading";
-import { StripeConnectNotice } from "@/components/stripe-connect-notice";
-import { TestModeNotice } from "@/components/test-mode-notice";
 
 export function TicketsOverview() {
   return (
@@ -8,8 +6,6 @@ export function TicketsOverview() {
       <div className="mx-auto flex w-full gap-2 justify-between">
         <Heading>Tickets</Heading>
       </div>
-      <TestModeNotice />
-      <StripeConnectNotice />
     </div>
   );
 }

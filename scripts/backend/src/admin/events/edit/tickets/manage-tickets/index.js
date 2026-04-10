@@ -1,5 +1,4 @@
 import { Box } from "@/components/box";
-import { StripeConnectNotice } from "@/components/stripe-connect-notice";
 import { Heading } from "@/components/heading";
 import { TimeInput } from "@/components/time-input";
 import { Button } from "@/components/ui/button";
@@ -530,7 +529,6 @@ export function EventEditManageTickets() {
 
   return (
     <div className="flex flex-col w-full gap-8">
-      <StripeConnectNotice />
       <Box container>
         <Heading level={3}>{__("Tickets", "eventkoi")}</Heading>
 

@@ -19,7 +19,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { callEdgeFunction, callLocalApi } from "@/lib/remote";
+import { callLocalApi } from "@/lib/remote";
 import { BaseToast, showStaticToast, showToastError } from "@/lib/toast";
 import { __, sprintf } from "@wordpress/i18n";
 import { ChevronDown, Loader2 } from "lucide-react";
@@ -70,21 +70,7 @@ export function OrderHeader({ loading, setLoading, order, setOrder }) {
         },
       });
 
-      const refreshed = await callEdgeFunction("get-order", {
-        method: "POST",
-        body: JSON.stringify({ id: order.id }),
-      });
-
-      setOrder?.((prev) => {
-        if (!prev || typeof prev !== "object" || !refreshed || typeof refreshed !== "object") {
-          return refreshed || prev;
-        }
-        return {
-          ...prev,
-          notes: Array.isArray(refreshed.notes) ? refreshed.notes : prev.notes,
-          last_modified: refreshed.last_modified || prev.last_modified,
-        };
-      });
+      setOrder?.((prev) => prev);
       toast.custom(() => (
         <BaseToast
           message={__("Ticket confirmation sent.", "eventkoi")}
@@ -134,21 +120,10 @@ export function OrderHeader({ loading, setLoading, order, setOrder }) {
       });
 
       if (mode === "archive") {
-        // Order was deleted — navigate back to the list.
         showStaticToast(__("Order archived.", "eventkoi"));
         navigate("/tickets/orders");
       } else {
-        // Unarchive — refresh order data.
-        try {
-          const refreshed = await callEdgeFunction("get-order", {
-            method: "POST",
-            body: JSON.stringify({ id: order.id }),
-          });
-          setOrder?.(refreshed);
-        } catch (_) {
-          // WC orders may not exist in Supabase — just update local state.
-          setOrder?.({ ...order, is_archived: false });
-        }
+        setOrder?.({ ...order, is_archived: false });
         showStaticToast(__("Order unarchived.", "eventkoi"));
       }
     } catch (error) {

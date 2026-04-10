@@ -8,7 +8,6 @@ import { DashboardOverview } from "@/admin/dashboard/overview";
 import { LogoIcon } from "@/components/logo-icon";
 import { ConfirmTimezoneFormatStep } from "@/components/onboarding/confirm-timezone-format";
 import { SetCalendarDefaultsStep } from "@/components/onboarding/set-calendar-defaults";
-import { SetupTicketCheckoutStep } from "@/components/onboarding/setup-ticket-checkout";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,

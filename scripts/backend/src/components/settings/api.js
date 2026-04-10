@@ -1,11 +1,9 @@
 import { Box } from "@/components/box";
 import { Heading } from "@/components/heading";
 import { Panel } from "@/components/panel";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { useStripeAccount } from "@/hooks/useStripeAccount";
 import { showToast, showToastError } from "@/lib/toast";
 import { __ } from "@wordpress/i18n";
 import apiRequest from "@wordpress/api-fetch";
@@ -14,10 +12,6 @@ import { useState } from "react";
 export function SettingsAPI() {
   const [isSaving, setIsSaving] = useState(false);
   const [newKey, setNewKey] = useState(null);
-  const [noticeDismissed, setNoticeDismissed] = useState(false);
-  const { data: account, loading, error } = useStripeAccount();
-  const showMissingAccountNotice =
-    !noticeDismissed && !loading && !!error && !account?.connected;
 
   const refreshKey = async () => {
     try {
@@ -36,7 +30,6 @@ export function SettingsAPI() {
 
       if (response?.api_key) {
         setNewKey(response.api_key);
-        setNoticeDismissed(true);
         showToast({
           message: "API key regenerated successfully.",
         });
@@ -58,25 +51,6 @@ export function SettingsAPI() {
         </Panel>
         <Separator />
         <Panel className="gap-6">
-          {showMissingAccountNotice && (
-            <Alert className="bg-amber-50 border-amber-200 text-sm">
-              <AlertDescription className="text-amber-900/90 text-xs">
-                <p className="text-sm">
-                  {__(
-                    "We couldn't verify your site with EventKoi services.",
-                    "eventkoi"
-                  )}{" "}
-                  <span className="font-medium">
-                    {__(
-                      "Regenerate the API key",
-                      "eventkoi"
-                    )}
-                  </span>{" "}
-                  {__("to re-register this instance.", "eventkoi")}
-                </p>
-              </AlertDescription>
-            </Alert>
-          )}
           <div className="space-y-2">
             <Label>Site instance ID</Label>
             <p className="text-sm text-muted-foreground">

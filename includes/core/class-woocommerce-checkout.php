@@ -4,7 +4,7 @@
  *
  * Uses WooCommerce's standard cart/checkout flow with a hidden virtual
  * product as a ticket proxy, giving customers the full checkout UX.
- * Syncs completed orders to Supabase and handles refunds.
+ * Syncs completed orders to the local database and handles refunds.
  *
  * @package EventKoi\Core
  */
@@ -543,7 +543,7 @@ class WooCommerce_Checkout {
 	}
 
 	/**
-	 * Handle WC payment completion — sync to Supabase + local + send email.
+	 * Handle WC payment completion — sync to local DB + send email.
 	 *
 	 * @param int $wc_order_id WC order ID.
 	 */
@@ -573,17 +573,17 @@ class WooCommerce_Checkout {
 		$customer_name       = trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() );
 		$customer_email      = $order->get_billing_email();
 
-		// Build Supabase-compatible order payload.
-		$supabase_order_id = 'wc_' . $wc_order_id;
+		// Build order payload for local sync.
+		$ek_order_id = 'wc_' . $wc_order_id;
 		$total_cents       = (int) round( (float) $order->get_total() * 100 );
 		$total_quantity    = 0;
-		$supabase_items    = array();
+		$order_items    = array();
 
 		foreach ( $ticket_items as $ti ) {
 			$quantity        = absint( $ti['quantity'] ?? 1 );
 			$total_quantity += $quantity;
 
-			$supabase_items[] = array(
+			$order_items[] = array(
 				'ticket_id'          => absint( $ti['ticket_id'] ?? 0 ),
 				'ticket_name'        => (string) ( $ti['name'] ?? '' ),
 				'ticket_description' => (string) ( $ti['description'] ?? '' ),
@@ -593,8 +593,8 @@ class WooCommerce_Checkout {
 			);
 		}
 
-		$supabase_payload = array(
-			'stripe_checkout_id'   => $supabase_order_id,
+		$order_payload = array(
+			'stripe_checkout_id'   => $ek_order_id,
 			'event_id'             => $event_id,
 			'event_instance_ts'    => $instance_ts,
 			'event_title'          => $event_title,
@@ -611,7 +611,7 @@ class WooCommerce_Checkout {
 			'master_checkin_code'  => $master_checkin_code,
 			'wp_user_id'           => $wp_user_id,
 			'wp_user_label'        => $wp_user_label,
-			'items'                => $supabase_items,
+			'items'                => $order_items,
 			'gateway'              => 'woocommerce',
 			'platform_fee_amount'  => 0,
 			'metadata'             => array(
@@ -627,20 +627,17 @@ class WooCommerce_Checkout {
 			),
 		);
 
-		// Sync to Supabase via edge function.
-		\EventKoi\API\Tickets::call_edge_function( 'sync-wc-order', $supabase_payload, 'POST' );
-
 		// Sync to local database.
 		$local_order = array(
-			'order_id'       => $supabase_order_id,
+			'order_id'       => $ek_order_id,
 			'customer_name'  => $customer_name,
 			'customer_email' => $customer_email,
 			'status'         => 'completed',
 			'payment_status' => 'complete',
 			'event_id'       => $event_id,
 			'currency'       => $currency,
-			'items'          => $supabase_items,
-			'metadata'       => $supabase_payload['metadata'],
+			'items'          => $order_items,
+			'metadata'       => $order_payload['metadata'],
 		);
 		Ticket_Order_Sync::sync_order_to_local( $local_order );
 
@@ -648,7 +645,7 @@ class WooCommerce_Checkout {
 		$email_order = array_merge(
 			$local_order,
 			array(
-				'id'                  => $supabase_order_id,
+				'id'                  => $ek_order_id,
 				'master_checkin_code' => $master_checkin_code,
 				'event_instance_ts'   => $instance_ts,
 			)
@@ -669,7 +666,7 @@ class WooCommerce_Checkout {
 	}
 
 	/**
-	 * Handle WC order refund — propagate to Supabase + local.
+	 * Handle WC order refund — sync to local + send refund email.
 	 *
 	 * @param int $wc_order_id WC order ID.
 	 * @param int $refund_id   WC refund ID.
@@ -685,7 +682,7 @@ class WooCommerce_Checkout {
 			return; // Not an EventKoi order.
 		}
 
-		$supabase_order_id = 'wc_' . $wc_order_id;
+		$ek_order_id = 'wc_' . $wc_order_id;
 
 		$refund        = wc_get_order( $refund_id );
 		$refund_amount = $refund ? abs( (float) $refund->get_total() ) : 0;
@@ -697,24 +694,15 @@ class WooCommerce_Checkout {
 		$is_full_refund = $total_refunded >= $order_total;
 		$refund_status  = $is_full_refund ? 'refunded' : 'partially_refunded';
 
-		// Notify Supabase.
-		\EventKoi\API\Tickets::call_edge_function(
-			'sync-wc-order',
-			array(
-				'action'             => 'refund',
-				'stripe_checkout_id' => $supabase_order_id,
-				'refund_amount'      => $refund_cents,
-				'event_id'           => $event_id,
-			),
-			'POST'
-		);
-
 		// Sync refund to local (expects major currency units, not cents).
 		Ticket_Order_Sync::sync_refund_to_local(
-			$supabase_order_id,
+			$ek_order_id,
 			$refund_status,
 			$total_refunded
 		);
+
+		// Send refund confirmation email.
+		Ticket_Emails::send_refund_for_order( $ek_order_id, $refund_amount );
 	}
 
 	/**

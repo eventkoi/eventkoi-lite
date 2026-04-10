@@ -51,6 +51,7 @@ export function DataTable({
   to,
   defaultSort,
   customTopLeft,
+  customTopRight,
   hideTableBorder = false,
   tableClassName = "",
   hideSearchBox = false,
@@ -105,20 +106,28 @@ export function DataTable({
           )}
         </div>
         <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-end">
-          <Filters
-            base={base}
-            table={table}
-            hideDateRange={hideDateRange}
-            hideCategories={hideCategories}
-            filterName={filterName}
-            queryStatus={queryStatus}
-            eventStatus={searchParams.get("event_status")}
-            calStatus={calStatus}
-            from={from}
-            to={to}
-            statusFilters={statusFilters}
-            hideSearchBox={hideSearchBox}
-          />
+          {customTopRight ? (
+            typeof customTopRight === "function" ? (
+              customTopRight(table)
+            ) : (
+              customTopRight
+            )
+          ) : (
+            <Filters
+              base={base}
+              table={table}
+              hideDateRange={hideDateRange}
+              hideCategories={hideCategories}
+              filterName={filterName}
+              queryStatus={queryStatus}
+              eventStatus={searchParams.get("event_status")}
+              calStatus={calStatus}
+              from={from}
+              to={to}
+              statusFilters={statusFilters}
+              hideSearchBox={hideSearchBox}
+            />
+          )}
         </div>
       </div>
 

@@ -24,7 +24,8 @@ import { showStaticToast, showToastError } from "@/lib/toast";
 import { __, sprintf } from "@wordpress/i18n";
 import { useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { callEdgeFunction, callLocalApi } from "@/lib/remote";
+import { callLocalApi } from "@/lib/remote";
+import { normalizeOrder } from "@/lib/orders";
 
 function normalizeLineItems(order) {
   const eventTitleRaw = String(
@@ -213,9 +214,9 @@ export function OrderRefundView() {
 
       const currentUser = window.eventkoi_params?.current_user || {};
 
-      await callEdgeFunction("create-order-refund", {
+      await callLocalApi("tickets/orders/refund", {
         method: "POST",
-        body: JSON.stringify({
+        data: {
           order_id: order?.id || id,
           items: payloadItems,
           restock_tickets: restockTickets,
@@ -225,7 +226,7 @@ export function OrderRefundView() {
             wp_user_id: currentUser.id || 0,
             wp_user_name: currentUser.display_name || "",
           },
-        }),
+        },
       });
 
       if (sendConfirmation) {
@@ -254,12 +255,11 @@ export function OrderRefundView() {
         }
       }
 
-      const refreshed = await callEdgeFunction("get-order", {
-        method: "POST",
-        body: JSON.stringify({ id: order?.id || id }),
-      });
-
-      setOrder(refreshed || order);
+      const orders = await callLocalApi("tickets/all-orders");
+      const match = Array.isArray(orders)
+        ? orders.find((o) => o.id === (order?.id || id) || o.order_id === (order?.id || id))
+        : null;
+      setOrder(match ? normalizeOrder(match) : order);
       showStaticToast(__("Refund completed successfully.", "eventkoi"));
     } catch (err) {
       console.error("Refund failed:", err);

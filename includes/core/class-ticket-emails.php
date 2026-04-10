@@ -7,7 +7,6 @@
 
 namespace EventKoi\Core;
 
-use EventKoi\API\Tickets as Tickets_API;
 use WP_Error;
 
 // Exit if accessed directly.
@@ -42,7 +41,7 @@ class Ticket_Emails {
 			return new WP_Error( 'refund_email_disabled', __( 'Refund confirmation email is disabled.', 'eventkoi-lite' ), array( 'status' => 200 ) );
 		}
 
-		$order = self::get_edge_order_by_id( $order_id );
+		$order = self::get_order_by_id( $order_id );
 		if ( is_wp_error( $order ) ) {
 			return $order;
 		}
@@ -74,7 +73,7 @@ class Ticket_Emails {
 		if ( preg_match( '/^wc_(\d+)/', $order_id, $m ) ) {
 			$order = self::build_order_from_wc( (int) $m[1] );
 		} else {
-			$order = self::get_edge_order_by_id( $order_id );
+			$order = self::get_order_by_id( $order_id );
 		}
 
 		if ( is_wp_error( $order ) ) {
@@ -177,7 +176,7 @@ class Ticket_Emails {
 			return $order_id;
 		}
 
-		$order = self::get_edge_order_by_id( $order_id );
+		$order = self::get_order_by_id( $order_id );
 		if ( is_wp_error( $order ) ) {
 			return $order;
 		}
@@ -312,25 +311,6 @@ class Ticket_Emails {
 			: '';
 
 		$qr_code = '';
-		if ( '' !== $checkin_code ) {
-			$checkin_url = add_query_arg(
-				array( 'eventkoi_qr' => $checkin_code ),
-				home_url( '/' )
-			);
-			$qr_url      = add_query_arg(
-				array(
-					'data' => $checkin_url,
-					'size' => '96x96',
-				),
-				'https://api.qrserver.com/v1/create-qr-code/'
-			);
-			$qr_url      = apply_filters( 'eventkoi_ticket_qr_url', $qr_url, $checkin_url, $checkin_code, $event_id, $instance_ts );
-			$qr_code     = sprintf(
-				'<img src="%s" alt="%s" width="96" height="96" />',
-				esc_url( $qr_url ),
-				esc_attr__( 'QR code', 'eventkoi-lite' )
-			);
-		}
 
 		$ticket_codes_line = self::render_ticket_codes_for_email( $items, $ticket_name_contexts );
 
@@ -630,17 +610,15 @@ class Ticket_Emails {
 	 * @return void
 	 */
 	private static function add_refund_confirmation_note( $order_id ) {
-		$note_value = __( 'Refund confirmation sent.', 'eventkoi-lite' );
-
-		Tickets_API::call_edge_function(
-			'add-order-note',
-			array(
-				'order_id'   => sanitize_text_field( (string) $order_id ),
-				'note_key'   => 'refund_confirmation_sent',
-				'note_value' => $note_value,
-			),
-			'POST'
-		);
+		// Notes are stored locally via the Orders class — extract WC order ID if applicable.
+		$wc_id = 0;
+		if ( preg_match( '/^wc_(\d+)/', (string) $order_id, $m ) ) {
+			$wc_id = (int) $m[1];
+		}
+		if ( $wc_id > 0 ) {
+			$orders = new \EventKoi\Core\Orders();
+			$orders->add_note( $wc_id, 'refund_confirmation_sent', __( 'Refund confirmation sent.', 'eventkoi-lite' ), 'system' );
+		}
 	}
 
 	/**
@@ -827,17 +805,14 @@ class Ticket_Emails {
 	 * @return void
 	 */
 	private static function add_confirmation_note( $order_id ) {
-		$note_value = __( 'Ticket confirmation sent.', 'eventkoi-lite' );
-
-		Tickets_API::call_edge_function(
-			'add-order-note',
-			array(
-				'order_id'   => sanitize_text_field( (string) $order_id ),
-				'note_key'   => 'ticket_confirmation_sent',
-				'note_value' => $note_value,
-			),
-			'POST'
-		);
+		$wc_id = 0;
+		if ( preg_match( '/^wc_(\d+)/', (string) $order_id, $m ) ) {
+			$wc_id = (int) $m[1];
+		}
+		if ( $wc_id > 0 ) {
+			$orders = new \EventKoi\Core\Orders();
+			$orders->add_note( $wc_id, 'ticket_confirmation_sent', __( 'Ticket confirmation sent.', 'eventkoi-lite' ), 'system' );
+		}
 	}
 
 	/**
@@ -849,54 +824,7 @@ class Ticket_Emails {
 	 * @return string|WP_Error
 	 */
 	private static function find_order_id_by_checkout_session( $checkout_session_id, $event_id = 0, $instance_ts = 0 ) {
-		$max_attempts = 4;
-		$delays       = array( 3, 4, 5 ); // seconds to sleep between attempts.
-
-		for ( $attempt = 0; $attempt < $max_attempts; $attempt++ ) {
-			if ( $attempt > 0 && isset( $delays[ $attempt - 1 ] ) ) {
-				sleep( $delays[ $attempt - 1 ] );
-			}
-
-			$orders = Tickets_API::call_edge_function( 'list-orders?include_archived=1', array(), 'GET' );
-			if ( is_wp_error( $orders ) ) {
-				continue;
-			}
-
-			if ( ! is_array( $orders ) ) {
-				continue;
-			}
-
-			foreach ( $orders as $order ) {
-				if ( ! is_array( $order ) ) {
-					continue;
-				}
-
-				$order_checkout = sanitize_text_field( (string) ( $order['stripe_checkout_id'] ?? '' ) );
-				if ( $order_checkout !== $checkout_session_id ) {
-					continue;
-				}
-
-				// Found matching checkout session.
-				$status = strtolower( sanitize_key( (string) ( $order['status'] ?? '' ) ) );
-				if ( ! in_array( $status, array( 'complete', 'completed', 'succeeded' ), true ) ) {
-					continue;
-				}
-
-				if ( $event_id > 0 && absint( $order['event_id'] ?? 0 ) !== $event_id ) {
-					continue;
-				}
-
-				if ( $instance_ts > 0 && absint( $order['event_instance_ts'] ?? 0 ) !== $instance_ts ) {
-					continue;
-				}
-
-				$order_id = sanitize_text_field( (string) ( $order['id'] ?? '' ) );
-				if ( '' !== $order_id ) {
-					return $order_id;
-				}
-			}
-		}
-
+		// Lite is WC-only; Stripe-direct checkout sessions do not exist.
 		return new WP_Error( 'order_not_found', __( 'Completed order was not found for this checkout session.', 'eventkoi-lite' ), array( 'status' => 404 ) );
 	}
 
@@ -906,24 +834,59 @@ class Ticket_Emails {
 	 * @param string $order_id Order ID.
 	 * @return array|WP_Error
 	 */
-	private static function get_edge_order_by_id( $order_id ) {
-		$response = Tickets_API::call_edge_function(
-			'get-order',
-			array(
-				'id' => sanitize_text_field( (string) $order_id ),
-			),
-			'POST'
-		);
+	private static function get_order_by_id( $order_id ) {
+		$order_id = sanitize_text_field( (string) $order_id );
 
-		if ( is_wp_error( $response ) ) {
-			return $response;
+		// WC orders: build from WC meta.
+		if ( preg_match( '/^wc_(\d+)/', $order_id, $m ) ) {
+			return self::build_order_from_wc( (int) $m[1] );
 		}
 
-		if ( ! is_array( $response ) ) {
+		// Non-WC orders: query local ticket_orders table.
+		global $wpdb;
+		$table = $wpdb->prefix . 'eventkoi_ticket_orders';
+		$rows  = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT * FROM {$table} WHERE order_id = %s LIMIT 10",
+				$order_id
+			),
+			ARRAY_A
+		);
+
+		if ( empty( $rows ) ) {
 			return new WP_Error( 'order_not_found', __( 'Order not found.', 'eventkoi-lite' ), array( 'status' => 404 ) );
 		}
 
-		return $response;
+		$first = $rows[0];
+		$items = array();
+		foreach ( $rows as $row ) {
+			$tid  = absint( $row['ticket_id'] ?? 0 );
+			$name = $tid ? get_the_title( $tid ) : '';
+			$items[] = array(
+				'ticket_id' => $tid,
+				'name'      => $name,
+				'quantity'  => absint( $row['quantity'] ?? 1 ),
+				'price'     => (int) round( floatval( $row['unit_price'] ?? 0 ) * 100 ),
+			);
+		}
+
+		return array(
+			'id'             => $order_id,
+			'order_id'       => $order_id,
+			'status'         => (string) ( $first['payment_status'] ?? '' ),
+			'payment_status' => (string) ( $first['payment_status'] ?? '' ),
+			'customer_email' => (string) ( $first['customer_email'] ?? '' ),
+			'customer_name'  => (string) ( $first['customer_name'] ?? '' ),
+			'event_id'       => absint( $first['event_id'] ?? 0 ),
+			'event_instance_ts' => 0,
+			'currency'       => strtolower( (string) ( $first['currency'] ?? 'usd' ) ),
+			'items'          => $items,
+			'metadata'       => array(
+				'event_id'    => (string) absint( $first['event_id'] ?? 0 ),
+				'event_title' => get_the_title( absint( $first['event_id'] ?? 0 ) ),
+				'instance_ts' => (string) 0,
+			),
+		);
 	}
 
 	/**

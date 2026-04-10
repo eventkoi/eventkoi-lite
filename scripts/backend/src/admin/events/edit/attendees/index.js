@@ -151,9 +151,7 @@ function BulkRsvpActions({ table, onComplete }) {
       });
 
       table.setRowSelection({});
-      if (!isResendEmail) {
-        onComplete?.();
-      }
+      onComplete?.();
 
       const message =
         action === "delete"
@@ -1004,7 +1002,7 @@ export function EventEditAttendees() {
       let response;
       
       if (isTicketsAttendees) {
-        // Fetch ticket attendees rows + stats from edge + local WC stats.
+        // Fetch ticket attendees rows + stats from local DB.
         const params = new URLSearchParams({ event_id: String(event.id) });
         const [ordersResponse, combinedStats] = await Promise.all([
           apiRequest({
@@ -1681,40 +1679,10 @@ export function EventEditAttendees() {
 
   const base = event?.id ? `events/${event.id}/attendees` : "events";
 
-  // Show "Enable RSVP" message only when viewing RSVP attendees and RSVP is not enabled
-  if (!isTicketsAttendees && event?.attendance_mode !== 'rsvp') {
-    return (
-      <div className="flex flex-col w-full min-w-0 gap-8">
-        <div className="flex-1 flex items-center justify-center px-4 min-h-[50vh]">
-          <div className="w-full max-w-md text-center">
-            <h2 className="text-lg font-semibold text-foreground mb-1">
-              {__("RSVP is turned off", "eventkoi-lite")}
-            </h2>
-            <p className="text-sm text-muted-foreground mb-6">
-              {__(
-                "Enable RSVP for this event to start collecting attendees.",
-                "eventkoi-lite",
-              )}
-            </p>
-            <Button
-              variant="outline"
-              onClick={enableRsvp}
-              disabled={isEnabling}
-            >
-              {isEnabling
-                ? __("Enabling...", "eventkoi-lite")
-                : __("Enable RSVP", "eventkoi-lite")}
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  
-  // Show ticket attendees table
-  if (isTicketsAttendees) {
-    const ticketColumns = useMemo(
-      () => [
+  const ticketColumns = useMemo(
+    () => {
+      if (!isTicketsAttendees) return [];
+      return [
         {
           id: "select",
           header: ({ table }) => (
@@ -1882,8 +1850,7 @@ export function EventEditAttendees() {
                     href={`${window.location.origin}/wp-admin/admin.php?page=wc-orders&action=edit&id=${wcMatch[1]}`}
                     className="font-medium hover:underline hover:decoration-dotted underline-offset-4"
                     title={`WooCommerce Order #${wcMatch[1]}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    target="_self"
                   >
                     #{wcMatch[1]}
                   </a>
@@ -1953,10 +1920,43 @@ export function EventEditAttendees() {
           enableSorting: false,
           enableHiding: false,
         },
-      ],
-      [fetchResults, updateTicketCheckin, updateTicketCheckinCount]
-    );
+      ];
+    },
+    [isTicketsAttendees, fetchResults, updateTicketCheckin, updateTicketCheckinCount]
+  );
 
+  // Show "Enable RSVP" message only when viewing RSVP attendees and RSVP is not enabled
+  if (!isTicketsAttendees && event?.attendance_mode !== 'rsvp') {
+    return (
+      <div className="flex flex-col w-full min-w-0 gap-8">
+        <div className="flex-1 flex items-center justify-center px-4 min-h-[50vh]">
+          <div className="w-full max-w-md text-center">
+            <h2 className="text-lg font-semibold text-foreground mb-1">
+              {__("RSVP is turned off", "eventkoi-lite")}
+            </h2>
+            <p className="text-sm text-muted-foreground mb-6">
+              {__(
+                "Enable RSVP for this event to start collecting attendees.",
+                "eventkoi-lite",
+              )}
+            </p>
+            <Button
+              variant="outline"
+              onClick={enableRsvp}
+              disabled={isEnabling}
+            >
+              {isEnabling
+                ? __("Enabling...", "eventkoi-lite")
+                : __("Enable RSVP", "eventkoi-lite")}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show ticket attendees table
+  if (isTicketsAttendees) {
     return (
       <div className="flex flex-col w-full min-w-0 gap-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
@@ -1997,6 +1997,7 @@ export function EventEditAttendees() {
           hideCategories
           isLoading={isLoading}
           fetchResults={fetchResults}
+          customTopLeft={() => null}
           customTopRight={(table) => (
             <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
               <SearchBox table={table} />

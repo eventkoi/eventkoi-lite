@@ -110,8 +110,7 @@ export const createOrderColumns = ({ includeEventColumn = false } = {}) => {
                 href={`${window.location.origin}/wp-admin/admin.php?page=wc-orders&action=edit&id=${wcMatch[1]}`}
                 className="font-medium hover:underline hover:decoration-dotted underline-offset-4"
                 title={`WooCommerce Order #${wcMatch[1]}`}
-                target="_blank"
-                rel="noopener noreferrer"
+                target="_self"
               >
                 #{wcMatch[1]}
               </a>

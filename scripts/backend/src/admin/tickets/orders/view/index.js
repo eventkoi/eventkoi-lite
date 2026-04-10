@@ -11,7 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Wrapper } from "@/components/wrapper";
 import { useOrder } from "@/hooks/useOrder";
 import { formatWPtime } from "@/lib/date-utils";
-import { callEdgeFunction } from "@/lib/remote";
+import { callLocalApi } from "@/lib/remote";
+import { normalizeOrder } from "@/lib/orders";
 import { __, sprintf } from "@wordpress/i18n";
 import { useState } from "react";
 import { useParams } from "react-router-dom";
@@ -32,21 +33,22 @@ export function OrderView() {
     setSubmittingNote(true);
 
     try {
-      await callEdgeFunction("add-order-note", {
+      await callLocalApi("add_order_note", {
         method: "POST",
-        body: JSON.stringify({
+        data: {
           order_id: order.id,
           note_key: "admin_note",
           note_value: newNote,
-        }),
+        },
       });
 
-      const refreshed = await callEdgeFunction("get-order", {
-        method: "POST",
-        body: JSON.stringify({ id: order.id }),
-      });
-
-      setOrder(refreshed);
+      const orders = await callLocalApi("tickets/all-orders");
+      const match = Array.isArray(orders)
+        ? orders.find((o) => o.id === order.id || o.order_id === order.id)
+        : null;
+      if (match) {
+        setOrder(normalizeOrder(match));
+      }
       setNewNote("");
     } catch (err) {
       console.error("Failed to submit note:", err);

@@ -120,23 +120,10 @@ class Scripts {
 		$current_user  = wp_get_current_user();
 
 		// Prepare parameters for JS.
-		$remote_config = get_transient( 'eventkoi_remote_config' );
-		if ( ! is_array( $remote_config ) && defined( 'EVENTKOI_CONFIG' ) ) {
-			$config_res = wp_remote_get( EVENTKOI_CONFIG, array( 'timeout' => 3 ) );
-			if ( ! is_wp_error( $config_res ) ) {
-				$remote_config = json_decode( (string) wp_remote_retrieve_body( $config_res ), true );
-				if ( is_array( $remote_config ) ) {
-					set_transient( 'eventkoi_remote_config', $remote_config, 5 * MINUTE_IN_SECONDS );
-				}
-			}
-		}
-
 		$eventkoi_params = array(
 			'version'             => EVENTKOI_VERSION,
 			'api'                 => EVENTKOI_API,
 			'rest_url'            => esc_url_raw( rest_url( EVENTKOI_API ) ),
-			'supabase_config_url' => defined( 'EVENTKOI_CONFIG' ) ? EVENTKOI_CONFIG : '',
-			'supabase_config'     => is_array( $remote_config ) ? $remote_config : null,
 			'plugin_url'          => trailingslashit( EVENTKOI_PLUGIN_URL ),
 			'settings'            => $safe_settings,
 			'general_options_url' => admin_url( 'options-general.php' ),

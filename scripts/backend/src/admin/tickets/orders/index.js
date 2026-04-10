@@ -2,14 +2,11 @@
 import { DataTable } from "@/components/data-table";
 import { Heading } from "@/components/heading";
 import { OrderStats, getDateRange } from "@/components/order-stats";
-import { StripeConnectNotice } from "@/components/stripe-connect-notice";
-import { TestModeNotice } from "@/components/test-mode-notice";
 import { SearchBox } from "@/components/search-box";
 import { Button } from "@/components/ui/button";
 import { createOrderColumns } from "@/lib/order-table-columns";
-import { normalizeOrder, normalizeOrders } from "@/lib/orders";
-import { callEdgeFunction } from "@/lib/remote";
-import { getSupabase } from "@/lib/supabase";
+import { normalizeOrders } from "@/lib/orders";
+import { formatCurrency } from "@/lib/utils";
 import apiRequest from "@wordpress/api-fetch";
 import { __ } from "@wordpress/i18n";
 import { ArrowDownToLine } from "lucide-react";
@@ -92,7 +89,7 @@ const buildOrderStatusCounts = (rows) =>
 export function Orders() {
   const [isLoading, setIsLoading] = useState(true);
   const [data, setData] = useState([]);
-  const [isExporting] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
   const [timeRange, setTimeRange] = useState("all");
   const [searchParams] = useSearchParams();
   const queryStatus = searchParams.get("status") || "all";
@@ -102,77 +99,9 @@ export function Orders() {
     []
   );
 
-  const enrichOrdersWithEventIds = useCallback(async (orders) => {
-    const missing = orders.filter(
-      (order) => !Array.isArray(order.event_ids) || order.event_ids.length === 0
-    );
-
-    if (!missing.length) {
-      return orders;
-    }
-
-    // Cap enrichment to avoid flooding the edge with requests.
-    const MAX_ENRICH = 20;
-    const toEnrich = missing.slice(0, MAX_ENRICH);
-
-    const resolvedById = new Map();
-
-    // Process in batches of 5 concurrent requests.
-    const BATCH_SIZE = 5;
-    for (let i = 0; i < toEnrich.length; i += BATCH_SIZE) {
-      const batch = toEnrich.slice(i, i + BATCH_SIZE);
-      const details = await Promise.all(
-        batch.map(async (order) => {
-          const id = order.id || order.order_id;
-          if (!id) return null;
-          try {
-            const detail = await callEdgeFunction("get-order", {
-              method: "POST",
-              body: JSON.stringify({ id }),
-            });
-            const normalizedDetail = normalizeOrder(detail);
-            return { id: String(id), detail: normalizedDetail };
-          } catch {
-            return null;
-          }
-        })
-      );
-
-      details.forEach((result) => {
-        if (!result || !Array.isArray(result.detail?.event_ids)) return;
-        if (result.detail.event_ids.length > 0) {
-          resolvedById.set(result.id, {
-            event_ids: result.detail.event_ids,
-            event_names: result.detail.event_names || {},
-          });
-        }
-      });
-    }
-
-    if (!resolvedById.size) {
-      return orders;
-    }
-
-    return orders.map((order) => {
-      const id = String(order.id || order.order_id || "");
-      const resolved = resolvedById.get(id);
-      if (!resolved) {
-        return order;
-      }
-      return {
-        ...order,
-        event_ids: resolved.event_ids,
-        event_id: resolved.event_ids[0] || order.event_id || null,
-        event_names: resolved.event_names,
-      };
-    });
-  }, []);
-
   const fetchResults = useCallback(async (options = {}) => {
     const { emitUpdateEvent = true, forceRefresh = false } = options;
     try {
-      // all-orders proxies the edge list-orders call with server-side
-      // caching and merges WC orders in one response.
       const refreshParam = forceRefresh ? "&force_refresh=1" : "";
       const json = await apiRequest({
         path: `${eventkoi_params.api}/tickets/all-orders?_=${Date.now()}${refreshParam}`,
@@ -180,9 +109,7 @@ export function Orders() {
         headers: { "EVENTKOI-API-KEY": eventkoi_params.api_key },
       });
       const normalized = normalizeOrders(json);
-
-      const enriched = await enrichOrdersWithEventIds(normalized);
-      setData(enriched);
+      setData(normalized);
       if (emitUpdateEvent) {
         window.dispatchEvent(new CustomEvent("eventkoi-orders-updated"));
       }
@@ -191,64 +118,12 @@ export function Orders() {
     } finally {
       setIsLoading(false);
     }
-  }, [enrichOrdersWithEventIds]);
+  }, []);
 
   useEffect(() => {
     setData([]);
     setIsLoading(true);
     fetchResults({ emitUpdateEvent: false });
-  }, [fetchResults]);
-
-  useEffect(() => {
-    let channel = null;
-    let refreshTimer = null;
-    let mounted = true;
-
-    const scheduleRefresh = () => {
-      if (refreshTimer) {
-        clearTimeout(refreshTimer);
-      }
-      refreshTimer = setTimeout(() => {
-        if (!mounted) return;
-        fetchResults({ forceRefresh: true });
-      }, 250);
-    };
-
-    (async () => {
-      try {
-        const supabase = await getSupabase();
-        channel = supabase
-          .channel("eventkoi-admin-orders")
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "orders" },
-            scheduleRefresh
-          )
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "order_items" },
-            scheduleRefresh
-          )
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "refunds" },
-            scheduleRefresh
-          )
-          .subscribe();
-      } catch (error) {
-        console.error("Orders realtime subscribe failed:", error);
-      }
-    })();
-
-    return () => {
-      mounted = false;
-      if (refreshTimer) {
-        clearTimeout(refreshTimer);
-      }
-      if (channel) {
-        getSupabase().then((supabase) => supabase.removeChannel(channel));
-      }
-    };
   }, [fetchResults]);
 
   const timeFilteredData = useMemo(() => {
@@ -267,6 +142,71 @@ export function Orders() {
     [timeFilteredData, queryStatus]
   );
 
+  const exportOrdersCsv = (table) => {
+    setIsExporting(true);
+    try {
+      const rows = table.getFilteredRowModel().rows || [];
+      const headers = [
+        "Order ID",
+        "Event",
+        "Customer name",
+        "Customer email",
+        "Order status",
+        "Quantity",
+        "Amount",
+        "Currency",
+        "Date",
+      ];
+
+      const escapeCsv = (value) => {
+        const text = String(value ?? "");
+        if (text.includes(",") || text.includes('"') || text.includes("\n")) {
+          return `"${text.replace(/"/g, '""')}"`;
+        }
+        return text;
+      };
+
+      const csvRows = rows.map((row) => {
+        const o = row.original;
+        const eventNames = o.event_names || {};
+        const eventIds = Array.isArray(o.event_ids) ? o.event_ids : [];
+        const eventLabel = eventIds.map((id) => eventNames[id] || id).join("; ");
+        const totalCents = Number(o.total_amount ?? o.amount_total ?? o.total ?? 0);
+        const cur = (o.currency || "usd").toUpperCase();
+
+        return [
+          o.order_id || o.id || "",
+          eventLabel,
+          o.ticket_holder_name || o.customer_name || "",
+          o.customer_email || o.billing_email || "",
+          o.payment_status || o.status || "",
+          Number(o.quantity || 0),
+          formatCurrency(totalCents, cur),
+          cur,
+          o.created_at || "",
+        ]
+          .map(escapeCsv)
+          .join(",");
+      });
+
+      const blob = new Blob([[headers.join(","), ...csvRows].join("\n")], {
+        type: "text/csv;charset=utf-8;",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "eventkoi-orders.csv";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Export orders CSV failed:", error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-8">
       <div className="mx-auto flex w-full gap-2 justify-between">
@@ -274,15 +214,12 @@ export function Orders() {
           <Heading>{__("Ticket sales", "eventkoi")}</Heading>
         </div>
       </div>
-      <TestModeNotice />
-      <StripeConnectNotice />
       <OrderStats timeRange={timeRange} onTimeRangeChange={setTimeRange} />
       <DataTable
         data={filteredData}
         columns={columns}
         empty={queryStatus === "archived" ? "No archived orders are found." : "No orders are found."}
-        base="orders"
-        statusBase="tickets"
+        base="tickets"
         statusFilters={ORDER_STATUS_FILTERS}
         isLoading={isLoading}
         fetchResults={fetchResults}
@@ -293,7 +230,7 @@ export function Orders() {
         customTopRight={(table) => (
           <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
             <SearchBox table={table} />
-            <Button variant="outline" disabled={isExporting}>
+            <Button variant="outline" disabled={isExporting} onClick={() => exportOrdersCsv(table)}>
               <ArrowDownToLine className="mr-2 h-4 w-4" />
               {isExporting
                 ? __("Exporting...", "eventkoi")

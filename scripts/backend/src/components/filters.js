@@ -56,7 +56,7 @@ export function Filters({
 
   return (
     <>
-      {statusFilters && (
+      {statusFilters && base === "events" && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button

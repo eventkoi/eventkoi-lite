@@ -14,14 +14,11 @@ import { SearchBox } from "@/components/search-box";
 import { Button } from "@/components/ui/button";
 import { createOrderColumns } from "@/lib/order-table-columns";
 import { normalizeOrders } from "@/lib/orders";
-import { callEdgeFunction } from "@/lib/remote";
-import { getSupabase } from "@/lib/supabase";
 import apiRequest from "@wordpress/api-fetch";
 import { __ } from "@wordpress/i18n";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowDownToLine, Info } from "lucide-react";
-import { TestModeNotice } from "@/components/test-mode-notice";
-import { formatCurrencyBreakdownParts } from "@/lib/utils";
+import { formatCurrency, formatCurrencyBreakdownParts } from "@/lib/utils";
 import { useSearchParams } from "react-router-dom";
 
 const ORDER_STATUS_FILTERS = [
@@ -150,38 +147,20 @@ export function EventEditSalesHistory() {
     const refreshParam = forceRefresh ? "&force_refresh=1" : "";
 
     try {
-      // All three calls run in parallel for fastest load.
-      // combined-stats proxies the edge get-stats call with server-side caching
-      // and merges WC stats, eliminating two slow browser→Supabase round-trips.
-      const [ordersResponse, combinedStats, localOrders] = await Promise.all([
-        callEdgeFunction(`list-orders?event_id=${event.id}&include_archived=1`),
+      const [ordersResponse, combinedStats] = await Promise.all([
+        apiRequest({
+          path: `${eventkoi_params.api}/tickets/orders?event_id=${event.id}${refreshParam}`,
+          method: "GET",
+          headers: { "EVENTKOI-API-KEY": eventkoi_params.api_key },
+        }),
         apiRequest({
           path: `${eventkoi_params.api}/tickets/combined-stats?event_id=${event.id}${refreshParam}`,
           method: "GET",
           headers: { "EVENTKOI-API-KEY": eventkoi_params.api_key },
         }),
-        apiRequest({
-          path: `${eventkoi_params.api}/tickets/orders?event_id=${event.id}${refreshParam}`,
-          method: "GET",
-          headers: { "EVENTKOI-API-KEY": eventkoi_params.api_key },
-        }).catch(() => []),
       ]);
 
-      const normalizedOrders = normalizeOrders(ordersResponse);
-
-      // Merge local WC orders — they only exist in the local DB,
-      // not in Supabase, so the edge function won't return them.
-      if (Array.isArray(localOrders)) {
-        const edgeIds = new Set(normalizedOrders.map((o) => o.order_id || o.id));
-        const wcOrders = localOrders.filter(
-          (o) => String(o.order_id || "").startsWith("wc_") && !edgeIds.has(o.order_id)
-        );
-        if (wcOrders.length > 0) {
-          normalizedOrders.push(...normalizeOrders(wcOrders));
-        }
-      }
-
-      setData(normalizedOrders);
+      setData(normalizeOrders(ordersResponse));
       setStats({
         total_orders: Number(combinedStats?.total_orders || 0),
         total_earnings: Number(combinedStats?.total_earnings || 0),
@@ -218,73 +197,67 @@ export function EventEditSalesHistory() {
     fetchResults();
   }, [fetchResults]);
 
-  useEffect(() => {
-    if (!event?.id) {
-      return undefined;
-    }
-
-    let channel = null;
-    let refreshTimer = null;
-    let mounted = true;
-
-    const scheduleRefresh = () => {
-      if (refreshTimer) {
-        clearTimeout(refreshTimer);
-      }
-      refreshTimer = setTimeout(() => {
-        if (!mounted) return;
-        fetchResults({ forceRefresh: true });
-      }, 250);
-    };
-
-    (async () => {
-      try {
-        const supabase = await getSupabase();
-        channel = supabase
-          .channel(`eventkoi-event-sales-${event.id}`)
-          .on(
-            "postgres_changes",
-            {
-              event: "*",
-              schema: "public",
-              table: "order_items",
-              filter: `event_id=eq.${event.id}`,
-            },
-            scheduleRefresh
-          )
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "orders" },
-            scheduleRefresh
-          )
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "refunds" },
-            scheduleRefresh
-          )
-          .on(
-            "postgres_changes",
-            { event: "*", schema: "public", table: "platform_fees" },
-            scheduleRefresh
-          )
-          .subscribe();
-      } catch (error) {
-        console.error("Event sales realtime subscribe failed:", error);
-      }
-    })();
-
-    return () => {
-      mounted = false;
-      if (refreshTimer) {
-        clearTimeout(refreshTimer);
-      }
-      if (channel) {
-        getSupabase().then((supabase) => supabase.removeChannel(channel));
-      }
-    };
-  }, [event?.id, fetchResults]);
-
   const base = event?.id ? `events/${event.id}/sales-history` : "events";
+
+  const exportOrdersCsv = (table) => {
+    setIsExporting(true);
+    try {
+      const rows = table.getFilteredRowModel().rows || [];
+      const headers = [
+        "Order ID",
+        "Customer name",
+        "Customer email",
+        "Order status",
+        "Quantity",
+        "Amount",
+        "Currency",
+        "Date",
+      ];
+
+      const escapeCsv = (value) => {
+        const text = String(value ?? "");
+        if (text.includes(",") || text.includes('"') || text.includes("\n")) {
+          return `"${text.replace(/"/g, '""')}"`;
+        }
+        return text;
+      };
+
+      const csvRows = rows.map((row) => {
+        const o = row.original;
+        const totalCents = Number(o.total_amount ?? o.amount_total ?? o.total ?? 0);
+        const cur = (o.currency || "usd").toUpperCase();
+
+        return [
+          o.order_id || o.id || "",
+          o.ticket_holder_name || o.customer_name || "",
+          o.customer_email || o.billing_email || "",
+          o.payment_status || o.status || "",
+          Number(o.quantity || 0),
+          formatCurrency(totalCents, cur),
+          cur,
+          o.created_at || "",
+        ]
+          .map(escapeCsv)
+          .join(",");
+      });
+
+      const blob = new Blob([[headers.join(","), ...csvRows].join("\n")], {
+        type: "text/csv;charset=utf-8;",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `eventkoi-orders-${event?.id || "event"}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("Export orders CSV failed:", error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   return (
     <div className="flex flex-col w-full gap-8">
@@ -293,8 +266,6 @@ export function EventEditSalesHistory() {
           <Heading>{__("Sales history", "eventkoi")}</Heading>
         </div>
       </div>
-
-      <TestModeNotice />
 
       <div className="rounded-lg border bg-card text-sm text-card-foreground shadow-sm w-full overflow-x-auto py-3 flex gap-4">
         <div className="min-w-[16px]"></div>
@@ -411,7 +382,7 @@ export function EventEditSalesHistory() {
         customTopRight={(table) => (
           <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
             <SearchBox table={table} />
-            <Button variant="outline" disabled={isExporting}>
+            <Button variant="outline" disabled={isExporting} onClick={() => exportOrdersCsv(table)}>
               <ArrowDownToLine className="mr-2 h-4 w-4" />
               {isExporting
                 ? __("Exporting...", "eventkoi")

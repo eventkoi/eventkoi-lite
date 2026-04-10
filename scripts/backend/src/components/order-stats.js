@@ -129,8 +129,7 @@ export function OrderStats({ timeRange, onTimeRangeChange }) {
       if (dateRange.from) params.set("from", dateRange.from);
       if (dateRange.to) params.set("to", dateRange.to);
       const qs = params.toString();
-      // combined-stats proxies the edge get-stats call with server-side
-      // caching and merges WC stats in one response.
+      // Fetch combined ticket order stats from local database.
       const combined = await apiRequest({
         path: `${eventkoi_params.api}/tickets/combined-stats${qs ? `?${qs}` : ""}`,
         method: "GET",

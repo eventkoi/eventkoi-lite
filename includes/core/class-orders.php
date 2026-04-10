@@ -32,13 +32,8 @@ class Orders {
 	 * @param array  $args An array of args to create an order.
 	 * @param string $gateway Payment gateway.
 	 */
-	public static function create_order( $args = array(), $gateway = 'stripe' ) {
+	public static function create_order( $args = array(), $gateway = 'woocommerce' ) {
 		$order_id = null;
-
-		if ( 'stripe' === $gateway ) {
-			$stripe   = new \EventKoi\Payments\Stripe();
-			$order_id = $stripe->create_order( $args );
-		}
 
 		// Fires after order has been created.
 		do_action( 'eventkoi_after_order_created', $args, $gateway );
