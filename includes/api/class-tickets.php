@@ -600,20 +600,23 @@ class Tickets {
 
 				if ( ! isset( $grouped[ $base_id ] ) ) {
 					$grouped[ $base_id ] = array(
-						'id'             => $base_id,
-						'order_id'       => $base_id,
-						'event_ids'      => array(),
-						'event_names'    => array(),
-						'customer_name'  => (string) ( $row->customer_name ?? '' ),
-						'customer_email' => (string) ( $row->customer_email ?? '' ),
-						'payment_status' => (string) ( $row->payment_status ?? 'pending' ),
-						'status'         => (string) ( $row->payment_status ?? 'pending' ),
-						'quantity'       => 0,
-						'amount_total'   => 0,
-						'currency'       => strtolower( (string) ( $row->currency ?? 'usd' ) ),
-						'created_at'     => (string) ( $row->created_at ?? '' ),
-						'gateway'        => 'woocommerce',
-						'items'          => array(),
+						'id'                    => $base_id,
+						'order_id'              => $base_id,
+						'event_ids'             => array(),
+						'event_names'           => array(),
+						'customer_name'         => (string) ( $row->customer_name ?? '' ),
+						'customer_email'        => (string) ( $row->customer_email ?? '' ),
+						'payment_status'        => 'pending',
+						'status'                => 'pending',
+						'quantity'              => 0,
+						'amount_total'          => 0,
+						'currency'              => strtolower( (string) ( $row->currency ?? 'usd' ) ),
+						'created_at'            => (string) ( $row->created_at ?? '' ),
+						'gateway'               => 'woocommerce',
+						'items'                 => array(),
+						'_completed_count'      => 0,
+						'_refunded_count'       => 0,
+						'_partial_refund_count' => 0,
 					);
 				}
 
@@ -621,9 +624,37 @@ class Tickets {
 					$grouped[ $base_id ]['event_ids'][] = $eid;
 				}
 
+				$row_status = (string) ( $row->payment_status ?? '' );
+				if ( 'refunded' === $row_status ) {
+					++$grouped[ $base_id ]['_refunded_count'];
+				} elseif ( 'partially_refunded' === $row_status ) {
+					++$grouped[ $base_id ]['_partial_refund_count'];
+				} elseif ( 'completed' === $row_status || 'complete' === $row_status || 'paid' === $row_status ) {
+					++$grouped[ $base_id ]['_completed_count'];
+				}
+
 				$grouped[ $base_id ]['quantity']     += absint( $row->quantity ?? 1 );
 				$grouped[ $base_id ]['amount_total'] += (float) ( $row->total_amount ?? 0 ) * 100;
 			}
+
+			// Derive aggregate status from per-seat row mix.
+			foreach ( $grouped as &$entry ) {
+				$completed = (int) ( $entry['_completed_count'] ?? 0 );
+				$refunded  = (int) ( $entry['_refunded_count'] ?? 0 );
+				$partial   = (int) ( $entry['_partial_refund_count'] ?? 0 );
+				if ( $partial > 0 || ( $refunded > 0 && $completed > 0 ) ) {
+					$entry['payment_status'] = 'partially_refunded';
+					$entry['status']         = 'partially_refunded';
+				} elseif ( $refunded > 0 ) {
+					$entry['payment_status'] = 'refunded';
+					$entry['status']         = 'refunded';
+				} elseif ( $completed > 0 ) {
+					$entry['payment_status'] = 'complete';
+					$entry['status']         = 'complete';
+				}
+				unset( $entry['_completed_count'], $entry['_refunded_count'], $entry['_partial_refund_count'] );
+			}
+			unset( $entry );
 
 			// Resolve event names.
 			$name_map = array();

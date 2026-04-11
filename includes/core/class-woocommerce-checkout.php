@@ -68,13 +68,17 @@ class WooCommerce_Checkout {
 		add_action( 'woocommerce_checkout_order_created', array( __CLASS__, 'attach_order_meta' ) );
 		add_action( 'woocommerce_store_api_checkout_order_processed', array( __CLASS__, 'attach_order_meta' ) );
 
-		// Payment/completion hooks.
-		// Only issue tickets when payment is actually confirmed:
-		// - woocommerce_payment_complete: fires when gateway confirms payment (Stripe, PayPal, etc.)
-		// - woocommerce_order_status_completed: fires when admin manually marks complete (COD, BACS, etc.)
-		// NOTE: Do NOT hook woocommerce_order_status_processing — that fires for COD/offline
-		// gateways before payment is received, which would issue tickets prematurely.
+		// Payment/completion hooks. Issue tickets as soon as WC considers the
+		// order actionable so every gateway works out of the box:
+		// - woocommerce_payment_complete: online gateways (Stripe, PayPal, …).
+		// - woocommerce_order_status_processing: offline gateways (COD, BACS, …)
+		//   that skip payment_complete and land directly in "processing".
+		// - woocommerce_order_status_completed: admin manual completion.
+		// on_payment_complete() is idempotent via the _eventkoi_synced guard,
+		// and auto-completes the order after syncing so the final status is
+		// always "completed".
 		add_action( 'woocommerce_payment_complete', array( __CLASS__, 'on_payment_complete' ) );
+		add_action( 'woocommerce_order_status_processing', array( __CLASS__, 'on_payment_complete' ) );
 		add_action( 'woocommerce_order_status_completed', array( __CLASS__, 'on_payment_complete' ) );
 		add_action( 'woocommerce_order_refunded', array( __CLASS__, 'on_order_refunded' ), 10, 2 );
 		add_action( 'woocommerce_order_status_changed', array( __CLASS__, 'on_order_status_changed' ), 10, 4 );
