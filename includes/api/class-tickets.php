@@ -253,6 +253,49 @@ class Tickets {
 	}
 
 	/**
+	 * Build a WHERE clause for ticket_orders queries, shared by every list
+	 * and stats endpoint so the gateway/currency/hold filters stay in lockstep.
+	 *
+	 * Lite is WooCommerce-only, so the gateway filter is always WC and currency
+	 * is resolved from WC. Optional filters for event_id and created_at range
+	 * are added when provided.
+	 *
+	 * @param array $args {
+	 *     @type int    $event_id Optional event ID filter.
+	 *     @type string $from     Optional created_at lower bound.
+	 *     @type string $to       Optional created_at upper bound.
+	 * }
+	 * @return string WHERE clause without the leading "WHERE " keyword.
+	 */
+	private static function build_ticket_orders_where( array $args = array() ) {
+		global $wpdb;
+
+		$currency = function_exists( 'get_woocommerce_currency' ) ? strtoupper( get_woocommerce_currency() ) : '';
+
+		$parts   = array();
+		$parts[] = "order_id LIKE 'wc\\_%'";
+		$parts[] = "payment_status != 'hold'";
+
+		if ( '' !== $currency ) {
+			$parts[] = $wpdb->prepare( 'UPPER(currency) = %s', $currency );
+		}
+
+		if ( ! empty( $args['event_id'] ) ) {
+			$parts[] = $wpdb->prepare( 'event_id = %d', absint( $args['event_id'] ) );
+		}
+
+		if ( ! empty( $args['from'] ) ) {
+			$parts[] = $wpdb->prepare( 'created_at >= %s', sanitize_text_field( (string) $args['from'] ) );
+		}
+
+		if ( ! empty( $args['to'] ) ) {
+			$parts[] = $wpdb->prepare( 'created_at <= %s', sanitize_text_field( (string) $args['to'] ) );
+		}
+
+		return implode( ' AND ', $parts );
+	}
+
+	/**
 	 * Get ticket orders for an event.
 	 *
 	 * @param WP_REST_Request $request Request object.
@@ -268,13 +311,11 @@ class Tickets {
 		}
 
 		$table_name = $wpdb->prefix . 'eventkoi_ticket_orders';
+		$where      = self::build_ticket_orders_where( array( 'event_id' => $event_id ) );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$orders = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT * FROM {$table_name} WHERE event_id = %d AND payment_status != 'hold' ORDER BY created_at DESC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$event_id
-			)
+			"SELECT * FROM {$table_name} WHERE {$where} ORDER BY created_at DESC" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		);
 
 		if ( null === $orders ) {
@@ -482,11 +523,7 @@ class Tickets {
 
 		$event_id   = absint( $request->get_param( 'event_id' ) );
 		$orders_tbl = $wpdb->prefix . 'eventkoi_ticket_orders';
-
-		$where = "WHERE order_id LIKE 'wc\\_%'";
-		if ( $event_id ) {
-			$where .= $wpdb->prepare( ' AND event_id = %d', $event_id );
-		}
+		$where      = self::build_ticket_orders_where( array( 'event_id' => $event_id ) );
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$row = $wpdb->get_row(
@@ -495,7 +532,7 @@ class Tickets {
 				COALESCE(SUM(CASE WHEN payment_status IN ('complete','completed','succeeded','partially_refunded') THEN total_amount - refund_amount ELSE 0 END), 0) AS total_earnings,
 				COALESCE(SUM(CASE WHEN payment_status IN ('complete','completed','succeeded','partially_refunded') THEN quantity ELSE 0 END), 0) AS tickets_sold,
 				COALESCE(SUM(refund_amount), 0) AS refund_amount
-			FROM {$orders_tbl} {$where}"
+			FROM {$orders_tbl} WHERE {$where}"
 		);
 		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
@@ -521,10 +558,7 @@ class Tickets {
 		$event_id = absint( $request->get_param( 'event_id' ) );
 
 		$orders_tbl = $wpdb->prefix . 'eventkoi_ticket_orders';
-		$where      = 'WHERE 1=1';
-		if ( $event_id ) {
-			$where .= $wpdb->prepare( ' AND event_id = %d', $event_id );
-		}
+		$where      = self::build_ticket_orders_where( array( 'event_id' => $event_id ) );
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		$row = $wpdb->get_row(
@@ -533,7 +567,7 @@ class Tickets {
 				COALESCE(SUM(CASE WHEN payment_status IN ('complete','completed','succeeded','partially_refunded') THEN total_amount - refund_amount ELSE 0 END), 0) AS total_earnings,
 				COALESCE(SUM(CASE WHEN payment_status IN ('complete','completed','succeeded','partially_refunded') THEN quantity ELSE 0 END), 0) AS tickets_sold,
 				COALESCE(SUM(refund_amount), 0) AS refund_amount
-			FROM {$orders_tbl} {$where}"
+			FROM {$orders_tbl} WHERE {$where}"
 		);
 		// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
@@ -574,14 +608,17 @@ class Tickets {
 	 * @return WP_REST_Response
 	 */
 	public static function get_all_orders( WP_REST_Request $request ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.Found
+		unset( $request );
 		global $wpdb;
 		$table = $wpdb->prefix . 'eventkoi_ticket_orders';
 
 		self::cleanup_expired_holds();
 
+		$where = self::build_ticket_orders_where();
+
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$wc_rows = $wpdb->get_results(
-			"SELECT * FROM {$table} WHERE payment_status != 'hold' ORDER BY created_at DESC" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			"SELECT * FROM {$table} WHERE {$where} ORDER BY created_at DESC" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		);
 
 		$result = array();
