@@ -5,7 +5,7 @@ Tags: event calendar, event management, event registration, rsvp, events
 Requires at least: 6.7
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.3.9.1
+Stable tag: 1.3.9.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 A modern, lightweight WordPress events calendar plugin. Create an events calendar or event list, manage event registration and RSVPs, and track
@@ -202,6 +202,19 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.9.2 – Order Sync & Ticket UI Polish – 2026-04-11 =
+* Improvement: Ticket refund emails now fire automatically when a WooCommerce order is refunded.
+* Improvement: Orders list CSV export and sales history CSV export are now working.
+* Improvement: WooCommerce order links in orders, attendees and sales history open in the same tab.
+* Improvement: `master_checkin_code` is populated from WooCommerce order meta so check-in works consistently.
+* Improvement: Attendees tab now refreshes reliably after ticket status changes.
+* Fix: Fatal error in `Orders::create_order` caused by a stray Stripe class reference.
+* Fix: Order status filter tabs on the Tickets > Orders page now point at the correct base.
+* Fix: Event status dropdown is hidden on non-event admin pages.
+* Fix: React "Rules of Hooks" error on the Event Attendees tab.
+* Fix: Removed an undefined `isResendEmail` reference in the Attendees component.
+* Fix: Hidden the attendees bulk-actions toolbar when no row-level actions are available.
 
 = 1.3.9.1 – Payments & UX Improvements – 2026-04-10 =
 * Improvement: Billing information (name, email) is now auto-filled for logged-in users during ticket checkout.
