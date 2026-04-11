@@ -5,7 +5,7 @@ Tags: event calendar, event management, event registration, rsvp, events
 Requires at least: 6.7
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.3.9.2
+Stable tag: 1.3.9.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 A modern, lightweight WordPress events calendar plugin. Create an events calendar or event list, manage event registration and RSVPs, and track
@@ -202,6 +202,12 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.9.3 – WooCommerce Gateway & Reporting Fixes – 2026-04-11 =
+* Improvement: Tickets are now issued as soon as a WooCommerce order moves to "processing", so every gateway (including Cash on Delivery and Bank Transfer) works out of the box.
+* Fix: Orders with a partial refund now display the correct "Partially refunded" status on the Orders list and per-event sales history.
+* Fix: Ticket sales totals and per-event stats no longer mix amounts from different WooCommerce currencies.
+* Fix: In-progress checkout holds are no longer counted toward sales stats.
 
 = 1.3.9.2 – Order Sync & Ticket UI Polish – 2026-04-11 =
 * Improvement: Ticket refund emails now fire automatically when a WooCommerce order is refunded.
