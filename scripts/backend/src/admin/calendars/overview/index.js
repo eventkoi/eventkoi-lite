@@ -18,7 +18,6 @@ import { LogoIcon } from "@/components/logo-icon";
 import { SortButton } from "@/components/sort-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import {
   Tooltip,
@@ -131,32 +130,6 @@ function ShortcodeCell({ row }) {
 }
 
 const columns = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <div className="flex items-center justify-center min-h-6">
-        <Checkbox
-          checked={
-            table.getIsAllPageRowsSelected() ||
-            (table.getIsSomePageRowsSelected() && "indeterminate")
-          }
-          onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-          aria-label="Select all rows"
-        />
-      </div>
-    ),
-    cell: ({ row }) => (
-      <div className="flex items-center justify-center min-h-6">
-        <Checkbox
-          checked={row.getIsSelected()}
-          onCheckedChange={(value) => row.toggleSelected(!!value)}
-          aria-label="Select row"
-        />
-      </div>
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
   {
     accessorKey: "name",
     header: ({ column }) => (
@@ -315,7 +288,11 @@ export function CalendarsOverview() {
         path: `${eventkoi_params.api}/calendars`,
         method: "get",
       });
-      setData(response);
+      const defaultCalId = parseInt(eventkoi_params.default_cal, 10);
+      const filtered = Array.isArray(response)
+        ? response.filter((cal) => parseInt(cal.id, 10) === defaultCalId)
+        : response;
+      setData(filtered);
     } catch (error) {
       console.error("Failed to load calendars:", error);
     } finally {
@@ -832,6 +809,9 @@ export function CalendarsOverview() {
           fetchResults={fetchResults}
           hideCategories
           hideDateRange
+          hideSearchBox
+          hideBottomBar
+          customTopLeft={() => null}
         />
         <ProLaunch headline="Upgrade to access Unlimited Calendars" minimal />
       </div>

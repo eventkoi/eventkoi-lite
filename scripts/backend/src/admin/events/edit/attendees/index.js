@@ -4,16 +4,7 @@ import { OrderStatus } from "@/components/order/OrderStatus";
 import { SearchBox } from "@/components/search-box";
 import { SortButton } from "@/components/sort-button";
 import { Stat } from "@/components/stat";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -242,33 +233,22 @@ function BulkRsvpActions({ table, onComplete }) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {__("Delete RSVPs?", "eventkoi-lite")}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {sprintf(
-                /* translators: %d: number of selected RSVPs */
-                __("This will permanently delete %d RSVP(s).", "eventkoi-lite"),
-                selectedCount,
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{__("Cancel", "eventkoi-lite")}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                runAction("delete");
-                setConfirmOpen(false);
-              }}
-            >
-              {__("Delete", "eventkoi-lite")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        icon="delete"
+        title={__("Delete RSVPs?", "eventkoi-lite")}
+        description={sprintf(
+          /* translators: %d: number of selected RSVPs */
+          __("This will permanently delete %d RSVP(s).", "eventkoi-lite"),
+          selectedCount,
+        )}
+        confirmLabel={__("Delete", "eventkoi-lite")}
+        onConfirm={() => {
+          runAction("delete");
+          setConfirmOpen(false);
+        }}
+      />
     </>
   );
 }
@@ -396,29 +376,18 @@ function RowRsvpActions({
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {__("Delete RSVP?", "eventkoi-lite")}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {__("This will permanently delete this RSVP.", "eventkoi-lite")}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{__("Cancel", "eventkoi-lite")}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                runAction("delete");
-                setConfirmOpen(false);
-              }}
-            >
-              {__("Delete", "eventkoi-lite")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        icon="delete"
+        title={__("Delete RSVP?", "eventkoi-lite")}
+        description={__("This will permanently delete this RSVP.", "eventkoi-lite")}
+        confirmLabel={__("Delete", "eventkoi-lite")}
+        onConfirm={() => {
+          runAction("delete");
+          setConfirmOpen(false);
+        }}
+      />
     </>
   );
 }

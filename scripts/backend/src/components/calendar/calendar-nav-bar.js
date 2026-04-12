@@ -1,14 +1,13 @@
 import apiRequest from "@wordpress/api-fetch";
 
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 
 import { Button } from "@/components/ui/button";
+import { ProBadge } from "@/components/pro-badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -17,67 +16,10 @@ import { ChevronDown } from "lucide-react";
 import { showToast, showToastError } from "@/lib/toast";
 
 export function CalendarNavBar({ loading, setLoading, calendar, setCalendar }) {
-  const navigate = useNavigate();
-
   const [saving, setSaving] = useState(false);
   const [nameError, setNameError] = useState(false);
 
   let disabled = (!calendar?.id && !calendar?.name) || saving;
-
-  const deleteCalendar = async () => {
-    setLoading(true);
-    await apiRequest({
-      path: `${eventkoi_params.api}/delete_calendar`,
-      method: "post",
-      data: {
-        calendar_id: calendar?.id,
-      },
-      headers: {
-        "EVENTKOI-API-KEY": eventkoi_params.api_key,
-      },
-    })
-      .then((response) => {
-        setLoading(false);
-        navigate("/calendars");
-        showToast(response);
-      })
-      .catch(() => {
-        setLoading(false);
-      });
-  };
-
-  const duplicateCalendar = async () => {
-    setSaving(true);
-    setLoading(true);
-    const originalId = calendar?.id;
-    await apiRequest({
-      path: `${eventkoi_params.api}/duplicate_calendar`,
-      method: "post",
-      data: {
-        calendar_id: calendar?.id,
-      },
-      headers: {
-        "EVENTKOI-API-KEY": eventkoi_params.api_key,
-      },
-    })
-      .then((response) => {
-        setSaving(false);
-        setLoading(false);
-        setCalendar(response);
-        showToast(response);
-
-        if (response.update_endpoint) {
-          window.location.hash = window.location.hash.replace(
-            originalId,
-            response.id
-          );
-        }
-      })
-      .catch(() => {
-        setSaving(false);
-        setLoading(false);
-      });
-  };
 
   const saveCalendar = async (status) => {
     if (!calendar.name) {
@@ -152,22 +94,11 @@ export function CalendarNavBar({ loading, setLoading, calendar, setCalendar }) {
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56 z-[510000]" align="end">
             <DropdownMenuItem
-              disabled={!calendar?.id}
-              onClick={() => {
-                duplicateCalendar();
-              }}
+              disabled
+              className="opacity-60"
             >
               Create duplicate calendar
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              className="text-destructive focus:text-destructive"
-              disabled={calendar?.id === parseInt(eventkoi_params.default_cal)}
-              onClick={() => {
-                deleteCalendar();
-              }}
-            >
-              Delete calendar
+              <ProBadge />
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

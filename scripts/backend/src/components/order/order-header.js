@@ -2,16 +2,7 @@ import { cn } from "@/lib/utils";
 
 import { Logo } from "@/components/logo";
 import { OrderNavBack } from "@/components/order/order-nav-back";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -191,40 +182,26 @@ export function OrderHeader({ loading, setLoading, order, setOrder }) {
           </>
         ) : null}
       </div>
-      <AlertDialog open={confirmArchiveOpen} onOpenChange={setConfirmArchiveOpen}>
-        <AlertDialogContent className="max-w-sm p-4 gap-3">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="text-base">
-              {isArchived
-                ? __("Unarchive order?", "eventkoi")
-                : __("Archive order?", "eventkoi")}
-            </AlertDialogTitle>
-            <AlertDialogDescription className="text-sm text-foreground">
-              {isArchived
-                ? __("This will restore this order back to dashboard order lists.", "eventkoi")
-                : sprintf(
-                    __(
-                      "This will hide %d order(s) from order lists. Financial records and webhook accounting will remain unchanged.",
-                      "eventkoi"
-                    ),
-                    1
-                  )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter className="mt-4 gap-2 sm:gap-2">
-            <AlertDialogCancel>{__("Cancel", "eventkoi")}</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-              onClick={() => {
-                setConfirmArchiveOpen(false);
-                handleArchiveToggle();
-              }}
-            >
-              {isArchived ? __("Unarchive", "eventkoi") : __("Archive", "eventkoi")}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={confirmArchiveOpen}
+        onOpenChange={setConfirmArchiveOpen}
+        icon="archive"
+        title={
+          isArchived
+            ? __("Unarchive order?", "eventkoi")
+            : __("Archive order?", "eventkoi")
+        }
+        description={
+          isArchived
+            ? __("This will restore this order back to your order lists.", "eventkoi")
+            : __("This order will be hidden from your order lists. Financial records remain unchanged.", "eventkoi")
+        }
+        confirmLabel={isArchived ? __("Unarchive", "eventkoi") : __("Archive", "eventkoi")}
+        onConfirm={() => {
+          setConfirmArchiveOpen(false);
+          handleArchiveToggle();
+        }}
+      />
     </header>
   );
 }

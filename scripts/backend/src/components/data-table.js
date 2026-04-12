@@ -142,9 +142,11 @@ export function DataTable({
             />
           </div>
         )}
-        <div className="text-sm text-muted-foreground">
-          <TableSelectedRows table={table} compact={compact} />
-        </div>
+        {!hideBottomBar && (
+          <div className="text-sm text-muted-foreground">
+            <TableSelectedRows table={table} compact={compact} />
+          </div>
+        )}
       </div>
 
       <div

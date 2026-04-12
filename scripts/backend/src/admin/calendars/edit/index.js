@@ -94,7 +94,8 @@ export function CalendarEdit() {
     };
 
     if (!calendarId) {
-      initNewCalendar();
+      navigate("/calendars", { replace: true });
+      return;
     } else {
       getCalendar();
     }

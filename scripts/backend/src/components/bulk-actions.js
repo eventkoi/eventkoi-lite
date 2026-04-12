@@ -12,8 +12,11 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 
 import { EllipsisVertical } from "lucide-react";
+import { __, sprintf } from "@wordpress/i18n";
+import { useState } from "react";
 
 export function BulkActions({
   table,
@@ -23,6 +26,13 @@ export function BulkActions({
   queryStatus,
   refreshCounts,
 }) {
+  const basePath = String(base || "");
+  const isOrders = basePath === "orders" || basePath === "tickets" || /\/sales-history$/.test(basePath);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState("archive");
+  const selectedCount = table.getFilteredSelectedRowModel().rows.length;
+  const isArchivedView = queryStatus === "archived";
+
   const runAction = async (action) => {
     let selectedRows = table.getFilteredSelectedRowModel().rows;
 
@@ -30,6 +40,34 @@ export function BulkActions({
     selectedRows.forEach((item, index) => {
       ids.push(item.original.id);
     });
+
+    if (isOrders) {
+      if (!ids.length) {
+        return;
+      }
+
+      if (action !== "archive" && action !== "unarchive" && action !== "delete") {
+        return;
+      }
+
+      try {
+        for (const orderId of ids) {
+          await apiRequest({
+            path: `${eventkoi_params.api}/tickets/orders/archive`,
+            method: "POST",
+            data: { order_id: orderId, mode: action },
+            headers: { "EVENTKOI-API-KEY": eventkoi_params.api_key },
+          });
+        }
+
+        table.setRowSelection({});
+        fetchResults?.();
+      } catch (error) {
+        console.error("Orders archive error:", error);
+      }
+
+      return;
+    }
 
     let data = {
       ids: ids,
@@ -58,6 +96,7 @@ export function BulkActions({
   };
 
   return (
+    <>
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
@@ -69,10 +108,24 @@ export function BulkActions({
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-[180px]">
-        {queryStatus == "trash" ? (
+        {isOrders ? (
+          <DropdownMenuItem
+            disabled={selectedCount == 0}
+            onClick={() => {
+              setConfirmAction(isArchivedView ? "unarchive" : "archive");
+              setConfirmOpen(true);
+            }}
+          >
+            <span>
+              {isArchivedView
+                ? __("Unarchive", "eventkoi-lite")
+                : __("Archive", "eventkoi-lite")}
+            </span>
+          </DropdownMenuItem>
+        ) : queryStatus == "trash" ? (
           <>
             <DropdownMenuItem
-              disabled={table.getFilteredSelectedRowModel().rows.length == 0}
+              disabled={selectedCount == 0}
               onClick={() => {
                 runAction("restore");
               }}
@@ -80,7 +133,7 @@ export function BulkActions({
               <span>Restore</span>
             </DropdownMenuItem>
             <DropdownMenuItem
-              disabled={table.getFilteredSelectedRowModel().rows.length == 0}
+              disabled={selectedCount == 0}
               onClick={() => {
                 runAction("remove");
               }}
@@ -92,7 +145,7 @@ export function BulkActions({
           <>
             {base !== "calendars" && (
               <DropdownMenuItem
-                disabled={table.getFilteredSelectedRowModel().rows.length == 0}
+                disabled={selectedCount == 0}
                 onClick={() => {
                   runAction("duplicate");
                 }}
@@ -101,7 +154,7 @@ export function BulkActions({
               </DropdownMenuItem>
             )}
             <DropdownMenuItem
-              disabled={table.getFilteredSelectedRowModel().rows.length == 0}
+              disabled={selectedCount == 0}
               onClick={() => {
                 runAction("delete");
               }}
@@ -110,7 +163,7 @@ export function BulkActions({
                 {["calendars"].includes(base) ? "Delete" : "Move to trash"}
               </span>
             </DropdownMenuItem>
-            {addTo && table.getFilteredSelectedRowModel().rows.length > 0 && (
+            {addTo && selectedCount > 0 && (
               <DropdownMenuSub>
                 <DropdownMenuSubTrigger>
                   <span>{addTo}</span>
@@ -123,10 +176,8 @@ export function BulkActions({
               </DropdownMenuSub>
             )}
 
-            {addTo && table.getFilteredSelectedRowModel().rows.length == 0 && (
-              <DropdownMenuItem
-                disabled={table.getFilteredSelectedRowModel().rows.length == 0}
-              >
+            {addTo && selectedCount == 0 && (
+              <DropdownMenuItem disabled>
                 <span>{addTo}</span>
               </DropdownMenuItem>
             )}
@@ -134,5 +185,35 @@ export function BulkActions({
         )}
       </DropdownMenuContent>
     </DropdownMenu>
+    {isOrders && (
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        icon="archive"
+        title={
+          confirmAction === "unarchive"
+            ? __("Unarchive orders?", "eventkoi-lite")
+            : __("Archive orders?", "eventkoi-lite")
+        }
+        description={
+          confirmAction === "unarchive"
+            ? sprintf(
+                __("This will restore %d order(s) back to your order lists.", "eventkoi-lite"),
+                selectedCount
+              )
+            : sprintf(
+                __("%d order(s) will be hidden from your order lists. Financial records remain unchanged.", "eventkoi-lite"),
+                selectedCount
+              )
+        }
+        confirmLabel={
+          confirmAction === "unarchive"
+            ? __("Unarchive", "eventkoi-lite")
+            : __("Archive", "eventkoi-lite")
+        }
+        onConfirm={() => runAction(confirmAction)}
+      />
+    )}
+    </>
   );
 }

@@ -2,16 +2,7 @@ import { NotFound } from "@/components/empty-state/NotFound";
 import { CopyableOrderId } from "@/components/order/CopyableOrderId";
 import { OrderHeader } from "@/components/order/order-header";
 import { OrderSkeleton } from "@/components/order/OrderSkeleton";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -513,28 +504,16 @@ export function OrderRefundView() {
             </div>
           </div>
         </div>
-        <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-          <AlertDialogContent className="max-w-sm p-4 gap-3">
-            <AlertDialogHeader>
-              <AlertDialogTitle className="text-base">
-                {__("Confirm refund?", "eventkoi")}
-              </AlertDialogTitle>
-              <AlertDialogDescription className="text-sm text-foreground">
-                {__("This action will issue a refund.", "eventkoi")}
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter className="mt-4 gap-2 sm:gap-2">
-              <AlertDialogCancel>{__("Cancel", "eventkoi")}</AlertDialogCancel>
-              <AlertDialogAction
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                onClick={confirmRefund}
-                disabled={submitting}
-              >
-                {submitting ? __("Processing...", "eventkoi") : __("Refund", "eventkoi")}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+        <ConfirmDialog
+          open={confirmOpen}
+          onOpenChange={setConfirmOpen}
+          icon="refund"
+          title={__("Confirm refund?", "eventkoi")}
+          description={__("This action will issue a refund.", "eventkoi")}
+          confirmLabel={submitting ? __("Processing...", "eventkoi") : __("Refund", "eventkoi")}
+          onConfirm={confirmRefund}
+          disabled={submitting}
+        />
       </Wrapper>
     </>
   );
