@@ -13,7 +13,7 @@ A modern, unbloated WordPress events calendar plugin. Sell tickets, create an ev
 
 == Description ==
 
-**EventKoi Lite is a modern WordPress events calendar plugin** built for site owners who are tired of bloated, outdated event management plugins from a decade ago. Create and manage in-person and virtual events, display a beautiful events calendar or event list, and handle event registration and attendee management, all from a clean, intuitive admin.
+**EventKoi Lite is a modern WordPress events calendar plugin** built for site owners who want an unbloated and intuitive event management plugin. Create and manage in-person and virtual events, display a beautiful events calendar or event list, sell tickets, manage RSVPs and attendees, all from a clean, intuitive admin.
 
 ✓ **Events calendar & event list** — Display events in a calendar, list, or grid view using blocks, shortcodes, Elementor, or Beaver Builder
 ✓ **Event registration & RSVP** — Let attendees register for events, manage capacity, and check in with check-in codes
@@ -43,8 +43,7 @@ A modern, unbloated WordPress events calendar plugin. Sell tickets, create an ev
 
 ###Events Calendar & Event Listing
 
-- Embed an events calendar using a block, shortcode, Elementor
-  widget, or Beaver Builder module
+- Embed an events calendar using a block, shortcode, Elementor widget, or Beaver Builder module
 - Display an event listing as a list or grid view
 - Filter events by date range or calendar
 - Accessible calendar views with full keyboard navigation and ARIA labels
@@ -65,7 +64,7 @@ A modern, unbloated WordPress events calendar plugin. Sell tickets, create an ev
 
 ## Sell Event Tickets with WooCommerce
 
-- Use any WooCommerce payment gateway — Stripe, PayPal, and more — to sell tickets directly from your WordPress site
+- Use any WooCommerce payment gateway (Stripe, PayPal, and more) to sell tickets directly from your WordPress site
 - Create multiple ticket types per event (e.g. General Admission, VIP, Early Bird)
 - Set individual pricing, capacity, and availability for each ticket type
 - Offer free tickets or paid tickets
@@ -83,8 +82,7 @@ A modern, unbloated WordPress events calendar plugin. Sell tickets, create an ev
 
 ## Calendar Sync & Sharing
 
-- Let visitors add events to Google Calendar, iCalendar, Outlook 365,
-  or Outlook Live
+- Let visitors add events to Google Calendar, iCalendar, Outlook 365, or Outlook Live
 - Auto-detect visitor timezone for virtual and international events
 - Social sharing built in
 
@@ -96,10 +94,8 @@ EventKoi Lite automatically outputs JSON-LD structured data for every event, hel
 
 ## Page Builder Integrations
 
-- **Elementor:** Embed an events calendar or event data using native
-  Elementor widgets
-- **Beaver Builder:** Embed an events calendar or event data using native
-  Beaver Builder modules
+- **Elementor:** Embed an events calendar or event data using native Elementor widgets
+- **Beaver Builder:** Embed an events calendar or event data using native Beaver Builder modules
 
 
 ## Block editor and shortcode support
@@ -128,6 +124,7 @@ EventKoi Lite automatically outputs JSON-LD structured data for every event, hel
 	- Automatically create a dedicated event series page
 - **Custom fields**
 	- Add custom fields and field groups to any event
+	- Import custom fields from The Events Calendar
 - **Multiple event calendars**
 	- Lite includes one calendar. Pro unlocks unlimited calendars so you can segment events by type, department,
   location, or audience
