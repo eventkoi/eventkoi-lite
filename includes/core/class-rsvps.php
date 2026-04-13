@@ -208,6 +208,7 @@ class Rsvps {
 
 		if ( 'going' === $status ) {
 			self::send_rsvp_email( $email, $name, $event_id, $instance_ts, $checkin_token, $guests );
+			self::send_admin_rsvp_notification( $name, $email, $event_id, $instance_ts, $guests );
 		}
 
 		return array(
@@ -821,8 +822,25 @@ class Rsvps {
 		$title   = self::get_event_title( $event_id, $instance_ts );
 		$subject = sprintf( __( 'Your RSVP for %s', 'eventkoi-lite' ), $title );
 
-		$event_url = self::get_event_url( $event_id, $instance_ts );
-		$qr_code  = '';
+		$event_url   = self::get_event_url( $event_id, $instance_ts );
+		$checkin_url = add_query_arg(
+			array( 'eventkoi_qr' => $token ),
+			home_url( '/' )
+		);
+		$qr_url      = add_query_arg(
+			array(
+				'data' => $checkin_url,
+				'size' => '96x96',
+			),
+			'https://api.qrserver.com/v1/create-qr-code/'
+		);
+		$qr_url      = apply_filters( 'eventkoi_rsvp_qr_url', $qr_url, $checkin_url, $token, $event_id, $instance_ts );
+		$qr_code     = sprintf(
+			'<img src="%s" alt="%s" width="96" height="96" />',
+			esc_url( $qr_url ),
+			esc_attr__( 'QR code', 'eventkoi-lite' )
+		);
+		$qr_code     = apply_filters( 'eventkoi_rsvp_qr_code', $qr_code, $qr_url, $checkin_url, $token, $event_id, $instance_ts );
 
 		$event_timestamp     = $instance_ts ? absint( $instance_ts ) : absint( get_post_meta( $event_id, 'start_timestamp', true ) );
 		$event_end_timestamp = absint( get_post_meta( $event_id, 'end_timestamp', true ) );
@@ -912,6 +930,7 @@ class Rsvps {
 				'<p>Hi [attendee_name],</p>',
 				'<p>Thanks for your RSVP to [event_name].</p>',
 				'<p>Check-in code:<br />[checkin_code]</p>',
+				'<p>[qr_code]</p>',
 				$event_datetime ? '<p>' . esc_html( $schedule_label ) . '<br />[event_datetime]</p>' : '',
 				$event_location ? '<p>' . esc_html__( 'Location:', 'eventkoi-lite' ) . '<br />[event_location]</p>' : '',
 				'<p>[guests_line]</p>',
@@ -1113,5 +1132,82 @@ class Rsvps {
 		}
 
 		return add_query_arg( 'instance', absint( $instance_ts ), $url );
+	}
+
+	/**
+	 * Send admin notification for a new RSVP.
+	 *
+	 * @param string $name        Attendee name.
+	 * @param string $email       Attendee email.
+	 * @param int    $event_id    Event post ID.
+	 * @param string $instance_ts Instance timestamp.
+	 * @param int    $guests      Guest count.
+	 */
+	private static function send_admin_rsvp_notification( $name, $email, $event_id, $instance_ts, $guests = 0 ) {
+		$settings = Settings::get();
+		$enabled  = $settings['admin_rsvp_email_enabled'] ?? null;
+		$enabled  = null === $enabled || '' === $enabled
+			? true
+			: filter_var( $enabled, FILTER_VALIDATE_BOOLEAN );
+
+		if ( ! $enabled ) {
+			return;
+		}
+
+		$admin_email = get_option( 'admin_email' );
+		if ( ! is_email( $admin_email ) ) {
+			return;
+		}
+
+		$event_name = self::get_event_title( $event_id, $instance_ts );
+
+		$event_timestamp = $instance_ts ? absint( $instance_ts ) : absint( get_post_meta( $event_id, 'start_timestamp', true ) );
+		$utc_timezone    = new \DateTimeZone( 'UTC' );
+		$date_format     = get_option( 'date_format' );
+		$time_format     = get_option( 'time_format' );
+		$event_datetime  = $event_timestamp ? wp_date( $date_format . ' ' . $time_format, $event_timestamp, $utc_timezone ) : '';
+
+		$guest_line = $guests > 0
+			/* translators: %d: Number of guests. */
+			? '<strong>' . esc_html__( 'Guests:', 'eventkoi-lite' ) . '</strong> ' . absint( $guests )
+			: '';
+
+		$tags = array(
+			'[attendee_name]'  => esc_html( $name ),
+			'[attendee_email]' => esc_html( $email ),
+			'[event_name]'     => esc_html( $event_name ),
+			'[event_datetime]' => esc_html( $event_datetime ),
+			'[guests_line]'    => $guest_line,
+			'[site_name]'      => esc_html( get_bloginfo( 'name' ) ),
+		);
+
+		$default_subject  = __( 'New RSVP: [event_name]', 'eventkoi-lite' );
+		$default_template = implode(
+			"\n",
+			array(
+				'<p>' . esc_html__( 'A new RSVP has been submitted.', 'eventkoi-lite' ) . '</p>',
+				'<p><strong>' . esc_html__( 'Attendee:', 'eventkoi-lite' ) . '</strong> [attendee_name] ([attendee_email])</p>',
+				'<p>[guests_line]</p>',
+				'<p><strong>' . esc_html__( 'Event:', 'eventkoi-lite' ) . '</strong> [event_name]</p>',
+				'<p><strong>' . esc_html__( 'Date:', 'eventkoi-lite' ) . '</strong> [event_datetime]</p>',
+				'<p>&mdash;<br />[site_name]</p>',
+			)
+		);
+
+		$subject  = trim( (string) ( $settings['admin_rsvp_email_subject'] ?? '' ) );
+		$template = trim( (string) ( $settings['admin_rsvp_email_template'] ?? '' ) );
+		$subject  = '' !== $subject ? $subject : $default_subject;
+		$template = '' !== $template ? $template : $default_template;
+
+		$subject = strtr( $subject, $tags );
+		$body    = strtr( $template, $tags );
+		$body    = wp_kses( wpautop( trim( $body ) ), Settings::get_email_template_allowed_tags() );
+
+		wp_mail(
+			$admin_email,
+			$subject,
+			$body,
+			array( 'Content-Type: text/html; charset=UTF-8' )
+		);
 	}
 }

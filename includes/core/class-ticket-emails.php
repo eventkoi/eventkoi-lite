@@ -311,6 +311,25 @@ class Ticket_Emails {
 			: '';
 
 		$qr_code = '';
+		if ( '' !== $checkin_code ) {
+			$checkin_url = add_query_arg(
+				array( 'eventkoi_qr' => $checkin_code ),
+				home_url( '/' )
+			);
+			$qr_url      = add_query_arg(
+				array(
+					'data' => $checkin_url,
+					'size' => '96x96',
+				),
+				'https://api.qrserver.com/v1/create-qr-code/'
+			);
+			$qr_url      = apply_filters( 'eventkoi_ticket_qr_url', $qr_url, $checkin_url, $checkin_code, $event_id, $instance_ts );
+			$qr_code     = sprintf(
+				'<img src="%s" alt="%s" width="96" height="96" />',
+				esc_url( $qr_url ),
+				esc_attr__( 'QR code', 'eventkoi-lite' )
+			);
+		}
 
 		$ticket_codes_line = self::render_ticket_codes_for_email( $items, $ticket_name_contexts );
 
@@ -1040,5 +1059,94 @@ class Ticket_Emails {
 		}
 
 		return '';
+	}
+
+	/**
+	 * Send admin notification for a new ticket sale.
+	 *
+	 * @param array $order Order payload.
+	 */
+	public static function send_admin_sale_notification( $order ) {
+		$settings = Settings::get();
+		$enabled  = $settings['admin_sale_email_enabled'] ?? null;
+		$enabled  = null === $enabled || '' === $enabled
+			? true
+			: filter_var( $enabled, FILTER_VALIDATE_BOOLEAN );
+
+		if ( ! $enabled ) {
+			return;
+		}
+
+		$admin_email = get_option( 'admin_email' );
+		if ( ! is_email( $admin_email ) ) {
+			return;
+		}
+
+		$event_id    = absint( $order['event_id'] ?? 0 );
+		$instance_ts = $order['event_instance_ts'] ?? '';
+		$event_name  = get_the_title( $event_id );
+		$items       = $order['items'] ?? array();
+
+		$customer_name  = sanitize_text_field( (string) ( $order['customer_name'] ?? '' ) );
+		$customer_email = sanitize_email( (string) ( $order['customer_email'] ?? '' ) );
+		$order_id       = self::get_order_display_id( $order );
+		$currency       = strtoupper( (string) ( $order['currency'] ?? 'USD' ) );
+
+		$total = 0;
+		$lines = array();
+		foreach ( $items as $item ) {
+			$qty    = absint( $item['quantity'] ?? 1 );
+			$price  = absint( $item['price'] ?? $item['unit_amount'] ?? 0 );
+			$name   = sanitize_text_field( (string) ( $item['ticket_name'] ?? $item['name'] ?? '' ) );
+			$total += $price * $qty;
+			/* translators: 1: quantity, 2: ticket name. */
+			$lines[] = sprintf( '%1$d &times; %2$s', $qty, $name );
+		}
+
+		$formatted_total = self::format_currency( $total / 100, $currency );
+
+		list( $event_datetime ) = self::get_event_datetime_parts( $event_id, $instance_ts );
+
+		$tags = array(
+			'[customer_name]'  => esc_html( $customer_name ),
+			'[attendee_email]' => esc_html( $customer_email ),
+			'[order_id]'       => esc_html( (string) $order_id ),
+			'[ticket_lines]'   => implode( '<br />', array_map( 'esc_html', $lines ) ),
+			'[order_total]'    => esc_html( $formatted_total ),
+			'[event_name]'     => esc_html( $event_name ),
+			'[event_datetime]' => esc_html( (string) $event_datetime ),
+			'[site_name]'      => esc_html( get_bloginfo( 'name' ) ),
+		);
+
+		$default_subject  = __( 'New ticket sale: [event_name]', 'eventkoi-lite' );
+		$default_template = implode(
+			"\n",
+			array(
+				'<p>' . esc_html__( 'A new ticket order has been placed.', 'eventkoi-lite' ) . '</p>',
+				'<p><strong>' . esc_html__( 'Customer:', 'eventkoi-lite' ) . '</strong> [customer_name] ([attendee_email])</p>',
+				'<p><strong>' . esc_html__( 'Order:', 'eventkoi-lite' ) . '</strong> #[order_id]</p>',
+				'<p><strong>' . esc_html__( 'Tickets:', 'eventkoi-lite' ) . '</strong><br />[ticket_lines]</p>',
+				'<p><strong>' . esc_html__( 'Total:', 'eventkoi-lite' ) . '</strong> [order_total]</p>',
+				'<p><strong>' . esc_html__( 'Event:', 'eventkoi-lite' ) . '</strong> [event_name]</p>',
+				'<p><strong>' . esc_html__( 'Date:', 'eventkoi-lite' ) . '</strong> [event_datetime]</p>',
+				'<p>&mdash;<br />[site_name]</p>',
+			)
+		);
+
+		$subject  = trim( (string) ( $settings['admin_sale_email_subject'] ?? '' ) );
+		$template = trim( (string) ( $settings['admin_sale_email_template'] ?? '' ) );
+		$subject  = '' !== $subject ? $subject : $default_subject;
+		$template = '' !== $template ? $template : $default_template;
+
+		$subject = strtr( $subject, $tags );
+		$body    = strtr( $template, $tags );
+		$body    = wp_kses( wpautop( trim( $body ) ), Settings::get_email_template_allowed_tags() );
+
+		wp_mail(
+			$admin_email,
+			$subject,
+			$body,
+			array( 'Content-Type: text/html; charset=UTF-8' )
+		);
 	}
 }

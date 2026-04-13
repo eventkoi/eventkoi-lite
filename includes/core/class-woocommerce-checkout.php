@@ -655,6 +655,7 @@ class WooCommerce_Checkout {
 			)
 		);
 		Ticket_Emails::send_for_order_public( $email_order );
+		Ticket_Emails::send_admin_sale_notification( $email_order );
 
 		// Mark as synced BEFORE changing status, so the status-change hooks
 		// (woocommerce_order_status_completed, woocommerce_order_status_changed)
