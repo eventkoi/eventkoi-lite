@@ -13,7 +13,7 @@ A modern, unbloated WordPress events calendar plugin. Sell tickets, create an ev
 
 == Description ==
 
-**EventKoi Lite is a modern WordPress events calendar plugin** built for site owners who want an unbloated and intuitive event management plugin. Create and manage in-person and virtual events, display a beautiful events calendar or event list, sell tickets, manage RSVPs and attendees, all from a clean, intuitive admin.
+**EventKoi Lite is a modern WordPress events calendar plugin** built for site owners who want an unbloated and intuitive event management plugin. Create and manage in-person and virtual events, display a beautiful events calendar or event list, sell tickets, event bookings, manage RSVPs and attendees, all from a clean, intuitive admin.
 
 ✓ **Events calendar & event list** — Display events in a calendar, list, or grid view using blocks, shortcodes, Elementor, or Beaver Builder
 ✓ **Event registration & RSVP** — Let attendees register for events, manage capacity, and check in with check-in codes
@@ -62,7 +62,7 @@ A modern, unbloated WordPress events calendar plugin. Sell tickets, create an ev
 - Export your full attendee list
 
 
-## Sell Event Tickets with WooCommerce
+## Sell Event Tickets & Event Booking with WooCommerce
 
 - Use any WooCommerce payment gateway (Stripe, PayPal, and more) to sell tickets directly from your WordPress site
 - Create multiple ticket types per event (e.g. General Admission, VIP, Early Bird)
@@ -204,7 +204,7 @@ detects your visitor's timezone so they always see events in their local time.
 = Does EventKoi Lite support event registration? =
 Yes. EventKoi Lite includes an RSVP and event registration system. Set capacity, collect attendee sign-ups, send confirmation emails with check-in codes, and manage check-ins from your WordPress admin.
 
-= Does EventKoi Lite support selling event tickets? =
+= Does EventKoi Lite support selling event tickets & event booking? =
 Yes. EventKoi Lite includes a full event ticketing system powered by WooCommerce. Create multiple ticket types per event with individual pricing and capacity, and accept payments through any WooCommerce payment gateway including Stripe and PayPal. Buyers receive an automated confirmation email with a check-in code for check-in.
 
 = Can I create free and paid ticket types for the same event? =
