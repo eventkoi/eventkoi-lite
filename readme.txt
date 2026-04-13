@@ -1,36 +1,29 @@
-== Event Koi Lite - Events Calendar & Event Management Plugin for WordPress ==
+== Event Koi Lite - Events Calendar, Event Management, RSVP, and Tickets ==
 Contributors: eventkoi, lesleysim, ahmedfouaddev
 Donate link: https://donate.stripe.com/fZubJ1auN86Y1PU8cSdUY01
-Tags: event calendar, event management, event registration, rsvp, events
+Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 6.9
 Requires PHP: 8.0
 Stable tag: 1.3.9.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
-A modern, lightweight WordPress events calendar plugin. Create an events calendar or event list, manage event registration and RSVPs, and track
-attendees.
+
+A modern, unbloated WordPress events calendar plugin. Sell tickets, create an events calendar or list, manage RSVPs and attendees.
 
 == Description ==
 
 **EventKoi Lite is a modern WordPress events calendar plugin** built for site owners who are tired of bloated, outdated event management plugins from a decade ago. Create and manage in-person and virtual events, display a beautiful events calendar or event list, and handle event registration and attendee management, all from a clean, intuitive admin.
 
-✓ **Events calendar & event list** — Display events in a calendar, list, or
-  grid view using blocks, shortcodes, Elementor, or Beaver Builder
-✓ **Event registration & RSVP** — Let attendees register for events, manage
-  capacity, and check in with QR codes
-✓ **Attendee management** — Export your attendee list and manage check-ins
-  from your WordPress admin
-✓ **In-person and virtual events** — Supports Google Maps for venues and
-  auto-detects visitor timezone for virtual and international events
-✓ **Google Calendar, iCal & Outlook sync** — Let attendees add events to
-  their own calendar with one click
-✓ **Accessible & responsive** — Keyboard navigation, ARIA labels, and a
-  fully mobile-friendly events calendar
-✓ **Event SEO** — Automatic JSON-LD structured data markup so your events
-  appear in Google search results and rich snippets
-✓ **Blocks, shortcodes & page builders** — Works with Gutenberg, Elementor,
-  and Beaver Builder out of the box
+✓ **Events calendar & event list** — Display events in a calendar, list, or grid view using blocks, shortcodes, Elementor, or Beaver Builder
+✓ **Event registration & RSVP** — Let attendees register for events, manage capacity, and check in with check-in codes
+✓ **Sell event tickets with WooCommerce** — Create multiple ticket types per event, set capacity and pricing, and sell tickets using any WooCommerce payment gateway including Stripe and PayPal
+✓ **Attendee management** — Export your attendee list and manage check-ins from your WordPress admin
+✓ **In-person and virtual events** — Supports Google Maps for venues and auto-detects visitor timezone for virtual and international events
+✓ **Google Calendar, iCal & Outlook sync** — Let attendees add events to their own calendar with one click
+✓ **Accessible & responsive** — Keyboard navigation, ARIA labels, and a fully mobile-friendly events calendar
+✓ **Event SEO** — Automatic JSON-LD structured data markup so your events appear in Google search results and rich snippets
+✓ **Blocks, shortcodes & page builders** — Works with Gutenberg, Elementor, and Beaver Builder out of the box
 ✓ Secure, well-built code that follows WordPress coding standards
 ✓ Active development, responsive support, and thorough documentation
 
@@ -40,11 +33,12 @@ attendees.
 ##Event management
 
 - Add multiple event days, each with its own start and end time
+- Create multiple venue events. Combine in-person and virtual event locations
 - Create in-person events with Google Maps venue embedding
 - Create virtual events with automatic visitor timezone detection
 - Use your WordPress site's date, time, and timezone settings
 - Customize event page templates in the block editor
-- Localization-ready for
+- Localization-ready
 
 
 ###Events Calendar & Event Listing
@@ -66,6 +60,24 @@ attendees.
 - Let attendees submit and update their event registration (RSVP)
 - Send automated confirmation emails with check-in codes
 - Manage attendee registration and check-ins from WordPress admin
+- Export your full attendee list
+
+
+## Sell Event Tickets with WooCommerce
+
+- Use any WooCommerce payment gateway — Stripe, PayPal, and more — to sell tickets directly from your WordPress site
+- Create multiple ticket types per event (e.g. General Admission, VIP, Early Bird)
+- Set individual pricing, capacity, and availability for each ticket type
+- Offer free tickets or paid tickets
+- Set ticket sale windows — open and close ticket sales on specific dates
+- Set a maximum number of tickets per order
+- Show or hide remaining ticket quantities to create urgency
+- Add terms and conditions per ticket type
+- Require buyers to have a WordPress account, or auto-create one at checkout
+- Automated ticket confirmation email with check-in code sent on purchase
+- Automated refund confirmation emails
+- Manage all ticket orders and attendees from your WordPress admin
+- Track tickets sold and total earnings with built-in reporting
 - Export your full attendee list
 
 
@@ -94,6 +106,19 @@ EventKoi Lite automatically outputs JSON-LD structured data for every event, hel
 - **Shortcode builder:** Build shortcodes with multiple queries to display a calendar or list of events
 - **Block Editor:** Add an events calendar, event query loop block or event data block directly in the WordPress editor
 
+
+## Import events from The Events Calendar
+
+- Switching from The Events Calendar? Import your events in minutes with our built-in migration tool
+- Event titles, descriptions, dates, times, and timezones
+- All-day and multi-day event settings
+- Venue and location data
+- Organizer information
+- Event categories
+- Recurrence rules (converted to EventKoi's recurring event format)
+- Google Maps embed settings
+- Featured images
+- Duplicate events detector. Re-running the importer won't create duplicates.
 
 ##Get advanced features with EventKoi Pro
 
@@ -161,7 +186,7 @@ There, you will see 3 ways to embed the calendar into your site:
 
 == Frequently Asked Questions ==
 
-= Does it work with block themes and classic themes?
+= Does it work with block themes and classic themes? =
 Yes. EventKoi Lite works with both block and classic themes. You can use our blocks or shortcodes to build your events calendar.
 
 = Can I display a responsive events calendar on mobile? =
@@ -172,23 +197,29 @@ includes accessible keyboard navigation and ARIA labels.
 Recurring events are available in EventKoi Pro. Pro supports daily, weekly,
 monthly, and yearly recurring events with advanced rules.
 
+= I'm currently using The Events Calendar. Can I migrate my events to EventKoi? =
+Yes. EventKoi Lite includes a built-in migration tool that imports your events from The Events Calendar, including dates, venues, categories, recurrence rules, and featured images. Already-migrated events are skipped automatically so you can run it more than once safely.
+
 = Does EventKoi Lite support virtual events and timezones? =
 Yes. You can create virtual events, and the events calendar automatically
 detects your visitor's timezone so they always see events in their local time.
 
 = Does EventKoi Lite support event registration? =
-Yes. EventKoi Lite includes an RSVP and event registration system. Set
-capacity, collect attendee sign-ups, send confirmation emails with QR codes,
-and manage check-ins from your WordPress admin.
+Yes. EventKoi Lite includes an RSVP and event registration system. Set capacity, collect attendee sign-ups, send confirmation emails with check-in codes, and manage check-ins from your WordPress admin.
 
-= Does EventKoi Lite include ticketing and paid events? =
-Paid event ticketing is coming soon in 2026. In the meantime, EventKoi Lite handles
-free event registration and RSVP management.
+= Does EventKoi Lite support selling event tickets? =
+Yes. EventKoi Lite includes a full event ticketing system powered by WooCommerce. Create multiple ticket types per event with individual pricing and capacity, and accept payments through any WooCommerce payment gateway including Stripe and PayPal. Buyers receive an automated confirmation email with a check-in code for check-in.
 
-= My calendar or event page shows "Page not found."
+= Can I create free and paid ticket types for the same event? =
+Yes. Each ticket type has its own price — set it to $0 for free tickets or any amount for paid tickets. You can mix free and paid ticket types on a single event.
+
+= Does EventKoi Lite work with Stripe and PayPal for ticket sales? =
+Yes. EventKoi uses WooCommerce's standard checkout, which means any WooCommerce payment gateway works out of the box — including Stripe, PayPal, and many others.
+
+= My calendar or event page shows "Page not found." =
 Go to Settings > Permalinks and click Save Changes to refresh rewrite rules.
 
-= Can I customize the event template?
+= Can I customize the event template? =
 Yes. If you're using a block theme, you can go to Appearance > Editor > Templates and customise the Event template. If you're using a classic theme, you can edit the template files.
 
 = Does EventKoi Lite help my events appear in Google Search? =
@@ -301,7 +332,7 @@ This service is provided by Google LLC: [Terms of Service](https://cloud.google.
 = 1.0.14 – Admin Event Description Editor Fix – 2025-11-10 =
 * Fix: Resolved issue where the event description editor in the admin sometimes failed to display or save properly.
 
-= 1.0.13 – Week View Layout & Header Improvements – 2025-10-21 =
+= 1.3.0.3 – Week View Layout & Header Improvements – 2025-10-21 =
 * Improvement: Redesigned week view header to show weekday names and dates on separate lines for better readability.
 * Improvement: Enhanced alignment and font styling for week/day headers across all screen sizes.
 * Fix: Removed weird day numbers appearing beside months in month view.
