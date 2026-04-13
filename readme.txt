@@ -332,7 +332,7 @@ This service is provided by Google LLC: [Terms of Service](https://cloud.google.
 = 1.0.14 – Admin Event Description Editor Fix – 2025-11-10 =
 * Fix: Resolved issue where the event description editor in the admin sometimes failed to display or save properly.
 
-= 1.3.0.3 – Week View Layout & Header Improvements – 2025-10-21 =
+= 1.0.13 – Week View Layout & Header Improvements – 2025-10-21 =
 * Improvement: Redesigned week view header to show weekday names and dates on separate lines for better readability.
 * Improvement: Enhanced alignment and font styling for week/day headers across all screen sizes.
 * Fix: Removed weird day numbers appearing beside months in month view.
