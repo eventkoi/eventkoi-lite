@@ -15,6 +15,18 @@ export function RichTextEditor({
   const lastEditorValue = useRef(value || "");
   const latestValueRef = useRef(value || "");
   const onChangeRef = useRef(onChange);
+  const [tinymceReady, setTinymceReady] = useState(!!window.tinymce);
+
+  useEffect(() => {
+    if (tinymceReady) return;
+    const interval = setInterval(() => {
+      if (window.tinymce) {
+        setTinymceReady(true);
+        clearInterval(interval);
+      }
+    }, 50);
+    return () => clearInterval(interval);
+  }, [tinymceReady]);
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -39,7 +51,7 @@ export function RichTextEditor({
   }, [value, editorId, showHTML]);
 
   useEffect(() => {
-    if (!window.tinymce || !editorRef.current || showHTML) {
+    if (!tinymceReady || !editorRef.current || showHTML) {
       return;
     }
 
@@ -112,7 +124,7 @@ export function RichTextEditor({
               ed.execCommand(
                 "mceInsertContent",
                 false,
-                `<img src="${url}" alt="${alt}" />`
+                `<img src="${url}" alt="${alt}" />`,
               );
             });
             frame?.open();
@@ -150,7 +162,7 @@ export function RichTextEditor({
         inst.remove();
       }
     };
-  }, [showHTML, editorId, height, disabled]);
+  }, [tinymceReady, showHTML, editorId, height, disabled]);
 
   if (showHTML) {
     return (
