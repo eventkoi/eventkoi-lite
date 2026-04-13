@@ -1062,6 +1062,16 @@ class Ticket_Emails {
 	}
 
 	/**
+	 * Resolve the display order ID from an order payload.
+	 *
+	 * @param array $order Order payload.
+	 * @return string
+	 */
+	private static function get_order_display_id( $order ) {
+		return sanitize_text_field( (string) ( $order['id'] ?? $order['order_id'] ?? '' ) );
+	}
+
+	/**
 	 * Send admin notification for a new ticket sale.
 	 *
 	 * @param array $order Order payload.
