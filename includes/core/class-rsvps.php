@@ -1203,11 +1203,38 @@ class Rsvps {
 		$body    = strtr( $template, $tags );
 		$body    = wp_kses( wpautop( trim( $body ) ), Settings::get_email_template_allowed_tags() );
 
-		wp_mail(
-			$admin_email,
-			$subject,
-			$body,
-			array( 'Content-Type: text/html; charset=UTF-8' )
-		);
+		$headers         = array( 'Content-Type: text/html; charset=UTF-8' );
+		$sender_email    = sanitize_email( (string) ( $settings['admin_rsvp_email_sender_email'] ?? '' ) );
+		$sender_name     = sanitize_text_field( (string) ( $settings['admin_rsvp_email_sender_name'] ?? '' ) );
+		$from_email_hook = null;
+		$from_name_hook  = null;
+
+		if ( $sender_email ) {
+			$from = $sender_email;
+			if ( $sender_name ) {
+				$from = sprintf( '%s <%s>', $sender_name, $sender_email );
+			}
+			$headers[]       = 'From: ' . $from;
+			$from_email_hook = static function () use ( $sender_email ) {
+				return $sender_email;
+			};
+			add_filter( 'wp_mail_from', $from_email_hook );
+		}
+
+		if ( $sender_name ) {
+			$from_name_hook = static function () use ( $sender_name ) {
+				return $sender_name;
+			};
+			add_filter( 'wp_mail_from_name', $from_name_hook );
+		}
+
+		wp_mail( $admin_email, $subject, $body, $headers );
+
+		if ( $from_email_hook ) {
+			remove_filter( 'wp_mail_from', $from_email_hook );
+		}
+		if ( $from_name_hook ) {
+			remove_filter( 'wp_mail_from_name', $from_name_hook );
+		}
 	}
 }
