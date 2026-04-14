@@ -274,5 +274,48 @@ class Activator {
 				KEY checkin_token (checkin_token)
 			) {$charset_collate};" );
 		}
+
+		self::ensure_archive_columns( $orders_table, $ticket_orders_table );
+	}
+
+	/**
+	 * Defensive column/index guard for the archive fields introduced in
+	 * schema bumps 1.1.0 (orders) and 1.0.3 (ticket_orders).
+	 */
+	private static function ensure_archive_columns( $orders_table, $ticket_orders_table ) {
+		global $wpdb;
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$has_is_archived = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM `{$orders_table}` LIKE %s", 'is_archived' ) );
+		if ( ! $has_is_archived ) {
+			$wpdb->query( "ALTER TABLE `{$orders_table}` ADD COLUMN `is_archived` TINYINT(1) UNSIGNED NOT NULL DEFAULT 0, ADD INDEX `is_archived_idx` (`is_archived`)" );
+		}
+
+		$has_prev_status = $wpdb->get_var( $wpdb->prepare( "SHOW COLUMNS FROM `{$ticket_orders_table}` LIKE %s", 'archived_prev_status' ) );
+		if ( ! $has_prev_status ) {
+			$wpdb->query( "ALTER TABLE `{$ticket_orders_table}` ADD COLUMN `archived_prev_status` VARCHAR(20) DEFAULT NULL" );
+		}
+		// phpcs:enable
+	}
+
+	/**
+	 * Run lightweight DB upgrades once per plugin version bump.
+	 */
+	public static function maybe_upgrade() {
+		$stored  = get_option( 'eventkoi_db_version' );
+		$current = defined( 'EVENTKOI_LITE_VERSION' ) ? EVENTKOI_LITE_VERSION : ( defined( 'EVENTKOI_VERSION' ) ? EVENTKOI_VERSION : '0' );
+
+		if ( $stored === $current ) {
+			return;
+		}
+
+		global $wpdb;
+		$orders_table        = $wpdb->prefix . 'eventkoi_orders';
+		$ticket_orders_table = $wpdb->prefix . 'eventkoi_ticket_orders';
+
+		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+		self::ensure_archive_columns( $orders_table, $ticket_orders_table );
+
+		update_option( 'eventkoi_db_version', $current );
 	}
 }

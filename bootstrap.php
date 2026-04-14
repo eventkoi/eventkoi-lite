@@ -27,5 +27,7 @@ function eventkoi() {
 	new \EventKoi\Init();
 }
 
+add_action( 'plugins_loaded', array( __NAMESPACE__ . '\\Core\\Activator', 'maybe_upgrade' ), 5 );
+
 // Initialize the plugin on every page load.
 eventkoi();

@@ -23,7 +23,7 @@ class Orders extends Table {
 	/**
 	 * Schema version.
 	 */
-	const SCHEMA_VERSION = '1.0.0';
+	const SCHEMA_VERSION = '1.1.0';
 
 	/**
 	 * Table name.
@@ -89,6 +89,7 @@ class Orders extends Table {
                 `billing_data` LONGTEXT DEFAULT NULL,
                 `ip_address` VARCHAR(45) DEFAULT NULL,
                 `gateway` VARCHAR(20) NOT NULL DEFAULT 'stripe',
+                `is_archived` TINYINT(1) UNSIGNED NOT NULL DEFAULT 0,
                 PRIMARY KEY (`id`),
                 UNIQUE KEY `checkout_id_uniq` (`checkout_id`),
                 INDEX `payment_id_idx` (`payment_id`),
@@ -97,7 +98,8 @@ class Orders extends Table {
                 INDEX `ticket_id_idx` (`ticket_id`),
                 INDEX `status_idx` (`status`),
                 INDEX `created_idx` (`created`),
-                INDEX `last_updated_idx` (`last_updated`)
+                INDEX `last_updated_idx` (`last_updated`),
+                INDEX `is_archived_idx` (`is_archived`)
             ) {$charset_collate};
         ";
 	}

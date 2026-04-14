@@ -262,7 +262,7 @@ class Ticket_Order_Sync {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Updates local cache rows after edge refund.
 			$updated = $wpdb->query(
 				$wpdb->prepare(
-					"UPDATE {$table} SET payment_status = %s, refund_amount = 0, updated_at = %s WHERE order_id LIKE %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					"UPDATE {$table} SET payment_status = %s, refund_amount = 0, updated_at = %s WHERE order_id LIKE %s AND payment_status <> 'archived'", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					sanitize_key( $new_status ),
 					$now,
 					$wpdb->esc_like( $order_id ) . '%'
@@ -284,7 +284,7 @@ class Ticket_Order_Sync {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Updates local cache rows after Stripe refund by charge_id.
 			$updated = $wpdb->query(
 				$wpdb->prepare(
-					"UPDATE {$table} SET payment_status = %s, refund_amount = 0, updated_at = %s WHERE charge_id = %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					"UPDATE {$table} SET payment_status = %s, refund_amount = 0, updated_at = %s WHERE charge_id = %s AND payment_status <> 'archived'", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 					sanitize_key( $new_status ),
 					$now,
 					$charge_id

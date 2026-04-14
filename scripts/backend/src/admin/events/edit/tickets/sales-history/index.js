@@ -149,7 +149,7 @@ export function EventEditSalesHistory() {
     try {
       const [ordersResponse, combinedStats] = await Promise.all([
         apiRequest({
-          path: `${eventkoi_params.api}/tickets/orders?event_id=${event.id}${refreshParam}`,
+          path: `${eventkoi_params.api}/tickets/orders?event_id=${event.id}&include_archived=1${refreshParam}`,
           method: "GET",
           headers: { "EVENTKOI-API-KEY": eventkoi_params.api_key },
         }),

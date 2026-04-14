@@ -276,6 +276,12 @@ class Tickets {
 		$parts[] = "order_id LIKE 'wc\\_%'";
 		$parts[] = "payment_status != 'hold'";
 
+		if ( ! empty( $args['only_archived'] ) ) {
+			$parts[] = "payment_status = 'archived'";
+		} elseif ( empty( $args['include_archived'] ) ) {
+			$parts[] = "payment_status != 'archived'";
+		}
+
 		if ( '' !== $currency ) {
 			$parts[] = $wpdb->prepare( 'UPPER(currency) = %s', $currency );
 		}
@@ -310,8 +316,16 @@ class Tickets {
 			return new WP_Error( 'invalid_event_id', __( 'Invalid event ID.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
-		$table_name = $wpdb->prefix . 'eventkoi_ticket_orders';
-		$where      = self::build_ticket_orders_where( array( 'event_id' => $event_id ) );
+		$table_name       = $wpdb->prefix . 'eventkoi_ticket_orders';
+		$include_archived = (bool) $request->get_param( 'include_archived' );
+		$only_archived    = (bool) $request->get_param( 'only_archived' );
+		$where            = self::build_ticket_orders_where(
+			array(
+				'event_id'         => $event_id,
+				'include_archived' => $include_archived,
+				'only_archived'    => $only_archived,
+			)
+		);
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$orders = $wpdb->get_results(
@@ -358,23 +372,36 @@ class Tickets {
 				}
 				$master_code = $master_code_cache[ $base_id ];
 
+				$row_status       = (string) ( $row->payment_status ?? 'pending' );
+				$effective_status = ( 'archived' === $row_status )
+					? (string) ( $row->archived_prev_status ?? 'pending' )
+					: $row_status;
+
 				$grouped[ $base_id ] = array(
-					'id'                  => $base_id,
-					'event_id'            => absint( $row->event_id ?? 0 ),
-					'order_id'            => $base_id,
-					'customer_name'       => (string) ( $row->customer_name ?? '' ),
-					'customer_email'      => $email,
-					'avatar_url'          => esc_url_raw( (string) $avatar_url ),
-					'payment_status'      => (string) ( $row->payment_status ?? 'pending' ),
-					'quantity'            => 0,
-					'amount_total'        => 0,
-					'currency'            => strtolower( (string) ( $row->currency ?? 'usd' ) ),
-					'checkin_codes'       => array(),
-					'master_checkin_code' => $master_code,
-					'checked_in'          => 0,
-					'checked_in_count'    => 0,
-					'created_at'          => (string) ( $row->created_at ?? '' ),
+					'id'                    => $base_id,
+					'event_id'              => absint( $row->event_id ?? 0 ),
+					'order_id'              => $base_id,
+					'customer_name'         => (string) ( $row->customer_name ?? '' ),
+					'customer_email'        => $email,
+					'avatar_url'            => esc_url_raw( (string) $avatar_url ),
+					'payment_status'        => $effective_status,
+					'is_archived'           => false,
+					'quantity'              => 0,
+					'amount_total'          => 0,
+					'currency'              => strtolower( (string) ( $row->currency ?? 'usd' ) ),
+					'checkin_codes'         => array(),
+					'master_checkin_code'   => $master_code,
+					'checked_in'            => 0,
+					'checked_in_count'      => 0,
+					'created_at'            => (string) ( $row->created_at ?? '' ),
+					'_archived_count'       => 0,
+					'_total_count'          => 0,
 				);
+			}
+
+			++$grouped[ $base_id ]['_total_count'];
+			if ( 'archived' === (string) ( $row->payment_status ?? '' ) ) {
+				++$grouped[ $base_id ]['_archived_count'];
 			}
 
 			$grouped[ $base_id ]['quantity']     += absint( $row->quantity ?? 1 );
@@ -389,6 +416,16 @@ class Tickets {
 				$grouped[ $base_id ]['checked_in_count'] += 1;
 			}
 		}
+
+		foreach ( $grouped as &$entry ) {
+			$total    = (int) ( $entry['_total_count'] ?? 0 );
+			$archived = (int) ( $entry['_archived_count'] ?? 0 );
+			if ( $total > 0 && $archived === $total ) {
+				$entry['is_archived'] = true;
+			}
+			unset( $entry['_total_count'], $entry['_archived_count'] );
+		}
+		unset( $entry );
 
 		// Sort by created_at descending.
 		$result = array_values( $grouped );
@@ -614,7 +651,7 @@ class Tickets {
 
 		self::cleanup_expired_holds();
 
-		$where = self::build_ticket_orders_where();
+		$where = self::build_ticket_orders_where( array( 'include_archived' => true ) );
 
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$wc_rows = $wpdb->get_results(
@@ -645,6 +682,7 @@ class Tickets {
 						'customer_email'        => (string) ( $row->customer_email ?? '' ),
 						'payment_status'        => 'pending',
 						'status'                => 'pending',
+						'is_archived'           => false,
 						'quantity'              => 0,
 						'amount_total'          => 0,
 						'currency'              => strtolower( (string) ( $row->currency ?? 'usd' ) ),
@@ -654,6 +692,8 @@ class Tickets {
 						'_completed_count'      => 0,
 						'_refunded_count'       => 0,
 						'_partial_refund_count' => 0,
+						'_archived_count'       => 0,
+						'_total_count'          => 0,
 					);
 				}
 
@@ -661,12 +701,19 @@ class Tickets {
 					$grouped[ $base_id ]['event_ids'][] = $eid;
 				}
 
-				$row_status = (string) ( $row->payment_status ?? '' );
-				if ( 'refunded' === $row_status ) {
+				++$grouped[ $base_id ]['_total_count'];
+				$row_status       = (string) ( $row->payment_status ?? '' );
+				$effective_status = ( 'archived' === $row_status )
+					? (string) ( $row->archived_prev_status ?? '' )
+					: $row_status;
+				if ( 'archived' === $row_status ) {
+					++$grouped[ $base_id ]['_archived_count'];
+				}
+				if ( 'refunded' === $effective_status ) {
 					++$grouped[ $base_id ]['_refunded_count'];
-				} elseif ( 'partially_refunded' === $row_status ) {
+				} elseif ( 'partially_refunded' === $effective_status ) {
 					++$grouped[ $base_id ]['_partial_refund_count'];
-				} elseif ( 'completed' === $row_status || 'complete' === $row_status || 'paid' === $row_status ) {
+				} elseif ( 'completed' === $effective_status || 'complete' === $effective_status || 'paid' === $effective_status ) {
 					++$grouped[ $base_id ]['_completed_count'];
 				}
 
@@ -679,6 +726,8 @@ class Tickets {
 				$completed = (int) ( $entry['_completed_count'] ?? 0 );
 				$refunded  = (int) ( $entry['_refunded_count'] ?? 0 );
 				$partial   = (int) ( $entry['_partial_refund_count'] ?? 0 );
+				$archived  = (int) ( $entry['_archived_count'] ?? 0 );
+				$total     = (int) ( $entry['_total_count'] ?? 0 );
 				if ( $partial > 0 || ( $refunded > 0 && $completed > 0 ) ) {
 					$entry['payment_status'] = 'partially_refunded';
 					$entry['status']         = 'partially_refunded';
@@ -689,7 +738,10 @@ class Tickets {
 					$entry['payment_status'] = 'complete';
 					$entry['status']         = 'complete';
 				}
-				unset( $entry['_completed_count'], $entry['_refunded_count'], $entry['_partial_refund_count'] );
+				if ( $total > 0 && $archived === $total ) {
+					$entry['is_archived'] = true;
+				}
+				unset( $entry['_completed_count'], $entry['_refunded_count'], $entry['_partial_refund_count'], $entry['_archived_count'], $entry['_total_count'] );
 			}
 			unset( $entry );
 
@@ -1303,18 +1355,15 @@ class Tickets {
 		}
 
 		if ( 'archive' === $mode ) {
-			// Recount inventory before deleting local rows so quantity_sold
-			// is updated while the rows are still queryable.
-			self::recount_inventory_before_archive( $order_id );
-
-			\EventKoi\Core\Ticket_Order_Sync::delete_local_order( $order_id );
-
-			// Cancel the WC order if it's a WooCommerce order.
-			\EventKoi\Core\WooCommerce_Checkout::update_wc_order_status(
-				$order_id,
-				'cancelled',
-				__( 'Order archived via EventKoi.', 'eventkoi-lite' )
-			);
+			self::soft_archive_rows( $order_id );
+			if ( 0 === strpos( $order_id, 'wc_' ) ) {
+				self::archive_wc_order( $order_id );
+			}
+		} else {
+			self::soft_unarchive_rows( $order_id );
+			if ( 0 === strpos( $order_id, 'wc_' ) ) {
+				self::unarchive_wc_order( $order_id );
+			}
 		}
 
 		self::invalidate_order_caches();
@@ -1328,47 +1377,74 @@ class Tickets {
 	}
 
 	/**
-	 * Mark local order rows as void and recount inventory before archive
-	 * deletes them. This ensures quantity_sold is decremented while the
-	 * rows are still in the table.
-	 *
-	 * @param string $order_id Order ID (e.g. "wc_123").
+	 * Soft-archive ticket_orders rows: save current payment_status into
+	 * archived_prev_status and set payment_status='archived', then recount
+	 * quantity_sold so archived rows stop counting as sales.
 	 */
-	private static function recount_inventory_before_archive( $order_id ) {
+	private static function soft_archive_rows( $order_id ) {
 		global $wpdb;
 
-		$order_id = sanitize_text_field( (string) $order_id );
-		if ( '' === $order_id ) {
-			return;
-		}
-
 		$table = $wpdb->prefix . 'eventkoi_ticket_orders';
-
-		// Get event_id and ticket_ids from the rows about to be deleted.
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
-		$rows = $wpdb->get_results(
-			$wpdb->prepare(
-				"SELECT DISTINCT event_id, ticket_id FROM {$table} WHERE order_id = %s OR order_id LIKE %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-				$order_id,
-				$wpdb->esc_like( $order_id ) . ':%'
-			)
-		);
+		$like  = $wpdb->esc_like( $order_id ) . ':%';
+		$rows  = self::fetch_order_event_ticket_map( $order_id );
 
 		if ( empty( $rows ) ) {
 			return;
 		}
 
-		// Mark these rows as archived so they are excluded from the recount.
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$wpdb->query(
 			$wpdb->prepare(
-				"UPDATE {$table} SET payment_status = 'archived' WHERE order_id = %s OR order_id LIKE %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"UPDATE {$table} SET archived_prev_status = payment_status, payment_status = 'archived' WHERE ( order_id = %s OR order_id LIKE %s ) AND payment_status <> 'archived'", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$order_id,
-				$wpdb->esc_like( $order_id ) . ':%'
+				$like
 			)
 		);
 
-		// Group by event_id and recount each ticket.
+		self::recount_affected_tickets( $rows );
+	}
+
+	/**
+	 * Restore ticket_orders rows from archived state.
+	 */
+	private static function soft_unarchive_rows( $order_id ) {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'eventkoi_ticket_orders';
+		$like  = $wpdb->esc_like( $order_id ) . ':%';
+		$rows  = self::fetch_order_event_ticket_map( $order_id );
+
+		if ( empty( $rows ) ) {
+			return;
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$table} SET payment_status = COALESCE(NULLIF(archived_prev_status, ''), 'completed'), archived_prev_status = NULL WHERE ( order_id = %s OR order_id LIKE %s ) AND payment_status = 'archived'", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$order_id,
+				$like
+			)
+		);
+
+		self::recount_affected_tickets( $rows );
+	}
+
+	private static function fetch_order_event_ticket_map( $order_id ) {
+		global $wpdb;
+		$table = $wpdb->prefix . 'eventkoi_ticket_orders';
+		$like  = $wpdb->esc_like( $order_id ) . ':%';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		return $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT DISTINCT event_id, ticket_id FROM {$table} WHERE order_id = %s OR order_id LIKE %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$order_id,
+				$like
+			)
+		);
+	}
+
+	private static function recount_affected_tickets( $rows ) {
 		$by_event = array();
 		foreach ( $rows as $row ) {
 			$eid = absint( $row->event_id );
@@ -1377,9 +1453,50 @@ class Tickets {
 				$by_event[ $eid ][] = array( 'ticket_id' => $tid );
 			}
 		}
-
 		foreach ( $by_event as $event_id => $items ) {
 			\EventKoi\Core\Ticket_Order_Sync::sync_quantity_sold( $event_id, $items );
+		}
+	}
+
+	/**
+	 * Cancel a WC order and remember the previous status for later restore.
+	 */
+	private static function archive_wc_order( $order_id ) {
+		if ( ! preg_match( '/^wc_(\d+)/', $order_id, $m ) || ! function_exists( 'wc_get_order' ) ) {
+			return;
+		}
+		$wc_order = wc_get_order( (int) $m[1] );
+		if ( ! $wc_order ) {
+			return;
+		}
+		$current = (string) $wc_order->get_status();
+		if ( 'cancelled' !== $current && '' === (string) $wc_order->get_meta( '_eventkoi_archive_prev_status' ) ) {
+			$wc_order->update_meta_data( '_eventkoi_archive_prev_status', $current );
+		}
+		$wc_order->update_meta_data( '_eventkoi_is_archived', '1' );
+		$wc_order->save();
+		if ( 'cancelled' !== $current ) {
+			$wc_order->update_status( 'cancelled', __( 'Order archived via EventKoi.', 'eventkoi-lite' ) );
+		}
+	}
+
+	/**
+	 * Restore a WC order to its pre-archive status.
+	 */
+	private static function unarchive_wc_order( $order_id ) {
+		if ( ! preg_match( '/^wc_(\d+)/', $order_id, $m ) || ! function_exists( 'wc_get_order' ) ) {
+			return;
+		}
+		$wc_order = wc_get_order( (int) $m[1] );
+		if ( ! $wc_order ) {
+			return;
+		}
+		$prev = (string) $wc_order->get_meta( '_eventkoi_archive_prev_status' );
+		$wc_order->delete_meta_data( '_eventkoi_archive_prev_status' );
+		$wc_order->delete_meta_data( '_eventkoi_is_archived' );
+		$wc_order->save();
+		if ( '' !== $prev && $prev !== $wc_order->get_status() ) {
+			$wc_order->update_status( $prev, __( 'Order unarchived via EventKoi.', 'eventkoi-lite' ) );
 		}
 	}
 
