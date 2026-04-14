@@ -316,6 +316,10 @@ class Activator {
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		self::ensure_archive_columns( $orders_table, $ticket_orders_table );
 
+		if ( ! get_option( 'eventkoi_site_instance_id' ) ) {
+			update_option( 'eventkoi_site_instance_id', wp_generate_uuid4() );
+		}
+
 		update_option( 'eventkoi_db_version', $current );
 	}
 }
