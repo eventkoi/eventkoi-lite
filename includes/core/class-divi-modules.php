@@ -22,6 +22,16 @@ class Divi_Modules {
 	 */
 	public function __construct() {
 		add_action( 'et_builder_ready', array( $this, 'register_modules' ) );
+		add_action( 'init', array( $this, 'register_pro_fallbacks' ), 20 );
+	}
+
+	/**
+	 * Register empty handlers for Pro-only Divi module slugs so content
+	 * authored with Pro degrades silently instead of leaking raw tag text
+	 * when the site is running Lite.
+	 */
+	public function register_pro_fallbacks() {
+		add_shortcode( 'et_pb_eventkoi_loop', '__return_empty_string' );
 	}
 
 	/**
