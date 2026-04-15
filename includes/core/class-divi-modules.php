@@ -53,8 +53,8 @@ class Divi_Modules {
 
 		$base_dir = EVENTKOI_PLUGIN_DIR . 'includes/core/divi-modules/';
 
-		require_once $base_dir . 'class-module-calendar.php';
-		require_once $base_dir . 'class-module-event.php';
+		require_once $base_dir . 'class-et-builder-module-eventkoicalendar.php';
+		require_once $base_dir . 'class-et-builder-module-eventkoievent.php';
 
 		new \ET_Builder_Module_EventkoiCalendar();
 		new \ET_Builder_Module_EventkoiEvent();
