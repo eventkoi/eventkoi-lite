@@ -34,4 +34,40 @@ bin/
 vendor/
 composer.lock
 
+# OS
+.DS_Store
+
+# Playwright / browser automation
+.playwright-mcp/
+playwright-report/
+test-results/
+tests/e2e/.auth/
+
+# PHPUnit cache
+.phpunit.cache/
+
+# Images (template assets are committed explicitly)
+*.png
+*.jpg
+*.jpeg
+!templates/assets/*.png
+
+# AI / coding assistant artifacts
+CLAUDE.md
 .claude/
+.cursor/
+.cursorignore
+.cursorindexingignore
+.copilot/
+.github/copilot-instructions.md
+.aider*
+.windsurf/
+.codeium/
+.bolt/
+
+# Local credentials / access notes (never commit)
+reference_*_access.md
+*credentials*
+*sites.xml
+.access/
+.secrets/
