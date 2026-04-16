@@ -119,13 +119,14 @@ class ET_Builder_Module_EventkoiEvent extends ET_Builder_Module {
 	protected function event_options() {
 		$options = array( '' => esc_html__( '— Current event —', 'eventkoi' ) );
 
+		$limit = (int) apply_filters( 'eventkoi_divi_event_options_limit', 200 );
 		$posts = get_posts(
 			array(
-				'post_type'      => 'eventkoi_event',
-				'posts_per_page' => 100,
-				'post_status'    => array( 'publish', 'draft', 'future' ),
-				'orderby'        => 'title',
-				'order'          => 'ASC',
+				'post_type'        => 'eventkoi_event',
+				'posts_per_page'   => max( 1, $limit ),
+				'post_status'      => array( 'publish', 'draft', 'future', 'private' ),
+				'orderby'          => 'modified',
+				'order'            => 'DESC',
 				'suppress_filters' => true,
 			)
 		);
