@@ -46,11 +46,11 @@ tests/e2e/.auth/
 # PHPUnit cache
 .phpunit.cache/
 
-# Images (template assets are committed explicitly)
+# Images — except real plugin assets in templates/assets/
 *.png
 *.jpg
 *.jpeg
-!templates/assets/*.png
+!templates/assets/**
 
 # AI / coding assistant artifacts
 CLAUDE.md
