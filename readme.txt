@@ -233,7 +233,10 @@ This service is provided by Google LLC: [Terms of Service](https://cloud.google.
 
 = 1.3.9.5 – Divi Integration (Beta) & Fixes – 2026-04-18 =
 * New: Added Divi Builder integration (Beta) — Calendar and Event modules for embedding EventKoi content in Divi layouts.
+* New: Added admin notification email templates for New RSVP and New ticket sale events.
+* Improvement: Admin notification emails now use the saved sender name and email from the Emails settings.
 * Improvement: Site instance ID UUID is now backfilled automatically on version bump.
+* Fix: Prevented a fatal error in the admin sale notification pipeline.
 * Fix: Fixed archive/unarchive for ticket sales on global and per-event views.
 * Fix: Fixed theme CSS bleed into FullCalendar cells on Divi-like themes.
 
