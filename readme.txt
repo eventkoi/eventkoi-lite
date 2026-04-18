@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.3.9.4
+Stable tag: 1.3.9.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -230,6 +230,12 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.9.5 – Divi Integration (Beta) & Fixes – 2026-04-18 =
+* New: Added Divi Builder integration (Beta) — Calendar and Event modules for embedding EventKoi content in Divi layouts.
+* Improvement: Site instance ID UUID is now backfilled automatically on version bump.
+* Fix: Fixed archive/unarchive for ticket sales on global and per-event views.
+* Fix: Fixed theme CSS bleed into FullCalendar cells on Divi-like themes.
 
 = 1.3.9.4 – UI & Calendar Improvements – 2026-04-12 =
 * Improvement: Centralized confirmation dialogs with consistent centered modal design across all destructive actions.
