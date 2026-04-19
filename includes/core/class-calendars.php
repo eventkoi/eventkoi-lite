@@ -46,7 +46,7 @@ class Calendars {
 			$results[] = array(
 				'id'        => $term->term_id,
 				'slug'      => $term->slug,
-				'name'      => $term->name,
+				'name'      => eventkoi_decode_term_name( $term->name ),
 				'count'     => $term->count,
 				'url'       => get_term_link( $term->slug, 'event_cal' ),
 				'shortcode' => '[eventkoi_calendar id=' . $term->term_id . ']',

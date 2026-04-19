@@ -784,7 +784,7 @@ class Event {
 		foreach ( $terms as $term ) {
 			$calendar[] = array(
 				'id'   => $term->term_id,
-				'name' => $term->name,
+				'name' => eventkoi_decode_term_name( $term->name ),
 				'slug' => $term->slug,
 				'url'  => get_term_link( $term, 'event_cal' ),
 			);

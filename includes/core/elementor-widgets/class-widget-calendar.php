@@ -273,7 +273,7 @@ class Calendar_Widget extends Widget_Base {
 		}
 
 		foreach ( $terms as $term ) {
-			$options[ (string) $term->term_id ] = $term->name;
+			$options[ (string) $term->term_id ] = eventkoi_decode_term_name( $term->name );
 		}
 
 		return $options;

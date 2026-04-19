@@ -1611,8 +1611,12 @@ JS;
 	 * @return string HTML output.
 	 */
 	private static function render_calendar_type( $type, $attrs ) {
-		$cal_id   = (int) get_option( 'eventkoi_default_event_cal', 0 );
+		$cal_id   = eventkoi_resolve_calendar_id( $attrs['calendars'] ?? 0 );
 		$calendar = new \EventKoi\Core\Calendar( $cal_id );
+
+		if ( $calendar::is_invalid() ) {
+			return self::render_no_calendar_notice();
+		}
 
 		if ( 'calendar' === $type ) {
 			$args = array(
@@ -1639,6 +1643,22 @@ JS;
 		$args['align']  = $attrs['align'] ?? '';
 
 		return eventkoi_get_calendar_content( $cal_id, $type, $args );
+	}
+
+	/**
+	 * Friendly fallback when no calendar can be resolved.
+	 *
+	 * Admins get an actionable link; visitors just see a plain message.
+	 */
+	private static function render_no_calendar_notice() {
+		$message = esc_html__( 'No calendar is available to display.', 'eventkoi-lite' );
+
+		if ( current_user_can( 'manage_options' ) ) {
+			$url      = esc_url( admin_url( 'admin.php?page=eventkoi#/calendars' ) );
+			$message .= ' <a href="' . $url . '">' . esc_html__( 'Create a calendar', 'eventkoi-lite' ) . '</a>';
+		}
+
+		return '<div class="wp-block-group eventkoi-front"><p>' . $message . '</p></div>';
 	}
 
 	/**

@@ -114,7 +114,7 @@ if ( ! function_exists( 'eventkoi_get_calendar_options' ) ) {
 
 		if ( ! is_wp_error( $terms ) ) {
 			foreach ( $terms as $term ) {
-				$options[ (string) $term->term_id ] = $term->name;
+				$options[ (string) $term->term_id ] = eventkoi_decode_term_name( $term->name );
 			}
 		}
 

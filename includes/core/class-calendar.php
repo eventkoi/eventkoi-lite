@@ -95,7 +95,7 @@ class Calendar {
 	 * Get name.
 	 */
 	public static function get_name() {
-		$name = ! empty( self::$calendar->name ) ? self::$calendar->name : '';
+		$name = ! empty( self::$calendar->name ) ? eventkoi_decode_term_name( self::$calendar->name ) : '';
 
 		return apply_filters( 'eventkoi_get_calendar_name', $name, self::$calendar_id, self::$calendar );
 	}

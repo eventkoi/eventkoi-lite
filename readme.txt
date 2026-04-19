@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.3.9.5
+Stable tag: 1.3.9.6
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -230,6 +230,13 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.9.6 – Ampersand & Calendar Block Fixes – 2026-04-19 =
+* Fix: Ampersand (&) now displays correctly in calendar names across the admin, multiselect dropdowns, builder module dropdowns, and frontend calendar archive page.
+* Fix: Calendar block no longer shows "Invalid calendar" when the default calendar option is missing or points to a deleted term. The block now resolves from its own attributes first, then the default option, then the first available calendar.
+* Improvement: Self-healing default calendar option — if the stored reference is invalid, it is repointed automatically to a real calendar on the next page load.
+* Improvement: Empty-state calendar block shows a friendlier message; admins also get a "Create a calendar" link.
+* Improvement: Block editor no longer seeds the calendar block with an invalid default ID when the default option is missing.
 
 = 1.3.9.5 – Divi Integration (Beta) & Fixes – 2026-04-18 =
 * New: Added Divi Builder integration (Beta) — Calendar and Event modules for embedding EventKoi content in Divi layouts.

@@ -62,7 +62,12 @@ export const Controls = (props) => {
       items.length > 0 &&
       (!attributes.calendars || attributes.calendars.length === 0)
     ) {
-      setAttributes({ calendars: [Number(eventkoi_params.default_cal)] });
+      const defaultId = Number(eventkoi_params.default_cal);
+      const existsInItems = items.some((it) => Number(it.value) === defaultId);
+      const seedId = existsInItems ? defaultId : Number(items[0].value);
+      if (seedId) {
+        setAttributes({ calendars: [seedId] });
+      }
     }
   }, [items, attributes.calendars]);
 

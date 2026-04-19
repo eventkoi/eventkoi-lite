@@ -131,7 +131,7 @@ class ET_Builder_Module_EventkoiCalendar extends ET_Builder_Module {
 		}
 
 		foreach ( $terms as $term ) {
-			$options[ (string) $term->term_id ] = $term->name;
+			$options[ (string) $term->term_id ] = eventkoi_decode_term_name( $term->name );
 		}
 
 		return $options;

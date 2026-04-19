@@ -12,6 +12,81 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Decode a calendar/term name for display.
+ *
+ * WordPress core's wp_insert_term() runs term names through
+ * wp_kses_normalize_entities(), which converts `&` to `&amp;` before saving.
+ * The DB value therefore needs to be decoded back to its human-readable form
+ * before being returned to React UIs, REST consumers, and HTML templates that
+ * apply their own escaping.
+ *
+ * @param string|null $name Raw term name as stored in wp_terms.name.
+ * @return string Decoded name safe to display or pass through esc_html().
+ */
+function eventkoi_decode_term_name( $name ) {
+	return html_entity_decode( (string) $name, ENT_QUOTES, 'UTF-8' );
+}
+
+/**
+ * Resolve a usable event_cal term_id with validation and fallbacks.
+ *
+ * Tries (in order): caller-preferred ids, the eventkoi_default_event_cal
+ * option, then the first existing term. Returns 0 only if no calendars
+ * exist on the site at all.
+ *
+ * @param int|array|string $preferred Caller's preferred id or list (e.g. block attr).
+ * @return int Valid term_id, or 0 if no calendars exist.
+ */
+function eventkoi_resolve_calendar_id( $preferred = 0 ) {
+	$candidates = array();
+
+	if ( is_array( $preferred ) ) {
+		foreach ( $preferred as $p ) {
+			$candidates[] = (int) $p;
+		}
+	} elseif ( is_string( $preferred ) && false !== strpos( $preferred, ',' ) ) {
+		foreach ( explode( ',', $preferred ) as $p ) {
+			$candidates[] = (int) trim( $p );
+		}
+	} else {
+		$candidates[] = (int) $preferred;
+	}
+
+	$default_option = (int) get_option( 'eventkoi_default_event_cal', 0 );
+	$candidates[]   = $default_option;
+
+	foreach ( $candidates as $id ) {
+		if ( $id > 0 && term_exists( $id, 'event_cal' ) ) {
+			return $id;
+		}
+	}
+
+	$first = get_terms(
+		array(
+			'taxonomy'   => 'event_cal',
+			'hide_empty' => false,
+			'number'     => 1,
+			'fields'     => 'ids',
+			'orderby'    => 'term_id',
+			'order'      => 'ASC',
+		)
+	);
+
+	if ( empty( $first ) || is_wp_error( $first ) ) {
+		return 0;
+	}
+
+	$fallback_id = (int) $first[0];
+
+	// Self-heal: if the stored default option is invalid, repoint it to a real term.
+	if ( $default_option !== $fallback_id ) {
+		update_option( 'eventkoi_default_event_cal', $fallback_id );
+	}
+
+	return $fallback_id;
+}
+
+/**
  * Retrieve a single enriched event structure.
  *
  * Returns the same normalized event object as Calendar::get_events(),
@@ -403,7 +478,7 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 			<!-- /wp:post-title -->
 		</div>
 		<!-- /wp:group -->',
-			esc_html( $term->name ),
+			esc_html( eventkoi_decode_term_name( $term->name ) ),
 			esc_attr( $style )
 		);
 
