@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.3.9.6
+Stable tag: 1.3.9.7
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -230,6 +230,12 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.9.7 – Ticket Save Fixes & Loco Translate Compatibility – 2026-04-19 =
+* Fix: Tickets are now saved correctly from the event's Tickets tab. Previously, ticket rows could be discarded when the event was saved or when switching tabs.
+* Improvement: Tickets auto-save when you switch to another tab, so edits are no longer lost if you forget to click Save.
+* Improvement: Fixed ~700 translation strings that used the wrong textdomain, so translations now load as expected.
+* Improvement: Translations saved to the plugin's own languages folder (Loco Translate's "Author" location) are now picked up.
 
 = 1.3.9.6 – Ampersand & Calendar Block Fixes – 2026-04-19 =
 * Fix: Ampersand (&) now displays correctly in calendar names across the admin, multiselect dropdowns, builder module dropdowns, and frontend calendar archive page.
