@@ -76,6 +76,26 @@ export function EventEdit() {
   const [hintBaseTop, setHintBaseTop] = useState(null);
   const hintMeasureRaf = useRef(null);
   const previewMeasureRaf = useRef(null);
+  const beforeSaveHandlersRef = useRef([]);
+
+  const registerBeforeSave = useCallback((handler) => {
+    if (typeof handler !== "function") return () => {};
+    beforeSaveHandlersRef.current = [
+      ...beforeSaveHandlersRef.current,
+      handler,
+    ];
+    return () => {
+      beforeSaveHandlersRef.current = beforeSaveHandlersRef.current.filter(
+        (entry) => entry !== handler
+      );
+    };
+  }, []);
+
+  const runBeforeSave = useCallback(async () => {
+    for (const handler of beforeSaveHandlersRef.current) {
+      await handler();
+    }
+  }, []);
 
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -747,6 +767,8 @@ export function EventEdit() {
         setIsPublishing,
         disableAutoSave,
         setDisableAutoSave,
+        registerBeforeSave,
+        runBeforeSave,
       }}
     >
       {isEditingInstance ? (

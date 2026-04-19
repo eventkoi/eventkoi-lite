@@ -527,6 +527,21 @@ export function EventEditManageTickets() {
     });
   }, [registerBeforeSave, event?.id]);
 
+  const saveTicketsRef = useRef(saveTickets);
+  useEffect(() => {
+    saveTicketsRef.current = saveTickets;
+  });
+
+  useEffect(() => {
+    const eventId = event?.id;
+    return () => {
+      if (!eventId) return;
+      const currentTickets = ticketsRef.current;
+      if (!currentTickets || currentTickets.length === 0) return;
+      Promise.resolve(saveTicketsRef.current(currentTickets)).catch(() => {});
+    };
+  }, [event?.id]);
+
   return (
     <div className="flex flex-col w-full gap-8">
       <Box container>
