@@ -14,7 +14,7 @@ function getNoteUI(note) {
   if (key === "admin_note") {
     return (
       <span className="text-foreground">
-        <span className="font-medium">{__("Admin note:", "eventkoi")}</span>{" "}
+        <span className="font-medium">{__("Admin note:", "eventkoi-lite")}</span>{" "}
         <span className="font-normal">{val}</span>
       </span>
     );
@@ -22,14 +22,14 @@ function getNoteUI(note) {
 
   if (key === "order_started") {
     return (
-      <span className="font-normal">{__("Checkout started", "eventkoi")}</span>
+      <span className="font-normal">{__("Checkout started", "eventkoi-lite")}</span>
     );
   }
 
   if (key === "order_awaiting_payment") {
     return (
       <span className="font-normal">
-        {__("Awaiting payment", "eventkoi")}
+        {__("Awaiting payment", "eventkoi-lite")}
       </span>
     );
   }
@@ -37,7 +37,7 @@ function getNoteUI(note) {
   if (key === "order_failed") {
     return (
       <span className="font-normal">
-        {__("Payment failed", "eventkoi")}
+        {__("Payment failed", "eventkoi-lite")}
         {val ? `: ${val}` : ""}
       </span>
     );
@@ -45,18 +45,18 @@ function getNoteUI(note) {
 
   if (key === "order_completed") {
     return (
-      <span className="font-normal">{__("Completed", "eventkoi")}</span>
+      <span className="font-normal">{__("Completed", "eventkoi-lite")}</span>
     );
   }
 
   if (key === "order_refunded") {
-    return <span className="font-normal">{__("Refunded", "eventkoi")}</span>;
+    return <span className="font-normal">{__("Refunded", "eventkoi-lite")}</span>;
   }
 
   if (key === "order_partially_refunded") {
     return (
       <span className="font-normal">
-        {__("Partially refunded", "eventkoi")}
+        {__("Partially refunded", "eventkoi-lite")}
       </span>
     );
   }
@@ -64,7 +64,7 @@ function getNoteUI(note) {
   if (key === "ticket_confirmation_sent") {
     return (
       <span className="font-medium">
-        {__("Ticket confirmation sent.", "eventkoi")}
+        {__("Ticket confirmation sent.", "eventkoi-lite")}
       </span>
     );
   }
@@ -72,23 +72,23 @@ function getNoteUI(note) {
   const statusMap = {
     pending_payment: {
       icon: <SquareDot aria-hidden="true" className="w-4 h-4 text-yellow-600 mr-1 -mt-0.5" />,
-      text: __("Pending payment", "eventkoi"),
+      text: __("Pending payment", "eventkoi-lite"),
     },
     complete: {
       icon: <SquareCheck aria-hidden="true" className="w-4 h-4 text-green-600 mr-1 -mt-0.5" />,
-      text: __("Completed", "eventkoi"),
+      text: __("Completed", "eventkoi-lite"),
     },
     failed: {
       icon: <SquareX aria-hidden="true" className="w-4 h-4 text-red-600 mr-1 -mt-0.5" />,
-      text: __("Failed", "eventkoi"),
+      text: __("Failed", "eventkoi-lite"),
     },
     refunded: {
       icon: <RefundStatusIcon aria-hidden="true" className="w-4 h-4 text-muted-foreground mr-1 -mt-0.5" />,
-      text: __("Refunded", "eventkoi"),
+      text: __("Refunded", "eventkoi-lite"),
     },
     partially_refunded: {
       icon: <RefundStatusIcon aria-hidden="true" className="w-4 h-4 text-muted-foreground mr-1 -mt-0.5" />,
-      text: __("Partially refunded", "eventkoi"),
+      text: __("Partially refunded", "eventkoi-lite"),
     },
   };
 
@@ -98,7 +98,7 @@ function getNoteUI(note) {
     return (
       <span className="flex items-center font-normal">
         <span className="font-medium mr-1">
-          {__("Order status:", "eventkoi")}
+          {__("Order status:", "eventkoi-lite")}
         </span>
         {status.icon}
         {status.text}
@@ -119,7 +119,7 @@ export function OrderActivity({
   return (
     <div className="rounded-xl border bg-white p-6 flex flex-col h-full">
       <h3 className="text-base font-medium mb-4">
-        {__("Activity", "eventkoi")}
+        {__("Activity", "eventkoi-lite")}
       </h3>
       <div className="grow overflow-y-auto text-sm pr-1">
         <AnimatePresence initial={false}>
@@ -163,12 +163,12 @@ export function OrderActivity({
 
       <div className="mt-auto">
         <textarea
-          placeholder={__("Add note...", "eventkoi")}
+          placeholder={__("Add note...", "eventkoi-lite")}
           value={newNote}
           onChange={(e) => setNewNote(e.target.value)}
           className="w-full border rounded-md p-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
           rows={3}
-          aria-label={__("Add order note", "eventkoi")}
+          aria-label={__("Add order note", "eventkoi-lite")}
         />
         <AnimatePresence initial={false}>
           {newNote.trim() && (
@@ -187,8 +187,8 @@ export function OrderActivity({
                 className="font-normal"
               >
                 {submittingNote
-                  ? __("Saving...", "eventkoi")
-                  : __("Add note", "eventkoi")}
+                  ? __("Saving...", "eventkoi-lite")
+                  : __("Add note", "eventkoi-lite")}
               </Button>
             </motion.div>
           )}

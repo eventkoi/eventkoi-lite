@@ -384,7 +384,7 @@ export const withEventKoiQueryData = (BlockEdit) => (props) => {
 
     const hiddenButtons = new Set();
     const hiddenSlots = new Set();
-    const matchLabel = __("Change design", "eventkoi").toLowerCase();
+    const matchLabel = __("Change design", "eventkoi-lite").toLowerCase();
 
     const hideMatches = (root) => {
       if (!root) {

@@ -18,27 +18,27 @@ export function ViewToggle({ calendarApi, view, setView }) {
         calendarApi?.changeView(val);
         setView(val);
       }}
-      aria-label={__("Calendar view mode", "eventkoi")}
+      aria-label={__("Calendar view mode", "eventkoi-lite")}
       role="radiogroup"
     >
       <ToggleGroupItem
         value="dayGridMonth"
         role="radio"
         aria-checked={view === "dayGridMonth"}
-        aria-label={__("Month view", "eventkoi")}
+        aria-label={__("Month view", "eventkoi-lite")}
         className="border-none transition-none cursor-pointer shadow-none h-full rounded-sm text-foreground hover:text-foreground data-[state=on]:bg-white data-[state=on]:font-semibold"
       >
-        {__("Month", "eventkoi")}
+        {__("Month", "eventkoi-lite")}
       </ToggleGroupItem>
 
       <ToggleGroupItem
         value="timeGridWeek"
         role="radio"
         aria-checked={view === "timeGridWeek"}
-        aria-label={__("Week view", "eventkoi")}
+        aria-label={__("Week view", "eventkoi-lite")}
         className="border-none transition-none cursor-pointer shadow-none h-full rounded-sm text-foreground hover:text-foreground data-[state=on]:bg-white data-[state=on]:font-semibold"
       >
-        {__("Week", "eventkoi")}
+        {__("Week", "eventkoi-lite")}
       </ToggleGroupItem>
     </ToggleGroup>
   );

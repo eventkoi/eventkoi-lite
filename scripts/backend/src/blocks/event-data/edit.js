@@ -189,7 +189,7 @@ export default function Edit({ attributes, setAttributes, clientId }) {
             <span className="italic opacity-60">
               {__(
                 "No event available. Choose an event or place this block inside Event Query.",
-                "eventkoi"
+                "eventkoi-lite"
               )}
             </span>
           </div>
@@ -240,7 +240,7 @@ export default function Edit({ attributes, setAttributes, clientId }) {
               excerpt ||
               `<span class="opacity-60 italic">${__(
                 "No description",
-                "eventkoi"
+                "eventkoi-lite"
               )}</span>`,
           }}
         />
@@ -260,7 +260,7 @@ export default function Edit({ attributes, setAttributes, clientId }) {
             <span>{timeline}</span>
           ) : (
             <span className="opacity-60 italic">
-              {__("No time", "eventkoi")}
+              {__("No time", "eventkoi-lite")}
             </span>
           )}
         </TagName>
@@ -293,7 +293,7 @@ export default function Edit({ attributes, setAttributes, clientId }) {
       } else {
         locationContent = (
           <span className="opacity-60 italic">
-            {__("No location", "eventkoi")}
+            {__("No location", "eventkoi-lite")}
           </span>
         );
       }
@@ -332,7 +332,7 @@ export default function Edit({ attributes, setAttributes, clientId }) {
       content = (
         <TagName {...blockProps}>
           <span className="italic opacity-60">
-            {__("No event data", "eventkoi")}
+            {__("No event data", "eventkoi-lite")}
           </span>
         </TagName>
       );

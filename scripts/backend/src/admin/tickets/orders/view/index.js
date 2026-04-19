@@ -22,7 +22,7 @@ export function OrderView() {
   const { order, setOrder, loading, setLoading, error } = useOrder(id);
   const [newNote, setNewNote] = useState("");
   const [submittingNote, setSubmittingNote] = useState(false);
-  const headerTitle = __("Order", "eventkoi");
+  const headerTitle = __("Order", "eventkoi-lite");
 
   const lastUpdated = order?.last_modified
     ? formatWPtime(order.last_modified).replace(/\n/g, " ")
@@ -92,7 +92,7 @@ export function OrderView() {
                 variant="outline"
                 className="border-warning/80 text-foreground bg-warning/10"
               >
-                {__("Test", "eventkoi")}
+                {__("Test", "eventkoi-lite")}
               </Badge>
             )}
             <div className="flex items-center gap-4 text-2xl font-medium">
@@ -104,7 +104,7 @@ export function OrderView() {
           <p className="text-sm text-muted-foreground mt-2">
             {sprintf(
               /* translators: %s: human-readable last updated datetime */
-              __("Last updated on %s", "eventkoi"),
+              __("Last updated on %s", "eventkoi-lite"),
               lastUpdated
             )}
           </p>

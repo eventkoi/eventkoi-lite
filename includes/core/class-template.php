@@ -147,8 +147,8 @@ class Template {
 	public static function register_plugin_templates() {
 
 		$args = array(
-			'title'       => __( 'Event', 'eventkoi' ),
-			'description' => __( 'Default template for a single event view.', 'eventkoi' ),
+			'title'       => __( 'Event', 'eventkoi-lite' ),
+			'description' => __( 'Default template for a single event view.', 'eventkoi-lite' ),
 			'content'     => self::get_default_event_template(),
 		);
 
@@ -156,8 +156,8 @@ class Template {
 
 		// Event series template (for recurring events).
 		$series_args = array(
-			'title'       => __( 'Event Series', 'eventkoi' ),
-			'description' => __( 'Template used when viewing a recurring event series.', 'eventkoi' ),
+			'title'       => __( 'Event Series', 'eventkoi-lite' ),
+			'description' => __( 'Template used when viewing a recurring event series.', 'eventkoi-lite' ),
 			'content'     => self::get_event_series_template(),
 		);
 
@@ -791,7 +791,7 @@ class Template {
 		// Translators: %s is the linked event series title.
 		$link_text = sprintf(
 		/* translators: %s: linked event series title including the word "series". */
-			esc_html__( '← See all events in the %s', 'eventkoi' ),
+			esc_html__( '← See all events in the %s', 'eventkoi-lite' ),
 			sprintf(
 				'<a href="%1$s" rel="bookmark">%2$s</a>',
 				esc_url( $parent_url ),
@@ -986,15 +986,15 @@ class Template {
 		}
 
 		if ( 0 === strpos( $token, 'event_fieldgroup_' ) ) {
-			return __( 'Event Field Group', 'eventkoi' );
+			return __( 'Event Field Group', 'eventkoi-lite' );
 		}
 
 		if ( 0 === strpos( $token, 'event_field_' ) ) {
-			return __( 'Event Field', 'eventkoi' );
+			return __( 'Event Field', 'eventkoi-lite' );
 		}
 
 		if ( 0 === strpos( $token, 'event_custom_fields' ) ) {
-			return __( 'Custom fields', 'eventkoi' );
+			return __( 'Custom fields', 'eventkoi-lite' );
 		}
 
 		$label = str_replace( 'event_', '', $token );

@@ -211,7 +211,7 @@ export function Orders() {
     <div className="flex flex-col gap-8">
       <div className="mx-auto flex w-full gap-2 justify-between">
         <div className="flex items-center gap-2">
-          <Heading>{__("Ticket sales", "eventkoi")}</Heading>
+          <Heading>{__("Ticket sales", "eventkoi-lite")}</Heading>
         </div>
       </div>
       <OrderStats timeRange={timeRange} onTimeRangeChange={setTimeRange} />
@@ -233,8 +233,8 @@ export function Orders() {
             <Button variant="outline" disabled={isExporting} onClick={() => exportOrdersCsv(table)}>
               <ArrowDownToLine className="mr-2 h-4 w-4" />
               {isExporting
-                ? __("Exporting...", "eventkoi")
-                : __("Export", "eventkoi")}
+                ? __("Exporting...", "eventkoi-lite")
+                : __("Export", "eventkoi-lite")}
             </Button>
           </div>
         )}

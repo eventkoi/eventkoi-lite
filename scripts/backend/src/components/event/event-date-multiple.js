@@ -361,7 +361,7 @@ export function EventDateMultiple({ showAttributes }) {
 
                 <div className="flex items-center gap-2">
                   <Switch
-                    aria-label={__("All day", "eventkoi")}
+                    aria-label={__("All day", "eventkoi-lite")}
                     checked={day.all_day}
                     onCheckedChange={(checked) =>
                       updateDay(index, "all_day", checked)

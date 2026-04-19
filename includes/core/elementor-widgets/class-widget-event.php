@@ -29,7 +29,7 @@ class Event_Widget extends Widget_Base {
 	 * Widget label shown in Elementor.
 	 */
 	public function get_title() {
-		return __( 'EventKoi Event', 'eventkoi' );
+		return __( 'EventKoi Event', 'eventkoi-lite' );
 	}
 
 	/**
@@ -73,32 +73,32 @@ class Event_Widget extends Widget_Base {
 		$this->start_controls_section(
 			'section_content',
 			array(
-				'label' => __( 'Event Options', 'eventkoi' ),
+				'label' => __( 'Event Options', 'eventkoi-lite' ),
 			)
 		);
 
 		$this->add_control(
 			'event_id',
 			array(
-				'label'       => __( 'Select Event', 'eventkoi' ),
+				'label'       => __( 'Select Event', 'eventkoi-lite' ),
 				'type'        => Controls_Manager::SELECT2,
 				'options'     => $this->get_events(),
 				'multiple'    => false,
 				'label_block' => true,
 				'default'     => '',
-				'description' => __( 'Choose the event to display.', 'eventkoi' ),
+				'description' => __( 'Choose the event to display.', 'eventkoi-lite' ),
 			)
 		);
 
 		$this->add_control(
 			'event_data_items',
 			array(
-				'label'       => __( 'Event Data Items', 'eventkoi' ),
+				'label'       => __( 'Event Data Items', 'eventkoi-lite' ),
 				'type'        => Controls_Manager::REPEATER,
 				'fields'      => array(
 					array(
 						'name'        => 'data_type',
-						'label'       => __( 'Data Type', 'eventkoi' ),
+						'label'       => __( 'Data Type', 'eventkoi-lite' ),
 						'type'        => Controls_Manager::SELECT,
 						'default'     => 'event_title',
 						'options'     => $this->get_event_data_options(),
@@ -106,10 +106,10 @@ class Event_Widget extends Widget_Base {
 					),
 					array(
 						'name'         => 'show',
-						'label'        => __( 'Show', 'eventkoi' ),
+						'label'        => __( 'Show', 'eventkoi-lite' ),
 						'type'         => Controls_Manager::SWITCHER,
-						'label_on'     => __( 'Show', 'eventkoi' ),
-						'label_off'    => __( 'Hide', 'eventkoi' ),
+						'label_on'     => __( 'Show', 'eventkoi-lite' ),
+						'label_off'    => __( 'Hide', 'eventkoi-lite' ),
 						'return_value' => 'yes',
 						'default'      => 'yes',
 					),
@@ -145,7 +145,7 @@ class Event_Widget extends Widget_Base {
 				\Elementor\Group_Control_Typography::get_type(),
 				array(
 					'name'     => $data_type_key . '_typography',
-					'label'    => __( 'Typography', 'eventkoi' ),
+					'label'    => __( 'Typography', 'eventkoi-lite' ),
 					'selector' => '{{WRAPPER}} .eventkoi-elementor-widget .eventkoi-data.eventkoi-data-' . esc_attr( $data_type_key ) . ', {{WRAPPER}} .eventkoi-elementor-widget .eventkoi-shortcode.eventkoi-data-' . esc_attr( $data_type_key ),
 				)
 			);
@@ -154,7 +154,7 @@ class Event_Widget extends Widget_Base {
 			$this->add_control(
 				$data_type_key . '_color',
 				array(
-					'label'     => __( 'Text Color', 'eventkoi' ),
+					'label'     => __( 'Text Color', 'eventkoi-lite' ),
 					'type'      => Controls_Manager::COLOR,
 					'selectors' => array(
 						'{{WRAPPER}} .eventkoi-elementor-widget .eventkoi-data.eventkoi-data-' . esc_attr( $data_type_key )      => 'color: {{VALUE}};',
@@ -167,7 +167,7 @@ class Event_Widget extends Widget_Base {
 			$this->add_control(
 				$data_type_key . '_background_color',
 				array(
-					'label'     => __( 'Background Color', 'eventkoi' ),
+					'label'     => __( 'Background Color', 'eventkoi-lite' ),
 					'type'      => Controls_Manager::COLOR,
 					'selectors' => array(
 						'{{WRAPPER}} .eventkoi-elementor-widget .eventkoi-data.eventkoi-data-' . esc_attr( $data_type_key )      => 'background-color: {{VALUE}};',
@@ -180,19 +180,19 @@ class Event_Widget extends Widget_Base {
 			$this->add_responsive_control(
 				$data_type_key . '_align',
 				array(
-					'label'     => __( 'Alignment', 'eventkoi' ),
+					'label'     => __( 'Alignment', 'eventkoi-lite' ),
 					'type'      => Controls_Manager::CHOOSE,
 					'options'   => array(
 						'left'   => array(
-							'title' => __( 'Left', 'eventkoi' ),
+							'title' => __( 'Left', 'eventkoi-lite' ),
 							'icon'  => 'eicon-text-align-left',
 						),
 						'center' => array(
-							'title' => __( 'Center', 'eventkoi' ),
+							'title' => __( 'Center', 'eventkoi-lite' ),
 							'icon'  => 'eicon-text-align-center',
 						),
 						'right'  => array(
-							'title' => __( 'Right', 'eventkoi' ),
+							'title' => __( 'Right', 'eventkoi-lite' ),
 							'icon'  => 'eicon-text-align-right',
 						),
 					),
@@ -208,7 +208,7 @@ class Event_Widget extends Widget_Base {
 			$this->add_responsive_control(
 				$data_type_key . '_margin',
 				array(
-					'label'      => __( 'Margin', 'eventkoi' ),
+					'label'      => __( 'Margin', 'eventkoi-lite' ),
 					'type'       => Controls_Manager::DIMENSIONS,
 					'size_units' => array( 'px', 'em', '%' ),
 					'selectors'  => array(
@@ -221,7 +221,7 @@ class Event_Widget extends Widget_Base {
 			$this->add_responsive_control(
 				$data_type_key . '_padding',
 				array(
-					'label'      => __( 'Padding', 'eventkoi' ),
+					'label'      => __( 'Padding', 'eventkoi-lite' ),
 					'type'       => Controls_Manager::DIMENSIONS,
 					'size_units' => array( 'px', 'em', '%' ),
 					'selectors'  => array(
@@ -329,20 +329,20 @@ class Event_Widget extends Widget_Base {
 	 */
 	private function get_event_data_options() {
 		return array(
-			'event_title'                 => __( 'Event Title', 'eventkoi' ),
-			'event_details'               => __( 'Event Details', 'eventkoi' ),
-			'event_timezone'              => __( 'Event Timezone', 'eventkoi' ),
-			'event_gmap'                  => __( 'Event Google Map', 'eventkoi' ),
-			'event_image'                 => __( 'Event Image', 'eventkoi' ),
-			'event_image_url'             => __( 'Event Image URL', 'eventkoi' ),
-			'event_calendar_url'          => __( 'Event Calendar URL', 'eventkoi' ),
-			'event_calendar'              => __( 'Event Calendar', 'eventkoi' ),
-			'event_calendar_link'         => __( 'Event Calendar Link', 'eventkoi' ),
-			'event_location'              => __( 'Event Location', 'eventkoi' ),
-			'event_datetime_with_summary' => __( 'Event Datetime with Summary', 'eventkoi' ),
-			'event_datetime'              => __( 'Event Datetime', 'eventkoi' ),
-			'event_date_type'             => __( 'Event Date Type', 'eventkoi' ),
-			'event_rulesummary'           => __( 'Event Rule Summary', 'eventkoi' ),
+			'event_title'                 => __( 'Event Title', 'eventkoi-lite' ),
+			'event_details'               => __( 'Event Details', 'eventkoi-lite' ),
+			'event_timezone'              => __( 'Event Timezone', 'eventkoi-lite' ),
+			'event_gmap'                  => __( 'Event Google Map', 'eventkoi-lite' ),
+			'event_image'                 => __( 'Event Image', 'eventkoi-lite' ),
+			'event_image_url'             => __( 'Event Image URL', 'eventkoi-lite' ),
+			'event_calendar_url'          => __( 'Event Calendar URL', 'eventkoi-lite' ),
+			'event_calendar'              => __( 'Event Calendar', 'eventkoi-lite' ),
+			'event_calendar_link'         => __( 'Event Calendar Link', 'eventkoi-lite' ),
+			'event_location'              => __( 'Event Location', 'eventkoi-lite' ),
+			'event_datetime_with_summary' => __( 'Event Datetime with Summary', 'eventkoi-lite' ),
+			'event_datetime'              => __( 'Event Datetime', 'eventkoi-lite' ),
+			'event_date_type'             => __( 'Event Date Type', 'eventkoi-lite' ),
+			'event_rulesummary'           => __( 'Event Rule Summary', 'eventkoi-lite' ),
 		);
 	}
 

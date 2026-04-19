@@ -16,15 +16,15 @@ class ET_Builder_Module_EventkoiCalendar extends ET_Builder_Module {
 	 * Init module.
 	 */
 	public function init() {
-		$this->name       = esc_html__( 'EventKoi Calendar', 'eventkoi' );
-		$this->plural     = esc_html__( 'EventKoi Calendars', 'eventkoi' );
+		$this->name       = esc_html__( 'EventKoi Calendar', 'eventkoi-lite' );
+		$this->plural     = esc_html__( 'EventKoi Calendars', 'eventkoi-lite' );
 		$this->slug       = 'et_pb_eventkoi_calendar';
 		$this->vb_support = 'off';
 
 		$this->settings_modal_toggles = array(
 			'general' => array(
 				'toggles' => array(
-					'main_content' => esc_html__( 'Calendar', 'eventkoi' ),
+					'main_content' => esc_html__( 'Calendar', 'eventkoi-lite' ),
 				),
 			),
 		);
@@ -38,37 +38,37 @@ class ET_Builder_Module_EventkoiCalendar extends ET_Builder_Module {
 	public function get_fields() {
 		return array(
 			'eventkoi_calendar'   => array(
-				'label'           => esc_html__( 'Calendar', 'eventkoi' ),
+				'label'           => esc_html__( 'Calendar', 'eventkoi-lite' ),
 				'type'            => 'select',
 				'option_category' => 'basic_option',
 				'options'         => $this->calendar_options(),
 				'default'         => '',
-				'description'     => esc_html__( 'Leave empty to use the default calendar.', 'eventkoi' ),
+				'description'     => esc_html__( 'Leave empty to use the default calendar.', 'eventkoi-lite' ),
 				'toggle_slug'     => 'main_content',
 			),
 			'eventkoi_timeframe'  => array(
-				'label'            => esc_html__( 'Default timeframe', 'eventkoi' ),
+				'label'            => esc_html__( 'Default timeframe', 'eventkoi-lite' ),
 				'type'             => 'select',
 				'option_category'  => 'configuration',
 				'options'          => array(
-					'month' => esc_html__( 'Month', 'eventkoi' ),
-					'week'  => esc_html__( 'Week', 'eventkoi' ),
+					'month' => esc_html__( 'Month', 'eventkoi-lite' ),
+					'week'  => esc_html__( 'Week', 'eventkoi-lite' ),
 				),
 				'default_on_front' => 'month',
 				'toggle_slug'      => 'main_content',
 			),
 			'eventkoi_week_start' => array(
-				'label'            => esc_html__( 'Week starts on', 'eventkoi' ),
+				'label'            => esc_html__( 'Week starts on', 'eventkoi-lite' ),
 				'type'             => 'select',
 				'option_category'  => 'configuration',
 				'options'          => array(
-					'sunday'    => esc_html__( 'Sunday', 'eventkoi' ),
-					'monday'    => esc_html__( 'Monday', 'eventkoi' ),
-					'tuesday'   => esc_html__( 'Tuesday', 'eventkoi' ),
-					'wednesday' => esc_html__( 'Wednesday', 'eventkoi' ),
-					'thursday'  => esc_html__( 'Thursday', 'eventkoi' ),
-					'friday'    => esc_html__( 'Friday', 'eventkoi' ),
-					'saturday'  => esc_html__( 'Saturday', 'eventkoi' ),
+					'sunday'    => esc_html__( 'Sunday', 'eventkoi-lite' ),
+					'monday'    => esc_html__( 'Monday', 'eventkoi-lite' ),
+					'tuesday'   => esc_html__( 'Tuesday', 'eventkoi-lite' ),
+					'wednesday' => esc_html__( 'Wednesday', 'eventkoi-lite' ),
+					'thursday'  => esc_html__( 'Thursday', 'eventkoi-lite' ),
+					'friday'    => esc_html__( 'Friday', 'eventkoi-lite' ),
+					'saturday'  => esc_html__( 'Saturday', 'eventkoi-lite' ),
 				),
 				'default_on_front' => 'monday',
 				'toggle_slug'      => 'main_content',
@@ -117,7 +117,7 @@ class ET_Builder_Module_EventkoiCalendar extends ET_Builder_Module {
 	 * @return array
 	 */
 	protected function calendar_options() {
-		$options = array( '' => esc_html__( '— Default calendar —', 'eventkoi' ) );
+		$options = array( '' => esc_html__( '— Default calendar —', 'eventkoi-lite' ) );
 
 		$terms = get_terms(
 			array(

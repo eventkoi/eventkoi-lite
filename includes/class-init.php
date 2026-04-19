@@ -63,7 +63,9 @@ class Init {
 	private function init_core() {
 		// Include core functions.
 		include_once EVENTKOI_PLUGIN_DIR . 'includes/core/core-functions.php';
+		require_once EVENTKOI_PLUGIN_DIR . 'includes/core/i18n.php';
 		require_once EVENTKOI_PLUGIN_DIR . 'includes/helpers/instance.php';
+		\EventKoi\Core\register_i18n();
 
 		// Initialize the container and set it in Config.
 		$this->container = new Container();

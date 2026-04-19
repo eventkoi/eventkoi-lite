@@ -530,13 +530,13 @@ export function EventEditManageTickets() {
   return (
     <div className="flex flex-col w-full gap-8">
       <Box container>
-        <Heading level={3}>{__("Tickets", "eventkoi")}</Heading>
+        <Heading level={3}>{__("Tickets", "eventkoi-lite")}</Heading>
 
         {!event?.id && (
           <p className="text-sm text-muted-foreground">
             {__(
               "Save the event first before adding tickets.",
-              "eventkoi"
+              "eventkoi-lite"
             )}
           </p>
         )}
@@ -544,10 +544,10 @@ export function EventEditManageTickets() {
         <div className="flex flex-col gap-6">
           <SettingToggle
             id="tickets_auto_create_account"
-            label={__("Auto-create attendee account", "eventkoi")}
+            label={__("Auto-create attendee account", "eventkoi-lite")}
             description={__(
               "Create a WordPress user when someone purchases a ticket.",
-              "eventkoi",
+              "eventkoi-lite",
             )}
             checked={ticketSettings.auto_create_account}
             onCheckedChange={() => handleToggle("auto_create_account")}
@@ -555,10 +555,10 @@ export function EventEditManageTickets() {
 
           <SettingToggle
             id="tickets_show_remaining"
-            label={__("Show remaining tickets", "eventkoi")}
+            label={__("Show remaining tickets", "eventkoi-lite")}
             description={__(
               "Display the number of available tickets on the event page.",
-              "eventkoi",
+              "eventkoi-lite",
             )}
             checked={ticketSettings.show_remaining}
             onCheckedChange={() => handleToggle("show_remaining")}
@@ -566,13 +566,13 @@ export function EventEditManageTickets() {
 
           <div className="flex flex-col gap-2 max-w-[500px] pt-4">
             <Label className="font-medium" htmlFor="tickets-terms-conditions">
-              {__("Terms & conditions", "eventkoi")}
+              {__("Terms & conditions", "eventkoi-lite")}
             </Label>
             <Textarea
               id="tickets-terms-conditions"
               placeholder={__(
                 "Add ticket terms and conditions here.",
-                "eventkoi",
+                "eventkoi-lite",
               )}
               value={ticketSettings.terms_conditions}
               onChange={handleTextChange}
@@ -583,7 +583,7 @@ export function EventEditManageTickets() {
           <div className="flex flex-col gap-4 mt-2">
             {loadingTickets && (
               <div className="text-sm text-muted-foreground">
-                {__("Loading tickets…", "eventkoi")}
+                {__("Loading tickets…", "eventkoi-lite")}
               </div>
             )}
 
@@ -621,8 +621,8 @@ export function EventEditManageTickets() {
                         size="icon"
                         className="h-7 w-7 text-foreground hover:text-foreground cursor-grab active:cursor-grabbing"
                         onClick={(e) => e.preventDefault()}
-                        aria-label={__("Reorder ticket", "eventkoi")}
-                        title={__("Drag to reorder", "eventkoi")}
+                        aria-label={__("Reorder ticket", "eventkoi-lite")}
+                        title={__("Drag to reorder", "eventkoi-lite")}
                         draggable
                         onDragStart={handleDragStart(index)}
                         onDragEnd={handleDragEnd}
@@ -630,8 +630,8 @@ export function EventEditManageTickets() {
                         <GripVertical className="h-4 w-4" aria-hidden="true" />
                       </Button>
                       <Input
-                        aria-label={__("Ticket name", "eventkoi")}
-                        placeholder={__("Enter ticket name", "eventkoi")}
+                        aria-label={__("Ticket name", "eventkoi-lite")}
+                        placeholder={__("Enter ticket name", "eventkoi-lite")}
                         value={ticket.name || ""}
                         onChange={(e) =>
                           handleTicketChange(index, { name: e.target.value })
@@ -642,7 +642,7 @@ export function EventEditManageTickets() {
                     <div className="flex items-center gap-3">
                       <div className="flex items-center gap-2">
                         <Switch
-                          aria-label={__("Toggle ticket active", "eventkoi")}
+                          aria-label={__("Toggle ticket active", "eventkoi-lite")}
                           checked={ticket.status !== "inactive"}
                           onCheckedChange={(checked) =>
                             handleTicketChange(index, {
@@ -652,7 +652,7 @@ export function EventEditManageTickets() {
                           className="data-[state=checked]:bg-foreground"
                         />
                         <span className="text-xs text-muted-foreground">
-                          {__("Active", "eventkoi")}
+                          {__("Active", "eventkoi-lite")}
                         </span>
                       </div>
                       <Button
@@ -661,7 +661,7 @@ export function EventEditManageTickets() {
                         className="h-7 w-7 text-foreground/90 hover:text-foreground"
                         onClick={() => toggleTicket(key)}
                         aria-expanded={isExpanded}
-                        aria-label={isExpanded ? __("Collapse ticket", "eventkoi") : __("Expand ticket", "eventkoi")}
+                        aria-label={isExpanded ? __("Collapse ticket", "eventkoi-lite") : __("Expand ticket", "eventkoi-lite")}
                       >
                         {isExpanded ? (
                           <ChevronUp className="h-4 w-4" aria-hidden="true" />
@@ -674,7 +674,7 @@ export function EventEditManageTickets() {
                         size="icon"
                         className="h-7 w-7 text-foreground/90 hover:text-destructive"
                         onClick={() => handleDeleteTicket(ticket, index)}
-                        aria-label={__("Delete ticket", "eventkoi")}
+                        aria-label={__("Delete ticket", "eventkoi-lite")}
                       >
                         <Trash2 className="h-4 w-4" aria-hidden="true" />
                       </Button>
@@ -686,7 +686,7 @@ export function EventEditManageTickets() {
                       <div className="flex flex-wrap items-start gap-16">
                         <div className="grid gap-2">
                           <Label htmlFor={`ticket-${key}-price`}>
-                            {__("Price", "eventkoi")}
+                            {__("Price", "eventkoi-lite")}
                           </Label>
                         <InputGroup className="w-auto">
                           <InputGroupText>
@@ -713,13 +713,13 @@ export function EventEditManageTickets() {
                               to="/settings/payments"
                               className="underline underline-offset-2 hover:text-foreground"
                             >
-                              {__("Change currency", "eventkoi")}
+                              {__("Change currency", "eventkoi-lite")}
                             </Link>
                           </div>
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor={`ticket-${key}-quantity`}>
-                            {__("Quantity available", "eventkoi")}
+                            {__("Quantity available", "eventkoi-lite")}
                           </Label>
                           <Input
                             id={`ticket-${key}-quantity`}
@@ -736,7 +736,7 @@ export function EventEditManageTickets() {
                         </div>
                         <div className="grid gap-2">
                           <Label htmlFor={`ticket-${key}-max-per-order`}>
-                            {__("Max per order", "eventkoi")}
+                            {__("Max per order", "eventkoi-lite")}
                           </Label>
                           <Input
                             id={`ticket-${key}-max-per-order`}
@@ -758,7 +758,7 @@ export function EventEditManageTickets() {
                           <div className="grid gap-2">
                             <div className="flex items-center justify-between gap-2 min-h-[18px]">
                               <Label>
-                                {__("Ticket sales start", "eventkoi")}
+                                {__("Ticket sales start", "eventkoi-lite")}
                               </Label>
                               {startDate ? (
                                 <button
@@ -770,7 +770,7 @@ export function EventEditManageTickets() {
                                     })
                                   }
                                 >
-                                  {__("Clear", "eventkoi")}
+                                  {__("Clear", "eventkoi-lite")}
                                 </button>
                               ) : (
                                 <span className="text-xs opacity-0">{"Clear"}</span>
@@ -836,7 +836,7 @@ export function EventEditManageTickets() {
 
                           <div className="grid gap-2">
                             <div className="flex items-center justify-between gap-2 min-h-[18px]">
-                              <Label>{__("Ticket sales end", "eventkoi")}</Label>
+                              <Label>{__("Ticket sales end", "eventkoi-lite")}</Label>
                               {endDate ? (
                                 <button
                                   type="button"
@@ -847,7 +847,7 @@ export function EventEditManageTickets() {
                                     })
                                   }
                                 >
-                                  {__("Clear", "eventkoi")}
+                                  {__("Clear", "eventkoi-lite")}
                                 </button>
                               ) : (
                                 <span className="text-xs opacity-0">{"Clear"}</span>
@@ -910,7 +910,7 @@ export function EventEditManageTickets() {
                           <p className="text-sm font-medium text-destructive mt-1">
                             {__(
                               "Ticket sales end date cannot be before the start date.",
-                              "eventkoi",
+                              "eventkoi-lite",
                             )}
                           </p>
                         ) : null}
@@ -918,7 +918,7 @@ export function EventEditManageTickets() {
 
                       <div className="grid gap-2">
                       <Label htmlFor={`ticket-${key}-description`}>
-                        {__("Description", "eventkoi")}
+                        {__("Description", "eventkoi-lite")}
                       </Label>
                       <Input
                         id={`ticket-${key}-description`}
@@ -933,14 +933,14 @@ export function EventEditManageTickets() {
                         <p className="text-sm text-muted-foreground">
                           {__(
                             "Give a short description of the ticket to attendees.",
-                            "eventkoi"
+                            "eventkoi-lite"
                           )}
                         </p>
                       </div>
 
                       <div className="grid gap-2">
                         <Label htmlFor={`ticket-${key}-terms`}>
-                          {__("Additional terms & conditions", "eventkoi")}
+                          {__("Additional terms & conditions", "eventkoi-lite")}
                         </Label>
                         <Textarea
                           id={`ticket-${key}-terms`}
@@ -955,7 +955,7 @@ export function EventEditManageTickets() {
                         <p className="text-sm text-muted-foreground">
                           {__(
                             "Add additional terms & conditions that only apply to this ticket.",
-                            "eventkoi"
+                            "eventkoi-lite"
                           )}
                         </p>
                       </div>
@@ -973,7 +973,7 @@ export function EventEditManageTickets() {
                 disabled={!event?.id}
               >
                 <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
-                {__("Add ticket", "eventkoi")}
+                {__("Add ticket", "eventkoi-lite")}
               </Button>
             </div>
         </div>

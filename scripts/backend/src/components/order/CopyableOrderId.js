@@ -27,7 +27,7 @@ export function CopyableOrderId({ id }) {
             type="button"
             onClick={handleCopy}
             className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:underline"
-            aria-label={__("Copy order ID", "eventkoi")}
+            aria-label={__("Copy order ID", "eventkoi-lite")}
           >
             <span className="max-w-full break-all text-left font-mono">
               {id}
@@ -44,7 +44,7 @@ export function CopyableOrderId({ id }) {
           align="center"
           className="bg-foreground text-white px-2 py-1 text-xs rounded-md shadow-sm"
         >
-          {copied ? __("Copied!", "eventkoi") : __("Click to copy", "eventkoi")}
+          {copied ? __("Copied!", "eventkoi-lite") : __("Click to copy", "eventkoi-lite")}
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

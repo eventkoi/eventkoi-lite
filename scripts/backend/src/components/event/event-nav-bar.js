@@ -169,7 +169,7 @@ export function EventNavBar() {
 
   const saveEvent = async (status) => {
     if (!event?.title?.trim()) {
-      showToast({ message: __("Please enter an event name.", "eventkoi") });
+      showToast({ message: __("Please enter an event name.", "eventkoi-lite") });
       return;
     }
 
@@ -383,7 +383,7 @@ export function EventNavBar() {
                   size="icon"
                   className="rounded-l-none"
                   disabled={isDisabled}
-                  aria-label={__("More actions", "eventkoi")}
+                  aria-label={__("More actions", "eventkoi-lite")}
                 >
                   <ChevronDown className="w-4 h-4" aria-hidden="true" />
                 </Button>

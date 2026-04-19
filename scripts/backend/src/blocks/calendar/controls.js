@@ -34,7 +34,7 @@ export const Controls = (props) => {
     });
   };
 
-  const colors = [{ value: "color", label: __("Accent", "eventkoi") }];
+  const colors = [{ value: "color", label: __("Accent", "eventkoi-lite") }];
 
   const getCalendars = async () => {
     let response = await apiRequest({
@@ -73,10 +73,10 @@ export const Controls = (props) => {
 
   return (
     <>
-      <PanelBody title={__("Display options", "eventkoi")} initialOpen={true}>
+      <PanelBody title={__("Display options", "eventkoi-lite")} initialOpen={true}>
         {items && items.length > 0 && (
           <MultiSelectControl
-            label={__("Select calendar(s)", "eventkoi")}
+            label={__("Select calendar(s)", "eventkoi-lite")}
             value={attributes.calendars || []}
             options={items}
             onChange={(selected) => {
@@ -86,7 +86,7 @@ export const Controls = (props) => {
           />
         )}
         <ToggleGroupControl
-          label={__("Timeframe defaults to", "eventkoi")}
+          label={__("Timeframe defaults to", "eventkoi-lite")}
           value={timeframe}
           isBlock
           onChange={(newValue) => {
@@ -104,32 +104,32 @@ export const Controls = (props) => {
         </ToggleGroupControl>
 
         <SelectControl
-          label={__("Default month to display", "eventkoi")}
+          label={__("Default month to display", "eventkoi-lite")}
           value={attributes.default_month || ""}
           options={[
-            { label: __("Current month", "eventkoi"), value: "" },
-            { label: __("January", "eventkoi"), value: "january" },
-            { label: __("February", "eventkoi"), value: "february" },
-            { label: __("March", "eventkoi"), value: "march" },
-            { label: __("April", "eventkoi"), value: "april" },
-            { label: __("May", "eventkoi"), value: "may" },
-            { label: __("June", "eventkoi"), value: "june" },
-            { label: __("July", "eventkoi"), value: "july" },
-            { label: __("August", "eventkoi"), value: "august" },
-            { label: __("September", "eventkoi"), value: "september" },
-            { label: __("October", "eventkoi"), value: "october" },
-            { label: __("November", "eventkoi"), value: "november" },
-            { label: __("December", "eventkoi"), value: "december" },
+            { label: __("Current month", "eventkoi-lite"), value: "" },
+            { label: __("January", "eventkoi-lite"), value: "january" },
+            { label: __("February", "eventkoi-lite"), value: "february" },
+            { label: __("March", "eventkoi-lite"), value: "march" },
+            { label: __("April", "eventkoi-lite"), value: "april" },
+            { label: __("May", "eventkoi-lite"), value: "may" },
+            { label: __("June", "eventkoi-lite"), value: "june" },
+            { label: __("July", "eventkoi-lite"), value: "july" },
+            { label: __("August", "eventkoi-lite"), value: "august" },
+            { label: __("September", "eventkoi-lite"), value: "september" },
+            { label: __("October", "eventkoi-lite"), value: "october" },
+            { label: __("November", "eventkoi-lite"), value: "november" },
+            { label: __("December", "eventkoi-lite"), value: "december" },
           ]}
           onChange={(newMonth) => setAttributes({ default_month: newMonth })}
           __nextHasNoMarginBottom
         />
 
         <SelectControl
-          label={__("Default year to display", "eventkoi")}
+          label={__("Default year to display", "eventkoi-lite")}
           value={attributes.default_year || ""}
           options={[
-            { label: __("Current year", "eventkoi"), value: "" },
+            { label: __("Current year", "eventkoi-lite"), value: "" },
             ...Array.from({ length: 10 }, (_, i) => {
               const year = new Date().getFullYear() + i + 1;
               return { label: String(year), value: String(year) };
@@ -140,7 +140,7 @@ export const Controls = (props) => {
         />
 
         <SelectControl
-          label={__("Week starts on", "eventkoi")}
+          label={__("Week starts on", "eventkoi-lite")}
           value={startday}
           options={[
             { label: "Monday", value: "monday" },

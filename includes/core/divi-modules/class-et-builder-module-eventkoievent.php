@@ -16,15 +16,15 @@ class ET_Builder_Module_EventkoiEvent extends ET_Builder_Module {
 	 * Init module.
 	 */
 	public function init() {
-		$this->name       = esc_html__( 'EventKoi Event', 'eventkoi' );
-		$this->plural     = esc_html__( 'EventKoi Events', 'eventkoi' );
+		$this->name       = esc_html__( 'EventKoi Event', 'eventkoi-lite' );
+		$this->plural     = esc_html__( 'EventKoi Events', 'eventkoi-lite' );
 		$this->slug       = 'et_pb_eventkoi_event';
 		$this->vb_support = 'off';
 
 		$this->settings_modal_toggles = array(
 			'general' => array(
 				'toggles' => array(
-					'main_content' => esc_html__( 'Event', 'eventkoi' ),
+					'main_content' => esc_html__( 'Event', 'eventkoi-lite' ),
 				),
 			),
 		);
@@ -38,30 +38,30 @@ class ET_Builder_Module_EventkoiEvent extends ET_Builder_Module {
 	public function get_fields() {
 		return array(
 			'eventkoi_event_id' => array(
-				'label'           => esc_html__( 'Event', 'eventkoi' ),
+				'label'           => esc_html__( 'Event', 'eventkoi-lite' ),
 				'type'            => 'select',
 				'option_category' => 'basic_option',
 				'options'         => $this->event_options(),
 				'default'         => '',
-				'description'     => esc_html__( 'Select an event to display. Leave empty to use the current post when placed on an event template.', 'eventkoi' ),
+				'description'     => esc_html__( 'Select an event to display. Leave empty to use the current post when placed on an event template.', 'eventkoi-lite' ),
 				'toggle_slug'     => 'main_content',
 			),
 			'eventkoi_data'     => array(
-				'label'            => esc_html__( 'Data to render', 'eventkoi' ),
+				'label'            => esc_html__( 'Data to render', 'eventkoi-lite' ),
 				'type'             => 'select',
 				'option_category'  => 'configuration',
 				'options'          => array(
-					'full'                        => esc_html__( 'Full event', 'eventkoi' ),
-					'event_title'                 => esc_html__( 'Title', 'eventkoi' ),
-					'event_details'               => esc_html__( 'Details', 'eventkoi' ),
-					'event_image'                 => esc_html__( 'Image', 'eventkoi' ),
-					'event_datetime'              => esc_html__( 'Date & time', 'eventkoi' ),
-					'event_datetime_with_summary' => esc_html__( 'Date, time & recurring summary', 'eventkoi' ),
-					'event_location'              => esc_html__( 'Location', 'eventkoi' ),
-					'event_gmap'                  => esc_html__( 'Google map', 'eventkoi' ),
-					'event_rulesummary'           => esc_html__( 'Recurring summary', 'eventkoi' ),
-					'event_ticket_rsvp'           => esc_html__( 'Ticket / RSVP', 'eventkoi' ),
-					'event_url'                   => esc_html__( 'Event URL', 'eventkoi' ),
+					'full'                        => esc_html__( 'Full event', 'eventkoi-lite' ),
+					'event_title'                 => esc_html__( 'Title', 'eventkoi-lite' ),
+					'event_details'               => esc_html__( 'Details', 'eventkoi-lite' ),
+					'event_image'                 => esc_html__( 'Image', 'eventkoi-lite' ),
+					'event_datetime'              => esc_html__( 'Date & time', 'eventkoi-lite' ),
+					'event_datetime_with_summary' => esc_html__( 'Date, time & recurring summary', 'eventkoi-lite' ),
+					'event_location'              => esc_html__( 'Location', 'eventkoi-lite' ),
+					'event_gmap'                  => esc_html__( 'Google map', 'eventkoi-lite' ),
+					'event_rulesummary'           => esc_html__( 'Recurring summary', 'eventkoi-lite' ),
+					'event_ticket_rsvp'           => esc_html__( 'Ticket / RSVP', 'eventkoi-lite' ),
+					'event_url'                   => esc_html__( 'Event URL', 'eventkoi-lite' ),
 				),
 				'default_on_front' => 'full',
 				'toggle_slug'      => 'main_content',
@@ -117,7 +117,7 @@ class ET_Builder_Module_EventkoiEvent extends ET_Builder_Module {
 	 * @return array
 	 */
 	protected function event_options() {
-		$options = array( '' => esc_html__( '— Current event —', 'eventkoi' ) );
+		$options = array( '' => esc_html__( '— Current event —', 'eventkoi-lite' ) );
 
 		$limit = (int) apply_filters( 'eventkoi_divi_event_options_limit', 200 );
 		$posts = get_posts(

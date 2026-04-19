@@ -119,7 +119,7 @@ export function EventNavBar({ loading, setLoading, event, setEvent }) {
             saveEvent("draft");
           }}
         >
-          {__("Save draft", "eventkoi")}
+          {__("Save draft", "eventkoi-lite")}
         </Button>
       )}
       <Button
@@ -127,7 +127,7 @@ export function EventNavBar({ loading, setLoading, event, setEvent }) {
         disabled={disabled}
         onClick={() => window.open(event?.url, "_blank")}
       >
-        {__("Preview", "eventkoi")}
+        {__("Preview", "eventkoi-lite")}
       </Button>
       <div className="flex items-center gap-[1px]">
         <Button
@@ -139,8 +139,8 @@ export function EventNavBar({ loading, setLoading, event, setEvent }) {
           }}
         >
           {event?.wp_status === "draft"
-            ? __("Publish", "eventkoi")
-            : __("Save", "eventkoi")}
+            ? __("Publish", "eventkoi-lite")
+            : __("Save", "eventkoi-lite")}
         </Button>
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
@@ -149,7 +149,7 @@ export function EventNavBar({ loading, setLoading, event, setEvent }) {
               size="icon"
               className="rounded-l-none"
               disabled={disabled}
-              aria-label={__("More actions", "eventkoi")}
+              aria-label={__("More actions", "eventkoi-lite")}
             >
               <ChevronDown className="w-4 h-4" aria-hidden="true" />
             </Button>
@@ -162,7 +162,7 @@ export function EventNavBar({ loading, setLoading, event, setEvent }) {
                 duplicateEvent();
               }}
             >
-              {__("Create duplicate event", "eventkoi")}
+              {__("Create duplicate event", "eventkoi-lite")}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             {event?.wp_status === "publish" && (
@@ -171,7 +171,7 @@ export function EventNavBar({ loading, setLoading, event, setEvent }) {
                   saveEvent("draft");
                 }}
               >
-                {__("Unpublish", "eventkoi")}
+                {__("Unpublish", "eventkoi-lite")}
               </DropdownMenuItem>
             )}
             <DropdownMenuItem
@@ -180,7 +180,7 @@ export function EventNavBar({ loading, setLoading, event, setEvent }) {
                 trashEvent();
               }}
             >
-              {__("Move to trash", "eventkoi")}
+              {__("Move to trash", "eventkoi-lite")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

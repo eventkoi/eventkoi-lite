@@ -48,15 +48,15 @@ export function getCountryName(code) {
 export function getStatusLabel(status) {
   switch (status) {
     case "pending":
-      return __("Pending payment", "eventkoi");
+      return __("Pending payment", "eventkoi-lite");
     case "complete":
-      return __("Completed", "eventkoi");
+      return __("Completed", "eventkoi-lite");
     case "failed":
-      return __("Payment failed", "eventkoi");
+      return __("Payment failed", "eventkoi-lite");
     case "refunded":
-      return __("Refunded", "eventkoi");
+      return __("Refunded", "eventkoi-lite");
     case "partially_refunded":
-      return __("Partially refunded", "eventkoi");
+      return __("Partially refunded", "eventkoi-lite");
     default:
       return status;
   }

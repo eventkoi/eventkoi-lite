@@ -133,7 +133,7 @@ function AdminLayout() {
                 element={
                   <FeatureDisabled
                     actionTo="../main"
-                    actionLabel={__("Back to event", "eventkoi")}
+                    actionLabel={__("Back to event", "eventkoi-lite")}
                   />
                 }
               />
@@ -142,7 +142,7 @@ function AdminLayout() {
                 element={
                   <FeatureDisabled
                     actionTo="../main"
-                    actionLabel={__("Back to event", "eventkoi")}
+                    actionLabel={__("Back to event", "eventkoi-lite")}
                   />
                 }
               />

@@ -263,7 +263,7 @@ export function EventEditSalesHistory() {
     <div className="flex flex-col w-full gap-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-2">
-          <Heading>{__("Sales history", "eventkoi")}</Heading>
+          <Heading>{__("Sales history", "eventkoi-lite")}</Heading>
         </div>
       </div>
 
@@ -272,7 +272,7 @@ export function EventEditSalesHistory() {
         <div className="grid grid-cols-4 grow gap-4">
           <Stat
             className="border-l-0 pl-0"
-            line1={__("Total orders", "eventkoi")}
+            line1={__("Total orders", "eventkoi-lite")}
             line2={
               statsLoading ? (
                 <Skeleton className="h-5 w-16" />
@@ -282,7 +282,7 @@ export function EventEditSalesHistory() {
             }
           />
           <Stat
-            line1={__("Net earnings", "eventkoi")}
+            line1={__("Net earnings", "eventkoi-lite")}
             line2={
               statsLoading ? (
                 <Skeleton className="h-5 w-16" />
@@ -317,7 +317,7 @@ export function EventEditSalesHistory() {
                         side="top"
                         sideOffset={8}
                       >
-                        {__("Net earnings are calculated after platform and Stripe processing fees.", "eventkoi")}
+                        {__("Net earnings are calculated after platform and Stripe processing fees.", "eventkoi-lite")}
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -326,7 +326,7 @@ export function EventEditSalesHistory() {
             }
           />
           <Stat
-            line1={__("Tickets sold", "eventkoi")}
+            line1={__("Tickets sold", "eventkoi-lite")}
             line2={
               statsLoading ? (
                 <Skeleton className="h-5 w-16" />
@@ -336,7 +336,7 @@ export function EventEditSalesHistory() {
             }
           />
           <Stat
-            line1={__("Total refunds", "eventkoi")}
+            line1={__("Total refunds", "eventkoi-lite")}
             line2={
               statsLoading ? (
                 <Skeleton className="h-5 w-16" />
@@ -365,8 +365,8 @@ export function EventEditSalesHistory() {
         columns={columns}
         empty={
           queryStatus === "archived"
-            ? __("No archived orders found.", "eventkoi")
-            : __("No orders found.", "eventkoi")
+            ? __("No archived orders found.", "eventkoi-lite")
+            : __("No orders found.", "eventkoi-lite")
         }
         base={base}
         tableLayout="fixed"
@@ -385,8 +385,8 @@ export function EventEditSalesHistory() {
             <Button variant="outline" disabled={isExporting} onClick={() => exportOrdersCsv(table)}>
               <ArrowDownToLine className="mr-2 h-4 w-4" />
               {isExporting
-                ? __("Exporting...", "eventkoi")
-                : __("Export", "eventkoi")}
+                ? __("Exporting...", "eventkoi-lite")
+                : __("Export", "eventkoi-lite")}
             </Button>
           </div>
         )}

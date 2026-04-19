@@ -70,7 +70,7 @@ class ICS_Importer {
 		$ics_content = $data['content'] ?? '';
 
 		if ( empty( $ics_content ) ) {
-			return new WP_Error( 'no_content', __( 'No ICS content provided.', 'eventkoi' ), array( 'status' => 400 ) );
+			return new WP_Error( 'no_content', __( 'No ICS content provided.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
 		$events = self::parse_ics( $ics_content );
@@ -108,7 +108,7 @@ class ICS_Importer {
 		foreach ( $new_events as $ev ) {
 			$preview[] = array(
 				'uid'        => $ev['uid'] ?? '',
-				'title'      => $ev['summary'] ?? __( 'Untitled Event', 'eventkoi' ),
+				'title'      => $ev['summary'] ?? __( 'Untitled Event', 'eventkoi-lite' ),
 				'start_date' => $ev['dtstart'] ?? '',
 				'end_date'   => $ev['dtend'] ?? '',
 				'all_day'    => $ev['all_day'] ?? false,
@@ -139,14 +139,14 @@ class ICS_Importer {
 		$cache_key = $data['cache_key'] ?? '';
 
 		if ( empty( $cache_key ) ) {
-			return new WP_Error( 'no_cache', __( 'No parsed data found.', 'eventkoi' ), array( 'status' => 400 ) );
+			return new WP_Error( 'no_cache', __( 'No parsed data found.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
 		$events = get_transient( $cache_key );
 		delete_transient( $cache_key );
 
 		if ( empty( $events ) || ! is_array( $events ) ) {
-			return new WP_Error( 'expired', __( 'Parsed data has expired. Please upload the file again.', 'eventkoi' ), array( 'status' => 400 ) );
+			return new WP_Error( 'expired', __( 'Parsed data has expired. Please upload the file again.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
 		$results  = array();
@@ -213,7 +213,7 @@ class ICS_Importer {
 			}
 		}
 
-		$title       = $event['summary'] ?? __( 'Untitled Event', 'eventkoi' );
+		$title       = $event['summary'] ?? __( 'Untitled Event', 'eventkoi-lite' );
 		$description = $event['description'] ?? '';
 		$location    = $event['location'] ?? '';
 		$start       = $event['dtstart'] ?? '';
@@ -224,7 +224,7 @@ class ICS_Importer {
 		$timezone    = $event['timezone'] ?? '';
 
 		if ( empty( $start ) ) {
-			return new WP_Error( 'no_start', __( 'Event has no start date.', 'eventkoi' ) );
+			return new WP_Error( 'no_start', __( 'Event has no start date.', 'eventkoi-lite' ) );
 		}
 
 		// Convert to ISO 8601.
@@ -268,7 +268,7 @@ class ICS_Importer {
 			$locations[] = array(
 				'id'          => wp_generate_uuid4(),
 				'type'        => 'online',
-				'name'        => __( 'Online', 'eventkoi' ),
+				'name'        => __( 'Online', 'eventkoi-lite' ),
 				'address1'    => '',
 				'address2'    => '',
 				'city'        => '',

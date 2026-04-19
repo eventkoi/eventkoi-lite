@@ -33,7 +33,7 @@ export const Controls = (props) => {
     });
   };
 
-  const colors = [{ value: "color", label: __("Accent", "eventkoi") }];
+  const colors = [{ value: "color", label: __("Accent", "eventkoi-lite") }];
 
   const getCalendars = async () => {
     let response = await apiRequest({
@@ -69,10 +69,10 @@ export const Controls = (props) => {
 
   return (
     <>
-      <PanelBody title={__("Display options", "eventkoi")} initialOpen={true}>
+      <PanelBody title={__("Display options", "eventkoi-lite")} initialOpen={true}>
         {items && items.length > 0 && (
           <MultiSelectControl
-            label={__("Select calendar(s)", "eventkoi")}
+            label={__("Select calendar(s)", "eventkoi-lite")}
             value={attributes.calendars || []}
             options={items}
             onChange={(selected) => {
@@ -83,29 +83,29 @@ export const Controls = (props) => {
         )}
       </PanelBody>
       <PanelBody
-        title={__("Show/hide components", "eventkoi")}
+        title={__("Show/hide components", "eventkoi-lite")}
         initialOpen={true}
       >
         <ShowHide
           id="showImage"
-          label={__("Featured image", "eventkoi")}
+          label={__("Featured image", "eventkoi-lite")}
           attributes={attributes}
           setAttributes={setAttributes}
         ></ShowHide>
         <ShowHide
           id="showLocation"
-          label={__("Location", "eventkoi")}
+          label={__("Location", "eventkoi-lite")}
           attributes={attributes}
           setAttributes={setAttributes}
         ></ShowHide>
         <ShowHide
           id="showDescription"
-          label={__("Description", "eventkoi")}
+          label={__("Description", "eventkoi-lite")}
           attributes={attributes}
           setAttributes={setAttributes}
         ></ShowHide>
       </PanelBody>
-      <PanelBody title={__("Design options", "eventkoi")} initialOpen={true}>
+      <PanelBody title={__("Design options", "eventkoi-lite")} initialOpen={true}>
         <Grid>
           <SelectControl
             label="Line style"

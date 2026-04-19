@@ -23,19 +23,19 @@ export function EventDataControls({
       {/* ---------------------------------- */}
       {/* Field Selection Panel */}
       {/* ---------------------------------- */}
-      <PanelBody title={__("Event Data Field", "eventkoi")} initialOpen={true}>
+      <PanelBody title={__("Event Data Field", "eventkoi-lite")} initialOpen={true}>
         <SelectControl
-          label={__("Field", "eventkoi")}
+          label={__("Field", "eventkoi-lite")}
           value={field}
           options={[
-            { label: __("Title", "eventkoi"), value: "title" },
+            { label: __("Title", "eventkoi-lite"), value: "title" },
             {
-              label: __("Excerpt / Description", "eventkoi"),
+              label: __("Excerpt / Description", "eventkoi-lite"),
               value: "excerpt",
             },
-            { label: __("Date and Time", "eventkoi"), value: "timeline" },
-            { label: __("Location", "eventkoi"), value: "location" },
-            { label: __("Image", "eventkoi"), value: "image" },
+            { label: __("Date and Time", "eventkoi-lite"), value: "timeline" },
+            { label: __("Location", "eventkoi-lite"), value: "location" },
+            { label: __("Image", "eventkoi-lite"), value: "image" },
           ]}
           onChange={(val) => setAttributes({ field: val })}
         />
@@ -45,12 +45,12 @@ export function EventDataControls({
       {/* Event Source Panel (hidden when inside Event Query) */}
       {/* ---------------------------------- */}
       {!disableEventSource && (
-        <PanelBody title={__("Event Source", "eventkoi")} initialOpen={true}>
+        <PanelBody title={__("Event Source", "eventkoi-lite")} initialOpen={true}>
           <ComboboxControl
-            label={__("Select Event", "eventkoi")}
+            label={__("Select Event", "eventkoi-lite")}
             help={__(
               "Choose which event to display. If no event is selected, this block will remain empty when used outside a query.",
-              "eventkoi"
+              "eventkoi-lite"
             )}
             value={eventId > 0 ? String(eventId) : ""}
             options={options}
@@ -58,20 +58,20 @@ export function EventDataControls({
               setAttributes({ eventId: parseInt(val, 10) || 0 })
             }
             onFilterValueChange={setSearchValue}
-            placeholder={__("Search events…", "eventkoi")}
+            placeholder={__("Search events…", "eventkoi-lite")}
             isLoading={isLoading || isLoadingEvent}
           />
 
           {isLoadingEvent && (
             <div className="flex items-center gap-2 text-xs opacity-70 mt-1">
               <Spinner />
-              {__("Loading selected event…", "eventkoi")}
+              {__("Loading selected event…", "eventkoi-lite")}
             </div>
           )}
 
           {eventId > 0 && !isLoadingEvent && (
             <p className="text-xs opacity-60 mt-1">
-              {__("Displaying data for the selected event.", "eventkoi")}
+              {__("Displaying data for the selected event.", "eventkoi-lite")}
             </p>
           )}
 
@@ -79,7 +79,7 @@ export function EventDataControls({
             <p className="text-xs opacity-60 mt-1">
               {__(
                 "No specific event selected — will use context if available, or remain empty if used outside an Event Query.",
-                "eventkoi"
+                "eventkoi-lite"
               )}
             </p>
           )}

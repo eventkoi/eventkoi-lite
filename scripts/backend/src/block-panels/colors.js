@@ -56,7 +56,7 @@ export const ColorSettingsPane = props => {
                       }
                     }}
                   >
-                    {__('Clear', 'eventkoi')}
+                    {__('Clear', 'eventkoi-lite')}
                   </Button>
                 }
               </div>

@@ -104,7 +104,7 @@ if ( ! function_exists( 'eventkoi_get_calendar_options' ) ) {
 	 * @return array
 	 */
 	function eventkoi_get_calendar_options() {
-		$options = array( '' => __( 'Select a calendar', 'eventkoi' ) );
+		$options = array( '' => __( 'Select a calendar', 'eventkoi-lite' ) );
 		$terms   = get_terms(
 			array(
 				'taxonomy'   => 'event_cal',
@@ -130,19 +130,19 @@ if ( ! function_exists( 'eventkoi_get_month_options' ) ) {
 	 */
 	function eventkoi_get_month_options() {
 		return array(
-			'current'   => __( 'Current month', 'eventkoi' ),
-			'january'   => __( 'January', 'eventkoi' ),
-			'february'  => __( 'February', 'eventkoi' ),
-			'march'     => __( 'March', 'eventkoi' ),
-			'april'     => __( 'April', 'eventkoi' ),
-			'may'       => __( 'May', 'eventkoi' ),
-			'june'      => __( 'June', 'eventkoi' ),
-			'july'      => __( 'July', 'eventkoi' ),
-			'august'    => __( 'August', 'eventkoi' ),
-			'september' => __( 'September', 'eventkoi' ),
-			'october'   => __( 'October', 'eventkoi' ),
-			'november'  => __( 'November', 'eventkoi' ),
-			'december'  => __( 'December', 'eventkoi' ),
+			'current'   => __( 'Current month', 'eventkoi-lite' ),
+			'january'   => __( 'January', 'eventkoi-lite' ),
+			'february'  => __( 'February', 'eventkoi-lite' ),
+			'march'     => __( 'March', 'eventkoi-lite' ),
+			'april'     => __( 'April', 'eventkoi-lite' ),
+			'may'       => __( 'May', 'eventkoi-lite' ),
+			'june'      => __( 'June', 'eventkoi-lite' ),
+			'july'      => __( 'July', 'eventkoi-lite' ),
+			'august'    => __( 'August', 'eventkoi-lite' ),
+			'september' => __( 'September', 'eventkoi-lite' ),
+			'october'   => __( 'October', 'eventkoi-lite' ),
+			'november'  => __( 'November', 'eventkoi-lite' ),
+			'december'  => __( 'December', 'eventkoi-lite' ),
 		);
 	}
 }
@@ -155,13 +155,13 @@ if ( ! function_exists( 'eventkoi_get_weekday_options' ) ) {
 	 */
 	function eventkoi_get_weekday_options() {
 		return array(
-			'monday'    => __( 'Monday', 'eventkoi' ),
-			'tuesday'   => __( 'Tuesday', 'eventkoi' ),
-			'wednesday' => __( 'Wednesday', 'eventkoi' ),
-			'thursday'  => __( 'Thursday', 'eventkoi' ),
-			'friday'    => __( 'Friday', 'eventkoi' ),
-			'saturday'  => __( 'Saturday', 'eventkoi' ),
-			'sunday'    => __( 'Sunday', 'eventkoi' ),
+			'monday'    => __( 'Monday', 'eventkoi-lite' ),
+			'tuesday'   => __( 'Tuesday', 'eventkoi-lite' ),
+			'wednesday' => __( 'Wednesday', 'eventkoi-lite' ),
+			'thursday'  => __( 'Thursday', 'eventkoi-lite' ),
+			'friday'    => __( 'Friday', 'eventkoi-lite' ),
+			'saturday'  => __( 'Saturday', 'eventkoi-lite' ),
+			'sunday'    => __( 'Sunday', 'eventkoi-lite' ),
 		);
 	}
 }
@@ -314,20 +314,20 @@ if ( ! function_exists( 'eventkoi_get_event_data_options' ) ) {
 	 */
 	function eventkoi_get_event_data_options() {
 		return array(
-			'event_title'                 => __( 'Event Title', 'eventkoi' ),
-			'event_details'               => __( 'Event Details', 'eventkoi' ),
-			'event_timezone'              => __( 'Event Timezone', 'eventkoi' ),
-			'event_gmap'                  => __( 'Event Google Map', 'eventkoi' ),
-			'event_image'                 => __( 'Event Image', 'eventkoi' ),
-			'event_image_url'             => __( 'Event Image URL', 'eventkoi' ),
-			'event_calendar_url'          => __( 'Event Calendar URL', 'eventkoi' ),
-			'event_calendar'              => __( 'Event Calendar', 'eventkoi' ),
-			'event_calendar_link'         => __( 'Event Calendar Link', 'eventkoi' ),
-			'event_location'              => __( 'Event Location', 'eventkoi' ),
-			'event_datetime_with_summary' => __( 'Event Datetime with Summary', 'eventkoi' ),
-			'event_datetime'              => __( 'Event Datetime', 'eventkoi' ),
-			'event_date_type'             => __( 'Event Date Type', 'eventkoi' ),
-			'event_rulesummary'           => __( 'Event Rule Summary', 'eventkoi' ),
+			'event_title'                 => __( 'Event Title', 'eventkoi-lite' ),
+			'event_details'               => __( 'Event Details', 'eventkoi-lite' ),
+			'event_timezone'              => __( 'Event Timezone', 'eventkoi-lite' ),
+			'event_gmap'                  => __( 'Event Google Map', 'eventkoi-lite' ),
+			'event_image'                 => __( 'Event Image', 'eventkoi-lite' ),
+			'event_image_url'             => __( 'Event Image URL', 'eventkoi-lite' ),
+			'event_calendar_url'          => __( 'Event Calendar URL', 'eventkoi-lite' ),
+			'event_calendar'              => __( 'Event Calendar', 'eventkoi-lite' ),
+			'event_calendar_link'         => __( 'Event Calendar Link', 'eventkoi-lite' ),
+			'event_location'              => __( 'Event Location', 'eventkoi-lite' ),
+			'event_datetime_with_summary' => __( 'Event Datetime with Summary', 'eventkoi-lite' ),
+			'event_datetime'              => __( 'Event Datetime', 'eventkoi-lite' ),
+			'event_date_type'             => __( 'Event Date Type', 'eventkoi-lite' ),
+			'event_rulesummary'           => __( 'Event Rule Summary', 'eventkoi-lite' ),
 		);
 	}
 }

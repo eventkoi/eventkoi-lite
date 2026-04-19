@@ -44,15 +44,15 @@ export function SearchBox({
     >
       {/* Hidden accessible label */}
       <label htmlFor="event-search" className="sr-only">
-        {__("Search events", "eventkoi")}
+        {__("Search events", "eventkoi-lite")}
       </label>
 
       <Input
         id="event-search"
         ref={inputRef}
         type="search"
-        placeholder={__("Search events…", "eventkoi")}
-        aria-label={__("Search events", "eventkoi")}
+        placeholder={__("Search events…", "eventkoi-lite")}
+        aria-label={__("Search events", "eventkoi-lite")}
         role="combobox"
         aria-expanded={open}
         aria-controls="event-search-listbox"
@@ -99,12 +99,12 @@ export function SearchBox({
       {/* Live region for loading/empty states */}
       <div className="sr-only" role="status">
         {isLoading
-          ? __("Loading events...", "eventkoi")
+          ? __("Loading events...", "eventkoi-lite")
           : isEmpty
-          ? __("No events found.", "eventkoi")
+          ? __("No events found.", "eventkoi-lite")
           : sprintf(
               /* translators: %d: number of events found */
-              __("%d events found.", "eventkoi"),
+              __("%d events found.", "eventkoi-lite"),
               filteredResults.length
             )}
       </div>
@@ -123,7 +123,7 @@ export function SearchBox({
           >
             {filteredResults.length === 0 ? (
               <CommandEmpty className="p-4 text-muted-foreground text-sm">
-                {__("No events found.", "eventkoi")}
+                {__("No events found.", "eventkoi-lite")}
               </CommandEmpty>
             ) : (
               <>
@@ -174,16 +174,16 @@ export function SearchBox({
                       size="sm"
                       onClick={() => setPage((p) => Math.max(0, p - 1))}
                       disabled={page === 0}
-                      aria-label={__("Previous page", "eventkoi")}
+                      aria-label={__("Previous page", "eventkoi-lite")}
                       aria-disabled={page === 0}
                       className="cursor-pointer box-border border-none text-foreground bg-transparent shadow-none"
                     >
-                      {__("Prev", "eventkoi")}
+                      {__("Prev", "eventkoi-lite")}
                     </Button>
 
                     <span aria-live="polite">
                       {sprintf(
-                        __("Page %1$d of %2$d", "eventkoi"),
+                        __("Page %1$d of %2$d", "eventkoi-lite"),
                         page + 1,
                         totalPages
                       )}
@@ -197,11 +197,11 @@ export function SearchBox({
                         setPage((p) => Math.min(totalPages - 1, p + 1))
                       }
                       disabled={page >= totalPages - 1}
-                      aria-label={__("Next page", "eventkoi")}
+                      aria-label={__("Next page", "eventkoi-lite")}
                       aria-disabled={page >= totalPages - 1}
                       className="cursor-pointer box-border border-none text-foreground bg-transparent shadow-none"
                     >
-                      {__("Next", "eventkoi")}
+                      {__("Next", "eventkoi-lite")}
                     </Button>
                   </div>
                 )}

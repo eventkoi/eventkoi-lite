@@ -13,12 +13,12 @@ export function CustomerInfo({ order }) {
   return (
     <div className="rounded-xl border bg-white p-6">
       <h3 className="text-base font-medium mb-4">
-        {__("Customer", "eventkoi")}
+        {__("Customer", "eventkoi-lite")}
       </h3>
       <div className="space-y-2 text-sm">
         <div className="grid grid-cols-[auto_1fr] gap-2">
           <span className="text-muted-foreground w-32">
-            {__("Name", "eventkoi")}
+            {__("Name", "eventkoi-lite")}
           </span>
           <span className="text-foreground font-medium">
             {displayCustomerName || ""}
@@ -26,7 +26,7 @@ export function CustomerInfo({ order }) {
         </div>
         <div className="grid grid-cols-[auto_1fr] gap-2">
           <span className="text-muted-foreground w-32">
-            {__("Email", "eventkoi")}
+            {__("Email", "eventkoi-lite")}
           </span>
           {order.customer_email && (
             <a
@@ -41,7 +41,7 @@ export function CustomerInfo({ order }) {
         </div>
         <div className="grid grid-cols-[auto_1fr] gap-2">
           <span className="text-muted-foreground w-32">
-            {__("Billing address", "eventkoi")}
+            {__("Billing address", "eventkoi-lite")}
           </span>
           {order.customer_address ? (
             <span className="text-foreground">
@@ -62,7 +62,7 @@ export function CustomerInfo({ order }) {
         </div>
         <div className="grid grid-cols-[auto_1fr] gap-2">
           <span className="text-muted-foreground w-32">
-            {__("WP user", "eventkoi")}
+            {__("WP user", "eventkoi-lite")}
           </span>
           {wpUserId > 0 ? (
             <a

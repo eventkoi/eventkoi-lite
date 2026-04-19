@@ -436,12 +436,12 @@ const withEventKoiQueryControls = createHigherOrderComponent(
               if (tab.name === "settings") {
                 return (
                   <PanelBody
-                    title={__("Query Settings", "eventkoi")}
+                    title={__("Query Settings", "eventkoi-lite")}
                     initialOpen={true}
                   >
                     <div className="eventkoi-settings-wrapper space-y-[16px]">
                       <RangeControl
-                        label={__("Events per page", "eventkoi")}
+                        label={__("Events per page", "eventkoi-lite")}
                         value={currentPerPage}
                         onChange={handlePerPageChange}
                         min={1}
@@ -449,33 +449,33 @@ const withEventKoiQueryControls = createHigherOrderComponent(
                       />
 
                       <SelectControl
-                        label={__("Order by", "eventkoi")}
+                        label={__("Order by", "eventkoi-lite")}
                         value={currentOrderBy}
                         options={[
                           {
-                            label: __("Event start date", "eventkoi"),
+                            label: __("Event start date", "eventkoi-lite"),
                             value: "start_date",
                           },
                           {
-                            label: __("Publish date", "eventkoi"),
+                            label: __("Publish date", "eventkoi-lite"),
                             value: "date",
                           },
                           {
-                            label: __("Last modified", "eventkoi"),
+                            label: __("Last modified", "eventkoi-lite"),
                             value: "modified",
                           },
-                          { label: __("Title", "eventkoi"), value: "title" },
+                          { label: __("Title", "eventkoi-lite"), value: "title" },
                         ]}
                         onChange={handleOrderByChange}
                       />
 
                       <SelectControl
-                        label={__("Order direction", "eventkoi")}
+                        label={__("Order direction", "eventkoi-lite")}
                         value={currentOrder}
                         options={[
-                          { label: __("Ascending", "eventkoi"), value: "asc" },
+                          { label: __("Ascending", "eventkoi-lite"), value: "asc" },
                           {
-                            label: __("Descending", "eventkoi"),
+                            label: __("Descending", "eventkoi-lite"),
                             value: "desc",
                           },
                         ]}
@@ -484,7 +484,7 @@ const withEventKoiQueryControls = createHigherOrderComponent(
 
                       {calendars.length > 0 && (
                         <MultiSelectControl
-                          label={__("Select calendar(s)", "eventkoi")}
+                          label={__("Select calendar(s)", "eventkoi-lite")}
                           value={props.attributes?.calendars || []}
                           options={calendars}
                           onChange={handleCalendarsChange}
@@ -499,10 +499,10 @@ const withEventKoiQueryControls = createHigherOrderComponent(
                       <hr style={{ margin: "8px 0 4px" }} aria-hidden="true" />
 
                       <ToggleControl
-                        label={__("Include recurring instances", "eventkoi")}
+                        label={__("Include recurring instances", "eventkoi-lite")}
                         help={__(
                           "Expand recurring events into individual instances.",
-                          "eventkoi"
+                          "eventkoi-lite"
                         )}
                         checked={!!props.attributes?.includeInstances}
                         onChange={(val) =>
@@ -513,10 +513,10 @@ const withEventKoiQueryControls = createHigherOrderComponent(
                       {props.attributes?.includeInstances && (
                         <>
                           <ToggleControl
-                            label={__("Limit to a specific event", "eventkoi")}
+                            label={__("Limit to a specific event", "eventkoi-lite")}
                             help={__(
                               "Only show instances belonging to one recurring event.",
-                              "eventkoi"
+                              "eventkoi-lite"
                             )}
                             checked={!!props.attributes?.showInstancesForEvent}
                             onChange={(val) =>
@@ -528,10 +528,10 @@ const withEventKoiQueryControls = createHigherOrderComponent(
 
                           {props.attributes?.showInstancesForEvent && (
                             <ComboboxControl
-                              label={__("Select Event", "eventkoi")}
+                              label={__("Select Event", "eventkoi-lite")}
                               help={__(
                                 "Choose the parent event whose instances should be listed.",
-                                "eventkoi"
+                                "eventkoi-lite"
                               )}
                               value={
                                 props.attributes?.instanceParentId > 0
@@ -545,7 +545,7 @@ const withEventKoiQueryControls = createHigherOrderComponent(
                                 })
                               }
                               onFilterValueChange={setSearchValue}
-                              placeholder={__("Search events…", "eventkoi")}
+                              placeholder={__("Search events…", "eventkoi-lite")}
                               isLoading={isLoading}
                             />
                           )}
@@ -559,25 +559,25 @@ const withEventKoiQueryControls = createHigherOrderComponent(
               if (tab.name === "styles") {
                 return (
                   <PanelBody
-                    title={__("Layout & Design", "eventkoi")}
+                    title={__("Layout & Design", "eventkoi-lite")}
                     initialOpen={true}
                   >
                     <div className="eventkoi-settings-wrapper space-y-[16px]">
                       <div className="eventkoi-style-settings">
                         <SegmentedControl
-                          label={__("Layout", "eventkoi")}
+                          label={__("Layout", "eventkoi-lite")}
                           value={currentFormat}
                           onChange={handleDisplayFormatChange}
                           options={[
-                            { label: __("Grid", "eventkoi"), value: "grid" },
-                            { label: __("List", "eventkoi"), value: "list" },
+                            { label: __("Grid", "eventkoi-lite"), value: "grid" },
+                            { label: __("List", "eventkoi-lite"), value: "list" },
                           ]}
                         />
                       </div>
 
                       {currentFormat === "grid" && (
                         <RangeControl
-                          label={__("Columns", "eventkoi")}
+                          label={__("Columns", "eventkoi-lite")}
                           value={currentColumns}
                           onChange={handleColumnsChange}
                           min={1}
@@ -587,20 +587,20 @@ const withEventKoiQueryControls = createHigherOrderComponent(
 
                       {currentFormat === "list" && (
                         <SegmentedControl
-                          label={__("List layout", "eventkoi")}
+                          label={__("List layout", "eventkoi-lite")}
                           value={currentListLayout}
                           onChange={applyListTemplate}
                           options={[
                             {
-                              label: __("Stacked", "eventkoi"),
+                              label: __("Stacked", "eventkoi-lite"),
                               value: "stack",
                             },
                             {
-                              label: __("Image left", "eventkoi"),
+                              label: __("Image left", "eventkoi-lite"),
                               value: "image-left",
                             },
                             {
-                              label: __("Image right", "eventkoi"),
+                              label: __("Image right", "eventkoi-lite"),
                               value: "image-right",
                             },
                           ]}
@@ -611,7 +611,7 @@ const withEventKoiQueryControls = createHigherOrderComponent(
                         <p className="components-base-control__help">
                           {__(
                             "Changing list layouts rebuilds the template and may reset custom styling inside the item.",
-                            "eventkoi"
+                            "eventkoi-lite"
                           )}
                         </p>
                       )}

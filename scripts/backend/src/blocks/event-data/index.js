@@ -14,10 +14,10 @@ import save from "./save";
 
 registerBlockType("eventkoi/event-data", {
   apiVersion: 3,
-  title: __("EK Event Data", "eventkoi"),
+  title: __("EK Event Data", "eventkoi-lite"),
   description: __(
     "Display specific details (title, location, time, etc.) from an event. Can be used alone or inside an Event Query.",
-    "eventkoi"
+    "eventkoi-lite"
   ),
   category: "eventkoi-blocks",
   icon,
@@ -57,13 +57,13 @@ registerBlockType("eventkoi/event-data", {
   // ---------------------------------------------------------------------
   __experimentalLabel: (attributes) => {
     const labels = {
-      title: __("Title", "eventkoi"),
-      excerpt: __("Excerpt / Description", "eventkoi"),
-      timeline: __("Date and Time", "eventkoi"),
-      location: __("Location", "eventkoi"),
-      image: __("Image", "eventkoi"),
+      title: __("Title", "eventkoi-lite"),
+      excerpt: __("Excerpt / Description", "eventkoi-lite"),
+      timeline: __("Date and Time", "eventkoi-lite"),
+      location: __("Location", "eventkoi-lite"),
+      image: __("Image", "eventkoi-lite"),
     };
-    const label = labels[attributes.field] || __("Unknown", "eventkoi");
+    const label = labels[attributes.field] || __("Unknown", "eventkoi-lite");
     return `Event data: ${label}`;
   },
 

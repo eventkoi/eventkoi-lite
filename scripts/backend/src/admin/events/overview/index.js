@@ -199,7 +199,7 @@ export function EventsOverview() {
       }
       setTecDialogOpen(false);
     } catch (err) {
-      showToastError(err?.message ?? __("Import failed.", "eventkoi"));
+      showToastError(err?.message ?? __("Import failed.", "eventkoi-lite"));
       setTecState((s) => ({ ...s, importing: false }));
     }
   };
@@ -221,8 +221,8 @@ export function EventsOverview() {
       if (!parsed?.cache_key || parsed.events_count === 0) {
         showToastError(
           parsed?.skipped > 0
-            ? __("All events already imported.", "eventkoi")
-            : __("No events found in file.", "eventkoi")
+            ? __("All events already imported.", "eventkoi-lite")
+            : __("No events found in file.", "eventkoi-lite")
         );
         setIcsImporting(false);
         e.target.value = "";
@@ -242,7 +242,7 @@ export function EventsOverview() {
         showToastError(`${response.errors} event(s) failed.`);
       }
     } catch {
-      showToastError(__("Import failed.", "eventkoi"));
+      showToastError(__("Import failed.", "eventkoi-lite"));
     }
     setIcsImporting(false);
     e.target.value = "";
@@ -861,19 +861,19 @@ export function EventsOverview() {
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="default" className="gap-2 font-normal">
                 <Download className="h-4 w-4" />
-                {__("Import", "eventkoi")}
+                {__("Import", "eventkoi-lite")}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => setUrlImportOpen(true)}>
-                {__("Import from URL", "eventkoi")}
+                {__("Import from URL", "eventkoi-lite")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => icsFileRef.current?.click()} disabled={icsImporting}>
-                {icsImporting ? __("Importing...", "eventkoi") : __("Import from ICS / iCal file", "eventkoi")}
+                {icsImporting ? __("Importing...", "eventkoi-lite") : __("Import from ICS / iCal file", "eventkoi-lite")}
               </DropdownMenuItem>
               {tecAvailable && (
                 <DropdownMenuItem onClick={() => setTecDialogOpen(true)}>
-                  {__("Import from The Events Calendar", "eventkoi")}
+                  {__("Import from The Events Calendar", "eventkoi-lite")}
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>
@@ -889,11 +889,11 @@ export function EventsOverview() {
                 <div className="flex items-center gap-3 mb-1">
                   <img src={`${eventkoi_params.plugin_url}templates/assets/tec-icon.png`} alt="The Events Calendar" className="h-8 w-8 rounded-lg" />
                   <DialogTitle className="text-base">
-                    {__("Import from The Events Calendar", "eventkoi")}
+                    {__("Import from The Events Calendar", "eventkoi-lite")}
                   </DialogTitle>
                 </div>
                 <DialogDescription className="text-sm leading-relaxed">
-                  {__("This will import the following into EventKoi:", "eventkoi")}
+                  {__("This will import the following into EventKoi:", "eventkoi-lite")}
                 </DialogDescription>
                 <ul className="text-sm text-muted-foreground mt-2 space-y-1.5 pl-1">
                   <li className="flex items-center gap-2">
@@ -902,21 +902,21 @@ export function EventsOverview() {
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="h-1 w-1 rounded-full bg-muted-foreground/50 flex-shrink-0" />
-                    {__("Venues, categories & featured images", "eventkoi")}
+                    {__("Venues, categories & featured images", "eventkoi-lite")}
                   </li>
                 </ul>
                 <p className="text-xs text-muted-foreground/70 mt-3">
-                  {__("Previously imported events will be skipped.", "eventkoi")}
+                  {__("Previously imported events will be skipped.", "eventkoi-lite")}
                 </p>
               </DialogHeader>
               <DialogFooter className="mt-2">
                 <DialogClose asChild>
                   <Button variant="outline" className="cursor-pointer shadow-none border-solid">
-                    {__("Cancel", "eventkoi")}
+                    {__("Cancel", "eventkoi-lite")}
                   </Button>
                 </DialogClose>
                 <Button onClick={importTEC} disabled={tecState.importing} className="gap-1.5 cursor-pointer shadow-none" style={{ border: "1px solid transparent" }}>
-                  {tecState.importing ? <><span className="h-3.5 w-3.5 mr-1.5 animate-spin rounded-full border-2 border-current border-t-transparent" />{__("Importing...", "eventkoi")}</> : <><Download className="h-3.5 w-3.5" />{__("Import", "eventkoi")}</>}
+                  {tecState.importing ? <><span className="h-3.5 w-3.5 mr-1.5 animate-spin rounded-full border-2 border-current border-t-transparent" />{__("Importing...", "eventkoi-lite")}</> : <><Download className="h-3.5 w-3.5" />{__("Import", "eventkoi-lite")}</>}
                 </Button>
               </DialogFooter>
             </DialogContent>

@@ -576,7 +576,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
 
               <div className="flex items-center gap-2">
                 <Switch
-                  aria-label={__("All day", "eventkoi")}
+                  aria-label={__("All day", "eventkoi-lite")}
                   checked={rule.all_day}
                   onCheckedChange={(val) => updateRule(index, "all_day", val)}
                   disabled={tbc}
@@ -590,7 +590,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                 variant="ghost"
                 onClick={() => deleteRule(index)}
                 className="h-7 w-7 ml-auto p-0"
-                aria-label={__("Delete rule", "eventkoi")}
+                aria-label={__("Delete rule", "eventkoi-lite")}
               >
                 <Trash2 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               </Button>
@@ -748,7 +748,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                                   <span
                                     role="button"
                                     tabIndex={0}
-                                    aria-label={sprintf(__("Remove %s", "eventkoi"), MONTHS[i])}
+                                    aria-label={sprintf(__("Remove %s", "eventkoi-lite"), MONTHS[i])}
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       toggleItem(index, "months", i);

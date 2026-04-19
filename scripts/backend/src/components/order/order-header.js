@@ -33,7 +33,7 @@ export function OrderHeader({ loading, setLoading, order, setOrder }) {
 
   const handleResendReceipt = async () => {
     if (!order?.id) {
-      showToastError(__("Cannot resend confirmation for this order.", "eventkoi"));
+      showToastError(__("Cannot resend confirmation for this order.", "eventkoi-lite"));
       return;
     }
 
@@ -45,7 +45,7 @@ export function OrderHeader({ loading, setLoading, order, setOrder }) {
           <div className="flex min-w-0 items-center gap-2">
             <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin shrink-0" />
             <span className="truncate">
-              {__("Sending ticket confirmation...", "eventkoi")}
+              {__("Sending ticket confirmation...", "eventkoi-lite")}
             </span>
           </div>
         </div>
@@ -64,7 +64,7 @@ export function OrderHeader({ loading, setLoading, order, setOrder }) {
       setOrder?.((prev) => prev);
       toast.custom(() => (
         <BaseToast
-          message={__("Ticket confirmation sent.", "eventkoi")}
+          message={__("Ticket confirmation sent.", "eventkoi-lite")}
           variant="default"
         />
       ), {
@@ -74,7 +74,7 @@ export function OrderHeader({ loading, setLoading, order, setOrder }) {
     } catch (error) {
       toast.custom(() => (
         <BaseToast
-          message={__("Failed to resend confirmation.", "eventkoi")}
+          message={__("Failed to resend confirmation.", "eventkoi-lite")}
           variant="default"
         />
       ), {
@@ -86,7 +86,7 @@ export function OrderHeader({ loading, setLoading, order, setOrder }) {
 
   const handleRefund = () => {
     if (!order?.id) {
-      showToastError(__("Cannot open refund flow for this order.", "eventkoi"));
+      showToastError(__("Cannot open refund flow for this order.", "eventkoi-lite"));
       return;
     }
 
@@ -111,17 +111,17 @@ export function OrderHeader({ loading, setLoading, order, setOrder }) {
       });
 
       if (mode === "archive") {
-        showStaticToast(__("Order archived.", "eventkoi"));
+        showStaticToast(__("Order archived.", "eventkoi-lite"));
         navigate("/tickets/orders");
       } else {
         setOrder?.({ ...order, is_archived: false });
-        showStaticToast(__("Order unarchived.", "eventkoi"));
+        showStaticToast(__("Order unarchived.", "eventkoi-lite"));
       }
     } catch (error) {
       showToastError(
         isArchived
-          ? __("Failed to unarchive order.", "eventkoi")
-          : __("Failed to archive order.", "eventkoi")
+          ? __("Failed to unarchive order.", "eventkoi-lite")
+          : __("Failed to archive order.", "eventkoi-lite")
       );
     } finally {
       setLoading?.(false);
@@ -147,13 +147,13 @@ export function OrderHeader({ loading, setLoading, order, setOrder }) {
               className="gap-2 font-normal text-foreground"
               disabled={!order?.id || loading}
             >
-              {__("More actions", "eventkoi")}
+              {__("More actions", "eventkoi-lite")}
               <ChevronDown aria-hidden="true" className="h-4 w-4 opacity-70" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44 z-[100001]">
             <DropdownMenuItem onClick={() => setConfirmArchiveOpen(true)}>
-              {isArchived ? __("Unarchive", "eventkoi") : __("Archive", "eventkoi")}
+              {isArchived ? __("Unarchive", "eventkoi-lite") : __("Archive", "eventkoi-lite")}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -166,7 +166,7 @@ export function OrderHeader({ loading, setLoading, order, setOrder }) {
               onClick={handleResendReceipt}
               disabled={!order?.id || loading}
             >
-              {__("Resend receipt", "eventkoi")}
+              {__("Resend receipt", "eventkoi-lite")}
             </Button>
 
             <Button
@@ -175,7 +175,7 @@ export function OrderHeader({ loading, setLoading, order, setOrder }) {
               onClick={handleRefund}
               disabled={!paymentIntentId || loading}
             >
-              {__("Refund", "eventkoi")}
+              {__("Refund", "eventkoi-lite")}
             </Button>
           </>
         ) : null}
@@ -188,15 +188,15 @@ export function OrderHeader({ loading, setLoading, order, setOrder }) {
         icon="archive"
         title={
           isArchived
-            ? __("Unarchive order?", "eventkoi")
-            : __("Archive order?", "eventkoi")
+            ? __("Unarchive order?", "eventkoi-lite")
+            : __("Archive order?", "eventkoi-lite")
         }
         description={
           isArchived
-            ? __("This will restore this order back to your order lists.", "eventkoi")
-            : __("This order will be hidden from your order lists. Financial records remain unchanged.", "eventkoi")
+            ? __("This will restore this order back to your order lists.", "eventkoi-lite")
+            : __("This order will be hidden from your order lists. Financial records remain unchanged.", "eventkoi-lite")
         }
-        confirmLabel={isArchived ? __("Unarchive", "eventkoi") : __("Archive", "eventkoi")}
+        confirmLabel={isArchived ? __("Unarchive", "eventkoi-lite") : __("Archive", "eventkoi-lite")}
         onConfirm={() => {
           setConfirmArchiveOpen(false);
           handleArchiveToggle();

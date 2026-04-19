@@ -63,16 +63,16 @@ function CheckinWidget({ mountEl }) {
   const [saving, setSaving] = useState(false);
 
   const statusLabels = {
-    going: __("Going", "eventkoi"),
-    maybe: __("Maybe", "eventkoi"),
-    not_going: __("Not going", "eventkoi"),
-    cancelled: __("Cancelled", "eventkoi"),
+    going: __("Going", "eventkoi-lite"),
+    maybe: __("Maybe", "eventkoi-lite"),
+    not_going: __("Not going", "eventkoi-lite"),
+    cancelled: __("Cancelled", "eventkoi-lite"),
   };
 
   const statusOptions = [
-    { value: "going", label: __("Going", "eventkoi") },
-    { value: "maybe", label: __("Maybe", "eventkoi") },
-    { value: "not_going", label: __("Not going", "eventkoi") },
+    { value: "going", label: __("Going", "eventkoi-lite") },
+    { value: "maybe", label: __("Maybe", "eventkoi-lite") },
+    { value: "not_going", label: __("Not going", "eventkoi-lite") },
   ];
 
   const fetchCheckin = async (value) => {
@@ -149,7 +149,7 @@ function CheckinWidget({ mountEl }) {
       ? Intl.DateTimeFormat().resolvedOptions().timeZone
       : "";
   const timezoneLabel = eventkoi_params?.auto_detect_timezone
-    ? localTimezone || __("Local time", "eventkoi")
+    ? localTimezone || __("Local time", "eventkoi-lite")
     : eventkoi_params?.timezone_string?.trim() ||
       eventkoi_params?.timezone ||
       "UTC";
@@ -211,7 +211,7 @@ function CheckinWidget({ mountEl }) {
         .map((part) => part[0])
         .join("")
         .toUpperCase()
-    : __("?", "eventkoi");
+    : __("?", "eventkoi-lite");
 
   useEffect(() => {
     if (!data?.rsvp) return;
@@ -226,7 +226,7 @@ function CheckinWidget({ mountEl }) {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     if (!eventId || !instanceTs) {
-      setEditError(__("Unable to update RSVP.", "eventkoi"));
+      setEditError(__("Unable to update RSVP.", "eventkoi-lite"));
       return;
     }
 
@@ -277,19 +277,19 @@ function CheckinWidget({ mountEl }) {
         <div className="flex w-full flex-col sm:flex-row">
           <Input
             id="eventkoi-checkin-code"
-            aria-label={__("Check-in code", "eventkoi")}
+            aria-label={__("Check-in code", "eventkoi-lite")}
             aria-describedby={error ? "eventkoi-checkin-error" : undefined}
             aria-invalid={!!error}
             value={token}
             onChange={(e) => setToken(e.target.value)}
-            placeholder={__("Enter your code", "eventkoi")}
+            placeholder={__("Enter your code", "eventkoi-lite")}
             className="sm:rounded-r-none focus-visible:z-10"
           />
           <Button
             type="submit"
             className="relative z-0 font-semibold sm:rounded-l-none sm:border-l-0"
           >
-            {__("View RSVP", "eventkoi")}
+            {__("View RSVP", "eventkoi-lite")}
           </Button>
         </div>
       </form>
@@ -375,7 +375,7 @@ function CheckinWidget({ mountEl }) {
                 <Users className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
                 {sprintf(
                   /* translators: %d: guest count */
-                  __("Guests: %d", "eventkoi"),
+                  __("Guests: %d", "eventkoi-lite"),
                   guests,
                 )}
               </div>
@@ -395,7 +395,7 @@ function CheckinWidget({ mountEl }) {
                           variant="ghost"
                           className="h-8 w-8 p-0 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
                           onClick={handleCopy}
-                          aria-label={__("Copy check-in code", "eventkoi")}
+                          aria-label={__("Copy check-in code", "eventkoi-lite")}
                         >
                           {copied ? (
                             <CheckCheck className="h-4 w-4" />
@@ -408,7 +408,7 @@ function CheckinWidget({ mountEl }) {
                         side="right"
                         className="text-xs px-2 py-1"
                       >
-                        {__("Copy", "eventkoi")}
+                        {__("Copy", "eventkoi-lite")}
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -427,7 +427,7 @@ function CheckinWidget({ mountEl }) {
                       disabled={saving || isFull}
                       variant={saving || isFull ? "secondary" : "outline"}
                     >
-                      {__("Edit RSVP", "eventkoi")}
+                      {__("Edit RSVP", "eventkoi-lite")}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="eventkoi-front">
@@ -436,13 +436,13 @@ function CheckinWidget({ mountEl }) {
                         {eventTitle
                           ? sprintf(
                               /* translators: %s: event title */
-                              __("RSVP for %s", "eventkoi"),
+                              __("RSVP for %s", "eventkoi-lite"),
                               eventTitle,
                             )
-                          : __("RSVP", "eventkoi")}
+                          : __("RSVP", "eventkoi-lite")}
                       </DialogTitle>
                       <DialogDescription>
-                        {__("Let us know you're coming.", "eventkoi")}
+                        {__("Let us know you're coming.", "eventkoi-lite")}
                       </DialogDescription>
                     </DialogHeader>
 
@@ -455,7 +455,7 @@ function CheckinWidget({ mountEl }) {
 
                       <div className="grid gap-2">
                         <Label htmlFor="eventkoi-checkin-name">
-                          {__("Name", "eventkoi")}
+                          {__("Name", "eventkoi-lite")}
                         </Label>
                         <Input
                           id="eventkoi-checkin-name"
@@ -467,7 +467,7 @@ function CheckinWidget({ mountEl }) {
 
                       <div className="grid gap-2">
                         <Label htmlFor="eventkoi-checkin-email">
-                          {__("Email", "eventkoi")}
+                          {__("Email", "eventkoi-lite")}
                         </Label>
                         <Input
                           id="eventkoi-checkin-email"
@@ -479,7 +479,7 @@ function CheckinWidget({ mountEl }) {
                       </div>
 
                       <div className="grid gap-2">
-                        <Label>{__("Status", "eventkoi")}</Label>
+                        <Label>{__("Status", "eventkoi-lite")}</Label>
                         <RadioGroup
                           value={editStatus}
                           onValueChange={setEditStatus}
@@ -502,7 +502,7 @@ function CheckinWidget({ mountEl }) {
                       {allowGuests && editStatus === "going" && (
                         <div className="grid gap-2">
                           <Label htmlFor="eventkoi-checkin-guests">
-                            {__("Guests", "eventkoi")}
+                            {__("Guests", "eventkoi-lite")}
                           </Label>
                           <Input
                             id="eventkoi-checkin-guests"
@@ -518,7 +518,7 @@ function CheckinWidget({ mountEl }) {
                               typeof maxGuestsAllowed === "number"
                                 ? sprintf(
                                     /* translators: %d: maximum guests */
-                                    __("Max %d", "eventkoi"),
+                                    __("Max %d", "eventkoi-lite"),
                                     maxGuestsAllowed,
                                   )
                                 : undefined
@@ -545,8 +545,8 @@ function CheckinWidget({ mountEl }) {
                               {sprintf(
                                 /* translators: %d: maximum guests */
                                 maxGuestsAllowed === 1
-                                  ? __("Max %d guest", "eventkoi")
-                                  : __("Max %d guests", "eventkoi"),
+                                  ? __("Max %d guest", "eventkoi-lite")
+                                  : __("Max %d guests", "eventkoi-lite"),
                                 maxGuestsAllowed,
                               )}
                             </div>
@@ -557,15 +557,15 @@ function CheckinWidget({ mountEl }) {
                       <div className="flex flex-wrap items-center gap-3 pt-2">
                         <Button type="submit" disabled={saving}>
                           {saving
-                            ? __("Submitting...", "eventkoi")
-                            : __("Submit RSVP", "eventkoi")}
+                            ? __("Submitting...", "eventkoi-lite")
+                            : __("Submit RSVP", "eventkoi-lite")}
                         </Button>
                         <Button
                           type="button"
                           variant="link"
                           onClick={() => setEditOpen(false)}
                         >
-                          {__("Cancel", "eventkoi")}
+                          {__("Cancel", "eventkoi-lite")}
                         </Button>
                       </div>
                     </form>
@@ -609,10 +609,10 @@ function QrCheckinOverlay({ payload }) {
   const iconClassName = isSuccess ? "text-primary" : "text-destructive";
   const statusCode = Number(currentPayload?.status || payload?.status || 0);
   const descriptionText = isSuccess
-    ? __("Review the attendance count before closing this screen.", "eventkoi")
+    ? __("Review the attendance count before closing this screen.", "eventkoi-lite")
     : statusCode === 403
-      ? __("Check-in is restricted to staff.", "eventkoi")
-      : __("Please check the code and try again.", "eventkoi");
+      ? __("Check-in is restricted to staff.", "eventkoi-lite")
+      : __("Please check the code and try again.", "eventkoi-lite");
 
   const handleCountSubmit = async (event) => {
     event.preventDefault();
@@ -657,7 +657,7 @@ function QrCheckinOverlay({ payload }) {
             </div>
             <div className="space-y-1">
               <AlertDialogTitle className="text-xl font-semibold text-foreground">
-                {currentPayload?.message || __("Check-in complete.", "eventkoi")}
+                {currentPayload?.message || __("Check-in complete.", "eventkoi-lite")}
               </AlertDialogTitle>
               <AlertDialogDescription className="text-sm text-muted-foreground">
                 {descriptionText}
@@ -671,12 +671,12 @@ function QrCheckinOverlay({ payload }) {
                 onSubmit={handleCountSubmit}
               >
                 <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>{__("Checked-in count", "eventkoi")}</span>
+                  <span>{__("Checked-in count", "eventkoi-lite")}</span>
                   {maxValue > 0 && (
                     <span>
                       {sprintf(
                         /* translators: %d: maximum count */
-                        __("Max %d", "eventkoi"),
+                        __("Max %d", "eventkoi-lite"),
                         maxValue,
                       )}
                     </span>
@@ -691,7 +691,7 @@ function QrCheckinOverlay({ payload }) {
                     value={count}
                     onChange={(event) => setCount(event.target.value)}
                     className="h-10 w-24 text-center tabular-nums"
-                    aria-label={__("Checked-in count", "eventkoi")}
+                    aria-label={__("Checked-in count", "eventkoi-lite")}
                   />
                   <Button
                     type="submit"
@@ -699,8 +699,8 @@ function QrCheckinOverlay({ payload }) {
                     disabled={submitting || Number(count) === 0}
                   >
                     {submitting
-                      ? __("Updating...", "eventkoi")
-                      : __("Update count", "eventkoi")}
+                      ? __("Updating...", "eventkoi-lite")
+                      : __("Update count", "eventkoi-lite")}
                   </Button>
                 </div>
               </form>
@@ -708,7 +708,7 @@ function QrCheckinOverlay({ payload }) {
 
             {showUpdated && (
               <div className="text-xs text-muted-foreground">
-                {__("Count updated.", "eventkoi")}
+                {__("Count updated.", "eventkoi-lite")}
               </div>
             )}
           </div>

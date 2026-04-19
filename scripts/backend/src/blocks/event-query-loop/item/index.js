@@ -161,10 +161,10 @@ const useEventData = (postId, postType, prefetchedEvent = null) => {
 
 registerBlockType("eventkoi/event-query-item", {
   apiVersion: 3,
-  title: __("EK Event Query Item", "eventkoi"),
+  title: __("EK Event Query Item", "eventkoi-lite"),
   description: __(
     "Provides EventKoi event context inside Query Loop rows.",
-    "eventkoi"
+    "eventkoi-lite"
   ),
   category: "eventkoi-blocks",
   parent: ["core/post-template"],
@@ -189,7 +189,7 @@ registerBlockType("eventkoi/event-query-item", {
       return (
         <div {...blockProps}>
           <p className="text-muted-foreground text-sm">
-            {__("This block must be placed inside a Query Loop.", "eventkoi")}
+            {__("This block must be placed inside a Query Loop.", "eventkoi-lite")}
           </p>
         </div>
       );

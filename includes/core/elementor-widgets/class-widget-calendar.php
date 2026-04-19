@@ -29,7 +29,7 @@ class Calendar_Widget extends Widget_Base {
 	 * Widget label shown in Elementor.
 	 */
 	public function get_title() {
-		return __( 'EventKoi Calendar', 'eventkoi' );
+		return __( 'EventKoi Calendar', 'eventkoi-lite' );
 	}
 
 	/**
@@ -73,37 +73,37 @@ class Calendar_Widget extends Widget_Base {
 		$this->start_controls_section(
 			'section_display',
 			array(
-				'label' => __( 'Calendar Options', 'eventkoi' ),
+				'label' => __( 'Calendar Options', 'eventkoi-lite' ),
 			)
 		);
 
 		$this->add_control(
 			'calendars',
 			array(
-				'label'       => __( 'Select Calendar', 'eventkoi' ),
+				'label'       => __( 'Select Calendar', 'eventkoi-lite' ),
 				'type'        => Controls_Manager::SELECT2,
 				'options'     => $this->get_calendar_options(),
 				'multiple'    => false,
 				'label_block' => true,
 				'default'     => array(),
-				'description' => __( 'Leave empty to use the default calendar.', 'eventkoi' ),
+				'description' => __( 'Leave empty to use the default calendar.', 'eventkoi-lite' ),
 			)
 		);
 
 		$this->add_control(
 			'timeframe',
 			array(
-				'label'   => __( 'Timeframe defaults to', 'eventkoi' ),
+				'label'   => __( 'Timeframe defaults to', 'eventkoi-lite' ),
 				'type'    => Controls_Manager::CHOOSE,
 				'default' => 'month',
 				'toggle'  => true,
 				'options' => array(
 					'month' => array(
-						'title' => __( 'Month', 'eventkoi' ),
+						'title' => __( 'Month', 'eventkoi-lite' ),
 						'icon'  => 'eicon-calendar',
 					),
 					'week'  => array(
-						'title' => __( 'Week', 'eventkoi' ),
+						'title' => __( 'Week', 'eventkoi-lite' ),
 						'icon'  => 'eicon-calendar',
 					),
 				),
@@ -113,29 +113,29 @@ class Calendar_Widget extends Widget_Base {
 		$this->add_control(
 			'default_month',
 			array(
-				'label'       => __( 'Default month to display', 'eventkoi' ),
+				'label'       => __( 'Default month to display', 'eventkoi-lite' ),
 				'type'        => Controls_Manager::SELECT,
 				'default'     => 'current',
 				'options'     => $this->get_month_options(),
-				'description' => __( 'Choose a fixed month or use the current month.', 'eventkoi' ),
+				'description' => __( 'Choose a fixed month or use the current month.', 'eventkoi-lite' ),
 			)
 		);
 
 		$this->add_control(
 			'default_year',
 			array(
-				'label'       => __( 'Default year to display', 'eventkoi' ),
+				'label'       => __( 'Default year to display', 'eventkoi-lite' ),
 				'type'        => Controls_Manager::NUMBER,
 				'default'     => '',
 				'placeholder' => wp_date( 'Y' ),
-				'description' => __( 'Leave empty to follow the current year or enter a four-digit year (e.g. 2025).', 'eventkoi' ),
+				'description' => __( 'Leave empty to follow the current year or enter a four-digit year (e.g. 2025).', 'eventkoi-lite' ),
 			)
 		);
 
 		$this->add_control(
 			'week_starts_on',
 			array(
-				'label'   => __( 'Week starts on', 'eventkoi' ),
+				'label'   => __( 'Week starts on', 'eventkoi-lite' ),
 				'type'    => Controls_Manager::SELECT,
 				'default' => 'monday',
 				'options' => $this->get_weekday_options(),
@@ -147,7 +147,7 @@ class Calendar_Widget extends Widget_Base {
 		$this->start_controls_section(
 			'style_section',
 			array(
-				'label' => __( 'Day\'s Labels', 'eventkoi' ),
+				'label' => __( 'Day\'s Labels', 'eventkoi-lite' ),
 				'tab'   => Controls_Manager::TAB_STYLE,
 			)
 		);
@@ -155,7 +155,7 @@ class Calendar_Widget extends Widget_Base {
 		$this->add_group_control(
 			\Elementor\Group_Control_Typography::get_type(),
 			array(
-				'label'    => __( 'Typography', 'eventkoi' ),
+				'label'    => __( 'Typography', 'eventkoi-lite' ),
 				'name'     => 'table_header_label',
 				'selector' => '{{WRAPPER}} table.fc-scrollgrid .fc-col-header-cell span',
 			)
@@ -168,14 +168,14 @@ class Calendar_Widget extends Widget_Base {
 		$this->start_controls_tab(
 			'table_header_label_normal_tab',
 			array(
-				'label' => __( 'Normal', 'eventkoi' ),
+				'label' => __( 'Normal', 'eventkoi-lite' ),
 			)
 		);
 
 		$this->add_control(
 			'table_header_label_color',
 			array(
-				'label'     => __( 'Color', 'eventkoi' ),
+				'label'     => __( 'Color', 'eventkoi-lite' ),
 				'type'      => Controls_Manager::COLOR,
 				'selectors' => array(
 					'{{WRAPPER}} table.fc-scrollgrid .fc-col-header-cell span' => 'color: {{VALUE}};',
@@ -186,7 +186,7 @@ class Calendar_Widget extends Widget_Base {
 		$this->add_control(
 			'table_header_label_bg_color',
 			array(
-				'label'     => __( 'Background Color', 'eventkoi' ),
+				'label'     => __( 'Background Color', 'eventkoi-lite' ),
 				'type'      => Controls_Manager::COLOR,
 				'selectors' => array(
 					'{{WRAPPER}} table.fc-scrollgrid .fc-col-header-cell' => 'background-color: {{VALUE}};',
@@ -199,14 +199,14 @@ class Calendar_Widget extends Widget_Base {
 		$this->start_controls_tab(
 			'table_header_label_hover_tab',
 			array(
-				'label' => __( 'Hover', 'eventkoi' ),
+				'label' => __( 'Hover', 'eventkoi-lite' ),
 			)
 		);
 
 		$this->add_control(
 			'table_header_label_hover_color',
 			array(
-				'label'     => __( 'Color', 'eventkoi' ),
+				'label'     => __( 'Color', 'eventkoi-lite' ),
 				'type'      => Controls_Manager::COLOR,
 				'selectors' => array(
 					'{{WRAPPER}} table.fc-scrollgrid .fc-col-header-cell:hover span' => 'color: {{VALUE}};',
@@ -217,7 +217,7 @@ class Calendar_Widget extends Widget_Base {
 		$this->add_control(
 			'table_header_label_hover_bg_color',
 			array(
-				'label'     => __( 'Background Color', 'eventkoi' ),
+				'label'     => __( 'Background Color', 'eventkoi-lite' ),
 				'type'      => Controls_Manager::COLOR,
 				'selectors' => array(
 					'{{WRAPPER}} table.fc-scrollgrid .fc-col-header-cell:hover' => 'background-color: {{VALUE}};',
@@ -286,19 +286,19 @@ class Calendar_Widget extends Widget_Base {
 	 */
 	private function get_month_options() {
 		return array(
-			'current'   => __( 'Current month', 'eventkoi' ),
-			'january'   => __( 'January', 'eventkoi' ),
-			'february'  => __( 'February', 'eventkoi' ),
-			'march'     => __( 'March', 'eventkoi' ),
-			'april'     => __( 'April', 'eventkoi' ),
-			'may'       => __( 'May', 'eventkoi' ),
-			'june'      => __( 'June', 'eventkoi' ),
-			'july'      => __( 'July', 'eventkoi' ),
-			'august'    => __( 'August', 'eventkoi' ),
-			'september' => __( 'September', 'eventkoi' ),
-			'october'   => __( 'October', 'eventkoi' ),
-			'november'  => __( 'November', 'eventkoi' ),
-			'december'  => __( 'December', 'eventkoi' ),
+			'current'   => __( 'Current month', 'eventkoi-lite' ),
+			'january'   => __( 'January', 'eventkoi-lite' ),
+			'february'  => __( 'February', 'eventkoi-lite' ),
+			'march'     => __( 'March', 'eventkoi-lite' ),
+			'april'     => __( 'April', 'eventkoi-lite' ),
+			'may'       => __( 'May', 'eventkoi-lite' ),
+			'june'      => __( 'June', 'eventkoi-lite' ),
+			'july'      => __( 'July', 'eventkoi-lite' ),
+			'august'    => __( 'August', 'eventkoi-lite' ),
+			'september' => __( 'September', 'eventkoi-lite' ),
+			'october'   => __( 'October', 'eventkoi-lite' ),
+			'november'  => __( 'November', 'eventkoi-lite' ),
+			'december'  => __( 'December', 'eventkoi-lite' ),
 		);
 	}
 
@@ -309,13 +309,13 @@ class Calendar_Widget extends Widget_Base {
 	 */
 	private function get_weekday_options() {
 		return array(
-			'monday'    => __( 'Monday', 'eventkoi' ),
-			'tuesday'   => __( 'Tuesday', 'eventkoi' ),
-			'wednesday' => __( 'Wednesday', 'eventkoi' ),
-			'thursday'  => __( 'Thursday', 'eventkoi' ),
-			'friday'    => __( 'Friday', 'eventkoi' ),
-			'saturday'  => __( 'Saturday', 'eventkoi' ),
-			'sunday'    => __( 'Sunday', 'eventkoi' ),
+			'monday'    => __( 'Monday', 'eventkoi-lite' ),
+			'tuesday'   => __( 'Tuesday', 'eventkoi-lite' ),
+			'wednesday' => __( 'Wednesday', 'eventkoi-lite' ),
+			'thursday'  => __( 'Thursday', 'eventkoi-lite' ),
+			'friday'    => __( 'Friday', 'eventkoi-lite' ),
+			'saturday'  => __( 'Saturday', 'eventkoi-lite' ),
+			'sunday'    => __( 'Sunday', 'eventkoi-lite' ),
 		);
 	}
 

@@ -495,13 +495,13 @@ export function CalendarsOverview() {
           </span>
           <div className="text-[14px] font-semibold text-[#0D5342] leading-tight">
             <span className="block">
-              {__("EventKoi Plugin Tour Completed!", "eventkoi")}
+              {__("EventKoi Plugin Tour Completed!", "eventkoi-lite")}
             </span>
           </div>
           <button
             type="button"
             className="ml-auto p-0 text-[#555] hover:text-black transition-colors leading-none -mt-1"
-            aria-label={__("Close", "eventkoi")}
+            aria-label={__("Close", "eventkoi-lite")}
             style={{
               background: "transparent",
               border: "none",
@@ -519,7 +519,7 @@ export function CalendarsOverview() {
         <div className="p-4 border border-solid border-border bg-white rounded-b-lg flex flex-col gap-4">
           <div className="flex flex-col gap-4">
             <div className="text-[14px] text-[#161616] font-medium text-center w-full">
-              {__("What you can do next:", "eventkoi")}
+              {__("What you can do next:", "eventkoi-lite")}
             </div>
             <Button
               asChild
@@ -534,7 +534,7 @@ export function CalendarsOverview() {
                   "/wp-admin/admin.php?page=eventkoi"
                 }#/dashboard`}
               >
-                {__("Go to EventKoi Dashboard", "eventkoi")}
+                {__("Go to EventKoi Dashboard", "eventkoi-lite")}
               </a>
             </Button>
             <Button
@@ -549,7 +549,7 @@ export function CalendarsOverview() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {__("Learn how to customize an Event Template", "eventkoi")}
+                {__("Learn how to customize an Event Template", "eventkoi-lite")}
               </a>
             </Button>
           </div>
@@ -557,7 +557,7 @@ export function CalendarsOverview() {
           <p className="text-[12px] text-[#555] m-0">
             {__(
               "You can restart this Tour any time in the EventKoi Dashboard.",
-              "eventkoi"
+              "eventkoi-lite"
             )}
           </p>
         </div>

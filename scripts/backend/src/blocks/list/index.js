@@ -8,13 +8,13 @@ import save from "./save";
 
 registerBlockType("eventkoi/list", {
   apiVersion: 3,
-  title: __("EK Events List", "eventkoi"),
+  title: __("EK Events List", "eventkoi-lite"),
   category: "eventkoi-blocks",
   icon: icon,
   example: {
     attributes: {},
   },
-  description: __("Add an EventKoi list of events.", "eventkoi"),
+  description: __("Add an EventKoi list of events.", "eventkoi-lite"),
   keywords: ["eventkoi", "events"],
   attributes: attributes,
   supports: {
