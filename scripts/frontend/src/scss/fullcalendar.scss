@@ -26,9 +26,8 @@
     color: inherit;
     font-weight: inherit;
   }
-  // Collapse week-view borders that would otherwise stack with neighbours.
+  // Week view: drop redundant cell borders that stack with neighbours.
   &.fc .fc-timegrid-axis.fc-scrollgrid-shrink {
-    border-left: 0;
     border-bottom: 0;
   }
   &.fc .fc-scrollgrid-section-liquid > td {
