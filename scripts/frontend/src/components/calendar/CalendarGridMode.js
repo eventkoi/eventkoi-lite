@@ -102,7 +102,11 @@ export function CalendarGridMode({
 
   const formatSlotLabel = (date) => {
     if (timeFormat === "24") {
-      return null;
+      return formatInCalendarTz(date, {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
     }
 
     const formatted = formatInCalendarTz(date, {
