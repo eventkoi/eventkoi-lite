@@ -2311,6 +2311,82 @@ class Event {
 	}
 
 	/**
+	 * Rendered event date (date only — no times, regardless of all_day).
+	 *
+	 * Use as the `event_date` dynamic token / block binding when you only want
+	 * the date portion of the event's first instance.
+	 *
+	 * @return string
+	 */
+	public static function rendered_date() {
+		$first = self::get_first_instance();
+
+		$start_ts = ! empty( $first['start_date'] ) ? strtotime( $first['start_date'] ) : null;
+		$end_ts   = ! empty( $first['end_date'] ) ? strtotime( $first['end_date'] ) : null;
+
+		if ( ! $start_ts ) {
+			return '';
+		}
+
+		if ( $end_ts && $end_ts < $start_ts ) {
+			$end_ts = null;
+		}
+
+		// Force all-day format: date(s) only, no times.
+		$output = eventkoi_format_datetime_range( $start_ts, $end_ts, true );
+
+		return apply_filters(
+			'eventkoi_rendered_event_date',
+			$output,
+			self::$event_id,
+			self::$event
+		);
+	}
+
+	/**
+	 * Rendered event time (time only — start, or start – end if same day).
+	 *
+	 * Returns an empty string for all-day events.
+	 *
+	 * @return string
+	 */
+	public static function rendered_time() {
+		$first = self::get_first_instance();
+
+		if ( ! empty( $first['all_day'] ) ) {
+			return apply_filters( 'eventkoi_rendered_event_time', '', self::$event_id, self::$event );
+		}
+
+		$start_ts = ! empty( $first['start_date'] ) ? strtotime( $first['start_date'] ) : null;
+		$end_ts   = ! empty( $first['end_date'] ) ? strtotime( $first['end_date'] ) : null;
+
+		if ( ! $start_ts ) {
+			return apply_filters( 'eventkoi_rendered_event_time', '', self::$event_id, self::$event );
+		}
+
+		if ( $end_ts && $end_ts < $start_ts ) {
+			$end_ts = null;
+		}
+
+		$time_format = eventkoi_apply_time_preference( get_option( 'time_format', 'g:i a' ) );
+		$start_str   = wp_date( $time_format, $start_ts );
+
+		$same_day = $end_ts && wp_date( 'Y-m-d', $start_ts ) === wp_date( 'Y-m-d', $end_ts );
+		if ( $end_ts && $same_day ) {
+			$output = $start_str . ' — ' . wp_date( $time_format, $end_ts );
+		} else {
+			$output = $start_str;
+		}
+
+		return apply_filters(
+			'eventkoi_rendered_event_time',
+			$output,
+			self::$event_id,
+			self::$event
+		);
+	}
+
+	/**
 	 * Rendered event datetime (start-end formatted, respects all_day).
 	 *
 	 * @return string
