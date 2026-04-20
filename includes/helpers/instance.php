@@ -326,6 +326,8 @@ if ( ! function_exists( 'eventkoi_get_event_data_options' ) ) {
 			'event_location'              => __( 'Event Location', 'eventkoi-lite' ),
 			'event_datetime_with_summary' => __( 'Event Datetime with Summary', 'eventkoi-lite' ),
 			'event_datetime'              => __( 'Event Datetime', 'eventkoi-lite' ),
+			'event_date'                  => __( 'Event Date', 'eventkoi-lite' ),
+			'event_time'                  => __( 'Event Time', 'eventkoi-lite' ),
 			'event_date_type'             => __( 'Event Date Type', 'eventkoi-lite' ),
 			'event_rulesummary'           => __( 'Event Rule Summary', 'eventkoi-lite' ),
 		);

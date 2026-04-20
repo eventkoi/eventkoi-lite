@@ -56,6 +56,8 @@ class ET_Builder_Module_EventkoiEvent extends ET_Builder_Module {
 					'event_details'               => esc_html__( 'Details', 'eventkoi-lite' ),
 					'event_image'                 => esc_html__( 'Image', 'eventkoi-lite' ),
 					'event_datetime'              => esc_html__( 'Date & time', 'eventkoi-lite' ),
+					'event_date'                  => esc_html__( 'Date only', 'eventkoi-lite' ),
+					'event_time'                  => esc_html__( 'Time only', 'eventkoi-lite' ),
 					'event_datetime_with_summary' => esc_html__( 'Date, time & recurring summary', 'eventkoi-lite' ),
 					'event_location'              => esc_html__( 'Location', 'eventkoi-lite' ),
 					'event_gmap'                  => esc_html__( 'Google map', 'eventkoi-lite' ),
