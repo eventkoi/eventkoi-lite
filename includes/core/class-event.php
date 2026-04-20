@@ -1365,7 +1365,15 @@ class Event {
 		}
 
 		if ( in_array( $date_type, array( 'standard', 'multi' ), true ) ) {
-			if ( $is_same && ! $all_day ) {
+			if ( $all_day ) {
+				if ( ! $end || $is_same ) {
+					return $fmt( $start, 'date' );
+				}
+
+				return sprintf( '%s – %s', $fmt( $start, 'date' ), $fmt( $end, 'date' ) );
+			}
+
+			if ( $is_same && $end ) {
 				return sprintf(
 					'%s, %s – %s',
 					$fmt( $start, 'date' ),
@@ -1375,10 +1383,6 @@ class Event {
 			}
 
 			if ( ! $end ) {
-				if ( $all_day ) {
-					return $fmt( $start, 'date' );
-				}
-
 				return sprintf( '%s, %s', $fmt( $start, 'date' ), $fmt( $start, 'time' ) );
 			}
 
@@ -2228,13 +2232,7 @@ class Event {
 				$end_ts     = $duration ? ( $instance_ts + $duration ) : null;
 				$is_all_day = ! empty( $rule['all_day'] );
 
-				// Render using WP timezone.
-				if ( $is_all_day ) {
-					$line = eventkoi_date( 'M j, Y', $instance_ts );
-				} else {
-					$start_str = eventkoi_date( 'M j, Y, g:ia', $instance_ts );
-					$line      = $end_ts ? $start_str . ' - ' . eventkoi_date( 'g:ia', $end_ts ) : $start_str;
-				}
+				$line = eventkoi_format_datetime_range( $instance_ts, $end_ts, $is_all_day );
 
 				$summary = self::render_rule_summary_single( $rule, $instance_ts );
 				if ( ! empty( $summary ) ) {
@@ -2268,20 +2266,20 @@ class Event {
 
 			$start_ts   = $start_date ? strtotime( $start_date ) : null;
 			$end_ts     = $end_date ? strtotime( $end_date ) : null;
-			$is_all_day = false;
+			// Authoritative source: event_days[0].all_day. Fall back to legacy top-level
+			// meta only when the day item has no explicit flag (undefined, not just false).
+			$days       = self::get_event_days();
+			$first_day  = ! empty( $days ) && is_array( $days ) ? $days[0] : array();
+			$is_all_day = array_key_exists( 'all_day', (array) $first_day )
+				? (bool) $first_day['all_day']
+				: (bool) get_post_meta( self::$event_id, 'all_day', true );
 
 			if ( $start_ts ) {
-				if ( $is_all_day ) {
-					$line = eventkoi_date( 'M j, Y', $start_ts ) . ( $end_ts ? ' — ' . eventkoi_date( 'M j, Y', $end_ts ) : '' );
-				} else {
-					$start_str = eventkoi_date( 'M j, Y, g:ia', $start_ts );
-					$line      = $end_ts ? $start_str . ' — ' . eventkoi_date( 'M j, Y, g:ia', $end_ts ) : $start_str;
-				}
-
+				$line      = eventkoi_format_datetime_range( $start_ts, $end_ts, $is_all_day );
 				$outputs[] = self::wrap_datetime_with_data( $line, $start_ts, $end_ts, $event_tz, $is_all_day );
 			}
 		} else {
-			// Existing per-day rendering.
+			// Per-day / per-rule rendering.
 			foreach ( $data as $item ) {
 				if ( empty( $item['start_date'] ) ) {
 					continue;
@@ -2291,12 +2289,7 @@ class Event {
 				$end_ts     = ! empty( $item['end_date'] ) ? strtotime( $item['end_date'] ) : null;
 				$is_all_day = ! empty( $item['all_day'] );
 
-				if ( $is_all_day ) {
-					$line = eventkoi_date( 'M j, Y', $start_ts );
-				} else {
-					$start_str = eventkoi_date( 'M j, Y, g:ia', $start_ts );
-					$line      = $end_ts ? $start_str . ' - ' . eventkoi_date( 'g:ia', $end_ts ) : $start_str;
-				}
+				$line = eventkoi_format_datetime_range( $start_ts, $end_ts, $is_all_day );
 
 				if ( 'recurring' === $type ) {
 					$summary = self::render_rule_summary_single( $item );
@@ -2367,19 +2360,7 @@ class Event {
 				$end_ts = null;
 			}
 
-			if ( $is_all_day ) {
-				$line = eventkoi_date( 'M j, Y', $start_ts );
-			} else {
-				$start_str = eventkoi_date( 'M j, Y, g:ia', $start_ts );
-
-				if ( $end_ts ) {
-					$end_str    = eventkoi_date( 'g:ia', $end_ts );
-					$start_str .= ' - ' . $end_str;
-				}
-
-				$line = $start_str;
-			}
-
+			$line      = eventkoi_format_datetime_range( $start_ts, $end_ts, $is_all_day );
 			$outputs[] = self::wrap_datetime_with_data( $line, $start_ts, $end_ts, $event_tz, $is_all_day );
 		}
 

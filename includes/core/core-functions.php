@@ -1103,6 +1103,67 @@ function eventkoi_gmdate( $format, $timestamp = null ) {
 }
 
 /**
+ * Format a datetime range for display.
+ *
+ * Single entry point for all event date/time rendering to guarantee consistency
+ * between the event single page, calendar grid, event data block, and any other
+ * surface. The visitor-local conversion is handled by the frontend JS
+ * (local-timezone.js) via data attributes — this function always renders in
+ * the site timezone (via wp_date with default).
+ *
+ * @param int                      $start_ts  Start timestamp (UTC).
+ * @param int|null                 $end_ts    End timestamp (UTC), or null.
+ * @param bool                     $all_day   Whether the event is all-day.
+ * @param array                    $args      {
+ *     Optional.
+ *
+ *     @type string                $separator Separator between parts. Default ' — '.
+ *     @type DateTimeZone|string   $timezone  Optional timezone override.
+ * }
+ * @return string Formatted display string (plain text, no HTML wrapping).
+ */
+function eventkoi_format_datetime_range( $start_ts, $end_ts = null, $all_day = false, $args = array() ) {
+	if ( empty( $start_ts ) ) {
+		return '';
+	}
+
+	$separator   = isset( $args['separator'] ) ? (string) $args['separator'] : ' — ';
+	$timezone    = $args['timezone'] ?? null;
+	$date_format = get_option( 'date_format', 'F j, Y' );
+	$time_format = eventkoi_apply_time_preference( get_option( 'time_format', 'g:i a' ) );
+
+	$start_ts = (int) $start_ts;
+	$end_ts   = ! empty( $end_ts ) ? (int) $end_ts : null;
+
+	$same_day = false;
+	if ( $end_ts ) {
+		$same_day = wp_date( 'Y-m-d', $start_ts, $timezone ) === wp_date( 'Y-m-d', $end_ts, $timezone );
+	}
+
+	if ( $all_day ) {
+		if ( ! $end_ts || $same_day ) {
+			return wp_date( $date_format, $start_ts, $timezone );
+		}
+
+		return wp_date( $date_format, $start_ts, $timezone )
+			. $separator
+			. wp_date( $date_format, $end_ts, $timezone );
+	}
+
+	$start_str = wp_date( $date_format . ', ' . $time_format, $start_ts, $timezone );
+
+	if ( ! $end_ts ) {
+		return $start_str;
+	}
+
+	if ( $same_day ) {
+		return $start_str . $separator . wp_date( $time_format, $end_ts, $timezone );
+	}
+
+	return $start_str . $separator . wp_date( $date_format . ', ' . $time_format, $end_ts, $timezone );
+}
+
+/**
  * Retrieves Stripe's webhook secret.
  *
  * @return string The Stripe webhook secret.
