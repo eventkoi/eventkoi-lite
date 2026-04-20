@@ -2319,6 +2319,30 @@ class Event {
 	 * @return string
 	 */
 	public static function rendered_date() {
+		$instance_ts = eventkoi_get_instance_id();
+		$type        = self::get_date_type();
+
+		// Instance-aware render for a specific recurring occurrence.
+		if ( $instance_ts && 'recurring' === $type ) {
+			$rules = self::get_recurrence_rules();
+			$rule  = $rules[0] ?? null;
+			if ( $rule ) {
+				$rule_start = ! empty( $rule['start_date'] ) ? strtotime( $rule['start_date'] . ' UTC' ) : null;
+				$rule_end   = ! empty( $rule['end_date'] ) ? strtotime( $rule['end_date'] . ' UTC' ) : null;
+				$duration   = ( $rule_start && $rule_end && $rule_end > $rule_start ) ? ( $rule_end - $rule_start ) : null;
+				$end_ts     = $duration ? ( $instance_ts + $duration ) : null;
+
+				$output = eventkoi_format_datetime_range( $instance_ts, $end_ts, true );
+
+				return apply_filters(
+					'eventkoi_rendered_event_date',
+					$output,
+					self::$event_id,
+					self::$event
+				);
+			}
+		}
+
 		$first = self::get_first_instance();
 
 		$start_ts = ! empty( $first['start_date'] ) ? strtotime( $first['start_date'] ) : null;
@@ -2351,6 +2375,39 @@ class Event {
 	 * @return string
 	 */
 	public static function rendered_time() {
+		$instance_ts = eventkoi_get_instance_id();
+		$type        = self::get_date_type();
+		$time_format = eventkoi_apply_time_preference( get_option( 'time_format', 'g:i a' ) );
+
+		// Instance-aware render for a specific recurring occurrence.
+		if ( $instance_ts && 'recurring' === $type ) {
+			$rules = self::get_recurrence_rules();
+			$rule  = $rules[0] ?? null;
+			if ( $rule ) {
+				if ( ! empty( $rule['all_day'] ) ) {
+					return apply_filters( 'eventkoi_rendered_event_time', '', self::$event_id, self::$event );
+				}
+
+				$rule_start = ! empty( $rule['start_date'] ) ? strtotime( $rule['start_date'] . ' UTC' ) : null;
+				$rule_end   = ! empty( $rule['end_date'] ) ? strtotime( $rule['end_date'] . ' UTC' ) : null;
+				$duration   = ( $rule_start && $rule_end && $rule_end > $rule_start ) ? ( $rule_end - $rule_start ) : null;
+				$end_ts     = $duration ? ( $instance_ts + $duration ) : null;
+
+				$start_str = wp_date( $time_format, $instance_ts );
+				$same_day  = $end_ts && wp_date( 'Y-m-d', $instance_ts ) === wp_date( 'Y-m-d', $end_ts );
+				$output    = $end_ts && $same_day
+					? $start_str . ' — ' . wp_date( $time_format, $end_ts )
+					: $start_str;
+
+				return apply_filters(
+					'eventkoi_rendered_event_time',
+					$output,
+					self::$event_id,
+					self::$event
+				);
+			}
+		}
+
 		$first = self::get_first_instance();
 
 		if ( ! empty( $first['all_day'] ) ) {
@@ -2368,8 +2425,7 @@ class Event {
 			$end_ts = null;
 		}
 
-		$time_format = eventkoi_apply_time_preference( get_option( 'time_format', 'g:i a' ) );
-		$start_str   = wp_date( $time_format, $start_ts );
+		$start_str = wp_date( $time_format, $start_ts );
 
 		$same_day = $end_ts && wp_date( 'Y-m-d', $start_ts ) === wp_date( 'Y-m-d', $end_ts );
 		if ( $end_ts && $same_day ) {
@@ -2392,8 +2448,9 @@ class Event {
 	 * @return string
 	 */
 	public static function rendered_datetime() {
-		$type     = self::get_date_type();
-		$event_tz = self::get_timezone();
+		$type        = self::get_date_type();
+		$event_tz    = self::get_timezone();
+		$instance_ts = eventkoi_get_instance_id();
 
 		if ( self::get_tbc() ) {
 			$tbc_note = self::get_tbc_note();
@@ -2403,6 +2460,29 @@ class Event {
 			: esc_html__( 'Date and time to be confirmed.', 'eventkoi-lite' );
 
 			return apply_filters( 'eventkoi_rendered_event_datetime', $message, self::$event_id, self::$event );
+		}
+
+		// Instance-aware render for a specific recurring occurrence (e.g. /event/slug/1778058000/
+		// or ?instance=1778058000 on any page that invokes the shortcode or dynamic tag).
+		if ( $instance_ts && 'recurring' === $type ) {
+			$rules = self::get_recurrence_rules();
+			foreach ( $rules as $rule ) {
+				$rule_start = ! empty( $rule['start_date'] ) ? strtotime( $rule['start_date'] . ' UTC' ) : null;
+				$rule_end   = ! empty( $rule['end_date'] ) ? strtotime( $rule['end_date'] . ' UTC' ) : null;
+				$duration   = ( $rule_start && $rule_end && $rule_end > $rule_start ) ? ( $rule_end - $rule_start ) : null;
+				$end_ts     = $duration ? ( $instance_ts + $duration ) : null;
+				$is_all_day = ! empty( $rule['all_day'] );
+
+				$line = eventkoi_format_datetime_range( $instance_ts, $end_ts, $is_all_day );
+				$line = self::wrap_datetime_with_data( $line, $instance_ts, $end_ts, $event_tz, $is_all_day );
+
+				return apply_filters(
+					'eventkoi_rendered_event_datetime',
+					wp_kses_post( $line ),
+					self::$event_id,
+					self::$event
+				);
+			}
 		}
 
 		if ( 'recurring' === $type ) {
