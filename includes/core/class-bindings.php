@@ -50,6 +50,15 @@ class Bindings {
 			'event_date_type'             => __( 'Event date type', 'eventkoi-lite' ),
 			'event_rulesummary'           => __( 'Recurring rule summary', 'eventkoi-lite' ),
 			'event_ticket_rsvp'           => __( 'Event RSVP / Tickets', 'eventkoi-lite' ),
+			'event_capacity'              => __( 'Event capacity', 'eventkoi-lite' ),
+			'event_capacity_remaining'    => __( 'Event capacity remaining', 'eventkoi-lite' ),
+			'event_capacity_sold'         => __( 'Event capacity sold', 'eventkoi-lite' ),
+			'event_sold_out'              => __( 'Event sold out label', 'eventkoi-lite' ),
+			'event_low_stock'             => __( 'Event low stock label', 'eventkoi-lite' ),
+			'event_ticket_count'          => __( 'Event ticket count', 'eventkoi-lite' ),
+			'event_ticket_summary'        => __( 'Event ticket summary', 'eventkoi-lite' ),
+			'event_sales_start'           => __( 'Event sales start', 'eventkoi-lite' ),
+			'event_sales_end'             => __( 'Event sales end', 'eventkoi-lite' ),
 		);
 	}
 

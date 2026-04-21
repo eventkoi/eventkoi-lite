@@ -2582,6 +2582,338 @@ class Event {
 	}
 
 	/**
+	 * Fetch active tickets for the current event, cached per-request.
+	 *
+	 * @return array<int,object> Array of ticket rows ordered by sort_order.
+	 */
+	protected static function get_active_tickets() {
+		static $cache = array();
+
+		$event_id = (int) self::$event_id;
+		if ( $event_id <= 0 ) {
+			return array();
+		}
+
+		if ( isset( $cache[ $event_id ] ) ) {
+			return $cache[ $event_id ];
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'eventkoi_tickets';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT id, name, price, currency, quantity_available, quantity_sold, sale_start, sale_end, sort_order FROM {$table} WHERE event_id = %d AND status = %s ORDER BY sort_order ASC, id ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$event_id,
+				'active'
+			)
+		);
+
+		$cache[ $event_id ] = is_array( $rows ) ? $rows : array();
+		return $cache[ $event_id ];
+	}
+
+	/**
+	 * Compute capacity / sold / held / remaining for the current event.
+	 *
+	 * Mirrors the logic used by the public-tickets API so the event-level
+	 * tokens stay consistent with the checkout widget's numbers.
+	 *
+	 * @return array{capacity: int|null, sold: int, held: int, remaining: int|null}
+	 */
+	protected static function get_capacity_snapshot() {
+		static $cache = array();
+
+		$event_id = (int) self::$event_id;
+		if ( $event_id <= 0 ) {
+			return array(
+				'capacity'  => null,
+				'sold'      => 0,
+				'held'      => 0,
+				'remaining' => null,
+			);
+		}
+
+		if ( isset( $cache[ $event_id ] ) ) {
+			return $cache[ $event_id ];
+		}
+
+		$tickets = self::get_active_tickets();
+
+		if ( empty( $tickets ) ) {
+			$cache[ $event_id ] = array(
+				'capacity'  => null,
+				'sold'      => 0,
+				'held'      => 0,
+				'remaining' => null,
+			);
+			return $cache[ $event_id ];
+		}
+
+		global $wpdb;
+		$orders_table = $wpdb->prefix . 'eventkoi_ticket_orders';
+
+		// Remote ticket sales (authoritative sold counts per ticket).
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$sales_rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT ticket_id, SUM(quantity) AS qty FROM {$orders_table} WHERE event_id = %d AND payment_status IN ('complete','completed','succeeded','partially_refunded') GROUP BY ticket_id", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$event_id
+			)
+		);
+
+		$remote_sales = array();
+		if ( $sales_rows ) {
+			foreach ( $sales_rows as $row ) {
+				$tid = absint( $row->ticket_id ?? 0 );
+				if ( $tid > 0 ) {
+					$remote_sales[ $tid ] = absint( $row->qty ?? 0 );
+				}
+			}
+		}
+
+		// Held quantity per ticket (holds expire after 15 minutes server-side).
+		$hold_duration = defined( '\\EventKoi\\API\\Tickets::HOLD_DURATION' )
+			? (int) constant( '\\EventKoi\\API\\Tickets::HOLD_DURATION' )
+			: 15 * MINUTE_IN_SECONDS;
+		$hold_threshold = gmdate( 'Y-m-d H:i:s', time() - $hold_duration );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$hold_rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT ticket_id, COALESCE(SUM(quantity),0) AS qty FROM {$orders_table} WHERE event_id = %d AND payment_status = 'hold' AND created_at > %s GROUP BY ticket_id", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$event_id,
+				$hold_threshold
+			)
+		);
+
+		$held_per_ticket = array();
+		if ( $hold_rows ) {
+			foreach ( $hold_rows as $row ) {
+				$tid = absint( $row->ticket_id ?? 0 );
+				if ( $tid > 0 ) {
+					$held_per_ticket[ $tid ] = absint( $row->qty ?? 0 );
+				}
+			}
+		}
+
+		$capacity  = 0;
+		$sold      = 0;
+		$held      = 0;
+		$unlimited = false;
+
+		foreach ( $tickets as $ticket ) {
+			$tid = (int) $ticket->id;
+
+			if ( null === $ticket->quantity_available || '' === $ticket->quantity_available ) {
+				$unlimited = true;
+			} else {
+				$capacity += absint( $ticket->quantity_available );
+			}
+
+			$local_sold  = absint( $ticket->quantity_sold );
+			$remote_sold = isset( $remote_sales[ $tid ] ) ? $remote_sales[ $tid ] : 0;
+			$sold       += max( $local_sold, $remote_sold );
+
+			$held += isset( $held_per_ticket[ $tid ] ) ? $held_per_ticket[ $tid ] : 0;
+		}
+
+		$remaining = null;
+		if ( ! $unlimited ) {
+			$remaining = max( $capacity - $sold - $held, 0 );
+		}
+
+		$cache[ $event_id ] = array(
+			'capacity'  => $unlimited ? null : $capacity,
+			'sold'      => $sold,
+			'held'      => $held,
+			'remaining' => $remaining,
+		);
+
+		return $cache[ $event_id ];
+	}
+
+	/**
+	 * Whether a ticket row is currently on sale based on sale_start / sale_end.
+	 *
+	 * @param object $ticket Ticket row.
+	 * @return bool
+	 */
+	protected static function is_ticket_on_sale( $ticket ) {
+		if ( ! is_object( $ticket ) ) {
+			return false;
+		}
+		$now           = time();
+		$sale_start_ts = ! empty( $ticket->sale_start ) ? strtotime( $ticket->sale_start . ' UTC' ) : 0;
+		$sale_end_ts   = ! empty( $ticket->sale_end ) ? strtotime( $ticket->sale_end . ' UTC' ) : 0;
+
+		if ( $sale_start_ts && $now < $sale_start_ts ) {
+			return false;
+		}
+		if ( $sale_end_ts && $now > $sale_end_ts ) {
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Rendered total ticket capacity across all active tickets.
+	 *
+	 * Returns empty string when any ticket is unlimited.
+	 *
+	 * @return string
+	 */
+	public static function rendered_capacity() {
+		$snap   = self::get_capacity_snapshot();
+		$output = null === $snap['capacity'] ? '' : (string) $snap['capacity'];
+		return apply_filters( 'eventkoi_rendered_event_capacity', $output, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered remaining capacity (capacity - sold - held, floor 0).
+	 *
+	 * @return string
+	 */
+	public static function rendered_capacity_remaining() {
+		$snap   = self::get_capacity_snapshot();
+		$output = null === $snap['remaining'] ? '' : (string) $snap['remaining'];
+		return apply_filters( 'eventkoi_rendered_event_capacity_remaining', $output, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered sold capacity across all active tickets.
+	 *
+	 * @return string
+	 */
+	public static function rendered_capacity_sold() {
+		$snap   = self::get_capacity_snapshot();
+		$output = (string) $snap['sold'];
+		return apply_filters( 'eventkoi_rendered_event_capacity_sold', $output, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered "Sold out" label when the event is sold out, otherwise empty.
+	 *
+	 * @return string
+	 */
+	public static function rendered_sold_out() {
+		$snap    = self::get_capacity_snapshot();
+		$is_full = null !== $snap['capacity'] && $snap['capacity'] > 0 && 0 === $snap['remaining'];
+		$label   = $is_full ? __( 'Sold out', 'eventkoi-lite' ) : '';
+		return apply_filters( 'eventkoi_rendered_event_sold_out', $label, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered "Low stock" label when remaining stock is at or below the threshold.
+	 *
+	 * Threshold defaults to 10% of capacity, with a minimum of 5.
+	 *
+	 * @return string
+	 */
+	public static function rendered_low_stock() {
+		$snap = self::get_capacity_snapshot();
+
+		if ( null === $snap['capacity'] || $snap['capacity'] <= 0 || null === $snap['remaining'] ) {
+			return apply_filters( 'eventkoi_rendered_event_low_stock', '', self::$event_id, self::$event );
+		}
+
+		$default_threshold = max( 5, (int) ceil( $snap['capacity'] * 0.1 ) );
+		/**
+		 * Override the "low stock" threshold.
+		 *
+		 * @param int $threshold Default computed threshold.
+		 * @param int $event_id  Event ID.
+		 * @param int $capacity  Total capacity.
+		 */
+		$threshold = (int) apply_filters( 'eventkoi_low_stock_threshold', $default_threshold, self::$event_id, $snap['capacity'] );
+
+		$is_low = $snap['remaining'] > 0 && $snap['remaining'] <= $threshold;
+		$label  = $is_low ? __( 'Low stock', 'eventkoi-lite' ) : '';
+
+		return apply_filters( 'eventkoi_rendered_event_low_stock', $label, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered number of active ticket types for the event.
+	 *
+	 * @return string
+	 */
+	public static function rendered_ticket_count() {
+		$tickets = self::get_active_tickets();
+		$output  = (string) count( $tickets );
+		return apply_filters( 'eventkoi_rendered_event_ticket_count', $output, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered comma-separated list of active ticket names in sort order.
+	 *
+	 * @return string
+	 */
+	public static function rendered_ticket_summary() {
+		$tickets = self::get_active_tickets();
+		$names   = array();
+		foreach ( $tickets as $ticket ) {
+			$name = isset( $ticket->name ) ? trim( (string) $ticket->name ) : '';
+			if ( '' !== $name ) {
+				$names[] = $name;
+			}
+		}
+		$output = implode( ', ', $names );
+		return apply_filters( 'eventkoi_rendered_event_ticket_summary', $output, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered earliest sale_start timestamp across active tickets.
+	 *
+	 * @return string
+	 */
+	public static function rendered_sales_start() {
+		$tickets  = self::get_active_tickets();
+		$earliest = null;
+		foreach ( $tickets as $ticket ) {
+			if ( empty( $ticket->sale_start ) ) {
+				continue;
+			}
+			$ts = strtotime( $ticket->sale_start . ' UTC' );
+			if ( ! $ts ) {
+				continue;
+			}
+			if ( null === $earliest || $ts < $earliest ) {
+				$earliest = $ts;
+			}
+		}
+
+		$output = null === $earliest ? '' : eventkoi_format_datetime_range( $earliest, null, false );
+		return apply_filters( 'eventkoi_rendered_event_sales_start', $output, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered latest sale_end timestamp across active tickets.
+	 *
+	 * @return string
+	 */
+	public static function rendered_sales_end() {
+		$tickets = self::get_active_tickets();
+		$latest  = null;
+		foreach ( $tickets as $ticket ) {
+			if ( empty( $ticket->sale_end ) ) {
+				continue;
+			}
+			$ts = strtotime( $ticket->sale_end . ' UTC' );
+			if ( ! $ts ) {
+				continue;
+			}
+			if ( null === $latest || $ts > $latest ) {
+				$latest = $ts;
+			}
+		}
+
+		$output = null === $latest ? '' : eventkoi_format_datetime_range( $latest, null, false );
+		return apply_filters( 'eventkoi_rendered_event_sales_end', $output, self::$event_id, self::$event );
+	}
+
+	/**
 	 * Rendered recurring rule summary string.
 	 *
 	 * @return string Recurrence summary.

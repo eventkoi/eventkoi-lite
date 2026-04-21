@@ -330,6 +330,15 @@ if ( ! function_exists( 'eventkoi_get_event_data_options' ) ) {
 			'event_time'                  => __( 'Event Time', 'eventkoi-lite' ),
 			'event_date_type'             => __( 'Event Date Type', 'eventkoi-lite' ),
 			'event_rulesummary'           => __( 'Event Rule Summary', 'eventkoi-lite' ),
+			'event_capacity'              => __( 'Event Capacity', 'eventkoi-lite' ),
+			'event_capacity_remaining'    => __( 'Event Capacity Remaining', 'eventkoi-lite' ),
+			'event_capacity_sold'         => __( 'Event Capacity Sold', 'eventkoi-lite' ),
+			'event_sold_out'              => __( 'Event Sold Out', 'eventkoi-lite' ),
+			'event_low_stock'             => __( 'Event Low Stock', 'eventkoi-lite' ),
+			'event_ticket_count'          => __( 'Event Ticket Count', 'eventkoi-lite' ),
+			'event_ticket_summary'        => __( 'Event Ticket Summary', 'eventkoi-lite' ),
+			'event_sales_start'           => __( 'Event Sales Start', 'eventkoi-lite' ),
+			'event_sales_end'             => __( 'Event Sales End', 'eventkoi-lite' ),
 		);
 	}
 }
