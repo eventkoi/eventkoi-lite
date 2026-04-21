@@ -59,6 +59,15 @@ class Bindings {
 			'event_ticket_summary'        => __( 'Event ticket summary', 'eventkoi-lite' ),
 			'event_sales_start'           => __( 'Event sales start', 'eventkoi-lite' ),
 			'event_sales_end'             => __( 'Event sales end', 'eventkoi-lite' ),
+			'event_ticket_price_from'     => __( 'Event ticket price from', 'eventkoi-lite' ),
+			'event_ticket_price_to'       => __( 'Event ticket price to', 'eventkoi-lite' ),
+			'event_ticket_price_range'    => __( 'Event ticket price range', 'eventkoi-lite' ),
+			'event_date_year'             => __( 'Event date year', 'eventkoi-lite' ),
+			'event_date_month'            => __( 'Event date month', 'eventkoi-lite' ),
+			'event_date_month_short'      => __( 'Event date month short', 'eventkoi-lite' ),
+			'event_date_day'              => __( 'Event date day', 'eventkoi-lite' ),
+			'event_date_day_name'         => __( 'Event date day name', 'eventkoi-lite' ),
+			'event_date_iso'              => __( 'Event date ISO', 'eventkoi-lite' ),
 		);
 	}
 

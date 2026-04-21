@@ -354,6 +354,15 @@ class Event_Widget extends Widget_Base {
 			'event_ticket_summary'        => __( 'Event Ticket Summary', 'eventkoi-lite' ),
 			'event_sales_start'           => __( 'Event Sales Start', 'eventkoi-lite' ),
 			'event_sales_end'             => __( 'Event Sales End', 'eventkoi-lite' ),
+			'event_ticket_price_from'     => __( 'Event Ticket Price From', 'eventkoi-lite' ),
+			'event_ticket_price_to'       => __( 'Event Ticket Price To', 'eventkoi-lite' ),
+			'event_ticket_price_range'    => __( 'Event Ticket Price Range', 'eventkoi-lite' ),
+			'event_date_year'             => __( 'Event Date Year', 'eventkoi-lite' ),
+			'event_date_month'            => __( 'Event Date Month', 'eventkoi-lite' ),
+			'event_date_month_short'      => __( 'Event Date Month Short', 'eventkoi-lite' ),
+			'event_date_day'              => __( 'Event Date Day', 'eventkoi-lite' ),
+			'event_date_day_name'         => __( 'Event Date Day Name', 'eventkoi-lite' ),
+			'event_date_iso'              => __( 'Event Date ISO', 'eventkoi-lite' ),
 		);
 	}
 

@@ -2914,6 +2914,211 @@ class Event {
 	}
 
 	/**
+	 * Format a price with the ticket's currency, preferring wc_price() when available.
+	 *
+	 * @param float  $price    Price in major units (e.g. 10.00).
+	 * @param string $currency 3-letter currency code.
+	 * @return string
+	 */
+	protected static function format_ticket_price( $price, $currency ) {
+		$price    = (float) $price;
+		$currency = strtoupper( trim( (string) $currency ) );
+		if ( '' === $currency ) {
+			$currency = 'USD';
+		}
+
+		if ( function_exists( 'wc_price' ) ) {
+			return wp_strip_all_tags( wc_price( $price, array( 'currency' => $currency ) ) );
+		}
+
+		$symbol_map = array(
+			'USD' => '$',
+			'EUR' => '€',
+			'GBP' => '£',
+			'JPY' => '¥',
+			'CNY' => '¥',
+			'CAD' => 'C$',
+			'AUD' => 'A$',
+			'SGD' => 'S$',
+			'INR' => '₹',
+		);
+		$symbol    = isset( $symbol_map[ $currency ] ) ? $symbol_map[ $currency ] : $currency . ' ';
+		$formatted = number_format_i18n( $price, 2 );
+		return $symbol . $formatted;
+	}
+
+	/**
+	 * Compute the min / max active-ticket prices with a shared currency.
+	 *
+	 * @return array{min: float|null, max: float|null, currency: string}
+	 */
+	protected static function get_ticket_price_snapshot() {
+		$tickets = self::get_active_tickets();
+		$min     = null;
+		$max     = null;
+		$cur     = '';
+		foreach ( $tickets as $ticket ) {
+			if ( ! isset( $ticket->price ) ) {
+				continue;
+			}
+			$price = (float) $ticket->price;
+			if ( null === $min || $price < $min ) {
+				$min = $price;
+			}
+			if ( null === $max || $price > $max ) {
+				$max = $price;
+			}
+			if ( '' === $cur && ! empty( $ticket->currency ) ) {
+				$cur = (string) $ticket->currency;
+			}
+		}
+		return array(
+			'min'      => $min,
+			'max'      => $max,
+			'currency' => $cur,
+		);
+	}
+
+	/**
+	 * Rendered lowest ticket price across active tickets.
+	 *
+	 * @return string
+	 */
+	public static function rendered_ticket_price_from() {
+		$snap = self::get_ticket_price_snapshot();
+		$out  = null === $snap['min'] ? '' : self::format_ticket_price( $snap['min'], $snap['currency'] );
+		return apply_filters( 'eventkoi_rendered_event_ticket_price_from', $out, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered highest ticket price across active tickets. Empty when all tickets share a price.
+	 *
+	 * @return string
+	 */
+	public static function rendered_ticket_price_to() {
+		$snap = self::get_ticket_price_snapshot();
+		if ( null === $snap['max'] || $snap['min'] === $snap['max'] ) {
+			return apply_filters( 'eventkoi_rendered_event_ticket_price_to', '', self::$event_id, self::$event );
+		}
+		return apply_filters(
+			'eventkoi_rendered_event_ticket_price_to',
+			self::format_ticket_price( $snap['max'], $snap['currency'] ),
+			self::$event_id,
+			self::$event
+		);
+	}
+
+	/**
+	 * Rendered price range "$min – $max", collapsing to single value when prices are equal.
+	 *
+	 * @return string
+	 */
+	public static function rendered_ticket_price_range() {
+		$snap = self::get_ticket_price_snapshot();
+		if ( null === $snap['min'] ) {
+			return apply_filters( 'eventkoi_rendered_event_ticket_price_range', '', self::$event_id, self::$event );
+		}
+		$from = self::format_ticket_price( $snap['min'], $snap['currency'] );
+		if ( $snap['min'] === $snap['max'] ) {
+			$out = $from;
+		} else {
+			$to  = self::format_ticket_price( $snap['max'], $snap['currency'] );
+			$out = $from . ' – ' . $to;
+		}
+		return apply_filters( 'eventkoi_rendered_event_ticket_price_range', $out, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Resolve the effective event start timestamp, honouring the instance context
+	 * so date-format tokens match the rest of the renderers under /event/slug/{ts}/.
+	 *
+	 * @return int|null
+	 */
+	protected static function get_effective_start_timestamp() {
+		$instance_ts = eventkoi_get_instance_id();
+		$type        = self::get_date_type();
+
+		if ( $instance_ts && 'recurring' === $type ) {
+			return (int) $instance_ts;
+		}
+
+		$first = self::get_first_instance();
+		if ( ! empty( $first['start_date'] ) ) {
+			$ts = strtotime( $first['start_date'] );
+			if ( $ts ) {
+				return (int) $ts;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Rendered event year (YYYY).
+	 *
+	 * @return string
+	 */
+	public static function rendered_date_year() {
+		$ts  = self::get_effective_start_timestamp();
+		$out = $ts ? wp_date( 'Y', $ts ) : '';
+		return apply_filters( 'eventkoi_rendered_event_date_year', $out, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered event month full name ("May").
+	 *
+	 * @return string
+	 */
+	public static function rendered_date_month() {
+		$ts  = self::get_effective_start_timestamp();
+		$out = $ts ? wp_date( 'F', $ts ) : '';
+		return apply_filters( 'eventkoi_rendered_event_date_month', $out, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered event month short name ("May").
+	 *
+	 * @return string
+	 */
+	public static function rendered_date_month_short() {
+		$ts  = self::get_effective_start_timestamp();
+		$out = $ts ? wp_date( 'M', $ts ) : '';
+		return apply_filters( 'eventkoi_rendered_event_date_month_short', $out, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered event day number without leading zero ("4").
+	 *
+	 * @return string
+	 */
+	public static function rendered_date_day() {
+		$ts  = self::get_effective_start_timestamp();
+		$out = $ts ? wp_date( 'j', $ts ) : '';
+		return apply_filters( 'eventkoi_rendered_event_date_day', $out, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered event day name ("Monday").
+	 *
+	 * @return string
+	 */
+	public static function rendered_date_day_name() {
+		$ts  = self::get_effective_start_timestamp();
+		$out = $ts ? wp_date( 'l', $ts ) : '';
+		return apply_filters( 'eventkoi_rendered_event_date_day_name', $out, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered event date in ISO form ("2026-05-04").
+	 *
+	 * @return string
+	 */
+	public static function rendered_date_iso() {
+		$ts  = self::get_effective_start_timestamp();
+		$out = $ts ? wp_date( 'Y-m-d', $ts ) : '';
+		return apply_filters( 'eventkoi_rendered_event_date_iso', $out, self::$event_id, self::$event );
+	}
+
+	/**
 	 * Rendered recurring rule summary string.
 	 *
 	 * @return string Recurrence summary.
