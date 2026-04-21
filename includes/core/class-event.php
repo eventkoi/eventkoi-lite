@@ -1596,7 +1596,10 @@ class Event {
 	 *
 	 * @return int
 	 */
-	public static function get_rsvp_capacity() {
+	public static function get_rsvp_capacity( $instance_ts = 0 ) {
+		// Lite has no recurring events, so $instance_ts is always treated as
+		// series-wide. Param kept for Pro+Lite signature parity.
+		unset( $instance_ts );
 		$capacity = get_post_meta( self::$event_id, 'rsvp_capacity', true );
 
 		return apply_filters( 'eventkoi_get_event_rsvp_capacity', absint( $capacity ), self::$event_id, self::$event );
@@ -3116,6 +3119,101 @@ class Event {
 		$ts  = self::get_effective_start_timestamp();
 		$out = $ts ? wp_date( 'Y-m-d', $ts ) : '';
 		return apply_filters( 'eventkoi_rendered_event_date_iso', $out, self::$event_id, self::$event );
+	}
+
+	/**
+	 * RSVP counts/capacity snapshot. Lite has no recurring events, so this is
+	 * always the event-level aggregate.
+	 *
+	 * @return array{capacity:int, going:int, maybe:int, remaining:int|null}
+	 */
+	protected static function get_rsvp_snapshot() {
+		static $cache = array();
+
+		$event_id = (int) self::$event_id;
+		if ( $event_id <= 0 ) {
+			return array( 'capacity' => 0, 'going' => 0, 'maybe' => 0, 'remaining' => null );
+		}
+		if ( isset( $cache[ $event_id ] ) ) {
+			return $cache[ $event_id ];
+		}
+
+		$capacity = self::get_rsvp_capacity();
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'eventkoi_rsvps';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT status, COALESCE(SUM(1 + guests),0) AS cnt FROM {$table} WHERE event_id = %d AND status IN ('going','maybe') GROUP BY status", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$event_id
+			)
+		);
+
+		$going = 0;
+		$maybe = 0;
+		if ( $rows ) {
+			foreach ( $rows as $r ) {
+				if ( 'going' === $r->status ) {
+					$going = absint( $r->cnt );
+				} elseif ( 'maybe' === $r->status ) {
+					$maybe = absint( $r->cnt );
+				}
+			}
+		}
+
+		$remaining = $capacity > 0 ? max( $capacity - $going, 0 ) : null;
+		$cache[ $event_id ] = array(
+			'capacity'  => $capacity,
+			'going'     => $going,
+			'maybe'     => $maybe,
+			'remaining' => $remaining,
+		);
+		return $cache[ $event_id ];
+	}
+
+	/**
+	 * Rendered RSVP capacity. Empty string when unlimited.
+	 *
+	 * @return string
+	 */
+	public static function rendered_rsvp_capacity() {
+		$snap = self::get_rsvp_snapshot();
+		$out  = $snap['capacity'] > 0 ? (string) $snap['capacity'] : '';
+		return apply_filters( 'eventkoi_rendered_event_rsvp_capacity', $out, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered remaining RSVP spots.
+	 *
+	 * @return string
+	 */
+	public static function rendered_rsvp_remaining() {
+		$snap = self::get_rsvp_snapshot();
+		$out  = null === $snap['remaining'] ? '' : (string) $snap['remaining'];
+		return apply_filters( 'eventkoi_rendered_event_rsvp_remaining', $out, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered going RSVP count.
+	 *
+	 * @return string
+	 */
+	public static function rendered_rsvp_going() {
+		$snap = self::get_rsvp_snapshot();
+		return apply_filters( 'eventkoi_rendered_event_rsvp_going', (string) $snap['going'], self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered "RSVP full" label when at capacity.
+	 *
+	 * @return string
+	 */
+	public static function rendered_rsvp_full() {
+		$snap    = self::get_rsvp_snapshot();
+		$is_full = $snap['capacity'] > 0 && null !== $snap['remaining'] && 0 === $snap['remaining'];
+		$label   = $is_full ? __( 'RSVP full', 'eventkoi-lite' ) : '';
+		return apply_filters( 'eventkoi_rendered_event_rsvp_full', $label, self::$event_id, self::$event );
 	}
 
 	/**

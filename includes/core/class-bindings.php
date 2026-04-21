@@ -68,6 +68,10 @@ class Bindings {
 			'event_date_day'              => __( 'Event date day', 'eventkoi-lite' ),
 			'event_date_day_name'         => __( 'Event date day name', 'eventkoi-lite' ),
 			'event_date_iso'              => __( 'Event date ISO', 'eventkoi-lite' ),
+			'event_rsvp_capacity'         => __( 'Event RSVP capacity', 'eventkoi-lite' ),
+			'event_rsvp_remaining'        => __( 'Event RSVP remaining', 'eventkoi-lite' ),
+			'event_rsvp_going'            => __( 'Event RSVP going', 'eventkoi-lite' ),
+			'event_rsvp_full'             => __( 'Event RSVP full label', 'eventkoi-lite' ),
 		);
 	}
 

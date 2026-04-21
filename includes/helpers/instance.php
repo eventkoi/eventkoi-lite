@@ -348,6 +348,10 @@ if ( ! function_exists( 'eventkoi_get_event_data_options' ) ) {
 			'event_date_day'              => __( 'Event Date Day', 'eventkoi-lite' ),
 			'event_date_day_name'         => __( 'Event Date Day Name', 'eventkoi-lite' ),
 			'event_date_iso'              => __( 'Event Date ISO', 'eventkoi-lite' ),
+			'event_rsvp_capacity'         => __( 'Event RSVP Capacity', 'eventkoi-lite' ),
+			'event_rsvp_remaining'        => __( 'Event RSVP Remaining', 'eventkoi-lite' ),
+			'event_rsvp_going'            => __( 'Event RSVP Going', 'eventkoi-lite' ),
+			'event_rsvp_full'             => __( 'Event RSVP Full', 'eventkoi-lite' ),
 		);
 	}
 }
