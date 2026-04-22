@@ -39,12 +39,13 @@ export function EventDate({ showAttributes }) {
     ) {
       setEvent((prev) => ({
         ...prev,
-        // Default new events to all-day; user can toggle off to enter specific times.
+        // Default new events to timed (not all-day) — matches Google / Apple
+        // / Outlook calendars. User toggles all-day on explicitly when needed.
         event_days: [
           {
             start_date: null,
             end_date: null,
-            all_day: true,
+            all_day: false,
           },
         ],
       }));
