@@ -394,7 +394,7 @@ class Event {
 				'post_type'   => 'eventkoi_event',
 				'post_status' => $status,
 				'post_title'  => $title,
-				'post_name'   => sanitize_title_with_dashes( $title, '', 'save' ),
+				'post_name'   => sanitize_title( $title ),
 				'post_author' => get_current_user_id(),
 			);
 
@@ -417,7 +417,7 @@ class Event {
 		$args = array(
 			'ID'          => $id,
 			'post_title'  => $title,
-			'post_name'   => sanitize_title_with_dashes( $title, '', 'save' ),
+			'post_name'   => sanitize_title( $title ),
 			'post_status' => $status,
 		);
 
@@ -1779,7 +1779,7 @@ class Event {
 			'post_type'   => 'eventkoi_event',
 			'post_status' => 'draft',
 			'post_title'  => $title,
-			'post_name'   => sanitize_title_with_dashes( $title, '', 'save' ),
+			'post_name'   => sanitize_title( $title ),
 			'post_author' => get_current_user_id(),
 		);
 
