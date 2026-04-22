@@ -121,10 +121,12 @@ function getRenderedEventDatetimeText() {
   const node = document.querySelector(".ek-datetime");
   if (!node) return "";
 
-  // Keep checkout summary perfectly aligned with the event details display.
-  // Do not reformat from raw timestamps here, because that can drift from the
-  // current rendered timezone/format rules.
-  return node.textContent?.trim() || "";
+  // Keep checkout summary aligned with the event details display, but drop
+  // the recurring-rule summary ("Weekly, on Tue, Thu, ...") — the shopper
+  // is buying this specific instance, so series-level context is noise.
+  const clone = node.cloneNode(true);
+  clone.querySelectorAll(".eventkoi-rule-summary").forEach((n) => n.remove());
+  return clone.textContent?.trim() || "";
 }
 
 function formatEventLocationLine(event = {}) {
