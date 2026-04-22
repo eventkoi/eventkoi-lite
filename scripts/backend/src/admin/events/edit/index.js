@@ -479,9 +479,7 @@ export function EventEdit() {
   const layout = (
     <>
       <EventHeader />
-      <Wrapper
-        className={isEditingInstance ? "max-w-[800px]" : "max-w-[1180px]"}
-      >
+      <Wrapper className={isEditingInstance ? "max-w-[800px]" : undefined}>
         <div
           className={cn(
             "w-full mx-auto items-start gap-6",

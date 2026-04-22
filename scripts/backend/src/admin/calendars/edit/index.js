@@ -118,7 +118,7 @@ export function CalendarEdit() {
         calendar={calendar}
         setCalendar={setCalendar}
       />
-      <Wrapper className="max-w-[1180px]">
+      <Wrapper>
         <div
           className={cn(
             "w-full mx-auto items-start gap-6",
