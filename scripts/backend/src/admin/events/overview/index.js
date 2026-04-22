@@ -548,33 +548,35 @@ export function EventsOverview() {
           <SortButton title="RSVPs/Tickets" column={column} />
         ),
         cell: ({ row }) => {
-          const used = row.original.rsvp_used ?? 0;
-          const capacity = row.original.rsvp_capacity ?? 0;
-          const attendanceMode = row.original.attendance_mode || 'none';
-          const ticketsTotal = row.original.tickets_total ?? 0;
-          const ticketsSold = row.original.tickets_sold ?? 0;
-          const ticketsUnlimited = row.original.tickets_unlimited === true;
-          const displayValue = attendanceMode === 'tickets'
-            ? ticketsUnlimited
-              ? `${ticketsSold}/Unlimited`
-              : ticketsTotal > 0 || ticketsSold > 0
-              ? `${ticketsSold}/${ticketsTotal}`
-              : ""
-            : attendanceMode === 'rsvp'
-            ? capacity > 0
-              ? `${used}/${capacity}`
-              : `${used}/Unlimited`
-            : "";
-          return (
-            <div className="text-foreground tabular-nums">
-              {displayValue}
-            </div>
-          );
+          const attendanceMode = row.original.attendance_mode || "none";
+          if (attendanceMode === "tickets") {
+            const count = Number(row.original.tickets_sold || 0);
+            const label = count === 1 ? "ticket" : "tickets";
+            return (
+              <div className="text-foreground tabular-nums">
+                {count} {label}
+              </div>
+            );
+          }
+          if (attendanceMode === "rsvp") {
+            const count = Number(row.original.rsvp_used || 0);
+            const label = count === 1 ? "RSVP" : "RSVPs";
+            return (
+              <div className="text-foreground tabular-nums">
+                {count} {label}
+              </div>
+            );
+          }
+          return <div className="text-muted-foreground">—</div>;
         },
         sortingFn: (rowA, rowB) => {
-          const a = Number(rowA.original.rsvp_used || 0);
-          const b = Number(rowB.original.rsvp_used || 0);
-          return a - b;
+          const getCount = (row) => {
+            const mode = row.original.attendance_mode || "none";
+            if (mode === "tickets") return Number(row.original.tickets_sold || 0);
+            if (mode === "rsvp") return Number(row.original.rsvp_used || 0);
+            return -1;
+          };
+          return getCount(rowA) - getCount(rowB);
         },
       },
       {
