@@ -222,7 +222,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
     end.setHours(17, 0, 0, 0);
 
     const defaultEnd = new Date();
-    defaultEnd.setFullYear(defaultEnd.getFullYear() + 2);
+    defaultEnd.setFullYear(defaultEnd.getFullYear() + 1);
 
     const rule = {
       start_date: DateTime.fromJSDate(now, { zone: wpTz })
