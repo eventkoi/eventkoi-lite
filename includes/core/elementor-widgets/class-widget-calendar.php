@@ -147,7 +147,7 @@ class Calendar_Widget extends Widget_Base {
 		$this->start_controls_section(
 			'style_section',
 			array(
-				'label' => __( 'Day\'s Labels', 'eventkoi-lite' ),
+				'label' => __( "Day's Labels", 'eventkoi-lite' ),
 				'tab'   => Controls_Manager::TAB_STYLE,
 			)
 		);
