@@ -178,6 +178,26 @@
       grid-template-columns: repeat(6, 1fr);
     }
 
+    /* Responsive: collapse high col-counts on tablet + phone.
+       Without this, cols-3/4/5/6 stay that many columns even on mobile. */
+    @media (max-width: 900px) {
+      &.cols-3,
+      &.cols-4,
+      &.cols-5,
+      &.cols-6 {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    @media (max-width: 600px) {
+      &.cols-2,
+      &.cols-3,
+      &.cols-4,
+      &.cols-5,
+      &.cols-6 {
+        grid-template-columns: 1fr;
+      }
+    }
+
     .ek-event-row {
       flex-direction: column;
       gap: 1.2rem;
