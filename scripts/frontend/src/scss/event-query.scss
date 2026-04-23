@@ -219,3 +219,50 @@
     }
   }
 }
+
+/* ----------------------------------------------
+ * Frontend grid layout for Event Query Loop
+ * Renders as .eventkoi-query-loop > ul.wp-block-post-template.is-layout-grid.columns-N
+ * Server omits inline grid-template-columns so these rules own the column count.
+ * ---------------------------------------------- */
+.eventkoi-query-loop .wp-block-post-template.is-layout-grid {
+  &.columns-1 {
+    grid-template-columns: 1fr;
+  }
+  &.columns-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  &.columns-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  &.columns-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  &.columns-5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+  &.columns-6 {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  /* Tablet: collapse 3+ column grids to 2 columns. */
+  @media (max-width: 900px) {
+    &.columns-3,
+    &.columns-4,
+    &.columns-5,
+    &.columns-6 {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  /* Phone: stack every multi-column grid. */
+  @media (max-width: 600px) {
+    &.columns-2,
+    &.columns-3,
+    &.columns-4,
+    &.columns-5,
+    &.columns-6 {
+      grid-template-columns: 1fr;
+    }
+  }
+}

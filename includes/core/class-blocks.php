@@ -1305,8 +1305,11 @@ JS;
 			$template_cls[] = 'is-layout-grid';
 			if ( $layout_cols ) {
 				$template_cls[] = 'columns-' . $layout_cols;
-				$template_style = sprintf( 'display:grid;grid-template-columns:repeat(%d,minmax(0,1fr));gap:var(--wp--style--block-gap,1.5rem);', $layout_cols );
 			}
+			// Intentionally no inline grid-template-columns: the columns-N
+			// class carries that rule so media queries can collapse it on
+			// mobile. gap is kept as an inline var fallback.
+			$template_style = 'display:grid;gap:var(--wp--style--block-gap,1.5rem);';
 		} else {
 			$template_cls[] = 'is-layout-flow';
 		}
