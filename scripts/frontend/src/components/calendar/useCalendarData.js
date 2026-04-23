@@ -80,6 +80,7 @@ export function useCalendarData({
         defaultMonth,
         defaultYear,
         calendar: response.calendar,
+        timeframe: effectiveTimeframe,
       });
 
       setCurrentDate(date);
