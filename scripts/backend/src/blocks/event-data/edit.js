@@ -329,13 +329,25 @@ export default function Edit({ attributes, setAttributes, clientId }) {
       break;
 
     default:
-      content = (
-        <TagName {...blockProps}>
-          <span className="italic opacity-60">
-            {__("No event data", "eventkoi-lite")}
-          </span>
-        </TagName>
-      );
+      if (typeof field === "string" && field.startsWith("event_")) {
+        const humanLabel = field
+          .replace(/^event_/, "")
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (c) => c.toUpperCase());
+        content = (
+          <TagName {...blockProps}>
+            <span className="opacity-60 italic">{`{${humanLabel}}`}</span>
+          </TagName>
+        );
+      } else {
+        content = (
+          <TagName {...blockProps}>
+            <span className="italic opacity-60">
+              {__("No event data", "eventkoi-lite")}
+            </span>
+          </TagName>
+        );
+      }
   }
 
   return (

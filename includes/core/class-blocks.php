@@ -1543,11 +1543,28 @@ JS;
 			'image'    => $attributes['showImage'] ?? true,
 		);
 
-		if ( empty( $visibility[ $field ] ) ) {
+		if ( array_key_exists( $field, $visibility ) && empty( $visibility[ $field ] ) ) {
 			return '';
 		}
 
-		return $map[ $field ] ?? '';
+		if ( isset( $map[ $field ] ) ) {
+			return $map[ $field ];
+		}
+
+		// Extended canonical keys (event_*): delegate to the shared renderer
+		// so block-data matches what block bindings + builder widgets output.
+		if ( 0 === strpos( $field, 'event_' ) && function_exists( 'eventkoi_get_event_data_options' ) ) {
+			$allowed = eventkoi_get_event_data_options();
+			if ( isset( $allowed[ $field ] ) ) {
+				$event_id = isset( $event['id'] ) ? absint( $event['id'] ) : 0;
+				if ( $event_id > 0 ) {
+					$event_obj = new Event( $event_id );
+					return (string) $event_obj::render_meta( $field );
+				}
+			}
+		}
+
+		return '';
 	}
 
 	/**
