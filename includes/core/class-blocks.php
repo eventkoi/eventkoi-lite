@@ -43,6 +43,7 @@ class Blocks {
 		add_filter( 'pre_render_block', array( __CLASS__, 'mark_eventkoi_query_loop' ), 5, 2 );
 		add_filter( 'query_loop_block_query_vars', array( __CLASS__, 'filter_event_query_loop' ), 10, 2 );
 		add_filter( 'register_block_type_args', array( __CLASS__, 'register_core_query_attributes' ), 10, 2 );
+		add_filter( 'render_block', array( __CLASS__, 'seed_visibility_wrapper' ), 7, 2 );
 		add_filter( 'render_block', array( __CLASS__, 'render_eventkoi_image' ), 9, 2 );
 		add_filter( 'render_block', array( __CLASS__, 'render_shortcodes_in_image_src' ), 8, 2 );
 		add_filter( 'render_block', array( __CLASS__, 'render_eventkoi_query_loop' ), 10, 2 );
@@ -402,7 +403,11 @@ JS;
 	 * @return string
 	 */
 	public static function render_calendar_block( $block_content, $block ) {
-		return wp_kses_post( self::render_calendar_type( 'calendar', $block['attrs'] ) );
+		if ( '' === trim( (string) $block_content ) ) {
+			return '';
+		}
+		$rendered = wp_kses_post( self::render_calendar_type( 'calendar', $block['attrs'] ) );
+		return self::apply_upstream_wrapper_classes( $rendered, $block_content );
 	}
 
 	/**
@@ -413,7 +418,78 @@ JS;
 	 * @return string
 	 */
 	public static function render_list_block( $block_content, $block ) {
-		return wp_kses_post( self::render_calendar_type( 'list', $block['attrs'] ) );
+		if ( '' === trim( (string) $block_content ) ) {
+			return '';
+		}
+		$rendered = wp_kses_post( self::render_calendar_type( 'list', $block['attrs'] ) );
+		return self::apply_upstream_wrapper_classes( $rendered, $block_content );
+	}
+
+	/**
+	 * Seed a minimal wrapper for fully-dynamic EventKoi blocks so that plugins
+	 * injecting classes via WP_HTML_Tag_Processor (e.g. Block Visibility) have
+	 * a tag to attach to before our own render filter runs.
+	 *
+	 * @param string $block_content Block content.
+	 * @param array  $block         Block data.
+	 * @return string
+	 */
+	public static function seed_visibility_wrapper( $block_content, $block ) {
+		$blocks = array( 'eventkoi/calendar', 'eventkoi/list' );
+		if ( ! in_array( $block['blockName'] ?? '', $blocks, true ) ) {
+			return $block_content;
+		}
+		if ( '' !== trim( (string) $block_content ) ) {
+			return $block_content;
+		}
+		return '<div class="eventkoi-visibility-seed"></div>';
+	}
+
+	/**
+	 * Copy classes added by upstream render_block filters (e.g. Block Visibility)
+	 * onto the first tag of our rendered output.
+	 *
+	 * @param string $rendered    Freshly rendered block output.
+	 * @param string $seed_content Seeded wrapper content after upstream filters.
+	 * @return string
+	 */
+	private static function apply_upstream_wrapper_classes( $rendered, $seed_content ) {
+		if ( ! class_exists( 'WP_HTML_Tag_Processor' ) ) {
+			return $rendered;
+		}
+		if ( '' === trim( (string) $seed_content ) ) {
+			return $rendered;
+		}
+
+		$source = new \WP_HTML_Tag_Processor( $seed_content );
+		if ( ! $source->next_tag() ) {
+			return $rendered;
+		}
+		$class_attr = (string) $source->get_attribute( 'class' );
+		if ( '' === $class_attr ) {
+			return $rendered;
+		}
+
+		$classes = array_values(
+			array_filter(
+				preg_split( '/\s+/', trim( $class_attr ) ),
+				static function ( $c ) {
+					return '' !== $c && 'eventkoi-visibility-seed' !== $c;
+				}
+			)
+		);
+		if ( empty( $classes ) ) {
+			return $rendered;
+		}
+
+		$target = new \WP_HTML_Tag_Processor( $rendered );
+		if ( ! $target->next_tag() ) {
+			return $rendered;
+		}
+		foreach ( $classes as $cls ) {
+			$target->add_class( $cls );
+		}
+		return $target->get_updated_html();
 	}
 
 	/**
