@@ -63,9 +63,20 @@ class Blocks {
 	 * @return string
 	 */
 	public static function render_event_data_block( $block_content, $block ) {
-		$attributes = $block['attrs'] ?? array();
-		$field      = isset( $attributes['field'] ) ? sanitize_key( $attributes['field'] ) : 'title';
-		$event_id   = isset( $attributes['eventId'] ) ? absint( $attributes['eventId'] ) : 0;
+		$attributes   = $block['attrs'] ?? array();
+		$field        = isset( $attributes['field'] ) ? sanitize_key( $attributes['field'] ) : 'title';
+		$event_id     = isset( $attributes['eventId'] ) ? absint( $attributes['eventId'] ) : 0;
+		$seed_content = '';
+
+		if ( is_string( $block_content ) && false !== strpos( $block_content, 'eventkoi-visibility-seed' ) ) {
+			$seed_content  = $block_content;
+			$block_content = '';
+		}
+
+		// Respect upstream filters (e.g. Block Visibility) that fully hid the block.
+		if ( ! empty( $attributes['blockVisibility'] ) && '' === $seed_content && '' === trim( (string) $block_content ) ) {
+			return '';
+		}
 
 		// Prefer event from context (injected by EventKoi Query Loop).
 		$context_event = $block['context']['eventkoi_event'] ?? null;
@@ -126,7 +137,7 @@ class Blocks {
 				$rendered
 			);
 
-			return self::normalize_preset_styles( $rendered );
+			return self::apply_upstream_wrapper_classes( self::normalize_preset_styles( $rendered ), $seed_content );
 		}
 
 		$normalized_classes = array_unique(
@@ -156,7 +167,7 @@ class Blocks {
 			wp_kses_post( $value )
 		);
 
-		return self::normalize_preset_styles( $output );
+		return self::apply_upstream_wrapper_classes( self::normalize_preset_styles( $output ), $seed_content );
 	}
 
 	/**
@@ -403,7 +414,8 @@ JS;
 	 * @return string
 	 */
 	public static function render_calendar_block( $block_content, $block ) {
-		if ( '' === trim( (string) $block_content ) ) {
+		$has_bv = ! empty( $block['attrs']['blockVisibility'] );
+		if ( $has_bv && '' === trim( (string) $block_content ) ) {
 			return '';
 		}
 		$rendered = wp_kses_post( self::render_calendar_type( 'calendar', $block['attrs'] ) );
@@ -418,7 +430,8 @@ JS;
 	 * @return string
 	 */
 	public static function render_list_block( $block_content, $block ) {
-		if ( '' === trim( (string) $block_content ) ) {
+		$has_bv = ! empty( $block['attrs']['blockVisibility'] );
+		if ( $has_bv && '' === trim( (string) $block_content ) ) {
 			return '';
 		}
 		$rendered = wp_kses_post( self::render_calendar_type( 'list', $block['attrs'] ) );
@@ -435,8 +448,11 @@ JS;
 	 * @return string
 	 */
 	public static function seed_visibility_wrapper( $block_content, $block ) {
-		$blocks = array( 'eventkoi/calendar', 'eventkoi/list' );
+		$blocks = array( 'eventkoi/calendar', 'eventkoi/list', 'eventkoi/event-data' );
 		if ( ! in_array( $block['blockName'] ?? '', $blocks, true ) ) {
+			return $block_content;
+		}
+		if ( empty( $block['attrs']['blockVisibility'] ) ) {
 			return $block_content;
 		}
 		if ( '' !== trim( (string) $block_content ) ) {
