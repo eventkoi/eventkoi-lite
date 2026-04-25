@@ -683,14 +683,14 @@ function eventkoi_timezone() {
 		$timezone = $timezone_string;
 	} else {
 		// Fallback to UTC offset if not a named timezone.
-		$offset = get_option( 'gmt_offset', 0 );
+		$offset = (float) get_option( 'gmt_offset', 0 );
 
-		if ( 0 === (float) $offset ) {
+		if ( 0.0 === $offset ) {
 			$timezone = 'UTC';
 		} else {
-			$sign    = ( 0 <= $offset ) ? '+' : '-';
+			$sign    = ( 0.0 <= $offset ) ? '+' : '-';
 			$hours   = (int) $offset;
-			$minutes = abs( ( $offset - $hours ) * 60 );
+			$minutes = (int) round( abs( ( $offset - $hours ) * 60 ) );
 
 			if ( 0 === $minutes ) {
 				$timezone = sprintf( 'UTC%s%d', $sign, abs( $hours ) );
