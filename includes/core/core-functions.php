@@ -999,6 +999,40 @@ function eventkoi_generate_instance_starts( $rule, $limit = 500 ) {
 }
 
 /**
+ * Build an inclusive RRULE UNTIL value for a recurrence "ends on" date.
+ *
+ * The UI stores `ends_on` as a calendar date (e.g. "2026-05-17") or as midnight UTC
+ * (e.g. "2026-05-17T00:00:00Z"). Treating that as an instant excludes any same-day
+ * occurrence whose start is past midnight UTC in the event's timezone — even when
+ * the user picked the very date they expected to be included. Anchor the UNTIL to
+ * 23:59:59 on that calendar day in the event's timezone so RFC 5545 inclusivity
+ * matches user intent.
+ *
+ * @param string             $ends_on  Raw `ends_on` value from the rule.
+ * @param \DateTimeZone|null $event_tz Event timezone. Falls back to site timezone.
+ * @return \DateTimeImmutable|null End-of-day in event timezone, or null on bad input.
+ */
+function eventkoi_recurrence_until( $ends_on, $event_tz = null ) {
+	if ( empty( $ends_on ) ) {
+		return null;
+	}
+
+	if ( ! preg_match( '/^(\d{4}-\d{2}-\d{2})/', (string) $ends_on, $m ) ) {
+		return null;
+	}
+
+	if ( ! ( $event_tz instanceof \DateTimeZone ) ) {
+		$event_tz = wp_timezone();
+	}
+
+	try {
+		return new \DateTimeImmutable( $m[1] . ' 23:59:59', $event_tz );
+	} catch ( \Exception $e ) {
+		return null;
+	}
+}
+
+/**
  * Locate an EventKoi template.
  *
  * Looks in the theme first, then falls back to the plugin.

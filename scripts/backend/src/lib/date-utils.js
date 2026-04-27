@@ -598,6 +598,26 @@ export function ensureUtcZ(value) {
 }
 
 /**
+ * Anchor a recurrence "ends_on" value to end-of-day in the event timezone so
+ * the user-picked calendar date is inclusive. Mirrors PHP eventkoi_recurrence_until():
+ * the UI stores ends_on as "YYYY-MM-DD" or midnight UTC ("YYYY-MM-DDT00:00:00Z"),
+ * and treating either as an instant excludes any same-day occurrence past UTC
+ * midnight in the event's timezone.
+ *
+ * @param {string} endsOn Raw rule.ends_on value.
+ * @param {string} zone   Event timezone (IANA name).
+ * @returns {DateTime|null} Luxon DateTime at 23:59:59.999 in the event timezone, or null on bad input.
+ */
+export function recurrenceUntilWall(endsOn, zone) {
+  const m = String(endsOn || "").match(/^(\d{4}-\d{2}-\d{2})/);
+  if (!m) return null;
+  const dt = DateTime.fromISO(m[1], { zone: normalizeTimeZone(zone) }).endOf(
+    "day"
+  );
+  return dt.isValid ? dt : null;
+}
+
+/**
  * Convert stored UTC ISO string to a JS Date in a target timezone (wpTz).
  * Auto-fixes strings missing 'Z' or offset by treating them as UTC.
  */

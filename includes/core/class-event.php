@@ -3369,7 +3369,10 @@ class Event {
 					if ( isset( $rule['ends'] ) && 'after' === $rule['ends'] && ! empty( $rule['ends_after'] ) ) {
 						$options['COUNT'] = absint( $rule['ends_after'] );
 					} elseif ( isset( $rule['ends'] ) && 'on' === $rule['ends'] && ! empty( $rule['ends_on'] ) ) {
-						$options['UNTIL'] = new \DateTimeImmutable( $rule['ends_on'] );
+						$until = eventkoi_recurrence_until( $rule['ends_on'] );
+						if ( $until ) {
+							$options['UNTIL'] = $until;
+						}
 					}
 					if ( 'week' === $frequency && ! empty( $rule['weekdays'] ) ) {
 						$map   = array( 'MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU' );
@@ -3503,7 +3506,10 @@ class Event {
 					if ( 'after' === $rule['ends'] && ! empty( $rule['ends_after'] ) ) {
 						$options['COUNT'] = absint( $rule['ends_after'] );
 					} elseif ( 'on' === $rule['ends'] && ! empty( $rule['ends_on'] ) ) {
-						$options['UNTIL'] = new \DateTimeImmutable( $rule['ends_on'], $tz_wp );
+						$until = eventkoi_recurrence_until( $rule['ends_on'], $tz_wp );
+						if ( $until ) {
+							$options['UNTIL'] = $until;
+						}
 					} elseif ( 'never' === $rule['ends'] ) {
 						return array(
 							'start'       => $dt_start_local,

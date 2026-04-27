@@ -27,6 +27,7 @@ import {
   ensureUtcZ,
   getDateInTimezone,
   getOrderedWeekdays,
+  recurrenceUntilWall,
 } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
 import { CheckCheck, Copy, MoveRight, Plus, Trash2, X } from "lucide-react";
@@ -192,9 +193,8 @@ function getRecurringSummary(rule, wpTz) {
   if (rule.ends === "after") {
     endText = `, ${rule.ends_after} events`;
   } else if (rule.ends === "on") {
-    endText = `, until ${DateTime.fromISO(rule.ends_on, { zone: "utc" })
-      .setZone(wpTz)
-      .toFormat("d MMM yyyy")}`;
+    const endsOn = recurrenceUntilWall(rule.ends_on, wpTz);
+    endText = endsOn ? `, until ${endsOn.toFormat("d MMM yyyy")}` : "";
   } else {
     endText = ", forever";
   }

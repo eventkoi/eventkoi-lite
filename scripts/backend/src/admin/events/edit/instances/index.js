@@ -5,6 +5,7 @@ import { Panel } from "@/components/panel";
 import { Textarea } from "@/components/ui/textarea";
 import { useEventEditContext } from "@/hooks/EventEditContext";
 import { useSettings } from "@/hooks/SettingsContext";
+import { recurrenceUntilWall } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
 import { DateTime } from "luxon";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -103,6 +104,10 @@ export function generateInstances(
       const simulated = [];
       const dateCursor = new Date(start);
       const ruleInterval = rule.every || 1;
+      const endsOnDate =
+        rule.ends === "on"
+          ? recurrenceUntilWall(rule.ends_on, timezone)?.toJSDate() ?? null
+          : null;
 
       let skipCounter = 0;
       let added = 0;
@@ -120,7 +125,7 @@ export function generateInstances(
               break;
             }
 
-            if (rule.ends === "on" && dateCursor > new Date(rule.ends_on)) {
+            if (endsOnDate && dateCursor > endsOnDate) {
               break;
             }
           } else {
@@ -213,8 +218,8 @@ export function generateInstances(
 
     let until;
     if (rule.ends === "on") {
-      const parsedUntil = new Date(rule.ends_on);
-      if (!Number.isNaN(parsedUntil.getTime())) {
+      const parsedUntil = recurrenceUntilWall(rule.ends_on, timezone)?.toJSDate();
+      if (parsedUntil && !Number.isNaN(parsedUntil.getTime())) {
         until = parsedUntil;
       }
     }
