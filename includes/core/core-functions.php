@@ -186,6 +186,13 @@ function eventkoi_get_instance_id() {
 		$instance_ts = isset( $_GET['instance'] ) ? absint( wp_unslash( $_GET['instance'] ) ) : 0;
 	}
 
+	if ( 0 === $instance_ts ) {
+		$post = get_post();
+		if ( $post instanceof \WP_Post && ! empty( $post->eventkoi_instance_ts ) ) {
+			$instance_ts = absint( $post->eventkoi_instance_ts );
+		}
+	}
+
 	return $instance_ts;
 }
 
