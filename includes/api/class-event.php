@@ -168,7 +168,51 @@ class Event {
 			return $event;
 		}
 
+		$event = self::attach_rendered_event_fields( $event, $event_id );
+
 		return rest_ensure_response( $event );
+	}
+
+	/**
+	 * Attach rendered values for every event_* canonical field so the
+	 * Gutenberg editor preview can show actual content instead of literal
+	 * `{Field Name}` placeholder labels.
+	 *
+	 * @param array|mixed $event Single event array.
+	 * @param int|null    $event_id Optional event ID; resolved from the row when omitted.
+	 * @return array|mixed Enriched event (or original on bad input).
+	 */
+	public static function attach_rendered_event_fields( $event, $event_id = null ) {
+		if ( ! is_array( $event ) ) {
+			return $event;
+		}
+
+		$event_id = $event_id ? absint( $event_id ) : absint( $event['event_id'] ?? ( $event['id'] ?? 0 ) );
+		if ( $event_id <= 0 ) {
+			return $event;
+		}
+
+		if ( ! function_exists( 'eventkoi_get_event_data_options' ) ) {
+			return $event;
+		}
+
+		$options = eventkoi_get_event_data_options();
+		if ( ! is_array( $options ) ) {
+			return $event;
+		}
+
+		$event_obj = new \EventKoi\Core\Event( $event_id );
+		foreach ( array_keys( $options ) as $field ) {
+			if ( isset( $event[ $field ] ) ) {
+				continue;
+			}
+			$rendered = (string) $event_obj::render_meta( $field );
+			if ( '' !== $rendered ) {
+				$event[ $field ] = $rendered;
+			}
+		}
+
+		return $event;
 	}
 
 	/**

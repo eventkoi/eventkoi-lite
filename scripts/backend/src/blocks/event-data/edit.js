@@ -330,15 +330,27 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 
     default:
       if (typeof field === "string" && field.startsWith("event_")) {
-        const humanLabel = field
-          .replace(/^event_/, "")
-          .replace(/_/g, " ")
-          .replace(/\b\w/g, (c) => c.toUpperCase());
-        content = (
-          <TagName {...blockProps}>
-            <span className="opacity-60 italic">{`{${humanLabel}}`}</span>
-          </TagName>
-        );
+        const renderedValue =
+          event && typeof event[field] === "string" ? event[field].trim() : "";
+
+        if (renderedValue) {
+          content = (
+            <TagName
+              {...blockProps}
+              dangerouslySetInnerHTML={{ __html: renderedValue }}
+            />
+          );
+        } else {
+          const humanLabel = field
+            .replace(/^event_/, "")
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (c) => c.toUpperCase());
+          content = (
+            <TagName {...blockProps}>
+              <span className="opacity-60 italic">{`{${humanLabel}}`}</span>
+            </TagName>
+          );
+        }
       } else {
         content = (
           <TagName {...blockProps}>

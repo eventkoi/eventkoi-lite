@@ -230,7 +230,7 @@ class Calendar {
 
 		$response = array(
 			'calendar' => $calendar::get_meta(),
-			'events'   => $event_data['items'] ?? array(),
+			'events'   => self::enrich_events_for_editor( $event_data['items'] ?? array() ),
 			'total'    => $event_data['total'] ?? count( $event_data['items'] ?? array() ),
 		);
 
@@ -339,10 +339,12 @@ class Calendar {
 				)
 			);
 
+			$events_with_rendered = self::enrich_events_for_editor( $event_data['items'] ?? array() );
+
 			return rest_ensure_response(
 				array(
-					'events' => $event_data['items'] ?? array(),
-					'total'  => $event_data['total'] ?? count( $event_data['items'] ?? array() ),
+					'events' => $events_with_rendered,
+					'total'  => $event_data['total'] ?? count( $events_with_rendered ),
 					'source' => 'include',
 				)
 			);
@@ -369,7 +371,7 @@ class Calendar {
 				)
 			);
 
-			$events       = $event_data['items'] ?? array();
+			$events       = self::enrich_events_for_editor( $event_data['items'] ?? array() );
 			$total_events = $event_data['total'] ?? count( $events );
 
 			return rest_ensure_response(
@@ -401,7 +403,7 @@ class Calendar {
 			)
 		);
 
-		$events       = $event_data['items'] ?? array();
+		$events       = self::enrich_events_for_editor( $event_data['items'] ?? array() );
 		$total_events = $event_data['total'] ?? count( $events );
 		$count        = count( $events );
 
@@ -424,6 +426,33 @@ class Calendar {
 		);
 	}
 
+
+	/**
+	 * Attach rendered event_* canonical-field values to each event row so
+	 * Gutenberg editor previews can render actual values (e.g. "April 25, 2026")
+	 * instead of literal `{Date}` / `{Time}` placeholder labels.
+	 *
+	 * @param array $events Event rows from Calendar::get_events().
+	 * @return array Same rows with event_* rendered fields attached.
+	 */
+	private static function enrich_events_for_editor( $events ) {
+		if ( ! is_array( $events ) || empty( $events ) ) {
+			return $events;
+		}
+
+		if ( ! class_exists( '\EventKoi\API\Event' ) ) {
+			return $events;
+		}
+
+		foreach ( $events as $i => $row ) {
+			if ( ! is_array( $row ) ) {
+				continue;
+			}
+			$events[ $i ] = \EventKoi\API\Event::attach_rendered_event_fields( $row );
+		}
+
+		return $events;
+	}
 
 	/**
 	 * Update a calendar.
