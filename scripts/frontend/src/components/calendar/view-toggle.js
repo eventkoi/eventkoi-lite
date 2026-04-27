@@ -15,6 +15,23 @@ export function ViewToggle({ calendarApi, view, setView }) {
       value={view}
       onValueChange={(val) => {
         if (!val) return;
+
+        // When switching to week view, jump to today's week if today falls
+        // within the currently-displayed month; otherwise FullCalendar would
+        // anchor on the 1st of that month, which is rarely what the user
+        // expects (Mar 29 – Apr 4 instead of "this week").
+        if (val === "timeGridWeek" && calendarApi) {
+          const current = calendarApi.getDate();
+          const today = new Date();
+          if (
+            current &&
+            current.getFullYear() === today.getFullYear() &&
+            current.getMonth() === today.getMonth()
+          ) {
+            calendarApi.gotoDate(today);
+          }
+        }
+
         calendarApi?.changeView(val);
         setView(val);
       }}
