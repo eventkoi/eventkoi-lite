@@ -1,4 +1,5 @@
 import { Box } from "@/components/box";
+import { ConfirmDialog } from "@/components/confirm-dialog";
 import { Heading } from "@/components/heading";
 import { TimeInput } from "@/components/time-input";
 import { Button } from "@/components/ui/button";
@@ -67,6 +68,12 @@ export function EventEditManageTickets() {
   const [dragOverIndex, setDragOverIndex] = useState(null);
   const [draggingIndex, setDraggingIndex] = useState(null);
   const ticketsRef = useRef([]);
+  // Saved ticket IDs the user has marked for deletion since last save.
+  // The DELETE REST call is deferred until saveTickets() — refreshing
+  // before saving keeps the ticket intact.
+  const [deletedTicketIds, setDeletedTicketIds] = useState([]);
+  const deletedTicketIdsRef = useRef([]);
+  const [deleteConfirmTarget, setDeleteConfirmTarget] = useState(null);
   const expandedStorageKey = event?.id
     ? `eventkoi_tickets_expanded_${event.id}`
     : null;
@@ -116,9 +123,14 @@ export function EventEditManageTickets() {
   }, [tickets]);
 
   useEffect(() => {
+    deletedTicketIdsRef.current = deletedTicketIds;
+  }, [deletedTicketIds]);
+
+  useEffect(() => {
     const fetchTickets = async () => {
       if (!event?.id) {
         setTickets([]);
+        setDeletedTicketIds([]);
         return;
       }
 
@@ -133,6 +145,9 @@ export function EventEditManageTickets() {
           : [];
 
         setTickets(ticketsList);
+        // Server is the source of truth after a fresh fetch — clear any
+        // stale pending deletions from a previous event/edit session.
+        setDeletedTicketIds([]);
 
         const storedExpanded =
           expandedStorageKey &&
@@ -336,17 +351,26 @@ export function EventEditManageTickets() {
     setDragOverIndex(null);
   };
 
-  const handleDeleteTicket = async (ticket, index) => {
+  // Removes the row from local state. For saved tickets we also stash the
+  // server ID into deletedTicketIds so saveTickets() commits the deletion;
+  // unsaved rows just disappear (there's nothing on the server to delete).
+  const removeTicketRow = (ticket, index) => {
     if (ticket?.id) {
-      try {
-        await callLocalApi(`tickets/${ticket.id}`, { method: "DELETE" });
-      } catch (error) {
-        showToastError("Failed to delete ticket.");
-        return;
-      }
+      const id = ticket.id;
+      setDeletedTicketIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
     }
-
     setTickets((prev) => prev.filter((_, idx) => idx !== index));
+    setDeleteConfirmTarget(null);
+  };
+
+  const handleDeleteTicket = (ticket, index) => {
+    // Unsaved rows: drop immediately, no confirmation (nothing to lose).
+    if (!ticket?.id) {
+      removeTicketRow(ticket, index);
+      return;
+    }
+    // Saved rows: confirm first; commit the server deletion on Save.
+    setDeleteConfirmTarget({ ticket, index });
   };
 
   const ticketHasData = (ticket) => {
@@ -425,6 +449,28 @@ export function EventEditManageTickets() {
 
     setSavingTickets(true);
     try {
+      // Commit any pending deletions first. Tolerate 404s (already gone).
+      const pendingDeletes = deletedTicketIdsRef.current.slice();
+      const succeededDeletes = [];
+      for (const ticketId of pendingDeletes) {
+        if (!ticketId) continue;
+        try {
+          await callLocalApi(`tickets/${ticketId}`, { method: "DELETE" });
+          succeededDeletes.push(ticketId);
+        } catch (error) {
+          if (error?.code === "rest_post_invalid_id" || error?.data?.status === 404) {
+            succeededDeletes.push(ticketId);
+            continue;
+          }
+          throw error;
+        }
+      }
+      if (succeededDeletes.length) {
+        setDeletedTicketIds((prev) =>
+          prev.filter((id) => !succeededDeletes.includes(id))
+        );
+      }
+
       const savedTickets = [];
 
       for (let index = 0; index < filteredTickets.length; index += 1) {
@@ -994,6 +1040,27 @@ export function EventEditManageTickets() {
         </div>
       </div>
     </Box>
+    <ConfirmDialog
+      open={!!deleteConfirmTarget}
+      onOpenChange={(next) => {
+        if (!next) setDeleteConfirmTarget(null);
+      }}
+      icon="delete"
+      title={__("Delete this ticket?", "eventkoi-lite")}
+      description={__(
+        "This ticket will be removed from the event when you click Save. You can undo by leaving the page without saving.",
+        "eventkoi-lite"
+      )}
+      confirmLabel={__("Remove", "eventkoi-lite")}
+      onConfirm={() => {
+        if (deleteConfirmTarget) {
+          removeTicketRow(
+            deleteConfirmTarget.ticket,
+            deleteConfirmTarget.index
+          );
+        }
+      }}
+    />
   </div>
   );
 }
