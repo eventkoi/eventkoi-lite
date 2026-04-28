@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.3.9.7
+Stable tag: 1.3.9.8
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -230,6 +230,30 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.9.8 – Past events query, recurring date polish & ticket-delete safeguards – 2026-04-28 =
+* New: "Past events" query option in the Event Query Loop block — sort completed events with their most recent past occurrence, mirroring how "Upcoming events" rolls forward over time.
+* New: Event Data block exposes the full set of canonical event tokens — separate `event_date`, `event_time`, `event_date_year`, `event_date_month`, `event_date_day`, `event_date_iso`, plus ticket-data tokens (capacity, sold, sold_out, low_stock, ticket_count, ticket_summary, sales_start/end), RSVP tokens (capacity, remaining, going, full), and ticket price + date format presets.
+* New: `event_date` and `event_time` dynamic tokens for Elementor, Divi, Beaver Builder and shortcode pickers.
+* Improvement: Recurring events in query loops now display the next upcoming occurrence (not the original series start) — and Past mode shows the latest past occurrence.
+* Improvement: Recurring "ends on" defaults to one year from today, so newly created recurring events are bounded out of the box.
+* Improvement: Event Query Loop grid is now responsive on tablet and mobile breakpoints.
+* Improvement: Admin pages share a unified 1280px content width.
+* Improvement: Ticket counts column reads "N ticket(s)" / "N RSVP(s)" with proper pluralization, and reflects gateway-completed orders only.
+* Improvement: Drop the recurring rule summary from the ticket checkout modal — buyers see only what they're booking.
+* Improvement: New events default to timed (not all-day).
+* Improvement: Ticket delete now requires confirmation and is only persisted when you click Save — refresh restores tickets you removed by mistake.
+* Improvement: Date rendering uses a single helper across surfaces — all-day toggle, click-to-deselect, recurring scoped to Pro.
+* Improvement: Calendar week view renders 24-hour gutter labels and tightens border stacking in month + week views.
+* Improvement: Calendar week view now lands on the current week (not the start of the displayed month) when you toggle from Month.
+* Fix: Recurring "ends on" date is inclusive — the user-picked end date is now part of the series instead of being silently dropped.
+* Fix: Block Visibility extension is honored on Calendar/List/event-data blocks.
+* Fix: Switching the WordPress timezone setting no longer crashes the site when `gmt_offset` returns an empty string.
+* Fix: Wrapper classes from `render_block` filters are preserved on Calendar and List blocks.
+* Fix: Accent characters in event titles sanitize correctly into slugs.
+* Fix: Event description list styling is preserved on the front end.
+* Fix: All-day axis cell border restored in calendar week view for proper grid alignment.
+* Fix: Renderers honor a per-row `instance_ts` so Elementor/Divi/Beaver loops show the correct occurrence date.
 
 = 1.3.9.7 – Ticket Save Fixes & Loco Translate Compatibility – 2026-04-19 =
 * Fix: Tickets are now saved correctly from the event's Tickets tab. Previously, ticket rows could be discarded when the event was saved or when switching tabs.
