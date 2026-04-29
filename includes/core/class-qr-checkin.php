@@ -29,7 +29,8 @@ class QR_Checkin {
 	 * Constructor.
 	 */
 	public function __construct() {
-		// QR check-ins are Pro-only; disable handlers in Lite.
+		add_action( 'template_redirect', array( $this, 'maybe_handle_qr_checkin' ) );
+		add_action( 'wp_footer', array( $this, 'render_qr_overlay' ) );
 	}
 
 	/**
@@ -38,29 +39,65 @@ class QR_Checkin {
 	 * @return void
 	 */
 	public function maybe_handle_qr_checkin() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- QR token is the request credential for this public check-in endpoint.
 		if ( empty( $_GET['eventkoi_qr'] ) ) {
 			return;
 		}
 
-		// QR check-ins are a Pro feature.
-		$this->queue_qr_payload(
-			__( 'QR check-ins are a Pro feature.', 'eventkoi-lite' ),
-			403,
-			'&#10005;',
-			null,
-			false,
-			false
-		);
-		return;
-
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- QR token is the request credential for this public check-in endpoint.
 		$token = sanitize_text_field( wp_unslash( $_GET['eventkoi_qr'] ) );
 		if ( empty( $token ) ) {
 			return;
 		}
 
-		if ( ! is_user_logged_in() || ! current_user_can( 'manage_options' ) ) {
+		// Rate limit when the helper is available (Pro ships it; Lite degrades gracefully).
+		if ( class_exists( '\EventKoi\Core\Rate_Limiter' ) ) {
+			$ip = \EventKoi\Core\Rate_Limiter::get_client_ip();
+			if ( ! \EventKoi\Core\Rate_Limiter::check( 'qr_checkin', $ip, 20, 60 ) ) {
+				$retry = \EventKoi\Core\Rate_Limiter::retry_after( 'qr_checkin', $ip );
+				header( 'Retry-After: ' . $retry );
+				$this->queue_qr_payload(
+					__( 'Too many requests. Please try again later.', 'eventkoi-lite' ),
+					429,
+					'&#8987;',
+					null,
+					false,
+					false
+				);
+				return;
+			}
+		}
+
+		/**
+		 * Capability required to perform a QR check-in.
+		 *
+		 * Defaults to manage_options. Sites with multi-staff workflows can lower
+		 * this to e.g. `edit_posts` so editors can scan attendees too.
+		 *
+		 * @param string $capability Default capability.
+		 */
+		$capability = (string) apply_filters( 'eventkoi_qr_checkin_capability', 'manage_options' );
+
+		if ( ! is_user_logged_in() ) {
+			$login_url = wp_login_url( ( is_ssl() ? 'https://' : 'http://' ) . wp_unslash( $_SERVER['HTTP_HOST'] ?? '' ) . wp_unslash( $_SERVER['REQUEST_URI'] ?? '' ) );
 			$this->queue_qr_payload(
-				__( 'Not authorized.', 'eventkoi-lite' ),
+				sprintf(
+					/* translators: %s: login URL */
+					__( 'Please <a href="%s">log in</a> as event staff to scan check-in codes.', 'eventkoi-lite' ),
+					esc_url( $login_url )
+				),
+				401,
+				'&#10005;',
+				null,
+				false,
+				false
+			);
+			return;
+		}
+
+		if ( ! current_user_can( $capability ) ) {
+			$this->queue_qr_payload(
+				__( 'Only event staff can check in attendees.', 'eventkoi-lite' ),
 				403,
 				'&#10005;',
 				null,
