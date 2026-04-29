@@ -310,27 +310,6 @@ class Ticket_Emails {
 			)
 			: '';
 
-		$qr_code = '';
-		if ( '' !== $checkin_code ) {
-			$checkin_url = add_query_arg(
-				array( 'eventkoi_qr' => $checkin_code ),
-				home_url( '/' )
-			);
-			$qr_url      = add_query_arg(
-				array(
-					'data' => $checkin_url,
-					'size' => '96x96',
-				),
-				'https://api.qrserver.com/v1/create-qr-code/'
-			);
-			$qr_url      = apply_filters( 'eventkoi_ticket_qr_url', $qr_url, $checkin_url, $checkin_code, $event_id, $instance_ts );
-			$qr_code     = sprintf(
-				'<img src="%s" alt="%s" width="96" height="96" />',
-				esc_url( $qr_url ),
-				esc_attr__( 'QR code', 'eventkoi-lite' )
-			);
-		}
-
 		$ticket_codes_line = self::render_ticket_codes_for_email( $items, $ticket_name_contexts );
 
 		$tags = array(
@@ -347,7 +326,6 @@ class Ticket_Emails {
 			'[event_url]'      => $event_url,
 			'[checkin_code]'   => $checkin_code,
 			'[checkin_line]'   => $checkin_line,
-			'[qr_code]'        => $qr_code,
 			'[ticket_codes]'   => $ticket_codes_line,
 			'[ticket_lines]'   => $tickets_line,
 			'[site_name]'      => get_bloginfo( 'name' ),
@@ -366,7 +344,6 @@ class Ticket_Emails {
 				'<p>' . esc_html__( 'Thanks for your ticket purchase for [event_name].', 'eventkoi-lite' ) . '</p>',
 				'<p>' . esc_html__( 'Order ID:', 'eventkoi-lite' ) . ' <br />[order_id]</p>',
 				'[checkin_line]',
-				'' !== $qr_code ? '<p>[qr_code]</p>' : '',
 				'<p><strong>' . esc_html__( 'Tickets', 'eventkoi-lite' ) . '</strong><br />[ticket_lines]</p>',
 				'' !== $ticket_codes_line ? '<p><strong>' . esc_html__( 'Ticket Codes', 'eventkoi-lite' ) . '</strong><br />[ticket_codes]</p>' : '',
 				$event_datetime ? '<p>' . esc_html__( 'Schedule ([event_timezone]):', 'eventkoi-lite' ) . '<br />[event_datetime]</p>' : '',

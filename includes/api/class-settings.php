@@ -72,6 +72,23 @@ class Settings {
 			$settings['currency'] = strtoupper( get_woocommerce_currency() );
 		}
 
+		// Strip Pro-only [qr_code] tag from any saved email templates so the
+		// Lite settings UI never surfaces it (templates from a previous Pro
+		// install can carry it; Lite cannot render it anyway).
+		$template_keys = array(
+			'rsvp_email_template',
+			'ticket_email_template',
+			'refund_email_template',
+			'admin_rsvp_email_template',
+			'admin_ticket_email_template',
+		);
+		foreach ( $template_keys as $tk ) {
+			if ( ! empty( $settings[ $tk ] ) && is_string( $settings[ $tk ] ) && false !== strpos( $settings[ $tk ], '[qr_code]' ) ) {
+				$settings[ $tk ] = preg_replace( '#<p>\s*\[qr_code\]\s*</p>\s*\n?#', '', $settings[ $tk ] );
+				$settings[ $tk ] = str_replace( '[qr_code]', '', $settings[ $tk ] );
+			}
+		}
+
 		return rest_ensure_response( $settings );
 	}
 

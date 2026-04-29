@@ -99,55 +99,55 @@ class Hooks {
 	}
 
 	/**
-	 * Apply saved RSVP email template.
+	 * RSVP email template.
+	 *
+	 * Lite does not support editing email content, so always return the
+	 * baked-in default. Any saved template would be a leftover from a
+	 * previous Pro install and may contain Pro-only tags.
 	 *
 	 * @param string $template Default template.
 	 * @return string
 	 */
 	public static function filter_rsvp_email_template( $template ) {
-		$settings = Settings::get();
-		$saved    = isset( $settings['rsvp_email_template'] ) ? (string) $settings['rsvp_email_template'] : '';
-
-		return $saved ? $saved : $template;
+		return $template;
 	}
 
 	/**
-	 * Apply saved RSVP email subject.
+	 * RSVP email subject.
+	 *
+	 * Lite does not support editing the subject line; always use the default.
 	 *
 	 * @param string $subject Default subject.
 	 * @return string
 	 */
 	public static function filter_rsvp_email_subject( $subject ) {
-		$settings = Settings::get();
-		$saved    = isset( $settings['rsvp_email_subject'] ) ? (string) $settings['rsvp_email_subject'] : '';
-
-		return $saved ? $saved : $subject;
+		return $subject;
 	}
 
 	/**
-	 * Apply saved ticket email template.
+	 * Ticket email template.
+	 *
+	 * Lite does not support editing email content, so always return the
+	 * baked-in default. Any saved template would be a leftover from a
+	 * previous Pro install and may contain Pro-only tags.
 	 *
 	 * @param string $template Default template.
 	 * @return string
 	 */
 	public static function filter_ticket_email_template( $template ) {
-		$settings = Settings::get();
-		$saved    = isset( $settings['ticket_email_template'] ) ? (string) $settings['ticket_email_template'] : '';
-
-		return $saved ? $saved : $template;
+		return $template;
 	}
 
 	/**
-	 * Apply saved ticket email subject.
+	 * Ticket email subject.
+	 *
+	 * Lite does not support editing the subject line; always use the default.
 	 *
 	 * @param string $subject Default subject.
 	 * @return string
 	 */
 	public static function filter_ticket_email_subject( $subject ) {
-		$settings = Settings::get();
-		$saved    = isset( $settings['ticket_email_subject'] ) ? (string) $settings['ticket_email_subject'] : '';
-
-		return $saved ? $saved : $subject;
+		return $subject;
 	}
 
 	/**

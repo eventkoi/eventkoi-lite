@@ -822,25 +822,7 @@ class Rsvps {
 		$title   = self::get_event_title( $event_id, $instance_ts );
 		$subject = sprintf( __( 'Your RSVP for %s', 'eventkoi-lite' ), $title );
 
-		$event_url   = self::get_event_url( $event_id, $instance_ts );
-		$checkin_url = add_query_arg(
-			array( 'eventkoi_qr' => $token ),
-			home_url( '/' )
-		);
-		$qr_url      = add_query_arg(
-			array(
-				'data' => $checkin_url,
-				'size' => '96x96',
-			),
-			'https://api.qrserver.com/v1/create-qr-code/'
-		);
-		$qr_url      = apply_filters( 'eventkoi_rsvp_qr_url', $qr_url, $checkin_url, $token, $event_id, $instance_ts );
-		$qr_code     = sprintf(
-			'<img src="%s" alt="%s" width="96" height="96" />',
-			esc_url( $qr_url ),
-			esc_attr__( 'QR code', 'eventkoi-lite' )
-		);
-		$qr_code     = apply_filters( 'eventkoi_rsvp_qr_code', $qr_code, $qr_url, $checkin_url, $token, $event_id, $instance_ts );
+		$event_url = self::get_event_url( $event_id, $instance_ts );
 
 		$event_timestamp     = $instance_ts ? absint( $instance_ts ) : absint( get_post_meta( $event_id, 'start_timestamp', true ) );
 		$event_end_timestamp = absint( get_post_meta( $event_id, 'end_timestamp', true ) );
@@ -912,7 +894,6 @@ class Rsvps {
 			'[guest_count]'        => $guest_count,
 			'[guests_line]'        => $guest_line,
 			'[checkin_code]'       => $token,
-			'[qr_code]'            => '',
 			'[site_name]'          => get_bloginfo( 'name' ),
 		);
 
@@ -930,7 +911,6 @@ class Rsvps {
 				'<p>Hi [attendee_name],</p>',
 				'<p>Thanks for your RSVP to [event_name].</p>',
 				'<p>Check-in code:<br />[checkin_code]</p>',
-				'<p>[qr_code]</p>',
 				$event_datetime ? '<p>' . esc_html( $schedule_label ) . '<br />[event_datetime]</p>' : '',
 				$event_location ? '<p>' . esc_html__( 'Location:', 'eventkoi-lite' ) . '<br />[event_location]</p>' : '',
 				'<p>[guests_line]</p>',
