@@ -898,9 +898,12 @@ class Event {
 
 		if ( in_array( $type, array( 'standard', 'multi' ), true ) ) {
 			$days = self::get_event_days();
-			if ( ! empty( $days[0] ) && is_array( $days[0] ) ) {
+			// Only use days[0] when it actually carries a start_date; some events
+			// have a placeholder row with null/empty fields that would otherwise
+			// short-circuit before the post-meta fallback below.
+			if ( ! empty( $days[0]['start_date'] ) ) {
 				return array(
-					'start_date' => $days[0]['start_date'] ?? '',
+					'start_date' => $days[0]['start_date'],
 					'end_date'   => $days[0]['end_date'] ?? '',
 					'all_day'    => ! empty( $days[0]['all_day'] ),
 				);
@@ -909,16 +912,16 @@ class Event {
 
 		if ( 'recurring' === $type ) {
 			$rules = self::get_recurrence_rules();
-			if ( ! empty( $rules[0] ) && is_array( $rules[0] ) ) {
+			if ( ! empty( $rules[0]['start_date'] ) ) {
 				return array(
-					'start_date' => $rules[0]['start_date'] ?? '',
+					'start_date' => $rules[0]['start_date'],
 					'end_date'   => $rules[0]['end_date'] ?? '',
 					'all_day'    => ! empty( $rules[0]['all_day'] ),
 				);
 			}
 		}
 
-		// Fallback to legacy start_date.
+		// Fallback to legacy post-meta start_date / end_date.
 		return array(
 			'start_date' => self::get_start_date( true ),
 			'end_date'   => self::get_end_date( true ),
@@ -2130,17 +2133,16 @@ class Event {
 	}
 
 	/**
-	 * Rendered timezone (only if setting is enabled).
+	 * Rendered timezone.
+	 *
+	 * The "show timezone" event setting only gates the *implicit* timezone
+	 * display attached to the inline event_datetime widget. When the explicit
+	 * `event_timezone` token is used (block binding, shortcode, dynamic tag),
+	 * the user is asking for the timezone — always return it.
 	 *
 	 * @return string
 	 */
 	public static function rendered_timezone() {
-		$show = self::get_timezone_display();
-
-		if ( false === $show ) {
-			return '';
-		}
-
 		$timezone = wp_kses_post( eventkoi_timezone() );
 		$output   = sprintf(
 			'<span class="ek-timezone" data-source-tz="%1$s">%2$s</span>',
@@ -2494,8 +2496,19 @@ class Event {
 			$data = self::get_event_days();
 		}
 
-		if ( empty( $data ) || ! is_array( $data ) ) {
-			return '';
+		// Fall back to post-meta start/end when get_event_days returns a
+		// placeholder row with empty fields (some standard events). Without
+		// this, the dynamic token / block binding renders empty even though
+		// start_date is set in post meta.
+		if ( ! is_array( $data ) || empty( array_filter( $data, static function ( $row ) {
+			return is_array( $row ) && ! empty( $row['start_date'] );
+		} ) ) ) {
+			$first = self::get_first_instance();
+			if ( ! empty( $first['start_date'] ) ) {
+				$data = array( $first );
+			} else {
+				return '';
+			}
 		}
 
 		$outputs = array();

@@ -149,6 +149,7 @@ class Event {
 
 		$event    = new SingleEvent( $event_id );
 		$response = $event::get_meta();
+		$response = self::attach_rendered_event_fields( $response, $event_id );
 
 		return rest_ensure_response( $response );
 	}
