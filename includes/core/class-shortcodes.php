@@ -27,6 +27,48 @@ class Shortcodes {
 		add_shortcode( 'eventkoi_rsvp', array( __CLASS__, 'render_rsvp' ) );
 		add_shortcode( 'eventkoi_tickets', array( __CLASS__, 'render_tickets' ) );
 		add_shortcode( 'eventkoi_checkin', array( __CLASS__, 'render_checkin' ) );
+
+		// After do_shortcode resolves [eventkoi …] inside an href attribute,
+		// strip a leading bogus protocol that the WP/TinyMCE link inserter
+		// prepended to the shortcode (e.g. user typed [eventkoi …] in the
+		// link URL field, WP wrote href="http://[eventkoi …]", we end up
+		// with href="http://https://example.com").
+		add_filter( 'the_content', array( __CLASS__, 'normalize_doubled_protocol_hrefs' ), 12 );
+		add_filter( 'elementor/widget/render_content', array( __CLASS__, 'normalize_doubled_protocol_hrefs' ), 12 );
+		add_filter( 'render_block', array( __CLASS__, 'normalize_doubled_protocol_hrefs' ), 12 );
+	}
+
+	/**
+	 * Strip a doubled http(s):// in href attributes — leaves the second protocol.
+	 *
+	 * Handles the case where a user typed `[eventkoi data=event_field_xxx]` into
+	 * a TinyMCE link URL field. WP prepends `http://` to non-URL-looking values,
+	 * so the saved markup is `href="http://[eventkoi …]"`. After shortcode
+	 * substitution that becomes `href="http://https://example.com"`. This
+	 * filter rewrites it to `href="https://example.com"` and removes the
+	 * `data-wplink-url-error="true"` flag WP added at save time.
+	 *
+	 * @param string $html Rendered HTML.
+	 * @return string
+	 */
+	public static function normalize_doubled_protocol_hrefs( $html ) {
+		if ( ! is_string( $html ) || false === stripos( $html, 'href' ) ) {
+			return $html;
+		}
+
+		$html = preg_replace(
+			'#href=(["\'])https?://(https?://[^"\'<>\s]+)\1#i',
+			'href=$1$2$1',
+			(string) $html
+		);
+
+		$html = preg_replace(
+			'#\s+data-wplink-url-error=(["\'])true\1#i',
+			'',
+			(string) $html
+		);
+
+		return $html;
 	}
 
 	/**
