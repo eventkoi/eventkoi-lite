@@ -770,12 +770,21 @@ export function EventEditManageTickets() {
                           <div className="inline-flex items-center gap-2 text-xs text-muted-foreground">
                             <span>{globalCurrency}</span>
                             <span aria-hidden="true">•</span>
-                            <Link
-                              to="/settings/payments"
-                              className="underline underline-offset-2 hover:text-foreground"
-                            >
-                              {__("Change currency", "eventkoi-lite")}
-                            </Link>
+                            {(globalSettings?.ticket_checkout_method || "stripe") === "woocommerce" ? (
+                              <a
+                                href={window?.eventkoi_params?.wc_settings_url || "/wp-admin/admin.php?page=wc-settings"}
+                                className="underline underline-offset-2 hover:text-foreground"
+                              >
+                                {__("Change currency", "eventkoi-lite")}
+                              </a>
+                            ) : (
+                              <Link
+                                to="/settings/payments"
+                                className="underline underline-offset-2 hover:text-foreground"
+                              >
+                                {__("Change currency", "eventkoi-lite")}
+                              </Link>
+                            )}
                           </div>
                         </div>
                         <div className="grid gap-2">

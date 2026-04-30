@@ -132,6 +132,7 @@ class Scripts {
 			'admin_email'         => get_bloginfo( 'admin_email' ),
 			'instance_id'         => get_option( 'eventkoi_site_instance_id' ),
 			'ajax_url'            => admin_url( 'admin-ajax.php' ),
+			'wc_settings_url'     => admin_url( 'admin.php?page=wc-settings' ),
 			'api_key'             => REST::get_api_key(),
 			'is_admin'            => current_user_can( 'manage_options' ),
 			'date_now'            => eventkoi_date( 'j M Y' ),
