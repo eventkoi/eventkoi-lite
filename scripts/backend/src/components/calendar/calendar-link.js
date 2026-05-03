@@ -1,3 +1,4 @@
+import { __ } from "@wordpress/i18n";
 import { useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -13,7 +14,7 @@ export function CalendarLink({ calendar, setCalendar }) {
 
   return (
     <Panel className="p-0">
-      <Label>Calendar link</Label>
+      <Label>{__("Calendar link", "eventkoi-lite")}</Label>
       <div className="relative max-w-[422px]">
         <Input
           type="text"
@@ -40,7 +41,7 @@ export function CalendarLink({ calendar, setCalendar }) {
           ) : (
             <Copy className="mr-2 h-4 w-4" />
           )}
-          {copying ? "Copied!" : "Copy"}
+          {copying ? __("Copied!", "eventkoi-lite") : __("Copy", "eventkoi-lite")}
         </Button>
       </div>
     </Panel>

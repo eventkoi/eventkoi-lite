@@ -112,9 +112,9 @@ export function EventDescription({ isInstance = false, value, onChange }) {
 
   return (
     <Panel className="p-0">
-      <Label htmlFor={editorId}>Event description</Label>
+      <Label htmlFor={editorId}>{__("Event description", "eventkoi-lite")}</Label>
       <div className="text-muted-foreground mb-2">
-        Tell people what your event is about.
+        {__("Tell people what your event is about.", "eventkoi-lite")}
       </div>
 
       {showHTML ? (

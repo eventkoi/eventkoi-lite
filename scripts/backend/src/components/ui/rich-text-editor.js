@@ -1,3 +1,4 @@
+import { __ } from "@wordpress/i18n";
 import { useEffect, useId, useRef, useState } from "react";
 
 export function RichTextEditor({
@@ -173,7 +174,7 @@ export function RichTextEditor({
             onClick={() => setShowHTML(false)}
             className="mx-[8px] px-[6px] py-[4px] mce-btn mce-btn-has-text text-sm border-none bg-transparent cursor-pointer hover:bg-[#e5e7eb] text-[#374151]"
           >
-            <span className="mce-txt">Switch to Visual Editor</span>
+            <span className="mce-txt">{__("Switch to Visual Editor", "eventkoi-lite")}</span>
           </button>
         </div>
         <textarea
@@ -182,7 +183,7 @@ export function RichTextEditor({
           onChange={(e) => setHtmlContent(e.target.value)}
           onBlur={(e) => onChange?.(e.target.value)}
           disabled={disabled}
-          aria-label="HTML source editor"
+          aria-label={__("HTML source editor", "eventkoi-lite")}
         />
       </div>
     );

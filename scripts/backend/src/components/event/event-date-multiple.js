@@ -368,7 +368,7 @@ export function EventDateMultiple({ showAttributes }) {
                     }
                     disabled={tbc}
                   />
-                  <span className="text-sm text-muted-foreground">All day</span>
+                  <span className="text-sm text-muted-foreground">{__("All day", "eventkoi-lite")}</span>
                   {index !== 0 && (
                     <Button
                       type="button"

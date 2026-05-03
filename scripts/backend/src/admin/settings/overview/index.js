@@ -1,3 +1,4 @@
+import { __ } from "@wordpress/i18n";
 import apiRequest from "@wordpress/api-fetch";
 import { useEffect, useMemo, useState } from "react";
 
@@ -201,7 +202,7 @@ export function SettingsOverview() {
       <Box>
         <div className="grid w-full">
           <Panel variant="header">
-            <Heading level={3}>General Settings</Heading>
+            <Heading level={3}>{__("General Settings", "eventkoi-lite")}</Heading>
           </Panel>
 
           <Separator />
@@ -209,14 +210,14 @@ export function SettingsOverview() {
           <Panel className="gap-10">
             {/* Week Start Dropdown */}
             <div className="grid gap-2">
-              <Label htmlFor="week-start">Week starts on</Label>
+              <Label htmlFor="week-start">{__("Week starts on", "eventkoi-lite")}</Label>
               <Select
                 value={String(startDayIndex)}
                 onValueChange={handleStartDayChange}
                 disabled={isSaving}
               >
                 <SelectTrigger id="week-start" className="w-[250px]">
-                  <SelectValue placeholder="Select a day" />
+                  <SelectValue placeholder={__("Select a day", "eventkoi-lite")} />
                 </SelectTrigger>
                 <SelectContent>
                   {Object.entries(dayLabels).map(([key, label]) => (
@@ -233,14 +234,14 @@ export function SettingsOverview() {
 
             {/* Day Start Time */}
             <div className="grid gap-2">
-              <Label htmlFor="day-start-time">Day starts at</Label>
+              <Label htmlFor="day-start-time">{__("Day starts at", "eventkoi-lite")}</Label>
               <Select
                 value={dayStartTime}
                 onValueChange={handleDayStartTimeChange}
                 disabled={isSaving}
               >
                 <SelectTrigger id="day-start-time" className="w-[250px]">
-                  <SelectValue placeholder="Select time" />
+                  <SelectValue placeholder={__("Select time", "eventkoi-lite")} />
                 </SelectTrigger>
                 <SelectContent>
                   {HOURS.map((hour) => {
@@ -260,7 +261,7 @@ export function SettingsOverview() {
 
             {/* Working Days Toggle */}
             <div className="grid gap-2">
-              <Label className="text-sm font-medium">Working days</Label>
+              <Label className="text-sm font-medium">{__("Working days", "eventkoi-lite")}</Label>
               <div className="flex items-center gap-4 flex-wrap">
                 {orderedWeekdays.map((label, i) => {
                   const realIndex = (startDayIndex + i) % 7;
@@ -295,7 +296,7 @@ export function SettingsOverview() {
 
             {/* Time format */}
             <div className="grid gap-2">
-              <Label className="text-sm font-medium">Time format</Label>
+              <Label className="text-sm font-medium">{__("Time format", "eventkoi-lite")}</Label>
               <Tabs
                 value={timeFormat}
                 onValueChange={handleTimeFormatChange}
@@ -364,10 +365,10 @@ export function SettingsOverview() {
                   id="default-event-template"
                   className="w-[250px]"
                 >
-                  <SelectValue placeholder="Select a template" />
+                  <SelectValue placeholder={__("Select a template", "eventkoi-lite")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="default">Default template</SelectItem>
+                  <SelectItem value="default">{__("Default template", "eventkoi-lite")}</SelectItem>
                   {blockTemplates.map((tpl) => (
                     <SelectItem key={tpl.slug} value={tpl.slug}>
                       {tpl.title}

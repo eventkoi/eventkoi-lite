@@ -107,7 +107,7 @@ function ShortcodeCell({ row }) {
               size="icon"
               className="absolute h-8 right-[5px] top-[4px] border-none cursor-pointer hover:bg-input"
               onClick={handleCopy}
-              aria-label="Copy shortcode"
+              aria-label={__("Copy shortcode", "eventkoi-lite")}
             >
               {copied ? (
                 <CheckCheck className="h-4 w-4 transition-all duration-200" />
@@ -121,7 +121,7 @@ function ShortcodeCell({ row }) {
             side="top"
             sideOffset={8}
           >
-            {copied ? "Copied!" : "Copy shortcode"}
+            {copied ? __("Copied!", "eventkoi-lite") : __("Copy shortcode", "eventkoi-lite")}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -133,7 +133,7 @@ const columns = [
   {
     accessorKey: "name",
     header: ({ column }) => (
-      <SortButton title="Calendar name" column={column} />
+      <SortButton title={__("Calendar name", "eventkoi-lite")} column={column} />
     ),
     cell: CalendarNameCell,
     filterFn: multiColumnSearch,
@@ -141,7 +141,7 @@ const columns = [
   },
   {
     accessorKey: "slug",
-    header: ({ column }) => <SortButton title="Slug" column={column} />,
+    header: ({ column }) => <SortButton title={__("Slug", "eventkoi-lite")} column={column} />,
     cell: ({ row }) => (
       <div className="text-foreground">{row.getValue("slug")}</div>
     ),
@@ -150,14 +150,14 @@ const columns = [
   },
   {
     accessorKey: "shortcode",
-    header: ({ column }) => <SortButton title="Shortcode" column={column} />,
+    header: ({ column }) => <SortButton title={__("Shortcode", "eventkoi-lite")} column={column} />,
     cell: ShortcodeCell,
     filterFn: multiColumnSearch,
     sortingFn: "alphanumeric",
   },
   {
     accessorKey: "count",
-    header: ({ column }) => <SortButton title="Events count" column={column} />,
+    header: ({ column }) => <SortButton title={__("Events count", "eventkoi-lite")} column={column} />,
     cell: ({ row }) => (
       <div className="text-foreground text-right">{row.getValue("count")}</div>
     ),
@@ -211,7 +211,7 @@ function CalendarLinkIcon({
       rel="noopener noreferrer"
       className="ms-2 text-muted-foreground hover:text-foreground shrink-0 eventkoi-calendar-link-icon"
       data-default-cal-link={isDefaultCal ? "true" : undefined}
-      aria-label="View public calendar"
+      aria-label={__("View public calendar", "eventkoi-lite")}
       data-calendar-id={calendarId}
       onClick={(event) => {
         onLinkClick?.();
@@ -796,8 +796,8 @@ export function CalendarsOverview() {
     >
       <div className="flex flex-col gap-8">
         <div className="mx-auto flex w-full gap-2 justify-between">
-          <Heading className="eventkoi-calendars-heading">Calendars</Heading>
-          <AddButton title="Add calendar" url="/calendars/add" locked />
+          <Heading className="eventkoi-calendars-heading">{__("Calendars", "eventkoi-lite")}</Heading>
+          <AddButton title={__("Add calendar", "eventkoi-lite")} url="/calendars/add" locked />
         </div>
         <DataTable
           data={data}

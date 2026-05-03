@@ -130,7 +130,7 @@ export function BulkActions({
                 runAction("restore");
               }}
             >
-              <span>Restore</span>
+              <span>{__("Restore", "eventkoi-lite")}</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               disabled={selectedCount == 0}
@@ -138,7 +138,7 @@ export function BulkActions({
                 runAction("remove");
               }}
             >
-              <span>Delete permanently</span>
+              <span>{__("Delete permanently", "eventkoi-lite")}</span>
             </DropdownMenuItem>
           </>
         ) : (
@@ -150,7 +150,7 @@ export function BulkActions({
                   runAction("duplicate");
                 }}
               >
-                <span>Duplicate</span>
+                <span>{__("Duplicate", "eventkoi-lite")}</span>
               </DropdownMenuItem>
             )}
             <DropdownMenuItem
@@ -170,7 +170,7 @@ export function BulkActions({
                 </DropdownMenuSubTrigger>
                 <DropdownMenuPortal>
                   <DropdownMenuSubContent>
-                    <DropdownMenuCheckboxItem>Panel</DropdownMenuCheckboxItem>
+                    <DropdownMenuCheckboxItem>{__("Panel", "eventkoi-lite")}</DropdownMenuCheckboxItem>
                   </DropdownMenuSubContent>
                 </DropdownMenuPortal>
               </DropdownMenuSub>

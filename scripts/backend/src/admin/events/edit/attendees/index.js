@@ -1359,7 +1359,7 @@ export function EventEditAttendees() {
               onCheckedChange={(value) =>
                 table.toggleAllPageRowsSelected(!!value)
               }
-              aria-label="Select all"
+              aria-label={__("Select all", "eventkoi-lite")}
             />
           </div>
         ),
@@ -1368,7 +1368,7 @@ export function EventEditAttendees() {
             <Checkbox
               checked={row.getIsSelected()}
               onCheckedChange={(value) => row.toggleSelected(!!value)}
-              aria-label="Select row"
+              aria-label={__("Select row", "eventkoi-lite")}
             />
           </div>
         ),
@@ -1377,7 +1377,7 @@ export function EventEditAttendees() {
       },
       {
         accessorKey: "name",
-        header: ({ column }) => <SortButton title="Name" column={column} />,
+        header: ({ column }) => <SortButton title={__("Name", "eventkoi-lite")} column={column} />,
         cell: ({ row }) => (
           <div className="min-w-0">
             <div className="text-foreground truncate">
@@ -1396,7 +1396,7 @@ export function EventEditAttendees() {
       },
       {
         accessorKey: "checked_in",
-        header: () => <div className="text-sm font-normal">Checked-in</div>,
+        header: () => <div className="text-sm font-normal">{__("Checked-in", "eventkoi-lite")}</div>,
         cell: ({ row }) => {
           const rsvpStatus = (row.original.status || "").toLowerCase();
           const rawStatus = (row.original.checkin_status || "").toLowerCase();
@@ -1492,7 +1492,7 @@ export function EventEditAttendees() {
       {
         accessorKey: "checkin_token",
         header: ({ column }) => (
-          <SortButton title="Check-in code" column={column} />
+          <SortButton title={__("Check-in code", "eventkoi-lite")} column={column} />
         ),
         cell: ({ row }) => (
           <div className="text-sm text-foreground truncate">
@@ -1505,7 +1505,7 @@ export function EventEditAttendees() {
       },
       {
         accessorKey: "status",
-        header: ({ column }) => <SortButton title="Status" column={column} />,
+        header: ({ column }) => <SortButton title={__("Status", "eventkoi-lite")} column={column} />,
         cell: ({ row }) => {
           const status = (row.original.status || "").toLowerCase();
           const statusIcons = {
@@ -1586,7 +1586,7 @@ export function EventEditAttendees() {
       },
       {
         accessorKey: "guests",
-        header: ({ column }) => <SortButton title="Guests" column={column} />,
+        header: ({ column }) => <SortButton title={__("Guests", "eventkoi-lite")} column={column} />,
         cell: ({ row }) => (
           <div className="text-foreground">{row.original.guests ?? 0}</div>
         ),
@@ -1664,7 +1664,7 @@ export function EventEditAttendees() {
                 onCheckedChange={(value) =>
                   table.toggleAllPageRowsSelected(!!value)
                 }
-                aria-label="Select all"
+                aria-label={__("Select all", "eventkoi-lite")}
               />
             </div>
           ),
@@ -1673,7 +1673,7 @@ export function EventEditAttendees() {
               <Checkbox
                 checked={row.getIsSelected()}
                 onCheckedChange={(value) => row.toggleSelected(!!value)}
-                aria-label="Select row"
+                aria-label={__("Select row", "eventkoi-lite")}
               />
             </div>
           ),
@@ -1682,7 +1682,7 @@ export function EventEditAttendees() {
         },
         {
           accessorKey: "customer_name",
-          header: ({ column }) => <SortButton title="Name" column={column} />,
+          header: ({ column }) => <SortButton title={__("Name", "eventkoi-lite")} column={column} />,
           cell: ({ row }) => (
             <div className="min-w-0">
               <div className="text-foreground truncate">
@@ -1805,7 +1805,7 @@ export function EventEditAttendees() {
         },
         {
           accessorKey: "order_id",
-          header: ({ column }) => <SortButton title="Order ID" column={column} />,
+          header: ({ column }) => <SortButton title={__("Order ID", "eventkoi-lite")} column={column} />,
           cell: ({ row }) => {
             const orderId = row.original.order_id || "";
             if (!orderId) return <div className="text-foreground" />;
@@ -1844,13 +1844,13 @@ export function EventEditAttendees() {
         },
         {
           accessorKey: "payment_status",
-          header: ({ column }) => <SortButton title="Order Status" column={column} />,
+          header: ({ column }) => <SortButton title={__("Order Status", "eventkoi-lite")} column={column} />,
           cell: ({ row }) => <OrderStatus order={row.original} />,
           sortingFn: "alphanumeric",
         },
         {
           accessorKey: "quantity",
-          header: ({ column }) => <SortButton title="Ticket quantity" column={column} />,
+          header: ({ column }) => <SortButton title={__("Ticket quantity", "eventkoi-lite")} column={column} />,
           cell: ({ row }) => (
             <div className="text-foreground">{row.original.quantity || 0}</div>
           ),
@@ -1860,7 +1860,7 @@ export function EventEditAttendees() {
           id: "order_date",
           accessorFn: (row) => row.created_at,
           header: ({ column }) => (
-            <SortButton title="Order date" column={column} />
+            <SortButton title={__("Order date", "eventkoi-lite")} column={column} />
           ),
           cell: ({ row }) => {
             const created = row.original.created_at
@@ -1995,14 +1995,14 @@ export function EventEditAttendees() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-3">
-            <Heading>Attendees</Heading>
+            <Heading>{__("Attendees", "eventkoi-lite")}</Heading>
             {event?.date_type === "recurring" && (
               <Select
                 value={instanceTs || ""}
                 onValueChange={(value) => setInstanceTs(value)}
               >
                 <SelectTrigger className="w-full sm:w-[320px]">
-                  <SelectValue placeholder="Select instance" />
+                  <SelectValue placeholder={__("Select instance", "eventkoi-lite")} />
                 </SelectTrigger>
                 <SelectContent>
                   {groupedInstanceOptions.upcoming.length > 0 && (

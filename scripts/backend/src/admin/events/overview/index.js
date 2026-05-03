@@ -434,7 +434,7 @@ export function EventsOverview() {
               onCheckedChange={(value) =>
                 table.toggleAllPageRowsSelected(!!value)
               }
-              aria-label="Select all"
+              aria-label={__("Select all", "eventkoi-lite")}
             />
           </div>
         ),
@@ -443,7 +443,7 @@ export function EventsOverview() {
             <Checkbox
               checked={row.getIsSelected()}
               onCheckedChange={(value) => row.toggleSelected(!!value)}
-              aria-label="Select row"
+              aria-label={__("Select row", "eventkoi-lite")}
             />
           </div>
         ),
@@ -453,7 +453,7 @@ export function EventsOverview() {
       {
         accessorKey: "title",
         header: ({ column }) => (
-          <SortButton title="Event name" column={column} />
+          <SortButton title={__("Event name", "eventkoi-lite")} column={column} />
         ),
         cell: ({ row }) => {
           const { id, wp_status, url } = row.original;
@@ -519,7 +519,7 @@ export function EventsOverview() {
       },
       {
         accessorKey: "status",
-        header: ({ column }) => <SortButton title="Status" column={column} />,
+        header: ({ column }) => <SortButton title={__("Status", "eventkoi-lite")} column={column} />,
         cell: ({ row }) => {
           const status = row.getValue("status");
           const iconMap = {
@@ -581,7 +581,7 @@ export function EventsOverview() {
       },
       {
         accessorKey: "start_date_iso",
-        header: ({ column }) => <SortButton title="Starts" column={column} />,
+        header: ({ column }) => <SortButton title={__("Starts", "eventkoi-lite")} column={column} />,
         cell: ({ row }) => {
           const {
             start_date_iso,
@@ -613,7 +613,7 @@ export function EventsOverview() {
       },
       {
         accessorKey: "end_date_iso",
-        header: ({ column }) => <SortButton title="Ends" column={column} />,
+        header: ({ column }) => <SortButton title={__("Ends", "eventkoi-lite")} column={column} />,
         cell: ({ row }) => {
           const {
             end_date_iso,
@@ -652,7 +652,7 @@ export function EventsOverview() {
       },
       {
         accessorKey: "calendar",
-        header: () => <>Calendar</>,
+        header: () => <>{__("Calendar", "eventkoi-lite")}</>,
         cell: ({ row }) => {
           const calendar = row.original.calendar || [];
           return (
@@ -671,7 +671,7 @@ export function EventsOverview() {
       {
         accessorKey: "modified_date",
         header: ({ column }) => (
-          <SortButton title="Last modified" column={column} />
+          <SortButton title={__("Last modified", "eventkoi-lite")} column={column} />
         ),
         cell: ({ row }) => {
           const raw = row.getValue("modified_date");
@@ -857,7 +857,7 @@ export function EventsOverview() {
       )}
 
       <div className="mx-auto flex w-full gap-2 justify-between">
-        <Heading>Events</Heading>
+        <Heading>{__("Events", "eventkoi-lite")}</Heading>
         <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -930,7 +930,7 @@ export function EventsOverview() {
             className="hidden"
             onChange={handleICSUpload}
           />
-          <AddButton title="Add event" url="/events/add" />
+          <AddButton title={__("Add event", "eventkoi-lite")} url="/events/add" />
         </div>
       </div>
 

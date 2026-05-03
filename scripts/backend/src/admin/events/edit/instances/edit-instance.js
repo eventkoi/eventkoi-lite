@@ -1,3 +1,4 @@
+import { __ } from "@wordpress/i18n";
 import { Box } from "@/components/box";
 import { EventDescription } from "@/components/event/event-description";
 import { EventImage } from "@/components/event/event-image";
@@ -89,7 +90,7 @@ export function EditInstance() {
       </Box>
 
       <Box container>
-        <Heading level={3}>Location details</Heading>
+        <Heading level={3}>{__("Location details", "eventkoi-lite")}</Heading>
         {settings?.gmap_api_key ? (
           <APIProvider apiKey={settings.gmap_api_key}>
             <EventLocation
@@ -108,7 +109,7 @@ export function EditInstance() {
       </Box>
 
       <Box container className="gap-10">
-        <Heading level={3}>Additional details</Heading>
+        <Heading level={3}>{__("Additional details", "eventkoi-lite")}</Heading>
         <EventImage
           isInstance
           value={data}

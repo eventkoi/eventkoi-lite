@@ -1,3 +1,4 @@
+import { __ } from "@wordpress/i18n";
 import { Panel } from "@/components/panel";
 import { Button } from "@/components/ui/button";
 import {
@@ -97,17 +98,17 @@ export function EventLocation({ isInstance = false, value, onChange }) {
       </div>
 
       {(event.locations || []).length === 0 && (
-        <p className="text-muted-foreground text-sm">No locations added yet.</p>
+        <p className="text-muted-foreground text-sm">{__("No locations added yet.", "eventkoi-lite")}</p>
       )}
 
       <div className="flex items-center gap-2 mt-4">
         <Select value={newLocationType} onValueChange={setNewLocationType}>
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select location type" />
+            <SelectValue placeholder={__("Select location type", "eventkoi-lite")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="physical">Physical location</SelectItem>
-            <SelectItem value="online">Online location</SelectItem>
+            <SelectItem value="physical">{__("Physical location", "eventkoi-lite")}</SelectItem>
+            <SelectItem value="online">{__("Online location", "eventkoi-lite")}</SelectItem>
           </SelectContent>
         </Select>
         <Button type="button" variant="ghost" onClick={addLocation}>

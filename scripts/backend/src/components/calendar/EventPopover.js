@@ -266,7 +266,7 @@ export function EventPopover({
                 variant="secondary"
                 className="w-fit bg-[#eeeeee] hover:bg-[#eeeeee] font-normal"
               >
-                Recurring
+                {__("Recurring", "eventkoi-lite")}
               </Badge>
             )}
           </div>
@@ -319,7 +319,7 @@ export function EventPopover({
                 className="text-[13px] justify-between gap-2 bg-transparent border border-solid border-[#ddd] rounded-sm shadow-none cursor-pointer h-8 min-h-0"
                 onMouseDown={(e) => e.stopPropagation()}
               >
-                Add to calendar
+                {__("Add to calendar", "eventkoi-lite")}
                 <ChevronDown className="w-3.5 h-3.5" />
               </Button>
             </DropdownMenuTrigger>
@@ -368,7 +368,7 @@ export function EventPopover({
             className="text-[13px] gap-2 bg-transparent border border-solid border-[#ddd] rounded-sm shadow-none cursor-pointer h-8 min-h-0"
           >
             <Share2 className="w-3.5 h-3.5" />
-            Share
+            {__("Share", "eventkoi-lite")}
           </Button>
         </div>
       </div>
@@ -397,7 +397,7 @@ export function EventPopover({
         >
           <DialogHeader className="flex items-center justify-center p-4 border-0 border-solid border-b-2 border-input">
             <DialogTitle className="font-sans text-xl m-0 text-foreground">
-              Share this event
+              {__("Share this event", "eventkoi-lite")}
             </DialogTitle>
           </DialogHeader>
 
@@ -437,7 +437,7 @@ export function EventPopover({
             </div>
 
             <div className="flex flex-col gap-3 pb-[10px]">
-              <Label className="text-base">Event link</Label>
+              <Label className="text-base">{__("Event link", "eventkoi-lite")}</Label>
               <div className="relative">
                 <Input
                   id="link"
@@ -463,7 +463,7 @@ export function EventPopover({
                   ) : (
                     <Copy className="mr-2 h-5 w-5" />
                   )}
-                  {copied ? "Copied!" : "Copy"}
+                  {copied ? __("Copied!", "eventkoi-lite") : __("Copy", "eventkoi-lite")}
                 </Button>
               </div>
             </div>

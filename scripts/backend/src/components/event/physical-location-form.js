@@ -1,3 +1,4 @@
+import { __ } from "@wordpress/i18n";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -69,14 +70,14 @@ export function PhysicalLocationForm({ location, onChange, settings }) {
       </div>
 
       <div className="flex flex-col gap-2">
-        <Label htmlFor={`address1-${location.id}`}>Address</Label>
+        <Label htmlFor={`address1-${location.id}`}>{__("Address", "eventkoi-lite")}</Label>
         {isGmapConnected ? (
           <EventLocationAutocomplete location={location} onChange={onChange} />
         ) : (
           <Input
             id={`address1-${location.id}`}
             value={location.address1}
-            placeholder="Street address"
+            placeholder={__("Street address", "eventkoi-lite")}
             onChange={(e) => onChange({ address1: e.target.value })}
           />
         )}
@@ -89,48 +90,48 @@ export function PhysicalLocationForm({ location, onChange, settings }) {
         <Input
           id={`address2-${location.id}`}
           value={location.address2}
-          placeholder="Apartment, unit, building name"
+          placeholder={__("Apartment, unit, building name", "eventkoi-lite")}
           onChange={(e) => onChange({ address2: e.target.value })}
         />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
-          <Label htmlFor={`city-${location.id}`}>City</Label>
+          <Label htmlFor={`city-${location.id}`}>{__("City", "eventkoi-lite")}</Label>
           <Input
             id={`city-${location.id}`}
             value={location.city}
-            placeholder="City"
+            placeholder={__("City", "eventkoi-lite")}
             onChange={(e) => onChange({ city: e.target.value })}
           />
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor={`state-${location.id}`}>State</Label>
+          <Label htmlFor={`state-${location.id}`}>{__("State", "eventkoi-lite")}</Label>
           <Input
             id={`state-${location.id}`}
             value={location.state}
-            placeholder="State"
+            placeholder={__("State", "eventkoi-lite")}
             onChange={(e) => onChange({ state: e.target.value })}
           />
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor={`country-${location.id}`}>Country</Label>
+          <Label htmlFor={`country-${location.id}`}>{__("Country", "eventkoi-lite")}</Label>
           <Input
             id={`country-${location.id}`}
             value={location.country}
-            placeholder="Country"
+            placeholder={__("Country", "eventkoi-lite")}
             onChange={(e) => onChange({ country: e.target.value })}
           />
         </div>
 
         <div className="flex flex-col gap-2">
-          <Label htmlFor={`zip-${location.id}`}>Postal code</Label>
+          <Label htmlFor={`zip-${location.id}`}>{__("Postal code", "eventkoi-lite")}</Label>
           <Input
             id={`zip-${location.id}`}
             value={location.zip}
-            placeholder="Postal code"
+            placeholder={__("Postal code", "eventkoi-lite")}
             onChange={(e) => onChange({ zip: e.target.value })}
           />
         </div>
@@ -173,27 +174,27 @@ export function PhysicalLocationForm({ location, onChange, settings }) {
           <Alert className="flex gap-x-8 bg-gray-50">
             <AlertDescription>
               <p className="text-base font-medium mb-2">
-                How to get the Google Maps embed link:
+                {__("How to get the Google Maps embed link:", "eventkoi-lite")}
               </p>
               <ol className="text-sm list-decimal pl-4 mb-4">
-                <li>Find your address in Google Maps.</li>
+                <li>{__("Find your address in Google Maps.", "eventkoi-lite")}</li>
                 <li>
-                  Click on the <strong>Share</strong> button.
+                  {__("Click on the", "eventkoi-lite")} <strong>{__("Share", "eventkoi-lite")}</strong> {__("button.", "eventkoi-lite")}
                 </li>
                 <li>
-                  Go to <strong>Embed a map</strong> tab.
+                  {__("Go to", "eventkoi-lite")} <strong>{__("Embed a map", "eventkoi-lite")}</strong> {__("tab.", "eventkoi-lite")}
                 </li>
-                <li>Copy the entire iframe html code.</li>
-                <li>Paste it above. We’ll extract the correct embed URL.</li>
+                <li>{__("Copy the entire iframe html code.", "eventkoi-lite")}</li>
+                <li>{__("Paste it above. We’ll extract the correct embed URL.", "eventkoi-lite")}</li>
                 <li>
-                  It should start with:
+                  {__("It should start with:", "eventkoi-lite")}
                   <code className="text-inherit ml-1">
                     https://www.google.com/maps/embed
                   </code>
                 </li>
               </ol>
               <p className="text-sm">
-                Do <strong>NOT</strong> paste:
+                {__("Do", "eventkoi-lite")} <strong>NOT</strong> {__("paste:", "eventkoi-lite")}
                 <code className="text-inherit ml-1">
                   https://maps.app.goo.gl/
                 </code>
@@ -206,21 +207,21 @@ export function PhysicalLocationForm({ location, onChange, settings }) {
                   </div>
                   <CardHeader className="py-2 px-4">
                     <CardTitle className="text-base font-normal">
-                      Share
+                      {__("Share", "eventkoi-lite")}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="grid gap-2 px-4 pb-4">
                     <ul className="flex gap-x-4 font-semibold text-black whitespace-nowrap">
                       <li className="underline underline-offset-4">
-                        Send a link
+                        {__("Send a link", "eventkoi-lite")}
                       </li>
-                      <li>Embed a map</li>
+                      <li>{__("Embed a map", "eventkoi-lite")}</li>
                     </ul>
                     <p className="text-black underline underline-offset-4 decoration-gray-200 text-xs">
                       https://maps.app.goo.gl/
                     </p>
                     <p className="text-blue-700 font-semibold text-xs">
-                      COPY TO CLIPBOARD
+                      {__("COPY TO CLIPBOARD", "eventkoi-lite")}
                     </p>
                   </CardContent>
                 </Card>
@@ -231,21 +232,21 @@ export function PhysicalLocationForm({ location, onChange, settings }) {
                   </div>
                   <CardHeader className="py-2 px-4">
                     <CardTitle className="text-base font-normal">
-                      Share
+                      {__("Share", "eventkoi-lite")}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="grid gap-2 px-4 pb-4">
                     <ul className="flex gap-x-4 font-semibold text-black whitespace-nowrap">
-                      <li>Send a link</li>
+                      <li>{__("Send a link", "eventkoi-lite")}</li>
                       <li className="underline underline-offset-4">
-                        Embed a map
+                        {__("Embed a map", "eventkoi-lite")}
                       </li>
                     </ul>
                     <p className="text-black underline underline-offset-4 decoration-gray-200 text-xs truncate">
                       &lt;iframe src="https://www.google.com/maps/embed...
                     </p>
                     <p className="text-blue-700 font-semibold text-xs">
-                      COPY HTML
+                      {__("COPY HTML", "eventkoi-lite")}
                     </p>
                   </CardContent>
                 </Card>

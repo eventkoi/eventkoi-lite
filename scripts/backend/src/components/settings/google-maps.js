@@ -25,7 +25,7 @@ export function SettingsGoogleMaps({ settings, setSettings }) {
     const response = await fetch(url);
     const data = await response.json();
     if (data.status !== "OK") {
-      throw new Error(data?.error_message ?? "Invalid API Key.");
+      throw new Error(data?.error_message ?? __("Invalid API Key.", "eventkoi-lite"));
     }
     return data;
   };
@@ -50,9 +50,9 @@ export function SettingsGoogleMaps({ settings, setSettings }) {
 
       setSettings(response.settings);
       setIsSaving(false);
-      showToast({ ...response, message: "API successfully connected." });
+      showToast({ ...response, message: __("API successfully connected.", "eventkoi-lite") });
     } catch (error) {
-      showToastError(error?.message ?? "Something wrong.");
+      showToastError(error?.message ?? __("Something wrong.", "eventkoi-lite"));
     } finally {
       setIsSaving(false);
     }
@@ -76,7 +76,7 @@ export function SettingsGoogleMaps({ settings, setSettings }) {
 
       setSettings(response.settings);
       setIsLoading(false);
-      showToast({ ...response, message: "API key removed." });
+      showToast({ ...response, message: __("API key removed.", "eventkoi-lite") });
     } catch (error) {
       showToastError(error?.message ?? "Something wrong.");
     } finally {
@@ -86,16 +86,16 @@ export function SettingsGoogleMaps({ settings, setSettings }) {
 
   let connectionBtnText;
   if (settings?.gmap_connection_status) {
-    connectionBtnText = isSaving ? "Testing..." : "Test connection";
+    connectionBtnText = isSaving ? __("Testing...", "eventkoi-lite") : __("Test connection", "eventkoi-lite");
   } else {
-    connectionBtnText = isSaving ? "Connecting..." : "Connect";
+    connectionBtnText = isSaving ? __("Connecting...", "eventkoi-lite") : __("Connect", "eventkoi-lite");
   }
 
   return (
     <Box>
       <div className="grid w-full">
         <Panel variant="header">
-          <Heading level={3}>Google maps</Heading>
+          <Heading level={3}>{__("Google maps", "eventkoi-lite")}</Heading>
         </Panel>
         <Separator />
         <Panel className="gap-6">
@@ -127,12 +127,12 @@ export function SettingsGoogleMaps({ settings, setSettings }) {
           </Alert>
 
           <div className="flex flex-col items-start gap-1.5">
-            <Label htmlFor="ek-gmap-api-key">Google API key</Label>
+            <Label htmlFor="ek-gmap-api-key">{__("Google API key", "eventkoi-lite")}</Label>
             <Input
               type="password"
               id={"ek-gmap-api-key"}
               value={settings?.gmap_api_key ?? ""}
-              placeholder={"Enter your API key"}
+              placeholder={__("Enter your API key", "eventkoi-lite")}
               disabled={settings?.gmap_connection_status}
               className=""
               onChange={(e) => {
@@ -161,7 +161,7 @@ export function SettingsGoogleMaps({ settings, setSettings }) {
                 disabled={isLoading || isSaving}
                 className="w-40"
               >
-                {isLoading ? "Removing..." : "Remove API Key"}
+                {isLoading ? __("Removing...", "eventkoi-lite") : __("Remove API Key", "eventkoi-lite")}
               </Button>
             )}
           </div>

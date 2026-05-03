@@ -1,10 +1,11 @@
 import { Heading } from "@/components/heading";
+import { __ } from "@wordpress/i18n";
 
 export function Customers() {
   return (
     <div className="flex flex-col gap-8">
       <div className="mx-auto flex w-full gap-2 justify-between">
-        <Heading>Customers</Heading>
+        <Heading>{__("Customers", "eventkoi-lite")}</Heading>
       </div>
     </div>
   );
