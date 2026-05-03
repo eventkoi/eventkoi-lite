@@ -3,6 +3,7 @@
 import { Panel } from "@/components/panel";
 import { Label } from "@/components/ui/label";
 import { useEventEditContext } from "@/hooks/EventEditContext";
+import { __ } from "@wordpress/i18n";
 import { useEffect, useId, useRef, useState } from "react";
 
 export function EventDescription({ isInstance = false, value, onChange }) {
