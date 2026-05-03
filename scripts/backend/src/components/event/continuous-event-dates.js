@@ -143,10 +143,35 @@ export function ContinuousEventDates({ event, updateDay, updateEvent, tbc }) {
             date={startDate}
             setDate={(time) => {
               if (!time) return;
-              const base = startDate || new Date();
-              const newStart = new Date(base);
-              newStart.setHours(time.getHours(), time.getMinutes(), 0, 0);
-              updateContinuous("start", newStart);
+              // `time` is a UTC JS Date whose wpTz wall-clock hour/minute
+              // is what the user picked. Apply that hour/minute onto the
+              // start date's wpTz wall, NOT via JS Date.setHours which
+              // would use the browser's local TZ and roll the date.
+              const baseDt = startDate
+                ? DateTime.fromJSDate(startDate, { zone: wpTz })
+                : DateTime.now().setZone(wpTz).startOf("day");
+              const timeDt = DateTime.fromJSDate(time, { zone: wpTz });
+              const newStart = baseDt.set({
+                hour: timeDt.hour,
+                minute: timeDt.minute,
+                second: 0,
+                millisecond: 0,
+              });
+              updateContinuous("start", newStart.toJSDate());
+
+              // If end is now before start, bump end's time to match.
+              const endDt = endDate
+                ? DateTime.fromJSDate(endDate, { zone: wpTz })
+                : null;
+              if (endDt && endDt < newStart) {
+                const bumpedEnd = endDt.set({
+                  hour: timeDt.hour,
+                  minute: timeDt.minute,
+                  second: 0,
+                  millisecond: 0,
+                });
+                updateContinuous("end", bumpedEnd.toJSDate());
+              }
             }}
             wpTz={wpTz}
           />
@@ -189,10 +214,19 @@ export function ContinuousEventDates({ event, updateDay, updateEvent, tbc }) {
             date={endDate}
             setDate={(time) => {
               if (!time) return;
-              const base = endDate || startDate || new Date();
-              const newEnd = new Date(base);
-              newEnd.setHours(time.getHours(), time.getMinutes(), 0, 0);
-              updateContinuous("end", newEnd);
+              const baseDt = endDate
+                ? DateTime.fromJSDate(endDate, { zone: wpTz })
+                : startDate
+                ? DateTime.fromJSDate(startDate, { zone: wpTz })
+                : DateTime.now().setZone(wpTz).startOf("day");
+              const timeDt = DateTime.fromJSDate(time, { zone: wpTz });
+              const newEnd = baseDt.set({
+                hour: timeDt.hour,
+                minute: timeDt.minute,
+                second: 0,
+                millisecond: 0,
+              });
+              updateContinuous("end", newEnd.toJSDate());
             }}
             wpTz={wpTz}
           />
