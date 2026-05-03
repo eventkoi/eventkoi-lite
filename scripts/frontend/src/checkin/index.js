@@ -603,6 +603,7 @@ function QrCheckinOverlay({ payload }) {
       : 0;
   const showForm = currentPayload?.show_form === true;
   const showUpdated = updated;
+  const loginUrl = currentPayload?.login_url || "";
 
   const isSuccess = Number(payload?.status || 0) < 400;
   const IconComponent = isSuccess ? BadgeCheck : XCircle;
@@ -663,6 +664,14 @@ function QrCheckinOverlay({ payload }) {
                 {descriptionText}
               </AlertDialogDescription>
             </div>
+
+            {loginUrl && (
+              <Button asChild className="w-full">
+                <a href={loginUrl}>
+                  {__("Log in to check in attendees", "eventkoi-lite")}
+                </a>
+              </Button>
+            )}
 
             {showForm && (
               <form
