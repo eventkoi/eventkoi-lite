@@ -1288,7 +1288,8 @@ JS;
 				$target     = $paged < $total_pages ? $paged + 1 : 0;
 				$segments[] = self::build_pagination_link( 'next', $label, $arrow_opt, $target, $show_label );
 			} elseif ( 'core/query-pagination-numbers' === $name ) {
-				$segments[] = self::build_pagination_numbers( $paged, $total_pages );
+				$mid_size   = isset( $cattr['midSize'] ) ? max( 0, (int) $cattr['midSize'] ) : 2;
+				$segments[] = self::build_pagination_numbers( $paged, $total_pages, $mid_size );
 			}
 		}
 
@@ -1303,11 +1304,12 @@ JS;
 	/**
 	 * Build numbered pagination links.
 	 *
-	 * @param int $current Current page.
-	 * @param int $total   Total pages.
+	 * @param int $current  Current page.
+	 * @param int $total    Total pages.
+	 * @param int $mid_size Page links to show on each side of current.
 	 * @return string
 	 */
-	protected static function build_pagination_numbers( $current, $total ) {
+	protected static function build_pagination_numbers( $current, $total, $mid_size = 2 ) {
 		$links = paginate_links(
 			array(
 				'base'      => add_query_arg( 'ek_page', '%#%' ),
@@ -1316,6 +1318,7 @@ JS;
 				'total'     => $total,
 				'prev_next' => false,
 				'type'      => 'array',
+				'mid_size'  => $mid_size,
 			)
 		);
 
