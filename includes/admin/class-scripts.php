@@ -198,6 +198,12 @@ class Scripts {
 
 		wp_enqueue_script( 'eventkoi-admin' );
 
+		wp_set_script_translations(
+			'eventkoi-admin',
+			'eventkoi-lite',
+			WP_LANG_DIR . '/plugins'
+		);
+
 		wp_localize_script(
 			'eventkoi-admin',
 			'eventkoi_params',

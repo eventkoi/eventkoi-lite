@@ -1,4 +1,5 @@
 import apiRequest from "@wordpress/api-fetch";
+import { __ } from "@wordpress/i18n";
 
 import { useState } from "react";
 
@@ -68,7 +69,7 @@ export function CalendarNavBar({ loading, setLoading, calendar, setCalendar }) {
         disabled={disabled || !calendar.url}
         onClick={() => window.open(calendar?.url, "_blank")}
       >
-        Preview
+        {__("Preview", "eventkoi-lite")}
       </Button>
       <div className="flex items-center gap-[1px]">
         <Button
@@ -79,7 +80,7 @@ export function CalendarNavBar({ loading, setLoading, calendar, setCalendar }) {
             saveCalendar("publish");
           }}
         >
-          {calendar?.id ? "Save" : "Publish"}
+          {calendar?.id ? __("Save", "eventkoi-lite") : __("Publish", "eventkoi-lite")}
         </Button>
         <DropdownMenu modal={false}>
           <DropdownMenuTrigger asChild>
@@ -97,7 +98,7 @@ export function CalendarNavBar({ loading, setLoading, calendar, setCalendar }) {
               disabled
               className="opacity-60"
             >
-              Create duplicate calendar
+              {__("Create duplicate calendar", "eventkoi-lite")}
               <ProBadge />
             </DropdownMenuItem>
           </DropdownMenuContent>

@@ -127,11 +127,11 @@ export function EventNavBar() {
         };
       });
 
-      showToast({ message: "Instance updated!" });
+      showToast({ message: __("Instance updated!", "eventkoi-lite") });
       setJustSaved(true);
       setTimeout(() => setJustSaved(false), 3000);
     } catch (err) {
-      showToast({ message: "Failed to save instance." });
+      showToast({ message: __("Failed to save instance.", "eventkoi-lite") });
     } finally {
       setSaving(false);
     }
@@ -160,7 +160,7 @@ export function EventNavBar() {
       setTimeout(() => setJustSaved(false), 3000);
       return response;
     } catch (error) {
-      showToast({ message: "Failed to save. Please try again." });
+      showToast({ message: __("Failed to save. Please try again.", "eventkoi-lite") });
       throw error;
     } finally {
       setSaving(false);
@@ -183,7 +183,7 @@ export function EventNavBar() {
     try {
       await runBeforeSave?.();
     } catch (error) {
-      showToast({ message: "Failed to save tickets. Please try again." });
+      showToast({ message: __("Failed to save tickets. Please try again.", "eventkoi-lite") });
       if (status === "publish") {
         setIsPublishing?.(false);
         setDisableAutoSave?.(false);
@@ -257,7 +257,7 @@ export function EventNavBar() {
     <div className="flex gap-1 md:gap-2">
       {justSaved && (
         <div className="text-xs text-muted-foreground mr-6 self-center">
-          Saved just now
+          {__("Saved just now", "eventkoi-lite")}
         </div>
       )}
 
@@ -273,7 +273,7 @@ export function EventNavBar() {
                 )
               }
             >
-              Preview
+              {__("Preview", "eventkoi-lite")}
             </Button>
           )}
 
@@ -281,11 +281,11 @@ export function EventNavBar() {
             variant="ghost"
             onClick={() => {
               instanceCtx.resetData();
-              showToast({ message: "Changes reverted." });
+              showToast({ message: __("Changes reverted.", "eventkoi-lite") });
             }}
             disabled={!hasInstanceChanges}
           >
-            Reset
+            {__("Reset", "eventkoi-lite")}
           </Button>
 
           <Button
@@ -295,12 +295,12 @@ export function EventNavBar() {
             {saving ? (
               <span className="flex items-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Saving...
+                {__("Saving...", "eventkoi-lite")}
               </span>
             ) : (
               <>
-                <span className="sm:hidden">Save</span>
-                <span className="hidden sm:inline">Save instance</span>
+                <span className="sm:hidden">{__("Save", "eventkoi-lite")}</span>
+                <span className="hidden sm:inline">{__("Save instance", "eventkoi-lite")}</span>
               </>
             )}
           </Button>
@@ -313,7 +313,7 @@ export function EventNavBar() {
               disabled={isDisabled}
               onClick={() => saveEvent("draft")}
             >
-              Save draft
+              {__("Save draft", "eventkoi-lite")}
             </Button>
           )}
           <Button
@@ -349,7 +349,7 @@ export function EventNavBar() {
             )}
             data-eventkoi-onboarding-preview
           >
-            Preview
+            {__("Preview", "eventkoi-lite")}
           </Button>
           <div className="flex items-center gap-[1px]">
             <Button
@@ -368,12 +368,12 @@ export function EventNavBar() {
               {saving ? (
                 <span className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Saving...
+                  {__("Saving...", "eventkoi-lite")}
                 </span>
               ) : event?.wp_status === "draft" ? (
-                "Publish"
+                __("Publish", "eventkoi-lite")
               ) : (
-                "Save"
+                __("Save", "eventkoi-lite")
               )}
             </Button>
             <DropdownMenu modal={false}>
@@ -394,12 +394,12 @@ export function EventNavBar() {
                   disabled={!event?.id}
                   onClick={duplicateEvent}
                 >
-                  Create duplicate event
+                  {__("Create duplicate event", "eventkoi-lite")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 {event?.wp_status === "publish" && (
                   <DropdownMenuItem onClick={() => saveEvent("draft")}>
-                    Unpublish
+                    {__("Unpublish", "eventkoi-lite")}
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem
@@ -407,7 +407,7 @@ export function EventNavBar() {
                   className="text-destructive focus:text-destructive"
                   onClick={trashEvent}
                 >
-                  Move to trash
+                  {__("Move to trash", "eventkoi-lite")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

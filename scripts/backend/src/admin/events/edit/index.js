@@ -465,10 +465,10 @@ export function EventEdit() {
           strokeWidth={1}
         />
         <div className="text-base text-muted-foreground">
-          Event has moved to Trash. Restore it before you can edit.
+          {__("Event has moved to Trash. Restore it before you can edit.", "eventkoi-lite")}
         </div>
         <div className="pt-4">
-          <Button onClick={restoreEvent}>Restore event</Button>
+          <Button onClick={restoreEvent}>{__("Restore event", "eventkoi-lite")}</Button>
         </div>
       </div>
     );
