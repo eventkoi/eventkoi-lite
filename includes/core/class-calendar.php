@@ -613,6 +613,17 @@ class Calendar {
 						$end_dt_utc      = new \DateTimeImmutable( $range_end, new \DateTimeZone( 'UTC' ) );
 						$end_all_day_utc = $end_dt_utc->modify( '+1 day' )->setTime( 0, 0, 0 );
 
+						// Authoritative all-day flag: per-day flag wins; fall back
+						// to legacy top-level meta only when no day item exists.
+						$first_day  = ! empty( $days ) && is_array( $days ) ? $days[0] : array();
+						$is_all_day = array_key_exists( 'all_day', (array) $first_day )
+							? (bool) $first_day['all_day']
+							: (bool) get_post_meta( $event::get_id(), 'all_day', true );
+
+						// FullCalendar wants exclusive +1 day end ONLY for all-day
+						// events; timed events must keep the real end timestamp.
+						$fc_end_dt = $is_all_day ? $end_all_day_utc : $end_dt_utc;
+
 						$start_time_full = gmdate( 'g:ia', $start_dt_utc->getTimestamp() );
 						$end_time_full   = gmdate( 'g:ia', $end_dt_utc->getTimestamp() );
 
@@ -634,11 +645,11 @@ class Calendar {
 						'standard_type' => $event::get_standard_type(),
 						'start'         => $start_dt_utc->format( 'Y-m-d\TH:i:s\Z' ),
 						'start_real'    => $start_dt_utc->format( 'Y-m-d\TH:i:s\Z' ),
-						'end'           => $end_all_day_utc->format( 'Y-m-d\TH:i:s\Z' ),
+						'end'           => $fc_end_dt->format( 'Y-m-d\TH:i:s\Z' ),
 						'end_real'      => $end_dt_utc->format( 'Y-m-d\TH:i:s\Z' ),
 						'start_time'    => $start_time,
 						'end_time'      => $end_time,
-						'allDay'        => true,
+						'allDay'        => $is_all_day,
 						'url'           => $event::get_url(),
 						'description'   => $event::get_summary(),
 						'address1'      => $primary['address1'] ?? '',
