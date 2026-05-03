@@ -10,20 +10,18 @@ export function EventDateTimezoneSetting({ event, setEvent, className }) {
           <Label className="font-semibold">
             Display timezone in event page
           </Label>
-          {event?.timezone_display && (
-            <p className="text-sm text-muted-foreground">
-              Your current timezone is{" "}
-              <a
-                href={eventkoi_params.general_options_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline font-normal"
-              >
-                {event?.timezone}
-              </a>
-              .
-            </p>
-          )}
+          <p className="text-sm text-muted-foreground">
+            Your current timezone is{" "}
+            <a
+              href={eventkoi_params.general_options_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline font-normal"
+            >
+              {event?.timezone}
+            </a>
+            .
+          </p>
         </div>
         <Switch
           id="timezone_display"

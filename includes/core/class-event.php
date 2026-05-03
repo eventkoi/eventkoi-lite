@@ -2133,16 +2133,17 @@ class Event {
 	}
 
 	/**
-	 * Rendered timezone.
-	 *
-	 * The "show timezone" event setting only gates the *implicit* timezone
-	 * display attached to the inline event_datetime widget. When the explicit
-	 * `event_timezone` token is used (block binding, shortcode, dynamic tag),
-	 * the user is asking for the timezone — always return it.
+	 * Rendered timezone (only when the per-event "Display timezone in event
+	 * page" toggle is enabled). Applies to all surfaces that call this:
+	 * dynamic tag, shortcode, block binding, and the implicit datetime widget.
 	 *
 	 * @return string
 	 */
 	public static function rendered_timezone() {
+		if ( ! self::get_timezone_display() ) {
+			return '';
+		}
+
 		$timezone = wp_kses_post( eventkoi_timezone() );
 		$output   = sprintf(
 			'<span class="ek-timezone" data-source-tz="%1$s">%2$s</span>',
