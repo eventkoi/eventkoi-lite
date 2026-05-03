@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.3.9.8
+Stable tag: 1.3.9.9
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -230,6 +230,21 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.9.9 – Translatable admin, calendar timezone fixes & editor polish – 2026-05-03 =
+* i18n: Full admin React UI is now translatable via Loco Translate, WP.org translation packs, or bundled JSON — previously the admin stayed in English even when the site locale was set. POT regenerated with all new strings.
+* Fix: Continuous standard events with specific times were being shown in the All-day lane in calendar Week view (and as full-width strips in Month view). They now render in their correct time slots.
+* Fix: Picking a start or end time could roll the date back a day when the browser timezone differed from the site timezone. Times now apply in the site timezone consistently.
+* Fix: Auto-filled end date inherits the picked start time, so users no longer hit "End date cannot be before the start date" the moment they add a non-midnight start time.
+* Fix: "Display timezone in event page" toggle is now respected on the frontend — when off, the timezone label no longer appears on the event page.
+* Fix: Completed events were leaking into the Upcoming Query Loop, and future events into the Past Query Loop.
+* Fix: WordPress was prepending `http://` to `[eventkoi … as=link]` URLs, producing broken double-protocol links. Bogus prefix is stripped on render.
+* Fix: Standalone editor preview now resolves every `event_*` dynamic token (date, time, timezone, etc.) instead of showing `{Field Name}` placeholders.
+* Fix: Scalar custom fields (text, textarea, dropdown, radio, checkbox, url) auto-unwrap in the `[eventkoi]` shortcode by default, matching url-typed behavior.
+* Fix: Tickets "Change currency" link points to WooCommerce settings when WooCommerce is the checkout method, instead of EventKoi settings.
+* Fix: QR check-in handler now redirects logged-out users to the login URL (HTML) and surfaces a "Log in" button in the JSON overlay.
+* Fix: Editing a saved event no longer crashes due to a missing translation import in the description component.
+* Improvement: The Page Numbers block "Number of links" (mid_size) attribute is now honored by EK Query Loop pagination on the frontend.
 
 = 1.3.9.8 – Past events query, recurring date polish & ticket-delete safeguards – 2026-04-28 =
 * New: "Past events" query option in the Event Query Loop block — sort completed events with their most recent past occurrence, mirroring how "Upcoming events" rolls forward over time.
