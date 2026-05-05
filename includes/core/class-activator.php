@@ -315,11 +315,76 @@ class Activator {
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		self::ensure_archive_columns( $orders_table, $ticket_orders_table );
+		self::heal_orphaned_rsvp_instance_ts();
 
 		if ( ! get_option( 'eventkoi_site_instance_id' ) ) {
 			update_option( 'eventkoi_site_instance_id', wp_generate_uuid4() );
 		}
 
 		update_option( 'eventkoi_db_version', $current );
+	}
+
+	/**
+	 * One-shot migration to repair RSVPs orphaned by past date edits (PROD-449).
+	 *
+	 * For every non-recurring event with RSVP rows whose `instance_ts` no longer
+	 * matches the event's current `start_timestamp`, re-key those rows to the
+	 * current timestamp so the admin attendee list surfaces them again.
+	 * Skips events where the move would collide with an existing row in the
+	 * (event_id, instance_ts, email) unique index.
+	 */
+	private static function heal_orphaned_rsvp_instance_ts() {
+		if ( get_option( 'eventkoi_rsvp_instance_ts_healed' ) ) {
+			return;
+		}
+
+		global $wpdb;
+		$rsvps_table = $wpdb->prefix . 'eventkoi_rsvps';
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.DirectDatabaseQuery.SchemaChange
+		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $rsvps_table ) );
+		if ( ! $exists ) {
+			update_option( 'eventkoi_rsvp_instance_ts_healed', '1' );
+			return;
+		}
+
+		$event_ids = $wpdb->get_col(
+			"SELECT DISTINCT r.event_id
+			   FROM {$rsvps_table} r
+			   JOIN {$wpdb->postmeta} pm ON pm.post_id = r.event_id AND pm.meta_key = 'start_timestamp'
+			  WHERE r.instance_ts <> CAST(pm.meta_value AS UNSIGNED)"
+		);
+
+		foreach ( (array) $event_ids as $event_id ) {
+			$event_id = (int) $event_id;
+			if ( $event_id <= 0 ) {
+				continue;
+			}
+
+			$date_type = get_post_meta( $event_id, 'date_type', true );
+			if ( 'recurring' === $date_type ) {
+				continue;
+			}
+
+			$current_ts = (int) get_post_meta( $event_id, 'start_timestamp', true );
+			if ( $current_ts <= 0 ) {
+				continue;
+			}
+
+			$wpdb->query(
+				$wpdb->prepare(
+					"UPDATE IGNORE {$rsvps_table}
+					    SET instance_ts = %d
+					  WHERE event_id = %d
+					    AND instance_ts <> %d",
+					$current_ts,
+					$event_id,
+					$current_ts
+				)
+			);
+		}
+		// phpcs:enable
+
+		update_option( 'eventkoi_rsvp_instance_ts_healed', '1' );
 	}
 }

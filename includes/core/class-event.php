@@ -545,10 +545,12 @@ class Event {
 
 		if ( $start_date ) {
 			$start_utc_ts = strtotime( $start_date );
+			$old_start_ts = (int) get_post_meta( self::$event_id, 'start_timestamp', true );
 
 			update_post_meta( self::$event_id, 'start_date', $start_date );
 			update_post_meta( self::$event_id, 'start_timestamp', $start_utc_ts );
 
+			self::migrate_rsvp_instance_ts( $old_start_ts, (int) $start_utc_ts );
 		} else {
 			delete_post_meta( self::$event_id, 'start_date' );
 			delete_post_meta( self::$event_id, 'start_timestamp' );
@@ -3606,6 +3608,40 @@ class Event {
 		return array(
 			'start' => null,
 			'end'   => null,
+		);
+	}
+
+	/**
+	 * When a non-recurring event's start_timestamp changes, re-key existing
+	 * RSVP rows from the old instance_ts to the new one so the attendee list
+	 * does not appear empty after a date edit (PROD-449).
+	 *
+	 * @param int $old_ts Previous start_timestamp.
+	 * @param int $new_ts New start_timestamp.
+	 */
+	private static function migrate_rsvp_instance_ts( $old_ts, $new_ts ) {
+		$old_ts = (int) $old_ts;
+		$new_ts = (int) $new_ts;
+
+		if ( ! self::$event_id || $old_ts <= 0 || $new_ts <= 0 || $old_ts === $new_ts ) {
+			return;
+		}
+
+		if ( 'recurring' === self::get_date_type() ) {
+			return;
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'eventkoi_rsvps';
+		$wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$table,
+			array( 'instance_ts' => $new_ts ),
+			array(
+				'event_id'    => (int) self::$event_id,
+				'instance_ts' => $old_ts,
+			),
+			array( '%d' ),
+			array( '%d', '%d' )
 		);
 	}
 }
