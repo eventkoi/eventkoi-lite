@@ -143,8 +143,16 @@ export function DataTable({
           </div>
         )}
         {!hideBottomBar && (
-          <div className="text-sm text-muted-foreground">
-            <TableSelectedRows table={table} compact={compact} />
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6">
+            <div className="text-sm text-muted-foreground">
+              <TableSelectedRows table={table} compact={compact} />
+            </div>
+            {table.getRowModel().rows?.length > 0 && (
+              <div className="flex items-center gap-3 text-foreground">
+                <TablePage table={table} />
+                <Pagination table={table} />
+              </div>
+            )}
           </div>
         )}
       </div>
