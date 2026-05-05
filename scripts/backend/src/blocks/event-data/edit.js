@@ -1,6 +1,9 @@
 import { useEvent } from "@/blocks/event-query-loop/context";
 import { cn } from "@/lib/utils";
 import {
+  AlignmentControl,
+  BlockControls,
+  HeadingLevelDropdown,
   store as blockEditorStore,
   InspectorControls,
   useBlockProps,
@@ -14,12 +17,39 @@ import { EventDataControls } from "./event-data-controls";
 import { useFetchEvent } from "./fetch-event";
 
 export default function Edit({ attributes, setAttributes, clientId }) {
-  const { field, tagName = "div", eventId = 0 } = attributes;
+  const { field, tagName = "div", textAlign, eventId = 0 } = attributes;
 
+  const textAlignClass = textAlign ? `has-text-align-${textAlign}` : "";
   const blockProps = useBlockProps({
-    className: "eventkoi-event-data",
+    className: cn("eventkoi-event-data", textAlignClass),
     "data-event-field": field,
   });
+
+  const toolbar = (
+    <BlockControls group="block">
+      <AlignmentControl
+        value={textAlign}
+        onChange={(nextAlign) => setAttributes({ textAlign: nextAlign })}
+      />
+      {field === "title" && (
+        <HeadingLevelDropdown
+          value={
+            /^h[1-6]$/.test(tagName)
+              ? Number(tagName.replace("h", ""))
+              : tagName === "p"
+                ? 0
+                : 2
+          }
+          options={[0, 1, 2, 3, 4, 5, 6]}
+          onChange={(nextLevel) =>
+            setAttributes({
+              tagName: nextLevel === 0 ? "p" : `h${nextLevel}`,
+            })
+          }
+        />
+      )}
+    </BlockControls>
+  );
 
   const { event: contextEvent } = useEvent();
   const { event: manualEvent, isLoading: isLoadingEvent } =
@@ -183,6 +213,7 @@ export default function Edit({ attributes, setAttributes, clientId }) {
   if (!event) {
     return (
       <>
+        {toolbar}
         {sidebar}
         {!isInQuery && !isInsideEventQueryLoop && (
           <div {...blockProps}>
@@ -224,7 +255,9 @@ export default function Edit({ attributes, setAttributes, clientId }) {
           {...blockProps}
           className={cn(
             blockProps.className,
-            isInQuery && "ek-event-title-default"
+            isInQuery &&
+              !/^h[1-6]$/.test(tagName) &&
+              "ek-event-title-default"
           )}
           dangerouslySetInnerHTML={{ __html: title }}
         />
@@ -364,6 +397,7 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 
   return (
     <>
+      {toolbar}
       {sidebar}
       {content}
     </>

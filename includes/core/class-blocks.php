@@ -161,8 +161,15 @@ class Blocks {
 			$wrapper_attributes                  = get_block_wrapper_attributes( $extra_attributes );
 			\WP_Block_Supports::$block_to_render = $prev_block_to_render;
 
+		$tag          = isset( $attributes['tagName'] ) ? strtolower( (string) $attributes['tagName'] ) : 'div';
+		$allowed_tags = array( 'div', 'p', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6' );
+		if ( ! in_array( $tag, $allowed_tags, true ) ) {
+			$tag = 'div';
+		}
+
 		$output = sprintf(
-			'<div %1$s>%2$s</div>',
+			'<%1$s %2$s>%3$s</%1$s>',
+			$tag,
 			$wrapper_attributes,
 			wp_kses_post( $value )
 		);
@@ -186,6 +193,9 @@ class Blocks {
 					'tagName'               => array(
 						'type'    => 'string',
 						'default' => 'div',
+					),
+					'textAlign'             => array(
+						'type' => 'string',
 					),
 					'className'             => array(
 						'type' => 'string',
@@ -1023,6 +1033,10 @@ JS;
 		}
 
 		$wrapper_class     = ! empty( $attrs['className'] ) ? $attrs['className'] : 'eventkoi-query-loop';
+		$loop_text_align   = isset( $attrs['textAlign'] ) ? sanitize_html_class( (string) $attrs['textAlign'] ) : '';
+		if ( in_array( $loop_text_align, array( 'left', 'center', 'right' ), true ) ) {
+			$wrapper_class .= ' has-text-align-' . $loop_text_align;
+		}
 		$rendered          = '';
 		$has_post_template = false;
 

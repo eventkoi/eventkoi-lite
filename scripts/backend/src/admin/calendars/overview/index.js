@@ -51,11 +51,26 @@ function CalendarNameCell({ row }) {
   const isDefaultCal =
     parseInt(row.original.id) === parseInt(eventkoi_params.default_cal);
   const url = `#/calendars/${row.original.id}/main`;
+  const color = row.original.color;
+  const isTransparent = !color || color === "transparent";
+  const dotStyle = isTransparent
+    ? {
+        backgroundImage:
+          "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)",
+        backgroundSize: "6px 6px",
+        backgroundPosition: "0 0, 0 3px, 3px -3px, -3px 0",
+      }
+    : { backgroundColor: color };
 
   return (
     <div className="grid space-y-1">
       <div className="flex gap-2 items-start text-foreground">
         <span className="inline">
+          <span
+            aria-hidden="true"
+            style={dotStyle}
+            className="inline-block w-3 h-3 rounded-full shrink-0 mr-2 align-middle relative -top-0.5"
+          />
           <a
             href={url}
             className="inline font-medium hover:underline hover:decoration-dotted underline-offset-4"

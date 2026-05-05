@@ -1,7 +1,13 @@
 import { __ } from '@wordpress/i18n';
 import React from 'react';
 
-import { Button, ColorIndicator, ColorPicker, Dropdown, FlexItem, __experimentalHStack as HStack, __experimentalToolsPanelItem as ToolsPanelItem } from '@wordpress/components';
+import { Button, ColorIndicator, ColorPalette, Dropdown, FlexItem, __experimentalHStack as HStack, __experimentalToolsPanelItem as ToolsPanelItem } from '@wordpress/components';
+
+const TRANSPARENT = 'transparent';
+
+const themeColors = Array.isArray(window?.eventkoi_params?.theme_colors)
+  ? window.eventkoi_params.theme_colors
+  : [];
 
 export const ColorSettingsPane = props => {
 
@@ -14,6 +20,10 @@ export const ColorSettingsPane = props => {
         if (!item.label) {
           return null;
         }
+        const stored = attributes[item.value];
+        const isTransparent = stored === TRANSPARENT;
+        const value = isTransparent ? '' : (stored || '');
+        const indicatorValue = isTransparent ? undefined : value;
         return <ToolsPanelItem
           hasValue={() => attributes[item.value] != fallbackValue}
           label={item.label}
@@ -33,32 +43,30 @@ export const ColorSettingsPane = props => {
                 className={isOpen ? 'block-editor-panel-color-gradient-settings__dropdown is-open' : 'block-editor-panel-color-gradient-settings__dropdown'}
               >
                 <HStack justify="flex-start">
-                  <ColorIndicator className="block-editor-panel-color-gradient-settings__color-indicator" colorValue={attributes[item.value]} />
+                  <ColorIndicator className="block-editor-panel-color-gradient-settings__color-indicator" colorValue={indicatorValue} />
                   <FlexItem>{item.label}</FlexItem>
                 </HStack>
               </Button>
             )}
             renderContent={() => <div className="components-dropdown-content-wrapper">
               <div className="block-editor-panel-color-gradient-settings__dropdown-content">
-                <ColorPicker
-                  color={attributes[item.value] ? attributes[item.value] : ''}
-                  onChange={(newColor) => setAttributes({ [item.value]: newColor })}
-                />
-                {attributes[item.value] &&
-                  <Button
-                    variant="link"
-                    className="ng-clear-color"
-                    onClick={() => {
+                <ColorPalette
+                  value={value}
+                  colors={themeColors}
+                  enableAlpha
+                  clearable={!item.required}
+                  onChange={(newColor) => {
+                    if (!newColor) {
                       if (item.required) {
-                        setAttributes({ [item.value]: '' });
+                        setAttributes({ [item.value]: TRANSPARENT });
                       } else {
                         setAttributes({ [item.value]: undefined });
                       }
-                    }}
-                  >
-                    {__('Clear', 'eventkoi-lite')}
-                  </Button>
-                }
+                      return;
+                    }
+                    setAttributes({ [item.value]: newColor });
+                  }}
+                />
               </div>
             </div>}
           />

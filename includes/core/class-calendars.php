@@ -43,6 +43,9 @@ class Calendars {
 		}
 
 		foreach ( $terms as $term ) {
+			$stored_color = get_term_meta( $term->term_id, 'color', true );
+			$color        = '' !== (string) $stored_color ? (string) $stored_color : eventkoi_default_calendar_color();
+
 			$results[] = array(
 				'id'        => $term->term_id,
 				'slug'      => $term->slug,
@@ -50,6 +53,7 @@ class Calendars {
 				'count'     => $term->count,
 				'url'       => get_term_link( $term->slug, 'event_cal' ),
 				'shortcode' => '[eventkoi_calendar id=' . $term->term_id . ']',
+				'color'     => $color,
 			);
 		}
 

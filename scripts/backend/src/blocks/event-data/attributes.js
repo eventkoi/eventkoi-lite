@@ -7,6 +7,9 @@ export const attributes = {
     type: "string",
     default: "div",
   },
+  textAlign: {
+    type: "string",
+  },
   className: {
     type: "string",
   },

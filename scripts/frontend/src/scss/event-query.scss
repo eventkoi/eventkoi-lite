@@ -97,23 +97,23 @@
       padding: 0;
     }
 
-    /* Title */
-    &.ek-event-title {
+    /* Title — default styles only on non-heading wrappers. */
+    &.ek-event-title:where(div, p, span) {
       font-weight: 600;
+    }
 
-      h3 {
-        margin: 0;
-        font-weight: 600;
-        font-size: inherit;
+    &.ek-event-title h3 {
+      margin: 0;
+      font-weight: 600;
+      font-size: inherit;
 
-        a {
-          color: inherit;
-          text-decoration: none;
+      a {
+        color: inherit;
+        text-decoration: none;
 
-          &:hover,
-          &:focus {
-            text-decoration: underline;
-          }
+        &:hover,
+        &:focus {
+          text-decoration: underline;
         }
       }
     }

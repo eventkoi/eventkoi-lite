@@ -4,21 +4,25 @@
  */
 
 .wp-block-eventkoi-event-data.ek-event-title.ek-event-title-default {
-  font-weight: 600;
-  font-size: 1.25em;
-
   .ek-event-title--inner {
     margin: 0;
     font-weight: inherit;
     font-size: inherit;
+  }
+}
 
-    a {
-      text-decoration: none;
+/* Defaults only apply to non-heading wrappers (div/p/span). */
+.wp-block-eventkoi-event-data.ek-event-title.ek-event-title-default:where(div, p, span) {
+  font-size: 1.25em;
+  font-weight: 600;
 
-      &:hover,
-      &:focus {
-        text-decoration: underline;
-      }
+  .ek-event-title--inner a,
+  > a {
+    text-decoration: none;
+
+    &:hover,
+    &:focus {
+      text-decoration: underline;
     }
   }
 }

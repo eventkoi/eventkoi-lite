@@ -48,6 +48,47 @@ class Scripts {
 	}
 
 	/**
+	 * Build a flat color palette for the admin color picker, combining the
+	 * active theme palette with the WP defaults so EventKoi pickers match
+	 * the Gutenberg experience.
+	 *
+	 * @return array<int, array{name:string, slug:string, color:string}>
+	 */
+	private static function get_theme_color_palette() {
+		$palette = array();
+
+		if ( function_exists( 'wp_get_global_settings' ) ) {
+			$settings = wp_get_global_settings( array( 'color', 'palette' ) );
+			$buckets  = array();
+			foreach ( array( 'theme', 'default', 'custom' ) as $origin ) {
+				if ( isset( $settings[ $origin ] ) && is_array( $settings[ $origin ] ) ) {
+					$buckets[] = $settings[ $origin ];
+				}
+			}
+			$seen = array();
+			foreach ( $buckets as $bucket ) {
+				foreach ( $bucket as $entry ) {
+					if ( empty( $entry['color'] ) ) {
+						continue;
+					}
+					$color = (string) $entry['color'];
+					if ( isset( $seen[ $color ] ) ) {
+						continue;
+					}
+					$seen[ $color ] = true;
+					$palette[]      = array(
+						'name'  => isset( $entry['name'] ) ? (string) $entry['name'] : $color,
+						'slug'  => isset( $entry['slug'] ) ? (string) $entry['slug'] : sanitize_title( $color ),
+						'color' => $color,
+					);
+				}
+			}
+		}
+
+		return $palette;
+	}
+
+	/**
 	 * Get custom templates, cached in a 30-minute transient.
 	 *
 	 * @return array
@@ -144,6 +185,7 @@ class Scripts {
 			'default_cal_url'     => trailingslashit( $cal_url ),
 			'default_calendar'    => eventkoi_get_default_calendar_url(),
 			'default_color'       => eventkoi_default_calendar_color(),
+			'theme_colors'        => self::get_theme_color_palette(),
 			'calendars'           => Calendars::get_calendars(),
 			'timezone_string'     => wp_timezone_string(),
 			'timezone'            => wp_timezone_string(),
