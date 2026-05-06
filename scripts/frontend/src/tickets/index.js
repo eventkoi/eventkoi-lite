@@ -613,7 +613,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
     visibleTickets.every((ticket) => getTicketLimits(ticket).unavailable);
 
   const allVisibleSoldOut =
-    allVisibleUnavailable &&
+    visibleTickets.length > 0 &&
     visibleTickets.every((ticket) => getTicketLimits(ticket).soldOut);
 
   const allVisibleNotStarted =
@@ -622,10 +622,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
 
   const allVisibleSaleEnded =
     visibleTickets.length > 0 &&
-    visibleTickets.every((ticket) => {
-      const limits = getTicketLimits(ticket);
-      return limits.saleEnded || limits.soldOut;
-    });
+    visibleTickets.every((ticket) => getTicketLimits(ticket).saleEnded);
 
   const earliestSaleStartTs = visibleTickets.reduce((earliest, ticket) => {
     if (!ticket?.sale_start) return earliest;
@@ -972,18 +969,18 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
           type="button"
           className="h-14 w-full text-base font-semibold"
           onClick={() => {
-            if (!allVisibleUnavailable || allVisibleNotStarted || allVisibleSaleEnded) {
+            if (!allVisibleSoldOut) {
               setIsDialogOpen(true);
             }
           }}
-          disabled={allVisibleUnavailable && !allVisibleNotStarted && !allVisibleSaleEnded}
+          disabled={allVisibleSoldOut}
         >
           <Ticket className="mr-2 size-5" aria-hidden="true" />
-          {allVisibleUnavailable && !allVisibleNotStarted && !allVisibleSaleEnded
-            ? allVisibleSoldOut
-              ? __("Sold out", "eventkoi-lite")
-              : __("Not on sale", "eventkoi-lite")
-            : __("Get tickets", "eventkoi-lite")}
+          {allVisibleSoldOut
+            ? __("Sold out", "eventkoi-lite")
+            : allVisibleUnavailable && !allVisibleNotStarted && !allVisibleSaleEnded
+              ? __("Not on sale", "eventkoi-lite")
+              : __("Get tickets", "eventkoi-lite")}
         </Button>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
