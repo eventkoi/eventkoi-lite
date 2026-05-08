@@ -142,6 +142,19 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
   const windowState = summary?.is_open || { open: true, reason: "" };
   const windowOpen = windowState.open !== false;
   const windowClosedReason = windowOpen ? "" : windowState.reason || "closed";
+  const opensSoon =
+    !windowOpen &&
+    windowClosedReason === "not_started" &&
+    summary?.sale_start
+      ? (() => {
+          const startMs = Date.parse(
+            String(summary.sale_start).replace(" ", "T") + "Z"
+          );
+          if (Number.isNaN(startMs)) return false;
+          const diffMs = startMs - Date.now();
+          return diffMs > 0 && diffMs <= 24 * 60 * 60 * 1000;
+        })()
+      : false;
 
   const used = Number(summary?.summary?.used || 0);
   const goingCount = Number.isFinite(Number(summary?.summary?.used))
@@ -364,7 +377,9 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
           >
             {!windowOpen
               ? windowClosedReason === "not_started"
-                ? __("RSVP not yet open", "eventkoi-lite")
+                ? opensSoon
+                  ? __("RSVP opens soon", "eventkoi-lite")
+                  : __("RSVP not yet open", "eventkoi-lite")
                 : __("RSVP closed", "eventkoi-lite")
               : hasRsvp && allowEdit
                 ? __("Edit RSVP", "eventkoi-lite")
