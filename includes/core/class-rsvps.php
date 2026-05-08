@@ -82,10 +82,20 @@ class Rsvps {
 			return new \WP_Error( 'eventkoi_rsvp_disabled', __( 'RSVP is disabled for this event.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
+		// Reject after the event has ended. Highest-priority gate: a closed-out
+		// event blocks RSVPs even if an admin left the RSVP window open.
+		$now            = time();
+		$event_end_ts   = self::resolve_event_end_ts( $event_id, (int) $instance_ts );
+		$event_status   = (string) get_post_meta( $event_id, 'status', true );
+		$event_ended    = ( 'completed' === $event_status || 'cancelled' === $event_status )
+			|| ( $event_end_ts > 0 && $now > $event_end_ts );
+		if ( $event_ended ) {
+			return new \WP_Error( 'eventkoi_event_ended', __( 'This event has ended and is no longer accepting RSVPs.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
 		// Reject submissions outside the configured RSVP window. Done before
 		// the auto-account branch so we never create a WP user for a closed
 		// RSVP, and before any capacity work.
-		$now      = time();
 		$window_s = (string) Event::get_rsvp_sale_start( (int) $instance_ts );
 		$window_e = (string) Event::get_rsvp_sale_end( (int) $instance_ts );
 		$start_ts = '' !== $window_s ? strtotime( $window_s . ' UTC' ) : 0;
@@ -1231,5 +1241,42 @@ class Rsvps {
 		if ( $from_name_hook ) {
 			remove_filter( 'wp_mail_from_name', $from_name_hook );
 		}
+	}
+
+	/**
+	 * Resolve the end timestamp for an event, instance-aware.
+	 *
+	 * @param int $event_id    Event ID.
+	 * @param int $instance_ts Instance start timestamp (0 for non-recurring).
+	 * @return int Unix timestamp, 0 when undeterminable.
+	 */
+	public static function resolve_event_end_ts( $event_id, $instance_ts = 0 ) {
+		$event_id    = absint( $event_id );
+		$instance_ts = absint( $instance_ts );
+		if ( $event_id <= 0 ) {
+			return 0;
+		}
+
+		$end_ts = absint( get_post_meta( $event_id, 'end_timestamp', true ) );
+
+		if ( $instance_ts > 0 && 'recurring' === Event::get_date_type() ) {
+			$rules = Event::get_recurrence_rules();
+			if ( ! empty( $rules ) ) {
+				foreach ( $rules as $rule ) {
+					$rule_start = ! empty( $rule['start_date'] ) ? strtotime( $rule['start_date'] . ' UTC' ) : null;
+					$rule_end   = ! empty( $rule['end_date'] ) ? strtotime( $rule['end_date'] . ' UTC' ) : null;
+					$duration   = ( $rule_start && $rule_end && $rule_end > $rule_start ) ? ( $rule_end - $rule_start ) : null;
+					if ( $duration ) {
+						return $instance_ts + $duration;
+					}
+				}
+			}
+			return $instance_ts;
+		}
+
+		if ( $end_ts <= 0 ) {
+			$end_ts = absint( get_post_meta( $event_id, 'start_timestamp', true ) );
+		}
+		return $end_ts;
 	}
 }

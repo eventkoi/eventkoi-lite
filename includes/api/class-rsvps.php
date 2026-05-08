@@ -452,9 +452,10 @@ class Rsvps {
 
 		$summary = Core_Rsvps::get_summary( $event_id, $instance_ts );
 
-		$sale_start = (string) Event::get_rsvp_sale_start( (int) $instance_ts );
-		$sale_end   = (string) Event::get_rsvp_sale_end( (int) $instance_ts );
-		$is_open    = self::compute_rsvp_is_open( $sale_start, $sale_end );
+		$sale_start  = (string) Event::get_rsvp_sale_start( (int) $instance_ts );
+		$sale_end    = (string) Event::get_rsvp_sale_end( (int) $instance_ts );
+		$is_open     = self::compute_rsvp_is_open( $sale_start, $sale_end );
+		$event_ended = self::compute_event_ended( $event_id, (int) $instance_ts );
 
 		return rest_ensure_response(
 			array(
@@ -472,8 +473,25 @@ class Rsvps {
 				'sale_start'      => $sale_start,
 				'sale_end'        => $sale_end,
 				'is_open'         => $is_open,
+				'event_ended'     => $event_ended,
 			)
 		);
+	}
+
+	/**
+	 * Whether the event (or resolved instance) is over.
+	 *
+	 * @param int $event_id    Event ID.
+	 * @param int $instance_ts Instance timestamp, 0 for non-recurring.
+	 * @return bool
+	 */
+	private static function compute_event_ended( $event_id, $instance_ts = 0 ) {
+		$status = (string) get_post_meta( $event_id, 'status', true );
+		if ( 'completed' === $status || 'cancelled' === $status ) {
+			return true;
+		}
+		$end_ts = Core_Rsvps::resolve_event_end_ts( $event_id, $instance_ts );
+		return ( $end_ts > 0 && time() > $end_ts );
 	}
 
 	/**
@@ -590,6 +608,7 @@ class Rsvps {
 		$response['sale_start']     = $sale_start;
 		$response['sale_end']       = $sale_end;
 		$response['is_open']        = self::compute_rsvp_is_open( $sale_start, $sale_end );
+		$response['event_ended']    = self::compute_event_ended( $event_id, $record_instance_ts );
 
 		return rest_ensure_response( $response );
 	}

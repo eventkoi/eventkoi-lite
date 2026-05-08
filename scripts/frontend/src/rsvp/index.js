@@ -139,6 +139,7 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
   const isEnabled = summary?.rsvp_enabled !== false;
   const eventTitle = decodeEntities(summary?.event_title || "");
   const allowEdit = summary?.allow_edit !== false;
+  const eventEnded = summary?.event_ended === true;
   const windowState = summary?.is_open || { open: true, reason: "" };
   const windowOpen = windowState.open !== false;
   const windowClosedReason = windowOpen ? "" : windowState.reason || "closed";
@@ -155,6 +156,7 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
           return diffMs > 0 && diffMs <= 24 * 60 * 60 * 1000;
         })()
       : false;
+  const isClosed = !eventEnded && (!windowOpen ? windowClosedReason !== "not_started" : isFull);
 
   const used = Number(summary?.summary?.used || 0);
   const goingCount = Number.isFinite(Number(summary?.summary?.used))
@@ -362,28 +364,32 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
             onClick={() => setOpen(true)}
             disabled={
               submitting ||
-              isFull ||
+              eventEnded ||
+              isClosed ||
               !windowOpen ||
               (!allowEdit && hasRsvp)
             }
             variant={
               submitting ||
-              isFull ||
+              eventEnded ||
+              isClosed ||
               !windowOpen ||
               (!allowEdit && hasRsvp)
                 ? "secondary"
                 : "default"
             }
           >
-            {!windowOpen
-              ? windowClosedReason === "not_started"
-                ? opensSoon
-                  ? __("RSVP opens soon", "eventkoi-lite")
-                  : __("RSVP not yet open", "eventkoi-lite")
-                : __("RSVP closed", "eventkoi-lite")
-              : hasRsvp && allowEdit
-                ? __("Edit RSVP", "eventkoi-lite")
-                : __("Going", "eventkoi-lite")}
+            {eventEnded
+              ? __("Event ended", "eventkoi-lite")
+              : isClosed
+                ? __("RSVP: Closed", "eventkoi-lite")
+                : !windowOpen
+                  ? opensSoon
+                    ? __("RSVP opens soon", "eventkoi-lite")
+                    : __("RSVP not yet open", "eventkoi-lite")
+                  : hasRsvp && allowEdit
+                    ? __("Edit RSVP", "eventkoi-lite")
+                    : __("RSVP", "eventkoi-lite")}
           </Button>
         </DialogTrigger>
         <DialogContent className="eventkoi-front">
