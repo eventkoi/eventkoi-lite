@@ -156,7 +156,6 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
           return diffMs > 0 && diffMs <= 24 * 60 * 60 * 1000;
         })()
       : false;
-  const isClosed = !eventEnded && (!windowOpen ? windowClosedReason !== "not_started" : isFull);
 
   const used = Number(summary?.summary?.used || 0);
   const goingCount = Number.isFinite(Number(summary?.summary?.used))
@@ -182,6 +181,10 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
     capacity > 0 &&
     remaining === 0 &&
     (!hasRsvp || rsvpStatus !== "going");
+
+  // Closed = window over OR capacity full while the event itself hasn't ended.
+  const isClosed =
+    !eventEnded && (!windowOpen ? windowClosedReason !== "not_started" : isFull);
 
   const guestsValue = useMemo(() => {
     if (!allowGuests || status !== "going") return 0;
