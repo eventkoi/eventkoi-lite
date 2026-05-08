@@ -139,6 +139,9 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
   const isEnabled = summary?.rsvp_enabled !== false;
   const eventTitle = decodeEntities(summary?.event_title || "");
   const allowEdit = summary?.allow_edit !== false;
+  const windowState = summary?.is_open || { open: true, reason: "" };
+  const windowOpen = windowState.open !== false;
+  const windowClosedReason = windowOpen ? "" : windowState.reason || "closed";
 
   const used = Number(summary?.summary?.used || 0);
   const goingCount = Number.isFinite(Number(summary?.summary?.used))
@@ -344,16 +347,28 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
             type="button"
             className="h-11 text-base font-semibold"
             onClick={() => setOpen(true)}
-            disabled={submitting || isFull || (!allowEdit && hasRsvp)}
+            disabled={
+              submitting ||
+              isFull ||
+              !windowOpen ||
+              (!allowEdit && hasRsvp)
+            }
             variant={
-              submitting || isFull || (!allowEdit && hasRsvp)
+              submitting ||
+              isFull ||
+              !windowOpen ||
+              (!allowEdit && hasRsvp)
                 ? "secondary"
                 : "default"
             }
           >
-            {hasRsvp && allowEdit
-              ? __("Edit RSVP", "eventkoi-lite")
-              : __("Going", "eventkoi-lite")}
+            {!windowOpen
+              ? windowClosedReason === "not_started"
+                ? __("RSVP not yet open", "eventkoi-lite")
+                : __("RSVP closed", "eventkoi-lite")
+              : hasRsvp && allowEdit
+                ? __("Edit RSVP", "eventkoi-lite")
+                : __("Going", "eventkoi-lite")}
           </Button>
         </DialogTrigger>
         <DialogContent className="eventkoi-front">

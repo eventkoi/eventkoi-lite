@@ -88,6 +88,8 @@ class Event {
 		'rsvp_max_guests',
 		'rsvp_allow_edit',
 		'rsvp_auto_account',
+		'rsvp_sale_start',
+		'rsvp_sale_end',
 	);
 
 	/**
@@ -483,6 +485,8 @@ class Event {
 		$rsvp_max_guests     = isset( $meta['rsvp_max_guests'] ) ? absint( $meta['rsvp_max_guests'] ) : 0;
 		$rsvp_allow_edit     = ! empty( $meta['rsvp_allow_edit'] );
 		$rsvp_auto_account   = ! empty( $meta['rsvp_auto_account'] );
+		$rsvp_sale_start     = isset( $meta['rsvp_sale_start'] ) ? self::normalize_utc_datetime_string( $meta['rsvp_sale_start'] ) : '';
+		$rsvp_sale_end       = isset( $meta['rsvp_sale_end'] ) ? self::normalize_utc_datetime_string( $meta['rsvp_sale_end'] ) : '';
 
 		update_post_meta( self::$event_id, 'timezone_display', (bool) $timezone_display );
 		update_post_meta( self::$event_id, 'tbc', (bool) $tbc );
@@ -512,6 +516,8 @@ class Event {
 		update_post_meta( self::$event_id, 'rsvp_max_guests', $rsvp_max_guests );
 		update_post_meta( self::$event_id, 'rsvp_allow_edit', (bool) $rsvp_allow_edit );
 		update_post_meta( self::$event_id, 'rsvp_auto_account', (bool) $rsvp_auto_account );
+		update_post_meta( self::$event_id, 'rsvp_sale_start', (string) $rsvp_sale_start );
+		update_post_meta( self::$event_id, 'rsvp_sale_end', (string) $rsvp_sale_end );
 		update_post_meta( self::$event_id, 'attendance_mode', $attendance_mode );
 
 		$tickets_enabled             = ! empty( $meta['tickets_enabled'] );
@@ -1666,6 +1672,57 @@ class Event {
 		$auto_account = get_post_meta( self::$event_id, 'rsvp_auto_account', true );
 
 		return apply_filters( 'eventkoi_get_event_rsvp_auto_account', (bool) $auto_account, self::$event_id, self::$event );
+	}
+
+	/**
+	 * RSVP window start (UTC `Y-m-d H:i:s`) or '' for no boundary.
+	 *
+	 * Lite has no per-instance overrides; the parameter is accepted for
+	 * signature parity with Pro so frontend code paths can stay identical.
+	 *
+	 * @param int $instance_ts Unused in Lite.
+	 * @return string
+	 */
+	public static function get_rsvp_sale_start( $instance_ts = 0 ) {
+		$start = (string) get_post_meta( self::$event_id, 'rsvp_sale_start', true );
+
+		return apply_filters( 'eventkoi_get_event_rsvp_sale_start', $start, self::$event_id, self::$event, $instance_ts );
+	}
+
+	/**
+	 * RSVP window end (UTC `Y-m-d H:i:s`) or '' for no boundary.
+	 *
+	 * @param int $instance_ts Unused in Lite.
+	 * @return string
+	 */
+	public static function get_rsvp_sale_end( $instance_ts = 0 ) {
+		$end = (string) get_post_meta( self::$event_id, 'rsvp_sale_end', true );
+
+		return apply_filters( 'eventkoi_get_event_rsvp_sale_end', $end, self::$event_id, self::$event, $instance_ts );
+	}
+
+	/**
+	 * Normalize an inbound datetime to UTC `Y-m-d H:i:s`. Returns '' for empty
+	 * or unparseable input.
+	 *
+	 * @param mixed $value
+	 * @return string
+	 */
+	private static function normalize_utc_datetime_string( $value ) {
+		if ( null === $value ) {
+			return '';
+		}
+		$trimmed = trim( (string) $value );
+		if ( '' === $trimmed ) {
+			return '';
+		}
+		try {
+			$dt = new \DateTime( $trimmed, new \DateTimeZone( 'UTC' ) );
+			$dt->setTimezone( new \DateTimeZone( 'UTC' ) );
+			return $dt->format( 'Y-m-d H:i:s' );
+		} catch ( \Exception $e ) {
+			return '';
+		}
 	}
 
 	/**

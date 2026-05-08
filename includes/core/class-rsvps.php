@@ -82,6 +82,21 @@ class Rsvps {
 			return new \WP_Error( 'eventkoi_rsvp_disabled', __( 'RSVP is disabled for this event.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
+		// Reject submissions outside the configured RSVP window. Done before
+		// the auto-account branch so we never create a WP user for a closed
+		// RSVP, and before any capacity work.
+		$now      = time();
+		$window_s = (string) Event::get_rsvp_sale_start( (int) $instance_ts );
+		$window_e = (string) Event::get_rsvp_sale_end( (int) $instance_ts );
+		$start_ts = '' !== $window_s ? strtotime( $window_s . ' UTC' ) : 0;
+		$end_ts   = '' !== $window_e ? strtotime( $window_e . ' UTC' ) : 0;
+		if ( $start_ts && $now < $start_ts ) {
+			return new \WP_Error( 'eventkoi_rsvp_not_started', __( 'RSVP is not open yet.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+		if ( $end_ts && $now > $end_ts ) {
+			return new \WP_Error( 'eventkoi_rsvp_closed', __( 'RSVP is closed.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
 		$allow_guests = Event::get_rsvp_allow_guests();
 		$max_guests   = Event::get_rsvp_max_guests();
 

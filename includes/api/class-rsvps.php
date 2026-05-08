@@ -452,6 +452,10 @@ class Rsvps {
 
 		$summary = Core_Rsvps::get_summary( $event_id, $instance_ts );
 
+		$sale_start = (string) Event::get_rsvp_sale_start( (int) $instance_ts );
+		$sale_end   = (string) Event::get_rsvp_sale_end( (int) $instance_ts );
+		$is_open    = self::compute_rsvp_is_open( $sale_start, $sale_end );
+
 		return rest_ensure_response(
 			array(
 				'event_id'        => $event_id,
@@ -465,7 +469,40 @@ class Rsvps {
 				'max_guests'      => Event::get_rsvp_max_guests(),
 				'allow_edit'      => Event::get_rsvp_allow_edit(),
 				'rsvp_enabled'    => Event::get_rsvp_enabled(),
+				'sale_start'      => $sale_start,
+				'sale_end'        => $sale_end,
+				'is_open'         => $is_open,
 			)
+		);
+	}
+
+	/**
+	 * Resolve open/closed/upcoming for an RSVP window.
+	 *
+	 * @param string $sale_start UTC `Y-m-d H:i:s` or empty.
+	 * @param string $sale_end   UTC `Y-m-d H:i:s` or empty.
+	 * @return array{open:bool,reason:string}
+	 */
+	private static function compute_rsvp_is_open( $sale_start, $sale_end ) {
+		$now      = time();
+		$start_ts = '' !== $sale_start ? strtotime( $sale_start . ' UTC' ) : 0;
+		$end_ts   = '' !== $sale_end ? strtotime( $sale_end . ' UTC' ) : 0;
+
+		if ( $start_ts && $now < $start_ts ) {
+			return array(
+				'open'   => false,
+				'reason' => 'not_started',
+			);
+		}
+		if ( $end_ts && $now > $end_ts ) {
+			return array(
+				'open'   => false,
+				'reason' => 'closed',
+			);
+		}
+		return array(
+			'open'   => true,
+			'reason' => '',
 		);
 	}
 
@@ -540,12 +577,19 @@ class Rsvps {
 			$response['event']['timeline'] = true;
 		}
 
-		$response['summary']        = Core_Rsvps::get_summary( $event_id, absint( $record->instance_ts ?? 0 ) );
+		$record_instance_ts         = absint( $record->instance_ts ?? 0 );
+		$response['summary']        = Core_Rsvps::get_summary( $event_id, $record_instance_ts );
 		$response['capacity']       = Event::get_rsvp_capacity();
 		$response['allow_guests']   = Event::get_rsvp_allow_guests();
 		$response['max_guests']     = Event::get_rsvp_max_guests();
 		$response['allow_edit']     = Event::get_rsvp_allow_edit();
 		$response['rsvp_enabled']   = Event::get_rsvp_enabled();
+
+		$sale_start                 = (string) Event::get_rsvp_sale_start( $record_instance_ts );
+		$sale_end                   = (string) Event::get_rsvp_sale_end( $record_instance_ts );
+		$response['sale_start']     = $sale_start;
+		$response['sale_end']       = $sale_end;
+		$response['is_open']        = self::compute_rsvp_is_open( $sale_start, $sale_end );
 
 		return rest_ensure_response( $response );
 	}
