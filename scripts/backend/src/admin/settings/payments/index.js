@@ -16,9 +16,11 @@ export function SettingsPayments() {
           setSettings={setSettings}
         />
       )}
-      {ticketsEnabled && checkoutMethod === "woocommerce" && (
-        <SettingsWooCommerceLinks />
-      )}
+      {ticketsEnabled &&
+        checkoutMethod === "woocommerce" &&
+        !!window?.eventkoi_params?.woocommerce_active && (
+          <SettingsWooCommerceLinks />
+        )}
     </div>
   );
 }
