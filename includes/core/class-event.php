@@ -483,7 +483,7 @@ class Event {
 		$rsvp_show_remaining = array_key_exists( 'rsvp_show_remaining', $meta ) ? (bool) $meta['rsvp_show_remaining'] : true;
 		$rsvp_allow_guests   = ! empty( $meta['rsvp_allow_guests'] );
 		$rsvp_max_guests     = isset( $meta['rsvp_max_guests'] ) ? absint( $meta['rsvp_max_guests'] ) : 0;
-		$rsvp_allow_edit     = ! empty( $meta['rsvp_allow_edit'] );
+		$rsvp_allow_edit     = array_key_exists( 'rsvp_allow_edit', $meta ) ? ! empty( $meta['rsvp_allow_edit'] ) : true;
 		$rsvp_auto_account   = ! empty( $meta['rsvp_auto_account'] );
 		$rsvp_sale_start     = isset( $meta['rsvp_sale_start'] ) ? self::normalize_utc_datetime_string( $meta['rsvp_sale_start'] ) : '';
 		$rsvp_sale_end       = isset( $meta['rsvp_sale_end'] ) ? self::normalize_utc_datetime_string( $meta['rsvp_sale_end'] ) : '';
@@ -1659,6 +1659,10 @@ class Event {
 	 */
 	public static function get_rsvp_allow_edit() {
 		$allow_edit = get_post_meta( self::$event_id, 'rsvp_allow_edit', true );
+		// Default ON for events with no value stored (PROD-444).
+		if ( '' === $allow_edit ) {
+			$allow_edit = true;
+		}
 
 		return apply_filters( 'eventkoi_get_event_rsvp_allow_edit', (bool) $allow_edit, self::$event_id, self::$event );
 	}

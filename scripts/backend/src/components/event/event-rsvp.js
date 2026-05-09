@@ -213,7 +213,8 @@ export function EventRsvpSettings({ event, setEvent, className }) {
       ? event.rsvp_show_remaining
       : true;
   const allowGuests = !!event?.rsvp_allow_guests;
-  const allowEdit = !!event?.rsvp_allow_edit;
+  const allowEdit =
+    typeof event?.rsvp_allow_edit === "boolean" ? event.rsvp_allow_edit : true;
   const autoAccount = !!event?.rsvp_auto_account;
 
   return (

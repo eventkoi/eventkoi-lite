@@ -930,6 +930,12 @@ class Rsvps {
 				: __( 'Schedule:', 'eventkoi-lite' )
 			)
 			: '';
+		// PROD-444: pick the link line based on whether attendees can edit.
+		$allow_edit     = Event::get_rsvp_allow_edit();
+		$rsvp_link_line = $allow_edit
+			? '<p>' . esc_html__( 'View / manage your RSVP:', 'eventkoi-lite' ) . '<br />[event_url]</p>'
+			: '<p>' . esc_html__( 'View event page:', 'eventkoi-lite' ) . '<br />[event_url]</p>';
+
 		$default_body  = implode(
 			"\n",
 			array(
@@ -939,7 +945,7 @@ class Rsvps {
 				$event_datetime ? '<p>' . esc_html( $schedule_label ) . '<br />[event_datetime]</p>' : '',
 				$event_location ? '<p>' . esc_html__( 'Location:', 'eventkoi-lite' ) . '<br />[event_location]</p>' : '',
 				'<p>[guests_line]</p>',
-				'<p>' . esc_html__( 'View / manage your RSVP:', 'eventkoi-lite' ) . '<br />[event_url]</p>',
+				$rsvp_link_line,
 				'<p>&mdash;<br />[site_name]</p>',
 			)
 		);
