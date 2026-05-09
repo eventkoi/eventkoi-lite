@@ -1623,7 +1623,7 @@ class Event {
 	 */
 	public static function get_rsvp_show_remaining() {
 		$show_remaining = get_post_meta( self::$event_id, 'rsvp_show_remaining', true );
-		if ( '' === $show_remaining ) {
+		if ( '' === $show_remaining || false === $show_remaining || null === $show_remaining ) {
 			$show_remaining = true;
 		}
 
@@ -1659,8 +1659,9 @@ class Event {
 	 */
 	public static function get_rsvp_allow_edit() {
 		$allow_edit = get_post_meta( self::$event_id, 'rsvp_allow_edit', true );
-		// Default ON for events with no value stored (PROD-444).
-		if ( '' === $allow_edit ) {
+		// Default ON for events with no value stored. get_post_meta returns false
+		// when the post id is 0 (new-event template), so handle both ''/false/null.
+		if ( '' === $allow_edit || false === $allow_edit || null === $allow_edit ) {
 			$allow_edit = true;
 		}
 
