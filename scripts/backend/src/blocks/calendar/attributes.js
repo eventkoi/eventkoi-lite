@@ -2,6 +2,10 @@ let attrs = {
   calendars: {
     type: "array",
   },
+  selectAllCalendars: {
+    type: "boolean",
+    default: false,
+  },
   startday: {
     type: "string",
   },

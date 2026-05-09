@@ -1740,6 +1740,12 @@ JS;
 	 * @return string HTML output.
 	 */
 	private static function render_calendar_type( $type, $attrs ) {
+		// "Select all calendars" expands at render time so future calendars get
+		// picked up automatically across every page where the block is embedded.
+		if ( ! empty( $attrs['selectAllCalendars'] ) ) {
+			$attrs['calendars'] = self::get_all_calendar_term_ids();
+		}
+
 		$cal_id   = eventkoi_resolve_calendar_id( $attrs['calendars'] ?? 0 );
 		$calendar = new \EventKoi\Core\Calendar( $cal_id );
 
@@ -1772,6 +1778,29 @@ JS;
 		$args['align']  = $attrs['align'] ?? '';
 
 		return eventkoi_get_calendar_content( $cal_id, $type, $args );
+	}
+
+	/**
+	 * Resolve every published `event_cal` term ID. Used by the calendar/list
+	 * block "Select all calendars" toggle so newly-created calendars appear on
+	 * existing pages without re-saving the block.
+	 *
+	 * @return int[]
+	 */
+	private static function get_all_calendar_term_ids() {
+		$ids = get_terms(
+			array(
+				'taxonomy'   => 'event_cal',
+				'hide_empty' => false,
+				'fields'     => 'ids',
+				'orderby'    => 'term_id',
+				'order'      => 'ASC',
+			)
+		);
+		if ( is_wp_error( $ids ) || empty( $ids ) ) {
+			return array();
+		}
+		return array_map( 'intval', $ids );
 	}
 
 	/**

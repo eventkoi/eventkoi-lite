@@ -6,6 +6,7 @@ import { __ } from "@wordpress/i18n";
 import {
   PanelBody,
   SelectControl,
+  ToggleControl,
   __experimentalToggleGroupControl as ToggleGroupControl,
   __experimentalToggleGroupControlOption as ToggleGroupControlOption,
   __experimentalToolsPanel as ToolsPanel,
@@ -58,6 +59,7 @@ export const Controls = (props) => {
   }, []);
 
   useEffect(() => {
+    if (attributes.selectAllCalendars) return;
     if (
       items.length > 0 &&
       (!attributes.calendars || attributes.calendars.length === 0)
@@ -69,12 +71,27 @@ export const Controls = (props) => {
         setAttributes({ calendars: [seedId] });
       }
     }
-  }, [items, attributes.calendars]);
+  }, [items, attributes.calendars, attributes.selectAllCalendars]);
 
   return (
     <>
       <PanelBody title={__("Display options", "eventkoi-lite")} initialOpen={true}>
-        {items && items.length > 0 && (
+        <ToggleControl
+          label={__("Select all calendars", "eventkoi-lite")}
+          help={__(
+            "Automatically include every calendar — including any calendars added later.",
+            "eventkoi-lite"
+          )}
+          checked={!!attributes.selectAllCalendars}
+          onChange={(value) =>
+            setAttributes({
+              selectAllCalendars: value,
+              calendars: value ? [] : attributes.calendars || [],
+            })
+          }
+          __nextHasNoMarginBottom
+        />
+        {!attributes.selectAllCalendars && items && items.length > 0 && (
           <MultiSelectControl
             label={__("Select calendar(s)", "eventkoi-lite")}
             value={attributes.calendars || []}
