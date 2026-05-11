@@ -299,8 +299,8 @@ class Rsvps {
 		}
 
 		$rows = array();
-		$date_format = get_option( 'date_format' );
-		$time_format = get_option( 'time_format' );
+		$date_format = \eventkoi_resolved_date_format();
+		$time_format = \eventkoi_resolved_time_format();
 		$datetime_format = trim( $date_format . ' ' . $time_format );
 
 		foreach ( $items as $item ) {
@@ -635,8 +635,8 @@ class Rsvps {
 		}
 
 		$utc_timezone   = new \DateTimeZone( 'UTC' );
-		$date_format    = get_option( 'date_format' );
-		$time_format    = get_option( 'time_format' );
+		$date_format    = \eventkoi_resolved_date_format();
+		$time_format    = \eventkoi_resolved_time_format();
 		$event_date     = wp_date( $date_format, $event_timestamp, $utc_timezone );
 		$event_time     = wp_date( $time_format, $event_timestamp, $utc_timezone );
 		$event_end_date = $event_end_timestamp ? wp_date( $date_format, $event_end_timestamp, $utc_timezone ) : '';

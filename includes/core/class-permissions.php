@@ -178,6 +178,10 @@ class Permissions {
 			// Permissions panel itself — the master switch needs admin-level
 			// settings access.
 			self::SETTINGS_KEY           => 'eventkoi_settings_defaults',
+
+			// Custom PHP date/time formats — live in the Default settings tab.
+			'date_format'                => 'eventkoi_settings_defaults',
+			'time_format_string'         => 'eventkoi_settings_defaults',
 		);
 	}
 

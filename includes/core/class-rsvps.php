@@ -873,8 +873,8 @@ class Rsvps {
 		}
 
 		$utc_timezone       = new \DateTimeZone( 'UTC' );
-		$date_format        = get_option( 'date_format' );
-		$time_format        = get_option( 'time_format' );
+		$date_format        = \eventkoi_resolved_date_format();
+		$time_format        = \eventkoi_resolved_time_format();
 		$event_date         = $event_timestamp ? wp_date( $date_format, $event_timestamp, $utc_timezone ) : '';
 		$event_time         = $event_timestamp ? wp_date( $time_format, $event_timestamp, $utc_timezone ) : '';
 		$event_end_date     = $event_end_timestamp ? wp_date( $date_format, $event_end_timestamp, $utc_timezone ) : '';
@@ -1174,8 +1174,8 @@ class Rsvps {
 
 		$event_timestamp = $instance_ts ? absint( $instance_ts ) : absint( get_post_meta( $event_id, 'start_timestamp', true ) );
 		$utc_timezone    = new \DateTimeZone( 'UTC' );
-		$date_format     = get_option( 'date_format' );
-		$time_format     = get_option( 'time_format' );
+		$date_format     = \eventkoi_resolved_date_format();
+		$time_format     = \eventkoi_resolved_time_format();
 		$event_datetime  = $event_timestamp ? wp_date( $date_format . ' ' . $time_format, $event_timestamp, $utc_timezone ) : '';
 
 		$guest_line = $guests > 0

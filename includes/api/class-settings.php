@@ -53,6 +53,56 @@ class Settings {
 				},
 			)
 		);
+
+		// Live preview for custom PHP date/time format strings.
+		register_rest_route(
+			EVENTKOI_API,
+			'/settings/preview-format',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( self::class, 'preview_format' ),
+				'permission_callback' => REST::cap( 'eventkoi_settings_defaults' ),
+				'args'                => array(
+					'date' => array(
+						'type'              => 'string',
+						'required'          => false,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'time' => array(
+						'type'              => 'string',
+						'required'          => false,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Render a sample of the requested PHP date and time format strings.
+	 *
+	 * @param WP_REST_Request $request The incoming REST request.
+	 * @return WP_REST_Response
+	 */
+	public static function preview_format( WP_REST_Request $request ) {
+		$date = trim( (string) $request->get_param( 'date' ) );
+		$time = trim( (string) $request->get_param( 'time' ) );
+
+		if ( '' === $date ) {
+			$date = \eventkoi_resolved_date_format();
+		}
+		if ( '' === $time ) {
+			$time = \eventkoi_resolved_time_format();
+		}
+
+		$now = time();
+		return rest_ensure_response(
+			array(
+				'date'     => wp_date( $date, $now ),
+				'time'     => wp_date( $time, $now ),
+				'datetime' => wp_date( trim( $date . ', ' . $time, ', ' ), $now ),
+			)
+		);
 	}
 
 	/**

@@ -8,6 +8,7 @@ import { Heading } from "@/components/heading";
 import { Panel } from "@/components/panel";
 import { ProBadge } from "@/components/pro-badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
@@ -56,6 +57,12 @@ export function SettingsOverview() {
       ? "local"
       : "site"
   );
+  const [dateFormat, setDateFormat] = useState(settings?.date_format || "");
+  const [timeFormatString, setTimeFormatString] = useState(
+    settings?.time_format_string || ""
+  );
+  const [datePreview, setDatePreview] = useState("");
+  const [timePreview, setTimePreview] = useState("");
 
   const blockTemplates = useMemo(() => {
     const group = customTemplates.find((tplGroup) => tplGroup.type === "block");
@@ -97,6 +104,54 @@ export function SettingsOverview() {
       setDefaultTemplate(settings.default_event_template);
     }
   }, [settings?.default_event_template]);
+
+  useEffect(() => {
+    if (typeof settings?.date_format !== "undefined" && settings.date_format !== dateFormat) {
+      setDateFormat(settings.date_format || "");
+    }
+  }, [settings?.date_format]);
+
+  useEffect(() => {
+    if (
+      typeof settings?.time_format_string !== "undefined" &&
+      settings.time_format_string !== timeFormatString
+    ) {
+      setTimeFormatString(settings.time_format_string || "");
+    }
+  }, [settings?.time_format_string]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      try {
+        const url = new URL(
+          `${eventkoi_params.site_url.replace(/\/$/, "")}/wp-json/${eventkoi_params.api}/settings/preview-format`
+        );
+        if (dateFormat) url.searchParams.set("date", dateFormat);
+        if (timeFormatString) url.searchParams.set("time", timeFormatString);
+        const response = await apiRequest({
+          path: url.pathname + url.search,
+          method: "GET",
+          headers: {
+            "EVENTKOI-API-KEY": eventkoi_params.api_key,
+          },
+        });
+        if (!cancelled) {
+          setDatePreview(response?.date || "");
+          setTimePreview(response?.time || "");
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setDatePreview("");
+          setTimePreview("");
+        }
+      }
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [dateFormat, timeFormatString]);
 
   const handleTimeFormatChange = (val) => {
     setTimeFormat(val);
@@ -182,6 +237,18 @@ export function SettingsOverview() {
   const handleAutoDetectChange = (value) => {
     setAutoDetectTimezone(value);
     saveSettings({ auto_detect_timezone: value === "local" ? "1" : "0" });
+  };
+
+  const commitDateFormat = () => {
+    const next = (dateFormat || "").trim();
+    if (next === (settings?.date_format || "")) return;
+    saveSettings({ date_format: next });
+  };
+
+  const commitTimeFormatString = () => {
+    const next = (timeFormatString || "").trim();
+    if (next === (settings?.time_format_string || "")) return;
+    saveSettings({ time_format_string: next });
   };
 
   const handleDefaultTemplateChange = (value) => {
@@ -319,6 +386,49 @@ export function SettingsOverview() {
               </Tabs>
               <div className="text-muted-foreground">
                 Select how event times are displayed (e.g. 2:00 PM or 14:00).
+              </div>
+            </div>
+
+            {/* Custom PHP date / time format */}
+            <div className="grid gap-2">
+              <Label className="text-sm font-medium">Date format</Label>
+              <Input
+                value={dateFormat}
+                onChange={(e) => setDateFormat(e.target.value)}
+                onBlur={commitDateFormat}
+                placeholder="e.g. F j, Y — leave blank to use WordPress Settings → General"
+                className="w-[350px] font-mono"
+                disabled={isSaving}
+              />
+              <div className="text-muted-foreground text-sm">
+                {datePreview
+                  ? `Preview: ${datePreview}`
+                  : "Custom PHP date format used across EventKoi (events list, emails, blocks)."}{" "}
+                <a
+                  href="https://wordpress.org/documentation/article/customize-date-and-time-format/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-foreground"
+                >
+                  Format reference
+                </a>
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label className="text-sm font-medium">Time format (custom)</Label>
+              <Input
+                value={timeFormatString}
+                onChange={(e) => setTimeFormatString(e.target.value)}
+                onBlur={commitTimeFormatString}
+                placeholder="e.g. H:i:s — leave blank to use the 12/24-hour preference above"
+                className="w-[350px] font-mono"
+                disabled={isSaving}
+              />
+              <div className="text-muted-foreground text-sm">
+                {timePreview
+                  ? `Preview: ${timePreview}`
+                  : "When set, this string is used as-is and the 12/24-hour toggle is ignored."}
               </div>
             </div>
 

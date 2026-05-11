@@ -1070,13 +1070,58 @@ function eventkoi_locate_template( $template_name, $default_path = '' ) {
 }
 
 /**
+ * Resolve the date format EventKoi should use for date-only renders.
+ *
+ * Precedence:
+ *   1. eventkoi_settings['date_format'] (custom PHP format string, when non-empty)
+ *   2. WordPress core option 'date_format'
+ *   3. Hard fallback 'F j, Y'
+ *
+ * @return string PHP date format.
+ */
+function eventkoi_resolved_date_format(): string {
+	$settings = Settings::get();
+	$custom   = isset( $settings['date_format'] ) ? trim( (string) $settings['date_format'] ) : '';
+	if ( '' !== $custom ) {
+		return $custom;
+	}
+	return (string) get_option( 'date_format', 'F j, Y' );
+}
+
+/**
+ * Resolve the time format EventKoi should use for time-only renders.
+ *
+ * Precedence:
+ *   1. eventkoi_settings['time_format_string'] (custom PHP format string, when non-empty)
+ *      → returned as-is; the 12/24 toggle is NOT applied.
+ *   2. WordPress core option 'time_format', then mutated by the 12/24 toggle.
+ *   3. Hard fallback 'g:i a'.
+ *
+ * @return string PHP date format.
+ */
+function eventkoi_resolved_time_format(): string {
+	$settings = Settings::get();
+	$custom   = isset( $settings['time_format_string'] ) ? trim( (string) $settings['time_format_string'] ) : '';
+	if ( '' !== $custom ) {
+		return $custom;
+	}
+	return eventkoi_apply_time_preference( (string) get_option( 'time_format', 'g:i a' ) );
+}
+
+/**
  * Apply EventKoi 12/24-hour preference to a PHP date format string.
+ *
+ * Skipped (returns $format unchanged) when the admin has set a custom
+ * time_format_string in eventkoi_settings — the explicit string wins.
  *
  * @param string $format PHP date format string.
  * @return string Adjusted format string.
  */
 function eventkoi_apply_time_preference( string $format ): string {
 	$settings = Settings::get();
+	if ( ! empty( $settings['time_format_string'] ) ) {
+		return $format;
+	}
 	if ( ! empty( $settings['time_format'] ) && '24' === $settings['time_format'] ) {
 		$format = preg_replace( '/[gh]:i\s*[aA]/', 'H:i', $format );
 		$format = preg_replace( '/[gh]:i/', 'H:i', $format );
@@ -1107,9 +1152,8 @@ function eventkoi_date( $type = 'datetime', $timestamp = null, $timezone = null 
 		}
 	}
 
-	$date_format = get_option( 'date_format', 'F j, Y' );
-	$time_format = get_option( 'time_format', 'g:i a' );
-	$time_format = eventkoi_apply_time_preference( $time_format );
+	$date_format = eventkoi_resolved_date_format();
+	$time_format = eventkoi_resolved_time_format();
 
 	switch ( $type ) {
 		case 'date':
@@ -1170,8 +1214,8 @@ function eventkoi_format_datetime_range( $start_ts, $end_ts = null, $all_day = f
 
 	$separator   = isset( $args['separator'] ) ? (string) $args['separator'] : ' — ';
 	$timezone    = $args['timezone'] ?? null;
-	$date_format = get_option( 'date_format', 'F j, Y' );
-	$time_format = eventkoi_apply_time_preference( get_option( 'time_format', 'g:i a' ) );
+	$date_format = eventkoi_resolved_date_format();
+	$time_format = eventkoi_resolved_time_format();
 
 	$start_ts = (int) $start_ts;
 	$end_ts   = ! empty( $end_ts ) ? (int) $end_ts : null;

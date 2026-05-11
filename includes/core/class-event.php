@@ -1269,8 +1269,8 @@ class Event {
 		// Context / formatting settings.
 		$settings    = Settings::get();
 		$wp_timezone = wp_timezone();
-		$date_format = get_option( 'date_format', 'F j, Y' );
-		$time_format = get_option( 'time_format', 'g:i a' );
+		$date_format = \eventkoi_resolved_date_format();
+		$time_format = \eventkoi_resolved_time_format();
 		$time_pref   = isset( $settings['time_format'] ) ? $settings['time_format'] : '12';
 
 		$parse = static function ( $iso ) use ( $wp_timezone ) {
@@ -2447,7 +2447,7 @@ class Event {
 	public static function rendered_time() {
 		$instance_ts = eventkoi_get_instance_id();
 		$type        = self::get_date_type();
-		$time_format = eventkoi_apply_time_preference( get_option( 'time_format', 'g:i a' ) );
+		$time_format = eventkoi_resolved_time_format();
 
 		// Instance-aware render for a specific recurring occurrence.
 		if ( $instance_ts && 'recurring' === $type ) {
