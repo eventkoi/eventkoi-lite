@@ -39,7 +39,7 @@ class Tickets {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( __CLASS__, 'get_tickets' ),
-				'permission_callback' => array( __CLASS__, 'permission_check' ),
+				'permission_callback' => REST::any_cap( 'eventkoi_events_edit', 'eventkoi_events_add' ),
 				'args'                => array(
 					'event_id' => array(
 						'required'          => true,
@@ -85,7 +85,7 @@ class Tickets {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'resend_ticket_confirmation' ),
-				'permission_callback' => array( REST::class, 'private_api' ),
+				'permission_callback' => REST::cap( 'eventkoi_orders_manage' ),
 			)
 		);
 
@@ -95,7 +95,7 @@ class Tickets {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'send_refund_confirmation' ),
-				'permission_callback' => array( REST::class, 'private_api' ),
+				'permission_callback' => REST::cap( 'eventkoi_orders_manage' ),
 			)
 		);
 
@@ -105,7 +105,7 @@ class Tickets {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'archive_ticket_order' ),
-				'permission_callback' => array( REST::class, 'private_api' ),
+				'permission_callback' => REST::cap( 'eventkoi_orders_manage' ),
 			)
 		);
 
@@ -115,7 +115,7 @@ class Tickets {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'update_ticket_checkin' ),
-				'permission_callback' => array( REST::class, 'private_api' ),
+				'permission_callback' => REST::cap( 'eventkoi_attendees_manage' ),
 			)
 		);
 
@@ -135,7 +135,7 @@ class Tickets {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'create_ticket' ),
-				'permission_callback' => array( __CLASS__, 'permission_check' ),
+				'permission_callback' => REST::any_cap( 'eventkoi_events_edit', 'eventkoi_events_add' ),
 				'args'                => array(
 					'event_id' => array(
 						'required'          => true,
@@ -153,7 +153,7 @@ class Tickets {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( __CLASS__, 'get_ticket_orders' ),
-				'permission_callback' => array( __CLASS__, 'permission_check' ),
+				'permission_callback' => REST::any_cap( 'eventkoi_orders_view', 'eventkoi_attendees_view' ),
 				'args'                => array(
 					'event_id' => array(
 						'required'          => true,
@@ -171,7 +171,7 @@ class Tickets {
 			array(
 				'methods'             => 'PUT',
 				'callback'            => array( __CLASS__, 'update_ticket' ),
-				'permission_callback' => array( __CLASS__, 'permission_check' ),
+				'permission_callback' => REST::cap( 'eventkoi_events_edit' ),
 				'args'                => array(
 					'ticket_id' => array(
 						'required'          => true,
@@ -189,7 +189,7 @@ class Tickets {
 			array(
 				'methods'             => 'DELETE',
 				'callback'            => array( __CLASS__, 'delete_ticket' ),
-				'permission_callback' => array( __CLASS__, 'permission_check' ),
+				'permission_callback' => REST::cap( 'eventkoi_events_edit' ),
 				'args'                => array(
 					'ticket_id' => array(
 						'required'          => true,
@@ -207,7 +207,7 @@ class Tickets {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( __CLASS__, 'get_local_wc_orders' ),
-				'permission_callback' => array( __CLASS__, 'permission_check' ),
+				'permission_callback' => REST::cap( 'eventkoi_orders_view' ),
 			)
 		);
 
@@ -217,7 +217,7 @@ class Tickets {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( __CLASS__, 'get_local_ticket_stats' ),
-				'permission_callback' => array( __CLASS__, 'permission_check' ),
+				'permission_callback' => REST::cap( 'eventkoi_orders_view' ),
 			)
 		);
 
@@ -227,7 +227,7 @@ class Tickets {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( __CLASS__, 'get_combined_ticket_stats' ),
-				'permission_callback' => array( __CLASS__, 'permission_check' ),
+				'permission_callback' => REST::cap( 'eventkoi_orders_view' ),
 			)
 		);
 
@@ -237,7 +237,7 @@ class Tickets {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( __CLASS__, 'get_all_orders' ),
-				'permission_callback' => array( __CLASS__, 'permission_check' ),
+				'permission_callback' => REST::cap( 'eventkoi_orders_view' ),
 			)
 		);
 	}

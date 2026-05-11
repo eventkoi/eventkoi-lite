@@ -37,7 +37,7 @@ class Settings {
 				'methods'             => 'GET',
 				'callback'            => array( self::class, 'get_settings' ),
 				'permission_callback' => function () {
-					return current_user_can( 'manage_options' );
+					return current_user_can( \EventKoi\Core\Permissions::ACCESS_CAP );
 				},
 			)
 		);
@@ -49,7 +49,7 @@ class Settings {
 				'methods'             => 'POST',
 				'callback'            => array( self::class, 'set_settings' ),
 				'permission_callback' => function () {
-					return current_user_can( 'manage_options' );
+					return current_user_can( \EventKoi\Core\Permissions::ACCESS_CAP );
 				},
 			)
 		);
@@ -123,6 +123,9 @@ class Settings {
 			);
 		}
 
+		// Drop keys the current user is not permitted to write.
+		$data = \EventKoi\Core\Permissions::filter_settings_payload( $data );
+
 		$settings_api = new CoreSettings();
 		$settings     = $settings_api::get();
 		if ( ! is_array( $settings ) ) {
@@ -165,6 +168,8 @@ class Settings {
 				$sanitized = $currency;
 			} elseif ( in_array( $key, $html_keys, true ) ) {
 				$sanitized = wp_kses( $value, \EventKoi\Core\Settings::get_email_template_allowed_tags() );
+			} elseif ( \EventKoi\Core\Permissions::SETTINGS_KEY === $key ) {
+				$sanitized = self::sanitize_user_permissions( $value );
 			} else {
 				$sanitized = is_array( $value )
 				? array_map( 'sanitize_text_field', $value )
@@ -195,5 +200,40 @@ class Settings {
 				'settings' => $settings,
 			)
 		);
+	}
+
+	/**
+	 * Sanitize the user_permissions payload: a role-keyed map of capability
+	 * booleans. Strip anything outside the canonical cap catalog and never
+	 * persist administrator overrides.
+	 *
+	 * @param mixed $value Raw payload value.
+	 * @return array<string, array<string, bool>>
+	 */
+	private static function sanitize_user_permissions( $value ): array {
+		if ( ! is_array( $value ) ) {
+			return array();
+		}
+		$known = array_flip( \EventKoi\Core\Permissions::cap_keys() );
+		$out   = array();
+		foreach ( $value as $role => $caps ) {
+			$role = sanitize_key( (string) $role );
+			if ( '' === $role || 'administrator' === $role ) {
+				continue;
+			}
+			if ( ! is_array( $caps ) ) {
+				continue;
+			}
+			$role_caps = array();
+			foreach ( $caps as $cap => $granted ) {
+				$cap = sanitize_key( (string) $cap );
+				if ( ! isset( $known[ $cap ] ) ) {
+					continue;
+				}
+				$role_caps[ $cap ] = (bool) filter_var( $granted, FILTER_VALIDATE_BOOLEAN );
+			}
+			$out[ $role ] = $role_caps;
+		}
+		return $out;
 	}
 }

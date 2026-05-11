@@ -170,18 +170,48 @@ class REST {
 	}
 
 	/**
+	 * Build a private permission callback gated to a specific EventKoi
+	 * capability. Admins always pass via Permissions::user_can().
+	 *
+	 * @param string $capability EventKoi capability key.
+	 * @return callable
+	 */
+	public static function cap( string $capability ): callable {
+		return static function ( WP_REST_Request $request ) use ( $capability ) {
+			return self::private_api( $request, $capability );
+		};
+	}
+
+	/**
+	 * Build a private permission callback that accepts ANY of several caps.
+	 *
+	 * @param string ...$capabilities Capability keys.
+	 * @return callable
+	 */
+	public static function any_cap( string ...$capabilities ): callable {
+		return static function ( WP_REST_Request $request ) use ( $capabilities ) {
+			foreach ( $capabilities as $cap ) {
+				if ( self::private_api( $request, $cap ) ) {
+					return true;
+				}
+			}
+			return false;
+		};
+	}
+
+	/**
 	 * Permission callback for private REST endpoints.
 	 *
 	 * Ensures:
-	 * - The current user has manage_options capability.
 	 * - A valid EventKoi API key header is present and matches.
+	 * - The current user satisfies the supplied capability (defaults to
+	 *   manage_options for legacy callers; admins always pass).
 	 *
-	 * Always returns a boolean true/false.
-	 *
-	 * @param \WP_REST_Request $request
+	 * @param \WP_REST_Request $request    Request.
+	 * @param string           $capability Required capability.
 	 * @return bool
 	 */
-	public static function private_api( \WP_REST_Request $request ) {
+	public static function private_api( \WP_REST_Request $request, string $capability = 'manage_options' ) {
 		$headers = $request->get_headers();
 
 		$api_key = '';
@@ -203,7 +233,10 @@ class REST {
 			return false;
 		}
 
-		return current_user_can( 'manage_options' )
-		&& hash_equals( strtolower( $saved_api_key ), strtolower( $api_key ) );
+		if ( ! hash_equals( strtolower( $saved_api_key ), strtolower( $api_key ) ) ) {
+			return false;
+		}
+
+		return \EventKoi\Core\Permissions::user_can( $capability );
 	}
 }

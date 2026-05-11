@@ -35,7 +35,7 @@ class Order {
 				'methods'             => 'GET',
 				'callback'            => array( self::class, 'get_result' ),
 				'permission_callback' => function () {
-					return current_user_can( 'manage_options' );
+					return current_user_can( 'eventkoi_orders_view' );
 				},
 			)
 		);

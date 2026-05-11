@@ -95,6 +95,7 @@ class Init {
 	private function get_core_components() {
 		return array(
 			\EventKoi\Core\Install::class,
+			\EventKoi\Core\Permissions::class,
 			\EventKoi\Core\Hooks::class,
 			\EventKoi\Core\Post_Types::class,
 			\EventKoi\Core\Template::class,

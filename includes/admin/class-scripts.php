@@ -201,6 +201,9 @@ class Scripts {
 				'first_name'   => $current_user->first_name,
 				'display_name' => $current_user->display_name,
 			),
+			'caps'                => \EventKoi\Core\Permissions::user_caps(),
+			'caps_catalog'        => \EventKoi\Core\Permissions::all_caps(),
+			'roles_catalog'       => \EventKoi\Core\Permissions::roles_catalog(),
 		);
 
 		$eventkoi_params['custom_templates'] = self::get_custom_templates();

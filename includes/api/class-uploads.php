@@ -32,7 +32,10 @@ class Uploads {
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'upload_image' ),
 				'permission_callback' => function () {
-					return current_user_can( 'manage_options' );
+					return current_user_can( 'eventkoi_events_edit' )
+						|| current_user_can( 'eventkoi_events_add' )
+						|| current_user_can( 'eventkoi_calendars_edit' )
+						|| current_user_can( 'eventkoi_calendars_add' );
 				},
 			)
 		);
@@ -44,7 +47,10 @@ class Uploads {
 				'methods'             => 'DELETE',
 				'callback'            => array( __CLASS__, 'delete_image' ),
 				'permission_callback' => function () {
-					return current_user_can( 'manage_options' );
+					return current_user_can( 'eventkoi_events_edit' )
+						|| current_user_can( 'eventkoi_events_add' )
+						|| current_user_can( 'eventkoi_calendars_edit' )
+						|| current_user_can( 'eventkoi_calendars_add' );
 				},
 			)
 		);

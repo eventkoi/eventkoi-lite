@@ -65,7 +65,7 @@ class Calendar {
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'update_calendar' ),
 				'permission_callback' => function () {
-					return current_user_can( 'manage_options' );
+					return current_user_can( 'eventkoi_calendars_edit' ) || current_user_can( 'eventkoi_calendars_add' );
 				},
 			)
 		);
@@ -77,7 +77,7 @@ class Calendar {
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'duplicate_calendar' ),
 				'permission_callback' => function () {
-					return current_user_can( 'manage_options' );
+					return current_user_can( 'eventkoi_calendars_add' );
 				},
 			)
 		);
@@ -89,7 +89,7 @@ class Calendar {
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'delete_calendar' ),
 				'permission_callback' => function () {
-					return current_user_can( 'manage_options' );
+					return current_user_can( 'eventkoi_calendars_edit' );
 				},
 			)
 		);

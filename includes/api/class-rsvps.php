@@ -61,7 +61,7 @@ class Rsvps {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( __CLASS__, 'get_rsvps' ),
-				'permission_callback' => array( REST::class, 'private_api' ),
+				'permission_callback' => REST::cap( 'eventkoi_attendees_view' ),
 			)
 		);
 
@@ -71,7 +71,7 @@ class Rsvps {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'bulk_action' ),
-				'permission_callback' => array( REST::class, 'private_api' ),
+				'permission_callback' => REST::cap( 'eventkoi_attendees_manage' ),
 			)
 		);
 
@@ -81,7 +81,7 @@ class Rsvps {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( __CLASS__, 'export_rsvps' ),
-				'permission_callback' => array( REST::class, 'private_api' ),
+				'permission_callback' => REST::cap( 'eventkoi_attendees_view' ),
 			)
 		);
 	}

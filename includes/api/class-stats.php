@@ -36,7 +36,7 @@ class Stats {
 				'methods'             => 'GET',
 				'callback'            => array( __CLASS__, 'get_stats' ),
 				'permission_callback' => function () {
-					return current_user_can( 'manage_options' );
+					return current_user_can( 'eventkoi_orders_view' ) || current_user_can( 'eventkoi_attendees_view' );
 				},
 			)
 		);

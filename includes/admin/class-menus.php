@@ -135,10 +135,12 @@ class Menus {
 			remove_filter( 'update_footer', 'core_update_footer' );
 		}
 
+		$menu_cap = \EventKoi\Core\Permissions::ACCESS_CAP;
+
 		add_menu_page(
 			__( 'Events', 'eventkoi-lite' ),
 			__( 'Events', 'eventkoi-lite' ),
-			'manage_options',
+			$menu_cap,
 			'eventkoi',
 			array( static::class, 'load_admin' ),
 			static::get_admin_icon(),
@@ -161,7 +163,7 @@ class Menus {
 				'eventkoi',
 				$label,
 				$label,
-				'manage_options',
+				$menu_cap,
 				"admin.php?page=eventkoi#/$slug"
 			);
 		}
