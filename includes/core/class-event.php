@@ -1272,6 +1272,9 @@ class Event {
 		$date_format = \eventkoi_resolved_date_format();
 		$time_format = \eventkoi_resolved_time_format();
 		$time_pref   = isset( $settings['time_format'] ) ? $settings['time_format'] : '12';
+		// When the admin set a custom time_format_string, it has already been
+		// baked into $time_format above; the 12/24 toggle must NOT override it.
+		$has_custom_time = ! empty( $settings['time_format_string'] );
 
 		$parse = static function ( $iso ) use ( $wp_timezone ) {
 			if ( empty( $iso ) ) {
@@ -1285,12 +1288,14 @@ class Event {
 			}
 		};
 
-		$fmt_time = static function ( $dt ) use ( $time_pref, $time_format ) {
+		$fmt_time = static function ( $dt ) use ( $time_pref, $time_format, $has_custom_time ) {
 			if ( ! $dt instanceof \DateTimeInterface ) {
 				return '';
 			}
 
-			if ( '24' === $time_pref ) {
+			if ( $has_custom_time ) {
+				$fmt = $time_format;
+			} elseif ( '24' === $time_pref ) {
 				$fmt = 'H:i';
 			} elseif ( '12' === $time_pref ) {
 				$fmt = 'g:i a';

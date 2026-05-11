@@ -624,18 +624,26 @@ class Calendar {
 						// events; timed events must keep the real end timestamp.
 						$fc_end_dt = $is_all_day ? $end_all_day_utc : $end_dt_utc;
 
-						$start_time_full = gmdate( 'g:ia', $start_dt_utc->getTimestamp() );
-						$end_time_full   = gmdate( 'g:ia', $end_dt_utc->getTimestamp() );
+						// Calendar grid tiles use a compact time label.
+						// Honor the EK 12/24-hour toggle so 24h sites see "13"
+						// instead of "1pm". Keep the format short so tiles
+						// don't overflow.
+						$cal_settings    = \EventKoi\Core\Settings::get();
+						$cal_uses_24h    = ! empty( $cal_settings['time_format'] ) && '24' === $cal_settings['time_format'];
+						$full_fmt        = $cal_uses_24h ? 'H:i' : 'g:ia';
+						$round_fmt       = $cal_uses_24h ? 'H' : 'ga';
+						$start_time_full = gmdate( $full_fmt, $start_dt_utc->getTimestamp() );
+						$end_time_full   = gmdate( $full_fmt, $end_dt_utc->getTimestamp() );
 
 						$start_minutes = gmdate( 'i', $start_dt_utc->getTimestamp() );
 						$end_minutes   = gmdate( 'i', $end_dt_utc->getTimestamp() );
 
 						$start_time = ( '00' === $start_minutes )
-							? gmdate( 'ga', $start_dt_utc->getTimestamp() )
+							? gmdate( $round_fmt, $start_dt_utc->getTimestamp() )
 							: $start_time_full;
 
 						$end_time = ( '00' === $end_minutes )
-							? gmdate( 'ga', $end_dt_utc->getTimestamp() )
+							? gmdate( $round_fmt, $end_dt_utc->getTimestamp() )
 							: $end_time_full;
 
 					$record = array(

@@ -124,13 +124,14 @@ export function SettingsOverview() {
     let cancelled = false;
     const run = async () => {
       try {
-        const url = new URL(
-          `${eventkoi_params.site_url.replace(/\/$/, "")}/wp-json/${eventkoi_params.api}/settings/preview-format`
-        );
-        if (dateFormat) url.searchParams.set("date", dateFormat);
-        if (timeFormatString) url.searchParams.set("time", timeFormatString);
+        const params = new URLSearchParams();
+        if (dateFormat) params.set("date", dateFormat);
+        if (timeFormatString) params.set("time", timeFormatString);
+        const qs = params.toString();
+        const path =
+          `${eventkoi_params.api}/settings/preview-format` + (qs ? `?${qs}` : "");
         const response = await apiRequest({
-          path: url.pathname + url.search,
+          path,
           method: "GET",
           headers: {
             "EVENTKOI-API-KEY": eventkoi_params.api_key,
@@ -396,14 +397,14 @@ export function SettingsOverview() {
                 value={dateFormat}
                 onChange={(e) => setDateFormat(e.target.value)}
                 onBlur={commitDateFormat}
-                placeholder="e.g. F j, Y — leave blank to use WordPress Settings → General"
-                className="w-[350px] font-mono"
+                placeholder={eventkoi_params?.date_format || "F j, Y"}
+                className="w-[350px]"
                 disabled={isSaving}
               />
               <div className="text-muted-foreground text-sm">
                 {datePreview
                   ? `Preview: ${datePreview}`
-                  : "Custom PHP date format used across EventKoi (events list, emails, blocks)."}{" "}
+                  : "Leave blank to use the WordPress default date format."}{" "}
                 <a
                   href="https://wordpress.org/documentation/article/customize-date-and-time-format/"
                   target="_blank"
@@ -421,14 +422,14 @@ export function SettingsOverview() {
                 value={timeFormatString}
                 onChange={(e) => setTimeFormatString(e.target.value)}
                 onBlur={commitTimeFormatString}
-                placeholder="e.g. H:i:s — leave blank to use the 12/24-hour preference above"
-                className="w-[350px] font-mono"
+                placeholder={eventkoi_params?.time_format_string || "g:i a"}
+                className="w-[350px]"
                 disabled={isSaving}
               />
               <div className="text-muted-foreground text-sm">
                 {timePreview
                   ? `Preview: ${timePreview}`
-                  : "When set, this string is used as-is and the 12/24-hour toggle is ignored."}
+                  : "Leave blank to use the WordPress default time format. When set, this overrides the 12/24-hour toggle above."}
               </div>
             </div>
 
