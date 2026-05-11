@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.3.10.0
+Stable tag: 1.3.11.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -230,6 +230,14 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.11.0 – User permissions & custom date/time formats – 2026-05-11 =
+* New: Settings → User permissions — grant non-admin WP roles access to specific EventKoi areas (events, calendars, attendees, orders, settings sub-tabs) without sharing the admin password. Admins always have full access; the panel is empty by default so existing behaviour is unchanged until you grant something.
+* New: Settings → Default settings → custom Date format and Time format inputs. Type a PHP date format string (e.g. `Y-m-d`, `d-M-Y \a\t H:i`) to override WP Settings → General everywhere EventKoi renders dates (events list, single event, calendar/list blocks, RSVP and ticket emails, dynamic tags). Leave blank to keep using WordPress defaults.
+* Improvement: When a custom Time format is set, the 12/24-hour toggle is bypassed so the typed string wins as-is. With the field blank, the toggle keeps working exactly as before.
+* Improvement: Calendar grid event tile labels now honour the 12/24-hour toggle (sites set to 24-hour see `13:00` instead of `1pm`).
+* Fix: Recurring event series pages now honour the custom time format on every listed instance (previously some instances ignored it).
+* Fix: Resolves a WP 6.7 "Translation loading triggered too early" notice introduced by the permissions filter.
 
 = 1.3.10.0 – RSVP windows, button states & block polish – 2026-05-11 =
 * New: RSVP availability window — set start and end dates for when RSVPs open and close on each event.
