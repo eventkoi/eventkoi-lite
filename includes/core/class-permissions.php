@@ -53,8 +53,12 @@ class Permissions {
 	}
 
 	/**
-	 * Canonical capability catalog. Single source of truth for the React UI
-	 * (rendering the checkbox list) and the REST layer (validation).
+	 * Canonical capability catalog with translated labels.
+	 *
+	 * Only call this after the init action — it runs translation functions,
+	 * which would trigger _load_textdomain_just_in_time too early otherwise.
+	 * For cap-key lookups during early hooks (e.g. user_has_cap), use
+	 * cap_keys() — it is i18n-free.
 	 *
 	 * @return array
 	 */
@@ -100,18 +104,33 @@ class Permissions {
 	}
 
 	/**
-	 * Flat list of every cap key in the catalog.
+	 * Flat list of every cap key. Hardcoded (no i18n calls) so it is safe
+	 * to call during early hooks like user_has_cap, well before init.
+	 *
+	 * Must stay in sync with all_caps() — there's a self-test in
+	 * cap_keys_match_catalog() to fail loudly during dev if they drift.
 	 *
 	 * @return string[]
 	 */
 	public static function cap_keys(): array {
-		$keys = array();
-		foreach ( self::all_caps() as $group ) {
-			foreach ( array_keys( $group['caps'] ) as $key ) {
-				$keys[] = $key;
-			}
-		}
-		return $keys;
+		return array(
+			'eventkoi_events_add',
+			'eventkoi_events_edit',
+			'eventkoi_calendars_add',
+			'eventkoi_calendars_edit',
+			'eventkoi_attendees_checkin',
+			'eventkoi_attendees_view',
+			'eventkoi_attendees_manage',
+			'eventkoi_orders_view',
+			'eventkoi_orders_manage',
+			'eventkoi_settings_defaults',
+			'eventkoi_settings_fields',
+			'eventkoi_settings_emails',
+			'eventkoi_settings_payments',
+			'eventkoi_settings_integrations',
+			'eventkoi_settings_import',
+			'eventkoi_settings_license',
+		);
 	}
 
 	/**
@@ -123,42 +142,42 @@ class Permissions {
 	public static function settings_key_caps(): array {
 		return array(
 			// Payments.
-			'ticket_checkout_method' => 'eventkoi_settings_payments',
-			'stripe'                 => 'eventkoi_settings_payments',
-			'currency'               => 'eventkoi_settings_payments',
+			'ticket_checkout_method'     => 'eventkoi_settings_payments',
+			'stripe'                     => 'eventkoi_settings_payments',
+			'currency'                   => 'eventkoi_settings_payments',
 
 			// Emails — templates + per-email sender + enable toggles.
-			'rsvp_email_template'           => 'eventkoi_settings_emails',
-			'ticket_email_template'         => 'eventkoi_settings_emails',
-			'refund_email_template'         => 'eventkoi_settings_emails',
-			'rsvp_email_enabled'            => 'eventkoi_settings_emails',
-			'ticket_email_enabled'          => 'eventkoi_settings_emails',
-			'refund_email_enabled'          => 'eventkoi_settings_emails',
-			'rsvp_email_sender_email'       => 'eventkoi_settings_emails',
-			'rsvp_email_sender_name'        => 'eventkoi_settings_emails',
-			'ticket_email_sender_email'     => 'eventkoi_settings_emails',
-			'ticket_email_sender_name'      => 'eventkoi_settings_emails',
-			'refund_email_sender_email'     => 'eventkoi_settings_emails',
-			'refund_email_sender_name'      => 'eventkoi_settings_emails',
-			'admin_email_enabled'           => 'eventkoi_settings_emails',
-			'admin_email_recipient'         => 'eventkoi_settings_emails',
-			'admin_rsvp_email_enabled'      => 'eventkoi_settings_emails',
-			'admin_rsvp_email_recipient'    => 'eventkoi_settings_emails',
+			'rsvp_email_template'        => 'eventkoi_settings_emails',
+			'ticket_email_template'      => 'eventkoi_settings_emails',
+			'refund_email_template'      => 'eventkoi_settings_emails',
+			'rsvp_email_enabled'         => 'eventkoi_settings_emails',
+			'ticket_email_enabled'       => 'eventkoi_settings_emails',
+			'refund_email_enabled'       => 'eventkoi_settings_emails',
+			'rsvp_email_sender_email'    => 'eventkoi_settings_emails',
+			'rsvp_email_sender_name'     => 'eventkoi_settings_emails',
+			'ticket_email_sender_email'  => 'eventkoi_settings_emails',
+			'ticket_email_sender_name'   => 'eventkoi_settings_emails',
+			'refund_email_sender_email'  => 'eventkoi_settings_emails',
+			'refund_email_sender_name'   => 'eventkoi_settings_emails',
+			'admin_email_enabled'        => 'eventkoi_settings_emails',
+			'admin_email_recipient'      => 'eventkoi_settings_emails',
+			'admin_rsvp_email_enabled'   => 'eventkoi_settings_emails',
+			'admin_rsvp_email_recipient' => 'eventkoi_settings_emails',
 
 			// Integrations.
-			'api_key'                => 'eventkoi_settings_integrations',
-			'gmap_api_key'           => 'eventkoi_settings_integrations',
-			'gmap_connection_status' => 'eventkoi_settings_integrations',
+			'api_key'                    => 'eventkoi_settings_integrations',
+			'gmap_api_key'               => 'eventkoi_settings_integrations',
+			'gmap_connection_status'     => 'eventkoi_settings_integrations',
 
 			// License (kept here for completeness; license fields live in
 			// dedicated options and are written via class-license.php anyway).
-			'license_key'     => 'eventkoi_settings_license',
-			'license_status'  => 'eventkoi_settings_license',
-			'license_expires' => 'eventkoi_settings_license',
+			'license_key'                => 'eventkoi_settings_license',
+			'license_status'             => 'eventkoi_settings_license',
+			'license_expires'            => 'eventkoi_settings_license',
 
 			// Permissions panel itself — the master switch needs admin-level
 			// settings access.
-			self::SETTINGS_KEY => 'eventkoi_settings_defaults',
+			self::SETTINGS_KEY           => 'eventkoi_settings_defaults',
 		);
 	}
 
@@ -293,9 +312,9 @@ class Permissions {
 	 * untouched; non-admins gain the caps the site owner granted to their
 	 * role(s).
 	 *
-	 * @param array   $allcaps Existing caps.
-	 * @param array   $caps    Caps being requested. Unused.
-	 * @param array   $args    Args from current_user_can. Unused.
+	 * @param array         $allcaps Existing caps.
+	 * @param array         $caps    Caps being requested. Unused.
+	 * @param array         $args    Args from current_user_can. Unused.
 	 * @param \WP_User|null $user The user object.
 	 * @return array
 	 */
