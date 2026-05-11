@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.3.9.9
+Stable tag: 1.3.10.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -230,6 +230,21 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.10.0 – RSVP windows, button states & block polish – 2026-05-11 =
+* New: RSVP availability window — set start and end dates for when RSVPs open and close on each event.
+* New: RSVP button now reflects three states — "RSVP" when open, "RSVP: Closed" when capacity is reached or the RSVP window has ended, and "Event ended" once the event itself is over.
+* New: "RSVP opens soon" label automatically appears within 24 hours of the configured open date.
+* New: "Select all calendars" toggle on the Calendar and List blocks — automatically include every calendar (including ones added later) without having to re-edit existing pages.
+* New: WooCommerce next-steps panel on Settings → Payments — quick links to set up payments and currency in WooCommerce when WC checkout is selected.
+* New: "Sold out" Get-tickets button label when the entire event's inventory is exhausted, replacing the old confusing "open the modal to find out".
+* New: Pagination now also appears at the top of admin data tables for faster navigation.
+* New: Editor color picker upgrades, calendar dot indicators, text alignment and heading-level controls on event blocks.
+* Improvement: "Allow RSVP edits" now defaults ON for new events. The default RSVP confirmation email link line now auto-swaps between "View / manage your RSVP" and "View event page" based on the toggle (custom templates pass through unchanged).
+* Improvement: WooCommerce next-steps panel only renders when WooCommerce is installed and active.
+* Fix: RSVP defaults (allow edits, show remaining) now reach the new-event template correctly.
+* Fix: TDZ ReferenceError that was hiding the entire RSVP widget on the frontend.
+* Fix: RSVPs stay attached to their event when an event's date changes.
 
 = 1.3.9.9 – Translatable admin, calendar timezone fixes & editor polish – 2026-05-03 =
 * i18n: Full admin React UI is now translatable via Loco Translate, WP.org translation packs, or bundled JSON — previously the admin stayed in English even when the site locale was set. POT regenerated with all new strings.
