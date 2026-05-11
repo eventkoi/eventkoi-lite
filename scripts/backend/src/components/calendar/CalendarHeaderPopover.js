@@ -95,7 +95,7 @@ export function CalendarHeaderPopover({
             size="icon"
             onClick={gotoPrevYear}
             className="bg-transparent p-0 text-[1px] text-foreground border-none shadow-none cursor-pointer hover:bg-muted h-8"
-            aria-label={__("Previous year", "eventkoi")}
+            aria-label={__("Previous year", "eventkoi-lite")}
           >
             <ChevronLeft className="w-4 h-4" aria-hidden="true" />
           </Button>
@@ -105,7 +105,7 @@ export function CalendarHeaderPopover({
             size="icon"
             onClick={gotoNextYear}
             className="bg-transparent p-0 text-[1px] text-foreground border-none shadow-none cursor-pointer hover:bg-muted h-8"
-            aria-label={__("Next year", "eventkoi")}
+            aria-label={__("Next year", "eventkoi-lite")}
           >
             <ChevronRight className="w-4 h-4" aria-hidden="true" />
           </Button>

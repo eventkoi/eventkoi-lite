@@ -130,7 +130,7 @@ class Beaver_Modules {
 				'title'    => __( 'Style', 'eventkoi-lite' ),
 				'sections' => array(
 					'labels' => array(
-						'title'  => __( 'Day\'s Labels', 'eventkoi-lite' ),
+						'title'  => __( "Day's Labels", 'eventkoi-lite' ),
 						'fields' => array(
 							'table_header_label_typography' => array(
 								'type'       => 'typography',

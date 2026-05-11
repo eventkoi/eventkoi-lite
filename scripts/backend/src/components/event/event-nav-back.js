@@ -1,6 +1,7 @@
 import { Heading } from "@/components/heading";
 import { Button } from "@/components/ui/button";
 import { useEventEditContext } from "@/hooks/EventEditContext";
+import { __ } from "@wordpress/i18n";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Link, useLocation, useParams } from "react-router-dom";
 
@@ -11,10 +12,10 @@ export function EventNavBack() {
 
   const isEditingInstance = location.pathname.includes("/instances/edit/");
   const heading = isEditingInstance
-    ? "Edit event instance"
+    ? __("Edit event instance", "eventkoi-lite")
     : event?.id > 0
-    ? "Edit event"
-    : "Add event";
+    ? __("Edit event", "eventkoi-lite")
+    : __("Add event", "eventkoi-lite");
 
   return (
     <div className="flex flex-col gap-[1px] flex-shrink-0 min-w-0 overflow-hidden">
@@ -26,17 +27,17 @@ export function EventNavBack() {
               to="/events"
               className="text-foreground hover:underline flex items-center gap-1"
             >
-              Back to all events
+              {__("Back to all events", "eventkoi-lite")}
             </Link>
             <ChevronRight className="w-4 h-4" />
             <Link
               to={`/events/${event?.id}/instances`}
               className="text-foreground hover:underline"
             >
-              Recurring event instances table
+              {__("Recurring event instances table", "eventkoi-lite")}
             </Link>
             <ChevronRight className="w-4 h-4" />
-            <span className="text-muted-foreground">Edit event instance</span>
+            <span className="text-muted-foreground">{__("Edit event instance", "eventkoi-lite")}</span>
           </div>
         ) : (
           <Button
@@ -46,7 +47,7 @@ export function EventNavBack() {
           >
             <Link to="/events">
               <ChevronLeft className="mr-2 h-4 w-4" />
-              Back to all events
+              {__("Back to all events", "eventkoi-lite")}
             </Link>
           </Button>
         )}
@@ -60,7 +61,7 @@ export function EventNavBack() {
             className="hover:underline flex items-center gap-1"
           >
             <ChevronLeft className="h-4 w-4" />
-            Back
+            {__("Back", "eventkoi-lite")}
           </Link>
         </div>
       )}

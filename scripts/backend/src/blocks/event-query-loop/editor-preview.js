@@ -1,4 +1,5 @@
 import apiFetch from "@wordpress/api-fetch";
+import { AlignmentControl, BlockControls } from "@wordpress/block-editor";
 import { useEffect } from "@wordpress/element";
 import { __ } from "@wordpress/i18n";
 
@@ -384,7 +385,7 @@ export const withEventKoiQueryData = (BlockEdit) => (props) => {
 
     const hiddenButtons = new Set();
     const hiddenSlots = new Set();
-    const matchLabel = __("Change design", "eventkoi").toLowerCase();
+    const matchLabel = __("Change design", "eventkoi-lite").toLowerCase();
 
     const hideMatches = (root) => {
       if (!root) {
@@ -496,5 +497,19 @@ export const withEventKoiQueryData = (BlockEdit) => (props) => {
     };
   }, [props.isSelected, props.attributes?.namespace, props.name]);
 
-  return <BlockEdit {...props} />;
+  const textAlign = props.attributes?.textAlign || "";
+
+  return (
+    <>
+      <BlockControls group="block">
+        <AlignmentControl
+          value={textAlign}
+          onChange={(nextAlign) =>
+            props.setAttributes({ textAlign: nextAlign || "" })
+          }
+        />
+      </BlockControls>
+      <BlockEdit {...props} />
+    </>
+  );
 };

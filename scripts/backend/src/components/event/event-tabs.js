@@ -1,6 +1,7 @@
 import { ProBadge } from "@/components/pro-badge";
 import { SideTabs } from "@/components/ui/side-tabs";
 import { useEventEditContext } from "@/hooks/EventEditContext";
+import { __ } from "@wordpress/i18n";
 import { useLocation } from "react-router-dom";
 
 /**
@@ -31,33 +32,33 @@ export function EventTabs() {
 
   const rsvpChildTabs = {
     rsvp: [
-      { key: "attendees", label: "Attendees", to: "attendees" },
+      { key: "attendees", label: __("Attendees", "eventkoi-lite"), to: "attendees" },
     ],
   };
 
   const ticketsChildTabs = {
     tickets: [
-      { key: "manage-tickets", label: "Add tickets", to: "manage-tickets" },
-      { key: "attendees", label: "Attendees", to: "attendees" },
-      { key: "sales-history", label: "Sales history", to: "sales-history" },
+      { key: "manage-tickets", label: __("Add tickets", "eventkoi-lite"), to: "manage-tickets" },
+      { key: "attendees", label: __("Attendees", "eventkoi-lite"), to: "attendees" },
+      { key: "sales-history", label: __("Sales history", "eventkoi-lite"), to: "sales-history" },
     ],
   };
 
   const tabs = [
-    { name: "main", title: "Main" },
+    { name: "main", title: __("Main", "eventkoi-lite") },
     ...(event?.date_type === "recurring"
-      ? [{ name: "instances", title: "Recurring instances" }]
+      ? [{ name: "instances", title: __("Recurring instances", "eventkoi-lite") }]
       : []),
     ...(attendanceMode === 'rsvp'
       ? [{
           name: "rsvp",
-          title: "RSVP",
+          title: __("RSVP", "eventkoi-lite"),
           children: rsvpChildTabs.rsvp,
         }]
       : attendanceMode === 'tickets'
       ? [{
           name: "manage-tickets",
-          title: "Tickets",
+          title: __("Tickets", "eventkoi-lite"),
           children: ticketsChildTabs.tickets,
         }]
       : [] // No attendance tabs when mode is 'none'

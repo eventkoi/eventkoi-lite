@@ -10,7 +10,7 @@ export function NavControls({ calendarApi, currentDate, setCurrentDate }) {
         size="icon"
         className="text-[1px] box-border p-0 w-10 h-10 border-solid shadow-none cursor-pointer rounded"
         onClick={() => calendarApi?.prev()}
-        aria-label={__("Previous", "eventkoi")}
+        aria-label={__("Previous", "eventkoi-lite")}
       >
         <ChevronLeft className="w-4 h-4" aria-hidden="true" />
       </Button>
@@ -19,7 +19,7 @@ export function NavControls({ calendarApi, currentDate, setCurrentDate }) {
         size="icon"
         className="text-[1px] box-border p-0 w-10 h-10 border-solid shadow-none cursor-pointer rounded"
         onClick={() => calendarApi?.next()}
-        aria-label={__("Next", "eventkoi")}
+        aria-label={__("Next", "eventkoi-lite")}
       >
         <ChevronRight className="w-4 h-4" aria-hidden="true" />
       </Button>

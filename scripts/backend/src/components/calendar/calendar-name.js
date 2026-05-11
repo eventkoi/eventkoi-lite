@@ -1,3 +1,4 @@
+import { __ } from "@wordpress/i18n";
 import { useEffect, useRef, useState } from "react";
 
 import { PencilLine } from "lucide-react";
@@ -57,7 +58,7 @@ export function CalendarName({ calendar, setCalendar }) {
         className="inline-flex rounded-md items-center px-2 py-1 cursor-pointer font-medium text-lg border-2 border-transparent hover:border-input focus:border-input active:border-input"
         contentEditable
         spellCheck={false}
-        placeholder="Enter calendar name"
+        placeholder={__("Enter calendar name", "eventkoi-lite")}
         dangerouslySetInnerHTML={{
           __html: calendar?.name,
         }}
@@ -73,7 +74,7 @@ export function CalendarName({ calendar, setCalendar }) {
         className="cursor-pointer inline-flex items-center gap-x-1"
       >
         <PencilLine className="w-3.5 h-3.5 text-ring" />
-        <span className="text-xs">Click to edit</span>
+        <span className="text-xs">{__("Click to edit", "eventkoi-lite")}</span>
       </div>
       {error && (
         <p className="w-full text-xs text-[#d13d3d]">

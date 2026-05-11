@@ -71,7 +71,7 @@ class TEC_Importer {
 			return rest_ensure_response(
 				array(
 					'installed' => false,
-					'message'   => __( 'The Events Calendar plugin is not active.', 'eventkoi' ),
+					'message'   => __( 'The Events Calendar plugin is not active.', 'eventkoi-lite' ),
 				)
 			);
 		}
@@ -130,7 +130,7 @@ class TEC_Importer {
 		$import_images = ! empty( $data['import_images'] );
 
 		if ( ! self::is_tec_active() ) {
-			return new WP_Error( 'tec_not_active', __( 'The Events Calendar plugin is not active.', 'eventkoi' ), array( 'status' => 400 ) );
+			return new WP_Error( 'tec_not_active', __( 'The Events Calendar plugin is not active.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
 		// If no specific IDs, import all events directly via SQL to bypass TEC date filters.
@@ -211,7 +211,7 @@ class TEC_Importer {
 		$post = get_post( $tec_id );
 
 		if ( ! $post || 'tribe_events' !== $post->post_type ) {
-			return new WP_Error( 'invalid_event', __( 'TEC event not found.', 'eventkoi' ) );
+			return new WP_Error( 'invalid_event', __( 'TEC event not found.', 'eventkoi-lite' ) );
 		}
 
 		$title       = $post->post_title;
@@ -225,7 +225,7 @@ class TEC_Importer {
 		$all_day    = 'yes' === get_post_meta( $tec_id, '_EventAllDay', true );
 
 		if ( empty( $start_date ) ) {
-			return new WP_Error( 'no_start_date', __( 'Event has no start date.', 'eventkoi' ) );
+			return new WP_Error( 'no_start_date', __( 'Event has no start date.', 'eventkoi-lite' ) );
 		}
 
 		// Convert TEC dates (stored in local timezone) to ISO format.
@@ -433,21 +433,21 @@ class TEC_Importer {
 		}
 
 		$parts   = array();
-		$parts[] = '<strong>' . esc_html__( 'Organizer', 'eventkoi' ) . ':</strong> ' . esc_html( $organizer->post_title );
+		$parts[] = '<strong>' . esc_html__( 'Organizer', 'eventkoi-lite' ) . ':</strong> ' . esc_html( $organizer->post_title );
 
 		$email = get_post_meta( $organizer_id, '_OrganizerEmail', true );
 		if ( ! empty( $email ) ) {
-			$parts[] = esc_html__( 'Email', 'eventkoi' ) . ': ' . esc_html( $email );
+			$parts[] = esc_html__( 'Email', 'eventkoi-lite' ) . ': ' . esc_html( $email );
 		}
 
 		$phone = get_post_meta( $organizer_id, '_OrganizerPhone', true );
 		if ( ! empty( $phone ) ) {
-			$parts[] = esc_html__( 'Phone', 'eventkoi' ) . ': ' . esc_html( $phone );
+			$parts[] = esc_html__( 'Phone', 'eventkoi-lite' ) . ': ' . esc_html( $phone );
 		}
 
 		$website = get_post_meta( $organizer_id, '_OrganizerWebsite', true );
 		if ( ! empty( $website ) ) {
-			$parts[] = esc_html__( 'Website', 'eventkoi' ) . ': <a href="' . esc_url( $website ) . '">' . esc_html( $website ) . '</a>';
+			$parts[] = esc_html__( 'Website', 'eventkoi-lite' ) . ': <a href="' . esc_url( $website ) . '">' . esc_html( $website ) . '</a>';
 		}
 
 		return implode( '<br>', $parts );

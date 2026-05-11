@@ -20,6 +20,8 @@ $data_types = array(
 	'event_location',
 	'event_datetime_with_summary',
 	'event_datetime',
+	'event_date',
+	'event_time',
 	'event_date_type',
 	'event_rulesummary',
 );

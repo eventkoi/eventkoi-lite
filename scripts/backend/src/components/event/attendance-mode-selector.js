@@ -20,10 +20,10 @@ export function AttendanceModeSelector({ event, setEvent }) {
 
   return (
     <div className="grid gap-2">
-      <Heading level={3}>{__("Attendance", "eventkoi")}</Heading>
+      <Heading level={3}>{__("Attendance", "eventkoi-lite")}</Heading>
       <div className="grid gap-4">
         <p className="text-sm text-muted-foreground">
-          {__("Choose how visitors can register for this event.", "eventkoi")}
+          {__("Choose how visitors can register for this event.", "eventkoi-lite")}
         </p>
 
         <RadioGroup
@@ -34,9 +34,9 @@ export function AttendanceModeSelector({ event, setEvent }) {
           <div className="flex items-start space-x-3">
             <RadioGroupItem value="none" id="none" className="mt-1" />
             <Label htmlFor="none" className="cursor-pointer flex-1">
-              <div className="font-medium">{__("None", "eventkoi")}</div>
+              <div className="font-medium">{__("None", "eventkoi-lite")}</div>
               <div className="text-sm text-muted-foreground mt-1">
-                {__("No registration required for this event.", "eventkoi")}
+                {__("No registration required for this event.", "eventkoi-lite")}
               </div>
             </Label>
           </div>
@@ -44,11 +44,11 @@ export function AttendanceModeSelector({ event, setEvent }) {
           <div className="flex items-start space-x-3">
             <RadioGroupItem value="rsvp" id="rsvp" className="mt-1" />
             <Label htmlFor="rsvp" className="cursor-pointer flex-1">
-              <div className="font-medium">{__("RSVP (Free)", "eventkoi")}</div>
+              <div className="font-medium">{__("RSVP (Free)", "eventkoi-lite")}</div>
               <div className="text-sm text-muted-foreground mt-1">
                 {__(
                   "Allow visitors to RSVP to this event for free.",
-                  "eventkoi",
+                  "eventkoi-lite",
                 )}
               </div>
             </Label>
@@ -59,12 +59,12 @@ export function AttendanceModeSelector({ event, setEvent }) {
               <RadioGroupItem value="tickets" id="tickets" className="mt-1" />
               <Label htmlFor="tickets" className="cursor-pointer flex-1">
                 <div className="flex items-center gap-2 font-medium">
-                  {__("Tickets (Paid)", "eventkoi")}
+                  {__("Tickets (Paid)", "eventkoi-lite")}
                 </div>
                 <div className="text-sm text-muted-foreground mt-1">
                   {__(
                     "Sell tickets for this event.",
-                    "eventkoi",
+                    "eventkoi-lite",
                   )}
                 </div>
               </Label>

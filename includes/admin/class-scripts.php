@@ -48,6 +48,47 @@ class Scripts {
 	}
 
 	/**
+	 * Build a flat color palette for the admin color picker, combining the
+	 * active theme palette with the WP defaults so EventKoi pickers match
+	 * the Gutenberg experience.
+	 *
+	 * @return array<int, array{name:string, slug:string, color:string}>
+	 */
+	private static function get_theme_color_palette() {
+		$palette = array();
+
+		if ( function_exists( 'wp_get_global_settings' ) ) {
+			$settings = wp_get_global_settings( array( 'color', 'palette' ) );
+			$buckets  = array();
+			foreach ( array( 'theme', 'default', 'custom' ) as $origin ) {
+				if ( isset( $settings[ $origin ] ) && is_array( $settings[ $origin ] ) ) {
+					$buckets[] = $settings[ $origin ];
+				}
+			}
+			$seen = array();
+			foreach ( $buckets as $bucket ) {
+				foreach ( $bucket as $entry ) {
+					if ( empty( $entry['color'] ) ) {
+						continue;
+					}
+					$color = (string) $entry['color'];
+					if ( isset( $seen[ $color ] ) ) {
+						continue;
+					}
+					$seen[ $color ] = true;
+					$palette[]      = array(
+						'name'  => isset( $entry['name'] ) ? (string) $entry['name'] : $color,
+						'slug'  => isset( $entry['slug'] ) ? (string) $entry['slug'] : sanitize_title( $color ),
+						'color' => $color,
+					);
+				}
+			}
+		}
+
+		return $palette;
+	}
+
+	/**
 	 * Get custom templates, cached in a 30-minute transient.
 	 *
 	 * @return array
@@ -132,6 +173,7 @@ class Scripts {
 			'admin_email'         => get_bloginfo( 'admin_email' ),
 			'instance_id'         => get_option( 'eventkoi_site_instance_id' ),
 			'ajax_url'            => admin_url( 'admin-ajax.php' ),
+			'wc_settings_url'     => admin_url( 'admin.php?page=wc-settings' ),
 			'api_key'             => REST::get_api_key(),
 			'is_admin'            => current_user_can( 'manage_options' ),
 			'date_now'            => eventkoi_date( 'j M Y' ),
@@ -143,6 +185,7 @@ class Scripts {
 			'default_cal_url'     => trailingslashit( $cal_url ),
 			'default_calendar'    => eventkoi_get_default_calendar_url(),
 			'default_color'       => eventkoi_default_calendar_color(),
+			'theme_colors'        => self::get_theme_color_palette(),
 			'calendars'           => Calendars::get_calendars(),
 			'timezone_string'     => wp_timezone_string(),
 			'timezone'            => wp_timezone_string(),
@@ -150,14 +193,17 @@ class Scripts {
 			'time_format'         => $settings['time_format'] ?? '12',
 			'day_start_time'      => $settings['day_start_time'] ?? '07:00',
 			'locale'              => determine_locale(),
-			'date_format'         => get_option( 'date_format' ),
-			'time_format_string'  => \eventkoi_apply_time_preference( get_option( 'time_format' ) ),
+			'date_format'         => \eventkoi_resolved_date_format(),
+			'time_format_string'  => \eventkoi_resolved_time_format(),
 			'demo_event_id'       => (int) get_option( 'eventkoi_demo_event_id', 0 ),
 			'demo_event_image'    => trailingslashit( EVENTKOI_PLUGIN_URL ) . 'templates/assets/demo-event.png',
 			'current_user'        => array(
 				'first_name'   => $current_user->first_name,
 				'display_name' => $current_user->display_name,
 			),
+			'caps'                => \EventKoi\Core\Permissions::user_caps(),
+			'caps_catalog'        => \EventKoi\Core\Permissions::all_caps(),
+			'roles_catalog'       => \EventKoi\Core\Permissions::roles_catalog(),
 		);
 
 		$eventkoi_params['custom_templates'] = self::get_custom_templates();
@@ -196,6 +242,12 @@ class Scripts {
 		}
 
 		wp_enqueue_script( 'eventkoi-admin' );
+
+		wp_set_script_translations(
+			'eventkoi-admin',
+			'eventkoi-lite',
+			WP_LANG_DIR . '/plugins'
+		);
 
 		wp_localize_script(
 			'eventkoi-admin',

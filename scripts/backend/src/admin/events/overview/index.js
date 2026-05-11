@@ -199,7 +199,7 @@ export function EventsOverview() {
       }
       setTecDialogOpen(false);
     } catch (err) {
-      showToastError(err?.message ?? __("Import failed.", "eventkoi"));
+      showToastError(err?.message ?? __("Import failed.", "eventkoi-lite"));
       setTecState((s) => ({ ...s, importing: false }));
     }
   };
@@ -221,8 +221,8 @@ export function EventsOverview() {
       if (!parsed?.cache_key || parsed.events_count === 0) {
         showToastError(
           parsed?.skipped > 0
-            ? __("All events already imported.", "eventkoi")
-            : __("No events found in file.", "eventkoi")
+            ? __("All events already imported.", "eventkoi-lite")
+            : __("No events found in file.", "eventkoi-lite")
         );
         setIcsImporting(false);
         e.target.value = "";
@@ -242,7 +242,7 @@ export function EventsOverview() {
         showToastError(`${response.errors} event(s) failed.`);
       }
     } catch {
-      showToastError(__("Import failed.", "eventkoi"));
+      showToastError(__("Import failed.", "eventkoi-lite"));
     }
     setIcsImporting(false);
     e.target.value = "";
@@ -434,7 +434,7 @@ export function EventsOverview() {
               onCheckedChange={(value) =>
                 table.toggleAllPageRowsSelected(!!value)
               }
-              aria-label="Select all"
+              aria-label={__("Select all", "eventkoi-lite")}
             />
           </div>
         ),
@@ -443,7 +443,7 @@ export function EventsOverview() {
             <Checkbox
               checked={row.getIsSelected()}
               onCheckedChange={(value) => row.toggleSelected(!!value)}
-              aria-label="Select row"
+              aria-label={__("Select row", "eventkoi-lite")}
             />
           </div>
         ),
@@ -453,7 +453,7 @@ export function EventsOverview() {
       {
         accessorKey: "title",
         header: ({ column }) => (
-          <SortButton title="Event name" column={column} />
+          <SortButton title={__("Event name", "eventkoi-lite")} column={column} />
         ),
         cell: ({ row }) => {
           const { id, wp_status, url } = row.original;
@@ -519,7 +519,7 @@ export function EventsOverview() {
       },
       {
         accessorKey: "status",
-        header: ({ column }) => <SortButton title="Status" column={column} />,
+        header: ({ column }) => <SortButton title={__("Status", "eventkoi-lite")} column={column} />,
         cell: ({ row }) => {
           const status = row.getValue("status");
           const iconMap = {
@@ -548,38 +548,40 @@ export function EventsOverview() {
           <SortButton title="RSVPs/Tickets" column={column} />
         ),
         cell: ({ row }) => {
-          const used = row.original.rsvp_used ?? 0;
-          const capacity = row.original.rsvp_capacity ?? 0;
-          const attendanceMode = row.original.attendance_mode || 'none';
-          const ticketsTotal = row.original.tickets_total ?? 0;
-          const ticketsSold = row.original.tickets_sold ?? 0;
-          const ticketsUnlimited = row.original.tickets_unlimited === true;
-          const displayValue = attendanceMode === 'tickets'
-            ? ticketsUnlimited
-              ? `${ticketsSold}/Unlimited`
-              : ticketsTotal > 0 || ticketsSold > 0
-              ? `${ticketsSold}/${ticketsTotal}`
-              : ""
-            : attendanceMode === 'rsvp'
-            ? capacity > 0
-              ? `${used}/${capacity}`
-              : `${used}/Unlimited`
-            : "";
-          return (
-            <div className="text-foreground tabular-nums">
-              {displayValue}
-            </div>
-          );
+          const attendanceMode = row.original.attendance_mode || "none";
+          if (attendanceMode === "tickets") {
+            const count = Number(row.original.tickets_sold || 0);
+            const label = count === 1 ? "ticket" : "tickets";
+            return (
+              <div className="text-foreground tabular-nums">
+                {count} {label}
+              </div>
+            );
+          }
+          if (attendanceMode === "rsvp") {
+            const count = Number(row.original.rsvp_used || 0);
+            const label = count === 1 ? "RSVP" : "RSVPs";
+            return (
+              <div className="text-foreground tabular-nums">
+                {count} {label}
+              </div>
+            );
+          }
+          return <div className="text-muted-foreground">—</div>;
         },
         sortingFn: (rowA, rowB) => {
-          const a = Number(rowA.original.rsvp_used || 0);
-          const b = Number(rowB.original.rsvp_used || 0);
-          return a - b;
+          const getCount = (row) => {
+            const mode = row.original.attendance_mode || "none";
+            if (mode === "tickets") return Number(row.original.tickets_sold || 0);
+            if (mode === "rsvp") return Number(row.original.rsvp_used || 0);
+            return -1;
+          };
+          return getCount(rowA) - getCount(rowB);
         },
       },
       {
         accessorKey: "start_date_iso",
-        header: ({ column }) => <SortButton title="Starts" column={column} />,
+        header: ({ column }) => <SortButton title={__("Starts", "eventkoi-lite")} column={column} />,
         cell: ({ row }) => {
           const {
             start_date_iso,
@@ -611,7 +613,7 @@ export function EventsOverview() {
       },
       {
         accessorKey: "end_date_iso",
-        header: ({ column }) => <SortButton title="Ends" column={column} />,
+        header: ({ column }) => <SortButton title={__("Ends", "eventkoi-lite")} column={column} />,
         cell: ({ row }) => {
           const {
             end_date_iso,
@@ -650,7 +652,7 @@ export function EventsOverview() {
       },
       {
         accessorKey: "calendar",
-        header: () => <>Calendar</>,
+        header: () => <>{__("Calendar", "eventkoi-lite")}</>,
         cell: ({ row }) => {
           const calendar = row.original.calendar || [];
           return (
@@ -669,7 +671,7 @@ export function EventsOverview() {
       {
         accessorKey: "modified_date",
         header: ({ column }) => (
-          <SortButton title="Last modified" column={column} />
+          <SortButton title={__("Last modified", "eventkoi-lite")} column={column} />
         ),
         cell: ({ row }) => {
           const raw = row.getValue("modified_date");
@@ -855,25 +857,25 @@ export function EventsOverview() {
       )}
 
       <div className="mx-auto flex w-full gap-2 justify-between">
-        <Heading>Events</Heading>
+        <Heading>{__("Events", "eventkoi-lite")}</Heading>
         <div className="flex items-center gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="default" className="gap-2 font-normal">
                 <Download className="h-4 w-4" />
-                {__("Import", "eventkoi")}
+                {__("Import", "eventkoi-lite")}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => setUrlImportOpen(true)}>
-                {__("Import from URL", "eventkoi")}
+                {__("Import from URL", "eventkoi-lite")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => icsFileRef.current?.click()} disabled={icsImporting}>
-                {icsImporting ? __("Importing...", "eventkoi") : __("Import from ICS / iCal file", "eventkoi")}
+                {icsImporting ? __("Importing...", "eventkoi-lite") : __("Import from ICS / iCal file", "eventkoi-lite")}
               </DropdownMenuItem>
               {tecAvailable && (
                 <DropdownMenuItem onClick={() => setTecDialogOpen(true)}>
-                  {__("Import from The Events Calendar", "eventkoi")}
+                  {__("Import from The Events Calendar", "eventkoi-lite")}
                 </DropdownMenuItem>
               )}
             </DropdownMenuContent>
@@ -889,11 +891,11 @@ export function EventsOverview() {
                 <div className="flex items-center gap-3 mb-1">
                   <img src={`${eventkoi_params.plugin_url}templates/assets/tec-icon.png`} alt="The Events Calendar" className="h-8 w-8 rounded-lg" />
                   <DialogTitle className="text-base">
-                    {__("Import from The Events Calendar", "eventkoi")}
+                    {__("Import from The Events Calendar", "eventkoi-lite")}
                   </DialogTitle>
                 </div>
                 <DialogDescription className="text-sm leading-relaxed">
-                  {__("This will import the following into EventKoi:", "eventkoi")}
+                  {__("This will import the following into EventKoi:", "eventkoi-lite")}
                 </DialogDescription>
                 <ul className="text-sm text-muted-foreground mt-2 space-y-1.5 pl-1">
                   <li className="flex items-center gap-2">
@@ -902,21 +904,21 @@ export function EventsOverview() {
                   </li>
                   <li className="flex items-center gap-2">
                     <span className="h-1 w-1 rounded-full bg-muted-foreground/50 flex-shrink-0" />
-                    {__("Venues, categories & featured images", "eventkoi")}
+                    {__("Venues, categories & featured images", "eventkoi-lite")}
                   </li>
                 </ul>
                 <p className="text-xs text-muted-foreground/70 mt-3">
-                  {__("Previously imported events will be skipped.", "eventkoi")}
+                  {__("Previously imported events will be skipped.", "eventkoi-lite")}
                 </p>
               </DialogHeader>
               <DialogFooter className="mt-2">
                 <DialogClose asChild>
                   <Button variant="outline" className="cursor-pointer shadow-none border-solid">
-                    {__("Cancel", "eventkoi")}
+                    {__("Cancel", "eventkoi-lite")}
                   </Button>
                 </DialogClose>
                 <Button onClick={importTEC} disabled={tecState.importing} className="gap-1.5 cursor-pointer shadow-none" style={{ border: "1px solid transparent" }}>
-                  {tecState.importing ? <><span className="h-3.5 w-3.5 mr-1.5 animate-spin rounded-full border-2 border-current border-t-transparent" />{__("Importing...", "eventkoi")}</> : <><Download className="h-3.5 w-3.5" />{__("Import", "eventkoi")}</>}
+                  {tecState.importing ? <><span className="h-3.5 w-3.5 mr-1.5 animate-spin rounded-full border-2 border-current border-t-transparent" />{__("Importing...", "eventkoi-lite")}</> : <><Download className="h-3.5 w-3.5" />{__("Import", "eventkoi-lite")}</>}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -928,7 +930,7 @@ export function EventsOverview() {
             className="hidden"
             onChange={handleICSUpload}
           />
-          <AddButton title="Add event" url="/events/add" />
+          <AddButton title={__("Add event", "eventkoi-lite")} url="/events/add" />
         </div>
       </div>
 

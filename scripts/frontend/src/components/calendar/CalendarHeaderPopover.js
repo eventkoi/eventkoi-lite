@@ -84,8 +84,8 @@ export function CalendarHeaderPopover({
         <Button
           variant="ghost"
           className="text-sm box-border text-foreground bg-background shadow-none rounded border-[1px] border-border border-solid px-3 py-1 pr-2 gap-2 h-10 justify-between hover:bg-muted cursor-pointer font-normal"
-          aria-label={__("Select month and year", "eventkoi")}
-          title={__("Select month and year", "eventkoi")}
+          aria-label={__("Select month and year", "eventkoi-lite")}
+          title={__("Select month and year", "eventkoi-lite")}
         >
           {`${MONTHS[selectedMonth]} ${yearView}`}
           <ChevronDown className="h-4 w-4 min-w-4" aria-hidden="true" />
@@ -97,7 +97,7 @@ export function CalendarHeaderPopover({
         align="start"
         sideOffset={20}
         className="!z-[2147483647] w-[240px] rounded !border !bg-white !opacity-100 shadow-[0_0_4px_#bbb] text-sm overflow-hidden"
-        aria-label={__("Month and year selection", "eventkoi")}
+        aria-label={__("Month and year selection", "eventkoi-lite")}
       >
         {/* Year header */}
         <div className="flex items-center justify-between mb-2">
@@ -106,8 +106,8 @@ export function CalendarHeaderPopover({
             size="icon"
             onClick={gotoPrevYear}
             className="bg-transparent p-0 text-[1px] text-foreground border-none shadow-none cursor-pointer hover:bg-muted h-8"
-            aria-label={__("Go to previous year", "eventkoi")}
-            title={__("Go to previous year", "eventkoi")}
+            aria-label={__("Go to previous year", "eventkoi-lite")}
+            title={__("Go to previous year", "eventkoi-lite")}
           >
             <ChevronLeft className="w-4 h-4" aria-hidden="true" />
           </Button>
@@ -121,8 +121,8 @@ export function CalendarHeaderPopover({
             size="icon"
             onClick={gotoNextYear}
             className="bg-transparent p-0 text-[1px] text-foreground border-none shadow-none cursor-pointer hover:bg-muted h-8"
-            aria-label={__("Go to next year", "eventkoi")}
-            title={__("Go to next year", "eventkoi")}
+            aria-label={__("Go to next year", "eventkoi-lite")}
+            title={__("Go to next year", "eventkoi-lite")}
           >
             <ChevronRight className="w-4 h-4" aria-hidden="true" />
           </Button>
@@ -141,7 +141,7 @@ export function CalendarHeaderPopover({
               onClick={() => gotoMonth(i)}
               aria-label={sprintf(
                 /* translators: %s: month name */
-                __("Select %s", "eventkoi"),
+                __("Select %s", "eventkoi-lite"),
                 label
               )}
             >

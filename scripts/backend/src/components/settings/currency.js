@@ -1,4 +1,5 @@
 import apiRequest from "@wordpress/api-fetch";
+import { __ } from "@wordpress/i18n";
 import { useEffect, useMemo, useState } from "react";
 
 import { Box } from "@/components/box";
@@ -51,9 +52,9 @@ export function SettingsCurrency() {
       } else {
         await refreshSettings();
       }
-      showToast({ ...response, message: "Currency updated." });
+      showToast({ ...response, message: __("Currency updated.", "eventkoi-lite") });
     } catch (error) {
-      showToastError(error?.message ?? "Failed to update currency.");
+      showToastError(error?.message ?? __("Failed to update currency.", "eventkoi-lite"));
     } finally {
       setIsSaving(false);
     }
@@ -71,23 +72,23 @@ export function SettingsCurrency() {
     <Box>
       <div className="grid w-full">
         <Panel variant="header">
-          <Heading level={3}>Currency</Heading>
+          <Heading level={3}>{__("Currency", "eventkoi-lite")}</Heading>
         </Panel>
         <Separator />
         <Panel className="gap-4">
           <div className="grid gap-2">
-            <Label htmlFor="global-currency">Select currency</Label>
+            <Label htmlFor="global-currency">{__("Select currency", "eventkoi-lite")}</Label>
             <Select
               value={currency}
               onValueChange={handleCurrencyChange}
               disabled={isSaving}
             >
               <SelectTrigger id="global-currency" className="w-[320px]">
-                <SelectValue placeholder="Select currency" />
+                <SelectValue placeholder={__("Select currency", "eventkoi-lite")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectGroup>
-                  <SelectLabel>Currency</SelectLabel>
+                  <SelectLabel>{__("Currency", "eventkoi-lite")}</SelectLabel>
                   {currencyOptions.map((option) => (
                     <SelectItem
                       key={`currency-${option.code}`}
@@ -100,8 +101,7 @@ export function SettingsCurrency() {
               </SelectContent>
             </Select>
             <div className="text-muted-foreground text-sm">
-              Used as the single currency for tickets, checkout, and sales
-              reporting.
+              {__("Used as the single currency for tickets, checkout, and sales reporting.", "eventkoi-lite")}
             </div>
           </div>
         </Panel>

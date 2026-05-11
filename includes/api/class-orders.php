@@ -32,7 +32,7 @@ class Orders {
 				'methods'             => 'get',
 				'callback'            => array( __CLASS__, 'get_orders' ),
 				'permission_callback' => function () {
-					return current_user_can( 'manage_options' );
+					return current_user_can( 'eventkoi_orders_view' );
 				},
 			)
 		);
@@ -44,7 +44,7 @@ class Orders {
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'add_order_note' ),
 				'permission_callback' => function () {
-					return current_user_can( 'manage_options' );
+					return current_user_can( 'eventkoi_orders_manage' );
 				},
 			)
 		);

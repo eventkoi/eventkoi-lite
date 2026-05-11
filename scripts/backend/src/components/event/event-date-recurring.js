@@ -27,6 +27,7 @@ import {
   ensureUtcZ,
   getDateInTimezone,
   getOrderedWeekdays,
+  recurrenceUntilWall,
 } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
 import { CheckCheck, Copy, MoveRight, Plus, Trash2, X } from "lucide-react";
@@ -192,9 +193,8 @@ function getRecurringSummary(rule, wpTz) {
   if (rule.ends === "after") {
     endText = `, ${rule.ends_after} events`;
   } else if (rule.ends === "on") {
-    endText = `, until ${DateTime.fromISO(rule.ends_on, { zone: "utc" })
-      .setZone(wpTz)
-      .toFormat("d MMM yyyy")}`;
+    const endsOn = recurrenceUntilWall(rule.ends_on, wpTz);
+    endText = endsOn ? `, until ${endsOn.toFormat("d MMM yyyy")}` : "";
   } else {
     endText = ", forever";
   }
@@ -222,7 +222,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
     end.setHours(17, 0, 0, 0);
 
     const defaultEnd = new Date();
-    defaultEnd.setFullYear(defaultEnd.getFullYear() + 2);
+    defaultEnd.setFullYear(defaultEnd.getFullYear() + 1);
 
     const rule = {
       start_date: DateTime.fromJSDate(now, { zone: wpTz })
@@ -576,12 +576,12 @@ export const EventDateRecurring = memo(function EventDateRecurring({
 
               <div className="flex items-center gap-2">
                 <Switch
-                  aria-label={__("All day", "eventkoi")}
+                  aria-label={__("All day", "eventkoi-lite")}
                   checked={rule.all_day}
                   onCheckedChange={(val) => updateRule(index, "all_day", val)}
                   disabled={tbc}
                 />
-                <span className="text-sm text-muted-foreground">All day</span>
+                <span className="text-sm text-muted-foreground">{__("All day", "eventkoi-lite")}</span>
               </div>
 
               <Button
@@ -590,7 +590,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                 variant="ghost"
                 onClick={() => deleteRule(index)}
                 className="h-7 w-7 ml-auto p-0"
-                aria-label={__("Delete rule", "eventkoi")}
+                aria-label={__("Delete rule", "eventkoi-lite")}
               >
                 <Trash2 className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               </Button>
@@ -604,7 +604,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
             )}
             <div className="flex items-center gap-2">
               <span className="text-sm font-medium text-foreground">
-                Repeats every
+                {__("Repeats every", "eventkoi-lite")}
               </span>
               <Input
                 type="number"
@@ -623,10 +623,10 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="day">Day</SelectItem>
-                  <SelectItem value="week">Week</SelectItem>
-                  <SelectItem value="month">Month</SelectItem>
-                  <SelectItem value="year">Year</SelectItem>
+                  <SelectItem value="day">{__("Day", "eventkoi-lite")}</SelectItem>
+                  <SelectItem value="week">{__("Week", "eventkoi-lite")}</SelectItem>
+                  <SelectItem value="month">{__("Month", "eventkoi-lite")}</SelectItem>
+                  <SelectItem value="year">{__("Year", "eventkoi-lite")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -644,13 +644,13 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                   htmlFor={`working-days-${index}`}
                   className="text-sm text-muted-foreground"
                 >
-                  Only count{" "}
+                  {__("Only count", "eventkoi-lite")}{" "}
                   <Link
                     to="/settings"
                     className="underline text-muted-foreground hover:text-primary/80"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    working days
+                    {__("working days", "eventkoi-lite")}
                   </Link>
                   .
                 </label>
@@ -658,7 +658,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
             )}
             {rule.frequency === "week" && (
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-sm font-medium text-foreground">On</span>
+                <span className="text-sm font-medium text-foreground">{__("On", "eventkoi-lite")}</span>
 
                 {getOrderedWeekdays(
                   parseInt(settings?.week_starts_on ?? "0", 10)
@@ -685,7 +685,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
             )}
             {rule.frequency === "month" && (
               <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-foreground">On</span>
+                <span className="text-sm font-medium text-foreground">{__("On", "eventkoi-lite")}</span>
                 <Select
                   value={rule.month_day_rule}
                   onValueChange={(val) =>
@@ -693,7 +693,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                   }
                 >
                   <SelectTrigger className="w-[220px] h-9">
-                    <SelectValue placeholder="Pick rule" />
+                    <SelectValue placeholder={__("Pick rule", "eventkoi-lite")} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="day-of-month">
@@ -718,7 +718,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                 {/* In: Month selector */}
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-foreground">
-                    In
+                    {__("In", "eventkoi-lite")}
                   </span>
                   <Popover>
                     <PopoverTrigger asChild>
@@ -733,7 +733,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                       >
                         {safeMonths.length === 0 ? (
                           <span className="text-muted-foreground">
-                            Select months
+                            {__("Select months", "eventkoi-lite")}
                           </span>
                         ) : (
                           <div className="flex gap-1.5 items-center">
@@ -748,7 +748,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                                   <span
                                     role="button"
                                     tabIndex={0}
-                                    aria-label={sprintf(__("Remove %s", "eventkoi"), MONTHS[i])}
+                                    aria-label={sprintf(__("Remove %s", "eventkoi-lite"), MONTHS[i])}
                                     onClick={(e) => {
                                       e.stopPropagation();
                                       toggleItem(index, "months", i);
@@ -805,7 +805,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                     }
                   >
                     <SelectTrigger className="w-[220px] h-9">
-                      <SelectValue placeholder="Pick rule" />
+                      <SelectValue placeholder={__("Pick rule", "eventkoi-lite")} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="day-of-month">
@@ -827,7 +827,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
               </div>
             )}
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-foreground">Ends</span>
+              <span className="text-sm font-medium text-foreground">{__("Ends", "eventkoi-lite")}</span>
               <Select
                 value={rule.ends}
                 onValueChange={(val) => updateRule(index, "ends", val)}
@@ -836,9 +836,9 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="never">Never</SelectItem>
-                  <SelectItem value="after">After</SelectItem>
-                  <SelectItem value="on">On</SelectItem>
+                  <SelectItem value="never">{__("Never", "eventkoi-lite")}</SelectItem>
+                  <SelectItem value="after">{__("After", "eventkoi-lite")}</SelectItem>
+                  <SelectItem value="on">{__("On", "eventkoi-lite")}</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -853,7 +853,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                     }
                     className="w-20 h-9"
                   />
-                  <span className="text-sm text-muted-foreground">events</span>
+                  <span className="text-sm text-muted-foreground">{__("events", "eventkoi-lite")}</span>
                 </>
               )}
 
@@ -876,7 +876,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
             </div>
             <div className="space-y-1">
               <label className="text-sm font-medium text-foreground">
-                Recurring rule summary
+                {__("Recurring rule summary", "eventkoi-lite")}
               </label>
 
               <div className="relative max-w-[450px]">
@@ -903,7 +903,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                   ) : (
                     <Copy className="mr-2 h-4 w-4" />
                   )}
-                  {copyingIndex === index ? "Copied!" : "Copy"}
+                  {copyingIndex === index ? __("Copied!", "eventkoi-lite") : __("Copy", "eventkoi-lite")}
                 </Button>
               </div>
             </div>
@@ -927,7 +927,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
           className="w-auto justify-start text-sm"
         >
           <Plus className="w-4 h-4 mr-2" />
-          Add recurring rule
+          {__("Add recurring rule", "eventkoi-lite")}
         </Button>
       </div>
 

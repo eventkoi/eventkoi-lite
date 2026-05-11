@@ -100,10 +100,27 @@ class Install {
 	 * Create default calendar taxonomy term if missing.
 	 */
 	private static function create_terms() {
-		$option_key    = 'eventkoi_default_event_cal';
-		$existing_term = get_term( get_option( $option_key ), 'event_cal' );
+		$option_key = 'eventkoi_default_event_cal';
+		$stored     = (int) get_option( $option_key, 0 );
 
-		if ( $existing_term && ! is_wp_error( $existing_term ) ) {
+		if ( $stored > 0 && term_exists( $stored, 'event_cal' ) ) {
+			return;
+		}
+
+		// Recover by adopting any existing calendar before creating one.
+		$existing_any = get_terms(
+			array(
+				'taxonomy'   => 'event_cal',
+				'hide_empty' => false,
+				'number'     => 1,
+				'fields'     => 'ids',
+				'orderby'    => 'term_id',
+				'order'      => 'ASC',
+			)
+		);
+
+		if ( ! empty( $existing_any ) && ! is_wp_error( $existing_any ) ) {
+			update_option( $option_key, (int) $existing_any[0] );
 			return;
 		}
 
@@ -114,7 +131,7 @@ class Install {
 		$existing = get_term_by( 'slug', $slug, 'event_cal' );
 
 		if ( $existing && ! is_wp_error( $existing ) ) {
-			update_option( $option_key, (int) $existing->term_taxonomy_id );
+			update_option( $option_key, (int) $existing->term_id );
 			return;
 		}
 
@@ -124,8 +141,8 @@ class Install {
 			array( 'slug' => $slug )
 		);
 
-		if ( ! is_wp_error( $result ) && ! empty( $result['term_taxonomy_id'] ) ) {
-			update_option( $option_key, (int) $result['term_taxonomy_id'] );
+		if ( ! is_wp_error( $result ) && ! empty( $result['term_id'] ) ) {
+			update_option( $option_key, (int) $result['term_id'] );
 		}
 	}
 

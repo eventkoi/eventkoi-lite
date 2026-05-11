@@ -229,23 +229,17 @@ class Events {
 
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
 			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $tickets_table ) ) === $tickets_table ) {
-				$tickets_sql = "SELECT event_id, quantity_available, quantity_sold
+				$tickets_sql = "SELECT event_id, quantity_available
 					FROM {$tickets_table}
 					WHERE event_id IN ({$placeholders}) AND status = 'active'";
 				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Dynamic placeholder list is flattened before prepare().
 				$prepared    = call_user_func_array( array( $wpdb, 'prepare' ), array_merge( array( $tickets_sql ), $event_ids ) );
-				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared
 				$ticket_rows = $wpdb->get_results( $prepared );
 
 				if ( ! empty( $ticket_rows ) ) {
 					foreach ( $ticket_rows as $row ) {
 						$eid = absint( $row->event_id );
-
-						if ( ! isset( $tickets_sold[ $eid ] ) ) {
-							$tickets_sold[ $eid ] = 0;
-						}
-						$tickets_sold[ $eid ] += absint( $row->quantity_sold );
-
 						if ( is_null( $row->quantity_available ) ) {
 							$tickets_unlimited[ $eid ] = true;
 							continue;
@@ -254,6 +248,34 @@ class Events {
 							$tickets_total[ $eid ] = 0;
 						}
 						$tickets_total[ $eid ] += absint( $row->quantity_available );
+					}
+				}
+			}
+
+			// Sold counts come from the orders table (WC-only in Lite) so the
+			// events list stays in lock-step with Sales History.
+			$orders_table = $wpdb->prefix . 'eventkoi_ticket_orders';
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $orders_table ) ) === $orders_table ) {
+				$currency = function_exists( 'get_woocommerce_currency' )
+					? strtoupper( get_woocommerce_currency() )
+					: '';
+				$currency_clause = '' !== $currency
+					? $wpdb->prepare( ' AND UPPER(currency) = %s', $currency )
+					: '';
+				$orders_sql = "SELECT event_id, SUM(quantity) AS sold
+					FROM {$orders_table}
+					WHERE event_id IN ({$placeholders})
+					  AND payment_status IN ('complete','completed','succeeded','partially_refunded')
+					  AND order_id LIKE 'wc\\_%'{$currency_clause}
+					GROUP BY event_id";
+				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Dynamic placeholder list is flattened before prepare().
+				$orders_prepared = call_user_func_array( array( $wpdb, 'prepare' ), array_merge( array( $orders_sql ), $event_ids ) );
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared
+				$orders_rows = $wpdb->get_results( $orders_prepared );
+				if ( ! empty( $orders_rows ) ) {
+					foreach ( $orders_rows as $row ) {
+						$tickets_sold[ absint( $row->event_id ) ] = absint( $row->sold );
 					}
 				}
 			}

@@ -14,6 +14,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useEventEditContext } from "@/hooks/EventEditContext";
 import { APIProvider } from "@vis.gl/react-google-maps";
+import { __ } from "@wordpress/i18n";
 import { useState } from "react";
 
 export function EventEditMain() {
@@ -31,8 +32,8 @@ export function EventEditMain() {
         <div className="flex items-center min-w-[170px] justify-between gap-[10px]">
           <Label htmlFor="show-attrs" className="font-normal text-[12px]">
             <div className="leading-[15px] flex md:block">
-              <div>Show block attributes</div>
-              <div>and shortcodes</div>
+              <div>{__("Show block attributes", "eventkoi-lite")}</div>
+              <div>{__("and shortcodes", "eventkoi-lite")}</div>
             </div>
           </Label>
           <Switch
@@ -55,7 +56,7 @@ export function EventEditMain() {
 
       {/* Location + optional GMap + shortcode */}
       <Box container>
-        <Heading level={3}>Location details</Heading>
+        <Heading level={3}>{__("Location details", "eventkoi-lite")}</Heading>
         {gmapApiKey ? (
           <APIProvider apiKey={gmapApiKey}>
             <EventLocation />
@@ -74,7 +75,7 @@ export function EventEditMain() {
 
       {/* Additional details */}
       <Box container className="gap-10">
-        <Heading level={3}>Additional details</Heading>
+        <Heading level={3}>{__("Additional details", "eventkoi-lite")}</Heading>
         <EventImage />
         {showAttributes && (
           <div className="text-sm text-muted-foreground -mt-6">

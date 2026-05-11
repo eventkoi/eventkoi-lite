@@ -121,10 +121,12 @@ function getRenderedEventDatetimeText() {
   const node = document.querySelector(".ek-datetime");
   if (!node) return "";
 
-  // Keep checkout summary perfectly aligned with the event details display.
-  // Do not reformat from raw timestamps here, because that can drift from the
-  // current rendered timezone/format rules.
-  return node.textContent?.trim() || "";
+  // Keep checkout summary aligned with the event details display, but drop
+  // the recurring-rule summary ("Weekly, on Tue, Thu, ...") — the shopper
+  // is buying this specific instance, so series-level context is noise.
+  const clone = node.cloneNode(true);
+  clone.querySelectorAll(".eventkoi-rule-summary").forEach((n) => n.remove());
+  return clone.textContent?.trim() || "";
 }
 
 function formatEventLocationLine(event = {}) {
@@ -250,7 +252,7 @@ function getTicketLimits(ticket) {
     Date.now() < Date.parse(String(ticket.sale_start).replace(" ", "T") + "Z");
   const unavailable = soldOut || !ticket?.is_on_sale;
   const unavailableLabel = soldOut
-    ? __("Sold out", "eventkoi")
+    ? __("Sold out", "eventkoi-lite")
     : null;
 
   return {
@@ -611,7 +613,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
     visibleTickets.every((ticket) => getTicketLimits(ticket).unavailable);
 
   const allVisibleSoldOut =
-    allVisibleUnavailable &&
+    visibleTickets.length > 0 &&
     visibleTickets.every((ticket) => getTicketLimits(ticket).soldOut);
 
   const allVisibleNotStarted =
@@ -620,10 +622,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
 
   const allVisibleSaleEnded =
     visibleTickets.length > 0 &&
-    visibleTickets.every((ticket) => {
-      const limits = getTicketLimits(ticket);
-      return limits.saleEnded || limits.soldOut;
-    });
+    visibleTickets.every((ticket) => getTicketLimits(ticket).saleEnded);
 
   const earliestSaleStartTs = visibleTickets.reduce((earliest, ticket) => {
     if (!ticket?.sale_start) return earliest;
@@ -747,11 +746,11 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
 
     const email = emailValue;
     if (firstNameValue === "" || lastNameValue === "" || email === "") {
-      setCheckoutError(__("Please complete all required fields.", "eventkoi"));
+      setCheckoutError(__("Please complete all required fields.", "eventkoi-lite"));
       return;
     }
     if (!hasValidBillingEmail) {
-      setCheckoutError(__("Please enter a valid email address.", "eventkoi"));
+      setCheckoutError(__("Please enter a valid email address.", "eventkoi-lite"));
       return;
     }
 
@@ -792,7 +791,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
           throw new Error(
             __(
               "One or more selected tickets are no longer available.",
-              "eventkoi",
+              "eventkoi-lite",
             ),
           );
         }
@@ -801,8 +800,8 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
         if (limits.unavailable) {
           throw new Error(
             sprintf(
-              __("“%s” is no longer available.", "eventkoi"),
-              latestTicket.name || __("Selected ticket", "eventkoi"),
+              __("“%s” is no longer available.", "eventkoi-lite"),
+              latestTicket.name || __("Selected ticket", "eventkoi-lite"),
             ),
           );
         }
@@ -813,9 +812,9 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
         ) {
           throw new Error(
             sprintf(
-              __("Only %d left for “%s”.", "eventkoi"),
+              __("Only %d left for “%s”.", "eventkoi-lite"),
               Number(limits.remainingCount),
-              latestTicket.name || __("Selected ticket", "eventkoi"),
+              latestTicket.name || __("Selected ticket", "eventkoi-lite"),
             ),
           );
         }
@@ -860,14 +859,14 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
       const hostedUrl =
         payload?.hosted_url || payload?.checkout_url || payload?.url;
       if (!hostedUrl) {
-        throw new Error(__("Checkout URL is missing.", "eventkoi"));
+        throw new Error(__("Checkout URL is missing.", "eventkoi-lite"));
       }
       window.location.href = hostedUrl;
     } catch (err) {
       setCheckoutError(
         err?.response?.message ||
           err?.message ||
-          __("Unable to set up checkout.", "eventkoi"),
+          __("Unable to set up checkout.", "eventkoi-lite"),
       );
       setIsCheckoutLoading(false);
     }
@@ -883,12 +882,12 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                 <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
                 <div className="min-w-0">
                   <div className="text-sm font-medium text-emerald-900">
-                    {__("Payment successful", "eventkoi")}
+                    {__("Payment successful", "eventkoi-lite")}
                   </div>
                   <div className="mt-0.5 text-xs text-emerald-800">
                     {__(
                       "Your order is confirmed and your tickets will be sent by email.",
-                      "eventkoi",
+                      "eventkoi-lite",
                     )}
                   </div>
                 </div>
@@ -900,7 +899,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                   setCheckoutSuccessSessionId("");
                   clearCheckoutSuccessFromUrl();
                 }}
-                aria-label={__("Dismiss success message", "eventkoi")}
+                aria-label={__("Dismiss success message", "eventkoi-lite")}
               >
                 <X className="size-4" />
               </button>
@@ -914,12 +913,12 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                 <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-amber-600" />
                 <div className="min-w-0">
                   <div className="text-sm font-medium text-amber-900">
-                    {__("Order received", "eventkoi")}
+                    {__("Order received", "eventkoi-lite")}
                   </div>
                   <div className="mt-0.5 text-xs text-amber-800">
                     {__(
                       "Your tickets will be sent by email once payment is confirmed.",
-                      "eventkoi",
+                      "eventkoi-lite",
                     )}
                   </div>
                 </div>
@@ -931,7 +930,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                   setCheckoutSuccessSessionId("");
                   clearCheckoutSuccessFromUrl();
                 }}
-                aria-label={__("Dismiss message", "eventkoi")}
+                aria-label={__("Dismiss message", "eventkoi-lite")}
               >
                 <X className="size-4" />
               </button>
@@ -941,7 +940,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
 
         <div className="flex items-center justify-between gap-4">
           <div className="text-base font-semibold uppercase tracking-normal text-foreground">
-            {__("Tickets", "eventkoi")}
+            {__("Tickets", "eventkoi-lite")}
           </div>
           <div className="text-3xl font-semibold leading-none text-foreground tabular-nums">
             {priceRange}
@@ -950,19 +949,19 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
 
         {allVisibleSaleEnded && saleEndLabel ? (
           <div className="text-base text-muted-foreground">
-            {sprintf(__("Ticket sales ended on %s.", "eventkoi"), saleEndLabel)}
+            {sprintf(__("Ticket sales ended on %s.", "eventkoi-lite"), saleEndLabel)}
           </div>
         ) : saleStartLabel && saleEndLabel ? (
           <div className="text-base text-muted-foreground">
             {sprintf(
-              __("Ticket sales starts on %1$s and ends on %2$s.", "eventkoi"),
+              __("Ticket sales starts on %1$s and ends on %2$s.", "eventkoi-lite"),
               saleStartLabel,
               saleEndLabel,
             )}
           </div>
         ) : saleEndLabel ? (
           <div className="text-base text-muted-foreground">
-            {sprintf(__("Ticket sales end on %s.", "eventkoi"), saleEndLabel)}
+            {sprintf(__("Ticket sales end on %s.", "eventkoi-lite"), saleEndLabel)}
           </div>
         ) : null}
 
@@ -970,18 +969,18 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
           type="button"
           className="h-14 w-full text-base font-semibold"
           onClick={() => {
-            if (!allVisibleUnavailable || allVisibleNotStarted || allVisibleSaleEnded) {
+            if (!allVisibleSoldOut) {
               setIsDialogOpen(true);
             }
           }}
-          disabled={allVisibleUnavailable && !allVisibleNotStarted && !allVisibleSaleEnded}
+          disabled={allVisibleSoldOut}
         >
           <Ticket className="mr-2 size-5" aria-hidden="true" />
-          {allVisibleUnavailable && !allVisibleNotStarted && !allVisibleSaleEnded
-            ? allVisibleSoldOut
-              ? __("Sold out", "eventkoi")
-              : __("Not on sale", "eventkoi")
-            : __("Get tickets", "eventkoi")}
+          {allVisibleSoldOut
+            ? __("Sold out", "eventkoi-lite")
+            : allVisibleUnavailable && !allVisibleNotStarted && !allVisibleSaleEnded
+              ? __("Not on sale", "eventkoi-lite")
+              : __("Get tickets", "eventkoi-lite")}
         </Button>
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -990,11 +989,11 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
             onOpenAutoFocus={(event) => event.preventDefault()}
           >
             <DialogHeader className="sr-only">
-              <DialogTitle>{__("Ticket checkout", "eventkoi")}</DialogTitle>
+              <DialogTitle>{__("Ticket checkout", "eventkoi-lite")}</DialogTitle>
               <DialogDescription>
                 {__(
                   "Select tickets and complete billing information to continue to payment.",
-                  "eventkoi",
+                  "eventkoi-lite",
                 )}
               </DialogDescription>
             </DialogHeader>
@@ -1002,7 +1001,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
               <>
                 <div className="p-5 pb-8 sm:p-6 sm:pb-10">
                   <div className="text-2xl font-semibold leading-none text-foreground">
-                    {__("Buy tickets", "eventkoi")}
+                    {__("Buy tickets", "eventkoi-lite")}
                   </div>
                 </div>
 
@@ -1056,7 +1055,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                                     {sprintf(
                                       __(
                                         "Ticket sales starts on %1$s and ends on %2$s.",
-                                        "eventkoi",
+                                        "eventkoi-lite",
                                       ),
                                       ticketSaleStart,
                                       ticketSaleEnd,
@@ -1067,7 +1066,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                                     {sprintf(
                                       __(
                                         "Ticket sales ended on %s.",
-                                        "eventkoi",
+                                        "eventkoi-lite",
                                       ),
                                       ticketSaleEnd,
                                     )}
@@ -1077,7 +1076,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                                     {sprintf(
                                       __(
                                         "Ticket sales started on %1$s and ends on %2$s.",
-                                        "eventkoi",
+                                        "eventkoi-lite",
                                       ),
                                       ticketSaleStart,
                                       ticketSaleEnd,
@@ -1088,7 +1087,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                                     {sprintf(
                                       __(
                                         "Ticket sales ends on %s.",
-                                        "eventkoi",
+                                        "eventkoi-lite",
                                       ),
                                       ticketSaleEnd,
                                     )}
@@ -1107,8 +1106,8 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                                   onClick={() => decrementQty(ticket)}
                                   disabled={unavailable || qty <= 0}
                                   aria-label={sprintf(
-                                    __("Decrease quantity for %s", "eventkoi"),
-                                    ticket.name || __("ticket", "eventkoi"),
+                                    __("Decrease quantity for %s", "eventkoi-lite"),
+                                    ticket.name || __("ticket", "eventkoi-lite"),
                                   )}
                                 >
                                   <Minus className="size-3.5" />
@@ -1124,8 +1123,8 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                                   }
                                   className="h-8 w-[44px] rounded-sm border border-input bg-background px-1 text-center text-sm font-medium tabular-nums text-foreground [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none disabled:opacity-50"
                                   aria-label={sprintf(
-                                    __("Quantity for %s", "eventkoi"),
-                                    ticket.name || __("ticket", "eventkoi"),
+                                    __("Quantity for %s", "eventkoi-lite"),
+                                    ticket.name || __("ticket", "eventkoi-lite"),
                                   )}
                                   disabled={unavailable}
                                 />
@@ -1141,8 +1140,8 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                                       qty >= remainingCount)
                                   }
                                   aria-label={sprintf(
-                                    __("Increase quantity for %s", "eventkoi"),
-                                    ticket.name || __("ticket", "eventkoi"),
+                                    __("Increase quantity for %s", "eventkoi-lite"),
+                                    ticket.name || __("ticket", "eventkoi-lite"),
                                   )}
                                 >
                                   <Plus className="size-3.5" />
@@ -1156,7 +1155,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                                 liveTicketsLeft !== null ? (
                                 <div className="mt-2 text-center text-xs text-muted-foreground">
                                   {sprintf(
-                                    __("%d tickets left.", "eventkoi"),
+                                    __("%d tickets left.", "eventkoi-lite"),
                                     liveTicketsLeft,
                                   )}
                                 </div>
@@ -1192,7 +1191,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                     <div className="flex flex-col items-end justify-center gap-3">
                       <div className="flex items-center gap-3 leading-none">
                         <span className="text-sm leading-none text-muted-foreground">
-                          {__("Total", "eventkoi")}
+                          {__("Total", "eventkoi-lite")}
                         </span>
                         <span className="text-3xl leading-none font-semibold tabular-nums text-foreground">
                           <span role="status" aria-live="polite">
@@ -1212,7 +1211,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                             setQuantities(cleared);
                           }}
                         >
-                          {__("Clear all", "eventkoi")}
+                          {__("Clear all", "eventkoi-lite")}
                         </button>
                         <button
                           ref={stepOneCheckoutButtonRef}
@@ -1225,19 +1224,19 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                             setDialogStep("checkout");
                           }}
                         >
-                          {__("Checkout", "eventkoi")}
+                          {__("Checkout", "eventkoi-lite")}
                         </button>
                       </div>
                       {allVisibleNotStarted && saleStartLabel ? (
                         <div className="mt-1 text-sm font-medium text-destructive text-right">
                           {sprintf(
-                            __("Ticket sales start on %s.", "eventkoi"),
+                            __("Ticket sales start on %s.", "eventkoi-lite"),
                             saleStartLabel,
                           )}
                         </div>
                       ) : allVisibleSaleEnded ? (
                         <div className="mt-1 text-sm font-medium text-destructive text-right">
-                          {__("Ticket sales have ended.", "eventkoi")}
+                          {__("Ticket sales have ended.", "eventkoi-lite")}
                         </div>
                       ) : null}
                     </div>
@@ -1248,10 +1247,10 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
               <div className="p-5 pt-10 pb-8 sm:p-6 sm:pt-10 sm:pb-10">
                 <DialogHeader className="sr-only">
                   <DialogTitle>
-                    {__("Checkout", "eventkoi")}
+                    {__("Checkout", "eventkoi-lite")}
                   </DialogTitle>
                   <DialogDescription>
-                    {__("Checkout billing step", "eventkoi")}
+                    {__("Checkout billing step", "eventkoi-lite")}
                   </DialogDescription>
                 </DialogHeader>
 
@@ -1268,7 +1267,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                       id={stepTwoHeadingId}
                       className="text-lg font-medium text-foreground"
                     >
-                      {__("Billing information", "eventkoi")}
+                      {__("Billing information", "eventkoi-lite")}
                     </h3>
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div className="space-y-1.5">
@@ -1276,7 +1275,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                           htmlFor={firstNameId}
                           className="font-medium text-[13px] text-foreground"
                         >
-                          {__("First name", "eventkoi")}
+                          {__("First name", "eventkoi-lite")}
                         </label>
                         <input
                           id={firstNameId}
@@ -1306,7 +1305,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                             id={firstNameErrorId}
                             className="text-xs text-destructive"
                           >
-                            {__("First name is required.", "eventkoi")}
+                            {__("First name is required.", "eventkoi-lite")}
                           </p>
                         ) : null}
                       </div>
@@ -1315,7 +1314,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                           htmlFor={lastNameId}
                           className="font-medium text-[13px] text-foreground"
                         >
-                          {__("Last name", "eventkoi")}
+                          {__("Last name", "eventkoi-lite")}
                         </label>
                         <input
                           id={lastNameId}
@@ -1344,7 +1343,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                             id={lastNameErrorId}
                             className="text-xs text-destructive"
                           >
-                            {__("Last name is required.", "eventkoi")}
+                            {__("Last name is required.", "eventkoi-lite")}
                           </p>
                         ) : null}
                       </div>
@@ -1355,7 +1354,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                         htmlFor={emailId}
                         className="font-medium text-[13px] text-foreground"
                       >
-                        {__("Email address", "eventkoi")}
+                        {__("Email address", "eventkoi-lite")}
                       </label>
                       <input
                         id={emailId}
@@ -1389,7 +1388,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                         >
                           {__(
                             "Please enter a valid email address.",
-                            "eventkoi",
+                            "eventkoi-lite",
                           )}
                         </p>
                       ) : null}
@@ -1399,7 +1398,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                       >
                         {__(
                           "We will send your tickets to this email address.",
-                          "eventkoi",
+                          "eventkoi-lite",
                         )}
                       </p>
                     </div>
@@ -1436,10 +1435,10 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                             aria-live="polite"
                           >
                             <Loader2 className="size-4 animate-spin" />
-                            {__("Setting up payment", "eventkoi")}
+                            {__("Setting up payment", "eventkoi-lite")}
                           </span>
                         ) : (
-                          __("Checkout", "eventkoi")
+                          __("Checkout", "eventkoi-lite")
                         )}
                       </Button>
                       <Button
@@ -1452,14 +1451,14 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                           setDialogStep("tickets");
                         }}
                       >
-                        {__("Back", "eventkoi")}
+                        {__("Back", "eventkoi-lite")}
                       </Button>
                     </div>
                   </form>
 
                   <div className="rounded-xl border border-border bg-muted/50 px-6 py-6">
                     <div className="text-lg font-medium text-foreground">
-                      {__("Order summary", "eventkoi")}
+                      {__("Order summary", "eventkoi-lite")}
                     </div>
                     <div className="mt-6 border-b border-border pb-6">
                       <div className="text-sm font-medium leading-tight text-foreground">
@@ -1498,7 +1497,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                     <div className="border-t border-border pt-6">
                       <div className="flex items-center justify-between">
                         <span className="text-base font-medium text-foreground">
-                          {__("Total", "eventkoi")}
+                          {__("Total", "eventkoi-lite")}
                         </span>
                         <span className="text-base font-medium tabular-nums text-foreground">
                           <span role="status" aria-live="polite">

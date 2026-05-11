@@ -1,3 +1,4 @@
+import { __ } from "@wordpress/i18n";
 import apiRequest from "@wordpress/api-fetch";
 import { useEffect, useMemo, useState } from "react";
 
@@ -7,6 +8,7 @@ import { Heading } from "@/components/heading";
 import { Panel } from "@/components/panel";
 import { ProBadge } from "@/components/pro-badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
@@ -55,6 +57,12 @@ export function SettingsOverview() {
       ? "local"
       : "site"
   );
+  const [dateFormat, setDateFormat] = useState(settings?.date_format || "");
+  const [timeFormatString, setTimeFormatString] = useState(
+    settings?.time_format_string || ""
+  );
+  const [datePreview, setDatePreview] = useState("");
+  const [timePreview, setTimePreview] = useState("");
 
   const blockTemplates = useMemo(() => {
     const group = customTemplates.find((tplGroup) => tplGroup.type === "block");
@@ -96,6 +104,55 @@ export function SettingsOverview() {
       setDefaultTemplate(settings.default_event_template);
     }
   }, [settings?.default_event_template]);
+
+  useEffect(() => {
+    if (typeof settings?.date_format !== "undefined" && settings.date_format !== dateFormat) {
+      setDateFormat(settings.date_format || "");
+    }
+  }, [settings?.date_format]);
+
+  useEffect(() => {
+    if (
+      typeof settings?.time_format_string !== "undefined" &&
+      settings.time_format_string !== timeFormatString
+    ) {
+      setTimeFormatString(settings.time_format_string || "");
+    }
+  }, [settings?.time_format_string]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      try {
+        const params = new URLSearchParams();
+        if (dateFormat) params.set("date", dateFormat);
+        if (timeFormatString) params.set("time", timeFormatString);
+        const qs = params.toString();
+        const path =
+          `${eventkoi_params.api}/settings/preview-format` + (qs ? `?${qs}` : "");
+        const response = await apiRequest({
+          path,
+          method: "GET",
+          headers: {
+            "EVENTKOI-API-KEY": eventkoi_params.api_key,
+          },
+        });
+        if (!cancelled) {
+          setDatePreview(response?.date || "");
+          setTimePreview(response?.time || "");
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setDatePreview("");
+          setTimePreview("");
+        }
+      }
+    };
+    run();
+    return () => {
+      cancelled = true;
+    };
+  }, [dateFormat, timeFormatString]);
 
   const handleTimeFormatChange = (val) => {
     setTimeFormat(val);
@@ -183,6 +240,18 @@ export function SettingsOverview() {
     saveSettings({ auto_detect_timezone: value === "local" ? "1" : "0" });
   };
 
+  const commitDateFormat = () => {
+    const next = (dateFormat || "").trim();
+    if (next === (settings?.date_format || "")) return;
+    saveSettings({ date_format: next });
+  };
+
+  const commitTimeFormatString = () => {
+    const next = (timeFormatString || "").trim();
+    if (next === (settings?.time_format_string || "")) return;
+    saveSettings({ time_format_string: next });
+  };
+
   const handleDefaultTemplateChange = (value) => {
     setDefaultTemplate(value);
   };
@@ -201,7 +270,7 @@ export function SettingsOverview() {
       <Box>
         <div className="grid w-full">
           <Panel variant="header">
-            <Heading level={3}>General Settings</Heading>
+            <Heading level={3}>{__("General Settings", "eventkoi-lite")}</Heading>
           </Panel>
 
           <Separator />
@@ -209,14 +278,14 @@ export function SettingsOverview() {
           <Panel className="gap-10">
             {/* Week Start Dropdown */}
             <div className="grid gap-2">
-              <Label htmlFor="week-start">Week starts on</Label>
+              <Label htmlFor="week-start">{__("Week starts on", "eventkoi-lite")}</Label>
               <Select
                 value={String(startDayIndex)}
                 onValueChange={handleStartDayChange}
                 disabled={isSaving}
               >
                 <SelectTrigger id="week-start" className="w-[250px]">
-                  <SelectValue placeholder="Select a day" />
+                  <SelectValue placeholder={__("Select a day", "eventkoi-lite")} />
                 </SelectTrigger>
                 <SelectContent>
                   {Object.entries(dayLabels).map(([key, label]) => (
@@ -233,14 +302,14 @@ export function SettingsOverview() {
 
             {/* Day Start Time */}
             <div className="grid gap-2">
-              <Label htmlFor="day-start-time">Day starts at</Label>
+              <Label htmlFor="day-start-time">{__("Day starts at", "eventkoi-lite")}</Label>
               <Select
                 value={dayStartTime}
                 onValueChange={handleDayStartTimeChange}
                 disabled={isSaving}
               >
                 <SelectTrigger id="day-start-time" className="w-[250px]">
-                  <SelectValue placeholder="Select time" />
+                  <SelectValue placeholder={__("Select time", "eventkoi-lite")} />
                 </SelectTrigger>
                 <SelectContent>
                   {HOURS.map((hour) => {
@@ -260,7 +329,7 @@ export function SettingsOverview() {
 
             {/* Working Days Toggle */}
             <div className="grid gap-2">
-              <Label className="text-sm font-medium">Working days</Label>
+              <Label className="text-sm font-medium">{__("Working days", "eventkoi-lite")}</Label>
               <div className="flex items-center gap-4 flex-wrap">
                 {orderedWeekdays.map((label, i) => {
                   const realIndex = (startDayIndex + i) % 7;
@@ -295,7 +364,7 @@ export function SettingsOverview() {
 
             {/* Time format */}
             <div className="grid gap-2">
-              <Label className="text-sm font-medium">Time format</Label>
+              <Label className="text-sm font-medium">{__("Time format", "eventkoi-lite")}</Label>
               <Tabs
                 value={timeFormat}
                 onValueChange={handleTimeFormatChange}
@@ -318,6 +387,49 @@ export function SettingsOverview() {
               </Tabs>
               <div className="text-muted-foreground">
                 Select how event times are displayed (e.g. 2:00 PM or 14:00).
+              </div>
+            </div>
+
+            {/* Custom PHP date / time format */}
+            <div className="grid gap-2">
+              <Label className="text-sm font-medium">Date format</Label>
+              <Input
+                value={dateFormat}
+                onChange={(e) => setDateFormat(e.target.value)}
+                onBlur={commitDateFormat}
+                placeholder={eventkoi_params?.date_format || "F j, Y"}
+                className="w-[350px]"
+                disabled={isSaving}
+              />
+              <div className="text-muted-foreground text-sm">
+                {datePreview
+                  ? `Preview: ${datePreview}`
+                  : "Leave blank to use the WordPress default date format."}{" "}
+                <a
+                  href="https://wordpress.org/documentation/article/customize-date-and-time-format/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-foreground"
+                >
+                  Format reference
+                </a>
+              </div>
+            </div>
+
+            <div className="grid gap-2">
+              <Label className="text-sm font-medium">Time format (custom)</Label>
+              <Input
+                value={timeFormatString}
+                onChange={(e) => setTimeFormatString(e.target.value)}
+                onBlur={commitTimeFormatString}
+                placeholder={eventkoi_params?.time_format_string || "g:i a"}
+                className="w-[350px]"
+                disabled={isSaving}
+              />
+              <div className="text-muted-foreground text-sm">
+                {timePreview
+                  ? `Preview: ${timePreview}`
+                  : "Leave blank to use the WordPress default time format. When set, this overrides the 12/24-hour toggle above."}
               </div>
             </div>
 
@@ -364,10 +476,10 @@ export function SettingsOverview() {
                   id="default-event-template"
                   className="w-[250px]"
                 >
-                  <SelectValue placeholder="Select a template" />
+                  <SelectValue placeholder={__("Select a template", "eventkoi-lite")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="default">Default template</SelectItem>
+                  <SelectItem value="default">{__("Default template", "eventkoi-lite")}</SelectItem>
                   {blockTemplates.map((tpl) => (
                     <SelectItem key={tpl.slug} value={tpl.slug}>
                       {tpl.title}

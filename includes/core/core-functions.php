@@ -12,6 +12,81 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * Decode a calendar/term name for display.
+ *
+ * WordPress core's wp_insert_term() runs term names through
+ * wp_kses_normalize_entities(), which converts `&` to `&amp;` before saving.
+ * The DB value therefore needs to be decoded back to its human-readable form
+ * before being returned to React UIs, REST consumers, and HTML templates that
+ * apply their own escaping.
+ *
+ * @param string|null $name Raw term name as stored in wp_terms.name.
+ * @return string Decoded name safe to display or pass through esc_html().
+ */
+function eventkoi_decode_term_name( $name ) {
+	return html_entity_decode( (string) $name, ENT_QUOTES, 'UTF-8' );
+}
+
+/**
+ * Resolve a usable event_cal term_id with validation and fallbacks.
+ *
+ * Tries (in order): caller-preferred ids, the eventkoi_default_event_cal
+ * option, then the first existing term. Returns 0 only if no calendars
+ * exist on the site at all.
+ *
+ * @param int|array|string $preferred Caller's preferred id or list (e.g. block attr).
+ * @return int Valid term_id, or 0 if no calendars exist.
+ */
+function eventkoi_resolve_calendar_id( $preferred = 0 ) {
+	$candidates = array();
+
+	if ( is_array( $preferred ) ) {
+		foreach ( $preferred as $p ) {
+			$candidates[] = (int) $p;
+		}
+	} elseif ( is_string( $preferred ) && false !== strpos( $preferred, ',' ) ) {
+		foreach ( explode( ',', $preferred ) as $p ) {
+			$candidates[] = (int) trim( $p );
+		}
+	} else {
+		$candidates[] = (int) $preferred;
+	}
+
+	$default_option = (int) get_option( 'eventkoi_default_event_cal', 0 );
+	$candidates[]   = $default_option;
+
+	foreach ( $candidates as $id ) {
+		if ( $id > 0 && term_exists( $id, 'event_cal' ) ) {
+			return $id;
+		}
+	}
+
+	$first = get_terms(
+		array(
+			'taxonomy'   => 'event_cal',
+			'hide_empty' => false,
+			'number'     => 1,
+			'fields'     => 'ids',
+			'orderby'    => 'term_id',
+			'order'      => 'ASC',
+		)
+	);
+
+	if ( empty( $first ) || is_wp_error( $first ) ) {
+		return 0;
+	}
+
+	$fallback_id = (int) $first[0];
+
+	// Self-heal: if the stored default option is invalid, repoint it to a real term.
+	if ( $default_option !== $fallback_id ) {
+		update_option( 'eventkoi_default_event_cal', $fallback_id );
+	}
+
+	return $fallback_id;
+}
+
+/**
  * Retrieve a single enriched event structure.
  *
  * Returns the same normalized event object as Calendar::get_events(),
@@ -109,6 +184,13 @@ function eventkoi_get_instance_id() {
 	if ( 0 === $instance_ts ) {
 		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- public URL param, sanitized with absint()
 		$instance_ts = isset( $_GET['instance'] ) ? absint( wp_unslash( $_GET['instance'] ) ) : 0;
+	}
+
+	if ( 0 === $instance_ts ) {
+		$post = get_post();
+		if ( $post instanceof \WP_Post && ! empty( $post->eventkoi_instance_ts ) ) {
+			$instance_ts = absint( $post->eventkoi_instance_ts );
+		}
 	}
 
 	return $instance_ts;
@@ -403,7 +485,7 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 			<!-- /wp:post-title -->
 		</div>
 		<!-- /wp:group -->',
-			esc_html( $term->name ),
+			esc_html( eventkoi_decode_term_name( $term->name ) ),
 			esc_attr( $style )
 		);
 
@@ -608,14 +690,14 @@ function eventkoi_timezone() {
 		$timezone = $timezone_string;
 	} else {
 		// Fallback to UTC offset if not a named timezone.
-		$offset = get_option( 'gmt_offset', 0 );
+		$offset = (float) get_option( 'gmt_offset', 0 );
 
-		if ( 0 === (float) $offset ) {
+		if ( 0.0 === $offset ) {
 			$timezone = 'UTC';
 		} else {
-			$sign    = ( 0 <= $offset ) ? '+' : '-';
+			$sign    = ( 0.0 <= $offset ) ? '+' : '-';
 			$hours   = (int) $offset;
-			$minutes = abs( ( $offset - $hours ) * 60 );
+			$minutes = (int) round( abs( ( $offset - $hours ) * 60 ) );
 
 			if ( 0 === $minutes ) {
 				$timezone = sprintf( 'UTC%s%d', $sign, abs( $hours ) );
@@ -924,6 +1006,40 @@ function eventkoi_generate_instance_starts( $rule, $limit = 500 ) {
 }
 
 /**
+ * Build an inclusive RRULE UNTIL value for a recurrence "ends on" date.
+ *
+ * The UI stores `ends_on` as a calendar date (e.g. "2026-05-17") or as midnight UTC
+ * (e.g. "2026-05-17T00:00:00Z"). Treating that as an instant excludes any same-day
+ * occurrence whose start is past midnight UTC in the event's timezone — even when
+ * the user picked the very date they expected to be included. Anchor the UNTIL to
+ * 23:59:59 on that calendar day in the event's timezone so RFC 5545 inclusivity
+ * matches user intent.
+ *
+ * @param string             $ends_on  Raw `ends_on` value from the rule.
+ * @param \DateTimeZone|null $event_tz Event timezone. Falls back to site timezone.
+ * @return \DateTimeImmutable|null End-of-day in event timezone, or null on bad input.
+ */
+function eventkoi_recurrence_until( $ends_on, $event_tz = null ) {
+	if ( empty( $ends_on ) ) {
+		return null;
+	}
+
+	if ( ! preg_match( '/^(\d{4}-\d{2}-\d{2})/', (string) $ends_on, $m ) ) {
+		return null;
+	}
+
+	if ( ! ( $event_tz instanceof \DateTimeZone ) ) {
+		$event_tz = wp_timezone();
+	}
+
+	try {
+		return new \DateTimeImmutable( $m[1] . ' 23:59:59', $event_tz );
+	} catch ( \Exception $e ) {
+		return null;
+	}
+}
+
+/**
  * Locate an EventKoi template.
  *
  * Looks in the theme first, then falls back to the plugin.
@@ -954,13 +1070,58 @@ function eventkoi_locate_template( $template_name, $default_path = '' ) {
 }
 
 /**
+ * Resolve the date format EventKoi should use for date-only renders.
+ *
+ * Precedence:
+ *   1. eventkoi_settings['date_format'] (custom PHP format string, when non-empty)
+ *   2. WordPress core option 'date_format'
+ *   3. Hard fallback 'F j, Y'
+ *
+ * @return string PHP date format.
+ */
+function eventkoi_resolved_date_format(): string {
+	$settings = Settings::get();
+	$custom   = isset( $settings['date_format'] ) ? trim( (string) $settings['date_format'] ) : '';
+	if ( '' !== $custom ) {
+		return $custom;
+	}
+	return (string) get_option( 'date_format', 'F j, Y' );
+}
+
+/**
+ * Resolve the time format EventKoi should use for time-only renders.
+ *
+ * Precedence:
+ *   1. eventkoi_settings['time_format_string'] (custom PHP format string, when non-empty)
+ *      → returned as-is; the 12/24 toggle is NOT applied.
+ *   2. WordPress core option 'time_format', then mutated by the 12/24 toggle.
+ *   3. Hard fallback 'g:i a'.
+ *
+ * @return string PHP date format.
+ */
+function eventkoi_resolved_time_format(): string {
+	$settings = Settings::get();
+	$custom   = isset( $settings['time_format_string'] ) ? trim( (string) $settings['time_format_string'] ) : '';
+	if ( '' !== $custom ) {
+		return $custom;
+	}
+	return eventkoi_apply_time_preference( (string) get_option( 'time_format', 'g:i a' ) );
+}
+
+/**
  * Apply EventKoi 12/24-hour preference to a PHP date format string.
+ *
+ * Skipped (returns $format unchanged) when the admin has set a custom
+ * time_format_string in eventkoi_settings — the explicit string wins.
  *
  * @param string $format PHP date format string.
  * @return string Adjusted format string.
  */
 function eventkoi_apply_time_preference( string $format ): string {
 	$settings = Settings::get();
+	if ( ! empty( $settings['time_format_string'] ) ) {
+		return $format;
+	}
 	if ( ! empty( $settings['time_format'] ) && '24' === $settings['time_format'] ) {
 		$format = preg_replace( '/[gh]:i\s*[aA]/', 'H:i', $format );
 		$format = preg_replace( '/[gh]:i/', 'H:i', $format );
@@ -991,9 +1152,8 @@ function eventkoi_date( $type = 'datetime', $timestamp = null, $timezone = null 
 		}
 	}
 
-	$date_format = get_option( 'date_format', 'F j, Y' );
-	$time_format = get_option( 'time_format', 'g:i a' );
-	$time_format = eventkoi_apply_time_preference( $time_format );
+	$date_format = eventkoi_resolved_date_format();
+	$time_format = eventkoi_resolved_time_format();
 
 	switch ( $type ) {
 		case 'date':
@@ -1025,6 +1185,67 @@ function eventkoi_gmdate( $format, $timestamp = null ) {
 	$format = eventkoi_apply_time_preference( $format );
 
 	return gmdate( $format, $timestamp );
+}
+
+/**
+ * Format a datetime range for display.
+ *
+ * Single entry point for all event date/time rendering to guarantee consistency
+ * between the event single page, calendar grid, event data block, and any other
+ * surface. The visitor-local conversion is handled by the frontend JS
+ * (local-timezone.js) via data attributes — this function always renders in
+ * the site timezone (via wp_date with default).
+ *
+ * @param int                      $start_ts  Start timestamp (UTC).
+ * @param int|null                 $end_ts    End timestamp (UTC), or null.
+ * @param bool                     $all_day   Whether the event is all-day.
+ * @param array                    $args      {
+ *     Optional.
+ *
+ *     @type string                $separator Separator between parts. Default ' — '.
+ *     @type DateTimeZone|string   $timezone  Optional timezone override.
+ * }
+ * @return string Formatted display string (plain text, no HTML wrapping).
+ */
+function eventkoi_format_datetime_range( $start_ts, $end_ts = null, $all_day = false, $args = array() ) {
+	if ( empty( $start_ts ) ) {
+		return '';
+	}
+
+	$separator   = isset( $args['separator'] ) ? (string) $args['separator'] : ' — ';
+	$timezone    = $args['timezone'] ?? null;
+	$date_format = eventkoi_resolved_date_format();
+	$time_format = eventkoi_resolved_time_format();
+
+	$start_ts = (int) $start_ts;
+	$end_ts   = ! empty( $end_ts ) ? (int) $end_ts : null;
+
+	$same_day = false;
+	if ( $end_ts ) {
+		$same_day = wp_date( 'Y-m-d', $start_ts, $timezone ) === wp_date( 'Y-m-d', $end_ts, $timezone );
+	}
+
+	if ( $all_day ) {
+		if ( ! $end_ts || $same_day ) {
+			return wp_date( $date_format, $start_ts, $timezone );
+		}
+
+		return wp_date( $date_format, $start_ts, $timezone )
+			. $separator
+			. wp_date( $date_format, $end_ts, $timezone );
+	}
+
+	$start_str = wp_date( $date_format . ', ' . $time_format, $start_ts, $timezone );
+
+	if ( ! $end_ts ) {
+		return $start_str;
+	}
+
+	if ( $same_day ) {
+		return $start_str . $separator . wp_date( $time_format, $end_ts, $timezone );
+	}
+
+	return $start_str . $separator . wp_date( $date_format . ', ' . $time_format, $end_ts, $timezone );
 }
 
 /**

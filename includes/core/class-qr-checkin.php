@@ -15,6 +15,10 @@ if ( ! defined( 'ABSPATH' ) ) {
 
 /**
  * Handle QR check-ins via a global query param.
+ *
+ * QR scanning / check-in is a Pro feature. Lite registers the handler only
+ * so a scanned QR shows a clear "upgrade required" message instead of a
+ * confusing homepage redirect when an old email's QR is scanned.
  */
 class QR_Checkin {
 
@@ -29,176 +33,45 @@ class QR_Checkin {
 	 * Constructor.
 	 */
 	public function __construct() {
-		// QR check-ins are Pro-only; disable handlers in Lite.
+		add_action( 'template_redirect', array( $this, 'maybe_handle_qr_checkin' ) );
+		add_action( 'wp_footer', array( $this, 'render_qr_overlay' ) );
 	}
 
 	/**
-	 * Handle QR check-ins from the public site.
+	 * Render an upgrade-required message when a QR check-in URL is hit in Lite.
 	 *
 	 * @return void
 	 */
 	public function maybe_handle_qr_checkin() {
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- QR token would be the request credential; here we only detect the URL shape.
 		if ( empty( $_GET['eventkoi_qr'] ) ) {
 			return;
 		}
 
-		// QR check-ins are a Pro feature.
 		$this->queue_qr_payload(
-			__( 'QR check-ins are a Pro feature.', 'eventkoi-lite' ),
+			__( 'QR check-in is a Pro feature. Upgrade to scan codes and check in attendees.', 'eventkoi-lite' ),
 			403,
-			'&#10005;',
-			null,
-			false,
-			false
+			'&#10005;'
 		);
-		return;
-
-		$token = sanitize_text_field( wp_unslash( $_GET['eventkoi_qr'] ) );
-		if ( empty( $token ) ) {
-			return;
-		}
-
-		if ( ! is_user_logged_in() || ! current_user_can( 'manage_options' ) ) {
-			$this->queue_qr_payload(
-				__( 'Not authorized.', 'eventkoi-lite' ),
-				403,
-				'&#10005;',
-				null,
-				false,
-				false
-			);
-			return;
-		}
-
-		$record = Rsvps::get_by_token( $token );
-		if ( empty( $record ) ) {
-			$this->queue_qr_payload(
-				__( 'Invalid check-in code.', 'eventkoi-lite' ),
-				404,
-				'&#10005;',
-				null,
-				false,
-				false
-			);
-			return;
-		}
-
-		$status        = sanitize_key( $record->status ?? '' );
-		$checkin_state = sanitize_key( $record->checkin_status ?? '' );
-		$checked_in_at = isset( $record->checked_in ) ? (string) $record->checked_in : '';
-		$has_checked_in_time = ! empty( $checked_in_at ) && '0000-00-00 00:00:00' !== $checked_in_at;
-
-		if ( 'going' !== $status ) {
-			$this->queue_qr_payload(
-				__( 'RSVP is not marked as going.', 'eventkoi-lite' ),
-				403,
-				'&#33;',
-				$record,
-				false,
-				false
-			);
-			return;
-		}
-
-		if ( 'denied' === $checkin_state ) {
-			$this->queue_qr_payload(
-				__( 'Check-in denied.', 'eventkoi-lite' ),
-				403,
-				'&#10005;',
-				$record,
-				false,
-				false
-			);
-			return;
-		}
-
-		if ( 'checked_in' === $checkin_state || $has_checked_in_time ) {
-			$count_updated = $this->maybe_update_checkin_count( $record );
-			$this->queue_qr_payload(
-				__( 'Already checked in.', 'eventkoi-lite' ),
-				200,
-				'&#10003;',
-				$record,
-				true,
-				$count_updated
-			);
-			return;
-		}
-
-		$result = Rsvps::update_checkin_status( array( absint( $record->id ) ), 'checked_in' );
-
-		if ( is_wp_error( $result ) ) {
-			$this->queue_qr_payload(
-				__( 'Check-in failed.', 'eventkoi-lite' ),
-				500,
-				'&#10005;',
-				$record,
-				false,
-				false
-			);
-			return;
-		}
-
-		$count_updated = $this->maybe_update_checkin_count( $record );
-
-		$this->queue_qr_payload(
-			__( 'Checked in.', 'eventkoi-lite' ),
-			200,
-			'&#10003;',
-			$record,
-			true,
-			$count_updated
-		);
-		return;
 	}
 
 	/**
-	 * Update the check-in count from POST data when provided.
-	 *
-	 * @param object $record RSVP record.
-	 * @return void
-	 */
-	private function maybe_update_checkin_count( &$record ) {
-		if ( empty( $_POST['eventkoi_checkin_count'] ) ) {
-			return false;
-		}
-
-		$raw = wp_unslash( $_POST['eventkoi_checkin_count'] );
-		if ( ! is_numeric( $raw ) ) {
-			return false;
-		}
-
-		$max   = 1 + absint( $record->guests ?? 0 );
-		$count = min( absint( $raw ), $max );
-		Rsvps::update_checkin_count( array( absint( $record->id ) ), $count );
-		$record->checked_in_count = $count;
-		return true;
-	}
-
-	/**
-	 * Render a check-in response with optional count editor.
+	 * Queue a response payload.
 	 *
 	 * @param string $message Response message.
-	 * @param int    $status HTTP status.
-	 * @param string $icon Optional HTML entity icon.
-	 * @param object $record RSVP record.
-	 * @param bool   $show_form Whether to show the count form.
+	 * @param int    $status  HTTP status.
+	 * @param string $icon    Optional HTML entity icon.
 	 * @return void
 	 */
-	private function queue_qr_payload( $message, $status, $icon, $record = null, $show_form = true, $show_updated = false ) {
-		$guests        = $record ? absint( $record->guests ?? 0 ) : 0;
-		$default_count = 1 + $guests;
-		$stored_count  = isset( $record->checked_in_count ) ? $record->checked_in_count : null;
-		$current_count = null !== $stored_count ? (int) $stored_count : $default_count;
-
+	private function queue_qr_payload( $message, $status, $icon ) {
 		self::$qr_payload = array(
 			'message'       => $message,
 			'status'        => $status,
 			'icon'          => $icon,
-			'show_form'     => (bool) $show_form,
-			'count_updated' => (bool) $show_updated,
-			'count'         => $current_count,
-			'max'           => $default_count,
+			'show_form'     => false,
+			'count_updated' => false,
+			'count'         => 0,
+			'max'           => 0,
 		);
 
 		status_header( $status );
@@ -207,28 +80,6 @@ class QR_Checkin {
 		if ( $this->wants_json_response() ) {
 			wp_send_json( self::$qr_payload, $status );
 		}
-	}
-
-	/**
-	 * Render a plain text response and exit.
-	 *
-	 * @param string $message Response message.
-	 * @param int    $status  HTTP status.
-	 * @param string $icon    Optional HTML entity icon.
-	 * @return void
-	 */
-	private function render_text_response( $message, $status = 200, $icon = '' ) {
-		status_header( $status );
-		nocache_headers();
-		header( 'Content-Type: text/html; charset=UTF-8' );
-		$icon_markup = $icon ? '<div style="font-size:48px;line-height:1;">' . $icon . '</div>' : '';
-		$body        = sprintf(
-			'<div style="min-height:60vh;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;font-family:Arial,sans-serif;"><div style="display:flex;flex-direction:column;align-items:center;gap:12px;">%s<div style="font-size:22px;font-weight:600;color:#111;">%s</div></div></div>',
-			$icon_markup,
-			esc_html( $message )
-		);
-		echo $body; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		exit;
 	}
 
 	/**

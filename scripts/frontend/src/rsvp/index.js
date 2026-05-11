@@ -139,6 +139,23 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
   const isEnabled = summary?.rsvp_enabled !== false;
   const eventTitle = decodeEntities(summary?.event_title || "");
   const allowEdit = summary?.allow_edit !== false;
+  const eventEnded = summary?.event_ended === true;
+  const windowState = summary?.is_open || { open: true, reason: "" };
+  const windowOpen = windowState.open !== false;
+  const windowClosedReason = windowOpen ? "" : windowState.reason || "closed";
+  const opensSoon =
+    !windowOpen &&
+    windowClosedReason === "not_started" &&
+    summary?.sale_start
+      ? (() => {
+          const startMs = Date.parse(
+            String(summary.sale_start).replace(" ", "T") + "Z"
+          );
+          if (Number.isNaN(startMs)) return false;
+          const diffMs = startMs - Date.now();
+          return diffMs > 0 && diffMs <= 24 * 60 * 60 * 1000;
+        })()
+      : false;
 
   const used = Number(summary?.summary?.used || 0);
   const goingCount = Number.isFinite(Number(summary?.summary?.used))
@@ -164,6 +181,10 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
     capacity > 0 &&
     remaining === 0 &&
     (!hasRsvp || rsvpStatus !== "going");
+
+  // Closed = window over OR capacity full while the event itself hasn't ended.
+  const isClosed =
+    !eventEnded && (!windowOpen ? windowClosedReason !== "not_started" : isFull);
 
   const guestsValue = useMemo(() => {
     if (!allowGuests || status !== "going") return 0;
@@ -344,16 +365,34 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
             type="button"
             className="h-11 text-base font-semibold"
             onClick={() => setOpen(true)}
-            disabled={submitting || isFull || (!allowEdit && hasRsvp)}
+            disabled={
+              submitting ||
+              eventEnded ||
+              isClosed ||
+              !windowOpen ||
+              (!allowEdit && hasRsvp)
+            }
             variant={
-              submitting || isFull || (!allowEdit && hasRsvp)
+              submitting ||
+              eventEnded ||
+              isClosed ||
+              !windowOpen ||
+              (!allowEdit && hasRsvp)
                 ? "secondary"
                 : "default"
             }
           >
-            {hasRsvp && allowEdit
-              ? __("Edit RSVP", "eventkoi-lite")
-              : __("Going", "eventkoi-lite")}
+            {eventEnded
+              ? __("Event ended", "eventkoi-lite")
+              : isClosed
+                ? __("RSVP: Closed", "eventkoi-lite")
+                : !windowOpen
+                  ? opensSoon
+                    ? __("RSVP opens soon", "eventkoi-lite")
+                    : __("RSVP not yet open", "eventkoi-lite")
+                  : hasRsvp && allowEdit
+                    ? __("Edit RSVP", "eventkoi-lite")
+                    : __("RSVP", "eventkoi-lite")}
           </Button>
         </DialogTrigger>
         <DialogContent className="eventkoi-front">

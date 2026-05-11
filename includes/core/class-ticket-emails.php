@@ -310,8 +310,6 @@ class Ticket_Emails {
 			)
 			: '';
 
-		$qr_code = '';
-
 		$ticket_codes_line = self::render_ticket_codes_for_email( $items, $ticket_name_contexts );
 
 		$tags = array(
@@ -328,7 +326,6 @@ class Ticket_Emails {
 			'[event_url]'      => $event_url,
 			'[checkin_code]'   => $checkin_code,
 			'[checkin_line]'   => $checkin_line,
-			'[qr_code]'        => $qr_code,
 			'[ticket_codes]'   => $ticket_codes_line,
 			'[ticket_lines]'   => $tickets_line,
 			'[site_name]'      => get_bloginfo( 'name' ),
@@ -347,7 +344,6 @@ class Ticket_Emails {
 				'<p>' . esc_html__( 'Thanks for your ticket purchase for [event_name].', 'eventkoi-lite' ) . '</p>',
 				'<p>' . esc_html__( 'Order ID:', 'eventkoi-lite' ) . ' <br />[order_id]</p>',
 				'[checkin_line]',
-				'' !== $qr_code ? '<p>[qr_code]</p>' : '',
 				'<p><strong>' . esc_html__( 'Tickets', 'eventkoi-lite' ) . '</strong><br />[ticket_lines]</p>',
 				'' !== $ticket_codes_line ? '<p><strong>' . esc_html__( 'Ticket Codes', 'eventkoi-lite' ) . '</strong><br />[ticket_codes]</p>' : '',
 				$event_datetime ? '<p>' . esc_html__( 'Schedule ([event_timezone]):', 'eventkoi-lite' ) . '<br />[event_datetime]</p>' : '',
@@ -1040,5 +1036,131 @@ class Ticket_Emails {
 		}
 
 		return '';
+	}
+
+	/**
+	 * Resolve the display order ID from an order payload.
+	 *
+	 * @param array $order Order payload.
+	 * @return string
+	 */
+	private static function get_order_display_id( $order ) {
+		return sanitize_text_field( (string) ( $order['id'] ?? $order['order_id'] ?? '' ) );
+	}
+
+	/**
+	 * Send admin notification for a new ticket sale.
+	 *
+	 * @param array $order Order payload.
+	 */
+	public static function send_admin_sale_notification( $order ) {
+		$settings = Settings::get();
+		$enabled  = $settings['admin_sale_email_enabled'] ?? null;
+		$enabled  = null === $enabled || '' === $enabled
+			? true
+			: filter_var( $enabled, FILTER_VALIDATE_BOOLEAN );
+
+		if ( ! $enabled ) {
+			return;
+		}
+
+		$admin_email = get_option( 'admin_email' );
+		if ( ! is_email( $admin_email ) ) {
+			return;
+		}
+
+		$event_id    = absint( $order['event_id'] ?? 0 );
+		$instance_ts = $order['event_instance_ts'] ?? '';
+		$event_name  = get_the_title( $event_id );
+		$items       = $order['items'] ?? array();
+
+		$customer_name  = sanitize_text_field( (string) ( $order['customer_name'] ?? '' ) );
+		$customer_email = sanitize_email( (string) ( $order['customer_email'] ?? '' ) );
+		$order_id       = self::get_order_display_id( $order );
+		$currency       = strtoupper( (string) ( $order['currency'] ?? 'USD' ) );
+
+		$total = 0;
+		$lines = array();
+		foreach ( $items as $item ) {
+			$qty    = absint( $item['quantity'] ?? 1 );
+			$price  = absint( $item['price'] ?? $item['unit_amount'] ?? 0 );
+			$name   = sanitize_text_field( (string) ( $item['ticket_name'] ?? $item['name'] ?? '' ) );
+			$total += $price * $qty;
+			/* translators: 1: quantity, 2: ticket name. */
+			$lines[] = sprintf( '%1$d &times; %2$s', $qty, $name );
+		}
+
+		$formatted_total = self::format_currency( $total / 100, $currency );
+
+		list( $event_datetime ) = self::get_event_datetime_parts( $event_id, $instance_ts );
+
+		$tags = array(
+			'[customer_name]'  => esc_html( $customer_name ),
+			'[attendee_email]' => esc_html( $customer_email ),
+			'[order_id]'       => esc_html( (string) $order_id ),
+			'[ticket_lines]'   => implode( '<br />', array_map( 'esc_html', $lines ) ),
+			'[order_total]'    => esc_html( $formatted_total ),
+			'[event_name]'     => esc_html( $event_name ),
+			'[event_datetime]' => esc_html( (string) $event_datetime ),
+			'[site_name]'      => esc_html( get_bloginfo( 'name' ) ),
+		);
+
+		$default_subject  = __( 'New ticket sale: [event_name]', 'eventkoi-lite' );
+		$default_template = implode(
+			"\n",
+			array(
+				'<p>' . esc_html__( 'A new ticket order has been placed.', 'eventkoi-lite' ) . '</p>',
+				'<p><strong>' . esc_html__( 'Customer:', 'eventkoi-lite' ) . '</strong> [customer_name] ([attendee_email])</p>',
+				'<p><strong>' . esc_html__( 'Order:', 'eventkoi-lite' ) . '</strong> #[order_id]</p>',
+				'<p><strong>' . esc_html__( 'Tickets:', 'eventkoi-lite' ) . '</strong><br />[ticket_lines]</p>',
+				'<p><strong>' . esc_html__( 'Total:', 'eventkoi-lite' ) . '</strong> [order_total]</p>',
+				'<p><strong>' . esc_html__( 'Event:', 'eventkoi-lite' ) . '</strong> [event_name]</p>',
+				'<p><strong>' . esc_html__( 'Date:', 'eventkoi-lite' ) . '</strong> [event_datetime]</p>',
+				'<p>&mdash;<br />[site_name]</p>',
+			)
+		);
+
+		$subject  = trim( (string) ( $settings['admin_sale_email_subject'] ?? '' ) );
+		$template = trim( (string) ( $settings['admin_sale_email_template'] ?? '' ) );
+		$subject  = '' !== $subject ? $subject : $default_subject;
+		$template = '' !== $template ? $template : $default_template;
+
+		$subject = strtr( $subject, $tags );
+		$body    = strtr( $template, $tags );
+		$body    = wp_kses( wpautop( trim( $body ) ), Settings::get_email_template_allowed_tags() );
+
+		$headers         = array( 'Content-Type: text/html; charset=UTF-8' );
+		$sender_email    = sanitize_email( (string) ( $settings['admin_sale_email_sender_email'] ?? '' ) );
+		$sender_name     = sanitize_text_field( (string) ( $settings['admin_sale_email_sender_name'] ?? '' ) );
+		$from_email_hook = null;
+		$from_name_hook  = null;
+
+		if ( $sender_email ) {
+			$from = $sender_email;
+			if ( $sender_name ) {
+				$from = sprintf( '%s <%s>', $sender_name, $sender_email );
+			}
+			$headers[]       = 'From: ' . $from;
+			$from_email_hook = static function () use ( $sender_email ) {
+				return $sender_email;
+			};
+			add_filter( 'wp_mail_from', $from_email_hook );
+		}
+
+		if ( $sender_name ) {
+			$from_name_hook = static function () use ( $sender_name ) {
+				return $sender_name;
+			};
+			add_filter( 'wp_mail_from_name', $from_name_hook );
+		}
+
+		wp_mail( $admin_email, $subject, $body, $headers );
+
+		if ( $from_email_hook ) {
+			remove_filter( 'wp_mail_from', $from_email_hook );
+		}
+		if ( $from_name_hook ) {
+			remove_filter( 'wp_mail_from_name', $from_name_hook );
+		}
 	}
 }

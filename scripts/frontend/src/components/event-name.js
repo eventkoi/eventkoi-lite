@@ -18,9 +18,9 @@ export function EventName({ event, setEvent }) {
         className="inline-flex rounded-md items-center px-2 py-1 cursor-pointer font-medium text-lg border border-transparent hover:border-input"
         contentEditable
         role="textbox"
-        aria-label={__("Event name", "eventkoi")}
+        aria-label={__("Event name", "eventkoi-lite")}
         spellCheck={false}
-        placeholder={__("Click to add event name", "eventkoi")}
+        placeholder={__("Click to add event name", "eventkoi-lite")}
         dangerouslySetInnerHTML={{
           __html: event?.title,
         }}

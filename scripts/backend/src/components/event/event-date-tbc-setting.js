@@ -1,3 +1,4 @@
+import { __ } from "@wordpress/i18n";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -8,7 +9,7 @@ export function EventDateTBCSetting({ event, setEvent, className }) {
     <div className={cn("flex flex-col gap-4 rounded-sm border p-4", className)}>
       <div className="flex items-center justify-between">
         <div className="space-y-1">
-          <Label className="font-semibold">Date and time not confirmed</Label>
+          <Label className="font-semibold">{__("Date and time not confirmed", "eventkoi-lite")}</Label>
           <p className="text-sm text-muted-foreground">
             Remove date and time. Show “to be confirmed” notification instead.
           </p>
@@ -28,12 +29,12 @@ export function EventDateTBCSetting({ event, setEvent, className }) {
       {/* Only show when TBC is ON */}
       {event?.tbc && (
         <div className="flex flex-col gap-2">
-          <Label htmlFor="tbc_note">Notification</Label>
+          <Label htmlFor="tbc_note">{__("Notification", "eventkoi-lite")}</Label>
           <Input
             type="text"
             id="tbc_note"
             value={event?.tbc_note}
-            placeholder="Date and time to be confirmed"
+            placeholder={__("Date and time to be confirmed", "eventkoi-lite")}
             className="max-w-[422px]"
             onChange={(e) =>
               setEvent((prevState) => ({

@@ -69,25 +69,25 @@ const QUERY_TEMPLATE = [
 		"core/query-pagination",
 		{ layout: { type: "flex", justifyContent: "space-between" } },
 		[
-			["core/query-pagination-previous", { label: __("Previous", "eventkoi") }],
+			["core/query-pagination-previous", { label: __("Previous", "eventkoi-lite") }],
 			["core/query-pagination-numbers", {}],
-			["core/query-pagination-next", { label: __("Next", "eventkoi") }],
+			["core/query-pagination-next", { label: __("Next", "eventkoi-lite") }],
 		],
 	],
 	[
 		"core/query-no-results",
 		{},
-		[["core/paragraph", { placeholder: __("No events found.", "eventkoi") }]],
+		[["core/paragraph", { placeholder: __("No events found.", "eventkoi-lite") }]],
 	],
 ];
 
 if (registerBlockVariation) {
 	registerBlockVariation("core/query", {
 		name: BLOCK_NAME,
-		title: __("EK Event Query Loop", "eventkoi"),
+		title: __("EK Event Query Loop", "eventkoi-lite"),
 		description: __(
 			"Display EventKoi events using Query Loop controls.",
-			"eventkoi"
+			"eventkoi-lite"
 		),
 		icon,
 		attributes: {

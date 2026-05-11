@@ -1,3 +1,4 @@
+import { __ } from "@wordpress/i18n";
 import { useEffect, useId, useRef, useState } from "react";
 
 export function RichTextEditor({
@@ -15,6 +16,18 @@ export function RichTextEditor({
   const lastEditorValue = useRef(value || "");
   const latestValueRef = useRef(value || "");
   const onChangeRef = useRef(onChange);
+  const [tinymceReady, setTinymceReady] = useState(!!window.tinymce);
+
+  useEffect(() => {
+    if (tinymceReady) return;
+    const interval = setInterval(() => {
+      if (window.tinymce) {
+        setTinymceReady(true);
+        clearInterval(interval);
+      }
+    }, 50);
+    return () => clearInterval(interval);
+  }, [tinymceReady]);
 
   useEffect(() => {
     onChangeRef.current = onChange;
@@ -39,7 +52,7 @@ export function RichTextEditor({
   }, [value, editorId, showHTML]);
 
   useEffect(() => {
-    if (!window.tinymce || !editorRef.current || showHTML) {
+    if (!tinymceReady || !editorRef.current || showHTML) {
       return;
     }
 
@@ -112,7 +125,7 @@ export function RichTextEditor({
               ed.execCommand(
                 "mceInsertContent",
                 false,
-                `<img src="${url}" alt="${alt}" />`
+                `<img src="${url}" alt="${alt}" />`,
               );
             });
             frame?.open();
@@ -150,7 +163,7 @@ export function RichTextEditor({
         inst.remove();
       }
     };
-  }, [showHTML, editorId, height, disabled]);
+  }, [tinymceReady, showHTML, editorId, height, disabled]);
 
   if (showHTML) {
     return (
@@ -161,7 +174,7 @@ export function RichTextEditor({
             onClick={() => setShowHTML(false)}
             className="mx-[8px] px-[6px] py-[4px] mce-btn mce-btn-has-text text-sm border-none bg-transparent cursor-pointer hover:bg-[#e5e7eb] text-[#374151]"
           >
-            <span className="mce-txt">Switch to Visual Editor</span>
+            <span className="mce-txt">{__("Switch to Visual Editor", "eventkoi-lite")}</span>
           </button>
         </div>
         <textarea
@@ -170,7 +183,7 @@ export function RichTextEditor({
           onChange={(e) => setHtmlContent(e.target.value)}
           onBlur={(e) => onChange?.(e.target.value)}
           disabled={disabled}
-          aria-label="HTML source editor"
+          aria-label={__("HTML source editor", "eventkoi-lite")}
         />
       </div>
     );

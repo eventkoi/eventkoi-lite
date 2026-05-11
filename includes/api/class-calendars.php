@@ -45,7 +45,7 @@ class Calendars {
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'delete_calendars' ),
 				'permission_callback' => function () {
-					return current_user_can( 'manage_options' );
+					return current_user_can( 'eventkoi_calendars_edit' );
 				},
 			)
 		);

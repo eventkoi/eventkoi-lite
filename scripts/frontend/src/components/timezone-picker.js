@@ -43,7 +43,7 @@ export function TimezonePicker({
             /* translators: %s: current timezone label */
             __(
               "Current timezone: %s. Press Enter or Space to change.",
-              "eventkoi"
+              "eventkoi-lite"
             ),
             formatTimezoneLabel(timezone, timeFormat)
           )}
@@ -63,7 +63,7 @@ export function TimezonePicker({
             <Tabs
               value={timeFormat}
               onValueChange={setTimeFormat}
-              aria-label={__("Time format selection", "eventkoi")}
+              aria-label={__("Time format selection", "eventkoi-lite")}
               className="w-full bg-muted"
             >
               <TabsList className="flex bg-muted px-2 gap-2 shadow-none rounded-none">
@@ -71,28 +71,28 @@ export function TimezonePicker({
                   value="12"
                   className="rounded-sm bg-muted text-foreground hover:text-foreground flex-1 data-[state=active]:font-semibold shadow-none border-none cursor-pointer"
                 >
-                  {__("12hr (AM/PM)", "eventkoi")}
+                  {__("12hr (AM/PM)", "eventkoi-lite")}
                 </TabsTrigger>
                 <TabsTrigger
                   value="24"
                   className="rounded-sm bg-muted text-foreground hover:text-foreground flex-1 data-[state=active]:font-semibold shadow-none border-none cursor-pointer"
                 >
-                  {__("24hr", "eventkoi")}
+                  {__("24hr", "eventkoi-lite")}
                 </TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
           <CommandInput
-            placeholder={__("Search timezone...", "eventkoi")}
+            placeholder={__("Search timezone...", "eventkoi-lite")}
             className="h-auto border-none focus:border-none focus:border-transparent focus:border-[0px] focus:shadow-none"
           />
           <CommandList
             id="timezone-listbox"
             role="listbox"
-            aria-label={__("Select a timezone", "eventkoi")}
+            aria-label={__("Select a timezone", "eventkoi-lite")}
             className="max-h-[300px] overflow-y-auto border-t border-border border-t-[1px] border-solid border-b-0 border-l-0 border-r-0"
           >
-            <CommandEmpty>{__("No timezone found.", "eventkoi")}</CommandEmpty>
+            <CommandEmpty>{__("No timezone found.", "eventkoi-lite")}</CommandEmpty>
 
             {Object.entries(tzGroups).map(([region, tzList], index, array) => (
               <div key={region}>
@@ -136,7 +136,7 @@ export function TimezonePicker({
         <span className="sr-only" aria-live="polite">
           {sprintf(
             /* translators: %s: selected timezone label */
-            __("Selected timezone: %s", "eventkoi"),
+            __("Selected timezone: %s", "eventkoi-lite"),
             formatTimezoneLabel(timezone, timeFormat)
           )}
         </span>

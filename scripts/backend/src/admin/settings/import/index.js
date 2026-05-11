@@ -102,8 +102,8 @@ export function SettingsImport() {
 
       if (!parsed?.cache_key || parsed.events_count === 0) {
         const msg = parsed?.skipped > 0
-          ? __("All events already imported.", "eventkoi")
-          : __("No events found in file.", "eventkoi");
+          ? __("All events already imported.", "eventkoi-lite")
+          : __("No events found in file.", "eventkoi-lite");
         showToastError(msg);
         setIcsState((s) => ({ ...s, importing: false, parsed }));
         e.target.value = "";
@@ -128,7 +128,7 @@ export function SettingsImport() {
         showToastError(`${response.errors} event(s) failed.`);
       }
     } catch {
-      showToastError(__("Import failed.", "eventkoi"));
+      showToastError(__("Import failed.", "eventkoi-lite"));
       setIcsState((s) => ({ ...s, importing: false }));
     }
 
@@ -142,9 +142,9 @@ export function SettingsImport() {
 
   return (
     <div className="grid gap-5">
-      <Heading level={3}>{__("Import events", "eventkoi")}</Heading>
+      <Heading level={3}>{__("Import events", "eventkoi-lite")}</Heading>
       <p className="text-sm text-muted-foreground -mt-3">
-        {__("Import events from other calendar plugins or ICS files.", "eventkoi")}
+        {__("Import events from other calendar plugins or ICS files.", "eventkoi-lite")}
       </p>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -228,33 +228,33 @@ function IntegrationCard({
         {loading && (
           <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            {__("Detecting...", "eventkoi")}
+            {__("Detecting...", "eventkoi-lite")}
           </span>
         )}
 
         {inactive && (
           <p className="text-xs text-muted-foreground">
-            {__("Activate the plugin to import", "eventkoi")}
+            {__("Activate the plugin to import", "eventkoi-lite")}
           </p>
         )}
 
         {!loading && installed && !available && !done && (
           <p className="text-xs text-muted-foreground">
             {totalCount > 0
-              ? __("All events already imported", "eventkoi")
-              : __("No events found", "eventkoi")}
+              ? __("All events already imported", "eventkoi-lite")
+              : __("No events found", "eventkoi-lite")}
           </p>
         )}
 
         {!loading && available && !done && !importing && (
           <>
             <span className="text-xs text-muted-foreground">
-              {count} {count === 1 ? __("event", "eventkoi") : __("events", "eventkoi")} {__("available", "eventkoi")}
+              {count} {count === 1 ? __("event", "eventkoi-lite") : __("events", "eventkoi-lite")} {__("available", "eventkoi-lite")}
             </span>
             <Dialog>
               <DialogTrigger asChild>
                 <Button size="sm" variant="outline" className="h-8 text-xs px-3.5">
-                  {__("Import", "eventkoi")}
+                  {__("Import", "eventkoi-lite")}
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-md">
@@ -262,11 +262,11 @@ function IntegrationCard({
                   <div className="flex items-center gap-3 mb-1">
                     <img src={TEC_ICON_URL} alt="The Events Calendar" className="h-8 w-8 rounded-lg" />
                     <DialogTitle className="text-base">
-                      {__("Import from The Events Calendar", "eventkoi")}
+                      {__("Import from The Events Calendar", "eventkoi-lite")}
                     </DialogTitle>
                   </div>
                   <DialogDescription className="text-sm leading-relaxed">
-                    {__("This will import the following into EventKoi:", "eventkoi")}
+                    {__("This will import the following into EventKoi:", "eventkoi-lite")}
                   </DialogDescription>
                   <ul className="text-sm text-muted-foreground mt-2 space-y-1.5 pl-1">
                     <li className="flex items-center gap-2">
@@ -275,22 +275,22 @@ function IntegrationCard({
                     </li>
                     <li className="flex items-center gap-2">
                       <span className="h-1 w-1 rounded-full bg-muted-foreground/50 flex-shrink-0" />
-                      {__("Venues, categories & featured images", "eventkoi")}
+                      {__("Venues, categories & featured images", "eventkoi-lite")}
                     </li>
                   </ul>
                   <p className="text-xs text-muted-foreground/70 mt-3">
-                    {__("Previously imported events will be skipped.", "eventkoi")}
+                    {__("Previously imported events will be skipped.", "eventkoi-lite")}
                   </p>
                 </DialogHeader>
                 <DialogFooter className="mt-2">
                   <DialogClose asChild>
                     <Button variant="outline" className="cursor-pointer shadow-none border-solid">
-                      {__("Cancel", "eventkoi")}
+                      {__("Cancel", "eventkoi-lite")}
                     </Button>
                   </DialogClose>
                   <Button onClick={onImport} className="gap-1.5 cursor-pointer shadow-none" style={{ border: "1px solid transparent" }}>
                     <Download className="h-3.5 w-3.5" />
-                    {__("Import", "eventkoi")}
+                    {__("Import", "eventkoi-lite")}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -301,14 +301,14 @@ function IntegrationCard({
         {!loading && importing && (
           <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            {__("Importing events...", "eventkoi")}
+            {__("Importing events...", "eventkoi-lite")}
           </span>
         )}
 
         {!loading && done && (
           <>
             <span className="inline-flex items-center gap-1.5 text-xs text-green-600 font-medium">
-              {result?.imported} {result?.imported === 1 ? __("event", "eventkoi") : __("events", "eventkoi")} {__("imported", "eventkoi")}
+              {result?.imported} {result?.imported === 1 ? __("event", "eventkoi-lite") : __("events", "eventkoi-lite")} {__("imported", "eventkoi-lite")}
             </span>
             <Button
               variant="ghost"
@@ -316,7 +316,7 @@ function IntegrationCard({
               onClick={onViewEvents}
               className="h-8 gap-1.5 text-xs"
             >
-              {__("View events", "eventkoi")}
+              {__("View events", "eventkoi-lite")}
               <ArrowRight className="h-3 w-3" />
             </Button>
           </>
@@ -344,10 +344,10 @@ function ICSImportCard({
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold truncate">
-            {__("ICS / iCal File", "eventkoi")}
+            {__("ICS / iCal File", "eventkoi-lite")}
           </p>
           <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
-            {__("Import from Google Calendar, Apple Calendar, Outlook, or any .ics file.", "eventkoi")}
+            {__("Import from Google Calendar, Apple Calendar, Outlook, or any .ics file.", "eventkoi-lite")}
           </p>
         </div>
       </div>
@@ -356,10 +356,10 @@ function ICSImportCard({
         {!importing && !done && (
           <>
             <p className="text-xs text-muted-foreground">
-              {__("Select a .ics file to import", "eventkoi")}
+              {__("Select a .ics file to import", "eventkoi-lite")}
             </p>
             <Button size="sm" variant="outline" className="h-8 text-xs px-3.5 flex-shrink-0" onClick={onUpload}>
-              {__("Upload", "eventkoi")}
+              {__("Upload", "eventkoi-lite")}
             </Button>
           </>
         )}
@@ -367,14 +367,14 @@ function ICSImportCard({
         {importing && (
           <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            {__("Importing events...", "eventkoi")}
+            {__("Importing events...", "eventkoi-lite")}
           </span>
         )}
 
         {!importing && done && (
           <>
             <span className="inline-flex items-center gap-1.5 text-xs text-green-600 font-medium">
-              {result?.imported} {result?.imported === 1 ? __("event", "eventkoi") : __("events", "eventkoi")} {__("imported", "eventkoi")}
+              {result?.imported} {result?.imported === 1 ? __("event", "eventkoi-lite") : __("events", "eventkoi-lite")} {__("imported", "eventkoi-lite")}
             </span>
             <Button
               variant="ghost"
@@ -382,7 +382,7 @@ function ICSImportCard({
               onClick={onViewEvents}
               className="h-8 gap-1.5 text-xs"
             >
-              {__("View events", "eventkoi")}
+              {__("View events", "eventkoi-lite")}
               <ArrowRight className="h-3 w-3" />
             </Button>
           </>
@@ -403,20 +403,20 @@ function URLImportCard({ onOpen }) {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold truncate">
-            {__("Import from URL", "eventkoi")}
+            {__("Import from URL", "eventkoi-lite")}
           </p>
           <p className="text-xs text-muted-foreground mt-1 line-clamp-2 leading-relaxed">
-            {__("Paste a link to any event page to import it.", "eventkoi")}
+            {__("Paste a link to any event page to import it.", "eventkoi-lite")}
           </p>
         </div>
       </div>
 
       <div className="px-5 py-3 mt-auto border-t bg-muted/20 flex items-center justify-between gap-3" style={{ minHeight: 61 }}>
         <p className="text-xs text-muted-foreground">
-          {__("Supports structured data & OG tags", "eventkoi")}
+          {__("Supports structured data & OG tags", "eventkoi-lite")}
         </p>
         <Button size="sm" variant="outline" className="h-8 text-xs px-3.5 flex-shrink-0" onClick={onOpen}>
-          {__("Import", "eventkoi")}
+          {__("Import", "eventkoi-lite")}
         </Button>
       </div>
     </div>

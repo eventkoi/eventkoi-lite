@@ -88,6 +88,8 @@ class Event {
 		'rsvp_max_guests',
 		'rsvp_allow_edit',
 		'rsvp_auto_account',
+		'rsvp_sale_start',
+		'rsvp_sale_end',
 	);
 
 	/**
@@ -394,7 +396,7 @@ class Event {
 				'post_type'   => 'eventkoi_event',
 				'post_status' => $status,
 				'post_title'  => $title,
-				'post_name'   => sanitize_title_with_dashes( $title, '', 'save' ),
+				'post_name'   => sanitize_title( $title ),
 				'post_author' => get_current_user_id(),
 			);
 
@@ -417,7 +419,7 @@ class Event {
 		$args = array(
 			'ID'          => $id,
 			'post_title'  => $title,
-			'post_name'   => sanitize_title_with_dashes( $title, '', 'save' ),
+			'post_name'   => sanitize_title( $title ),
 			'post_status' => $status,
 		);
 
@@ -481,8 +483,10 @@ class Event {
 		$rsvp_show_remaining = array_key_exists( 'rsvp_show_remaining', $meta ) ? (bool) $meta['rsvp_show_remaining'] : true;
 		$rsvp_allow_guests   = ! empty( $meta['rsvp_allow_guests'] );
 		$rsvp_max_guests     = isset( $meta['rsvp_max_guests'] ) ? absint( $meta['rsvp_max_guests'] ) : 0;
-		$rsvp_allow_edit     = ! empty( $meta['rsvp_allow_edit'] );
+		$rsvp_allow_edit     = array_key_exists( 'rsvp_allow_edit', $meta ) ? ! empty( $meta['rsvp_allow_edit'] ) : true;
 		$rsvp_auto_account   = ! empty( $meta['rsvp_auto_account'] );
+		$rsvp_sale_start     = isset( $meta['rsvp_sale_start'] ) ? self::normalize_utc_datetime_string( $meta['rsvp_sale_start'] ) : '';
+		$rsvp_sale_end       = isset( $meta['rsvp_sale_end'] ) ? self::normalize_utc_datetime_string( $meta['rsvp_sale_end'] ) : '';
 
 		update_post_meta( self::$event_id, 'timezone_display', (bool) $timezone_display );
 		update_post_meta( self::$event_id, 'tbc', (bool) $tbc );
@@ -512,6 +516,8 @@ class Event {
 		update_post_meta( self::$event_id, 'rsvp_max_guests', $rsvp_max_guests );
 		update_post_meta( self::$event_id, 'rsvp_allow_edit', (bool) $rsvp_allow_edit );
 		update_post_meta( self::$event_id, 'rsvp_auto_account', (bool) $rsvp_auto_account );
+		update_post_meta( self::$event_id, 'rsvp_sale_start', (string) $rsvp_sale_start );
+		update_post_meta( self::$event_id, 'rsvp_sale_end', (string) $rsvp_sale_end );
 		update_post_meta( self::$event_id, 'attendance_mode', $attendance_mode );
 
 		$tickets_enabled             = ! empty( $meta['tickets_enabled'] );
@@ -545,10 +551,12 @@ class Event {
 
 		if ( $start_date ) {
 			$start_utc_ts = strtotime( $start_date );
+			$old_start_ts = (int) get_post_meta( self::$event_id, 'start_timestamp', true );
 
 			update_post_meta( self::$event_id, 'start_date', $start_date );
 			update_post_meta( self::$event_id, 'start_timestamp', $start_utc_ts );
 
+			self::migrate_rsvp_instance_ts( $old_start_ts, (int) $start_utc_ts );
 		} else {
 			delete_post_meta( self::$event_id, 'start_date' );
 			delete_post_meta( self::$event_id, 'start_timestamp' );
@@ -784,7 +792,7 @@ class Event {
 		foreach ( $terms as $term ) {
 			$calendar[] = array(
 				'id'   => $term->term_id,
-				'name' => $term->name,
+				'name' => eventkoi_decode_term_name( $term->name ),
 				'slug' => $term->slug,
 				'url'  => get_term_link( $term, 'event_cal' ),
 			);
@@ -898,9 +906,12 @@ class Event {
 
 		if ( in_array( $type, array( 'standard', 'multi' ), true ) ) {
 			$days = self::get_event_days();
-			if ( ! empty( $days[0] ) && is_array( $days[0] ) ) {
+			// Only use days[0] when it actually carries a start_date; some events
+			// have a placeholder row with null/empty fields that would otherwise
+			// short-circuit before the post-meta fallback below.
+			if ( ! empty( $days[0]['start_date'] ) ) {
 				return array(
-					'start_date' => $days[0]['start_date'] ?? '',
+					'start_date' => $days[0]['start_date'],
 					'end_date'   => $days[0]['end_date'] ?? '',
 					'all_day'    => ! empty( $days[0]['all_day'] ),
 				);
@@ -909,16 +920,16 @@ class Event {
 
 		if ( 'recurring' === $type ) {
 			$rules = self::get_recurrence_rules();
-			if ( ! empty( $rules[0] ) && is_array( $rules[0] ) ) {
+			if ( ! empty( $rules[0]['start_date'] ) ) {
 				return array(
-					'start_date' => $rules[0]['start_date'] ?? '',
+					'start_date' => $rules[0]['start_date'],
 					'end_date'   => $rules[0]['end_date'] ?? '',
 					'all_day'    => ! empty( $rules[0]['all_day'] ),
 				);
 			}
 		}
 
-		// Fallback to legacy start_date.
+		// Fallback to legacy post-meta start_date / end_date.
 		return array(
 			'start_date' => self::get_start_date( true ),
 			'end_date'   => self::get_end_date( true ),
@@ -1258,9 +1269,12 @@ class Event {
 		// Context / formatting settings.
 		$settings    = Settings::get();
 		$wp_timezone = wp_timezone();
-		$date_format = get_option( 'date_format', 'F j, Y' );
-		$time_format = get_option( 'time_format', 'g:i a' );
+		$date_format = \eventkoi_resolved_date_format();
+		$time_format = \eventkoi_resolved_time_format();
 		$time_pref   = isset( $settings['time_format'] ) ? $settings['time_format'] : '12';
+		// When the admin set a custom time_format_string, it has already been
+		// baked into $time_format above; the 12/24 toggle must NOT override it.
+		$has_custom_time = ! empty( $settings['time_format_string'] );
 
 		$parse = static function ( $iso ) use ( $wp_timezone ) {
 			if ( empty( $iso ) ) {
@@ -1274,12 +1288,14 @@ class Event {
 			}
 		};
 
-		$fmt_time = static function ( $dt ) use ( $time_pref, $time_format ) {
+		$fmt_time = static function ( $dt ) use ( $time_pref, $time_format, $has_custom_time ) {
 			if ( ! $dt instanceof \DateTimeInterface ) {
 				return '';
 			}
 
-			if ( '24' === $time_pref ) {
+			if ( $has_custom_time ) {
+				$fmt = $time_format;
+			} elseif ( '24' === $time_pref ) {
 				$fmt = 'H:i';
 			} elseif ( '12' === $time_pref ) {
 				$fmt = 'g:i a';
@@ -1365,7 +1381,15 @@ class Event {
 		}
 
 		if ( in_array( $date_type, array( 'standard', 'multi' ), true ) ) {
-			if ( $is_same && ! $all_day ) {
+			if ( $all_day ) {
+				if ( ! $end || $is_same ) {
+					return $fmt( $start, 'date' );
+				}
+
+				return sprintf( '%s – %s', $fmt( $start, 'date' ), $fmt( $end, 'date' ) );
+			}
+
+			if ( $is_same && $end ) {
 				return sprintf(
 					'%s, %s – %s',
 					$fmt( $start, 'date' ),
@@ -1375,10 +1399,6 @@ class Event {
 			}
 
 			if ( ! $end ) {
-				if ( $all_day ) {
-					return $fmt( $start, 'date' );
-				}
-
 				return sprintf( '%s, %s', $fmt( $start, 'date' ), $fmt( $start, 'time' ) );
 			}
 
@@ -1592,7 +1612,10 @@ class Event {
 	 *
 	 * @return int
 	 */
-	public static function get_rsvp_capacity() {
+	public static function get_rsvp_capacity( $instance_ts = 0 ) {
+		// Lite has no recurring events, so $instance_ts is always treated as
+		// series-wide. Param kept for Pro+Lite signature parity.
+		unset( $instance_ts );
 		$capacity = get_post_meta( self::$event_id, 'rsvp_capacity', true );
 
 		return apply_filters( 'eventkoi_get_event_rsvp_capacity', absint( $capacity ), self::$event_id, self::$event );
@@ -1605,7 +1628,7 @@ class Event {
 	 */
 	public static function get_rsvp_show_remaining() {
 		$show_remaining = get_post_meta( self::$event_id, 'rsvp_show_remaining', true );
-		if ( '' === $show_remaining ) {
+		if ( '' === $show_remaining || false === $show_remaining || null === $show_remaining ) {
 			$show_remaining = true;
 		}
 
@@ -1641,6 +1664,11 @@ class Event {
 	 */
 	public static function get_rsvp_allow_edit() {
 		$allow_edit = get_post_meta( self::$event_id, 'rsvp_allow_edit', true );
+		// Default ON for events with no value stored. get_post_meta returns false
+		// when the post id is 0 (new-event template), so handle both ''/false/null.
+		if ( '' === $allow_edit || false === $allow_edit || null === $allow_edit ) {
+			$allow_edit = true;
+		}
 
 		return apply_filters( 'eventkoi_get_event_rsvp_allow_edit', (bool) $allow_edit, self::$event_id, self::$event );
 	}
@@ -1654,6 +1682,57 @@ class Event {
 		$auto_account = get_post_meta( self::$event_id, 'rsvp_auto_account', true );
 
 		return apply_filters( 'eventkoi_get_event_rsvp_auto_account', (bool) $auto_account, self::$event_id, self::$event );
+	}
+
+	/**
+	 * RSVP window start (UTC `Y-m-d H:i:s`) or '' for no boundary.
+	 *
+	 * Lite has no per-instance overrides; the parameter is accepted for
+	 * signature parity with Pro so frontend code paths can stay identical.
+	 *
+	 * @param int $instance_ts Unused in Lite.
+	 * @return string
+	 */
+	public static function get_rsvp_sale_start( $instance_ts = 0 ) {
+		$start = (string) get_post_meta( self::$event_id, 'rsvp_sale_start', true );
+
+		return apply_filters( 'eventkoi_get_event_rsvp_sale_start', $start, self::$event_id, self::$event, $instance_ts );
+	}
+
+	/**
+	 * RSVP window end (UTC `Y-m-d H:i:s`) or '' for no boundary.
+	 *
+	 * @param int $instance_ts Unused in Lite.
+	 * @return string
+	 */
+	public static function get_rsvp_sale_end( $instance_ts = 0 ) {
+		$end = (string) get_post_meta( self::$event_id, 'rsvp_sale_end', true );
+
+		return apply_filters( 'eventkoi_get_event_rsvp_sale_end', $end, self::$event_id, self::$event, $instance_ts );
+	}
+
+	/**
+	 * Normalize an inbound datetime to UTC `Y-m-d H:i:s`. Returns '' for empty
+	 * or unparseable input.
+	 *
+	 * @param mixed $value
+	 * @return string
+	 */
+	private static function normalize_utc_datetime_string( $value ) {
+		if ( null === $value ) {
+			return '';
+		}
+		$trimmed = trim( (string) $value );
+		if ( '' === $trimmed ) {
+			return '';
+		}
+		try {
+			$dt = new \DateTime( $trimmed, new \DateTimeZone( 'UTC' ) );
+			$dt->setTimezone( new \DateTimeZone( 'UTC' ) );
+			return $dt->format( 'Y-m-d H:i:s' );
+		} catch ( \Exception $e ) {
+			return '';
+		}
 	}
 
 	/**
@@ -1772,7 +1851,7 @@ class Event {
 			'post_type'   => 'eventkoi_event',
 			'post_status' => 'draft',
 			'post_title'  => $title,
-			'post_name'   => sanitize_title_with_dashes( $title, '', 'save' ),
+			'post_name'   => sanitize_title( $title ),
 			'post_author' => get_current_user_id(),
 		);
 
@@ -2123,14 +2202,14 @@ class Event {
 	}
 
 	/**
-	 * Rendered timezone (only if setting is enabled).
+	 * Rendered timezone (only when the per-event "Display timezone in event
+	 * page" toggle is enabled). Applies to all surfaces that call this:
+	 * dynamic tag, shortcode, block binding, and the implicit datetime widget.
 	 *
 	 * @return string
 	 */
 	public static function rendered_timezone() {
-		$show = self::get_timezone_display();
-
-		if ( false === $show ) {
+		if ( ! self::get_timezone_display() ) {
 			return '';
 		}
 
@@ -2228,13 +2307,7 @@ class Event {
 				$end_ts     = $duration ? ( $instance_ts + $duration ) : null;
 				$is_all_day = ! empty( $rule['all_day'] );
 
-				// Render using WP timezone.
-				if ( $is_all_day ) {
-					$line = eventkoi_date( 'M j, Y', $instance_ts );
-				} else {
-					$start_str = eventkoi_date( 'M j, Y, g:ia', $instance_ts );
-					$line      = $end_ts ? $start_str . ' - ' . eventkoi_date( 'g:ia', $end_ts ) : $start_str;
-				}
+				$line = eventkoi_format_datetime_range( $instance_ts, $end_ts, $is_all_day );
 
 				$summary = self::render_rule_summary_single( $rule, $instance_ts );
 				if ( ! empty( $summary ) ) {
@@ -2268,20 +2341,20 @@ class Event {
 
 			$start_ts   = $start_date ? strtotime( $start_date ) : null;
 			$end_ts     = $end_date ? strtotime( $end_date ) : null;
-			$is_all_day = false;
+			// Authoritative source: event_days[0].all_day. Fall back to legacy top-level
+			// meta only when the day item has no explicit flag (undefined, not just false).
+			$days       = self::get_event_days();
+			$first_day  = ! empty( $days ) && is_array( $days ) ? $days[0] : array();
+			$is_all_day = array_key_exists( 'all_day', (array) $first_day )
+				? (bool) $first_day['all_day']
+				: (bool) get_post_meta( self::$event_id, 'all_day', true );
 
 			if ( $start_ts ) {
-				if ( $is_all_day ) {
-					$line = eventkoi_date( 'M j, Y', $start_ts ) . ( $end_ts ? ' — ' . eventkoi_date( 'M j, Y', $end_ts ) : '' );
-				} else {
-					$start_str = eventkoi_date( 'M j, Y, g:ia', $start_ts );
-					$line      = $end_ts ? $start_str . ' — ' . eventkoi_date( 'M j, Y, g:ia', $end_ts ) : $start_str;
-				}
-
+				$line      = eventkoi_format_datetime_range( $start_ts, $end_ts, $is_all_day );
 				$outputs[] = self::wrap_datetime_with_data( $line, $start_ts, $end_ts, $event_tz, $is_all_day );
 			}
 		} else {
-			// Existing per-day rendering.
+			// Per-day / per-rule rendering.
 			foreach ( $data as $item ) {
 				if ( empty( $item['start_date'] ) ) {
 					continue;
@@ -2291,12 +2364,7 @@ class Event {
 				$end_ts     = ! empty( $item['end_date'] ) ? strtotime( $item['end_date'] ) : null;
 				$is_all_day = ! empty( $item['all_day'] );
 
-				if ( $is_all_day ) {
-					$line = eventkoi_date( 'M j, Y', $start_ts );
-				} else {
-					$start_str = eventkoi_date( 'M j, Y, g:ia', $start_ts );
-					$line      = $end_ts ? $start_str . ' - ' . eventkoi_date( 'g:ia', $end_ts ) : $start_str;
-				}
+				$line = eventkoi_format_datetime_range( $start_ts, $end_ts, $is_all_day );
 
 				if ( 'recurring' === $type ) {
 					$summary = self::render_rule_summary_single( $item );
@@ -2318,13 +2386,146 @@ class Event {
 	}
 
 	/**
+	 * Rendered event date (date only — no times, regardless of all_day).
+	 *
+	 * Use as the `event_date` dynamic token / block binding when you only want
+	 * the date portion of the event's first instance.
+	 *
+	 * @return string
+	 */
+	public static function rendered_date() {
+		$instance_ts = eventkoi_get_instance_id();
+		$type        = self::get_date_type();
+
+		// Instance-aware render for a specific recurring occurrence.
+		if ( $instance_ts && 'recurring' === $type ) {
+			$rules = self::get_recurrence_rules();
+			$rule  = $rules[0] ?? null;
+			if ( $rule ) {
+				$rule_start = ! empty( $rule['start_date'] ) ? strtotime( $rule['start_date'] . ' UTC' ) : null;
+				$rule_end   = ! empty( $rule['end_date'] ) ? strtotime( $rule['end_date'] . ' UTC' ) : null;
+				$duration   = ( $rule_start && $rule_end && $rule_end > $rule_start ) ? ( $rule_end - $rule_start ) : null;
+				$end_ts     = $duration ? ( $instance_ts + $duration ) : null;
+
+				$output = eventkoi_format_datetime_range( $instance_ts, $end_ts, true );
+
+				return apply_filters(
+					'eventkoi_rendered_event_date',
+					$output,
+					self::$event_id,
+					self::$event
+				);
+			}
+		}
+
+		$first = self::get_first_instance();
+
+		$start_ts = ! empty( $first['start_date'] ) ? strtotime( $first['start_date'] ) : null;
+		$end_ts   = ! empty( $first['end_date'] ) ? strtotime( $first['end_date'] ) : null;
+
+		if ( ! $start_ts ) {
+			return '';
+		}
+
+		if ( $end_ts && $end_ts < $start_ts ) {
+			$end_ts = null;
+		}
+
+		// Force all-day format: date(s) only, no times.
+		$output = eventkoi_format_datetime_range( $start_ts, $end_ts, true );
+
+		return apply_filters(
+			'eventkoi_rendered_event_date',
+			$output,
+			self::$event_id,
+			self::$event
+		);
+	}
+
+	/**
+	 * Rendered event time (time only — start, or start – end if same day).
+	 *
+	 * Returns an empty string for all-day events.
+	 *
+	 * @return string
+	 */
+	public static function rendered_time() {
+		$instance_ts = eventkoi_get_instance_id();
+		$type        = self::get_date_type();
+		$time_format = eventkoi_resolved_time_format();
+
+		// Instance-aware render for a specific recurring occurrence.
+		if ( $instance_ts && 'recurring' === $type ) {
+			$rules = self::get_recurrence_rules();
+			$rule  = $rules[0] ?? null;
+			if ( $rule ) {
+				if ( ! empty( $rule['all_day'] ) ) {
+					return apply_filters( 'eventkoi_rendered_event_time', '', self::$event_id, self::$event );
+				}
+
+				$rule_start = ! empty( $rule['start_date'] ) ? strtotime( $rule['start_date'] . ' UTC' ) : null;
+				$rule_end   = ! empty( $rule['end_date'] ) ? strtotime( $rule['end_date'] . ' UTC' ) : null;
+				$duration   = ( $rule_start && $rule_end && $rule_end > $rule_start ) ? ( $rule_end - $rule_start ) : null;
+				$end_ts     = $duration ? ( $instance_ts + $duration ) : null;
+
+				$start_str = wp_date( $time_format, $instance_ts );
+				$same_day  = $end_ts && wp_date( 'Y-m-d', $instance_ts ) === wp_date( 'Y-m-d', $end_ts );
+				$output    = $end_ts && $same_day
+					? $start_str . ' — ' . wp_date( $time_format, $end_ts )
+					: $start_str;
+
+				return apply_filters(
+					'eventkoi_rendered_event_time',
+					$output,
+					self::$event_id,
+					self::$event
+				);
+			}
+		}
+
+		$first = self::get_first_instance();
+
+		if ( ! empty( $first['all_day'] ) ) {
+			return apply_filters( 'eventkoi_rendered_event_time', '', self::$event_id, self::$event );
+		}
+
+		$start_ts = ! empty( $first['start_date'] ) ? strtotime( $first['start_date'] ) : null;
+		$end_ts   = ! empty( $first['end_date'] ) ? strtotime( $first['end_date'] ) : null;
+
+		if ( ! $start_ts ) {
+			return apply_filters( 'eventkoi_rendered_event_time', '', self::$event_id, self::$event );
+		}
+
+		if ( $end_ts && $end_ts < $start_ts ) {
+			$end_ts = null;
+		}
+
+		$start_str = wp_date( $time_format, $start_ts );
+
+		$same_day = $end_ts && wp_date( 'Y-m-d', $start_ts ) === wp_date( 'Y-m-d', $end_ts );
+		if ( $end_ts && $same_day ) {
+			$output = $start_str . ' — ' . wp_date( $time_format, $end_ts );
+		} else {
+			$output = $start_str;
+		}
+
+		return apply_filters(
+			'eventkoi_rendered_event_time',
+			$output,
+			self::$event_id,
+			self::$event
+		);
+	}
+
+	/**
 	 * Rendered event datetime (start-end formatted, respects all_day).
 	 *
 	 * @return string
 	 */
 	public static function rendered_datetime() {
-		$type     = self::get_date_type();
-		$event_tz = self::get_timezone();
+		$type        = self::get_date_type();
+		$event_tz    = self::get_timezone();
+		$instance_ts = eventkoi_get_instance_id();
 
 		if ( self::get_tbc() ) {
 			$tbc_note = self::get_tbc_note();
@@ -2336,14 +2537,48 @@ class Event {
 			return apply_filters( 'eventkoi_rendered_event_datetime', $message, self::$event_id, self::$event );
 		}
 
+		// Instance-aware render for a specific recurring occurrence (e.g. /event/slug/1778058000/
+		// or ?instance=1778058000 on any page that invokes the shortcode or dynamic tag).
+		if ( $instance_ts && 'recurring' === $type ) {
+			$rules = self::get_recurrence_rules();
+			foreach ( $rules as $rule ) {
+				$rule_start = ! empty( $rule['start_date'] ) ? strtotime( $rule['start_date'] . ' UTC' ) : null;
+				$rule_end   = ! empty( $rule['end_date'] ) ? strtotime( $rule['end_date'] . ' UTC' ) : null;
+				$duration   = ( $rule_start && $rule_end && $rule_end > $rule_start ) ? ( $rule_end - $rule_start ) : null;
+				$end_ts     = $duration ? ( $instance_ts + $duration ) : null;
+				$is_all_day = ! empty( $rule['all_day'] );
+
+				$line = eventkoi_format_datetime_range( $instance_ts, $end_ts, $is_all_day );
+				$line = self::wrap_datetime_with_data( $line, $instance_ts, $end_ts, $event_tz, $is_all_day );
+
+				return apply_filters(
+					'eventkoi_rendered_event_datetime',
+					wp_kses_post( $line ),
+					self::$event_id,
+					self::$event
+				);
+			}
+		}
+
 		if ( 'recurring' === $type ) {
 			$data = self::get_recurrence_rules();
 		} else {
 			$data = self::get_event_days();
 		}
 
-		if ( empty( $data ) || ! is_array( $data ) ) {
-			return '';
+		// Fall back to post-meta start/end when get_event_days returns a
+		// placeholder row with empty fields (some standard events). Without
+		// this, the dynamic token / block binding renders empty even though
+		// start_date is set in post meta.
+		if ( ! is_array( $data ) || empty( array_filter( $data, static function ( $row ) {
+			return is_array( $row ) && ! empty( $row['start_date'] );
+		} ) ) ) {
+			$first = self::get_first_instance();
+			if ( ! empty( $first['start_date'] ) ) {
+				$data = array( $first );
+			} else {
+				return '';
+			}
 		}
 
 		$outputs = array();
@@ -2367,19 +2602,7 @@ class Event {
 				$end_ts = null;
 			}
 
-			if ( $is_all_day ) {
-				$line = eventkoi_date( 'M j, Y', $start_ts );
-			} else {
-				$start_str = eventkoi_date( 'M j, Y, g:ia', $start_ts );
-
-				if ( $end_ts ) {
-					$end_str    = eventkoi_date( 'g:ia', $end_ts );
-					$start_str .= ' - ' . $end_str;
-				}
-
-				$line = $start_str;
-			}
-
+			$line      = eventkoi_format_datetime_range( $start_ts, $end_ts, $is_all_day );
 			$outputs[] = self::wrap_datetime_with_data( $line, $start_ts, $end_ts, $event_tz, $is_all_day );
 		}
 
@@ -2442,6 +2665,638 @@ class Event {
 		}
 
 		return '';
+	}
+
+	/**
+	 * Fetch active tickets for the current event, cached per-request.
+	 *
+	 * @return array<int,object> Array of ticket rows ordered by sort_order.
+	 */
+	protected static function get_active_tickets() {
+		static $cache = array();
+
+		$event_id = (int) self::$event_id;
+		if ( $event_id <= 0 ) {
+			return array();
+		}
+
+		if ( isset( $cache[ $event_id ] ) ) {
+			return $cache[ $event_id ];
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'eventkoi_tickets';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT id, name, price, currency, quantity_available, quantity_sold, sale_start, sale_end, sort_order FROM {$table} WHERE event_id = %d AND status = %s ORDER BY sort_order ASC, id ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$event_id,
+				'active'
+			)
+		);
+
+		$cache[ $event_id ] = is_array( $rows ) ? $rows : array();
+		return $cache[ $event_id ];
+	}
+
+	/**
+	 * Compute capacity / sold / held / remaining for the current event.
+	 *
+	 * Mirrors the logic used by the public-tickets API so the event-level
+	 * tokens stay consistent with the checkout widget's numbers.
+	 *
+	 * @return array{capacity: int|null, sold: int, held: int, remaining: int|null}
+	 */
+	protected static function get_capacity_snapshot() {
+		static $cache = array();
+
+		$event_id = (int) self::$event_id;
+		if ( $event_id <= 0 ) {
+			return array(
+				'capacity'  => null,
+				'sold'      => 0,
+				'held'      => 0,
+				'remaining' => null,
+			);
+		}
+
+		if ( isset( $cache[ $event_id ] ) ) {
+			return $cache[ $event_id ];
+		}
+
+		$tickets = self::get_active_tickets();
+
+		if ( empty( $tickets ) ) {
+			$cache[ $event_id ] = array(
+				'capacity'  => null,
+				'sold'      => 0,
+				'held'      => 0,
+				'remaining' => null,
+			);
+			return $cache[ $event_id ];
+		}
+
+		global $wpdb;
+		$orders_table = $wpdb->prefix . 'eventkoi_ticket_orders';
+
+		// Remote ticket sales (authoritative sold counts per ticket).
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$sales_rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT ticket_id, SUM(quantity) AS qty FROM {$orders_table} WHERE event_id = %d AND payment_status IN ('complete','completed','succeeded','partially_refunded') GROUP BY ticket_id", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$event_id
+			)
+		);
+
+		$remote_sales = array();
+		if ( $sales_rows ) {
+			foreach ( $sales_rows as $row ) {
+				$tid = absint( $row->ticket_id ?? 0 );
+				if ( $tid > 0 ) {
+					$remote_sales[ $tid ] = absint( $row->qty ?? 0 );
+				}
+			}
+		}
+
+		// Held quantity per ticket (holds expire after 15 minutes server-side).
+		$hold_duration = defined( '\\EventKoi\\API\\Tickets::HOLD_DURATION' )
+			? (int) constant( '\\EventKoi\\API\\Tickets::HOLD_DURATION' )
+			: 15 * MINUTE_IN_SECONDS;
+		$hold_threshold = gmdate( 'Y-m-d H:i:s', time() - $hold_duration );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$hold_rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT ticket_id, COALESCE(SUM(quantity),0) AS qty FROM {$orders_table} WHERE event_id = %d AND payment_status = 'hold' AND created_at > %s GROUP BY ticket_id", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$event_id,
+				$hold_threshold
+			)
+		);
+
+		$held_per_ticket = array();
+		if ( $hold_rows ) {
+			foreach ( $hold_rows as $row ) {
+				$tid = absint( $row->ticket_id ?? 0 );
+				if ( $tid > 0 ) {
+					$held_per_ticket[ $tid ] = absint( $row->qty ?? 0 );
+				}
+			}
+		}
+
+		$capacity  = 0;
+		$sold      = 0;
+		$held      = 0;
+		$unlimited = false;
+
+		foreach ( $tickets as $ticket ) {
+			$tid = (int) $ticket->id;
+
+			if ( null === $ticket->quantity_available || '' === $ticket->quantity_available ) {
+				$unlimited = true;
+			} else {
+				$capacity += absint( $ticket->quantity_available );
+			}
+
+			$local_sold  = absint( $ticket->quantity_sold );
+			$remote_sold = isset( $remote_sales[ $tid ] ) ? $remote_sales[ $tid ] : 0;
+			$sold       += max( $local_sold, $remote_sold );
+
+			$held += isset( $held_per_ticket[ $tid ] ) ? $held_per_ticket[ $tid ] : 0;
+		}
+
+		$remaining = null;
+		if ( ! $unlimited ) {
+			$remaining = max( $capacity - $sold - $held, 0 );
+		}
+
+		$cache[ $event_id ] = array(
+			'capacity'  => $unlimited ? null : $capacity,
+			'sold'      => $sold,
+			'held'      => $held,
+			'remaining' => $remaining,
+		);
+
+		return $cache[ $event_id ];
+	}
+
+	/**
+	 * Whether a ticket row is currently on sale based on sale_start / sale_end.
+	 *
+	 * @param object $ticket Ticket row.
+	 * @return bool
+	 */
+	protected static function is_ticket_on_sale( $ticket ) {
+		if ( ! is_object( $ticket ) ) {
+			return false;
+		}
+		$now           = time();
+		$sale_start_ts = ! empty( $ticket->sale_start ) ? strtotime( $ticket->sale_start . ' UTC' ) : 0;
+		$sale_end_ts   = ! empty( $ticket->sale_end ) ? strtotime( $ticket->sale_end . ' UTC' ) : 0;
+
+		if ( $sale_start_ts && $now < $sale_start_ts ) {
+			return false;
+		}
+		if ( $sale_end_ts && $now > $sale_end_ts ) {
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * Rendered total ticket capacity across all active tickets.
+	 *
+	 * Returns empty string when any ticket is unlimited.
+	 *
+	 * @return string
+	 */
+	public static function rendered_capacity() {
+		$snap   = self::get_capacity_snapshot();
+		$output = null === $snap['capacity'] ? '' : (string) $snap['capacity'];
+		return apply_filters( 'eventkoi_rendered_event_capacity', $output, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered remaining capacity (capacity - sold - held, floor 0).
+	 *
+	 * @return string
+	 */
+	public static function rendered_capacity_remaining() {
+		$snap   = self::get_capacity_snapshot();
+		$output = null === $snap['remaining'] ? '' : (string) $snap['remaining'];
+		return apply_filters( 'eventkoi_rendered_event_capacity_remaining', $output, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered sold capacity across all active tickets.
+	 *
+	 * @return string
+	 */
+	public static function rendered_capacity_sold() {
+		$snap   = self::get_capacity_snapshot();
+		$output = (string) $snap['sold'];
+		return apply_filters( 'eventkoi_rendered_event_capacity_sold', $output, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered "Sold out" label when the event is sold out, otherwise empty.
+	 *
+	 * @return string
+	 */
+	public static function rendered_sold_out() {
+		$snap    = self::get_capacity_snapshot();
+		$is_full = null !== $snap['capacity'] && $snap['capacity'] > 0 && 0 === $snap['remaining'];
+		$label   = $is_full ? __( 'Sold out', 'eventkoi-lite' ) : '';
+		return apply_filters( 'eventkoi_rendered_event_sold_out', $label, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered "Low stock" label when remaining stock is at or below the threshold.
+	 *
+	 * Threshold defaults to 10% of capacity, with a minimum of 5.
+	 *
+	 * @return string
+	 */
+	public static function rendered_low_stock() {
+		$snap = self::get_capacity_snapshot();
+
+		if ( null === $snap['capacity'] || $snap['capacity'] <= 0 || null === $snap['remaining'] ) {
+			return apply_filters( 'eventkoi_rendered_event_low_stock', '', self::$event_id, self::$event );
+		}
+
+		$default_threshold = max( 5, (int) ceil( $snap['capacity'] * 0.1 ) );
+		/**
+		 * Override the "low stock" threshold.
+		 *
+		 * @param int $threshold Default computed threshold.
+		 * @param int $event_id  Event ID.
+		 * @param int $capacity  Total capacity.
+		 */
+		$threshold = (int) apply_filters( 'eventkoi_low_stock_threshold', $default_threshold, self::$event_id, $snap['capacity'] );
+
+		$is_low = $snap['remaining'] > 0 && $snap['remaining'] <= $threshold;
+		$label  = $is_low ? __( 'Low stock', 'eventkoi-lite' ) : '';
+
+		return apply_filters( 'eventkoi_rendered_event_low_stock', $label, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered number of active ticket types for the event.
+	 *
+	 * @return string
+	 */
+	public static function rendered_ticket_count() {
+		$tickets = self::get_active_tickets();
+		$output  = (string) count( $tickets );
+		return apply_filters( 'eventkoi_rendered_event_ticket_count', $output, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered comma-separated list of active ticket names in sort order.
+	 *
+	 * @return string
+	 */
+	public static function rendered_ticket_summary() {
+		$tickets = self::get_active_tickets();
+		$names   = array();
+		foreach ( $tickets as $ticket ) {
+			$name = isset( $ticket->name ) ? trim( (string) $ticket->name ) : '';
+			if ( '' !== $name ) {
+				$names[] = $name;
+			}
+		}
+		$output = implode( ', ', $names );
+		return apply_filters( 'eventkoi_rendered_event_ticket_summary', $output, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered earliest sale_start timestamp across active tickets.
+	 *
+	 * @return string
+	 */
+	public static function rendered_sales_start() {
+		$tickets  = self::get_active_tickets();
+		$earliest = null;
+		foreach ( $tickets as $ticket ) {
+			if ( empty( $ticket->sale_start ) ) {
+				continue;
+			}
+			$ts = strtotime( $ticket->sale_start . ' UTC' );
+			if ( ! $ts ) {
+				continue;
+			}
+			if ( null === $earliest || $ts < $earliest ) {
+				$earliest = $ts;
+			}
+		}
+
+		$output = null === $earliest ? '' : eventkoi_format_datetime_range( $earliest, null, false );
+		return apply_filters( 'eventkoi_rendered_event_sales_start', $output, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered latest sale_end timestamp across active tickets.
+	 *
+	 * @return string
+	 */
+	public static function rendered_sales_end() {
+		$tickets = self::get_active_tickets();
+		$latest  = null;
+		foreach ( $tickets as $ticket ) {
+			if ( empty( $ticket->sale_end ) ) {
+				continue;
+			}
+			$ts = strtotime( $ticket->sale_end . ' UTC' );
+			if ( ! $ts ) {
+				continue;
+			}
+			if ( null === $latest || $ts > $latest ) {
+				$latest = $ts;
+			}
+		}
+
+		$output = null === $latest ? '' : eventkoi_format_datetime_range( $latest, null, false );
+		return apply_filters( 'eventkoi_rendered_event_sales_end', $output, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Format a price with the ticket's currency, preferring wc_price() when available.
+	 *
+	 * @param float  $price    Price in major units (e.g. 10.00).
+	 * @param string $currency 3-letter currency code.
+	 * @return string
+	 */
+	protected static function format_ticket_price( $price, $currency ) {
+		$price    = (float) $price;
+		$currency = strtoupper( trim( (string) $currency ) );
+		if ( '' === $currency ) {
+			$currency = 'USD';
+		}
+
+		if ( function_exists( 'wc_price' ) ) {
+			return wp_strip_all_tags( wc_price( $price, array( 'currency' => $currency ) ) );
+		}
+
+		$symbol_map = array(
+			'USD' => '$',
+			'EUR' => '€',
+			'GBP' => '£',
+			'JPY' => '¥',
+			'CNY' => '¥',
+			'CAD' => 'C$',
+			'AUD' => 'A$',
+			'SGD' => 'S$',
+			'INR' => '₹',
+		);
+		$symbol    = isset( $symbol_map[ $currency ] ) ? $symbol_map[ $currency ] : $currency . ' ';
+		$formatted = number_format_i18n( $price, 2 );
+		return $symbol . $formatted;
+	}
+
+	/**
+	 * Compute the min / max active-ticket prices with a shared currency.
+	 *
+	 * @return array{min: float|null, max: float|null, currency: string}
+	 */
+	protected static function get_ticket_price_snapshot() {
+		$tickets = self::get_active_tickets();
+		$min     = null;
+		$max     = null;
+		$cur     = '';
+		foreach ( $tickets as $ticket ) {
+			if ( ! isset( $ticket->price ) ) {
+				continue;
+			}
+			$price = (float) $ticket->price;
+			if ( null === $min || $price < $min ) {
+				$min = $price;
+			}
+			if ( null === $max || $price > $max ) {
+				$max = $price;
+			}
+			if ( '' === $cur && ! empty( $ticket->currency ) ) {
+				$cur = (string) $ticket->currency;
+			}
+		}
+		return array(
+			'min'      => $min,
+			'max'      => $max,
+			'currency' => $cur,
+		);
+	}
+
+	/**
+	 * Rendered lowest ticket price across active tickets.
+	 *
+	 * @return string
+	 */
+	public static function rendered_ticket_price_from() {
+		$snap = self::get_ticket_price_snapshot();
+		$out  = null === $snap['min'] ? '' : self::format_ticket_price( $snap['min'], $snap['currency'] );
+		return apply_filters( 'eventkoi_rendered_event_ticket_price_from', $out, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered highest ticket price across active tickets. Empty when all tickets share a price.
+	 *
+	 * @return string
+	 */
+	public static function rendered_ticket_price_to() {
+		$snap = self::get_ticket_price_snapshot();
+		if ( null === $snap['max'] || $snap['min'] === $snap['max'] ) {
+			return apply_filters( 'eventkoi_rendered_event_ticket_price_to', '', self::$event_id, self::$event );
+		}
+		return apply_filters(
+			'eventkoi_rendered_event_ticket_price_to',
+			self::format_ticket_price( $snap['max'], $snap['currency'] ),
+			self::$event_id,
+			self::$event
+		);
+	}
+
+	/**
+	 * Rendered price range "$min – $max", collapsing to single value when prices are equal.
+	 *
+	 * @return string
+	 */
+	public static function rendered_ticket_price_range() {
+		$snap = self::get_ticket_price_snapshot();
+		if ( null === $snap['min'] ) {
+			return apply_filters( 'eventkoi_rendered_event_ticket_price_range', '', self::$event_id, self::$event );
+		}
+		$from = self::format_ticket_price( $snap['min'], $snap['currency'] );
+		if ( $snap['min'] === $snap['max'] ) {
+			$out = $from;
+		} else {
+			$to  = self::format_ticket_price( $snap['max'], $snap['currency'] );
+			$out = $from . ' – ' . $to;
+		}
+		return apply_filters( 'eventkoi_rendered_event_ticket_price_range', $out, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Resolve the effective event start timestamp, honouring the instance context
+	 * so date-format tokens match the rest of the renderers under /event/slug/{ts}/.
+	 *
+	 * @return int|null
+	 */
+	protected static function get_effective_start_timestamp() {
+		$instance_ts = eventkoi_get_instance_id();
+		$type        = self::get_date_type();
+
+		if ( $instance_ts && 'recurring' === $type ) {
+			return (int) $instance_ts;
+		}
+
+		$first = self::get_first_instance();
+		if ( ! empty( $first['start_date'] ) ) {
+			$ts = strtotime( $first['start_date'] );
+			if ( $ts ) {
+				return (int) $ts;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Rendered event year (YYYY).
+	 *
+	 * @return string
+	 */
+	public static function rendered_date_year() {
+		$ts  = self::get_effective_start_timestamp();
+		$out = $ts ? wp_date( 'Y', $ts ) : '';
+		return apply_filters( 'eventkoi_rendered_event_date_year', $out, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered event month full name ("May").
+	 *
+	 * @return string
+	 */
+	public static function rendered_date_month() {
+		$ts  = self::get_effective_start_timestamp();
+		$out = $ts ? wp_date( 'F', $ts ) : '';
+		return apply_filters( 'eventkoi_rendered_event_date_month', $out, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered event month short name ("May").
+	 *
+	 * @return string
+	 */
+	public static function rendered_date_month_short() {
+		$ts  = self::get_effective_start_timestamp();
+		$out = $ts ? wp_date( 'M', $ts ) : '';
+		return apply_filters( 'eventkoi_rendered_event_date_month_short', $out, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered event day number without leading zero ("4").
+	 *
+	 * @return string
+	 */
+	public static function rendered_date_day() {
+		$ts  = self::get_effective_start_timestamp();
+		$out = $ts ? wp_date( 'j', $ts ) : '';
+		return apply_filters( 'eventkoi_rendered_event_date_day', $out, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered event day name ("Monday").
+	 *
+	 * @return string
+	 */
+	public static function rendered_date_day_name() {
+		$ts  = self::get_effective_start_timestamp();
+		$out = $ts ? wp_date( 'l', $ts ) : '';
+		return apply_filters( 'eventkoi_rendered_event_date_day_name', $out, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered event date in ISO form ("2026-05-04").
+	 *
+	 * @return string
+	 */
+	public static function rendered_date_iso() {
+		$ts  = self::get_effective_start_timestamp();
+		$out = $ts ? wp_date( 'Y-m-d', $ts ) : '';
+		return apply_filters( 'eventkoi_rendered_event_date_iso', $out, self::$event_id, self::$event );
+	}
+
+	/**
+	 * RSVP counts/capacity snapshot. Lite has no recurring events, so this is
+	 * always the event-level aggregate.
+	 *
+	 * @return array{capacity:int, going:int, maybe:int, remaining:int|null}
+	 */
+	protected static function get_rsvp_snapshot() {
+		static $cache = array();
+
+		$event_id = (int) self::$event_id;
+		if ( $event_id <= 0 ) {
+			return array( 'capacity' => 0, 'going' => 0, 'maybe' => 0, 'remaining' => null );
+		}
+		if ( isset( $cache[ $event_id ] ) ) {
+			return $cache[ $event_id ];
+		}
+
+		$capacity = self::get_rsvp_capacity();
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'eventkoi_rsvps';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT status, COALESCE(SUM(1 + guests),0) AS cnt FROM {$table} WHERE event_id = %d AND status IN ('going','maybe') GROUP BY status", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$event_id
+			)
+		);
+
+		$going = 0;
+		$maybe = 0;
+		if ( $rows ) {
+			foreach ( $rows as $r ) {
+				if ( 'going' === $r->status ) {
+					$going = absint( $r->cnt );
+				} elseif ( 'maybe' === $r->status ) {
+					$maybe = absint( $r->cnt );
+				}
+			}
+		}
+
+		$remaining = $capacity > 0 ? max( $capacity - $going, 0 ) : null;
+		$cache[ $event_id ] = array(
+			'capacity'  => $capacity,
+			'going'     => $going,
+			'maybe'     => $maybe,
+			'remaining' => $remaining,
+		);
+		return $cache[ $event_id ];
+	}
+
+	/**
+	 * Rendered RSVP capacity. Empty string when unlimited.
+	 *
+	 * @return string
+	 */
+	public static function rendered_rsvp_capacity() {
+		$snap = self::get_rsvp_snapshot();
+		$out  = $snap['capacity'] > 0 ? (string) $snap['capacity'] : '';
+		return apply_filters( 'eventkoi_rendered_event_rsvp_capacity', $out, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered remaining RSVP spots.
+	 *
+	 * @return string
+	 */
+	public static function rendered_rsvp_remaining() {
+		$snap = self::get_rsvp_snapshot();
+		$out  = null === $snap['remaining'] ? '' : (string) $snap['remaining'];
+		return apply_filters( 'eventkoi_rendered_event_rsvp_remaining', $out, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered going RSVP count.
+	 *
+	 * @return string
+	 */
+	public static function rendered_rsvp_going() {
+		$snap = self::get_rsvp_snapshot();
+		return apply_filters( 'eventkoi_rendered_event_rsvp_going', (string) $snap['going'], self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered "RSVP full" label when at capacity.
+	 *
+	 * @return string
+	 */
+	public static function rendered_rsvp_full() {
+		$snap    = self::get_rsvp_snapshot();
+		$is_full = $snap['capacity'] > 0 && null !== $snap['remaining'] && 0 === $snap['remaining'];
+		$label   = $is_full ? __( 'RSVP full', 'eventkoi-lite' ) : '';
+		return apply_filters( 'eventkoi_rendered_event_rsvp_full', $label, self::$event_id, self::$event );
 	}
 
 	/**
@@ -2597,7 +3452,10 @@ class Event {
 					if ( isset( $rule['ends'] ) && 'after' === $rule['ends'] && ! empty( $rule['ends_after'] ) ) {
 						$options['COUNT'] = absint( $rule['ends_after'] );
 					} elseif ( isset( $rule['ends'] ) && 'on' === $rule['ends'] && ! empty( $rule['ends_on'] ) ) {
-						$options['UNTIL'] = new \DateTimeImmutable( $rule['ends_on'] );
+						$until = eventkoi_recurrence_until( $rule['ends_on'] );
+						if ( $until ) {
+							$options['UNTIL'] = $until;
+						}
 					}
 					if ( 'week' === $frequency && ! empty( $rule['weekdays'] ) ) {
 						$map   = array( 'MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU' );
@@ -2731,7 +3589,10 @@ class Event {
 					if ( 'after' === $rule['ends'] && ! empty( $rule['ends_after'] ) ) {
 						$options['COUNT'] = absint( $rule['ends_after'] );
 					} elseif ( 'on' === $rule['ends'] && ! empty( $rule['ends_on'] ) ) {
-						$options['UNTIL'] = new \DateTimeImmutable( $rule['ends_on'], $tz_wp );
+						$until = eventkoi_recurrence_until( $rule['ends_on'], $tz_wp );
+						if ( $until ) {
+							$options['UNTIL'] = $until;
+						}
 					} elseif ( 'never' === $rule['ends'] ) {
 						return array(
 							'start'       => $dt_start_local,
@@ -2814,6 +3675,40 @@ class Event {
 		return array(
 			'start' => null,
 			'end'   => null,
+		);
+	}
+
+	/**
+	 * When a non-recurring event's start_timestamp changes, re-key existing
+	 * RSVP rows from the old instance_ts to the new one so the attendee list
+	 * does not appear empty after a date edit (PROD-449).
+	 *
+	 * @param int $old_ts Previous start_timestamp.
+	 * @param int $new_ts New start_timestamp.
+	 */
+	private static function migrate_rsvp_instance_ts( $old_ts, $new_ts ) {
+		$old_ts = (int) $old_ts;
+		$new_ts = (int) $new_ts;
+
+		if ( ! self::$event_id || $old_ts <= 0 || $new_ts <= 0 || $old_ts === $new_ts ) {
+			return;
+		}
+
+		if ( 'recurring' === self::get_date_type() ) {
+			return;
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'eventkoi_rsvps';
+		$wpdb->update( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			$table,
+			array( 'instance_ts' => $new_ts ),
+			array(
+				'event_id'    => (int) self::$event_id,
+				'instance_ts' => $old_ts,
+			),
+			array( '%d' ),
+			array( '%d', '%d' )
 		);
 	}
 }

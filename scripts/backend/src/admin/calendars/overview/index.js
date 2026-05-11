@@ -51,11 +51,26 @@ function CalendarNameCell({ row }) {
   const isDefaultCal =
     parseInt(row.original.id) === parseInt(eventkoi_params.default_cal);
   const url = `#/calendars/${row.original.id}/main`;
+  const color = row.original.color;
+  const isTransparent = !color || color === "transparent";
+  const dotStyle = isTransparent
+    ? {
+        backgroundImage:
+          "linear-gradient(45deg, #ccc 25%, transparent 25%), linear-gradient(-45deg, #ccc 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #ccc 75%), linear-gradient(-45deg, transparent 75%, #ccc 75%)",
+        backgroundSize: "6px 6px",
+        backgroundPosition: "0 0, 0 3px, 3px -3px, -3px 0",
+      }
+    : { backgroundColor: color };
 
   return (
     <div className="grid space-y-1">
       <div className="flex gap-2 items-start text-foreground">
         <span className="inline">
+          <span
+            aria-hidden="true"
+            style={dotStyle}
+            className="inline-block w-3 h-3 rounded-full shrink-0 mr-2 align-middle relative -top-0.5"
+          />
           <a
             href={url}
             className="inline font-medium hover:underline hover:decoration-dotted underline-offset-4"
@@ -107,7 +122,7 @@ function ShortcodeCell({ row }) {
               size="icon"
               className="absolute h-8 right-[5px] top-[4px] border-none cursor-pointer hover:bg-input"
               onClick={handleCopy}
-              aria-label="Copy shortcode"
+              aria-label={__("Copy shortcode", "eventkoi-lite")}
             >
               {copied ? (
                 <CheckCheck className="h-4 w-4 transition-all duration-200" />
@@ -121,7 +136,7 @@ function ShortcodeCell({ row }) {
             side="top"
             sideOffset={8}
           >
-            {copied ? "Copied!" : "Copy shortcode"}
+            {copied ? __("Copied!", "eventkoi-lite") : __("Copy shortcode", "eventkoi-lite")}
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -133,7 +148,7 @@ const columns = [
   {
     accessorKey: "name",
     header: ({ column }) => (
-      <SortButton title="Calendar name" column={column} />
+      <SortButton title={__("Calendar name", "eventkoi-lite")} column={column} />
     ),
     cell: CalendarNameCell,
     filterFn: multiColumnSearch,
@@ -141,7 +156,7 @@ const columns = [
   },
   {
     accessorKey: "slug",
-    header: ({ column }) => <SortButton title="Slug" column={column} />,
+    header: ({ column }) => <SortButton title={__("Slug", "eventkoi-lite")} column={column} />,
     cell: ({ row }) => (
       <div className="text-foreground">{row.getValue("slug")}</div>
     ),
@@ -150,14 +165,14 @@ const columns = [
   },
   {
     accessorKey: "shortcode",
-    header: ({ column }) => <SortButton title="Shortcode" column={column} />,
+    header: ({ column }) => <SortButton title={__("Shortcode", "eventkoi-lite")} column={column} />,
     cell: ShortcodeCell,
     filterFn: multiColumnSearch,
     sortingFn: "alphanumeric",
   },
   {
     accessorKey: "count",
-    header: ({ column }) => <SortButton title="Events count" column={column} />,
+    header: ({ column }) => <SortButton title={__("Events count", "eventkoi-lite")} column={column} />,
     cell: ({ row }) => (
       <div className="text-foreground text-right">{row.getValue("count")}</div>
     ),
@@ -211,7 +226,7 @@ function CalendarLinkIcon({
       rel="noopener noreferrer"
       className="ms-2 text-muted-foreground hover:text-foreground shrink-0 eventkoi-calendar-link-icon"
       data-default-cal-link={isDefaultCal ? "true" : undefined}
-      aria-label="View public calendar"
+      aria-label={__("View public calendar", "eventkoi-lite")}
       data-calendar-id={calendarId}
       onClick={(event) => {
         onLinkClick?.();
@@ -495,13 +510,13 @@ export function CalendarsOverview() {
           </span>
           <div className="text-[14px] font-semibold text-[#0D5342] leading-tight">
             <span className="block">
-              {__("EventKoi Plugin Tour Completed!", "eventkoi")}
+              {__("EventKoi Plugin Tour Completed!", "eventkoi-lite")}
             </span>
           </div>
           <button
             type="button"
             className="ml-auto p-0 text-[#555] hover:text-black transition-colors leading-none -mt-1"
-            aria-label={__("Close", "eventkoi")}
+            aria-label={__("Close", "eventkoi-lite")}
             style={{
               background: "transparent",
               border: "none",
@@ -519,7 +534,7 @@ export function CalendarsOverview() {
         <div className="p-4 border border-solid border-border bg-white rounded-b-lg flex flex-col gap-4">
           <div className="flex flex-col gap-4">
             <div className="text-[14px] text-[#161616] font-medium text-center w-full">
-              {__("What you can do next:", "eventkoi")}
+              {__("What you can do next:", "eventkoi-lite")}
             </div>
             <Button
               asChild
@@ -534,7 +549,7 @@ export function CalendarsOverview() {
                   "/wp-admin/admin.php?page=eventkoi"
                 }#/dashboard`}
               >
-                {__("Go to EventKoi Dashboard", "eventkoi")}
+                {__("Go to EventKoi Dashboard", "eventkoi-lite")}
               </a>
             </Button>
             <Button
@@ -549,7 +564,7 @@ export function CalendarsOverview() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {__("Learn how to customize an Event Template", "eventkoi")}
+                {__("Learn how to customize an Event Template", "eventkoi-lite")}
               </a>
             </Button>
           </div>
@@ -557,7 +572,7 @@ export function CalendarsOverview() {
           <p className="text-[12px] text-[#555] m-0">
             {__(
               "You can restart this Tour any time in the EventKoi Dashboard.",
-              "eventkoi"
+              "eventkoi-lite"
             )}
           </p>
         </div>
@@ -796,8 +811,8 @@ export function CalendarsOverview() {
     >
       <div className="flex flex-col gap-8">
         <div className="mx-auto flex w-full gap-2 justify-between">
-          <Heading className="eventkoi-calendars-heading">Calendars</Heading>
-          <AddButton title="Add calendar" url="/calendars/add" locked />
+          <Heading className="eventkoi-calendars-heading">{__("Calendars", "eventkoi-lite")}</Heading>
+          <AddButton title={__("Add calendar", "eventkoi-lite")} url="/calendars/add" locked />
         </div>
         <DataTable
           data={data}

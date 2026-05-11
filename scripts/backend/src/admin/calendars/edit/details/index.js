@@ -1,3 +1,4 @@
+import { __ } from "@wordpress/i18n";
 import { useOutletContext } from "react-router-dom";
 
 import { Separator } from "@/components/ui/separator";
@@ -17,7 +18,7 @@ export function CalendarEditDetails() {
     <Box>
       <div className="grid w-full">
         <Panel variant="header">
-          <Heading level={3}>Additional details</Heading>
+          <Heading level={3}>{__("Additional details", "eventkoi-lite")}</Heading>
         </Panel>
         <Separator />
         <CalendarDisplay calendar={calendar} setCalendar={setCalendar} />

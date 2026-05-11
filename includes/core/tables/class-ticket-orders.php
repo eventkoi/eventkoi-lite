@@ -22,7 +22,7 @@ class Ticket_Orders extends Table {
 	/**
 	 * {@inheritdoc}
 	 */
-	const SCHEMA_VERSION = '1.0.2';
+	const SCHEMA_VERSION = '1.0.3';
 
 	/**
 	 * Schema slug used for version tracking.
@@ -74,6 +74,7 @@ class Ticket_Orders extends Table {
 				`checked_in_at` datetime DEFAULT NULL,
 				`checkin_token` varchar(255) DEFAULT NULL,
 				`status` varchar(20) NOT NULL DEFAULT 'active',
+				`archived_prev_status` varchar(20) DEFAULT NULL,
 				`created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
 				`updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 				PRIMARY KEY (`id`),

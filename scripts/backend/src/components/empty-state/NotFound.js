@@ -24,12 +24,12 @@ export function NotFound({
 
   const entityLabel =
     {
-      order: __("Order", "eventkoi"),
-      event: __("Event", "eventkoi"),
-      calendar: __("Calendar", "eventkoi"),
-      ticket: __("Ticket", "eventkoi"),
-      item: __("Item", "eventkoi"),
-    }[type] || __("Item", "eventkoi");
+      order: __("Order", "eventkoi-lite"),
+      event: __("Event", "eventkoi-lite"),
+      calendar: __("Calendar", "eventkoi-lite"),
+      ticket: __("Ticket", "eventkoi-lite"),
+      item: __("Item", "eventkoi-lite"),
+    }[type] || __("Item", "eventkoi-lite");
 
   const fallbackPath =
     {
@@ -47,14 +47,14 @@ export function NotFound({
           <AlertCircle className="w-8 h-8" />
         </div>
         <h2 className="text-xl font-semibold mb-2 text-foreground">
-          {title || sprintf(__("%s not found", "eventkoi"), entityLabel)}
+          {title || sprintf(__("%s not found", "eventkoi-lite"), entityLabel)}
         </h2>
         <p className="text-muted-foreground text-sm mb-6">
           {message ||
             sprintf(
               __(
                 "This %s may have been deleted, or the link you followed is invalid.",
-                "eventkoi"
+                "eventkoi-lite"
               ),
               entityLabel.toLowerCase()
             )}
@@ -63,7 +63,7 @@ export function NotFound({
           onClick={() => navigate(actionTo || fallbackPath)}
           variant="default"
         >
-          {actionLabel || sprintf(__("Back to all %s", "eventkoi"), `${type}s`)}
+          {actionLabel || sprintf(__("Back to all %s", "eventkoi-lite"), `${type}s`)}
         </Button>
       </div>
     </Wrapper>

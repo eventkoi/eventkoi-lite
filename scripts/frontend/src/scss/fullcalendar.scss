@@ -7,11 +7,37 @@
 
 .fc {
   position: relative !important;
+  // Neutralise theme-injected table defaults (e.g. Divi's `.entry-content tr td`)
+  // that leak padding/borders/backgrounds into FullCalendar cells. Scoped to the
+  // interior grid cells only so our own header padding / event padding survives.
+  &.fc table {
+    border: 0;
+    margin: 0;
+  }
+  &.fc .fc-daygrid-day,
+  &.fc .fc-timegrid-slot,
+  &.fc .fc-timegrid-slot-label,
+  &.fc .fc-timegrid-col,
+  &.fc .fc-timegrid-axis,
+  &.fc .fc-daygrid-body td,
+  &.fc .fc-daygrid-body th {
+    padding: 0;
+    border-top-color: var(--fc-border-color);
+    color: inherit;
+    font-weight: inherit;
+  }
+  // Week view: drop redundant cell borders that stack with neighbours.
+  &.fc .fc-timegrid-axis.fc-scrollgrid-shrink {
+    border-bottom: 0;
+  }
+  &.fc .fc-scrollgrid-section-liquid > td {
+    border-right: 0;
+  }
+  &.fc tr.fc-scrollgrid-section-body:not(.fc-scrollgrid-section-liquid) td.fc-day {
+    border-bottom: 0;
+  }
   table {
     margin-bottom: 0;
-  }
-  .fc-timegrid-body {
-    border-left: 1px solid var(--fc-border-color);
   }
   a {
     color: inherit;
@@ -50,12 +76,6 @@
   }
   .fc-daygrid-day-top {
     flex-direction: row;
-  }
-  .fc-daygrid-body {
-    border-left: 1px solid var(--fc-border-color);
-  }
-  .fc-scrollgrid-section-body > td {
-    border-top: 1px solid var(--fc-border-color);
   }
   .fc-daygrid-day-number {
     text-decoration: none !important;

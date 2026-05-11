@@ -6,7 +6,7 @@ import {
 import { ProBadge } from "@/components/pro-badge";
 
 const tabs = [
-  { key: "default", label: "Default settings", to: "default" },
+  { key: "default", label: "Default settings", to: "default", cap: "eventkoi_settings_defaults" },
   {
     key: "fields",
     label: (
@@ -16,18 +16,22 @@ const tabs = [
       </span>
     ),
     to: "fields",
+    cap: "eventkoi_settings_fields",
   },
-  { key: "emails", label: "Emails", to: "emails" },
-  { key: "payments", label: "Payments", to: "payments" },
-  { key: "integrations", label: "API & integrations", to: "integrations" },
-  { key: "import", label: "Import", to: "import" },
+  { key: "emails", label: "Emails", to: "emails", cap: "eventkoi_settings_emails" },
+  { key: "payments", label: "Payments", to: "payments", cap: "eventkoi_settings_payments" },
+  { key: "integrations", label: "API & integrations", to: "integrations", cap: "eventkoi_settings_integrations" },
+  { key: "import", label: "Import", to: "import", cap: "eventkoi_settings_import" },
+  { key: "permissions", label: "User permissions", to: "permissions", cap: "eventkoi_settings_defaults" },
 ];
 
 export function SettingsTabs({ settings, setSettings, location }) {
   const ticketsEnabled = !!window?.eventkoi_params?.tickets_feature_enabled;
-  const visibleTabs = tabs.filter(
-    (item) => item.key !== "payments" || ticketsEnabled
-  );
+  const caps = window?.eventkoi_params?.caps || {};
+  const visibleTabs = tabs.filter((item) => {
+    if (item.key === "payments" && !ticketsEnabled) return false;
+    return !item.cap || caps[item.cap];
+  });
   const segments = location.pathname?.split("/").filter(Boolean) || [];
   const view = segments[1]; // /settings/<view>/...
 

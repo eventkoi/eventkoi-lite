@@ -50,7 +50,7 @@ class Elementor_Widgets {
 		$elements_manager->add_category(
 			'eventkoi',
 			array(
-				'title' => __( 'EventKoi', 'eventkoi' ),
+				'title' => __( 'EventKoi', 'eventkoi-lite' ),
 				'icon'  => 'eicon-calendar',
 			)
 		);

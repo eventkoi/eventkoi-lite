@@ -3,6 +3,7 @@
 import { Panel } from "@/components/panel";
 import { Label } from "@/components/ui/label";
 import { useEventEditContext } from "@/hooks/EventEditContext";
+import { __ } from "@wordpress/i18n";
 import { useEffect, useId, useRef, useState } from "react";
 
 export function EventDescription({ isInstance = false, value, onChange }) {
@@ -112,9 +113,9 @@ export function EventDescription({ isInstance = false, value, onChange }) {
 
   return (
     <Panel className="p-0">
-      <Label htmlFor={editorId}>Event description</Label>
+      <Label htmlFor={editorId}>{__("Event description", "eventkoi-lite")}</Label>
       <div className="text-muted-foreground mb-2">
-        Tell people what your event is about.
+        {__("Tell people what your event is about.", "eventkoi-lite")}
       </div>
 
       {showHTML ? (

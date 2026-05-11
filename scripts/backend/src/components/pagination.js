@@ -1,3 +1,4 @@
+import { __ } from "@wordpress/i18n";
 import { Button } from "@/components/ui/button";
 import {
   ChevronLeftIcon,
@@ -17,7 +18,7 @@ export function Pagination(props) {
         onClick={() => table.setPageIndex(0)}
         disabled={!table.getCanPreviousPage()}
       >
-        <span className="sr-only">Go to first page</span>
+        <span className="sr-only">{__("Go to first page", "eventkoi-lite")}</span>
         <DoubleArrowLeftIcon className="h-4 w-4" />
       </Button>
       <Button
@@ -26,7 +27,7 @@ export function Pagination(props) {
         onClick={() => table.previousPage()}
         disabled={!table.getCanPreviousPage()}
       >
-        <span className="sr-only">Go to previous page</span>
+        <span className="sr-only">{__("Go to previous page", "eventkoi-lite")}</span>
         <ChevronLeftIcon className="h-4 w-4" />
       </Button>
       <Button
@@ -35,7 +36,7 @@ export function Pagination(props) {
         onClick={() => table.nextPage()}
         disabled={!table.getCanNextPage()}
       >
-        <span className="sr-only">Go to next page</span>
+        <span className="sr-only">{__("Go to next page", "eventkoi-lite")}</span>
         <ChevronRightIcon className="h-4 w-4" />
       </Button>
       <Button
@@ -44,7 +45,7 @@ export function Pagination(props) {
         onClick={() => table.setPageIndex(table.getPageCount() - 1)}
         disabled={!table.getCanNextPage()}
       >
-        <span className="sr-only">Go to last page</span>
+        <span className="sr-only">{__("Go to last page", "eventkoi-lite")}</span>
         <DoubleArrowRightIcon className="h-4 w-4" />
       </Button>
     </div>

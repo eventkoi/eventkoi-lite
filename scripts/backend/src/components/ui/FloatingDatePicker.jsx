@@ -68,21 +68,26 @@ export function FloatingDatePicker({
                 : null
             }
             onChange={(date) => {
-              if (date) {
-                setOpen(false);
+              setOpen(false);
 
-                // Build the wall date manually from Y/M/D parts
-                const dtWall = DateTime.fromObject(
-                  {
-                    year: date.getFullYear(),
-                    month: date.getMonth() + 1,
-                    day: date.getDate(),
-                  },
-                  { zone: wpTz }
-                );
-
-                onChange(dtWall); // Pass Luxon DateTime in WP timezone
+              if (!date) {
+                // react-day-picker single mode fires onSelect(undefined)
+                // when the user clicks the already-selected day.
+                onChange(null);
+                return;
               }
+
+              // Build the wall date manually from Y/M/D parts
+              const dtWall = DateTime.fromObject(
+                {
+                  year: date.getFullYear(),
+                  month: date.getMonth() + 1,
+                  day: date.getDate(),
+                },
+                { zone: wpTz }
+              );
+
+              onChange(dtWall); // Pass Luxon DateTime in WP timezone
             }}
           />
         </div>

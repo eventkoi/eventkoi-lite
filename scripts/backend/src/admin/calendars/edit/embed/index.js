@@ -1,3 +1,4 @@
+import { __ } from "@wordpress/i18n";
 import { useOutletContext } from "react-router-dom";
 
 import { Separator } from "@/components/ui/separator";
@@ -16,7 +17,7 @@ export function CalendarEditEmbed() {
     <Box>
       <div className="grid w-full">
         <Panel variant="header">
-          <Heading level={3}>Embed</Heading>
+          <Heading level={3}>{__("Embed", "eventkoi-lite")}</Heading>
         </Panel>
         <Separator />
         <div className="flex flex-col px-6 py-8 w-full gap-10">

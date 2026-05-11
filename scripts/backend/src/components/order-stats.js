@@ -21,16 +21,16 @@ import { Calendar, Info } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 const TIME_RANGES = [
-  { value: "all", label: __("All time", "eventkoi") },
-  { value: "today", label: __("Today", "eventkoi") },
-  { value: "7d", label: __("Last 7 days", "eventkoi") },
-  { value: "30d", label: __("Last 30 days", "eventkoi") },
-  { value: "mtd", label: __("Month to date", "eventkoi") },
-  { value: "qtd", label: __("Quarter to date", "eventkoi") },
-  { value: "last_quarter", label: __("Last quarter", "eventkoi") },
-  { value: "ytd", label: __("Year to date", "eventkoi") },
-  { value: "365d", label: __("Last 365 days", "eventkoi") },
-  { value: "last_year", label: __("Last year", "eventkoi") },
+  { value: "all", label: __("All time", "eventkoi-lite") },
+  { value: "today", label: __("Today", "eventkoi-lite") },
+  { value: "7d", label: __("Last 7 days", "eventkoi-lite") },
+  { value: "30d", label: __("Last 30 days", "eventkoi-lite") },
+  { value: "mtd", label: __("Month to date", "eventkoi-lite") },
+  { value: "qtd", label: __("Quarter to date", "eventkoi-lite") },
+  { value: "last_quarter", label: __("Last quarter", "eventkoi-lite") },
+  { value: "ytd", label: __("Year to date", "eventkoi-lite") },
+  { value: "365d", label: __("Last 365 days", "eventkoi-lite") },
+  { value: "last_year", label: __("Last year", "eventkoi-lite") },
 ];
 
 function getDateRange(value) {
@@ -183,13 +183,13 @@ export function OrderStats({ timeRange, onTimeRangeChange }) {
       </div>
       <div className="grid grid-cols-4 grow">
         <Stat
-          line1={__("Total orders", "eventkoi")}
+          line1={__("Total orders", "eventkoi-lite")}
           line2={
             loading ? <Skeleton className="h-5 w-12" /> : stats.total_orders
           }
         />
         <Stat
-          line1={__("Net earnings", "eventkoi")}
+          line1={__("Net earnings", "eventkoi-lite")}
           line2={
             loading ? (
               <Skeleton className="h-5 w-16" />
@@ -224,7 +224,7 @@ export function OrderStats({ timeRange, onTimeRangeChange }) {
                       side="top"
                       sideOffset={8}
                     >
-                      {__("Net earnings are calculated after platform and Stripe processing fees.", "eventkoi")}
+                      {__("Net earnings are calculated after platform and Stripe processing fees.", "eventkoi-lite")}
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
@@ -233,13 +233,13 @@ export function OrderStats({ timeRange, onTimeRangeChange }) {
           }
         />
         <Stat
-          line1={__("Tickets sold", "eventkoi")}
+          line1={__("Tickets sold", "eventkoi-lite")}
           line2={
             loading ? <Skeleton className="h-5 w-12" /> : stats.total_tickets
           }
         />
         <Stat
-          line1={__("Total refunds", "eventkoi")}
+          line1={__("Total refunds", "eventkoi-lite")}
           line2={
             loading ? (
               <Skeleton className="h-5 w-16" />

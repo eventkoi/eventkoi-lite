@@ -55,8 +55,8 @@
     margin-top: 1.2rem; /* Matches WP's :where(.is-layout-flow)>* rule */
   }
 
-  /* Title */
-  .ek-event-title-default {
+  /* Title — defaults only apply to non-heading wrappers (div, p, span). */
+  .ek-event-title-default:where(div, p, span) {
     font-weight: 600;
     font-size: 1.25em;
   }

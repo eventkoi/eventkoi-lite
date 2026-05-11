@@ -4,7 +4,8 @@
     padding: 0;
   }
 
-  &.ek-event-title-default {
+  /* Default visual styles only apply to non-heading wrappers (div/p/span). */
+  &.ek-event-title-default:where(div, p, span) {
     font-weight: 600;
     font-size: 1.25em;
   }

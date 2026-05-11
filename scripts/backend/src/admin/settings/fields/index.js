@@ -1,3 +1,4 @@
+import { __ } from "@wordpress/i18n";
 import { Box } from "@/components/box";
 import { ProLaunch } from "@/components/dashboard/pro-launch";
 import { Heading } from "@/components/heading";
@@ -26,7 +27,7 @@ export function SettingsFields() {
       <ProLaunch headline="Upgrade to access Custom Fields" minimal />
       <Box className="gap-0">
         <Panel variant="header">
-          <Heading level={3}>Custom fields</Heading>
+          <Heading level={3}>{__("Custom fields", "eventkoi-lite")}</Heading>
           <p className="text-sm text-muted-foreground">
             Preview of Pro Custom Fields. Upgrade to enable.
           </p>
@@ -72,11 +73,11 @@ export function SettingsFields() {
                     <TableHead className="w-[50px]">
                       <Checkbox disabled />
                     </TableHead>
-                    <TableHead>Field name</TableHead>
-                    <TableHead>Type</TableHead>
+                    <TableHead>{__("Field name", "eventkoi-lite")}</TableHead>
+                    <TableHead>{__("Type", "eventkoi-lite")}</TableHead>
                     <TableHead>ID</TableHead>
-                    <TableHead>Groups</TableHead>
-                    <TableHead className="text-right">Last modified</TableHead>
+                    <TableHead>{__("Groups", "eventkoi-lite")}</TableHead>
+                    <TableHead className="text-right">{__("Last modified", "eventkoi-lite")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

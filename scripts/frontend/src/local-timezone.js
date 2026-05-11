@@ -52,7 +52,25 @@ function rewriteEventDates() {
     let startISO = node.getAttribute("data-start");
     const endISO = node.getAttribute("data-end");
     const tz = node.getAttribute("data-tz") || "UTC";
-    const isAllDay = node.getAttribute("data-all-day") === "1";
+    let isAllDay = node.getAttribute("data-all-day") === "1";
+
+    // Fallback: infer all-day from a full-day range (00:00:00 → 23:59:*)
+    // when the HTML wrapper doesn't carry the flag (older templates).
+    if (!isAllDay && startISO && endISO) {
+      const s = DateTime.fromISO(startISO, { zone: tz });
+      const e = DateTime.fromISO(endISO, { zone: tz });
+      if (
+        s.isValid &&
+        e.isValid &&
+        s.hour === 0 &&
+        s.minute === 0 &&
+        s.second === 0 &&
+        e.hour === 23 &&
+        e.minute >= 58
+      ) {
+        isAllDay = true;
+      }
+    }
 
     // Fallback: try to parse the text if data-start is missing.
     if (!startISO) {

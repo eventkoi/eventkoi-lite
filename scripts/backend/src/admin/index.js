@@ -47,6 +47,7 @@ import { SettingsOverview } from "@/admin/settings/overview";
 import { SettingsEmails } from "@/admin/settings/emails";
 import { SettingsPayments } from "@/admin/settings/payments";
 import { SettingsImport } from "@/admin/settings/import";
+import { SettingsPermissions } from "@/admin/settings/permissions";
 
 import { Nav } from "@/components/nav";
 import { FeatureDisabled } from "@/components/empty-state/FeatureDisabled";
@@ -133,7 +134,7 @@ function AdminLayout() {
                 element={
                   <FeatureDisabled
                     actionTo="../main"
-                    actionLabel={__("Back to event", "eventkoi")}
+                    actionLabel={__("Back to event", "eventkoi-lite")}
                   />
                 }
               />
@@ -142,7 +143,7 @@ function AdminLayout() {
                 element={
                   <FeatureDisabled
                     actionTo="../main"
-                    actionLabel={__("Back to event", "eventkoi")}
+                    actionLabel={__("Back to event", "eventkoi-lite")}
                   />
                 }
               />
@@ -205,6 +206,7 @@ function AdminLayout() {
           <Route path="fields" element={<SettingsFields />} />
           <Route path="integrations" element={<SettingsIntegrations />} />
           <Route path="import" element={<SettingsImport />} />
+          <Route path="permissions" element={<SettingsPermissions />} />
         </Route>
 
         <Route path="*" element={<Home />} />

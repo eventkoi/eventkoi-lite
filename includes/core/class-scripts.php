@@ -124,8 +124,8 @@ class Scripts {
 			'no_events'         => __( 'No events were found.', 'eventkoi-lite' ),
 			'timezone'          => wp_timezone_string(),
 			'timezone_offset'   => ( get_option( 'gmt_offset' ) ?? 0 ) * 3600,
-			'date_format'       => get_option( 'date_format' ),
-			'time_format_string'=> \eventkoi_apply_time_preference( get_option( 'time_format' ) ),
+			'date_format'       => \eventkoi_resolved_date_format(),
+			'time_format_string'=> \eventkoi_resolved_time_format(),
 			'gmap'              => array(
 				'api_key'   => $settings['gmap_api_key'] ?? '',
 				'connected' => ! empty( $settings['gmap_connection_status'] ),

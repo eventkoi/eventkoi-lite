@@ -6,6 +6,7 @@ import { __ } from "@wordpress/i18n";
 import {
   PanelBody,
   SelectControl,
+  ToggleControl,
   __experimentalToggleGroupControl as ToggleGroupControl,
   __experimentalToggleGroupControlOption as ToggleGroupControlOption,
   __experimentalToolsPanel as ToolsPanel,
@@ -34,7 +35,7 @@ export const Controls = (props) => {
     });
   };
 
-  const colors = [{ value: "color", label: __("Accent", "eventkoi") }];
+  const colors = [{ value: "color", label: __("Accent", "eventkoi-lite") }];
 
   const getCalendars = async () => {
     let response = await apiRequest({
@@ -58,20 +59,41 @@ export const Controls = (props) => {
   }, []);
 
   useEffect(() => {
+    if (attributes.selectAllCalendars) return;
     if (
       items.length > 0 &&
       (!attributes.calendars || attributes.calendars.length === 0)
     ) {
-      setAttributes({ calendars: [Number(eventkoi_params.default_cal)] });
+      const defaultId = Number(eventkoi_params.default_cal);
+      const existsInItems = items.some((it) => Number(it.value) === defaultId);
+      const seedId = existsInItems ? defaultId : Number(items[0].value);
+      if (seedId) {
+        setAttributes({ calendars: [seedId] });
+      }
     }
-  }, [items, attributes.calendars]);
+  }, [items, attributes.calendars, attributes.selectAllCalendars]);
 
   return (
     <>
-      <PanelBody title={__("Display options", "eventkoi")} initialOpen={true}>
-        {items && items.length > 0 && (
+      <PanelBody title={__("Display options", "eventkoi-lite")} initialOpen={true}>
+        <ToggleControl
+          label={__("Select all calendars", "eventkoi-lite")}
+          help={__(
+            "Automatically include every calendar — including any calendars added later.",
+            "eventkoi-lite"
+          )}
+          checked={!!attributes.selectAllCalendars}
+          onChange={(value) =>
+            setAttributes({
+              selectAllCalendars: value,
+              calendars: value ? [] : attributes.calendars || [],
+            })
+          }
+          __nextHasNoMarginBottom
+        />
+        {!attributes.selectAllCalendars && items && items.length > 0 && (
           <MultiSelectControl
-            label={__("Select calendar(s)", "eventkoi")}
+            label={__("Select calendar(s)", "eventkoi-lite")}
             value={attributes.calendars || []}
             options={items}
             onChange={(selected) => {
@@ -81,7 +103,7 @@ export const Controls = (props) => {
           />
         )}
         <ToggleGroupControl
-          label={__("Timeframe defaults to", "eventkoi")}
+          label={__("Timeframe defaults to", "eventkoi-lite")}
           value={timeframe}
           isBlock
           onChange={(newValue) => {
@@ -99,32 +121,32 @@ export const Controls = (props) => {
         </ToggleGroupControl>
 
         <SelectControl
-          label={__("Default month to display", "eventkoi")}
+          label={__("Default month to display", "eventkoi-lite")}
           value={attributes.default_month || ""}
           options={[
-            { label: __("Current month", "eventkoi"), value: "" },
-            { label: __("January", "eventkoi"), value: "january" },
-            { label: __("February", "eventkoi"), value: "february" },
-            { label: __("March", "eventkoi"), value: "march" },
-            { label: __("April", "eventkoi"), value: "april" },
-            { label: __("May", "eventkoi"), value: "may" },
-            { label: __("June", "eventkoi"), value: "june" },
-            { label: __("July", "eventkoi"), value: "july" },
-            { label: __("August", "eventkoi"), value: "august" },
-            { label: __("September", "eventkoi"), value: "september" },
-            { label: __("October", "eventkoi"), value: "october" },
-            { label: __("November", "eventkoi"), value: "november" },
-            { label: __("December", "eventkoi"), value: "december" },
+            { label: __("Current month", "eventkoi-lite"), value: "" },
+            { label: __("January", "eventkoi-lite"), value: "january" },
+            { label: __("February", "eventkoi-lite"), value: "february" },
+            { label: __("March", "eventkoi-lite"), value: "march" },
+            { label: __("April", "eventkoi-lite"), value: "april" },
+            { label: __("May", "eventkoi-lite"), value: "may" },
+            { label: __("June", "eventkoi-lite"), value: "june" },
+            { label: __("July", "eventkoi-lite"), value: "july" },
+            { label: __("August", "eventkoi-lite"), value: "august" },
+            { label: __("September", "eventkoi-lite"), value: "september" },
+            { label: __("October", "eventkoi-lite"), value: "october" },
+            { label: __("November", "eventkoi-lite"), value: "november" },
+            { label: __("December", "eventkoi-lite"), value: "december" },
           ]}
           onChange={(newMonth) => setAttributes({ default_month: newMonth })}
           __nextHasNoMarginBottom
         />
 
         <SelectControl
-          label={__("Default year to display", "eventkoi")}
+          label={__("Default year to display", "eventkoi-lite")}
           value={attributes.default_year || ""}
           options={[
-            { label: __("Current year", "eventkoi"), value: "" },
+            { label: __("Current year", "eventkoi-lite"), value: "" },
             ...Array.from({ length: 10 }, (_, i) => {
               const year = new Date().getFullYear() + i + 1;
               return { label: String(year), value: String(year) };
@@ -135,7 +157,7 @@ export const Controls = (props) => {
         />
 
         <SelectControl
-          label={__("Week starts on", "eventkoi")}
+          label={__("Week starts on", "eventkoi-lite")}
           value={startday}
           options={[
             { label: "Monday", value: "monday" },

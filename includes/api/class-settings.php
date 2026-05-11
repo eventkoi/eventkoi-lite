@@ -37,7 +37,7 @@ class Settings {
 				'methods'             => 'GET',
 				'callback'            => array( self::class, 'get_settings' ),
 				'permission_callback' => function () {
-					return current_user_can( 'manage_options' );
+					return current_user_can( \EventKoi\Core\Permissions::ACCESS_CAP );
 				},
 			)
 		);
@@ -49,8 +49,58 @@ class Settings {
 				'methods'             => 'POST',
 				'callback'            => array( self::class, 'set_settings' ),
 				'permission_callback' => function () {
-					return current_user_can( 'manage_options' );
+					return current_user_can( \EventKoi\Core\Permissions::ACCESS_CAP );
 				},
+			)
+		);
+
+		// Live preview for custom PHP date/time format strings.
+		register_rest_route(
+			EVENTKOI_API,
+			'/settings/preview-format',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( self::class, 'preview_format' ),
+				'permission_callback' => REST::cap( 'eventkoi_settings_defaults' ),
+				'args'                => array(
+					'date' => array(
+						'type'              => 'string',
+						'required'          => false,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+					'time' => array(
+						'type'              => 'string',
+						'required'          => false,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
+			)
+		);
+	}
+
+	/**
+	 * Render a sample of the requested PHP date and time format strings.
+	 *
+	 * @param WP_REST_Request $request The incoming REST request.
+	 * @return WP_REST_Response
+	 */
+	public static function preview_format( WP_REST_Request $request ) {
+		$date = trim( (string) $request->get_param( 'date' ) );
+		$time = trim( (string) $request->get_param( 'time' ) );
+
+		if ( '' === $date ) {
+			$date = \eventkoi_resolved_date_format();
+		}
+		if ( '' === $time ) {
+			$time = \eventkoi_resolved_time_format();
+		}
+
+		$now = time();
+		return rest_ensure_response(
+			array(
+				'date'     => wp_date( $date, $now ),
+				'time'     => wp_date( $time, $now ),
+				'datetime' => wp_date( trim( $date . ', ' . $time, ', ' ), $now ),
 			)
 		);
 	}
@@ -70,6 +120,23 @@ class Settings {
 			&& function_exists( 'get_woocommerce_currency' )
 		) {
 			$settings['currency'] = strtoupper( get_woocommerce_currency() );
+		}
+
+		// Strip Pro-only [qr_code] tag from any saved email templates so the
+		// Lite settings UI never surfaces it (templates from a previous Pro
+		// install can carry it; Lite cannot render it anyway).
+		$template_keys = array(
+			'rsvp_email_template',
+			'ticket_email_template',
+			'refund_email_template',
+			'admin_rsvp_email_template',
+			'admin_ticket_email_template',
+		);
+		foreach ( $template_keys as $tk ) {
+			if ( ! empty( $settings[ $tk ] ) && is_string( $settings[ $tk ] ) && false !== strpos( $settings[ $tk ], '[qr_code]' ) ) {
+				$settings[ $tk ] = preg_replace( '#<p>\s*\[qr_code\]\s*</p>\s*\n?#', '', $settings[ $tk ] );
+				$settings[ $tk ] = str_replace( '[qr_code]', '', $settings[ $tk ] );
+			}
 		}
 
 		return rest_ensure_response( $settings );
@@ -105,6 +172,9 @@ class Settings {
 				400
 			);
 		}
+
+		// Drop keys the current user is not permitted to write.
+		$data = \EventKoi\Core\Permissions::filter_settings_payload( $data );
 
 		$settings_api = new CoreSettings();
 		$settings     = $settings_api::get();
@@ -148,6 +218,8 @@ class Settings {
 				$sanitized = $currency;
 			} elseif ( in_array( $key, $html_keys, true ) ) {
 				$sanitized = wp_kses( $value, \EventKoi\Core\Settings::get_email_template_allowed_tags() );
+			} elseif ( \EventKoi\Core\Permissions::SETTINGS_KEY === $key ) {
+				$sanitized = self::sanitize_user_permissions( $value );
 			} else {
 				$sanitized = is_array( $value )
 				? array_map( 'sanitize_text_field', $value )
@@ -178,5 +250,40 @@ class Settings {
 				'settings' => $settings,
 			)
 		);
+	}
+
+	/**
+	 * Sanitize the user_permissions payload: a role-keyed map of capability
+	 * booleans. Strip anything outside the canonical cap catalog and never
+	 * persist administrator overrides.
+	 *
+	 * @param mixed $value Raw payload value.
+	 * @return array<string, array<string, bool>>
+	 */
+	private static function sanitize_user_permissions( $value ): array {
+		if ( ! is_array( $value ) ) {
+			return array();
+		}
+		$known = array_flip( \EventKoi\Core\Permissions::cap_keys() );
+		$out   = array();
+		foreach ( $value as $role => $caps ) {
+			$role = sanitize_key( (string) $role );
+			if ( '' === $role || 'administrator' === $role ) {
+				continue;
+			}
+			if ( ! is_array( $caps ) ) {
+				continue;
+			}
+			$role_caps = array();
+			foreach ( $caps as $cap => $granted ) {
+				$cap = sanitize_key( (string) $cap );
+				if ( ! isset( $known[ $cap ] ) ) {
+					continue;
+				}
+				$role_caps[ $cap ] = (bool) filter_var( $granted, FILTER_VALIDATE_BOOLEAN );
+			}
+			$out[ $role ] = $role_caps;
+		}
+		return $out;
 	}
 }

@@ -61,7 +61,7 @@ class Rsvps {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( __CLASS__, 'get_rsvps' ),
-				'permission_callback' => array( REST::class, 'private_api' ),
+				'permission_callback' => REST::cap( 'eventkoi_attendees_view' ),
 			)
 		);
 
@@ -71,7 +71,7 @@ class Rsvps {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( __CLASS__, 'bulk_action' ),
-				'permission_callback' => array( REST::class, 'private_api' ),
+				'permission_callback' => REST::cap( 'eventkoi_attendees_manage' ),
 			)
 		);
 
@@ -81,7 +81,7 @@ class Rsvps {
 			array(
 				'methods'             => 'GET',
 				'callback'            => array( __CLASS__, 'export_rsvps' ),
-				'permission_callback' => array( REST::class, 'private_api' ),
+				'permission_callback' => REST::cap( 'eventkoi_attendees_view' ),
 			)
 		);
 	}
@@ -299,8 +299,8 @@ class Rsvps {
 		}
 
 		$rows = array();
-		$date_format = get_option( 'date_format' );
-		$time_format = get_option( 'time_format' );
+		$date_format = \eventkoi_resolved_date_format();
+		$time_format = \eventkoi_resolved_time_format();
 		$datetime_format = trim( $date_format . ' ' . $time_format );
 
 		foreach ( $items as $item ) {
@@ -452,6 +452,11 @@ class Rsvps {
 
 		$summary = Core_Rsvps::get_summary( $event_id, $instance_ts );
 
+		$sale_start  = (string) Event::get_rsvp_sale_start( (int) $instance_ts );
+		$sale_end    = (string) Event::get_rsvp_sale_end( (int) $instance_ts );
+		$is_open     = self::compute_rsvp_is_open( $sale_start, $sale_end );
+		$event_ended = self::compute_event_ended( $event_id, (int) $instance_ts );
+
 		return rest_ensure_response(
 			array(
 				'event_id'        => $event_id,
@@ -465,7 +470,57 @@ class Rsvps {
 				'max_guests'      => Event::get_rsvp_max_guests(),
 				'allow_edit'      => Event::get_rsvp_allow_edit(),
 				'rsvp_enabled'    => Event::get_rsvp_enabled(),
+				'sale_start'      => $sale_start,
+				'sale_end'        => $sale_end,
+				'is_open'         => $is_open,
+				'event_ended'     => $event_ended,
 			)
+		);
+	}
+
+	/**
+	 * Whether the event (or resolved instance) is over.
+	 *
+	 * @param int $event_id    Event ID.
+	 * @param int $instance_ts Instance timestamp, 0 for non-recurring.
+	 * @return bool
+	 */
+	private static function compute_event_ended( $event_id, $instance_ts = 0 ) {
+		$status = (string) get_post_meta( $event_id, 'status', true );
+		if ( 'completed' === $status || 'cancelled' === $status ) {
+			return true;
+		}
+		$end_ts = Core_Rsvps::resolve_event_end_ts( $event_id, $instance_ts );
+		return ( $end_ts > 0 && time() > $end_ts );
+	}
+
+	/**
+	 * Resolve open/closed/upcoming for an RSVP window.
+	 *
+	 * @param string $sale_start UTC `Y-m-d H:i:s` or empty.
+	 * @param string $sale_end   UTC `Y-m-d H:i:s` or empty.
+	 * @return array{open:bool,reason:string}
+	 */
+	private static function compute_rsvp_is_open( $sale_start, $sale_end ) {
+		$now      = time();
+		$start_ts = '' !== $sale_start ? strtotime( $sale_start . ' UTC' ) : 0;
+		$end_ts   = '' !== $sale_end ? strtotime( $sale_end . ' UTC' ) : 0;
+
+		if ( $start_ts && $now < $start_ts ) {
+			return array(
+				'open'   => false,
+				'reason' => 'not_started',
+			);
+		}
+		if ( $end_ts && $now > $end_ts ) {
+			return array(
+				'open'   => false,
+				'reason' => 'closed',
+			);
+		}
+		return array(
+			'open'   => true,
+			'reason' => '',
 		);
 	}
 
@@ -540,12 +595,20 @@ class Rsvps {
 			$response['event']['timeline'] = true;
 		}
 
-		$response['summary']        = Core_Rsvps::get_summary( $event_id, absint( $record->instance_ts ?? 0 ) );
+		$record_instance_ts         = absint( $record->instance_ts ?? 0 );
+		$response['summary']        = Core_Rsvps::get_summary( $event_id, $record_instance_ts );
 		$response['capacity']       = Event::get_rsvp_capacity();
 		$response['allow_guests']   = Event::get_rsvp_allow_guests();
 		$response['max_guests']     = Event::get_rsvp_max_guests();
 		$response['allow_edit']     = Event::get_rsvp_allow_edit();
 		$response['rsvp_enabled']   = Event::get_rsvp_enabled();
+
+		$sale_start                 = (string) Event::get_rsvp_sale_start( $record_instance_ts );
+		$sale_end                   = (string) Event::get_rsvp_sale_end( $record_instance_ts );
+		$response['sale_start']     = $sale_start;
+		$response['sale_end']       = $sale_end;
+		$response['is_open']        = self::compute_rsvp_is_open( $sale_start, $sale_end );
+		$response['event_ended']    = self::compute_event_ended( $event_id, $record_instance_ts );
 
 		return rest_ensure_response( $response );
 	}
@@ -572,8 +635,8 @@ class Rsvps {
 		}
 
 		$utc_timezone   = new \DateTimeZone( 'UTC' );
-		$date_format    = get_option( 'date_format' );
-		$time_format    = get_option( 'time_format' );
+		$date_format    = \eventkoi_resolved_date_format();
+		$time_format    = \eventkoi_resolved_time_format();
 		$event_date     = wp_date( $date_format, $event_timestamp, $utc_timezone );
 		$event_time     = wp_date( $time_format, $event_timestamp, $utc_timezone );
 		$event_end_date = $event_end_timestamp ? wp_date( $date_format, $event_end_timestamp, $utc_timezone ) : '';

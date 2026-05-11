@@ -128,7 +128,7 @@ export function ToolbarMobile(props) {
             }}
           >
             <Search className="w-4 h-4" aria-hidden="true" />
-            <span className="sr-only">{__("Search events", "eventkoi")}</span>
+            <span className="sr-only">{__("Search events", "eventkoi-lite")}</span>
           </Button>
         </div>
       )}

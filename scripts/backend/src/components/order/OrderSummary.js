@@ -48,12 +48,12 @@ export function OrderSummary({ order }) {
       ticketId > 0
         ? sprintf(
             /* translators: %d: ticket id */
-            __("Ticket #%d", "eventkoi"),
+            __("Ticket #%d", "eventkoi-lite"),
             ticketId
           )
         : sprintf(
             /* translators: %d: line item number */
-            __("Ticket line %d", "eventkoi"),
+            __("Ticket line %d", "eventkoi-lite"),
             index + 1
           );
     const rawName = item?.ticket_name || item?.name || "";
@@ -92,10 +92,10 @@ export function OrderSummary({ order }) {
               (Number(order?.ticket_id || 0) > 0
                 ? sprintf(
                     /* translators: %d: ticket id */
-                    __("Ticket #%d", "eventkoi"),
+                    __("Ticket #%d", "eventkoi-lite"),
                     Number(order?.ticket_id || 0)
                   )
-                : __("Ticket", "eventkoi")),
+                : __("Ticket", "eventkoi-lite")),
             description: String(order?.ticket_description || "").trim(),
             eventTitle: defaultEventTitle,
             eventId: defaultEventId,
@@ -153,13 +153,13 @@ export function OrderSummary({ order }) {
   return (
     <div className="rounded-xl border bg-white p-6">
       <h3 className="text-lg font-medium mb-4">
-        {__("Order summary", "eventkoi")}
+        {__("Order summary", "eventkoi-lite")}
       </h3>
       <div role="row" aria-hidden="true" className="grid grid-cols-[3fr_1fr_1fr_1fr] py-3 text-xs font-medium text-muted-foreground border-b">
-        <div>{__("Ticket", "eventkoi")}</div>
-        <div className="text-center">{__("Price", "eventkoi")}</div>
-        <div className="text-center">{__("Quantity", "eventkoi")}</div>
-        <div className="text-right">{__("Amount", "eventkoi")}</div>
+        <div>{__("Ticket", "eventkoi-lite")}</div>
+        <div className="text-center">{__("Price", "eventkoi-lite")}</div>
+        <div className="text-center">{__("Quantity", "eventkoi-lite")}</div>
+        <div className="text-right">{__("Amount", "eventkoi-lite")}</div>
       </div>
       {summaryItems.map((item, index) => (
         <div
@@ -196,7 +196,7 @@ export function OrderSummary({ order }) {
         </div>
       ))}
       <div className="flex justify-end pt-4 text-sm font-medium">
-        <span>{__("Total", "eventkoi")}</span>
+        <span>{__("Total", "eventkoi-lite")}</span>
         <span className="ml-2">
           {formatCurrency(totalAmountCents, order.currency)}
         </span>
@@ -205,7 +205,7 @@ export function OrderSummary({ order }) {
         <div className="mt-3 border-t pt-3 space-y-1 text-sm">
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">
-              {__("Payment amount", "eventkoi")}
+              {__("Payment amount", "eventkoi-lite")}
             </span>
             <span className="text-foreground">
               {formatCurrencyWithCode(totalAmountCents, order.currency)}
@@ -213,7 +213,7 @@ export function OrderSummary({ order }) {
           </div>
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">
-              {__("Stripe fee", "eventkoi")}
+              {__("Stripe fee", "eventkoi-lite")}
             </span>
             <span className="text-foreground">
               {formatDeductionCurrencyWithCode(stripeFeeCents, order.currency)}
@@ -221,7 +221,7 @@ export function OrderSummary({ order }) {
           </div>
           <div className="flex items-center justify-between">
             <span className="text-muted-foreground">
-              {__("Platform fee", "eventkoi")}
+              {__("Platform fee", "eventkoi-lite")}
             </span>
             <span className="text-foreground">
               {formatDeductionCurrencyWithCode(platformFeeCents, order.currency)}
@@ -229,18 +229,18 @@ export function OrderSummary({ order }) {
           </div>
           {refundAmountCents > 0 ? (
             <div className="flex items-center justify-between">
-              <span className="text-muted-foreground">{__("Refunds", "eventkoi")}</span>
+              <span className="text-muted-foreground">{__("Refunds", "eventkoi-lite")}</span>
               <span className="text-foreground">
                 {formatDeductionCurrencyWithCode(refundAmountCents, order.currency)}
               </span>
             </div>
           ) : null}
           <div className="flex items-center justify-between border-t pt-3 mt-2 font-medium">
-            <span>{__("Net amount", "eventkoi")}</span>
+            <span>{__("Net amount", "eventkoi-lite")}</span>
             <span>{formatSignedCurrencyWithCode(netAmountCents, order.currency)}</span>
           </div>
           <div className="flex items-center justify-between pt-1 font-medium">
-            <span>{__("Net amount after platform fee", "eventkoi")}</span>
+            <span>{__("Net amount after platform fee", "eventkoi-lite")}</span>
             <span>
               {formatSignedCurrencyWithCode(
                 payoutAfterPlatformFeeCents,

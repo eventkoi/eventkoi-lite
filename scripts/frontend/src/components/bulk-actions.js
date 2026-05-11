@@ -53,7 +53,7 @@ export function BulkActions({ table, base, fetchResults, addTo, queryStatus }) {
       <DropdownMenuTrigger asChild>
         <Button variant="outline" className="ml-auto flex font-normal">
           <EllipsisVertical className="mr-2 h-4 w-4" aria-hidden="true" />
-          {__("Bulk actions", "eventkoi")}
+          {__("Bulk actions", "eventkoi-lite")}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-[180px]">
@@ -65,7 +65,7 @@ export function BulkActions({ table, base, fetchResults, addTo, queryStatus }) {
                 runAction("restore");
               }}
             >
-              <span>{__("Restore", "eventkoi")}</span>
+              <span>{__("Restore", "eventkoi-lite")}</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               disabled={table.getFilteredSelectedRowModel().rows.length == 0}
@@ -73,7 +73,7 @@ export function BulkActions({ table, base, fetchResults, addTo, queryStatus }) {
                 runAction("remove");
               }}
             >
-              <span>{__("Delete permanently", "eventkoi")}</span>
+              <span>{__("Delete permanently", "eventkoi-lite")}</span>
             </DropdownMenuItem>
           </>
         ) : (
@@ -84,7 +84,7 @@ export function BulkActions({ table, base, fetchResults, addTo, queryStatus }) {
                 runAction("duplicate");
               }}
             >
-              <span>{__("Duplicate", "eventkoi")}</span>
+              <span>{__("Duplicate", "eventkoi-lite")}</span>
             </DropdownMenuItem>
             <DropdownMenuItem
               disabled={table.getFilteredSelectedRowModel().rows.length == 0}
@@ -94,8 +94,8 @@ export function BulkActions({ table, base, fetchResults, addTo, queryStatus }) {
             >
               <span>
                 {["categories"].includes(base)
-                  ? __("Delete", "eventkoi")
-                  : __("Move to trash", "eventkoi")}
+                  ? __("Delete", "eventkoi-lite")
+                  : __("Move to trash", "eventkoi-lite")}
               </span>
             </DropdownMenuItem>
             {addTo && table.getFilteredSelectedRowModel().rows.length > 0 && (
@@ -106,7 +106,7 @@ export function BulkActions({ table, base, fetchResults, addTo, queryStatus }) {
                 <DropdownMenuPortal>
                   <DropdownMenuSubContent>
                     <DropdownMenuCheckboxItem>
-                      {__("Panel", "eventkoi")}
+                      {__("Panel", "eventkoi-lite")}
                     </DropdownMenuCheckboxItem>
                   </DropdownMenuSubContent>
                 </DropdownMenuPortal>

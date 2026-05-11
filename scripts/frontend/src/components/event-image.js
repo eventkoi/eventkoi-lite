@@ -76,12 +76,12 @@ export function EventImage({ event, setEvent }) {
 
   return (
     <Panel>
-      <Label htmlFor="image">{__("Header banner image", "eventkoi")}</Label>
+      <Label htmlFor="image">{__("Header banner image", "eventkoi-lite")}</Label>
       <div className="text-muted-foreground">
-        {__("Ideal size: 1800px x 900px", "eventkoi")}
+        {__("Ideal size: 1800px x 900px", "eventkoi-lite")}
       </div>
       <MediaUpload
-        title={__("Select event image", "eventkoi")}
+        title={__("Select event image", "eventkoi-lite")}
         onSelect={(media) => {
           setEvent((prevState) => ({
             ...prevState,
@@ -104,18 +104,18 @@ export function EventImage({ event, setEvent }) {
               >
                 <Button variant="default" onClick={open}>
                   <Repeat2 className="mr-2 h-4 w-4" />
-                  {__("Replace", "eventkoi")}
+                  {__("Replace", "eventkoi-lite")}
                 </Button>
                 <Button variant="default" onClick={(e) => deleteImage()}>
                   <Trash2 className="mr-2 h-4 w-4" />
-                  {__("Delete", "eventkoi")}
+                  {__("Delete", "eventkoi-lite")}
                 </Button>
               </div>
             )}
             {event?.image && (
               <img
                 src={event?.image}
-                alt={__("Event image", "eventkoi")}
+                alt={__("Event image", "eventkoi-lite")}
                 className="rounded-lg w-full h-auto"
               />
             )}
@@ -124,7 +124,7 @@ export function EventImage({ event, setEvent }) {
                 className="flex items-center justify-center flex-col gap-1 p-10 cursor-pointer border border-dashed border-muted-foreground/40 bg-secondary rounded-lg cursor-default"
                 role="button"
                 tabIndex={0}
-                aria-label={__("Upload event image", "eventkoi")}
+                aria-label={__("Upload event image", "eventkoi-lite")}
                 onClick={open}
                 onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } }}
                 onDragOver={handleDragOver}
@@ -136,10 +136,10 @@ export function EventImage({ event, setEvent }) {
                   <Image className="w-6 h-6" strokeWidth={1} />
                 )}
                 <div className="pt-1 text-lg font-medium">
-                  {__("Drag and drop your image here.", "eventkoi")}
+                  {__("Drag and drop your image here.", "eventkoi-lite")}
                 </div>
                 <div className="text-sm">
-                  {__("Or click to select from media gallery.", "eventkoi")}
+                  {__("Or click to select from media gallery.", "eventkoi-lite")}
                 </div>
               </div>
             )}

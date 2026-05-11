@@ -1,3 +1,5 @@
+import { __ } from "@wordpress/i18n";
+
 export function EventTemplates() {
-  return <>List of event templates</>;
+  return <>{__("List of event templates", "eventkoi-lite")}</>;
 }

@@ -76,6 +76,26 @@ export function EventEdit() {
   const [hintBaseTop, setHintBaseTop] = useState(null);
   const hintMeasureRaf = useRef(null);
   const previewMeasureRaf = useRef(null);
+  const beforeSaveHandlersRef = useRef([]);
+
+  const registerBeforeSave = useCallback((handler) => {
+    if (typeof handler !== "function") return () => {};
+    beforeSaveHandlersRef.current = [
+      ...beforeSaveHandlersRef.current,
+      handler,
+    ];
+    return () => {
+      beforeSaveHandlersRef.current = beforeSaveHandlersRef.current.filter(
+        (entry) => entry !== handler
+      );
+    };
+  }, []);
+
+  const runBeforeSave = useCallback(async () => {
+    for (const handler of beforeSaveHandlersRef.current) {
+      await handler();
+    }
+  }, []);
 
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -445,10 +465,10 @@ export function EventEdit() {
           strokeWidth={1}
         />
         <div className="text-base text-muted-foreground">
-          Event has moved to Trash. Restore it before you can edit.
+          {__("Event has moved to Trash. Restore it before you can edit.", "eventkoi-lite")}
         </div>
         <div className="pt-4">
-          <Button onClick={restoreEvent}>Restore event</Button>
+          <Button onClick={restoreEvent}>{__("Restore event", "eventkoi-lite")}</Button>
         </div>
       </div>
     );
@@ -459,9 +479,7 @@ export function EventEdit() {
   const layout = (
     <>
       <EventHeader />
-      <Wrapper
-        className={isEditingInstance ? "max-w-[800px]" : "max-w-[1180px]"}
-      >
+      <Wrapper className={isEditingInstance ? "max-w-[800px]" : undefined}>
         <div
           className={cn(
             "w-full mx-auto items-start gap-6",
@@ -747,6 +765,8 @@ export function EventEdit() {
         setIsPublishing,
         disableAutoSave,
         setDisableAutoSave,
+        registerBeforeSave,
+        runBeforeSave,
       }}
     >
       {isEditingInstance ? (

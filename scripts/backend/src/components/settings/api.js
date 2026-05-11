@@ -31,13 +31,13 @@ export function SettingsAPI() {
       if (response?.api_key) {
         setNewKey(response.api_key);
         showToast({
-          message: "API key regenerated successfully.",
+          message: __("API key regenerated successfully.", "eventkoi-lite"),
         });
       } else {
-        showToastError("Unexpected response.");
+        showToastError(__("Unexpected response.", "eventkoi-lite"));
       }
     } catch (error) {
-      showToastError(error?.message ?? "Something went wrong.");
+      showToastError(error?.message ?? __("Something went wrong.", "eventkoi-lite"));
     } finally {
       setIsSaving(false);
     }
@@ -47,14 +47,14 @@ export function SettingsAPI() {
     <Box>
       <div className="grid w-full">
         <Panel variant="header">
-          <Heading level={3}>EventKoi API</Heading>
+          <Heading level={3}>{__("EventKoi API", "eventkoi-lite")}</Heading>
         </Panel>
         <Separator />
         <Panel className="gap-6">
           <div className="space-y-2">
-            <Label>Site instance ID</Label>
+            <Label>{__("Site instance ID", "eventkoi-lite")}</Label>
             <p className="text-sm text-muted-foreground">
-              This uniquely identifies your site for EventKoi services.
+              {__("This uniquely identifies your site for EventKoi services.", "eventkoi-lite")}
             </p>
             <div className="bg-muted/40 border border-muted rounded px-3 py-2 w-fit">
               <code className="bg-transparent text-sm break-all">
@@ -64,7 +64,7 @@ export function SettingsAPI() {
           </div>
 
           <div className="space-y-2">
-            <Label>Developer API key</Label>
+            <Label>{__("Developer API key", "eventkoi-lite")}</Label>
             <p className="text-sm text-muted-foreground">
               This key is kept private and is not displayed. You may regenerate
               it below if needed. The new key will be shown{" "}
@@ -85,7 +85,7 @@ export function SettingsAPI() {
               disabled={isSaving}
               className="w-48 font-medium"
             >
-              {isSaving ? "Regenerating..." : "Regenerate API key"}
+              {isSaving ? __("Regenerating...", "eventkoi-lite") : __("Regenerate API key", "eventkoi-lite")}
             </Button>
           </div>
         </Panel>

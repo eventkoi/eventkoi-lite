@@ -1,3 +1,4 @@
+import { __ } from "@wordpress/i18n";
 import { Panel } from "@/components/panel";
 import { ProBadge } from "@/components/pro-badge";
 import { Label } from "@/components/ui/label";
@@ -73,10 +74,10 @@ export function EventTemplate({
             className="w-[250px]"
             disabled={isDisabled}
           >
-            <SelectValue placeholder="Select a template" />
+            <SelectValue placeholder={__("Select a template", "eventkoi-lite")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="default">Default template</SelectItem>
+            <SelectItem value="default">{__("Default template", "eventkoi-lite")}</SelectItem>
             {customTemplates.some((group) => Array.isArray(group?.templates))
               ? customTemplates
                   .filter((group) => group?.templates?.length)

@@ -85,7 +85,7 @@ export function PaymentMethod({ order }) {
     if (type === "card" && brand && last4) {
       return `${brand.charAt(0).toUpperCase() + brand.slice(1)} ${__(
         "ending in",
-        "eventkoi"
+        "eventkoi-lite"
       )} ${last4}`;
     }
 
@@ -99,12 +99,12 @@ export function PaymentMethod({ order }) {
   return (
     <div className="rounded-xl border bg-white p-6">
       <h3 className="text-base font-medium mb-4">
-        {__("Payment method", "eventkoi")}
+        {__("Payment method", "eventkoi-lite")}
       </h3>
       <div className="space-y-2 text-sm">
         <div className="grid grid-cols-[auto_1fr] gap-2">
           <span className="text-muted-foreground w-32">
-            {__("Payment ID", "eventkoi")}
+            {__("Payment ID", "eventkoi-lite")}
           </span>
           {order.stripe_payment_intent_id && (
             <a
@@ -124,7 +124,7 @@ export function PaymentMethod({ order }) {
 
         <div className="grid grid-cols-[auto_1fr] gap-2">
           <span className="text-muted-foreground w-32">
-            {__("Type", "eventkoi")}
+            {__("Type", "eventkoi-lite")}
           </span>
           <span className="inline-flex items-center gap-1 text-foreground">
             {isLinkPayment ? (
@@ -140,7 +140,7 @@ export function PaymentMethod({ order }) {
 
         <div className="grid grid-cols-[auto_1fr] gap-2">
           <span className="text-muted-foreground w-32">
-            {__("Origin", "eventkoi")}
+            {__("Origin", "eventkoi-lite")}
           </span>
           <span className="text-foreground">
             {originCountryCode ? getCountryName(originCountryCode) : ""}
@@ -149,7 +149,7 @@ export function PaymentMethod({ order }) {
 
         <div className="grid grid-cols-[auto_1fr] gap-2">
           <span className="text-muted-foreground w-32">
-            {__("IP address", "eventkoi")}
+            {__("IP address", "eventkoi-lite")}
           </span>
           <span className="text-foreground">{order?.ip_address || ""}</span>
         </div>

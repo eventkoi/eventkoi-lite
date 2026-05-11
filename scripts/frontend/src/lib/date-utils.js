@@ -328,6 +328,7 @@ export function safeNormalizeTimeZone(tz) {
  * @param {string} [options.defaultMonth] Block-level default month (name)
  * @param {string|number} [options.defaultYear] Block-level default year
  * @param {Object} [options.calendar] Calendar object (default_month, default_year)
+ * @param {"month"|"week"} [options.timeframe] Active calendar timeframe
  * @returns {string} ISO date string (YYYY-MM-DD) in UTC, safe for FullCalendar
  */
 export function getInitialCalendarDate({
@@ -335,8 +336,15 @@ export function getInitialCalendarDate({
   defaultMonth,
   defaultYear,
   calendar,
+  timeframe,
 }) {
   const now = DateTime.utc(); // use UTC baseline, not local tz
+
+  // Week view always lands on the week containing today, regardless of
+  // default month/year. Month view uses the default-month logic below.
+  if (timeframe === "week") {
+    return now.toISODate();
+  }
 
   const safeParseYear = (value, fallback) => {
     const num = parseInt(value, 10);

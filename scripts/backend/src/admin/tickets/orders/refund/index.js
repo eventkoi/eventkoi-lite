@@ -53,12 +53,12 @@ function normalizeLineItems(order) {
       (ticketId > 0
         ? sprintf(
             /* translators: %d: ticket id */
-            __("Ticket #%d", "eventkoi"),
+            __("Ticket #%d", "eventkoi-lite"),
             ticketId
           )
         : sprintf(
             /* translators: %d: line item number */
-            __("Ticket line %d", "eventkoi"),
+            __("Ticket line %d", "eventkoi-lite"),
             index + 1
           ));
 
@@ -85,7 +85,7 @@ function normalizeLineItems(order) {
         ticket_id: Number(order?.ticket_id || 0) || 0,
         name:
           stripDuplicatedEventTitle(String(order?.ticket_name || "").trim()) ||
-          __("Ticket", "eventkoi"),
+          __("Ticket", "eventkoi-lite"),
         description: String(order?.ticket_description || "").trim(),
         unitAmount: fallbackUnit,
         quantity: fallbackQty,
@@ -167,12 +167,12 @@ export function OrderRefundView() {
 
   const handleRefund = () => {
     if (!selectedItems.length) {
-      showToastError(__("Select at least one line item to refund.", "eventkoi"));
+      showToastError(__("Select at least one line item to refund.", "eventkoi-lite"));
       return;
     }
 
     if (totalRefundCents <= 0) {
-      showToastError(__("Refund amount must be greater than zero.", "eventkoi"));
+      showToastError(__("Refund amount must be greater than zero.", "eventkoi-lite"));
       return;
     }
 
@@ -199,7 +199,7 @@ export function OrderRefundView() {
         .filter((row) => row.ticket_id > 0 && row.quantity > 0);
 
       if (!payloadItems.length) {
-        showToastError(__("No valid ticket lines selected for refund.", "eventkoi"));
+        showToastError(__("No valid ticket lines selected for refund.", "eventkoi-lite"));
         return;
       }
 
@@ -251,14 +251,14 @@ export function OrderRefundView() {
         ? orders.find((o) => o.id === (order?.id || id) || o.order_id === (order?.id || id))
         : null;
       setOrder(match ? normalizeOrder(match) : order);
-      showStaticToast(__("Refund completed successfully.", "eventkoi"));
+      showStaticToast(__("Refund completed successfully.", "eventkoi-lite"));
     } catch (err) {
       console.error("Refund failed:", err);
       const raw =
         (err && err.body) ||
         (err && err.message) ||
-        __("Failed to process refund.", "eventkoi");
-      let message = __("Failed to process refund.", "eventkoi");
+        __("Failed to process refund.", "eventkoi-lite");
+      let message = __("Failed to process refund.", "eventkoi-lite");
       try {
         const parsed = JSON.parse(raw);
         if (parsed?.error) {
@@ -310,11 +310,11 @@ export function OrderRefundView() {
                 variant="outline"
                 className="border-warning/80 text-foreground bg-warning/10"
               >
-                {__("Test", "eventkoi")}
+                {__("Test", "eventkoi-lite")}
               </Badge>
             )}
             <div className="flex items-center gap-4 text-2xl font-medium">
-              {__("Refund order", "eventkoi")}
+              {__("Refund order", "eventkoi-lite")}
               <CopyableOrderId id={order?.id || id} />
             </div>
           </div>
@@ -324,16 +324,16 @@ export function OrderRefundView() {
           <div className="md:col-span-2 rounded-2xl border bg-white shadow-sm">
             <div className="px-5 py-5">
               <h2 className="text-lg font-medium text-foreground">
-                {__("Select order to refund", "eventkoi")}
+                {__("Select order to refund", "eventkoi-lite")}
               </h2>
             </div>
 
             <div>
               <div className="grid grid-cols-[3fr_1fr_1fr_1fr] px-5 py-3 text-xs font-medium text-muted-foreground">
-                <div>{__("Ticket", "eventkoi")}</div>
-                <div className="text-center">{__("Price", "eventkoi")}</div>
-                <div className="text-center">{__("Quantity", "eventkoi")}</div>
-                <div className="text-right">{__("Refund amount", "eventkoi")}</div>
+                <div>{__("Ticket", "eventkoi-lite")}</div>
+                <div className="text-center">{__("Price", "eventkoi-lite")}</div>
+                <div className="text-center">{__("Quantity", "eventkoi-lite")}</div>
+                <div className="text-right">{__("Refund amount", "eventkoi-lite")}</div>
               </div>
 
               {items.map((item) => {
@@ -357,7 +357,7 @@ export function OrderRefundView() {
                         className="mt-0.5"
                         aria-label={sprintf(
                           /* translators: %s: ticket name */
-                          __("Select %s for refund", "eventkoi"),
+                          __("Select %s for refund", "eventkoi-lite"),
                           item.name
                         )}
                       />
@@ -397,7 +397,7 @@ export function OrderRefundView() {
                         className="h-9 w-[56px] text-center"
                         aria-label={sprintf(
                           /* translators: %s: ticket name */
-                          __("Refund quantity for %s", "eventkoi"),
+                          __("Refund quantity for %s", "eventkoi-lite"),
                           item.name
                         )}
                       />
@@ -412,7 +412,7 @@ export function OrderRefundView() {
                         className="h-9 w-[56px] text-center"
                         aria-label={sprintf(
                           /* translators: %s: ticket name */
-                          __("Refund amount for %s", "eventkoi"),
+                          __("Refund amount for %s", "eventkoi-lite"),
                           item.name
                         )}
                       />
@@ -423,7 +423,7 @@ export function OrderRefundView() {
 
               <div className="border-t px-5 py-3 flex flex-col items-end gap-1">
                 <div className="text-sm font-medium text-foreground">
-                  {__("Total refunded amount", "eventkoi")}{" "}
+                  {__("Total refunded amount", "eventkoi-lite")}{" "}
                   {`${formatCurrency(totalRefundCents, order?.currency || "usd")} ${String(
                     order?.currency || "usd"
                   ).toUpperCase()}`}
@@ -431,7 +431,7 @@ export function OrderRefundView() {
                 <div className="text-xs text-muted-foreground">
                   {sprintf(
                     /* translators: %s: max available refund amount */
-                    __("Out of %s available for refund.", "eventkoi"),
+                    __("Out of %s available for refund.", "eventkoi-lite"),
                     formatCurrency(availableRefundCents, order?.currency || "usd")
                   )}
                 </div>
@@ -446,7 +446,7 @@ export function OrderRefundView() {
                   <span>
                     {__(
                       "Update total tickets available and allow tickets to be sold again.",
-                      "eventkoi"
+                      "eventkoi-lite"
                     )}
                   </span>
                 </label>
@@ -457,14 +457,14 @@ export function OrderRefundView() {
                     onCheckedChange={(next) => setSendConfirmation(!!next)}
                   />
                   <span>
-                    {__("Send ", "eventkoi")}
+                    {__("Send ", "eventkoi-lite")}
                     <Link
                       to="/settings/emails"
                       className="underline underline-offset-2 text-foreground"
                     >
-                      {__("refund confirmation", "eventkoi")}
+                      {__("refund confirmation", "eventkoi-lite")}
                     </Link>
-                    {__(" to customer.", "eventkoi")}
+                    {__(" to customer.", "eventkoi-lite")}
                   </span>
                 </label>
 
@@ -479,7 +479,7 @@ export function OrderRefundView() {
                       submitting
                     }
                   >
-                    {submitting ? __("Processing...", "eventkoi") : __("Refund", "eventkoi")}
+                    {submitting ? __("Processing...", "eventkoi-lite") : __("Refund", "eventkoi-lite")}
                   </Button>
                 </div>
               </div>
@@ -489,17 +489,17 @@ export function OrderRefundView() {
           <div className="flex flex-col h-full">
             <div className="rounded-2xl border bg-white p-5 h-full">
               <h3 className="text-lg font-medium text-foreground">
-                {__("Order refund notes", "eventkoi")}
+                {__("Order refund notes", "eventkoi-lite")}
               </h3>
               <p className="mt-1 text-xs text-muted-foreground">
-                {__("Optional internal note. Customers will not see this.", "eventkoi")}
+                {__("Optional internal note. Customers will not see this.", "eventkoi-lite")}
               </p>
               <Textarea
                 className="mt-3 min-h-[92px]"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder={__("Add an internal note...", "eventkoi")}
-                aria-label={__("Order refund notes", "eventkoi")}
+                placeholder={__("Add an internal note...", "eventkoi-lite")}
+                aria-label={__("Order refund notes", "eventkoi-lite")}
               />
             </div>
           </div>
@@ -508,9 +508,9 @@ export function OrderRefundView() {
           open={confirmOpen}
           onOpenChange={setConfirmOpen}
           icon="refund"
-          title={__("Confirm refund?", "eventkoi")}
-          description={__("This action will issue a refund.", "eventkoi")}
-          confirmLabel={submitting ? __("Processing...", "eventkoi") : __("Refund", "eventkoi")}
+          title={__("Confirm refund?", "eventkoi-lite")}
+          description={__("This action will issue a refund.", "eventkoi-lite")}
+          confirmLabel={submitting ? __("Processing...", "eventkoi-lite") : __("Refund", "eventkoi-lite")}
           onConfirm={confirmRefund}
           disabled={submitting}
         />

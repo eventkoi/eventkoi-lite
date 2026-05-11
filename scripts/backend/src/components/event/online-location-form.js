@@ -1,3 +1,4 @@
+import { __ } from "@wordpress/i18n";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -21,7 +22,7 @@ export function OnlineLocationForm({ location, onChange }) {
       {/* Event URL + Link Text in 2 columns */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
-          <Label htmlFor={`link_text-${location.id}`}>Event link text</Label>
+          <Label htmlFor={`link_text-${location.id}`}>{__("Event link text", "eventkoi-lite")}</Label>
           <Input
             id={`link_text-${location.id}`}
             value={location.link_text}
@@ -30,7 +31,7 @@ export function OnlineLocationForm({ location, onChange }) {
           />
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor={`virtual_url-${location.id}`}>Event URL</Label>
+          <Label htmlFor={`virtual_url-${location.id}`}>{__("Event URL", "eventkoi-lite")}</Label>
           <Input
             id={`virtual_url-${location.id}`}
             type="url"

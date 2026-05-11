@@ -1,6 +1,7 @@
 "use client";
 
 import * as DialogPrimitive from "@radix-ui/react-dialog";
+import { __ } from "@wordpress/i18n";
 import { X } from "lucide-react";
 import * as React from "react";
 
@@ -55,7 +56,7 @@ const DialogContent = React.forwardRef(
           )}
         >
           <X className="h-5 w-5" />
-          <span className="sr-only">Close</span>
+          <span className="sr-only">{__("Close", "eventkoi-lite")}</span>
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>
     </DialogPortal>

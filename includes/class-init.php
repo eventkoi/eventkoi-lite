@@ -63,7 +63,9 @@ class Init {
 	private function init_core() {
 		// Include core functions.
 		include_once EVENTKOI_PLUGIN_DIR . 'includes/core/core-functions.php';
+		require_once EVENTKOI_PLUGIN_DIR . 'includes/core/i18n.php';
 		require_once EVENTKOI_PLUGIN_DIR . 'includes/helpers/instance.php';
+		\EventKoi\Core\register_i18n();
 
 		// Initialize the container and set it in Config.
 		$this->container = new Container();
@@ -93,6 +95,7 @@ class Init {
 	private function get_core_components() {
 		return array(
 			\EventKoi\Core\Install::class,
+			\EventKoi\Core\Permissions::class,
 			\EventKoi\Core\Hooks::class,
 			\EventKoi\Core\Post_Types::class,
 			\EventKoi\Core\Template::class,
@@ -109,6 +112,7 @@ class Init {
 			\EventKoi\Core\Pretty_Instance_URLs::class,
 			\EventKoi\Core\Elementor_Widgets::class,
 			\EventKoi\Core\Beaver_Modules::class,
+			\EventKoi\Core\Divi_Modules::class,
 			\EventKoi\Core\TEC_Importer::class,
 			\EventKoi\Core\ICS_Importer::class,
 			\EventKoi\Core\URL_Importer::class,

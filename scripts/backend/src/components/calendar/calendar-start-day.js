@@ -8,18 +8,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useSettings } from "@/hooks/SettingsContext";
+import { __ } from "@wordpress/i18n";
 import { Info } from "lucide-react";
 import { useEffect } from "react";
 import { Link } from "react-router-dom";
 
 const days = {
-  monday: "Monday",
-  tuesday: "Tuesday",
-  wednesday: "Wednesday",
-  thursday: "Thursday",
-  friday: "Friday",
-  saturday: "Saturday",
-  sunday: "Sunday",
+  monday: __("Monday", "eventkoi-lite"),
+  tuesday: __("Tuesday", "eventkoi-lite"),
+  wednesday: __("Wednesday", "eventkoi-lite"),
+  thursday: __("Thursday", "eventkoi-lite"),
+  friday: __("Friday", "eventkoi-lite"),
+  saturday: __("Saturday", "eventkoi-lite"),
+  sunday: __("Sunday", "eventkoi-lite"),
 };
 
 // Plugin-specific weekday order: Monday = 0
@@ -55,7 +56,7 @@ export function CalendarStartDay({ calendar, setCalendar }) {
 
   return (
     <Panel className="p-0">
-      <Label htmlFor="startday">Week starts on</Label>
+      <Label htmlFor="startday">{__("Week starts on", "eventkoi-lite")}</Label>
       <Select
         value={currentValue}
         onValueChange={(value) => {
@@ -69,7 +70,7 @@ export function CalendarStartDay({ calendar, setCalendar }) {
         disabled={isDisabled}
       >
         <SelectTrigger id="startday" className="w-[250px]">
-          <SelectValue placeholder="Select a day" />
+          <SelectValue placeholder={__("Select a day", "eventkoi-lite")} />
         </SelectTrigger>
         <SelectContent>
           {Object.entries(days).map(([key, label]) => (
@@ -82,12 +83,12 @@ export function CalendarStartDay({ calendar, setCalendar }) {
 
       {!isDisabled && (
         <div className="text-muted-foreground">
-          Select the day calendar use as the start of the week.{" "}
+          {__("Select the day calendar use as the start of the week.", "eventkoi-lite")}{" "}
           <Link
             to="/settings"
             className="underline hover:text-primary transition-colors"
           >
-            Edit global settings
+            {__("Edit global settings", "eventkoi-lite")}
           </Link>
           .
         </div>
@@ -96,7 +97,7 @@ export function CalendarStartDay({ calendar, setCalendar }) {
       {isDisabled && (
         <div className="flex items-center gap-2 text-sm text-muted-foreground mt-2">
           <Info className="w-4 h-4" />
-          This setting is only available in calendar view.
+          {__("This setting is only available in calendar view.", "eventkoi-lite")}
         </div>
       )}
     </Panel>

@@ -27,17 +27,17 @@ export function FeatureDisabled({
           <CircleAlert className="h-8 w-8" />
         </div>
         <h2 className="mb-2 text-xl font-semibold text-foreground">
-          {title || __("Tickets feature is disabled", "eventkoi")}
+          {title || __("Tickets feature is disabled", "eventkoi-lite")}
         </h2>
         <p className="mb-6 text-sm text-muted-foreground">
           {message ||
             __(
               "Enable Tickets in Settings > Experimental to access this page.",
-              "eventkoi"
+              "eventkoi-lite"
             )}
         </p>
         <Button onClick={() => navigate(actionTo)} variant="default">
-          {actionLabel || __("Go to Experimental settings", "eventkoi")}
+          {actionLabel || __("Go to Experimental settings", "eventkoi-lite")}
         </Button>
       </div>
     </Wrapper>

@@ -87,9 +87,9 @@ export function SettingsCheckoutMethod({ settings, setSettings }) {
         ...prev,
         ticket_checkout_method: nextMethod,
       }));
-      showToast({ ...response, message: __("Checkout method updated.", "eventkoi") });
+      showToast({ ...response, message: __("Checkout method updated.", "eventkoi-lite") });
     } catch (error) {
-      showToastError(error?.message ?? __("Failed to update checkout method.", "eventkoi"));
+      showToastError(error?.message ?? __("Failed to update checkout method.", "eventkoi-lite"));
       setSettings((prev) => ({
         ...prev,
         ticket_checkout_method: method,
@@ -103,12 +103,12 @@ export function SettingsCheckoutMethod({ settings, setSettings }) {
     <Box>
       <div className="grid w-full">
         <Panel variant="header">
-          <Heading level={3}>{__("Checkout method", "eventkoi")}</Heading>
+          <Heading level={3}>{__("Checkout method", "eventkoi-lite")}</Heading>
         </Panel>
         <Separator />
         <Panel className="gap-6">
           <p className="text-sm text-muted-foreground">
-            {__("Select a checkout method for processing ticket payments.", "eventkoi")}
+            {__("Select a checkout method for processing ticket payments.", "eventkoi-lite")}
           </p>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -123,7 +123,7 @@ export function SettingsCheckoutMethod({ settings, setSettings }) {
                 <ProBadge className="ml-0" />
               </div>
               <p className="text-xs text-muted-foreground text-center">
-                {__("Accept credit cards, Apple Pay, and Google Pay directly on your event pages.", "eventkoi")}
+                {__("Accept credit cards, Apple Pay, and Google Pay directly on your event pages.", "eventkoi-lite")}
               </p>
             </a>
 
@@ -133,8 +133,8 @@ export function SettingsCheckoutMethod({ settings, setSettings }) {
               <WooLogo className="h-5 w-auto" />
               <p className="text-xs text-muted-foreground">
                 {wooActive
-                  ? __("Any WooCommerce gateway", "eventkoi")
-                  : __("Install and activate WooCommerce to start selling tickets.", "eventkoi")}
+                  ? __("Any WooCommerce gateway", "eventkoi-lite")
+                  : __("Install and activate WooCommerce to start selling tickets.", "eventkoi-lite")}
               </p>
             </div>
           </div>

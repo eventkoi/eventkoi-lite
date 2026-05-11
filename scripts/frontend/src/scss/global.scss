@@ -28,16 +28,45 @@
   .eventkoi-details {
     padding: 1px 0 0;
   }
+
+  // Restore browser defaults for user-authored lists inside the event
+  // description. Tailwind's scoped preflight resets ul/ol/li inside
+  // .eventkoi-front, which strips bullets + indent from rich-text content.
+  .eventkoi-details ul,
+  .eventkoi-details ol {
+    margin: 0 0 16px;
+    padding-left: 1.5em;
+  }
+  .eventkoi-details ul {
+    list-style: disc outside;
+  }
+  .eventkoi-details ol {
+    list-style: decimal outside;
+  }
+  .eventkoi-details li {
+    display: list-item;
+    margin-bottom: 4px;
+  }
+  .eventkoi-details ul ul,
+  .eventkoi-details ol ol,
+  .eventkoi-details ul ol,
+  .eventkoi-details ol ul {
+    margin-top: 4px;
+    margin-bottom: 0;
+  }
+  .eventkoi-details ul ul {
+    list-style-type: circle;
+  }
+  .eventkoi-details ul ul ul {
+    list-style-type: square;
+  }
+
   .eventkoi-rule-summary {
     display: block;
     margin-bottom: 2px;
   }
   figure.wp-block-image img {
     width: 100%;
-  }
-  .wp-block-column .wp-block-column figure.wp-block-image {
-    position: relative;
-    top: -3px;
   }
   .eventkoi-location {
     font-style: normal;

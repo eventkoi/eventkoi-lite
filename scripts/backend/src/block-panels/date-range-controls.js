@@ -72,14 +72,14 @@ export const DateRangeControls = ({ attributes, setAttributes }) => {
             marginBottom: "8px",
           }}
         >
-          {__("Start Date", "eventkoi")}
+          {__("Start Date", "eventkoi-lite")}
         </label>
 
         <DateTrigger
           label={
             attributes.startDate
               ? dateI18n("F j, Y", attributes.startDate)
-              : __("Select Date", "eventkoi")
+              : __("Select Date", "eventkoi-lite")
           }
           onClick={() => setOpenPicker(openPicker === "start" ? null : "start")}
         />
@@ -114,7 +114,7 @@ export const DateRangeControls = ({ attributes, setAttributes }) => {
               width: "100%",
             }}
           >
-            {__("Clear Date", "eventkoi")}
+            {__("Clear Date", "eventkoi-lite")}
           </Button>
         )}
       </div>
@@ -131,14 +131,14 @@ export const DateRangeControls = ({ attributes, setAttributes }) => {
             marginBottom: "8px",
           }}
         >
-          {__("End Date (Optional)", "eventkoi")}
+          {__("End Date (Optional)", "eventkoi-lite")}
         </label>
 
         <DateTrigger
           label={
             attributes.endDate
               ? dateI18n("F j, Y", attributes.endDate)
-              : __("Select Date", "eventkoi")
+              : __("Select Date", "eventkoi-lite")
           }
           onClick={() => setOpenPicker(openPicker === "end" ? null : "end")}
         />
@@ -173,7 +173,7 @@ export const DateRangeControls = ({ attributes, setAttributes }) => {
               width: "100%",
             }}
           >
-            {__("Clear Date", "eventkoi")}
+            {__("Clear Date", "eventkoi-lite")}
           </Button>
         )}
       </div>

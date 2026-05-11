@@ -1,3 +1,4 @@
+import { __ } from "@wordpress/i18n";
 import { ArrowLeft, CircleCheck, CircleDotDashed } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { createRoot } from "react-dom/client";
@@ -216,13 +217,13 @@ function WizardWidget() {
         data-eventkoi-continue
       >
         <ArrowLeft style={{ width: "16px", height: "16px" }} />
-        <span>Continue Onboarding Wizard</span>
+        <span>{__("Continue Onboarding Wizard", "eventkoi-lite")}</span>
       </button>
 
       <div style={headerStyle}>
         <LogoIcon width="18" height="23" />
         <div style={{ fontSize: "14px", fontWeight: 600, color: "#111" }}>
-          EventKoi Onboarding Wizard
+          {__("EventKoi Onboarding Wizard", "eventkoi-lite")}
         </div>
         <button
           type="button"
@@ -247,7 +248,7 @@ function WizardWidget() {
             }
             setShow(false);
           }}
-          aria-label="Close"
+          aria-label={__("Close", "eventkoi-lite")}
         >
           ×
         </button>

@@ -57,7 +57,7 @@ class Events {
 				'methods'             => 'POST',
 				'callback'            => array( self::class, 'delete_events' ),
 				'permission_callback' => function () {
-					return current_user_can( 'manage_options' );
+					return current_user_can( 'eventkoi_events_edit' );
 				},
 			)
 		);
@@ -69,7 +69,7 @@ class Events {
 				'methods'             => 'POST',
 				'callback'            => array( self::class, 'remove_events' ),
 				'permission_callback' => function () {
-					return current_user_can( 'manage_options' );
+					return current_user_can( 'eventkoi_events_edit' );
 				},
 			)
 		);
@@ -81,7 +81,7 @@ class Events {
 				'methods'             => 'POST',
 				'callback'            => array( self::class, 'restore_events' ),
 				'permission_callback' => function () {
-					return current_user_can( 'manage_options' );
+					return current_user_can( 'eventkoi_events_edit' );
 				},
 			)
 		);
@@ -93,7 +93,7 @@ class Events {
 				'methods'             => 'POST',
 				'callback'            => array( self::class, 'duplicate_events' ),
 				'permission_callback' => function () {
-					return current_user_can( 'manage_options' );
+					return current_user_can( 'eventkoi_events_add' );
 				},
 			)
 		);

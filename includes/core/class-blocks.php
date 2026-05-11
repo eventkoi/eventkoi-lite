@@ -43,6 +43,7 @@ class Blocks {
 		add_filter( 'pre_render_block', array( __CLASS__, 'mark_eventkoi_query_loop' ), 5, 2 );
 		add_filter( 'query_loop_block_query_vars', array( __CLASS__, 'filter_event_query_loop' ), 10, 2 );
 		add_filter( 'register_block_type_args', array( __CLASS__, 'register_core_query_attributes' ), 10, 2 );
+		add_filter( 'render_block', array( __CLASS__, 'seed_visibility_wrapper' ), 7, 2 );
 		add_filter( 'render_block', array( __CLASS__, 'render_eventkoi_image' ), 9, 2 );
 		add_filter( 'render_block', array( __CLASS__, 'render_shortcodes_in_image_src' ), 8, 2 );
 		add_filter( 'render_block', array( __CLASS__, 'render_eventkoi_query_loop' ), 10, 2 );
@@ -62,9 +63,20 @@ class Blocks {
 	 * @return string
 	 */
 	public static function render_event_data_block( $block_content, $block ) {
-		$attributes = $block['attrs'] ?? array();
-		$field      = isset( $attributes['field'] ) ? sanitize_key( $attributes['field'] ) : 'title';
-		$event_id   = isset( $attributes['eventId'] ) ? absint( $attributes['eventId'] ) : 0;
+		$attributes   = $block['attrs'] ?? array();
+		$field        = isset( $attributes['field'] ) ? sanitize_key( $attributes['field'] ) : 'title';
+		$event_id     = isset( $attributes['eventId'] ) ? absint( $attributes['eventId'] ) : 0;
+		$seed_content = '';
+
+		if ( is_string( $block_content ) && false !== strpos( $block_content, 'eventkoi-visibility-seed' ) ) {
+			$seed_content  = $block_content;
+			$block_content = '';
+		}
+
+		// Respect upstream filters (e.g. Block Visibility) that fully hid the block.
+		if ( ! empty( $attributes['blockVisibility'] ) && '' === $seed_content && '' === trim( (string) $block_content ) ) {
+			return '';
+		}
 
 		// Prefer event from context (injected by EventKoi Query Loop).
 		$context_event = $block['context']['eventkoi_event'] ?? null;
@@ -125,7 +137,7 @@ class Blocks {
 				$rendered
 			);
 
-			return self::normalize_preset_styles( $rendered );
+			return self::apply_upstream_wrapper_classes( self::normalize_preset_styles( $rendered ), $seed_content );
 		}
 
 		$normalized_classes = array_unique(
@@ -149,13 +161,20 @@ class Blocks {
 			$wrapper_attributes                  = get_block_wrapper_attributes( $extra_attributes );
 			\WP_Block_Supports::$block_to_render = $prev_block_to_render;
 
+		$tag          = isset( $attributes['tagName'] ) ? strtolower( (string) $attributes['tagName'] ) : 'div';
+		$allowed_tags = array( 'div', 'p', 'span', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6' );
+		if ( ! in_array( $tag, $allowed_tags, true ) ) {
+			$tag = 'div';
+		}
+
 		$output = sprintf(
-			'<div %1$s>%2$s</div>',
+			'<%1$s %2$s>%3$s</%1$s>',
+			$tag,
 			$wrapper_attributes,
 			wp_kses_post( $value )
 		);
 
-		return self::normalize_preset_styles( $output );
+		return self::apply_upstream_wrapper_classes( self::normalize_preset_styles( $output ), $seed_content );
 	}
 
 	/**
@@ -174,6 +193,9 @@ class Blocks {
 					'tagName'               => array(
 						'type'    => 'string',
 						'default' => 'div',
+					),
+					'textAlign'             => array(
+						'type' => 'string',
 					),
 					'className'             => array(
 						'type' => 'string',
@@ -402,7 +424,12 @@ JS;
 	 * @return string
 	 */
 	public static function render_calendar_block( $block_content, $block ) {
-		return wp_kses_post( self::render_calendar_type( 'calendar', $block['attrs'] ) );
+		$has_bv = ! empty( $block['attrs']['blockVisibility'] );
+		if ( $has_bv && '' === trim( (string) $block_content ) ) {
+			return '';
+		}
+		$rendered = wp_kses_post( self::render_calendar_type( 'calendar', $block['attrs'] ) );
+		return self::apply_upstream_wrapper_classes( $rendered, $block_content );
 	}
 
 	/**
@@ -413,7 +440,82 @@ JS;
 	 * @return string
 	 */
 	public static function render_list_block( $block_content, $block ) {
-		return wp_kses_post( self::render_calendar_type( 'list', $block['attrs'] ) );
+		$has_bv = ! empty( $block['attrs']['blockVisibility'] );
+		if ( $has_bv && '' === trim( (string) $block_content ) ) {
+			return '';
+		}
+		$rendered = wp_kses_post( self::render_calendar_type( 'list', $block['attrs'] ) );
+		return self::apply_upstream_wrapper_classes( $rendered, $block_content );
+	}
+
+	/**
+	 * Seed a minimal wrapper for fully-dynamic EventKoi blocks so that plugins
+	 * injecting classes via WP_HTML_Tag_Processor (e.g. Block Visibility) have
+	 * a tag to attach to before our own render filter runs.
+	 *
+	 * @param string $block_content Block content.
+	 * @param array  $block         Block data.
+	 * @return string
+	 */
+	public static function seed_visibility_wrapper( $block_content, $block ) {
+		$blocks = array( 'eventkoi/calendar', 'eventkoi/list', 'eventkoi/event-data' );
+		if ( ! in_array( $block['blockName'] ?? '', $blocks, true ) ) {
+			return $block_content;
+		}
+		if ( empty( $block['attrs']['blockVisibility'] ) ) {
+			return $block_content;
+		}
+		if ( '' !== trim( (string) $block_content ) ) {
+			return $block_content;
+		}
+		return '<div class="eventkoi-visibility-seed"></div>';
+	}
+
+	/**
+	 * Copy classes added by upstream render_block filters (e.g. Block Visibility)
+	 * onto the first tag of our rendered output.
+	 *
+	 * @param string $rendered    Freshly rendered block output.
+	 * @param string $seed_content Seeded wrapper content after upstream filters.
+	 * @return string
+	 */
+	private static function apply_upstream_wrapper_classes( $rendered, $seed_content ) {
+		if ( ! class_exists( 'WP_HTML_Tag_Processor' ) ) {
+			return $rendered;
+		}
+		if ( '' === trim( (string) $seed_content ) ) {
+			return $rendered;
+		}
+
+		$source = new \WP_HTML_Tag_Processor( $seed_content );
+		if ( ! $source->next_tag() ) {
+			return $rendered;
+		}
+		$class_attr = (string) $source->get_attribute( 'class' );
+		if ( '' === $class_attr ) {
+			return $rendered;
+		}
+
+		$classes = array_values(
+			array_filter(
+				preg_split( '/\s+/', trim( $class_attr ) ),
+				static function ( $c ) {
+					return '' !== $c && 'eventkoi-visibility-seed' !== $c;
+				}
+			)
+		);
+		if ( empty( $classes ) ) {
+			return $rendered;
+		}
+
+		$target = new \WP_HTML_Tag_Processor( $rendered );
+		if ( ! $target->next_tag() ) {
+			return $rendered;
+		}
+		foreach ( $classes as $cls ) {
+			$target->add_class( $cls );
+		}
+		return $target->get_updated_html();
 	}
 
 	/**
@@ -931,6 +1033,10 @@ JS;
 		}
 
 		$wrapper_class     = ! empty( $attrs['className'] ) ? $attrs['className'] : 'eventkoi-query-loop';
+		$loop_text_align   = isset( $attrs['textAlign'] ) ? sanitize_html_class( (string) $attrs['textAlign'] ) : '';
+		if ( in_array( $loop_text_align, array( 'left', 'center', 'right' ), true ) ) {
+			$wrapper_class .= ' has-text-align-' . $loop_text_align;
+		}
 		$rendered          = '';
 		$has_post_template = false;
 
@@ -1196,7 +1302,8 @@ JS;
 				$target     = $paged < $total_pages ? $paged + 1 : 0;
 				$segments[] = self::build_pagination_link( 'next', $label, $arrow_opt, $target, $show_label );
 			} elseif ( 'core/query-pagination-numbers' === $name ) {
-				$segments[] = self::build_pagination_numbers( $paged, $total_pages );
+				$mid_size   = isset( $cattr['midSize'] ) ? max( 0, (int) $cattr['midSize'] ) : 2;
+				$segments[] = self::build_pagination_numbers( $paged, $total_pages, $mid_size );
 			}
 		}
 
@@ -1211,11 +1318,12 @@ JS;
 	/**
 	 * Build numbered pagination links.
 	 *
-	 * @param int $current Current page.
-	 * @param int $total   Total pages.
+	 * @param int $current  Current page.
+	 * @param int $total    Total pages.
+	 * @param int $mid_size Page links to show on each side of current.
 	 * @return string
 	 */
-	protected static function build_pagination_numbers( $current, $total ) {
+	protected static function build_pagination_numbers( $current, $total, $mid_size = 2 ) {
 		$links = paginate_links(
 			array(
 				'base'      => add_query_arg( 'ek_page', '%#%' ),
@@ -1224,6 +1332,7 @@ JS;
 				'total'     => $total,
 				'prev_next' => false,
 				'type'      => 'array',
+				'mid_size'  => $mid_size,
 			)
 		);
 
@@ -1305,8 +1414,11 @@ JS;
 			$template_cls[] = 'is-layout-grid';
 			if ( $layout_cols ) {
 				$template_cls[] = 'columns-' . $layout_cols;
-				$template_style = sprintf( 'display:grid;grid-template-columns:repeat(%d,minmax(0,1fr));gap:var(--wp--style--block-gap,1.5rem);', $layout_cols );
 			}
+			// Intentionally no inline grid-template-columns: the columns-N
+			// class carries that rule so media queries can collapse it on
+			// mobile. gap is kept as an inline var fallback.
+			$template_style = 'display:grid;gap:var(--wp--style--block-gap,1.5rem);';
 		} else {
 			$template_cls[] = 'is-layout-flow';
 		}
@@ -1543,11 +1655,28 @@ JS;
 			'image'    => $attributes['showImage'] ?? true,
 		);
 
-		if ( empty( $visibility[ $field ] ) ) {
+		if ( array_key_exists( $field, $visibility ) && empty( $visibility[ $field ] ) ) {
 			return '';
 		}
 
-		return $map[ $field ] ?? '';
+		if ( isset( $map[ $field ] ) ) {
+			return $map[ $field ];
+		}
+
+		// Extended canonical keys (event_*): delegate to the shared renderer
+		// so block-data matches what block bindings + builder widgets output.
+		if ( 0 === strpos( $field, 'event_' ) && function_exists( 'eventkoi_get_event_data_options' ) ) {
+			$allowed = eventkoi_get_event_data_options();
+			if ( isset( $allowed[ $field ] ) ) {
+				$event_id = isset( $event['id'] ) ? absint( $event['id'] ) : 0;
+				if ( $event_id > 0 ) {
+					$event_obj = new Event( $event_id );
+					return (string) $event_obj::render_meta( $field );
+				}
+			}
+		}
+
+		return '';
 	}
 
 	/**
@@ -1611,8 +1740,18 @@ JS;
 	 * @return string HTML output.
 	 */
 	private static function render_calendar_type( $type, $attrs ) {
-		$cal_id   = (int) get_option( 'eventkoi_default_event_cal', 0 );
+		// "Select all calendars" expands at render time so future calendars get
+		// picked up automatically across every page where the block is embedded.
+		if ( ! empty( $attrs['selectAllCalendars'] ) ) {
+			$attrs['calendars'] = self::get_all_calendar_term_ids();
+		}
+
+		$cal_id   = eventkoi_resolve_calendar_id( $attrs['calendars'] ?? 0 );
 		$calendar = new \EventKoi\Core\Calendar( $cal_id );
+
+		if ( $calendar::is_invalid() ) {
+			return self::render_no_calendar_notice();
+		}
 
 		if ( 'calendar' === $type ) {
 			$args = array(
@@ -1639,6 +1778,45 @@ JS;
 		$args['align']  = $attrs['align'] ?? '';
 
 		return eventkoi_get_calendar_content( $cal_id, $type, $args );
+	}
+
+	/**
+	 * Resolve every published `event_cal` term ID. Used by the calendar/list
+	 * block "Select all calendars" toggle so newly-created calendars appear on
+	 * existing pages without re-saving the block.
+	 *
+	 * @return int[]
+	 */
+	private static function get_all_calendar_term_ids() {
+		$ids = get_terms(
+			array(
+				'taxonomy'   => 'event_cal',
+				'hide_empty' => false,
+				'fields'     => 'ids',
+				'orderby'    => 'term_id',
+				'order'      => 'ASC',
+			)
+		);
+		if ( is_wp_error( $ids ) || empty( $ids ) ) {
+			return array();
+		}
+		return array_map( 'intval', $ids );
+	}
+
+	/**
+	 * Friendly fallback when no calendar can be resolved.
+	 *
+	 * Admins get an actionable link; visitors just see a plain message.
+	 */
+	private static function render_no_calendar_notice() {
+		$message = esc_html__( 'No calendar is available to display.', 'eventkoi-lite' );
+
+		if ( current_user_can( 'manage_options' ) ) {
+			$url      = esc_url( admin_url( 'admin.php?page=eventkoi#/calendars' ) );
+			$message .= ' <a href="' . $url . '">' . esc_html__( 'Create a calendar', 'eventkoi-lite' ) . '</a>';
+		}
+
+		return '<div class="wp-block-group eventkoi-front"><p>' . $message . '</p></div>';
 	}
 
 	/**

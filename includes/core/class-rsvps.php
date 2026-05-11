@@ -82,6 +82,31 @@ class Rsvps {
 			return new \WP_Error( 'eventkoi_rsvp_disabled', __( 'RSVP is disabled for this event.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
+		// Reject after the event has ended. Highest-priority gate: a closed-out
+		// event blocks RSVPs even if an admin left the RSVP window open.
+		$now            = time();
+		$event_end_ts   = self::resolve_event_end_ts( $event_id, (int) $instance_ts );
+		$event_status   = (string) get_post_meta( $event_id, 'status', true );
+		$event_ended    = ( 'completed' === $event_status || 'cancelled' === $event_status )
+			|| ( $event_end_ts > 0 && $now > $event_end_ts );
+		if ( $event_ended ) {
+			return new \WP_Error( 'eventkoi_event_ended', __( 'This event has ended and is no longer accepting RSVPs.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
+		// Reject submissions outside the configured RSVP window. Done before
+		// the auto-account branch so we never create a WP user for a closed
+		// RSVP, and before any capacity work.
+		$window_s = (string) Event::get_rsvp_sale_start( (int) $instance_ts );
+		$window_e = (string) Event::get_rsvp_sale_end( (int) $instance_ts );
+		$start_ts = '' !== $window_s ? strtotime( $window_s . ' UTC' ) : 0;
+		$end_ts   = '' !== $window_e ? strtotime( $window_e . ' UTC' ) : 0;
+		if ( $start_ts && $now < $start_ts ) {
+			return new \WP_Error( 'eventkoi_rsvp_not_started', __( 'RSVP is not open yet.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+		if ( $end_ts && $now > $end_ts ) {
+			return new \WP_Error( 'eventkoi_rsvp_closed', __( 'RSVP is closed.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
 		$allow_guests = Event::get_rsvp_allow_guests();
 		$max_guests   = Event::get_rsvp_max_guests();
 
@@ -208,6 +233,7 @@ class Rsvps {
 
 		if ( 'going' === $status ) {
 			self::send_rsvp_email( $email, $name, $event_id, $instance_ts, $checkin_token, $guests );
+			self::send_admin_rsvp_notification( $name, $email, $event_id, $instance_ts, $guests );
 		}
 
 		return array(
@@ -822,7 +848,6 @@ class Rsvps {
 		$subject = sprintf( __( 'Your RSVP for %s', 'eventkoi-lite' ), $title );
 
 		$event_url = self::get_event_url( $event_id, $instance_ts );
-		$qr_code  = '';
 
 		$event_timestamp     = $instance_ts ? absint( $instance_ts ) : absint( get_post_meta( $event_id, 'start_timestamp', true ) );
 		$event_end_timestamp = absint( get_post_meta( $event_id, 'end_timestamp', true ) );
@@ -848,8 +873,8 @@ class Rsvps {
 		}
 
 		$utc_timezone       = new \DateTimeZone( 'UTC' );
-		$date_format        = get_option( 'date_format' );
-		$time_format        = get_option( 'time_format' );
+		$date_format        = \eventkoi_resolved_date_format();
+		$time_format        = \eventkoi_resolved_time_format();
 		$event_date         = $event_timestamp ? wp_date( $date_format, $event_timestamp, $utc_timezone ) : '';
 		$event_time         = $event_timestamp ? wp_date( $time_format, $event_timestamp, $utc_timezone ) : '';
 		$event_end_date     = $event_end_timestamp ? wp_date( $date_format, $event_end_timestamp, $utc_timezone ) : '';
@@ -894,7 +919,6 @@ class Rsvps {
 			'[guest_count]'        => $guest_count,
 			'[guests_line]'        => $guest_line,
 			'[checkin_code]'       => $token,
-			'[qr_code]'            => '',
 			'[site_name]'          => get_bloginfo( 'name' ),
 		);
 
@@ -906,6 +930,12 @@ class Rsvps {
 				: __( 'Schedule:', 'eventkoi-lite' )
 			)
 			: '';
+		// PROD-444: pick the link line based on whether attendees can edit.
+		$allow_edit     = Event::get_rsvp_allow_edit();
+		$rsvp_link_line = $allow_edit
+			? '<p>' . esc_html__( 'View / manage your RSVP:', 'eventkoi-lite' ) . '<br />[event_url]</p>'
+			: '<p>' . esc_html__( 'View event page:', 'eventkoi-lite' ) . '<br />[event_url]</p>';
+
 		$default_body  = implode(
 			"\n",
 			array(
@@ -915,7 +945,7 @@ class Rsvps {
 				$event_datetime ? '<p>' . esc_html( $schedule_label ) . '<br />[event_datetime]</p>' : '',
 				$event_location ? '<p>' . esc_html__( 'Location:', 'eventkoi-lite' ) . '<br />[event_location]</p>' : '',
 				'<p>[guests_line]</p>',
-				'<p>' . esc_html__( 'View / manage your RSVP:', 'eventkoi-lite' ) . '<br />[event_url]</p>',
+				$rsvp_link_line,
 				'<p>&mdash;<br />[site_name]</p>',
 			)
 		);
@@ -1113,5 +1143,146 @@ class Rsvps {
 		}
 
 		return add_query_arg( 'instance', absint( $instance_ts ), $url );
+	}
+
+	/**
+	 * Send admin notification for a new RSVP.
+	 *
+	 * @param string $name        Attendee name.
+	 * @param string $email       Attendee email.
+	 * @param int    $event_id    Event post ID.
+	 * @param string $instance_ts Instance timestamp.
+	 * @param int    $guests      Guest count.
+	 */
+	private static function send_admin_rsvp_notification( $name, $email, $event_id, $instance_ts, $guests = 0 ) {
+		$settings = Settings::get();
+		$enabled  = $settings['admin_rsvp_email_enabled'] ?? null;
+		$enabled  = null === $enabled || '' === $enabled
+			? true
+			: filter_var( $enabled, FILTER_VALIDATE_BOOLEAN );
+
+		if ( ! $enabled ) {
+			return;
+		}
+
+		$admin_email = get_option( 'admin_email' );
+		if ( ! is_email( $admin_email ) ) {
+			return;
+		}
+
+		$event_name = self::get_event_title( $event_id, $instance_ts );
+
+		$event_timestamp = $instance_ts ? absint( $instance_ts ) : absint( get_post_meta( $event_id, 'start_timestamp', true ) );
+		$utc_timezone    = new \DateTimeZone( 'UTC' );
+		$date_format     = \eventkoi_resolved_date_format();
+		$time_format     = \eventkoi_resolved_time_format();
+		$event_datetime  = $event_timestamp ? wp_date( $date_format . ' ' . $time_format, $event_timestamp, $utc_timezone ) : '';
+
+		$guest_line = $guests > 0
+			/* translators: %d: Number of guests. */
+			? '<strong>' . esc_html__( 'Guests:', 'eventkoi-lite' ) . '</strong> ' . absint( $guests )
+			: '';
+
+		$tags = array(
+			'[attendee_name]'  => esc_html( $name ),
+			'[attendee_email]' => esc_html( $email ),
+			'[event_name]'     => esc_html( $event_name ),
+			'[event_datetime]' => esc_html( $event_datetime ),
+			'[guests_line]'    => $guest_line,
+			'[site_name]'      => esc_html( get_bloginfo( 'name' ) ),
+		);
+
+		$default_subject  = __( 'New RSVP: [event_name]', 'eventkoi-lite' );
+		$default_template = implode(
+			"\n",
+			array(
+				'<p>' . esc_html__( 'A new RSVP has been submitted.', 'eventkoi-lite' ) . '</p>',
+				'<p><strong>' . esc_html__( 'Attendee:', 'eventkoi-lite' ) . '</strong> [attendee_name] ([attendee_email])</p>',
+				'<p>[guests_line]</p>',
+				'<p><strong>' . esc_html__( 'Event:', 'eventkoi-lite' ) . '</strong> [event_name]</p>',
+				'<p><strong>' . esc_html__( 'Date:', 'eventkoi-lite' ) . '</strong> [event_datetime]</p>',
+				'<p>&mdash;<br />[site_name]</p>',
+			)
+		);
+
+		$subject  = trim( (string) ( $settings['admin_rsvp_email_subject'] ?? '' ) );
+		$template = trim( (string) ( $settings['admin_rsvp_email_template'] ?? '' ) );
+		$subject  = '' !== $subject ? $subject : $default_subject;
+		$template = '' !== $template ? $template : $default_template;
+
+		$subject = strtr( $subject, $tags );
+		$body    = strtr( $template, $tags );
+		$body    = wp_kses( wpautop( trim( $body ) ), Settings::get_email_template_allowed_tags() );
+
+		$headers         = array( 'Content-Type: text/html; charset=UTF-8' );
+		$sender_email    = sanitize_email( (string) ( $settings['admin_rsvp_email_sender_email'] ?? '' ) );
+		$sender_name     = sanitize_text_field( (string) ( $settings['admin_rsvp_email_sender_name'] ?? '' ) );
+		$from_email_hook = null;
+		$from_name_hook  = null;
+
+		if ( $sender_email ) {
+			$from = $sender_email;
+			if ( $sender_name ) {
+				$from = sprintf( '%s <%s>', $sender_name, $sender_email );
+			}
+			$headers[]       = 'From: ' . $from;
+			$from_email_hook = static function () use ( $sender_email ) {
+				return $sender_email;
+			};
+			add_filter( 'wp_mail_from', $from_email_hook );
+		}
+
+		if ( $sender_name ) {
+			$from_name_hook = static function () use ( $sender_name ) {
+				return $sender_name;
+			};
+			add_filter( 'wp_mail_from_name', $from_name_hook );
+		}
+
+		wp_mail( $admin_email, $subject, $body, $headers );
+
+		if ( $from_email_hook ) {
+			remove_filter( 'wp_mail_from', $from_email_hook );
+		}
+		if ( $from_name_hook ) {
+			remove_filter( 'wp_mail_from_name', $from_name_hook );
+		}
+	}
+
+	/**
+	 * Resolve the end timestamp for an event, instance-aware.
+	 *
+	 * @param int $event_id    Event ID.
+	 * @param int $instance_ts Instance start timestamp (0 for non-recurring).
+	 * @return int Unix timestamp, 0 when undeterminable.
+	 */
+	public static function resolve_event_end_ts( $event_id, $instance_ts = 0 ) {
+		$event_id    = absint( $event_id );
+		$instance_ts = absint( $instance_ts );
+		if ( $event_id <= 0 ) {
+			return 0;
+		}
+
+		$end_ts = absint( get_post_meta( $event_id, 'end_timestamp', true ) );
+
+		if ( $instance_ts > 0 && 'recurring' === Event::get_date_type() ) {
+			$rules = Event::get_recurrence_rules();
+			if ( ! empty( $rules ) ) {
+				foreach ( $rules as $rule ) {
+					$rule_start = ! empty( $rule['start_date'] ) ? strtotime( $rule['start_date'] . ' UTC' ) : null;
+					$rule_end   = ! empty( $rule['end_date'] ) ? strtotime( $rule['end_date'] . ' UTC' ) : null;
+					$duration   = ( $rule_start && $rule_end && $rule_end > $rule_start ) ? ( $rule_end - $rule_start ) : null;
+					if ( $duration ) {
+						return $instance_ts + $duration;
+					}
+				}
+			}
+			return $instance_ts;
+		}
+
+		if ( $end_ts <= 0 ) {
+			$end_ts = absint( get_post_meta( $event_id, 'start_timestamp', true ) );
+		}
+		return $end_ts;
 	}
 }

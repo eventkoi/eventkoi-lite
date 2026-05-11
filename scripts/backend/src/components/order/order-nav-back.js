@@ -9,10 +9,10 @@ export function OrderNavBack({ order, setOrder }) {
   const location = useLocation();
   const isRefundView = /\/tickets\/orders\/[^/]+\/refund$/.test(location.pathname);
   const heading = isRefundView
-    ? __("Refund", "eventkoi")
+    ? __("Refund", "eventkoi-lite")
     : id
-      ? __("Edit order", "eventkoi")
-      : __("Add order", "eventkoi");
+      ? __("Edit order", "eventkoi-lite")
+      : __("Add order", "eventkoi-lite");
 
   return (
     <div className="space-y-[1px]">
@@ -23,10 +23,10 @@ export function OrderNavBack({ order, setOrder }) {
             className="p-0 h-auto text-foreground font-normal"
             asChild
           >
-            <Link to={`/tickets/orders/${id}`}>{__("Edit order", "eventkoi")}</Link>
+            <Link to={`/tickets/orders/${id}`}>{__("Edit order", "eventkoi-lite")}</Link>
           </Button>
           <ChevronRight className="h-4 w-4" />
-          <span>{__("Refund", "eventkoi")}</span>
+          <span>{__("Refund", "eventkoi-lite")}</span>
         </div>
       ) : (
         <Button
