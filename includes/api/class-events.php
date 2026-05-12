@@ -97,6 +97,18 @@ class Events {
 				},
 			)
 		);
+
+		register_rest_route(
+			EVENTKOI_API,
+			'/empty_trash',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( self::class, 'empty_trash' ),
+				'permission_callback' => function () {
+					return current_user_can( 'eventkoi_events_edit' );
+				},
+			)
+		);
 	}
 
 	/**
@@ -214,6 +226,27 @@ class Events {
 		 * @param array|null $ids The removed event IDs.
 		 */
 		do_action( 'eventkoi_after_events_removed', $ids );
+
+		return rest_ensure_response( $response );
+	}
+
+	/**
+	 * Permanently delete every trashed event the current user is allowed to delete.
+	 *
+	 * @param \WP_REST_Request $request The request (no body needed).
+	 * @return \WP_REST_Response|\WP_Error The response with deleted IDs and a summary.
+	 */
+	public static function empty_trash( WP_REST_Request $request ) {
+		unset( $request );
+
+		$response = Query::empty_trash();
+
+		/**
+		 * Fires after the events trash has been emptied.
+		 *
+		 * @param array $ids The IDs that were permanently removed.
+		 */
+		do_action( 'eventkoi_after_events_trash_emptied', $response['ids'] ?? array() );
 
 		return rest_ensure_response( $response );
 	}

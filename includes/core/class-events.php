@@ -338,6 +338,53 @@ class Events {
 	}
 
 	/**
+	 * Permanently delete every trashed eventkoi_event the current user can delete.
+	 *
+	 * Mirrors core's "Empty Trash" behaviour. Skips IDs the user does not have
+	 * permission to delete so partial empties stay safe.
+	 *
+	 * @return array {ids: int[], removed: int, skipped: int, success: string}
+	 */
+	public static function empty_trash() {
+		$trashed = get_posts(
+			array(
+				'post_type'      => 'eventkoi_event',
+				'post_status'    => 'trash',
+				'posts_per_page' => -1,
+				'fields'         => 'ids',
+				'no_found_rows'  => true,
+				'cache_results'  => false,
+			)
+		);
+
+		$removed = array();
+		$skipped = 0;
+
+		foreach ( $trashed as $id ) {
+			if ( ! current_user_can( 'delete_post', $id ) ) {
+				++$skipped;
+				continue;
+			}
+			if ( wp_delete_post( (int) $id, true ) ) {
+				$removed[] = (int) $id;
+			} else {
+				++$skipped;
+			}
+		}
+
+		return array(
+			'ids'     => $removed,
+			'removed' => count( $removed ),
+			'skipped' => $skipped,
+			'success' => sprintf(
+				/* translators: %d: number of events permanently removed. */
+				_n( '%d event permanently removed.', '%d events permanently removed.', count( $removed ), 'eventkoi-lite' ),
+				count( $removed )
+			),
+		);
+	}
+
+	/**
 	 * Restore events.
 	 *
 	 * @param array $ids An array of events IDs to restore.

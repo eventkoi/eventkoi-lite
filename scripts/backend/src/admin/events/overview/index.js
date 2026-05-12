@@ -10,7 +10,7 @@ import { formatWPtime } from "@/lib/date-utils";
 import { showStaticToast, showToast, showToastError } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import apiRequest from "@wordpress/api-fetch";
-import { __, sprintf } from "@wordpress/i18n";
+import { __, _n, sprintf } from "@wordpress/i18n";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,6 +37,7 @@ import {
   Download,
   Link2,
   Repeat,
+  Trash2,
   Upload,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -88,6 +89,8 @@ export function EventsOverview() {
   const [icsImporting, setIcsImporting] = useState(false);
   const [tecDialogOpen, setTecDialogOpen] = useState(false);
   const [tecState, setTecState] = useState({ loading: true, data: null, importing: false, result: null });
+  const [emptyTrashOpen, setEmptyTrashOpen] = useState(false);
+  const [emptyingTrash, setEmptyingTrash] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
   const sidebarSteps = useMemo(
@@ -205,6 +208,31 @@ export function EventsOverview() {
   };
 
   const tecAvailable = !tecState.loading && tecState.data?.installed && tecState.data?.events_count > 0;
+
+  const trashCount = Number(statusCounts?.trash || 0);
+  const handleEmptyTrash = async () => {
+    setEmptyingTrash(true);
+    try {
+      const response = await apiRequest({
+        path: `${eventkoi_params.api}/empty_trash`,
+        method: "POST",
+        headers: { "EVENTKOI-API-KEY": eventkoi_params.api_key },
+      });
+      const removed = Number(response?.removed || 0);
+      if (removed > 0) {
+        showToast({ message: response?.success || sprintf(_n("%d event permanently removed.", "%d events permanently removed.", removed, "eventkoi-lite"), removed) });
+      }
+      if (Number(response?.skipped || 0) > 0) {
+        showToastError(sprintf(_n("%d event was skipped (no permission).", "%d events were skipped (no permission).", response.skipped, "eventkoi-lite"), response.skipped));
+      }
+      setEmptyTrashOpen(false);
+      fetchResults();
+    } catch (err) {
+      showToastError(err?.message ?? __("Failed to empty trash.", "eventkoi-lite"));
+    } finally {
+      setEmptyingTrash(false);
+    }
+  };
 
   const handleICSUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -856,6 +884,53 @@ export function EventsOverview() {
         </div>
       )}
 
+      <Dialog open={emptyTrashOpen} onOpenChange={setEmptyTrashOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base">
+              {__("Empty trash?", "eventkoi-lite")}
+            </DialogTitle>
+            <DialogDescription className="text-sm leading-relaxed">
+              {sprintf(
+                /* translators: %d: number of events. */
+                _n(
+                  "This will permanently delete %d event in the trash. This action cannot be undone.",
+                  "This will permanently delete %d events in the trash. This action cannot be undone.",
+                  trashCount,
+                  "eventkoi-lite"
+                ),
+                trashCount
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="mt-2">
+            <DialogClose asChild>
+              <Button variant="outline" className="cursor-pointer shadow-none border-solid">
+                {__("Cancel", "eventkoi-lite")}
+              </Button>
+            </DialogClose>
+            <Button
+              onClick={handleEmptyTrash}
+              disabled={emptyingTrash}
+              className="gap-1.5 cursor-pointer shadow-none"
+              style={{ border: "1px solid transparent" }}
+            >
+              {emptyingTrash ? (
+                <>
+                  <span className="h-3.5 w-3.5 mr-1.5 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  {__("Emptying…", "eventkoi-lite")}
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-3.5 w-3.5" />
+                  {__("Empty trash", "eventkoi-lite")}
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div className="mx-auto flex w-full gap-2 justify-between">
         <Heading>{__("Events", "eventkoi-lite")}</Heading>
         <div className="flex items-center gap-2">
@@ -960,6 +1035,22 @@ export function EventsOverview() {
         defaultSort={[{ id: "modified_date", desc: true }]}
         statusCounts={statusCounts}
         refreshStatusCounts={fetchResults}
+        topLeftExtra={
+          queryStatus === "trash" && trashCount > 0 ? (
+            <div className="flex items-center gap-3">
+              <div className="h-5 w-px bg-border" aria-hidden="true" />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setEmptyTrashOpen(true)}
+                className="font-normal text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+              >
+                <Trash2 className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                {__("Empty trash", "eventkoi-lite")}
+              </Button>
+            </div>
+          ) : null
+        }
       />
       )}
     </div>

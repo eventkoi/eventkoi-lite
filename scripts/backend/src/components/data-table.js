@@ -52,6 +52,7 @@ export function DataTable({
   defaultSort,
   customTopLeft,
   customTopRight,
+  topLeftExtra,
   hideTableBorder = false,
   tableClassName = "",
   hideSearchBox = false,
@@ -87,7 +88,7 @@ export function DataTable({
   return (
     <div className={cn("w-full grid self-start", gap ? `gap-${gap}` : "gap-6")}>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center">
+        <div className="flex items-center gap-3">
           {customTopLeft ? (
             typeof customTopLeft === "function" ? (
               customTopLeft(table)
@@ -104,6 +105,11 @@ export function DataTable({
               refreshCounts={refreshStatusCounts}
             />
           )}
+          {topLeftExtra
+            ? typeof topLeftExtra === "function"
+              ? topLeftExtra(table)
+              : topLeftExtra
+            : null}
         </div>
         <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-end">
           {customTopRight ? (
