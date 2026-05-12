@@ -215,14 +215,13 @@ class TEC_Importer {
 		}
 
 		$title       = $post->post_title;
-		$description = $post->post_content;
 		$status      = $post->post_status;
 
 		// Date/time.
 		$start_date = get_post_meta( $tec_id, '_EventStartDate', true );
 		$end_date   = get_post_meta( $tec_id, '_EventEndDate', true );
 		$timezone   = get_post_meta( $tec_id, '_EventTimezone', true );
-		$all_day    = 'yes' === get_post_meta( $tec_id, '_EventAllDay', true );
+		$all_day    = self::is_all_day( $tec_id );
 
 		if ( empty( $start_date ) ) {
 			return new WP_Error( 'no_start_date', __( 'Event has no start date.', 'eventkoi-lite' ) );
@@ -241,36 +240,19 @@ class TEC_Importer {
 			),
 		);
 
-		// Location from venue.
-		$locations  = self::build_locations( $tec_id );
+		// Location from venue. Map TEC _EventShowMap into the per-location embed flag.
+		$show_map  = '1' === get_post_meta( $tec_id, '_EventShowMap', true );
+		$locations = self::build_locations( $tec_id, $show_map );
+
+		// TEC's _EventURL is the "Event Website" link. Promote it to a structured virtual
+		// location so it lands in EventKoi's multi-location UI and JSON-LD instead of being
+		// stuffed into the description.
+		$event_url = (string) get_post_meta( $tec_id, '_EventURL', true );
+		if ( '' !== $event_url ) {
+			$locations[] = self::build_virtual_location( $event_url );
+		}
+
 		$event_type = ! empty( $locations ) ? self::infer_type_from_locations( $locations ) : 'inperson';
-
-		// Virtual URL.
-		$event_url   = get_post_meta( $tec_id, '_EventURL', true );
-		$virtual_url = '';
-		if ( ! empty( $event_url ) && empty( $locations ) ) {
-			$virtual_url = $event_url;
-			$event_type  = 'virtual';
-		}
-
-		// Organizer info — append to description.
-		$organizer_info = self::get_organizer_info( $tec_id );
-		if ( ! empty( $organizer_info ) ) {
-			$description .= "\n\n" . $organizer_info;
-		}
-
-		// Cost info — append to description.
-		$cost = get_post_meta( $tec_id, '_EventCost', true );
-		if ( ! empty( $cost ) ) {
-			$currency_symbol = get_post_meta( $tec_id, '_EventCurrencySymbol', true );
-			$currency_pos    = get_post_meta( $tec_id, '_EventCurrencyPosition', true );
-			if ( ! empty( $currency_symbol ) ) {
-				$cost_display = 'prefix' === $currency_pos ? $currency_symbol . $cost : $cost . $currency_symbol;
-			} else {
-				$cost_display = $cost;
-			}
-			$description .= "\n\n<!-- tec_cost:" . esc_attr( $cost_display ) . ' -->';
-		}
 
 		// Recurrence (TEC Pro).
 		$date_type        = 'standard';
@@ -286,9 +268,6 @@ class TEC_Importer {
 				$event_days       = array(); // Clear event_days for recurring events.
 			}
 		}
-
-		// Map Google Maps settings.
-		$embed_gmap = '1' === get_post_meta( $tec_id, '_EventShowMap', true );
 
 		// Create the EventKoi event post.
 		$new_post_id = wp_insert_post(
@@ -306,6 +285,45 @@ class TEC_Importer {
 			return $new_post_id;
 		}
 
+		// Try to map TEC cost to a real EventKoi ticket. If we create one, the cost line is
+		// omitted from the description tail (the ticket card carries the price).
+		$cost_raw        = get_post_meta( $tec_id, '_EventCost', true );
+		$currency_symbol = get_post_meta( $tec_id, '_EventCurrencySymbol', true );
+		$currency_pos    = get_post_meta( $tec_id, '_EventCurrencyPosition', true );
+		$currency_code   = get_post_meta( $tec_id, '_EventCurrencyCode', true );
+		$ticket_id       = self::maybe_create_ticket_from_cost( $new_post_id, $cost_raw, $currency_symbol, $currency_code );
+		$attendance_mode = $ticket_id ? 'tickets' : 'none';
+
+		// Build description: run TEC body through wpautop to preserve paragraphs, then append
+		// website/organizer/cost in their own paragraph blocks.
+		$description    = wpautop( (string) $post->post_content );
+		$organizer_data = self::get_organizer_data( $tec_id );
+		$tail           = array();
+
+		if ( $organizer_data && ! empty( $organizer_data['name'] ) ) {
+			$lines = array( '<strong>' . esc_html__( 'Organizer', 'eventkoi-lite' ) . ':</strong> ' . esc_html( $organizer_data['name'] ) );
+			if ( ! empty( $organizer_data['email'] ) ) {
+				$lines[] = esc_html__( 'Email', 'eventkoi-lite' ) . ': <a href="mailto:' . esc_attr( $organizer_data['email'] ) . '">' . esc_html( $organizer_data['email'] ) . '</a>';
+			}
+			if ( ! empty( $organizer_data['phone'] ) ) {
+				$lines[] = esc_html__( 'Phone', 'eventkoi-lite' ) . ': ' . esc_html( $organizer_data['phone'] );
+			}
+			if ( ! empty( $organizer_data['website'] ) ) {
+				$lines[] = esc_html__( 'Website', 'eventkoi-lite' ) . ': <a href="' . esc_url( $organizer_data['website'] ) . '">' . esc_html( $organizer_data['website'] ) . '</a>';
+			}
+			$tail[] = '<p>' . implode( '<br>', $lines ) . '</p>';
+		}
+
+		// Surface cost only when we couldn't map it to a real ticket (free / non-numeric).
+		if ( ! $ticket_id && '' !== (string) $cost_raw ) {
+			$cost_display = self::format_cost_display( $cost_raw, $currency_symbol, $currency_pos );
+			$tail[]       = '<p><strong>' . esc_html__( 'Cost', 'eventkoi-lite' ) . ':</strong> ' . esc_html( $cost_display ) . '</p>';
+		}
+
+		if ( ! empty( $tail ) ) {
+			$description .= "\n" . implode( "\n", $tail );
+		}
+
 		// Set meta using the same approach as Event::update_meta().
 		update_post_meta( $new_post_id, 'description', wp_kses_post( $description ) );
 		update_post_meta( $new_post_id, 'date_type', $date_type );
@@ -315,10 +333,20 @@ class TEC_Importer {
 		update_post_meta( $new_post_id, 'locations', $locations );
 		update_post_meta( $new_post_id, 'type', $event_type );
 		update_post_meta( $new_post_id, 'standard_type', 'selected' );
-		update_post_meta( $new_post_id, 'embed_gmap', $embed_gmap );
-		update_post_meta( $new_post_id, 'virtual_url', sanitize_url( $virtual_url ) );
+		update_post_meta( $new_post_id, 'embed_gmap', $show_map );
+
+		// Mirror first virtual URL into legacy top-level meta so EK's get_virtual_url() picks it up.
+		$virtual_url_legacy = '';
+		foreach ( $locations as $loc ) {
+			if ( in_array( ( $loc['type'] ?? '' ), array( 'virtual', 'online' ), true ) && ! empty( $loc['virtual_url'] ) ) {
+				$virtual_url_legacy = (string) $loc['virtual_url'];
+				break;
+			}
+		}
+		update_post_meta( $new_post_id, 'virtual_url', $virtual_url_legacy );
 		update_post_meta( $new_post_id, 'recurrence_rules', $recurrence_rules );
-		update_post_meta( $new_post_id, 'attendance_mode', 'none' );
+		update_post_meta( $new_post_id, 'attendance_mode', $attendance_mode );
+		update_post_meta( $new_post_id, 'tickets_enabled', (bool) $ticket_id );
 		update_post_meta( $new_post_id, 'timezone_display', false );
 
 		if ( ! empty( $end_iso ) ) {
@@ -330,13 +358,24 @@ class TEC_Importer {
 			update_post_meta( $new_post_id, 'timezone', $timezone );
 		}
 
-		// Legacy location fields from primary location.
+		// Structured organizer postmeta (queryable, future templates can render natively).
+		if ( $organizer_data ) {
+			update_post_meta( $new_post_id, 'organizer_name', sanitize_text_field( $organizer_data['name'] ) );
+			update_post_meta( $new_post_id, 'organizer_email', sanitize_email( $organizer_data['email'] ) );
+			update_post_meta( $new_post_id, 'organizer_phone', sanitize_text_field( $organizer_data['phone'] ) );
+			update_post_meta( $new_post_id, 'organizer_website', esc_url_raw( $organizer_data['website'] ) );
+		}
+
+		// Legacy top-level location fields kept in sync with the primary location entry.
 		if ( ! empty( $locations[0] ) ) {
 			$primary = $locations[0];
 			update_post_meta( $new_post_id, 'location', $primary );
-			update_post_meta( $new_post_id, 'address1', $primary['address1'] ?? '' );
-			update_post_meta( $new_post_id, 'latitude', $primary['lat'] ?? '' );
-			update_post_meta( $new_post_id, 'longitude', $primary['lng'] ?? '' );
+			update_post_meta( $new_post_id, 'address1', (string) ( $primary['address1'] ?? '' ) );
+			update_post_meta( $new_post_id, 'address2', (string) ( $primary['address2'] ?? '' ) );
+			update_post_meta( $new_post_id, 'address3', (string) ( $primary['address3'] ?? '' ) );
+			update_post_meta( $new_post_id, 'latitude', (string) ( $primary['latitude'] ?? '' ) );
+			update_post_meta( $new_post_id, 'longitude', (string) ( $primary['longitude'] ?? '' ) );
+			update_post_meta( $new_post_id, 'gmap_link', (string) ( $primary['gmap_link'] ?? '' ) );
 		}
 
 		// Map TEC categories to EventKoi calendars.
@@ -367,10 +406,15 @@ class TEC_Importer {
 	/**
 	 * Build EventKoi locations array from TEC venue.
 	 *
-	 * @param int $tec_id The TEC event post ID.
+	 * EventKoi splits address into three lines + structured city/state/zip/country fields.
+	 * address1 is street only — never the full concatenated address (which would render
+	 * thrice once EventKoi also displays city/zip and country).
+	 *
+	 * @param int  $tec_id   The TEC event post ID.
+	 * @param bool $show_map Whether the TEC source asked for the map to be shown.
 	 * @return array Locations array.
 	 */
-	private static function build_locations( $tec_id ) {
+	private static function build_locations( $tec_id, $show_map = false ) {
 		$venue_id = get_post_meta( $tec_id, '_EventVenueID', true );
 
 		if ( empty( $venue_id ) ) {
@@ -382,75 +426,160 @@ class TEC_Importer {
 			return array();
 		}
 
-		$address = get_post_meta( $venue_id, '_VenueAddress', true );
-		$city    = get_post_meta( $venue_id, '_VenueCity', true );
-		$state   = get_post_meta( $venue_id, '_VenueState', true );
-		$zip     = get_post_meta( $venue_id, '_VenueZip', true );
-		$country = get_post_meta( $venue_id, '_VenueCountry', true );
-		$lat     = get_post_meta( $venue_id, '_VenueLat', true );
-		$lng     = get_post_meta( $venue_id, '_VenueLng', true );
+		$address = (string) get_post_meta( $venue_id, '_VenueAddress', true );
+		$city    = (string) get_post_meta( $venue_id, '_VenueCity', true );
+		$state   = (string) get_post_meta( $venue_id, '_VenueState', true );
+		$zip     = (string) get_post_meta( $venue_id, '_VenueZip', true );
+		$country = (string) get_post_meta( $venue_id, '_VenueCountry', true );
+		$lat     = (string) get_post_meta( $venue_id, '_VenueLat', true );
+		$lng     = (string) get_post_meta( $venue_id, '_VenueLng', true );
 
-		// Build full address string.
-		$address_parts = array_filter( array( $address, $city, $state, $zip, $country ) );
-		$full_address  = implode( ', ', $address_parts );
+		// address3 = "City, State, Zip, Country" — matches EventKoi's manual-entry shape.
+		$address3 = implode( ', ', array_filter( array( $city, $state, $zip, $country ) ) );
+
+		// gmap_link: prefer lat/lng, else fall back to text address.
+		$gmap_link = '';
+		if ( '' !== $lat && '' !== $lng ) {
+			$gmap_link = 'https://www.google.com/maps?q=' . rawurlencode( $lat . ',' . $lng );
+		} else {
+			$full = trim( $address . ', ' . $address3, ', ' );
+			if ( '' !== $full ) {
+				$gmap_link = 'https://www.google.com/maps?q=' . rawurlencode( $full );
+			}
+		}
 
 		return array(
 			array(
 				'id'          => wp_generate_uuid4(),
 				'type'        => 'physical',
 				'name'        => $venue->post_title,
-				'address1'    => $full_address,
+				'address1'    => $address,
 				'address2'    => '',
-				'city'        => ! empty( $city ) ? $city : '',
-				'state'       => ! empty( $state ) ? $state : '',
-				'country'     => ! empty( $country ) ? $country : '',
-				'zip'         => ! empty( $zip ) ? $zip : '',
-				'embed_gmap'  => false,
-				'gmap_link'   => '',
+				'address3'    => $address3,
+				'city'        => $city,
+				'state'       => $state,
+				'country'     => $country,
+				'zip'         => $zip,
+				'embed_gmap'  => (bool) $show_map,
+				'gmap_link'   => $gmap_link,
 				'virtual_url' => '',
-				'latitude'    => $lat ? (string) $lat : '',
-				'longitude'   => $lng ? (string) $lng : '',
+				'latitude'    => $lat,
+				'longitude'   => $lng,
 			),
 		);
 	}
 
 	/**
-	 * Get organizer information as formatted text.
+	 * Extract structured organizer data from a TEC event.
 	 *
 	 * @param int $tec_id The TEC event post ID.
-	 * @return string Organizer info HTML, or empty string.
+	 * @return array|null Associative array (name/email/phone/website) or null when no organizer.
 	 */
-	private static function get_organizer_info( $tec_id ) {
+	private static function get_organizer_data( $tec_id ) {
 		$organizer_id = get_post_meta( $tec_id, '_EventOrganizerID', true );
-
 		if ( empty( $organizer_id ) ) {
-			return '';
+			return null;
 		}
-
 		$organizer = get_post( $organizer_id );
 		if ( ! $organizer ) {
-			return '';
+			return null;
+		}
+		return array(
+			'name'    => (string) $organizer->post_title,
+			'email'   => (string) get_post_meta( $organizer_id, '_OrganizerEmail', true ),
+			'phone'   => (string) get_post_meta( $organizer_id, '_OrganizerPhone', true ),
+			'website' => (string) get_post_meta( $organizer_id, '_OrganizerWebsite', true ),
+		);
+	}
+
+	/**
+	 * Format a TEC cost value for inline display when no ticket was created.
+	 *
+	 * @param string $cost_raw        Raw _EventCost value.
+	 * @param string $currency_symbol _EventCurrencySymbol.
+	 * @param string $currency_pos    _EventCurrencyPosition ('prefix' or 'suffix').
+	 * @return string
+	 */
+	private static function format_cost_display( $cost_raw, $currency_symbol, $currency_pos ) {
+		if ( '' === $currency_symbol ) {
+			return (string) $cost_raw;
+		}
+		return ( 'suffix' === $currency_pos )
+			? $cost_raw . $currency_symbol
+			: $currency_symbol . $cost_raw;
+	}
+
+	/**
+	 * Map a currency symbol (£, $, €, ¥…) to an ISO 4217 code.
+	 *
+	 * @param string $code_meta Raw _EventCurrencyCode meta (may be empty).
+	 * @param string $symbol    _EventCurrencySymbol.
+	 * @return string Three-letter ISO code; falls back to USD.
+	 */
+	private static function infer_currency_code( $code_meta, $symbol ) {
+		if ( '' !== (string) $code_meta ) {
+			return strtoupper( substr( sanitize_text_field( (string) $code_meta ), 0, 3 ) );
+		}
+		$map = array(
+			'$'   => 'USD',
+			'£'   => 'GBP',
+			'€'   => 'EUR',
+			'¥'   => 'JPY',
+			'₹'   => 'INR',
+			'₩'   => 'KRW',
+			'C$'  => 'CAD',
+			'A$'  => 'AUD',
+			'kr'  => 'SEK',
+			'CHF' => 'CHF',
+			'R$'  => 'BRL',
+		);
+		$trim = trim( (string) $symbol );
+		return $map[ $trim ] ?? 'USD';
+	}
+
+	/**
+	 * Create a single EventKoi ticket from TEC's free-text cost field, when the cost
+	 * is a positive numeric value and the tickets feature is enabled.
+	 *
+	 * @param int    $event_id        EventKoi event post ID.
+	 * @param string $cost_raw        Raw _EventCost.
+	 * @param string $currency_symbol _EventCurrencySymbol.
+	 * @param string $currency_code   _EventCurrencyCode.
+	 * @return int|false Ticket ID on creation; false when no ticket was created.
+	 */
+	private static function maybe_create_ticket_from_cost( $event_id, $cost_raw, $currency_symbol, $currency_code ) {
+		if ( '' === (string) $cost_raw ) {
+			return false;
+		}
+		if ( ! function_exists( 'eventkoi_is_tickets_feature_enabled' ) || ! eventkoi_is_tickets_feature_enabled() ) {
+			return false;
+		}
+		// Extract the first numeric run — handles "12", "12.50", "£12", "$25 USD", etc.
+		if ( ! preg_match( '/\d+(?:\.\d+)?/', (string) $cost_raw, $m ) ) {
+			return false; // Non-numeric: "Free", "Donation", "TBD" — caller falls back to text.
+		}
+		$price = (float) $m[0];
+		if ( $price <= 0 ) {
+			return false;
 		}
 
-		$parts   = array();
-		$parts[] = '<strong>' . esc_html__( 'Organizer', 'eventkoi-lite' ) . ':</strong> ' . esc_html( $organizer->post_title );
-
-		$email = get_post_meta( $organizer_id, '_OrganizerEmail', true );
-		if ( ! empty( $email ) ) {
-			$parts[] = esc_html__( 'Email', 'eventkoi-lite' ) . ': ' . esc_html( $email );
-		}
-
-		$phone = get_post_meta( $organizer_id, '_OrganizerPhone', true );
-		if ( ! empty( $phone ) ) {
-			$parts[] = esc_html__( 'Phone', 'eventkoi-lite' ) . ': ' . esc_html( $phone );
-		}
-
-		$website = get_post_meta( $organizer_id, '_OrganizerWebsite', true );
-		if ( ! empty( $website ) ) {
-			$parts[] = esc_html__( 'Website', 'eventkoi-lite' ) . ': <a href="' . esc_url( $website ) . '">' . esc_html( $website ) . '</a>';
-		}
-
-		return implode( '<br>', $parts );
+		global $wpdb;
+		$table = $wpdb->prefix . 'eventkoi_tickets';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$ok = $wpdb->insert(
+			$table,
+			array(
+				'event_id'    => $event_id,
+				'name'        => __( 'General admission', 'eventkoi-lite' ),
+				'description' => '',
+				'price'       => $price,
+				'currency'    => self::infer_currency_code( $currency_code, $currency_symbol ),
+				'status'      => 'active',
+				'sort_order'  => 0,
+			),
+			array( '%d', '%s', '%s', '%f', '%s', '%s', '%d' )
+		);
+		return $ok ? (int) $wpdb->insert_id : false;
 	}
 
 	/**
@@ -646,7 +775,7 @@ class TEC_Importer {
 		foreach ( $posts as $post ) {
 			$start   = get_post_meta( $post->ID, '_EventStartDate', true );
 			$end     = get_post_meta( $post->ID, '_EventEndDate', true );
-			$all_day = 'yes' === get_post_meta( $post->ID, '_EventAllDay', true );
+			$all_day = self::is_all_day( $post->ID );
 
 			$venue_id   = get_post_meta( $post->ID, '_EventVenueID', true );
 			$venue_name = '';
@@ -685,6 +814,19 @@ class TEC_Importer {
 	}
 
 	/**
+	 * Check whether a TEC event is marked as all-day.
+	 *
+	 * Modern TEC stores '1' while legacy stores 'yes'.
+	 *
+	 * @param int $tec_id TEC event post ID.
+	 * @return bool
+	 */
+	private static function is_all_day( $tec_id ) {
+		$raw = get_post_meta( $tec_id, '_EventAllDay', true );
+		return in_array( $raw, array( 'yes', '1', 1, true ), true );
+	}
+
+	/**
 	 * Count published posts of a given type.
 	 *
 	 * @param string $post_type Post type slug.
@@ -717,27 +859,57 @@ class TEC_Importer {
 	/**
 	 * Infer event type from locations array.
 	 *
+	 * Returns EventKoi canonical values: 'inperson', 'online', or 'mixed'.
+	 *
 	 * @param array $locations Locations array.
-	 * @return string Event type (inperson, virtual, hybrid).
+	 * @return string
 	 */
 	private static function infer_type_from_locations( $locations ) {
 		$has_physical = false;
 		$has_virtual  = false;
 
 		foreach ( $locations as $loc ) {
-			$type = $loc['type'] ?? 'physical';
-			if ( 'physical' === $type ) {
+			$type = sanitize_key( (string) ( $loc['type'] ?? 'physical' ) );
+			if ( in_array( $type, array( 'physical', 'inperson' ), true ) ) {
 				$has_physical = true;
-			} elseif ( 'virtual' === $type ) {
+			} elseif ( in_array( $type, array( 'virtual', 'online' ), true ) ) {
 				$has_virtual = true;
 			}
 		}
 
 		if ( $has_physical && $has_virtual ) {
-			return 'hybrid';
+			return 'mixed';
 		}
 
-		return $has_physical ? 'inperson' : 'virtual';
+		return $has_physical ? 'inperson' : 'online';
+	}
+
+	/**
+	 * Build a virtual-location entry for an event URL.
+	 *
+	 * @param string $url The virtual/meeting/website URL.
+	 * @return array Location row.
+	 */
+	private static function build_virtual_location( $url ) {
+		$host = (string) wp_parse_url( $url, PHP_URL_HOST );
+		$name = '' !== $host ? $host : __( 'Event website', 'eventkoi-lite' );
+		return array(
+			'id'          => wp_generate_uuid4(),
+			'type'        => 'virtual',
+			'name'        => $name,
+			'address1'    => '',
+			'address2'    => '',
+			'address3'    => '',
+			'city'        => '',
+			'state'       => '',
+			'country'     => '',
+			'zip'         => '',
+			'embed_gmap'  => false,
+			'gmap_link'   => '',
+			'virtual_url' => esc_url_raw( $url ),
+			'latitude'    => '',
+			'longitude'   => '',
+		);
 	}
 
 	/**
