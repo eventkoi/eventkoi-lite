@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardTitle } from "@/components/ui/card";
 import { ChevronDown, ChevronUp, Trash2 } from "lucide-react";
+import { __ } from "@wordpress/i18n";
 import { OnlineLocationForm } from "./online-location-form";
 import { PhysicalLocationForm } from "./physical-location-form";
 
@@ -42,13 +43,13 @@ export function LocationItem({
           <CardTitle className="text-base font-medium">
             {location.name ||
               (location.type === "physical"
-                ? "Physical location"
-                : "Online location")}
+                ? __("Physical location", "eventkoi-lite")
+                : __("Online location", "eventkoi-lite"))}
           </CardTitle>
           <div className="text-sm text-muted-foreground truncate max-w-[280px]">
             {location.type === "physical"
-              ? location.address1 || "No address yet"
-              : location.virtual_url || "No URL yet"}
+              ? location.address1 || __("No address yet", "eventkoi-lite")
+              : location.virtual_url || __("No URL yet", "eventkoi-lite")}
           </div>
         </div>
 
@@ -59,7 +60,7 @@ export function LocationItem({
             className="h-7 w-7 text-muted-foreground hover:text-foreground"
             onClick={toggleExpand}
             aria-expanded={isExpanded}
-            aria-label={isExpanded ? "Collapse location" : "Expand location"}
+            aria-label={isExpanded ? __("Collapse location", "eventkoi-lite") : __("Expand location", "eventkoi-lite")}
           >
             {isExpanded ? (
               <ChevronUp className="h-4 w-4" aria-hidden="true" />
@@ -73,7 +74,7 @@ export function LocationItem({
             size="icon"
             className="h-7 w-7 text-muted-foreground hover:text-destructive"
             onClick={handleDelete}
-            aria-label="Delete location"
+            aria-label={__("Delete location", "eventkoi-lite")}
           >
             <Trash2 className="h-4 w-4" aria-hidden="true" />
           </Button>

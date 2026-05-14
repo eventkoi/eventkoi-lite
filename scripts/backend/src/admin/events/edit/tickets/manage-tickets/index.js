@@ -179,7 +179,7 @@ export function EventEditManageTickets() {
           }, {})
         );
       } catch (error) {
-        showToastError("Failed to load tickets.");
+        showToastError(__("Failed to load tickets.", "eventkoi-lite"));
       } finally {
         setLoadingTickets(false);
         setHasLoadedTickets(true);
@@ -418,7 +418,7 @@ export function EventEditManageTickets() {
     });
 
     if (missingName) {
-      showToastError("Ticket name is required.");
+      showToastError(__("Ticket name is required.", "eventkoi-lite"));
       return false;
     }
 
@@ -431,7 +431,7 @@ export function EventEditManageTickets() {
     });
 
     if (invalidDates) {
-      showToastError("Ticket sales end date cannot be before the start date.");
+      showToastError(__("Ticket sales end date cannot be before the start date.", "eventkoi-lite"));
       return false;
     }
 
@@ -556,7 +556,7 @@ export function EventEditManageTickets() {
       if (error?.message === "Ticket name is required.") {
         return;
       }
-      showToastError("Failed to save tickets.");
+      showToastError(__("Failed to save tickets.", "eventkoi-lite"));
       throw error;
     } finally {
       setSavingTickets(false);

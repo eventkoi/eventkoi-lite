@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { CalendarPicker } from "@/components/ui/calendar-picker";
 import { cn } from "@/lib/utils";
+import { __ } from "@wordpress/i18n";
 import { DateTime } from "luxon";
 import { useRef, useState } from "react";
 import { useClickAway } from "react-use";
@@ -52,7 +53,7 @@ export function FloatingDatePicker({
             DateTime.fromJSDate(value, { zone: wpTz })
               .setLocale(wpLocale)
               .toFormat("d MMM yyyy")
-          : "Set date"}
+          : __("Set date", "eventkoi-lite")}
       </Button>
 
       {open && !disabled && (
