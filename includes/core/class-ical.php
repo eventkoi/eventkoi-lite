@@ -139,7 +139,8 @@ class ICal {
 		$this->send_headers(
 			sanitize_title_with_dashes( $event->get_title() ) . '-' . bin2hex( random_bytes( 2 ) ) . '.ics'
 		);
-		echo wp_kses_post( trim( $content ) );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- iCal text is RFC 5545-escaped at build time; wp_kses_post would mangle &, <, > in legitimate SUMMARY/DESCRIPTION/URL output.
+		echo trim( $content );
 		exit;
 	}
 
@@ -174,7 +175,8 @@ class ICal {
 
 		$this->send_headers( $filename );
 
-		echo wp_kses_post( trim( $content ) );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- iCal text is RFC 5545-escaped at build time; wp_kses_post would mangle &, <, > in legitimate SUMMARY/DESCRIPTION/URL output.
+		echo trim( $content );
 		exit;
 	}
 
