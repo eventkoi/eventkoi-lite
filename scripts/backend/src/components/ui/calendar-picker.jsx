@@ -89,12 +89,20 @@ export const CalendarPicker = memo(function CalendarPicker({
   value,
   onChange,
   className,
+  fallbackMonth,
 }) {
   const { settings } = useSettings();
 
   const defaultMonth = useMemo(() => {
-    return value instanceof Date && !isNaN(value) ? value : new Date();
-  }, [value?.getFullYear(), value?.getMonth()]);
+    if (value instanceof Date && !isNaN(value)) return value;
+    if (fallbackMonth instanceof Date && !isNaN(fallbackMonth)) return fallbackMonth;
+    return new Date();
+  }, [
+    value?.getFullYear(),
+    value?.getMonth(),
+    fallbackMonth?.getFullYear(),
+    fallbackMonth?.getMonth(),
+  ]);
 
   const key = `${defaultMonth.getFullYear()}-${defaultMonth.getMonth()}`;
 
@@ -122,14 +130,6 @@ export const CalendarPicker = memo(function CalendarPicker({
       ? normalizeLocale(eventkoi_params.locale)
       : "en";
 
-  // Generate localized weekday labels using Luxon
-  const weekdays = Array.from({ length: 7 }, (_, i) =>
-    DateTime.now()
-      .setLocale(wpLocale)
-      .set({ weekday: i + 1 })
-      .toFormat("ccc")
-  );
-
   return (
     <div key={key}>
       <Calendar
@@ -143,7 +143,8 @@ export const CalendarPicker = memo(function CalendarPicker({
           Caption: CustomCaption,
         }}
         formatters={{
-          formatWeekdayName: (day) => weekdays[day],
+          formatWeekdayName: (day) =>
+            DateTime.fromJSDate(day).setLocale(wpLocale).toFormat("ccc").toUpperCase(),
         }}
       />
     </div>

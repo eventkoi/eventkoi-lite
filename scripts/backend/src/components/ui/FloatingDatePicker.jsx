@@ -2,6 +2,8 @@
 
 import { Button } from "@/components/ui/button";
 import { CalendarPicker } from "@/components/ui/calendar-picker";
+import { useSettings } from "@/hooks/SettingsContext";
+import { wpToLuxonFormat } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
 import { __ } from "@wordpress/i18n";
 import { DateTime } from "luxon";
@@ -14,8 +16,10 @@ export function FloatingDatePicker({
   wpTz = "UTC",
   className,
   disabled = false,
+  defaultMonth,
 }) {
   const [open, setOpen] = useState(false);
+  const { settings } = useSettings();
   const ref = useRef(null);
 
   useClickAway(ref, () => {
@@ -32,6 +36,31 @@ export function FloatingDatePicker({
     typeof eventkoi_params !== "undefined" && eventkoi_params.locale
       ? normalizeLocale(eventkoi_params.locale)
       : "en";
+  const dateFormat = wpToLuxonFormat(
+    settings?.date_format ||
+      (typeof eventkoi_params !== "undefined" && eventkoi_params.date_format
+        ? eventkoi_params.date_format
+        : "F j, Y")
+  );
+
+  const pickerValue = value
+    ? (() => {
+        const wallDate = DateTime.fromJSDate(value, { zone: wpTz });
+        if (!wallDate.isValid) {
+          return null;
+        }
+
+        return new Date(wallDate.year, wallDate.month - 1, wallDate.day);
+      })()
+    : null;
+
+  const fallbackMonth = defaultMonth
+    ? (() => {
+        const wallDate = DateTime.fromJSDate(defaultMonth, { zone: wpTz });
+        if (!wallDate.isValid) return null;
+        return new Date(wallDate.year, wallDate.month - 1, wallDate.day);
+      })()
+    : null;
 
   return (
     <div className="relative" ref={ref}>
@@ -44,7 +73,7 @@ export function FloatingDatePicker({
         disabled={disabled}
         className={cn(
           !value && "text-muted-foreground font-normal",
-          "w-[116px] justify-start",
+          "min-w-[116px] w-auto justify-start",
           className
         )}
       >
@@ -52,22 +81,15 @@ export function FloatingDatePicker({
           ? // Localized formatted value using Luxon locale
             DateTime.fromJSDate(value, { zone: wpTz })
               .setLocale(wpLocale)
-              .toFormat("d MMM yyyy")
+              .toFormat(dateFormat)
           : __("Set date", "eventkoi-lite")}
       </Button>
 
       {open && !disabled && (
         <div className="absolute z-50 mt-2 rounded-md border bg-background shadow-md">
           <CalendarPicker
-            value={
-              value
-                ? new Date(
-                    value.getFullYear(),
-                    value.getMonth(),
-                    value.getDate()
-                  )
-                : null
-            }
+            value={pickerValue}
+            fallbackMonth={fallbackMonth}
             onChange={(date) => {
               setOpen(false);
 

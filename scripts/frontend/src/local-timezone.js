@@ -1,5 +1,9 @@
 import { DateTime } from "luxon";
-import { wpToLuxonFormat } from "@/lib/date-utils";
+import {
+  formatTimezoneLabel,
+  normalizeTimeZone,
+  wpToLuxonFormat,
+} from "@/lib/date-utils";
 
 const shouldAutoDetect =
   typeof window !== "undefined" &&
@@ -15,53 +19,208 @@ const dateFmt =
     ? wpToLuxonFormat(window.eventkoi_params?.date_format || "F j, Y")
     : "LLLL d, yyyy";
 
+const wpTimeFormatRaw =
+  typeof window !== "undefined"
+    ? window.eventkoi_params?.time_format_string || "g:i a"
+    : "g:i a";
+const wpTimeFormat = wpToLuxonFormat(wpTimeFormatRaw);
+
 const localeToUse =
   typeof window !== "undefined" && window.eventkoi_params?.locale
     ? window.eventkoi_params.locale.replace("_", "-")
     : "en";
 
-function formatRange(startISO, endISO, tz, isAllDay) {
-  const localZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
-  const start = DateTime.fromISO(startISO, { zone: tz });
-  if (!start.isValid) return null;
-
-  const startLocal = start.setZone(localZone).setLocale(localeToUse);
-  if (isAllDay) {
-    return startLocal.toFormat(dateFmt);
+function applyMeridiemCasing(value) {
+  if (wpTimeFormatRaw.includes("A")) {
+    return value.replace(/\b(am|pm)\b/g, (match) => match.toUpperCase());
   }
 
-  const timeFmt = is24h ? "HH:mm" : "h:mm a";
-  let output = startLocal.toFormat(dateFmt + ", " + timeFmt);
+  if (wpTimeFormatRaw.includes("a")) {
+    return value.replace(/\b(AM|PM)\b/g, (match) => match.toLowerCase());
+  }
+
+  return value;
+}
+
+function getSourceZone(tz) {
+  return (
+    tz ||
+    window.eventkoi_params?.timezone_string ||
+    window.eventkoi_params?.timezone_override ||
+    window.eventkoi_params?.timezone ||
+    "UTC"
+  );
+}
+
+function getBrowserZone() {
+  return (
+    DateTime.local().zoneName ||
+    Intl.DateTimeFormat().resolvedOptions().timeZone ||
+    "UTC"
+  );
+}
+
+function getRequestedDisplayZone() {
+  const params = new URLSearchParams(window.location.search);
+  const requested = params.get("tz");
+  const browserZone = getBrowserZone();
+
+  if (!requested) {
+    return null;
+  }
+
+  if (requested === "local") {
+    return browserZone;
+  }
+
+  const normalized = normalizeTimeZone(requested);
+  return DateTime.now().setZone(normalized).isValid ? normalized : null;
+}
+
+function getDisplayZone() {
+  return getRequestedDisplayZone() || getBrowserZone();
+}
+
+function formatDisplayZoneLabel(zone) {
+  const raw = String(zone || "").trim();
+  const utcOffsetMatch = raw.match(/^UTC([+-])(\d{1,2})(?::?(\d{2}))?$/i);
+
+  if (utcOffsetMatch) {
+    const sign = utcOffsetMatch[1];
+    const hours = parseInt(utcOffsetMatch[2], 10);
+    const minutes = utcOffsetMatch[3] || "00";
+    return minutes === "00" ? `UTC${sign}${hours}` : `UTC${sign}${hours}:${minutes}`;
+  }
+
+  if (/^(Etc\/GMT|[+-]\d{1,2}(?::?\d{2})?$)/i.test(raw)) {
+    return formatTimezoneLabel(raw, is24h ? "24" : "12", false);
+  }
+
+  return raw;
+}
+
+function hasDisplayZoneOverride() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  return getRequestedDisplayZone() !== null;
+}
+
+function parseWithZone(iso, tz) {
+  if (!iso) return null;
+
+  const hasOffset = /[+-]\d\d:\d\d|Z$/i.test(iso);
+  if (hasOffset) {
+    const dt = DateTime.fromISO(iso, { setZone: true });
+    return dt.isValid ? dt : DateTime.fromISO(iso);
+  }
+
+  const dt = DateTime.fromISO(iso, { zone: tz || "UTC" });
+  return dt.isValid ? dt : DateTime.fromISO(iso);
+}
+
+function parseAllDayDate(date, tz) {
+  if (!date) return null;
+  const dt = DateTime.fromISO(date, { zone: tz || "UTC" }).setLocale(localeToUse);
+  return dt.isValid ? dt : null;
+}
+
+function formatRange(
+  startISO,
+  endISO,
+  tz,
+  isAllDay,
+  allDayStartDate = "",
+  allDayEndDate = "",
+  allDayTz = ""
+) {
+  const localZone = getDisplayZone();
+  const sourceZone = getSourceZone(tz);
+  const start = parseWithZone(startISO, sourceZone);
+  if (!start?.isValid) return null;
+
+  if (isAllDay) {
+    const allDayZone = getSourceZone(allDayTz || sourceZone);
+    const startLocal =
+      parseAllDayDate(allDayStartDate, allDayZone) ||
+      start.setZone(allDayZone).setLocale(localeToUse);
+
+    if (!endISO) {
+      return startLocal.toFormat(dateFmt);
+    }
+
+    const end = parseWithZone(endISO, sourceZone);
+    if (!end?.isValid) {
+      return startLocal.toFormat(dateFmt);
+    }
+
+    const hasExplicitAllDayEndDate = !!allDayEndDate;
+    let endLocal =
+      parseAllDayDate(allDayEndDate, allDayZone) ||
+      end.setZone(allDayZone).setLocale(localeToUse);
+    const durationMs = end.toMillis() - start.toMillis();
+    if (durationMs > 0 && durationMs <= 24 * 60 * 60 * 1000) {
+      return startLocal.toFormat(dateFmt);
+    }
+
+    if (
+      !hasExplicitAllDayEndDate &&
+      !endLocal.hasSame(startLocal, "day") &&
+      endLocal.hour === 0 &&
+      endLocal.minute === 0 &&
+      endLocal.second === 0 &&
+      endLocal.millisecond === 0
+    ) {
+      endLocal = endLocal.minus({ days: 1 });
+    }
+
+    if (endLocal <= startLocal || endLocal.hasSame(startLocal, "day")) {
+      return startLocal.toFormat(dateFmt);
+    }
+
+    return `${startLocal.toFormat(dateFmt)} — ${endLocal.toFormat(dateFmt)}`;
+  }
+
+  const startLocal = start.setZone(localZone).setLocale(localeToUse);
+  const timeFmt = wpTimeFormat || (is24h ? "HH:mm" : "h:mm a");
+  let output = applyMeridiemCasing(startLocal.toFormat(dateFmt + ", " + timeFmt));
   if (endISO) {
-    const end = DateTime.fromISO(endISO, { zone: tz });
-    if (end.isValid) {
+    const end = parseWithZone(endISO, sourceZone);
+    if (end?.isValid) {
       const endLocal = end.setZone(localZone).setLocale(localeToUse);
       const sameDay = startLocal.toISODate() === endLocal.toISODate();
       output +=
-        " — " + endLocal.toFormat(sameDay ? timeFmt : dateFmt + ", " + timeFmt);
+        " — " +
+        applyMeridiemCasing(
+          endLocal.toFormat(sameDay ? timeFmt : dateFmt + ", " + timeFmt)
+        );
     }
   }
   return output;
 }
 
 function rewriteEventDates() {
-  if (!shouldAutoDetect) return;
+  if (!shouldAutoDetect && !hasDisplayZoneOverride()) return;
   const nodes = document.querySelectorAll(".ek-datetime");
 
   nodes.forEach((node) => {
     let startISO = node.getAttribute("data-start");
     const endISO = node.getAttribute("data-end");
-    const tz = node.getAttribute("data-tz") || "UTC";
+    const tz = getSourceZone(node.getAttribute("data-tz"));
     let isAllDay = node.getAttribute("data-all-day") === "1";
+    const allDayStartDate = node.getAttribute("data-all-day-start-date") || "";
+    const allDayEndDate = node.getAttribute("data-all-day-end-date") || "";
+    const allDayTz = node.getAttribute("data-all-day-tz") || "";
 
     // Fallback: infer all-day from a full-day range (00:00:00 → 23:59:*)
     // when the HTML wrapper doesn't carry the flag (older templates).
     if (!isAllDay && startISO && endISO) {
-      const s = DateTime.fromISO(startISO, { zone: tz });
-      const e = DateTime.fromISO(endISO, { zone: tz });
+      const s = parseWithZone(startISO, tz)?.setZone(tz);
+      const e = parseWithZone(endISO, tz)?.setZone(tz);
       if (
-        s.isValid &&
-        e.isValid &&
+        s?.isValid &&
+        e?.isValid &&
         s.hour === 0 &&
         s.minute === 0 &&
         s.second === 0 &&
@@ -101,7 +260,15 @@ function rewriteEventDates() {
     }
 
     if (!startISO) return;
-    const text = formatRange(startISO, endISO, tz, isAllDay);
+    const text = formatRange(
+      startISO,
+      endISO,
+      tz,
+      isAllDay,
+      allDayStartDate,
+      allDayEndDate,
+      allDayTz
+    );
     if (text) {
       node.firstChild
         ? (node.firstChild.textContent = text)
@@ -111,10 +278,9 @@ function rewriteEventDates() {
 
   // Update timezone labels when present.
   const tzNodes = document.querySelectorAll(".ek-timezone");
-  const localZone =
-    Intl.DateTimeFormat().resolvedOptions().timeZone || "Local time";
+  const localZone = getDisplayZone();
   tzNodes.forEach((node) => {
-    node.textContent = localZone;
+    node.textContent = formatDisplayZoneLabel(localZone);
   });
 }
 

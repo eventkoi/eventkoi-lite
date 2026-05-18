@@ -9,11 +9,143 @@ import { Button } from "@/components/ui/button";
 import { FloatingDatePicker } from "@/components/ui/FloatingDatePicker";
 import { Switch } from "@/components/ui/switch";
 import { useEventEditContext } from "@/hooks/EventEditContext";
-import { ensureUtcZ, getDateInTimezone } from "@/lib/date-utils";
+import {
+  ensureUtcZ,
+  getDateInTimezone,
+  normalizeTimeZone,
+} from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
 import { MoveRight, Plus, Trash2 } from "lucide-react";
 import { DateTime } from "luxon";
 import { useState } from "react";
+
+const getValidTimezone = (timezone, fallback = "UTC") => {
+  const fallbackZone = normalizeTimeZone(fallback || "UTC");
+  const normalized = normalizeTimeZone(timezone || fallbackZone);
+
+  return DateTime.now().setZone(normalized).isValid
+    ? normalized
+    : fallbackZone;
+};
+
+const getAllDayTimezone = (day, event, fallback) =>
+  getValidTimezone(
+    day?.all_day_timezone || event?.all_day_timezone || event?.timezone,
+    fallback
+  );
+
+const getDateOnlyInTimezone = (dateOnly, timezone) => {
+  if (!dateOnly) {
+    return undefined;
+  }
+
+  const dt = DateTime.fromISO(String(dateOnly), {
+    zone: getValidTimezone(timezone),
+  });
+
+  return dt.isValid ? dt.toJSDate() : undefined;
+};
+
+const getAllDayDateTime = (value, timezone) => {
+  const zone = getValidTimezone(timezone);
+  let dt = null;
+
+  if (DateTime.isDateTime(value)) {
+    dt = value.setZone(zone, { keepLocalTime: true });
+  } else if (value instanceof Date) {
+    dt = DateTime.fromJSDate(value, { zone });
+  } else if (value) {
+    dt = DateTime.fromISO(String(value), { zone });
+  }
+
+  if (!dt?.isValid) {
+    return null;
+  }
+
+  return DateTime.fromObject(
+    {
+      year: dt.year,
+      month: dt.month,
+      day: dt.day,
+      hour: 0,
+      minute: 0,
+      second: 0,
+      millisecond: 0,
+    },
+    { zone }
+  );
+};
+
+const getAllDayBounds = (value, timezone) => {
+  const zone = getValidTimezone(timezone);
+  const start = getAllDayDateTime(value, zone);
+
+  if (!start) {
+    return null;
+  }
+
+  const end = start.set({
+    hour: 23,
+    minute: 59,
+    second: 59,
+    millisecond: 0,
+  });
+
+  return {
+    startIso: start.toUTC().toISO({ suppressMilliseconds: true }),
+    endIso: end.toUTC().toISO({ suppressMilliseconds: true }),
+    startDate: start.toISODate(),
+    endDate: start.toISODate(),
+    endExclusiveDate: start.plus({ days: 1 }).toISODate(),
+    timezone: zone,
+  };
+};
+
+const allDayFieldsFromBounds = (bounds) => ({
+  all_day_timezone: bounds.timezone,
+  all_day_start_date: bounds.startDate,
+  all_day_end_date: bounds.endDate,
+  all_day_end_exclusive_date: bounds.endExclusiveDate,
+});
+
+const clearAllDayFields = (day) => {
+  delete day.all_day_timezone;
+  delete day.all_day_start_date;
+  delete day.all_day_end_date;
+  delete day.all_day_end_exclusive_date;
+};
+
+const getDayStartDate = (day, event, wpTz) => {
+  if (!day?.start_date) {
+    return undefined;
+  }
+
+  if (day.all_day) {
+    const allDayTz = getAllDayTimezone(day, event, wpTz);
+    return (
+      getDateOnlyInTimezone(day.all_day_start_date, allDayTz) ||
+      getDateInTimezone(ensureUtcZ(day.start_date), allDayTz)
+    );
+  }
+
+  return getDateInTimezone(ensureUtcZ(day.start_date), wpTz);
+};
+
+const getDayEndDate = (day, event, wpTz) => {
+  if (!day?.end_date) {
+    return undefined;
+  }
+
+  if (day.all_day) {
+    const allDayTz = getAllDayTimezone(day, event, wpTz);
+    return (
+      getDateOnlyInTimezone(day.all_day_end_date, allDayTz) ||
+      getDateInTimezone(ensureUtcZ(day.end_date), allDayTz)
+    );
+  }
+
+  return getDateInTimezone(ensureUtcZ(day.end_date), wpTz);
+};
 
 export function EventDateMultiple({ showAttributes }) {
   const { event, setEvent } = useEventEditContext();
@@ -43,9 +175,9 @@ export function EventDateMultiple({ showAttributes }) {
     return `${year}-${month}-${day}T${hours}:${minutes}:00`;
   };
 
-  const updateDayDateAndTimes = (index, startIso, endIso) => {
+  const updateDayDateAndTimes = (index, startIso, endIso, extra = {}) => {
     const updatedDays = [...days];
-    const day = { ...updatedDays[index] };
+    const day = { ...updatedDays[index], ...extra };
     day.start_date = startIso;
     day.end_date = endIso;
     updatedDays[index] = day;
@@ -59,11 +191,18 @@ export function EventDateMultiple({ showAttributes }) {
     const previousEnd = getPreviousEndDate(index);
 
     // Parse current values in WP time for comparison/manipulation
-    const currentStart = day.start_date
-      ? DateTime.fromISO(day.start_date, { zone: "utc" }).setZone(wpTz)
+    const allDayTz = getAllDayTimezone(day, event, wpTz);
+    const currentStartDate = getDayStartDate(day, event, wpTz);
+    const currentEndDate = getDayEndDate(day, event, wpTz);
+    const currentStart = currentStartDate
+      ? DateTime.fromJSDate(currentStartDate, {
+          zone: day.all_day ? allDayTz : wpTz,
+        })
       : null;
-    const currentEnd = day.end_date
-      ? DateTime.fromISO(day.end_date, { zone: "utc" }).setZone(wpTz)
+    const currentEnd = currentEndDate
+      ? DateTime.fromJSDate(currentEndDate, {
+          zone: day.all_day ? allDayTz : wpTz,
+        })
       : null;
 
     // --- ALL DAY TOGGLE ---
@@ -71,34 +210,48 @@ export function EventDateMultiple({ showAttributes }) {
       day.all_day = value;
 
       if (currentStart && currentEnd) {
-        let newStart = currentStart;
-        let newEnd = currentEnd;
-
         if (value) {
-          newStart = newStart.set({
-            hour: 0,
-            minute: 0,
-            second: 0,
-            millisecond: 0,
-          });
-          newEnd = newEnd.set({
-            hour: 23,
-            minute: 59,
-            second: 59,
-            millisecond: 999,
-          });
-        } else {
-          if (newStart.hour === 0)
-            newStart = newStart.set({ hour: 9, minute: 0 });
-          if (newEnd.hour >= 23) newEnd = newEnd.set({ hour: 17, minute: 0 });
-        }
+          const bounds = getAllDayBounds(currentStart, allDayTz);
 
-        day.start_date = newStart
-          .setZone("utc")
-          .toISO({ suppressMilliseconds: true });
-        day.end_date = newEnd
-          .setZone("utc")
-          .toISO({ suppressMilliseconds: true });
+          if (bounds) {
+            day.start_date = bounds.startIso;
+            day.end_date = bounds.endIso;
+            Object.assign(day, allDayFieldsFromBounds(bounds));
+          }
+        } else {
+          let newStart = DateTime.fromObject(
+            {
+              year: currentStart.year,
+              month: currentStart.month,
+              day: currentStart.day,
+              hour: currentStart.hour === 0 ? 9 : currentStart.hour,
+              minute: currentStart.hour === 0 ? 0 : currentStart.minute,
+              second: 0,
+              millisecond: 0,
+            },
+            { zone: wpTz }
+          );
+          let newEnd = DateTime.fromObject(
+            {
+              year: currentEnd.year,
+              month: currentEnd.month,
+              day: currentEnd.day,
+              hour: currentEnd.hour >= 23 ? 17 : currentEnd.hour,
+              minute: currentEnd.hour >= 23 ? 0 : currentEnd.minute,
+              second: 0,
+              millisecond: 0,
+            },
+            { zone: wpTz }
+          );
+
+          day.start_date = newStart
+            .setZone("utc")
+            .toISO({ suppressMilliseconds: true });
+          day.end_date = newEnd
+            .setZone("utc")
+            .toISO({ suppressMilliseconds: true });
+          clearAllDayFields(day);
+        }
       }
     }
 
@@ -235,13 +388,11 @@ export function EventDateMultiple({ showAttributes }) {
       {standardType === "selected" && (
         <>
           {days.map((day, index) => {
-            const startDate = day.start_date
-              ? getDateInTimezone(ensureUtcZ(day.start_date), wpTz)
-              : undefined;
-
-            const endDate = day.end_date
-              ? getDateInTimezone(ensureUtcZ(day.end_date), wpTz)
-              : undefined;
+            const dayTz = day.all_day
+              ? getAllDayTimezone(day, event, wpTz)
+              : wpTz;
+            const startDate = getDayStartDate(day, event, wpTz);
+            const endDate = getDayEndDate(day, event, wpTz);
 
             return (
               <div
@@ -251,9 +402,24 @@ export function EventDateMultiple({ showAttributes }) {
                 {/* Date Picker: updates both start and end date parts, preserves time */}
                 <FloatingDatePicker
                   value={startDate}
-                  wpTz={wpTz}
+                  wpTz={dayTz}
                   onChange={(pickedDate) => {
                     if (!pickedDate) return;
+
+                    if (day.all_day) {
+                      const bounds = getAllDayBounds(pickedDate, dayTz);
+
+                      if (bounds) {
+                        updateDayDateAndTimes(
+                          index,
+                          bounds.startIso,
+                          bounds.endIso,
+                          allDayFieldsFromBounds(bounds)
+                        );
+                      }
+
+                      return;
+                    }
 
                     const startTime = startDate
                       ? { h: startDate.getHours(), m: startDate.getMinutes() }

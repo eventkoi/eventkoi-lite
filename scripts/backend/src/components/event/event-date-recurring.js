@@ -236,7 +236,8 @@ export const EventDateRecurring = memo(function EventDateRecurring({
       ends: "after",
       ends_after: 30,
       ends_on: DateTime.fromJSDate(defaultEnd, { zone: wpTz })
-        .setZone("utc")
+        .startOf("day")
+        .toUTC()
         .toISO({ suppressMilliseconds: true }),
       weekdays: [],
       months: [now.getMonth()],
@@ -419,7 +420,10 @@ export const EventDateRecurring = memo(function EventDateRecurring({
       const end = normalizeJsDate(
         getDateInTimezone(ensureUtcZ(rule.end_date), wpTz)
       );
-      const endsOn = normalizeJsDate(rule.ends_on);
+      const endsOnWall = recurrenceUntilWall(rule.ends_on, wpTz);
+      const endsOn = endsOnWall?.isValid
+        ? endsOnWall.startOf("day").toJSDate()
+        : null;
       const safeWeekdays = (() => {
         const raw = Array.isArray(rule.weekdays)
           ? rule.weekdays
@@ -865,11 +869,13 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                     if (!dt) return;
 
                     const utc = dt
-                      .startOf("day") // remove time in LOCAL wall-clock
-                      .toUTC() // convert to UTC, but date stays the SAME
+                      .startOf("day")
+                      .toUTC()
                       .toISO({ suppressMilliseconds: true });
 
-                    updateRule(index, "ends_on", utc);
+                    if (utc) {
+                      updateRule(index, "ends_on", utc);
+                    }
                   }}
                 />
               )}

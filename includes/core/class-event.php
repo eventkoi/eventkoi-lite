@@ -221,7 +221,7 @@ class Event {
 		if ( preg_match( '/^datetime_(\d+)$/', $name, $matches ) ) {
 			$index = absint( $matches[1] ) - 1;
 			$type  = self::get_date_type();
-			$data  = ( 'recurring' === $type ) ? self::get_recurrence_rules() : self::get_event_days();
+			$data  = ( 'recurring' === $type ) ? self::get_recurrence_rules() : self::get_event_days_for_rendering();
 
 			if ( isset( $data[ $index ] ) && is_array( $data[ $index ] ) ) {
 				$item       = $data[ $index ];
@@ -237,18 +237,14 @@ class Event {
 					$end_ts = null;
 				}
 
+				$args = array(
+					'separator' => ' - ',
+				);
 				if ( $is_all_day ) {
-					return eventkoi_date( 'M j, Y', $start_ts );
+					$args['timezone'] = self::get_all_day_datetime_timezone( self::get_timezone(), $item );
 				}
 
-				$start_str = eventkoi_date( 'M j, Y, g:ia', $start_ts );
-
-				if ( $end_ts ) {
-					$end_str    = eventkoi_date( 'g:ia', $end_ts );
-					$start_str .= ' - ' . $end_str;
-				}
-
-				return $start_str;
+				return eventkoi_format_datetime_range( $start_ts, $end_ts, $is_all_day, $args );
 			}
 		}
 
@@ -324,24 +320,44 @@ class Event {
 			return '';
 		}
 
-		$type      = $location['type'] ?? 'physical';
-		$name      = $location['name'] ?? '';
-		$line1     = $location['address1'] ?? '';
-		$line2     = $location['address2'] ?? '';
-		$city      = $location['city'] ?? '';
-		$state     = $location['state'] ?? '';
-		$zip       = $location['zip'] ?? '';
-		$country   = $location['country'] ?? '';
-		$url       = $location['virtual_url'] ?? '';
-		$link_text = $location['link_text'] ?? '';
+		$address   = isset( $location['address'] ) && is_array( $location['address'] ) ? $location['address'] : array();
+		$type      = self::get_location_type( $location, 'inperson' );
+		$name      = self::location_text_value( $location, 'name' );
+		$line1     = self::first_location_text(
+			self::location_text_value( $location, 'address1' ),
+			self::location_text_value( $address, 'streetAddress' )
+		);
+		$line2     = self::location_text_value( $location, 'address2' );
+		$line3     = self::location_text_value( $location, 'address3' );
+		$city      = self::first_location_text(
+			self::location_text_value( $location, 'city' ),
+			self::location_text_value( $address, 'addressLocality' )
+		);
+		$state     = self::first_location_text(
+			self::location_text_value( $location, 'state' ),
+			self::location_text_value( $address, 'addressRegion' )
+		);
+		$zip       = self::first_location_text(
+			self::location_text_value( $location, 'zip' ),
+			self::location_text_value( $address, 'postalCode' )
+		);
+		$country   = self::first_location_text(
+			self::location_text_value( $location, 'country' ),
+			self::location_text_value( $address, 'addressCountry' )
+		);
+		$url       = self::get_location_virtual_url( $location );
+		$link_text = self::location_text_value( $location, 'link_text' );
 
 		$lines = array();
 
-		if ( 'physical' === $type ) {
+		if ( in_array( $type, array( 'physical', 'inperson' ), true ) ) {
 			foreach ( array( $name, $line1, $line2 ) as $part ) {
 				if ( $part ) {
 					$lines[] = esc_html( $part );
 				}
+			}
+			if ( $line3 ) {
+				$lines[] = esc_html( $line3 );
 			}
 
 			$city_line = implode( ', ', array_filter( array( $city, $state, $zip ) ) );
@@ -351,7 +367,7 @@ class Event {
 			if ( $country ) {
 				$lines[] = esc_html( $country );
 			}
-		} elseif ( 'online' === $type && $url ) {
+		} elseif ( in_array( $type, array( 'online', 'virtual' ), true ) && $url ) {
 			if ( ! empty( $name ) ) {
 				$title = $name;
 			} else {
@@ -373,7 +389,7 @@ class Event {
 			return '';
 		}
 
-		$class = 'eventkoi-location ' . ( 'online' === $type ? 'virtual' : 'physical' );
+		$class = 'eventkoi-location ' . ( in_array( $type, array( 'online', 'virtual' ), true ) ? 'virtual' : 'physical' );
 
 		return '<address class="' . esc_attr( $class ) . '">' . implode( '<br>', $lines ) . '</address>';
 	}
@@ -449,11 +465,11 @@ class Event {
 
 		do_action( 'eventkoi_before_update_event_meta', $meta, self::$event_id, self::$event );
 
-		$timezone_display = ! empty( $meta['timezone_display'] );
-		$tbc              = ! empty( $meta['tbc'] );
+		$timezone_display = array_key_exists( 'timezone_display', $meta ) ? self::normalize_boolean_meta( $meta['timezone_display'] ) : false;
+		$tbc              = array_key_exists( 'tbc', $meta ) ? self::normalize_boolean_meta( $meta['tbc'] ) : false;
 		$tbc_note         = ! empty( $meta['tbc_note'] ) ? esc_attr( $meta['tbc_note'] ) : '';
-		$start_date       = ! empty( $meta['start_date'] ) ? esc_attr( $meta['start_date'] ) : '';
-		$end_date         = ! empty( $meta['end_date'] ) ? esc_attr( $meta['end_date'] ) : '';
+		$start_date       = array_key_exists( 'start_date', $meta ) ? self::normalize_utc_datetime_iso_string( $meta['start_date'] ) : '';
+		$end_date         = array_key_exists( 'end_date', $meta ) ? self::normalize_utc_datetime_iso_string( $meta['end_date'] ) : '';
 		$type             = ! empty( $meta['type'] ) ? esc_attr( $meta['type'] ) : 'inperson';
 		$location         = ! empty( $meta['location'] ) ? $meta['location'] : array();
 		$address1         = ! empty( $meta['address1'] ) ? esc_attr( $meta['address1'] ) : '';
@@ -461,35 +477,45 @@ class Event {
 		$address3         = ! empty( $meta['address3'] ) ? esc_attr( $meta['address3'] ) : '';
 		$latitude         = ! empty( $meta['latitude'] ) ? esc_attr( $meta['latitude'] ) : '';
 		$longitude        = ! empty( $meta['longitude'] ) ? esc_attr( $meta['longitude'] ) : '';
-		$embed_gmap       = ! empty( $meta['embed_gmap'] );
+		$embed_gmap       = array_key_exists( 'embed_gmap', $meta ) ? self::normalize_boolean_meta( $meta['embed_gmap'] ) : false;
 		$gmap_link        = ! empty( $meta['gmap_link'] ) ? sanitize_url( self::extract_map_url( $meta['gmap_link'] ) ) : '';
 		$virtual_url      = ! empty( $meta['virtual_url'] ) ? esc_attr( $meta['virtual_url'] ) : '';
 		$description      = ! empty( $meta['description'] ) ? wp_kses_post( $meta['description'] ) : '';
 		$image            = ! empty( $meta['image'] ) ? sanitize_url( $meta['image'] ) : '';
 		$image_id         = ! empty( $meta['image_id'] ) ? absint( $meta['image_id'] ) : 0;
 		$date_type        = ! empty( $meta['date_type'] ) ? esc_attr( $meta['date_type'] ) : 'standard';
-		$event_days       = ! empty( $meta['event_days'] ) ? $meta['event_days'] : array();
-		$locations        = ! empty( $meta['locations'] ) ? $meta['locations'] : array();
-		$standard_type    = ! empty( $meta['standard_type'] ) ? esc_attr( $meta['standard_type'] ) : 'selected';
+			$event_days       = ! empty( $meta['event_days'] ) ? $meta['event_days'] : array();
+			$all_day_timezone = self::get_all_day_storage_timezone( $event_days );
+			$event_days       = self::prepare_event_days_for_storage( $event_days );
+			$locations        = ! empty( $meta['locations'] ) ? $meta['locations'] : array();
+			$primary_location = self::get_primary_location_from_locations( $locations );
+			if ( is_array( $primary_location ) ) {
+				$location = $primary_location;
+			}
+			$standard_type    = ! empty( $meta['standard_type'] ) ? esc_attr( $meta['standard_type'] ) : 'selected';
 		$recurrence_rules = ! empty( $meta['recurrence_rules'] ) && is_array( $meta['recurrence_rules'] )
 		? array_values( array_filter( $meta['recurrence_rules'], 'is_array' ) )
 		: array();
+		$recurrence_rules = self::prepare_recurrence_rules_for_storage( $recurrence_rules );
 		$stored_attendance_mode      = get_post_meta( self::$event_id, 'attendance_mode', true );
 		$attendance_mode             = isset( $meta['attendance_mode'] )
 			? sanitize_text_field( $meta['attendance_mode'] )
 			: ( ! empty( $stored_attendance_mode ) ? sanitize_text_field( $stored_attendance_mode ) : ( self::$event_id ? 'rsvp' : 'none' ) );
 		$rsvp_enabled                = ( 'rsvp' === $attendance_mode );
 		$rsvp_capacity       = isset( $meta['rsvp_capacity'] ) ? absint( $meta['rsvp_capacity'] ) : 0;
-		$rsvp_show_remaining = array_key_exists( 'rsvp_show_remaining', $meta ) ? (bool) $meta['rsvp_show_remaining'] : true;
-		$rsvp_allow_guests   = ! empty( $meta['rsvp_allow_guests'] );
+		$rsvp_show_remaining = array_key_exists( 'rsvp_show_remaining', $meta ) ? self::normalize_boolean_meta( $meta['rsvp_show_remaining'] ) : true;
+		$rsvp_allow_guests   = array_key_exists( 'rsvp_allow_guests', $meta ) ? self::normalize_boolean_meta( $meta['rsvp_allow_guests'] ) : false;
 		$rsvp_max_guests     = isset( $meta['rsvp_max_guests'] ) ? absint( $meta['rsvp_max_guests'] ) : 0;
-		$rsvp_allow_edit     = array_key_exists( 'rsvp_allow_edit', $meta ) ? ! empty( $meta['rsvp_allow_edit'] ) : true;
-		$rsvp_auto_account   = ! empty( $meta['rsvp_auto_account'] );
+		$rsvp_allow_edit     = array_key_exists( 'rsvp_allow_edit', $meta ) ? self::normalize_boolean_meta( $meta['rsvp_allow_edit'] ) : true;
+		$rsvp_auto_account   = array_key_exists( 'rsvp_auto_account', $meta ) ? self::normalize_boolean_meta( $meta['rsvp_auto_account'] ) : false;
 		$rsvp_sale_start     = isset( $meta['rsvp_sale_start'] ) ? self::normalize_utc_datetime_string( $meta['rsvp_sale_start'] ) : '';
 		$rsvp_sale_end       = isset( $meta['rsvp_sale_end'] ) ? self::normalize_utc_datetime_string( $meta['rsvp_sale_end'] ) : '';
 
-		update_post_meta( self::$event_id, 'timezone_display', (bool) $timezone_display );
-		update_post_meta( self::$event_id, 'tbc', (bool) $tbc );
+		update_post_meta( self::$event_id, 'timezone_display', $timezone_display ? 1 : 0 );
+		if ( '' !== $all_day_timezone ) {
+			update_post_meta( self::$event_id, 'timezone', (string) $all_day_timezone );
+		}
+		update_post_meta( self::$event_id, 'tbc', $tbc ? 1 : 0 );
 		update_post_meta( self::$event_id, 'tbc_note', (string) $tbc_note );
 		update_post_meta( self::$event_id, 'type', (string) $type );
 		update_post_meta( self::$event_id, 'location', (array) $location );
@@ -498,7 +524,7 @@ class Event {
 		update_post_meta( self::$event_id, 'address3', (string) $address3 );
 		update_post_meta( self::$event_id, 'latitude', (string) $latitude );
 		update_post_meta( self::$event_id, 'longitude', (string) $longitude );
-		update_post_meta( self::$event_id, 'embed_gmap', (bool) $embed_gmap );
+		update_post_meta( self::$event_id, 'embed_gmap', $embed_gmap ? 1 : 0 );
 		update_post_meta( self::$event_id, 'gmap_link', (string) $gmap_link );
 		update_post_meta( self::$event_id, 'virtual_url', (string) $virtual_url );
 		update_post_meta( self::$event_id, 'description', $description );
@@ -509,30 +535,30 @@ class Event {
 		update_post_meta( self::$event_id, 'locations', (array) $locations );
 		update_post_meta( self::$event_id, 'standard_type', (string) $standard_type );
 		update_post_meta( self::$event_id, 'recurrence_rules', $recurrence_rules );
-		update_post_meta( self::$event_id, 'rsvp_enabled', (bool) $rsvp_enabled );
+		update_post_meta( self::$event_id, 'rsvp_enabled', $rsvp_enabled ? 1 : 0 );
 		update_post_meta( self::$event_id, 'rsvp_capacity', $rsvp_capacity );
 		update_post_meta( self::$event_id, 'rsvp_show_remaining', $rsvp_show_remaining ? 1 : 0 );
-		update_post_meta( self::$event_id, 'rsvp_allow_guests', (bool) $rsvp_allow_guests );
+		update_post_meta( self::$event_id, 'rsvp_allow_guests', $rsvp_allow_guests ? 1 : 0 );
 		update_post_meta( self::$event_id, 'rsvp_max_guests', $rsvp_max_guests );
-		update_post_meta( self::$event_id, 'rsvp_allow_edit', (bool) $rsvp_allow_edit );
-		update_post_meta( self::$event_id, 'rsvp_auto_account', (bool) $rsvp_auto_account );
+		update_post_meta( self::$event_id, 'rsvp_allow_edit', $rsvp_allow_edit ? 1 : 0 );
+		update_post_meta( self::$event_id, 'rsvp_auto_account', $rsvp_auto_account ? 1 : 0 );
 		update_post_meta( self::$event_id, 'rsvp_sale_start', (string) $rsvp_sale_start );
 		update_post_meta( self::$event_id, 'rsvp_sale_end', (string) $rsvp_sale_end );
 		update_post_meta( self::$event_id, 'attendance_mode', $attendance_mode );
 
-		$tickets_enabled             = ! empty( $meta['tickets_enabled'] );
-		$tickets_require_account     = ! empty( $meta['tickets_require_account'] );
-		$tickets_auto_create_account = ! empty( $meta['tickets_auto_create_account'] );
-		$tickets_show_remaining      = array_key_exists( 'tickets_show_remaining', $meta ) ? (bool) $meta['tickets_show_remaining'] : true;
-		$tickets_show_unavailable    = array_key_exists( 'tickets_show_unavailable', $meta ) ? (bool) $meta['tickets_show_unavailable'] : false;
+		$tickets_enabled             = array_key_exists( 'tickets_enabled', $meta ) ? self::normalize_boolean_meta( $meta['tickets_enabled'] ) : false;
+		$tickets_require_account     = array_key_exists( 'tickets_require_account', $meta ) ? self::normalize_boolean_meta( $meta['tickets_require_account'] ) : false;
+		$tickets_auto_create_account = array_key_exists( 'tickets_auto_create_account', $meta ) ? self::normalize_boolean_meta( $meta['tickets_auto_create_account'] ) : false;
+		$tickets_show_remaining      = array_key_exists( 'tickets_show_remaining', $meta ) ? self::normalize_boolean_meta( $meta['tickets_show_remaining'] ) : true;
+		$tickets_show_unavailable    = array_key_exists( 'tickets_show_unavailable', $meta ) ? self::normalize_boolean_meta( $meta['tickets_show_unavailable'] ) : false;
 		$tickets_terms_conditions    = isset( $meta['tickets_terms_conditions'] ) ? wp_kses_post( $meta['tickets_terms_conditions'] ) : '';
 		$tickets_display_mode        = isset( $meta['tickets_display_mode'] ) ? sanitize_key( $meta['tickets_display_mode'] ) : 'cards';
 
-		update_post_meta( self::$event_id, 'tickets_enabled', (bool) $tickets_enabled );
-		update_post_meta( self::$event_id, 'tickets_require_account', (bool) $tickets_require_account );
-		update_post_meta( self::$event_id, 'tickets_auto_create_account', (bool) $tickets_auto_create_account );
+		update_post_meta( self::$event_id, 'tickets_enabled', $tickets_enabled ? 1 : 0 );
+		update_post_meta( self::$event_id, 'tickets_require_account', $tickets_require_account ? 1 : 0 );
+		update_post_meta( self::$event_id, 'tickets_auto_create_account', $tickets_auto_create_account ? 1 : 0 );
 		update_post_meta( self::$event_id, 'tickets_show_remaining', $tickets_show_remaining ? 1 : 0 );
-		update_post_meta( self::$event_id, 'tickets_show_unavailable', (bool) $tickets_show_unavailable );
+		update_post_meta( self::$event_id, 'tickets_show_unavailable', $tickets_show_unavailable ? 1 : 0 );
 		update_post_meta( self::$event_id, 'tickets_terms_conditions', $tickets_terms_conditions );
 		update_post_meta( self::$event_id, 'tickets_display_mode', $tickets_display_mode );
 
@@ -576,8 +602,8 @@ class Event {
 		$calendars = array();
 
 		if ( empty( $meta['calendar'] ) ) {
-			$default_event_cal = (int) get_option( 'eventkoi_default_event_cal', 0 );
-			$calendars         = array( $eventkoi_default_event_cal );
+			$default_event_cal = \eventkoi_resolve_calendar_id( (int) get_option( 'eventkoi_default_event_cal', 0 ) );
+			$calendars         = $default_event_cal ? array( $default_event_cal ) : array();
 		} else {
 			foreach ( $meta['calendar'] as $calendar ) {
 				if ( isset( $calendar['id'] ) ) {
@@ -623,6 +649,8 @@ class Event {
 			$event_days = array();
 		}
 
+		$event_days = self::prepare_event_days_all_day_dates( $event_days );
+
 		/**
 		 * Filter the retrieved event days.
 		 *
@@ -631,6 +659,283 @@ class Event {
 		 * @param \WP_Post $event      Event post object.
 		 */
 		return apply_filters( 'eventkoi_get_event_days', $event_days, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Get the selected standard event-day index from the frontend request.
+	 *
+	 * @return int|null
+	 */
+	protected static function get_selected_event_day_index_from_request() {
+		if ( is_admin() ) {
+			return null;
+		}
+
+		$context = $GLOBALS['eventkoi_selected_event_day_context'][ self::$event_id ] ?? null;
+		if ( null !== $context && is_scalar( $context ) ) {
+			$context = (string) $context;
+			if ( ctype_digit( $context ) ) {
+				return (int) $context;
+			}
+		}
+
+		$raw = filter_input( INPUT_GET, 'event_day', FILTER_DEFAULT );
+
+		if ( null === $raw && isset( $_GET['event_day'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only frontend occurrence selector.
+			$raw = wp_unslash( $_GET['event_day'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below after array guard.
+		}
+
+		if ( is_array( $raw ) ) {
+			return null;
+		}
+
+		$raw = sanitize_text_field( (string) $raw );
+		if ( '' === $raw || ! ctype_digit( $raw ) ) {
+			return null;
+		}
+
+		return (int) $raw;
+	}
+
+	/**
+	 * Get the selected standard event-day row for frontend occurrence URLs.
+	 *
+	 * @return array|null
+	 */
+	protected static function get_selected_event_day_from_request() {
+		if ( 'standard' !== self::get_date_type() || 'selected' !== self::get_standard_type() ) {
+			return null;
+		}
+
+		$index = self::get_selected_event_day_index_from_request();
+		if ( null === $index ) {
+			return null;
+		}
+
+		$days = self::get_event_days();
+		if ( ! isset( $days[ $index ] ) || ! is_array( $days[ $index ] ) || empty( $days[ $index ]['start_date'] ) ) {
+			return null;
+		}
+
+		return $days[ $index ];
+	}
+
+	/**
+	 * Get event days scoped to a selected frontend occurrence when requested.
+	 *
+	 * @return array
+	 */
+	protected static function get_event_days_for_rendering() {
+		$selected_day = self::get_selected_event_day_from_request();
+
+		if ( is_array( $selected_day ) ) {
+			return array( $selected_day );
+		}
+
+		return self::get_event_days();
+	}
+
+	/**
+	 * Add source timezone date-only fields to all-day event-day rows.
+	 *
+	 * Stored dates remain UTC instants. These derived fields let editors and
+	 * renderers treat all-day events as calendar dates in the event/source
+	 * timezone instead of shifting them through the current site timezone.
+	 *
+	 * @param array $event_days Event day rows.
+	 * @return array
+	 */
+	protected static function prepare_event_days_all_day_dates( array $event_days ) {
+		if ( empty( $event_days ) ) {
+			return $event_days;
+		}
+
+		foreach ( $event_days as $index => $day ) {
+			if ( is_array( $day ) && array_key_exists( 'all_day', $day ) ) {
+				$day['all_day']                  = self::normalize_boolean_meta( $day['all_day'] );
+				$event_days[ $index ]['all_day'] = $day['all_day'];
+			}
+
+			if ( ! is_array( $day ) || ! self::normalize_boolean_meta( $day['all_day'] ?? false ) || empty( $day['start_date'] ) ) {
+				continue;
+			}
+
+			$timezone = self::get_all_day_datetime_timezone( self::get_timezone(), $day );
+			$start_ts = strtotime( (string) $day['start_date'] );
+			if ( ! $start_ts ) {
+				continue;
+			}
+
+			$start = ( new \DateTimeImmutable( '@' . (int) $start_ts ) )->setTimezone( $timezone );
+			$end   = null;
+
+			if ( ! empty( $day['end_date'] ) ) {
+				$end_ts = strtotime( (string) $day['end_date'] );
+				if ( $end_ts && $end_ts >= $start_ts ) {
+					$end = ( new \DateTimeImmutable( '@' . (int) $end_ts ) )->setTimezone( $timezone );
+				}
+			}
+
+			$display_end = self::get_all_day_display_end_date( $start, $end );
+			if ( ! $display_end || $display_end < $start ) {
+				$display_end = $start;
+			}
+
+			$event_days[ $index ]['all_day_timezone']           = $timezone->getName();
+			$event_days[ $index ]['all_day_start_date']         = $start->setTime( 0, 0, 0 )->format( 'Y-m-d' );
+			$event_days[ $index ]['all_day_end_date']           = $display_end->setTime( 0, 0, 0 )->format( 'Y-m-d' );
+			$event_days[ $index ]['all_day_end_exclusive_date'] = $display_end->setTime( 0, 0, 0 )->modify( '+1 day' )->format( 'Y-m-d' );
+		}
+
+		return $event_days;
+	}
+
+	/**
+	 * Resolve inclusive display end date for all-day rows.
+	 *
+	 * @param \DateTimeImmutable      $start Start date in source timezone.
+	 * @param \DateTimeImmutable|null $end   End date in source timezone.
+	 * @return \DateTimeImmutable|null
+	 */
+	protected static function get_all_day_display_end_date( \DateTimeImmutable $start, $end ) {
+		if ( ! $end instanceof \DateTimeImmutable ) {
+			return $start;
+		}
+
+		if ( function_exists( 'eventkoi_is_single_all_day_span' ) && eventkoi_is_single_all_day_span( $start->getTimestamp(), $end->getTimestamp() ) ) {
+			return $start;
+		}
+
+		if ( '00:00:00' === $end->format( 'H:i:s' ) && $end->format( 'Y-m-d' ) !== $start->format( 'Y-m-d' ) ) {
+			return $end->modify( '-1 day' );
+		}
+
+		return $end;
+	}
+
+	/**
+	 * Resolve the all-day source timezone to persist on save.
+	 *
+	 * @param mixed $event_days Raw event_days payload.
+	 * @return string
+	 */
+	protected static function get_all_day_storage_timezone( $event_days ) {
+		if ( empty( $event_days ) || ! is_array( $event_days ) ) {
+			return '';
+		}
+
+		$stored = (string) get_post_meta( self::$event_id, 'timezone', true );
+
+		foreach ( $event_days as $day ) {
+			if ( ! is_array( $day ) || ! self::normalize_boolean_meta( $day['all_day'] ?? false ) ) {
+				continue;
+			}
+
+			$start_raw = $day['start_date'] ?? '';
+			$end_raw   = $day['end_date'] ?? '';
+			$inferred  = function_exists( 'eventkoi_infer_all_day_timezone_from_utc_range' )
+				? eventkoi_infer_all_day_timezone_from_utc_range( $start_raw, $end_raw )
+				: '';
+
+			$candidates = array(
+				(string) ( $day['all_day_timezone'] ?? '' ),
+				function_exists( 'eventkoi_all_day_timezone_should_prefer_stored' ) && eventkoi_all_day_timezone_should_prefer_stored( $stored, $inferred, $start_raw, $end_raw ) ? $stored : '',
+				$inferred,
+				$stored,
+			);
+
+			foreach ( $candidates as $candidate ) {
+				if ( '' === trim( $candidate ) ) {
+					continue;
+				}
+
+				try {
+					$timezone = new \DateTimeZone( eventkoi_php_timezone( $candidate ) );
+					return $timezone->getName();
+				} catch ( \Exception $e ) {
+					continue;
+				}
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Remove derived all-day display fields before writing event_days meta.
+	 *
+	 * @param mixed $event_days Raw event_days payload.
+	 * @return array
+	 */
+	protected static function prepare_event_days_for_storage( $event_days ) {
+		if ( empty( $event_days ) || ! is_array( $event_days ) ) {
+			return array();
+		}
+
+		foreach ( $event_days as $index => $day ) {
+			if ( ! is_array( $day ) ) {
+				continue;
+			}
+
+			unset(
+				$day['all_day_timezone'],
+				$day['all_day_start_date'],
+				$day['all_day_end_date'],
+				$day['all_day_end_exclusive_date']
+			);
+
+			foreach ( array( 'start_date', 'end_date' ) as $date_key ) {
+				if ( array_key_exists( $date_key, $day ) ) {
+					$day[ $date_key ] = self::normalize_utc_datetime_iso_string( $day[ $date_key ] );
+				}
+			}
+
+			if ( array_key_exists( 'all_day', $day ) ) {
+				$day['all_day'] = self::normalize_boolean_meta( $day['all_day'] );
+			}
+
+			$event_days[ $index ] = $day;
+		}
+
+		return $event_days;
+	}
+
+	/**
+	 * Remove derived all-day display date fields before writing recurrence rules.
+	 *
+	 * @param mixed $rules Raw recurrence rules payload.
+	 * @return array
+	 */
+	protected static function prepare_recurrence_rules_for_storage( $rules ) {
+		if ( empty( $rules ) || ! is_array( $rules ) ) {
+			return array();
+		}
+
+		foreach ( $rules as $index => $rule ) {
+			if ( ! is_array( $rule ) ) {
+				continue;
+			}
+
+			unset(
+				$rule['all_day_start_date'],
+				$rule['all_day_end_date'],
+				$rule['all_day_end_exclusive_date']
+			);
+
+			foreach ( array( 'start_date', 'end_date' ) as $date_key ) {
+				if ( array_key_exists( $date_key, $rule ) ) {
+					$rule[ $date_key ] = self::normalize_utc_datetime_iso_string( $rule[ $date_key ] );
+				}
+			}
+
+			if ( array_key_exists( 'all_day', $rule ) ) {
+				$rule['all_day'] = self::normalize_boolean_meta( $rule['all_day'] );
+			}
+
+			$rules[ $index ] = $rule;
+		}
+
+		return $rules;
 	}
 
 	/**
@@ -827,6 +1132,16 @@ class Event {
 			}
 		}
 
+		$event_day = self::get_selected_event_day_index_from_request();
+		if ( null !== $event_day && 'standard' === self::get_date_type() && 'selected' === self::get_standard_type() ) {
+			$days = self::get_event_days();
+			if ( isset( $days[ $event_day ] ) && is_array( $days[ $event_day ] ) ) {
+				$url = add_query_arg( 'event_day', absint( $event_day ), $url );
+			}
+		}
+
+		$url = eventkoi_append_frontend_timezone_arg( $url );
+
 		return apply_filters( 'eventkoi_get_event_url', $url, self::$event_id, self::$event );
 	}
 
@@ -844,6 +1159,16 @@ class Event {
 		if ( $instance ) {
 			$ical = add_query_arg( 'instance', absint( $instance ), $ical );
 		}
+
+		$event_day = self::get_selected_event_day_index_from_request();
+		if ( null !== $event_day && 'standard' === self::get_date_type() && 'selected' === self::get_standard_type() ) {
+			$days = self::get_event_days();
+			if ( isset( $days[ $event_day ] ) && is_array( $days[ $event_day ] ) ) {
+				$ical = add_query_arg( 'event_day', absint( $event_day ), $ical );
+			}
+		}
+
+		$ical = eventkoi_append_frontend_timezone_arg( $ical );
 
 		return apply_filters( 'eventkoi_get_event_ical', $ical, self::$event_id, self::$event );
 	}
@@ -905,6 +1230,18 @@ class Event {
 		$type = self::get_date_type();
 
 		if ( in_array( $type, array( 'standard', 'multi' ), true ) ) {
+			$selected_day = self::get_selected_event_day_from_request();
+			if ( is_array( $selected_day ) ) {
+				return array_merge(
+					array(
+						'start_date' => '',
+						'end_date'   => '',
+						'all_day'    => false,
+					),
+					$selected_day
+				);
+			}
+
 			$days = self::get_event_days();
 			// Only use days[0] when it actually carries a start_date; some events
 			// have a placeholder row with null/empty fields that would otherwise
@@ -948,8 +1285,13 @@ class Event {
 		$type          = self::get_date_type();
 		$standard_type = get_post_meta( self::$event_id, 'standard_type', true );
 
+		$selected_day = self::get_selected_event_day_from_request();
+		if ( is_array( $selected_day ) && ! empty( $selected_day['start_date'] ) ) {
+			$formatted = $selected_day['start_date'];
+		}
+
 		// If standard + continuous, read directly from meta.
-		if ( 'standard' === $type && 'continuous' === $standard_type ) {
+		if ( empty( $formatted ) && 'standard' === $type && 'continuous' === $standard_type ) {
 			$meta_val = get_post_meta( self::$event_id, 'start_date', true );
 			if ( ! empty( $meta_val ) ) {
 				$formatted = $meta_val;
@@ -995,8 +1337,13 @@ class Event {
 		$type          = self::get_date_type();
 		$standard_type = self::get_standard_type();
 
+		$selected_day = self::get_selected_event_day_from_request();
+		if ( is_array( $selected_day ) && ! empty( $selected_day['end_date'] ) ) {
+			$formatted = $selected_day['end_date'];
+		}
+
 		// If standard + continuous, read directly from meta.
-		if ( 'standard' === $type && 'continuous' === $standard_type ) {
+		if ( empty( $formatted ) && 'standard' === $type && 'continuous' === $standard_type ) {
 			$meta_val = get_post_meta( self::$event_id, 'end_date', true );
 			if ( ! empty( $meta_val ) ) {
 				$formatted = $meta_val;
@@ -1226,7 +1573,7 @@ class Event {
 	public static function get_tbc() {
 		$tbc = get_post_meta( self::$event_id, 'tbc', true );
 
-		return apply_filters( 'eventkoi_get_event_tbc', (bool) $tbc, self::$event_id, self::$event );
+		return apply_filters( 'eventkoi_get_event_tbc', self::normalize_boolean_meta( $tbc ), self::$event_id, self::$event );
 	}
 
 	/**
@@ -1235,7 +1582,7 @@ class Event {
 	public static function get_timezone_display() {
 		$timezone_display = get_post_meta( self::$event_id, 'timezone_display', true );
 
-		return apply_filters( 'eventkoi_get_timezone_display', (bool) $timezone_display, self::$event_id, self::$event );
+		return apply_filters( 'eventkoi_get_timezone_display', self::normalize_boolean_meta( $timezone_display ), self::$event_id, self::$event );
 	}
 
 	/**
@@ -1303,7 +1650,7 @@ class Event {
 				$fmt = $time_format;
 			}
 
-			$out = wp_date( $fmt, $dt->getTimestamp() );
+			$out = wp_date( $fmt, $dt->getTimestamp(), $dt->getTimezone() );
 
 			if ( str_contains( $time_format, 'A' ) ) {
 				$out = preg_replace_callback(
@@ -1328,7 +1675,7 @@ class Event {
 
 		$fmt_date = static function ( $dt ) use ( $date_format ) {
 			if ( $dt instanceof \DateTimeInterface ) {
-				return wp_date( $date_format, $dt->getTimestamp() );
+				return wp_date( $date_format, $dt->getTimestamp(), $dt->getTimezone() );
 			}
 			return '';
 		};
@@ -1352,16 +1699,41 @@ class Event {
 		$start_iso = self::get_start_date_iso();
 		$end_iso   = self::get_end_date_iso();
 
-		$start = $parse( $start_iso );
-		$end   = $parse( $end_iso );
+		$date_type = self::get_date_type();
+		$start     = $parse( $start_iso );
+		$end       = $parse( $end_iso );
 
 		if ( ! $start ) {
 			return null;
 		}
 
-		$all_day   = (bool) get_post_meta( self::$event_id, 'all_day', true );
-		$date_type = self::get_date_type();
+		$first_instance = self::get_first_instance();
+		$all_day        = array_key_exists( 'all_day', (array) $first_instance )
+			? (bool) $first_instance['all_day']
+			: self::normalize_boolean_meta( get_post_meta( self::$event_id, 'all_day', true ) );
+		if ( $all_day ) {
+			$all_day_timezone = self::get_all_day_datetime_timezone(
+				self::get_timezone(),
+				array(
+					'start_date'       => $start_iso,
+					'end_date'         => $end_iso,
+					'all_day_timezone' => $first_instance['all_day_timezone'] ?? '',
+				)
+			);
+
+			if ( 'recurring' !== $date_type || '' !== (string) get_post_meta( self::$event_id, 'timezone', true ) || ! empty( $first_instance['all_day_timezone'] ) ) {
+				try {
+					$start = ( new \DateTimeImmutable( $start_iso, new \DateTimeZone( 'UTC' ) ) )->setTimezone( $all_day_timezone );
+					$end   = ! empty( $end_iso )
+						? ( new \DateTimeImmutable( $end_iso, new \DateTimeZone( 'UTC' ) ) )->setTimezone( $all_day_timezone )
+						: null;
+				} catch ( \Exception $e ) {
+					// Keep the WordPress-time parsed values.
+				}
+			}
+		}
 		$is_same   = ( $end instanceof \DateTimeInterface ) && ( $start->format( 'Y-m-d' ) === $end->format( 'Y-m-d' ) );
+		$is_single_all_day_span = $all_day && $end && eventkoi_is_single_all_day_span( $start->getTimestamp(), $end->getTimestamp() );
 
 		if ( 'recurring' === $date_type ) {
 			if ( $is_same && ! $all_day ) {
@@ -1373,7 +1745,7 @@ class Event {
 				);
 			}
 
-			if ( ! $end || $is_same ) {
+			if ( ! $end || $is_same || $is_single_all_day_span ) {
 				return $fmt( $start, 'date' );
 			}
 
@@ -1382,7 +1754,7 @@ class Event {
 
 		if ( in_array( $date_type, array( 'standard', 'multi' ), true ) ) {
 			if ( $all_day ) {
-				if ( ! $end || $is_same ) {
+				if ( ! $end || $is_same || $is_single_all_day_span ) {
 					return $fmt( $start, 'date' );
 				}
 
@@ -1415,10 +1787,91 @@ class Event {
 	}
 
 	/**
+	 * Normalize stored event type values to supported values.
+	 *
+	 * @param string $type Raw event type.
+	 * @return string
+	 */
+	private static function normalize_event_type_value( $type ) {
+		$type = sanitize_key( (string) $type );
+
+		if ( 'physical' === $type ) {
+			return 'inperson';
+		}
+
+		if ( 'virtual' === $type ) {
+			return 'online';
+		}
+
+		if ( in_array( $type, array( 'inperson', 'online', 'mixed' ), true ) ) {
+			return $type;
+		}
+
+		if ( str_contains( $type, 'virtuallocation' ) ) {
+			return 'online';
+		}
+
+		if ( str_contains( $type, 'place' ) ) {
+			return 'inperson';
+		}
+
+		return '';
+	}
+
+	/**
+	 * Infer event type from the locations array.
+	 *
+	 * @param array $locations Event locations.
+	 * @return string
+	 */
+	private static function infer_event_type_from_locations( $locations ) {
+		if ( ! is_array( $locations ) || empty( $locations ) ) {
+			return '';
+		}
+
+		$has_online   = false;
+		$has_physical = false;
+
+		foreach ( $locations as $location ) {
+			if ( ! is_array( $location ) ) {
+				continue;
+			}
+
+			$location_type = self::get_location_type( $location );
+
+			if ( 'online' === $location_type ) {
+				$has_online = true;
+			} elseif ( 'inperson' === $location_type ) {
+				$has_physical = true;
+			}
+
+			if ( $has_online && $has_physical ) {
+				return 'mixed';
+			}
+		}
+
+		if ( $has_online ) {
+			return 'online';
+		}
+
+		if ( $has_physical ) {
+			return 'inperson';
+		}
+
+		return '';
+	}
+
+	/**
 	 * Get event type.
 	 */
 	public static function get_type() {
-		$type = get_post_meta( self::$event_id, 'type', true );
+		$locations = self::get_instance_field( 'locations' );
+		$locations = is_array( $locations ) ? $locations : array();
+		$type      = self::infer_event_type_from_locations( $locations );
+
+		if ( empty( $type ) && ! self::has_instance_locations_override() ) {
+			$type = self::normalize_event_type_value( get_post_meta( self::$event_id, 'type', true ) );
+		}
 
 		if ( empty( $type ) ) {
 			$type = 'inperson';
@@ -1444,11 +1897,25 @@ class Event {
 	 * Get event location.
 	 */
 	public static function get_location() {
+		$locations                       = self::get_instance_field( 'locations' );
+		$locations                       = is_array( $locations ) ? $locations : array();
+		$has_instance_locations_override = self::has_instance_locations_override();
+		$has_locations_meta              = ! empty( $locations );
+		$location                        = array();
 
-		$location = get_post_meta( self::$event_id, 'location', true );
+		$primary_location = self::get_primary_location_from_locations( $locations );
+		if ( is_array( $primary_location ) ) {
+			$location = $primary_location;
+		} elseif ( ! $has_locations_meta && ! $has_instance_locations_override ) {
+			$location = get_post_meta( self::$event_id, 'location', true );
 
-		if ( empty( $location ) ) {
-			$location = array();
+			if ( empty( $location ) ) {
+				$location = array();
+			}
+
+			if ( is_array( $location ) && isset( $location[0] ) && is_array( $location[0] ) && ! isset( $location['type'] ) ) {
+				$location = $location[0];
+			}
 		}
 
 		return apply_filters( 'eventkoi_get_event_location', $location, self::$event_id, self::$event );
@@ -1478,7 +1945,7 @@ class Event {
 	public static function get_embed_gmap() {
 		$embed_gmap = get_post_meta( self::$event_id, 'embed_gmap', true );
 
-		return apply_filters( 'eventkoi_get_event_embed_gmap', (bool) $embed_gmap, self::$event_id, self::$event );
+		return apply_filters( 'eventkoi_get_event_embed_gmap', self::normalize_boolean_meta( $embed_gmap ), self::$event_id, self::$event );
 	}
 
 	/**
@@ -1494,7 +1961,28 @@ class Event {
 	 * Get event virtual URL.
 	 */
 	public static function get_virtual_url() {
-		$virtual_url = get_post_meta( self::$event_id, 'virtual_url', true );
+		$virtual_url = '';
+		$locations   = self::get_instance_field( 'locations' );
+
+		if ( is_array( $locations ) ) {
+			foreach ( $locations as $location ) {
+				if ( ! is_array( $location ) ) {
+					continue;
+				}
+
+				$type = self::get_location_type( $location );
+				if ( 'online' === $type ) {
+					$virtual_url = self::get_location_virtual_url( $location );
+					if ( '' !== $virtual_url ) {
+						break;
+					}
+				}
+			}
+		}
+
+		if ( '' === $virtual_url && ! self::has_instance_locations_override() ) {
+			$virtual_url = get_post_meta( self::$event_id, 'virtual_url', true );
+		}
 
 		return apply_filters( 'eventkoi_get_event_virtual_url', (string) $virtual_url, self::$event_id, self::$event );
 	}
@@ -1521,7 +2009,7 @@ class Event {
 	public static function get_tickets_enabled() {
 		$enabled = get_post_meta( self::$event_id, 'tickets_enabled', true );
 
-		return apply_filters( 'eventkoi_get_event_tickets_enabled', (bool) $enabled, self::$event_id, self::$event );
+		return apply_filters( 'eventkoi_get_event_tickets_enabled', self::normalize_boolean_meta( $enabled ), self::$event_id, self::$event );
 	}
 
 	/**
@@ -1541,7 +2029,7 @@ class Event {
 	 * @return bool
 	 */
 	public static function get_tickets_require_account() {
-		return (bool) get_post_meta( self::$event_id, 'tickets_require_account', true );
+		return self::normalize_boolean_meta( get_post_meta( self::$event_id, 'tickets_require_account', true ) );
 	}
 
 	/**
@@ -1550,7 +2038,7 @@ class Event {
 	 * @return bool
 	 */
 	public static function get_tickets_auto_create_account() {
-		return (bool) get_post_meta( self::$event_id, 'tickets_auto_create_account', true );
+		return self::normalize_boolean_meta( get_post_meta( self::$event_id, 'tickets_auto_create_account', true ) );
 	}
 
 	/**
@@ -1560,11 +2048,11 @@ class Event {
 	 */
 	public static function get_tickets_show_remaining() {
 		$value = get_post_meta( self::$event_id, 'tickets_show_remaining', true );
-		if ( '' === $value || null === $value ) {
+		if ( ! metadata_exists( 'post', self::$event_id, 'tickets_show_remaining' ) && ( '' === $value || null === $value ) ) {
 			return true;
 		}
 
-		return (bool) $value;
+		return self::normalize_boolean_meta( $value );
 	}
 
 	/**
@@ -1575,11 +2063,11 @@ class Event {
 	public static function get_tickets_show_unavailable() {
 		$value = get_post_meta( self::$event_id, 'tickets_show_unavailable', true );
 
-		if ( '' === $value || null === $value ) {
+		if ( ! metadata_exists( 'post', self::$event_id, 'tickets_show_unavailable' ) && ( '' === $value || null === $value ) ) {
 			return false;
 		}
 
-		return (bool) $value;
+		return self::normalize_boolean_meta( $value );
 	}
 
 	/**
@@ -1604,7 +2092,7 @@ class Event {
 	public static function get_rsvp_enabled() {
 		$enabled = get_post_meta( self::$event_id, 'rsvp_enabled', true );
 
-		return apply_filters( 'eventkoi_get_event_rsvp_enabled', (bool) $enabled, self::$event_id, self::$event );
+		return apply_filters( 'eventkoi_get_event_rsvp_enabled', self::normalize_boolean_meta( $enabled ), self::$event_id, self::$event );
 	}
 
 	/**
@@ -1628,11 +2116,11 @@ class Event {
 	 */
 	public static function get_rsvp_show_remaining() {
 		$show_remaining = get_post_meta( self::$event_id, 'rsvp_show_remaining', true );
-		if ( '' === $show_remaining || false === $show_remaining || null === $show_remaining ) {
+		if ( ! metadata_exists( 'post', self::$event_id, 'rsvp_show_remaining' ) && ( '' === $show_remaining || false === $show_remaining || null === $show_remaining ) ) {
 			$show_remaining = true;
 		}
 
-		return apply_filters( 'eventkoi_get_event_rsvp_show_remaining', (bool) $show_remaining, self::$event_id, self::$event );
+		return apply_filters( 'eventkoi_get_event_rsvp_show_remaining', self::normalize_boolean_meta( $show_remaining ), self::$event_id, self::$event );
 	}
 
 	/**
@@ -1643,7 +2131,7 @@ class Event {
 	public static function get_rsvp_allow_guests() {
 		$allow_guests = get_post_meta( self::$event_id, 'rsvp_allow_guests', true );
 
-		return apply_filters( 'eventkoi_get_event_rsvp_allow_guests', (bool) $allow_guests, self::$event_id, self::$event );
+		return apply_filters( 'eventkoi_get_event_rsvp_allow_guests', self::normalize_boolean_meta( $allow_guests ), self::$event_id, self::$event );
 	}
 
 	/**
@@ -1666,11 +2154,11 @@ class Event {
 		$allow_edit = get_post_meta( self::$event_id, 'rsvp_allow_edit', true );
 		// Default ON for events with no value stored. get_post_meta returns false
 		// when the post id is 0 (new-event template), so handle both ''/false/null.
-		if ( '' === $allow_edit || false === $allow_edit || null === $allow_edit ) {
+		if ( ! metadata_exists( 'post', self::$event_id, 'rsvp_allow_edit' ) && ( '' === $allow_edit || false === $allow_edit || null === $allow_edit ) ) {
 			$allow_edit = true;
 		}
 
-		return apply_filters( 'eventkoi_get_event_rsvp_allow_edit', (bool) $allow_edit, self::$event_id, self::$event );
+		return apply_filters( 'eventkoi_get_event_rsvp_allow_edit', self::normalize_boolean_meta( $allow_edit ), self::$event_id, self::$event );
 	}
 
 	/**
@@ -1681,7 +2169,7 @@ class Event {
 	public static function get_rsvp_auto_account() {
 		$auto_account = get_post_meta( self::$event_id, 'rsvp_auto_account', true );
 
-		return apply_filters( 'eventkoi_get_event_rsvp_auto_account', (bool) $auto_account, self::$event_id, self::$event );
+		return apply_filters( 'eventkoi_get_event_rsvp_auto_account', self::normalize_boolean_meta( $auto_account ), self::$event_id, self::$event );
 	}
 
 	/**
@@ -1736,28 +2224,99 @@ class Event {
 	}
 
 	/**
+	 * Normalize an inbound event datetime to UTC ISO-8601. Returns '' for empty
+	 * or unparseable input.
+	 *
+	 * Event rows are read directly by the admin app with ISO parsers, so keep
+	 * their storage format canonical and JavaScript-safe.
+	 *
+	 * @param mixed $value Datetime input, usually ISO-8601.
+	 * @return string
+	 */
+	private static function normalize_utc_datetime_iso_string( $value ) {
+		if ( null === $value ) {
+			return '';
+		}
+		$trimmed = trim( (string) $value );
+		if ( '' === $trimmed ) {
+			return '';
+		}
+		try {
+			$dt = new \DateTimeImmutable( $trimmed, new \DateTimeZone( 'UTC' ) );
+			$dt = $dt->setTimezone( new \DateTimeZone( 'UTC' ) );
+			return $dt->format( 'Y-m-d\TH:i:s\Z' );
+		} catch ( \Exception $e ) {
+			return '';
+		}
+	}
+
+	/**
+	 * Normalize boolean-like event meta values.
+	 *
+	 * @param mixed $value Boolean-like value from REST/admin payloads.
+	 * @return bool
+	 */
+	private static function normalize_boolean_meta( $value ) {
+		return rest_sanitize_boolean( $value );
+	}
+
+	/**
 	 * Get the first usable location (physical or virtual).
 	 *
 	 * @return array|null
 	 */
 	public static function get_primary_location() {
-		$locations = self::get_locations();
+		$locations = self::get_instance_field( 'locations' );
+
+		return self::get_primary_location_from_locations( is_array( $locations ) ? $locations : array() );
+	}
+
+	/**
+	 * Get the first usable location from a locations array.
+	 *
+	 * @param array $locations Locations.
+	 * @return array|null
+	 */
+	protected static function get_primary_location_from_locations( $locations ) {
+		if ( ! is_array( $locations ) ) {
+			return null;
+		}
 
 		foreach ( $locations as $loc ) {
-			if ( ! is_array( $loc ) || empty( $loc['type'] ) ) {
+			if ( ! is_array( $loc ) ) {
 				continue;
 			}
 
-			if ( 'physical' === $loc['type'] && ! empty( $loc['address1'] ) ) {
+			$type = self::get_location_type( $loc );
+
+			if ( 'inperson' === $type && '' !== self::format_physical_location_line( $loc, true ) ) {
 				return $loc;
 			}
 
-			if ( in_array( $loc['type'], array( 'virtual', 'online' ), true ) && ! empty( $loc['virtual_url'] ) ) {
+			if ( 'online' === $type && '' !== self::get_location_virtual_url( $loc ) ) {
 				return $loc;
 			}
 		}
 
 		return null;
+	}
+
+	/**
+	 * Whether the active recurring instance explicitly overrides locations.
+	 *
+	 * @return bool
+	 */
+	protected static function has_instance_locations_override() {
+		$instance_ts = function_exists( 'eventkoi_get_instance_id' ) ? absint( eventkoi_get_instance_id() ) : 0;
+		if ( ! $instance_ts ) {
+			return false;
+		}
+
+		$overrides = self::get_recurrence_overrides();
+
+		return isset( $overrides[ $instance_ts ] )
+			&& is_array( $overrides[ $instance_ts ] )
+			&& array_key_exists( 'locations', $overrides[ $instance_ts ] );
 	}
 
 	/**
@@ -1772,15 +2331,177 @@ class Event {
 			return '';
 		}
 
-		if ( 'physical' === $loc['type'] && ! empty( $loc['address1'] ) ) {
-			return $loc['address1'];
+		$type = self::get_location_type( $loc );
+
+		if ( 'inperson' === $type ) {
+			return self::format_physical_location_line( $loc, false );
 		}
 
-		if ( in_array( $loc['type'], array( 'virtual', 'online' ), true ) && ! empty( $loc['virtual_url'] ) ) {
-			return esc_url_raw( $loc['virtual_url'] );
+		if ( 'online' === $type ) {
+			return esc_url_raw( self::get_location_virtual_url( $loc ) );
 		}
 
 		return '';
+	}
+
+	/**
+	 * Format a physical location row as a single line.
+	 *
+	 * @param array $location     Location row.
+	 * @param bool  $include_name Include the venue name.
+	 * @return string
+	 */
+	protected static function format_physical_location_line( array $location, $include_name = true ) {
+		$address = isset( $location['address'] ) && is_array( $location['address'] ) ? $location['address'] : array();
+
+		$city_line = implode(
+			', ',
+			array_filter(
+				array(
+					self::first_location_text(
+						self::location_text_value( $location, 'city' ),
+						self::location_text_value( $address, 'addressLocality' )
+					),
+					self::first_location_text(
+						self::location_text_value( $location, 'state' ),
+						self::location_text_value( $address, 'addressRegion' )
+					),
+					self::first_location_text(
+						self::location_text_value( $location, 'zip' ),
+						self::location_text_value( $address, 'postalCode' )
+					),
+				)
+			)
+		);
+
+		$parts = array(
+			self::first_location_text(
+				self::location_text_value( $location, 'address1' ),
+				self::location_text_value( $address, 'streetAddress' )
+			),
+			self::location_text_value( $location, 'address2' ),
+			self::location_text_value( $location, 'address3' ),
+			$city_line,
+			self::first_location_text(
+				self::location_text_value( $location, 'country' ),
+				self::location_text_value( $address, 'addressCountry' )
+			),
+		);
+
+		if ( $include_name ) {
+			array_unshift( $parts, self::location_text_value( $location, 'name' ) );
+		}
+
+		return implode( ', ', array_unique( array_filter( $parts ) ) );
+	}
+
+	/**
+	 * Return the first non-empty location text.
+	 *
+	 * @param string ...$values Values.
+	 * @return string
+	 */
+	protected static function first_location_text( ...$values ) {
+		foreach ( $values as $value ) {
+			$value = trim( (string) $value );
+			if ( '' !== $value ) {
+				return $value;
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Get sanitized text from a location row.
+	 *
+	 * @param array  $location Location row.
+	 * @param string $key      Field key.
+	 * @return string
+	 */
+	protected static function location_text_value( array $location, $key ) {
+		if ( ! array_key_exists( $key, $location ) ) {
+			return '';
+		}
+
+		$value = $location[ $key ];
+		if ( is_object( $value ) ) {
+			$value = get_object_vars( $value );
+		}
+
+		if ( is_array( $value ) ) {
+			foreach ( array( 'name', 'text', 'url', '@id' ) as $nested_key ) {
+				if ( array_key_exists( $nested_key, $value ) ) {
+					$text = self::location_scalar_text( $value[ $nested_key ] );
+					if ( '' !== $text ) {
+						return $text;
+					}
+				}
+			}
+
+			$texts = array();
+			foreach ( $value as $nested_value ) {
+				$text = self::location_scalar_text( $nested_value );
+				if ( '' !== $text ) {
+					$texts[] = $text;
+				}
+			}
+
+			return implode( ' ', array_unique( $texts ) );
+		}
+
+		return self::location_scalar_text( $value );
+	}
+
+	/**
+	 * Normalize a scalar location value to text.
+	 *
+	 * @param mixed $value Raw value.
+	 * @return string
+	 */
+	protected static function location_scalar_text( $value ) {
+		if ( is_array( $value ) || is_object( $value ) ) {
+			return '';
+		}
+
+		return sanitize_text_field( (string) $value );
+	}
+
+	/**
+	 * Normalize EventKoi and raw Schema.org location types.
+	 *
+	 * @param array  $location Location row.
+	 * @param string $default  Optional default normalized type.
+	 * @return string
+	 */
+	protected static function get_location_type( array $location, $default = '' ) {
+		$type = self::normalize_event_type_value( self::location_text_value( $location, 'type' ) );
+		if ( '' !== $type ) {
+			return $type;
+		}
+
+		$schema_type = strtolower( self::location_text_value( $location, '@type' ) );
+		if ( str_contains( $schema_type, 'virtuallocation' ) ) {
+			return 'online';
+		}
+		if ( str_contains( $schema_type, 'place' ) ) {
+			return 'inperson';
+		}
+
+		return self::normalize_event_type_value( $default );
+	}
+
+	/**
+	 * Get the virtual URL from supported location shapes.
+	 *
+	 * @param array $location Location row.
+	 * @return string
+	 */
+	protected static function get_location_virtual_url( array $location ) {
+		return self::first_location_text(
+			self::location_text_value( $location, 'virtual_url' ),
+			self::location_text_value( $location, 'url' )
+		);
 	}
 
 	/**
@@ -2048,6 +2769,28 @@ class Event {
 	}
 
 	/**
+	 * Rendered event URL.
+	 *
+	 * @return string Event URL.
+	 */
+	public static function rendered_url() {
+		$url = esc_url( self::get_url() );
+
+		return apply_filters( 'eventkoi_rendered_event_url', $url, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered iCal URL.
+	 *
+	 * @return string Event iCal URL.
+	 */
+	public static function rendered_ical() {
+		$url = esc_url( self::get_ical() );
+
+		return apply_filters( 'eventkoi_rendered_event_ical', $url, self::$event_id, self::$event );
+	}
+
+	/**
 	 * Render linked calendar names for the current event.
 	 *
 	 * @return string HTML string with anchor tags for each calendar.
@@ -2135,20 +2878,37 @@ class Event {
 				continue;
 			}
 
-			$name      = isset( $location['name'] ) ? $location['name'] : '';
-			$line1     = isset( $location['address1'] ) ? $location['address1'] : '';
-			$line2     = isset( $location['address2'] ) ? $location['address2'] : '';
-			$city      = isset( $location['city'] ) ? $location['city'] : '';
-			$state     = isset( $location['state'] ) ? $location['state'] : '';
-			$zip       = isset( $location['zip'] ) ? $location['zip'] : '';
-			$country   = isset( $location['country'] ) ? $location['country'] : '';
-			$url       = isset( $location['virtual_url'] ) ? $location['virtual_url'] : '';
-			$link_text = isset( $location['link_text'] ) ? $location['link_text'] : '';
-			$type      = isset( $location['type'] ) ? $location['type'] : 'physical';
+			$address   = isset( $location['address'] ) && is_array( $location['address'] ) ? $location['address'] : array();
+			$name      = self::location_text_value( $location, 'name' );
+			$line1     = self::first_location_text(
+				self::location_text_value( $location, 'address1' ),
+				self::location_text_value( $address, 'streetAddress' )
+			);
+			$line2     = self::location_text_value( $location, 'address2' );
+			$line3     = self::location_text_value( $location, 'address3' );
+			$city      = self::first_location_text(
+				self::location_text_value( $location, 'city' ),
+				self::location_text_value( $address, 'addressLocality' )
+			);
+			$state     = self::first_location_text(
+				self::location_text_value( $location, 'state' ),
+				self::location_text_value( $address, 'addressRegion' )
+			);
+			$zip       = self::first_location_text(
+				self::location_text_value( $location, 'zip' ),
+				self::location_text_value( $address, 'postalCode' )
+			);
+			$country   = self::first_location_text(
+				self::location_text_value( $location, 'country' ),
+				self::location_text_value( $address, 'addressCountry' )
+			);
+			$url       = self::get_location_virtual_url( $location );
+			$link_text = self::location_text_value( $location, 'link_text' );
+			$type      = self::get_location_type( $location, 'inperson' );
 
 			$lines = array();
 
-			if ( 'physical' === $type ) {
+			if ( 'inperson' === $type ) {
 				if ( ! empty( $name ) ) {
 					$lines[] = '<strong>' . esc_html( $name ) . '</strong>';
 				}
@@ -2157,6 +2917,9 @@ class Event {
 				}
 				if ( ! empty( $line2 ) ) {
 					$lines[] = esc_html( $line2 );
+				}
+				if ( ! empty( $line3 ) ) {
+					$lines[] = esc_html( $line3 );
 				}
 
 				$city_line_parts = array_filter( array( $city, $state, $zip ) );
@@ -2168,27 +2931,35 @@ class Event {
 				if ( ! empty( $country ) ) {
 					$lines[] = esc_html( $country );
 				}
-			} elseif ( 'online' === $type && ! empty( $url ) ) {
-				$online_title = ! empty( $name ) ? $name : __( 'Attend online', 'eventkoi-lite' );
-				$online_label = ! empty( $link_text ) ? $link_text : $url;
+				} elseif ( 'online' === $type && ! empty( $url ) ) {
+					$online_title = ! empty( $name ) ? $name : __( 'Attend online', 'eventkoi-lite' );
+					$online_label = ! empty( $link_text ) ? $link_text : $url;
 
-				$lines[] = '<strong>' . esc_html( $online_title ) . '</strong>';
-				$lines[] = '<a href="' . esc_url( $url ) . '" target="_blank" rel="noopener noreferrer">'
-				. esc_html( $online_label ) .
-				'</a>';
-			}
+					$lines[] = '<strong>' . esc_html( $online_title ) . '</strong>';
+					$lines[] = '<a href="' . esc_url( $url ) . '" target="_blank" rel="noopener noreferrer">'
+					. esc_html( $online_label ) .
+					'</a>';
+				}
 
-			$class_list  = 'eventkoi-location';
-			$class_list .= ( 'online' === $type ) ? ' virtual' : ' physical';
+				if ( empty( $lines ) ) {
+					continue;
+				}
+
+				$class_list  = 'eventkoi-location';
+				$class_list .= 'online' === $type ? ' virtual' : ' physical';
 
 			$outputs[] = '<address class="' . esc_attr( $class_list ) . '" style="white-space:pre-line">'
 			. implode( "\n", $lines ) .
-			'</address>';
-		}
+				'</address>';
+			}
 
-		return apply_filters(
-			'eventkoi_rendered_event_location',
-			implode( "\n\n", $outputs ),
+			if ( empty( $outputs ) ) {
+				return '<span class="eventkoi-no-location">' . esc_html__( 'No location available.', 'eventkoi-lite' ) . '</span>';
+			}
+
+			return apply_filters(
+				'eventkoi_rendered_event_location',
+				implode( "\n\n", $outputs ),
 			self::$event_id,
 			self::$event
 		);
@@ -2209,7 +2980,18 @@ class Event {
 	 * @return string
 	 */
 	public static function rendered_timezone() {
-		if ( ! self::get_timezone_display() ) {
+		$settings                  = get_option( 'eventkoi_settings', array() );
+		$settings                  = is_array( $settings ) ? $settings : array();
+		$auto_detect_timezone      = rest_sanitize_boolean( $settings['auto_detect_timezone'] ?? false );
+		$has_timezone_query_string = false;
+
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Frontend display preference only; sanitized immediately below.
+		if ( isset( $_GET['tz'] ) ) {
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Frontend display preference only.
+			$has_timezone_query_string = '' !== trim( sanitize_text_field( wp_unslash( $_GET['tz'] ) ) );
+		}
+
+		if ( ! self::get_timezone_display() && ! $auto_detect_timezone && ! $has_timezone_query_string ) {
 			return '';
 		}
 
@@ -2277,6 +3059,296 @@ class Event {
 	}
 
 	/**
+	 * Resolve the recurrence rule and display window for a concrete instance.
+	 *
+	 * @param int $instance_ts Instance start timestamp.
+	 * @return array{rule:array|null,end_ts:int|null,all_day:bool}|null
+	 */
+	private static function resolve_recurring_instance_context( $instance_ts ) {
+		$instance_ts = (int) $instance_ts;
+		if ( $instance_ts <= 0 ) {
+			return null;
+		}
+
+		$rules = self::get_recurrence_rules();
+		if ( empty( $rules ) || ! is_array( $rules ) ) {
+			return self::get_loop_instance_context( $instance_ts );
+		}
+
+		$timezone_string = self::get_timezone();
+		$timezone_string = $timezone_string ? $timezone_string : wp_timezone_string();
+		$timezone_string = $timezone_string ? $timezone_string : 'UTC';
+		try {
+			$timezone = new \DateTimeZone( $timezone_string );
+		} catch ( \Exception $e ) {
+			$timezone = new \DateTimeZone( 'UTC' );
+		}
+
+		$fallback = null;
+		foreach ( $rules as $rule ) {
+			if ( empty( $rule['start_date'] ) || empty( $rule['frequency'] ) ) {
+				continue;
+			}
+
+			$context = self::build_recurring_instance_context_from_rule( $rule, $instance_ts );
+			if ( null === $context ) {
+				continue;
+			}
+
+			if ( null === $fallback ) {
+				$fallback = $context;
+			}
+
+			if ( self::recurring_rule_contains_instance( $rule, $instance_ts, $timezone ) ) {
+				return $context;
+			}
+		}
+
+		$loop_context = self::get_loop_instance_context( $instance_ts );
+		if ( null !== $loop_context ) {
+			return $loop_context;
+		}
+
+		return $fallback;
+	}
+
+	/**
+	 * Build a display context for one recurrence rule at a concrete instance.
+	 *
+	 * @param array $rule Recurrence rule.
+	 * @param int   $instance_ts Instance start timestamp.
+	 * @return array{rule:array,end_ts:int|null,all_day:bool}|null
+	 */
+	private static function build_recurring_instance_context_from_rule( $rule, $instance_ts ) {
+		if ( empty( $rule['start_date'] ) ) {
+			return null;
+		}
+
+		try {
+			$rule_start = new \DateTimeImmutable( (string) $rule['start_date'], new \DateTimeZone( 'UTC' ) );
+			$rule_end   = ! empty( $rule['end_date'] )
+				? new \DateTimeImmutable( (string) $rule['end_date'], new \DateTimeZone( 'UTC' ) )
+				: null;
+		} catch ( \Exception $e ) {
+			return null;
+		}
+
+		$duration = null;
+		if ( $rule_end instanceof \DateTimeImmutable && $rule_end->getTimestamp() > $rule_start->getTimestamp() ) {
+			$duration = $rule_end->getTimestamp() - $rule_start->getTimestamp();
+		}
+
+		return array(
+			'rule'    => $rule,
+			'end_ts'  => null !== $duration ? ( (int) $instance_ts + (int) $duration ) : null,
+			'all_day' => ! empty( $rule['all_day'] ),
+		);
+	}
+
+	/**
+	 * Resolve instance context already attached by builder loop integrations.
+	 *
+	 * @param int $instance_ts Instance start timestamp.
+	 * @return array{rule:null,end_ts:int|null,all_day:bool}|null
+	 */
+	private static function get_loop_instance_context( $instance_ts ) {
+		$post = get_post();
+		if ( ! ( $post instanceof \WP_Post ) || empty( $post->eventkoi_instance_context ) || ! is_array( $post->eventkoi_instance_context ) ) {
+			return null;
+		}
+
+		$context_start = isset( $post->eventkoi_instance_context['start'] ) ? (int) $post->eventkoi_instance_context['start'] : 0;
+		if ( $context_start !== (int) $instance_ts ) {
+			return null;
+		}
+
+		return array(
+			'rule'    => null,
+			'end_ts'  => ! empty( $post->eventkoi_instance_context['end'] ) ? (int) $post->eventkoi_instance_context['end'] : null,
+			'all_day' => ! empty( $post->eventkoi_instance_context['all_day'] ),
+		);
+	}
+
+	/**
+	 * Determine whether a recurrence rule generates the requested instance.
+	 *
+	 * @param array         $rule Recurrence rule.
+	 * @param int           $instance_ts Instance start timestamp.
+	 * @param \DateTimeZone $timezone Event timezone.
+	 * @return bool
+	 */
+	private static function recurring_rule_contains_instance( $rule, $instance_ts, \DateTimeZone $timezone ) {
+		$options = self::build_recurring_rule_options( $rule, $timezone );
+		if ( empty( $options ) ) {
+			return false;
+		}
+
+		try {
+			$rrule = new \EKLIB\RRule\RRule( $options );
+			$seen  = 0;
+			$limit = (int) apply_filters( 'eventkoi_max_recurrence_iterations', 500 );
+			$limit = max( 50, $limit );
+
+			foreach ( $rrule as $occurrence ) {
+				++$seen;
+				if ( $seen > $limit ) {
+					break;
+				}
+
+				if ( ! ( $occurrence instanceof \DateTimeInterface ) ) {
+					continue;
+				}
+
+				$occurrence_ts = (int) $occurrence->getTimestamp();
+				if ( $occurrence_ts === (int) $instance_ts ) {
+					return true;
+				}
+
+				if ( $occurrence_ts > (int) $instance_ts ) {
+					break;
+				}
+			}
+		} catch ( \Exception $e ) {
+			return false;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Build RRule options for a stored EventKoi recurrence rule.
+	 *
+	 * @param array         $rule Recurrence rule.
+	 * @param \DateTimeZone $timezone Event timezone.
+	 * @return array<string,mixed>|null
+	 */
+	private static function build_recurring_rule_options( $rule, \DateTimeZone $timezone ) {
+		if ( empty( $rule['start_date'] ) || empty( $rule['frequency'] ) ) {
+			return null;
+		}
+
+		$freq_map = array(
+			'day'   => 'DAILY',
+			'week'  => 'WEEKLY',
+			'month' => 'MONTHLY',
+			'year'  => 'YEARLY',
+		);
+		$frequency = (string) $rule['frequency'];
+		if ( ! isset( $freq_map[ $frequency ] ) ) {
+			return null;
+		}
+
+		try {
+			$start_utc  = new \DateTimeImmutable( (string) $rule['start_date'], new \DateTimeZone( 'UTC' ) );
+			$start_wall = $start_utc->setTimezone( $timezone );
+		} catch ( \Exception $e ) {
+			return null;
+		}
+
+		$options = array(
+			'FREQ'     => $freq_map[ $frequency ],
+			'DTSTART'  => $start_wall,
+			'INTERVAL' => isset( $rule['every'] ) ? max( 1, absint( $rule['every'] ) ) : 1,
+		);
+
+		if ( isset( $rule['ends'] ) && 'after' === $rule['ends'] && ! empty( $rule['ends_after'] ) ) {
+			$options['COUNT'] = absint( $rule['ends_after'] );
+		} elseif ( isset( $rule['ends'] ) && 'on' === $rule['ends'] && ! empty( $rule['ends_on'] ) ) {
+			$until = eventkoi_recurrence_until( $rule['ends_on'], $timezone );
+			if ( $until ) {
+				$options['UNTIL'] = $until;
+			}
+		}
+
+		$weekdays = self::normalize_recurring_rule_weekdays( $rule, $start_wall );
+		if ( 'week' === $frequency && ! empty( $weekdays ) ) {
+			$map   = array( 'SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA' );
+			$byday = array();
+			foreach ( $weekdays as $weekday ) {
+				if ( isset( $map[ (int) $weekday ] ) ) {
+					$byday[] = $map[ (int) $weekday ];
+				}
+			}
+			if ( ! empty( $byday ) ) {
+				$options['BYDAY'] = implode( ',', $byday );
+			}
+		}
+
+		if ( 'month' === $frequency && ! empty( $rule['month_day_rule'] ) ) {
+			if ( 'day-of-month' === $rule['month_day_rule'] ) {
+				$options['BYMONTHDAY'] = (int) $start_wall->format( 'j' );
+			} elseif ( 'weekday-of-month' === $rule['month_day_rule'] ) {
+				$nth              = (int) ceil( (int) $start_wall->format( 'j' ) / 7 );
+				$weekday_map      = array(
+					'Sun' => 'SU',
+					'Mon' => 'MO',
+					'Tue' => 'TU',
+					'Wed' => 'WE',
+					'Thu' => 'TH',
+					'Fri' => 'FR',
+					'Sat' => 'SA',
+				);
+				$weekday          = $weekday_map[ $start_wall->format( 'D' ) ] ?? 'MO';
+				$options['BYDAY'] = $nth . $weekday;
+			}
+		}
+
+		if ( 'year' === $frequency && ! empty( $rule['months'] ) && is_array( $rule['months'] ) ) {
+			$options['BYMONTH'] = array_map(
+				static function ( $month ) {
+					return (int) $month + 1;
+				},
+				$rule['months']
+			);
+		}
+
+		return $options;
+	}
+
+	/**
+	 * Normalize stored weekly day values for RRule.
+	 *
+	 * @param array              $rule Recurrence rule.
+	 * @param \DateTimeImmutable $start_wall Rule start in event timezone.
+	 * @return array<int>
+	 */
+	private static function normalize_recurring_rule_weekdays( $rule, $start_wall ) {
+		$weekdays = array();
+		if ( ! empty( $rule['weekdays'] ) && is_array( $rule['weekdays'] ) ) {
+			foreach ( $rule['weekdays'] as $weekday ) {
+				if ( is_string( $weekday ) && preg_match( '/^(SU|MO|TU|WE|TH|FR|SA)$/i', trim( $weekday ) ) ) {
+					$map        = array(
+						'SU' => 0,
+						'MO' => 1,
+						'TU' => 2,
+						'WE' => 3,
+						'TH' => 4,
+						'FR' => 5,
+						'SA' => 6,
+					);
+					$weekdays[] = $map[ strtoupper( trim( $weekday ) ) ];
+					continue;
+				}
+
+				$value = (int) $weekday;
+				if ( $value >= 0 && $value <= 6 ) {
+					$weekdays[] = $value;
+				}
+			}
+		}
+
+		if ( 'week' !== ( $rule['frequency'] ?? '' ) || 1 !== count( $weekdays ) ) {
+			return array_values( array_unique( $weekdays ) );
+		}
+
+		if ( $start_wall instanceof \DateTimeInterface ) {
+			return array( (int) $start_wall->format( 'w' ) );
+		}
+
+		return array_values( array_unique( $weekdays ) );
+	}
+
+	/**
 	 * Rendered event datetime (start–end formatted, respects all_day). Includes recurrence rule summary.
 	 *
 	 * @return string
@@ -2298,18 +3370,22 @@ class Event {
 
 		// Render specific instance from ?instance=timestamp.
 		if ( $instance_ts && 'recurring' === $type ) {
-			$rules = self::get_recurrence_rules();
+			$instance_context = self::resolve_recurring_instance_context( $instance_ts );
 
-			foreach ( $rules as $rule ) {
-				$rule_start = ! empty( $rule['start_date'] ) ? strtotime( $rule['start_date'] . ' UTC' ) : null;
-				$rule_end   = ! empty( $rule['end_date'] ) ? strtotime( $rule['end_date'] . ' UTC' ) : null;
-				$duration   = ( $rule_start && $rule_end && $rule_end > $rule_start ) ? ( $rule_end - $rule_start ) : null;
-				$end_ts     = $duration ? ( $instance_ts + $duration ) : null;
-				$is_all_day = ! empty( $rule['all_day'] );
+			if ( $instance_context ) {
+				$rule       = $instance_context['rule'];
+				$end_ts     = $instance_context['end_ts'];
+				$is_all_day = (bool) $instance_context['all_day'];
+				$args       = array();
+				if ( $is_all_day ) {
+					$args['timezone'] = self::get_all_day_datetime_timezone(
+						$event_tz,
+						self::get_all_day_occurrence_range( $instance_ts, $end_ts, is_array( $rule ) ? $rule : array() )
+					);
+				}
+				$line = eventkoi_format_datetime_range( $instance_ts, $end_ts, $is_all_day, $args );
 
-				$line = eventkoi_format_datetime_range( $instance_ts, $end_ts, $is_all_day );
-
-				$summary = self::render_rule_summary_single( $rule, $instance_ts );
+				$summary = is_array( $rule ) ? self::render_rule_summary_single( $rule, $instance_ts ) : '';
 				if ( ! empty( $summary ) ) {
 					$line .= '<br><span class="eventkoi-rule-summary">' . esc_html( $summary ) . '</span>';
 				}
@@ -2325,8 +3401,8 @@ class Event {
 			}
 		}
 
-		// Fallback: full set of standard or recurring rules.
-		$data = ( 'recurring' === $type ) ? self::get_recurrence_rules() : self::get_event_days();
+		// Fallback: full set of standard dates or recurring rules.
+		$data = ( 'recurring' === $type ) ? self::get_recurrence_rules() : self::get_event_days_for_rendering();
 
 		if ( empty( $data ) || ! is_array( $data ) ) {
 			return '';
@@ -2347,10 +3423,14 @@ class Event {
 			$first_day  = ! empty( $days ) && is_array( $days ) ? $days[0] : array();
 			$is_all_day = array_key_exists( 'all_day', (array) $first_day )
 				? (bool) $first_day['all_day']
-				: (bool) get_post_meta( self::$event_id, 'all_day', true );
+				: self::normalize_boolean_meta( get_post_meta( self::$event_id, 'all_day', true ) );
 
 			if ( $start_ts ) {
-				$line      = eventkoi_format_datetime_range( $start_ts, $end_ts, $is_all_day );
+				$args = array();
+				if ( $is_all_day ) {
+					$args['timezone'] = self::get_all_day_datetime_timezone( $event_tz, $first_day );
+				}
+				$line      = eventkoi_format_datetime_range( $start_ts, $end_ts, $is_all_day, $args );
 				$outputs[] = self::wrap_datetime_with_data( $line, $start_ts, $end_ts, $event_tz, $is_all_day );
 			}
 		} else {
@@ -2364,7 +3444,12 @@ class Event {
 				$end_ts     = ! empty( $item['end_date'] ) ? strtotime( $item['end_date'] ) : null;
 				$is_all_day = ! empty( $item['all_day'] );
 
-				$line = eventkoi_format_datetime_range( $start_ts, $end_ts, $is_all_day );
+					$args = array();
+					if ( $is_all_day ) {
+						$args['timezone'] = self::get_all_day_datetime_timezone( $event_tz, $item );
+					}
+
+				$line = eventkoi_format_datetime_range( $start_ts, $end_ts, $is_all_day, $args );
 
 				if ( 'recurring' === $type ) {
 					$summary = self::render_rule_summary_single( $item );
@@ -2399,15 +3484,22 @@ class Event {
 
 		// Instance-aware render for a specific recurring occurrence.
 		if ( $instance_ts && 'recurring' === $type ) {
-			$rules = self::get_recurrence_rules();
-			$rule  = $rules[0] ?? null;
-			if ( $rule ) {
-				$rule_start = ! empty( $rule['start_date'] ) ? strtotime( $rule['start_date'] . ' UTC' ) : null;
-				$rule_end   = ! empty( $rule['end_date'] ) ? strtotime( $rule['end_date'] . ' UTC' ) : null;
-				$duration   = ( $rule_start && $rule_end && $rule_end > $rule_start ) ? ( $rule_end - $rule_start ) : null;
-				$end_ts     = $duration ? ( $instance_ts + $duration ) : null;
+			$instance_context = self::resolve_recurring_instance_context( $instance_ts );
+			if ( $instance_context ) {
+				$end_ts = $instance_context['end_ts'];
+				$args   = array();
+				if ( ! empty( $instance_context['all_day'] ) ) {
+					$args['timezone'] = self::get_all_day_datetime_timezone(
+						self::get_timezone(),
+						self::get_all_day_occurrence_range(
+							$instance_ts,
+							$end_ts,
+							is_array( $instance_context['rule'] ?? null ) ? $instance_context['rule'] : array()
+						)
+					);
+				}
 
-				$output = eventkoi_format_datetime_range( $instance_ts, $end_ts, true );
+				$output = eventkoi_format_datetime_range( $instance_ts, $end_ts, true, $args );
 
 				return apply_filters(
 					'eventkoi_rendered_event_date',
@@ -2432,7 +3524,12 @@ class Event {
 		}
 
 		// Force all-day format: date(s) only, no times.
-		$output = eventkoi_format_datetime_range( $start_ts, $end_ts, true );
+		$args = array();
+		if ( 'recurring' !== $type && ! empty( $first['all_day'] ) ) {
+			$args['timezone'] = self::get_all_day_datetime_timezone( self::get_timezone(), $first );
+		}
+
+		$output = eventkoi_format_datetime_range( $start_ts, $end_ts, true, $args );
 
 		return apply_filters(
 			'eventkoi_rendered_event_date',
@@ -2456,17 +3553,13 @@ class Event {
 
 		// Instance-aware render for a specific recurring occurrence.
 		if ( $instance_ts && 'recurring' === $type ) {
-			$rules = self::get_recurrence_rules();
-			$rule  = $rules[0] ?? null;
-			if ( $rule ) {
-				if ( ! empty( $rule['all_day'] ) ) {
+			$instance_context = self::resolve_recurring_instance_context( $instance_ts );
+			if ( $instance_context ) {
+				if ( ! empty( $instance_context['all_day'] ) ) {
 					return apply_filters( 'eventkoi_rendered_event_time', '', self::$event_id, self::$event );
 				}
 
-				$rule_start = ! empty( $rule['start_date'] ) ? strtotime( $rule['start_date'] . ' UTC' ) : null;
-				$rule_end   = ! empty( $rule['end_date'] ) ? strtotime( $rule['end_date'] . ' UTC' ) : null;
-				$duration   = ( $rule_start && $rule_end && $rule_end > $rule_start ) ? ( $rule_end - $rule_start ) : null;
-				$end_ts     = $duration ? ( $instance_ts + $duration ) : null;
+				$end_ts = $instance_context['end_ts'];
 
 				$start_str = wp_date( $time_format, $instance_ts );
 				$same_day  = $end_ts && wp_date( 'Y-m-d', $instance_ts ) === wp_date( 'Y-m-d', $end_ts );
@@ -2540,15 +3633,22 @@ class Event {
 		// Instance-aware render for a specific recurring occurrence (e.g. /event/slug/1778058000/
 		// or ?instance=1778058000 on any page that invokes the shortcode or dynamic tag).
 		if ( $instance_ts && 'recurring' === $type ) {
-			$rules = self::get_recurrence_rules();
-			foreach ( $rules as $rule ) {
-				$rule_start = ! empty( $rule['start_date'] ) ? strtotime( $rule['start_date'] . ' UTC' ) : null;
-				$rule_end   = ! empty( $rule['end_date'] ) ? strtotime( $rule['end_date'] . ' UTC' ) : null;
-				$duration   = ( $rule_start && $rule_end && $rule_end > $rule_start ) ? ( $rule_end - $rule_start ) : null;
-				$end_ts     = $duration ? ( $instance_ts + $duration ) : null;
-				$is_all_day = ! empty( $rule['all_day'] );
-
-				$line = eventkoi_format_datetime_range( $instance_ts, $end_ts, $is_all_day );
+			$instance_context = self::resolve_recurring_instance_context( $instance_ts );
+			if ( $instance_context ) {
+				$end_ts     = $instance_context['end_ts'];
+				$is_all_day = (bool) $instance_context['all_day'];
+				$args       = array();
+				if ( $is_all_day ) {
+					$args['timezone'] = self::get_all_day_datetime_timezone(
+						$event_tz,
+						self::get_all_day_occurrence_range(
+							$instance_ts,
+							$end_ts,
+							is_array( $instance_context['rule'] ?? null ) ? $instance_context['rule'] : array()
+						)
+					);
+				}
+				$line = eventkoi_format_datetime_range( $instance_ts, $end_ts, $is_all_day, $args );
 				$line = self::wrap_datetime_with_data( $line, $instance_ts, $end_ts, $event_tz, $is_all_day );
 
 				return apply_filters(
@@ -2563,7 +3663,7 @@ class Event {
 		if ( 'recurring' === $type ) {
 			$data = self::get_recurrence_rules();
 		} else {
-			$data = self::get_event_days();
+			$data = self::get_event_days_for_rendering();
 		}
 
 		// Fall back to post-meta start/end when get_event_days returns a
@@ -2602,7 +3702,12 @@ class Event {
 				$end_ts = null;
 			}
 
-			$line      = eventkoi_format_datetime_range( $start_ts, $end_ts, $is_all_day );
+			$args = array();
+			if ( $is_all_day ) {
+				$args['timezone'] = self::get_all_day_datetime_timezone( $event_tz, $item );
+			}
+
+			$line      = eventkoi_format_datetime_range( $start_ts, $end_ts, $is_all_day, $args );
 			$outputs[] = self::wrap_datetime_with_data( $line, $start_ts, $end_ts, $event_tz, $is_all_day );
 		}
 
@@ -2637,6 +3742,30 @@ class Event {
 		}
 
 		$all_day_attr = $is_all_day ? ' data-all-day="1"' : '';
+		if ( $is_all_day ) {
+			$all_day_timezone = self::get_all_day_datetime_timezone(
+				$timezone,
+				array(
+					'start_date' => gmdate( 'Y-m-d\TH:i:s\Z', (int) $start_ts ),
+					'end_date'   => ! empty( $end_ts ) ? gmdate( 'Y-m-d\TH:i:s\Z', (int) $end_ts ) : '',
+				)
+			);
+			$start_day        = ( new \DateTimeImmutable( '@' . (int) $start_ts ) )->setTimezone( $all_day_timezone );
+			$end_day          = ! empty( $end_ts )
+				? ( new \DateTimeImmutable( '@' . (int) $end_ts ) )->setTimezone( $all_day_timezone )
+				: $start_day;
+
+			if ( ! $end_day || $end_day < $start_day || eventkoi_is_single_all_day_span( $start_ts, $end_ts ) ) {
+				$end_day = $start_day;
+			}
+
+			$all_day_attr .= sprintf(
+				' data-all-day-start-date="%1$s" data-all-day-end-date="%2$s" data-all-day-tz="%3$s"',
+				esc_attr( $start_day->format( 'Y-m-d' ) ),
+				esc_attr( $end_day->format( 'Y-m-d' ) ),
+				esc_attr( $all_day_timezone->getName() )
+			);
+		}
 
 		return sprintf(
 			'<span class="ek-datetime" data-start="%1$s"%2$s data-tz="%3$s"%4$s>%5$s</span>',
@@ -2646,6 +3775,43 @@ class Event {
 			$all_day_attr,
 			$line
 		);
+	}
+
+	/**
+	 * Resolve the source timezone for all-day date-only client attributes.
+	 *
+	 * @param string $fallback Fallback timezone string.
+	 * @return \DateTimeZone
+	 */
+	protected static function get_all_day_datetime_timezone( $fallback, $range = array() ) {
+		$start_raw = is_array( $range ) ? ( $range['start_date'] ?? '' ) : '';
+		$end_raw   = is_array( $range ) ? ( $range['end_date'] ?? '' ) : '';
+		$stored    = (string) get_post_meta( self::$event_id, 'timezone', true );
+		$inferred  = is_array( $range ) && function_exists( 'eventkoi_infer_all_day_timezone_from_utc_range' )
+			? eventkoi_infer_all_day_timezone_from_utc_range( $start_raw, $end_raw )
+			: '';
+
+		$candidates = array(
+			is_array( $range ) ? (string) ( $range['all_day_timezone'] ?? '' ) : '',
+			function_exists( 'eventkoi_all_day_timezone_should_prefer_stored' ) && eventkoi_all_day_timezone_should_prefer_stored( $stored, $inferred, $start_raw, $end_raw ) ? $stored : '',
+			$inferred,
+			$stored,
+			(string) $fallback,
+		);
+
+		foreach ( $candidates as $candidate ) {
+			if ( '' === trim( $candidate ) ) {
+				continue;
+			}
+
+			try {
+				return new \DateTimeZone( eventkoi_php_timezone( $candidate ) );
+			} catch ( \Exception $e ) {
+				continue;
+			}
+		}
+
+		return wp_timezone();
 	}
 
 	/**
