@@ -313,7 +313,7 @@ class Ticket_Order_Sync {
 
 				$ticket_id = absint( $refund_item['ticket_id'] ?? 0 );
 				$qty       = absint( $refund_item['quantity'] ?? 0 );
-				$restock   = (bool) ( $refund_item['restock_tickets'] ?? true );
+				$restock   = rest_sanitize_boolean( $refund_item['restock_tickets'] ?? true );
 
 				if ( $ticket_id > 0 && $qty > 0 && $restock ) {
 					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Decrements local sold count after edge refund with restock.

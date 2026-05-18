@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { decodeEntities } from "@wordpress/html-entities";
+import { DateTime } from "luxon";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +24,89 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  buildTimeline,
+  normalizeTimeZone,
+  safeNormalizeTimeZone,
+  wpToLuxonFormat,
+} from "@/lib/date-utils";
 import publicApi, { resolvePublicRestUrl } from "@/lib/public-api";
+
+function getSiteTimezone() {
+  const params = typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
+  const normalized = normalizeTimeZone(
+    params?.timezone_string ||
+      params?.timezone_override ||
+      params?.timezone ||
+      "UTC",
+  );
+
+  return DateTime.now().setZone(normalized).isValid ? normalized : "UTC";
+}
+
+function getEventDisplayTimezone(event = {}) {
+  const params = typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
+
+  if (
+    params?.auto_detect_timezone === true ||
+    params?.auto_detect_timezone === 1 ||
+    params?.auto_detect_timezone === "1" ||
+    params?.auto_detect_timezone === "true"
+  ) {
+    return "local";
+  }
+
+  return safeNormalizeTimeZone(
+    event?.timezone ||
+      params?.timezone_string ||
+      params?.timezone_override ||
+      params?.timezone ||
+      "UTC",
+  );
+}
+
+function parseUtcDateTime(value) {
+  if (!value) return null;
+
+  if (typeof value === "number") {
+    const dt = DateTime.fromMillis(value, { zone: "UTC" });
+    return dt.isValid ? dt : null;
+  }
+
+  const raw = String(value).trim();
+  let dt = DateTime.fromISO(raw.replace(" ", "T"), { zone: "UTC" });
+
+  if (!dt.isValid) {
+    dt = DateTime.fromSQL(raw, { zone: "UTC" });
+  }
+
+  return dt.isValid ? dt : null;
+}
+
+function formatTicketSaleDateTime(value) {
+  const params = typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
+  const locale = (params.locale || "en").replace("_", "-");
+  const timePreference = params.time_format || "12";
+  const wpDateFormat = params.date_format || "F j, Y";
+  const wpTimeFormat =
+    params.time_format_string || (timePreference === "24" ? "H:i" : "g:i a");
+
+  const dt = parseUtcDateTime(value)?.setZone(getSiteTimezone()).setLocale(locale);
+
+  if (!dt?.isValid) {
+    return null;
+  }
+
+  let time = dt.toFormat(wpToLuxonFormat(wpTimeFormat));
+
+  if (wpTimeFormat.includes("A")) {
+    time = time.replace(/\b(am|pm)\b/g, (m) => m.toUpperCase());
+  } else if (wpTimeFormat.includes("a")) {
+    time = time.replace(/\b(AM|PM)\b/g, (m) => m.toLowerCase());
+  }
+
+  return `${dt.toFormat(wpToLuxonFormat(wpDateFormat))}, ${time}`;
+}
 
 function getInstanceTsFromDom(el) {
   const attr = el.getAttribute("data-instance-ts");
@@ -40,6 +123,16 @@ function getInstanceTsFromDom(el) {
   }
 
   return 0;
+}
+
+function getDateStartSeconds(value) {
+  const ms = Date.parse(value);
+
+  if (!Number.isFinite(ms)) {
+    return 0;
+  }
+
+  return Math.floor(ms / 1000);
 }
 
 function getActiveInstance(event = {}, instanceTs = 0) {
@@ -92,62 +185,120 @@ function formatEventDateLine(event = {}, instanceTs = 0) {
   const instance = getActiveInstance(event, instanceTs);
   if (!instance?.start_date) return "";
 
-  const start = new Date(instance.start_date);
-  const end = instance?.end_date ? new Date(instance.end_date) : null;
-  if (Number.isNaN(start.getTime())) return "";
+  const displayEvent = {
+    ...event,
+    date_type: "standard",
+    start: instance.start_date,
+    end: instance.end_date || instance.start_date,
+    end_real: instance.end_real || "",
+    all_day: !!instance.all_day,
+    allDay: !!instance.all_day,
+    event_days: [instance],
+  };
 
-  const sameYear = !end || start.getFullYear() === end.getFullYear();
-  const startFmt = new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(start);
-
-  if (!end || Number.isNaN(end.getTime())) {
-    return startFmt;
-  }
-
-  const endFmt = new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-    year: sameYear ? undefined : "numeric",
-  }).format(end);
-
-  return `${startFmt} - ${endFmt}`;
+  return (
+    buildTimeline(
+      displayEvent,
+      getEventDisplayTimezone(event),
+      eventkoi_params?.time_format || "12",
+    ) || ""
+  );
 }
 
-function getRenderedEventDatetimeText() {
-  if (typeof document === "undefined") return "";
-  const node = document.querySelector(".ek-datetime");
-  if (!node) return "";
+function getRenderedDateScopes(mountEl) {
+  if (typeof document === "undefined") return [];
 
-  // Keep checkout summary aligned with the event details display, but drop
-  // the recurring-rule summary ("Weekly, on Tue, Thu, ...") — the shopper
-  // is buying this specific instance, so series-level context is noise.
-  const clone = node.cloneNode(true);
-  clone.querySelectorAll(".eventkoi-rule-summary").forEach((n) => n.remove());
-  return clone.textContent?.trim() || "";
+  const scopes = [];
+  const closestScope = mountEl?.closest?.(
+    "article, main, .entry-content, .wp-block-post-content, .eventkoi, .eventkoi-event",
+  );
+
+  if (closestScope) {
+    scopes.push(closestScope);
+  }
+
+  scopes.push(document);
+
+  return scopes;
+}
+
+function getRenderedEventDatetimeText(mountEl = null, instanceTs = 0) {
+  if (typeof document === "undefined") return "";
+
+  const seen = new Set();
+  const rendered = [];
+
+  for (const scope of getRenderedDateScopes(mountEl)) {
+    if (!scope || seen.has(scope)) continue;
+    seen.add(scope);
+
+    const nodes = scope.querySelectorAll(".ek-datetime[data-start]");
+    for (const node of nodes) {
+      const startDate = node.getAttribute("data-start") || "";
+
+      if (instanceTs && getDateStartSeconds(startDate) !== Number(instanceTs)) {
+        continue;
+      }
+
+      // Keep checkout summary aligned with the event details display, but drop
+      // the recurring-rule summary. The shopper needs the concrete date(s).
+      const clone = node.cloneNode(true);
+      clone
+        .querySelectorAll(".eventkoi-rule-summary")
+        .forEach((n) => n.remove());
+
+      const text = clone.textContent?.replace(/\s+/g, " ").trim() || "";
+      if (text) {
+        rendered.push(text);
+      }
+    }
+
+    if (rendered.length) {
+      return rendered.join("\n");
+    }
+  }
+
+  return "";
 }
 
 function formatEventLocationLine(event = {}) {
-  const first = Array.isArray(event.locations) ? event.locations[0] : null;
-  if (first?.type === "virtual") {
-    return first?.virtual_url || event.location_line || "";
+  const locations = Array.isArray(event.locations) ? event.locations : [];
+
+  for (const first of locations) {
+    const virtualUrl = first?.virtual_url || first?.url || "";
+    if (first?.type === "virtual" || first?.type === "online") {
+      if (virtualUrl) {
+        return virtualUrl;
+      }
+      continue;
+    }
+
+    const address = first?.address || {};
+    const cityLine = [
+      first?.city || address?.addressLocality,
+      first?.state || address?.addressRegion,
+      first?.zip || address?.postalCode,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    const fromParts = [
+      first?.name,
+      first?.address1 || address?.streetAddress,
+      first?.address2,
+      first?.address3,
+      cityLine,
+      first?.country || address?.addressCountry,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    if (fromParts) {
+      return fromParts;
+    }
   }
 
-  const fromParts = [
-    first?.name,
-    first?.address1,
-    first?.address2,
-    first?.city,
-    first?.state,
-    first?.zip,
-    first?.country,
-  ]
-    .filter(Boolean)
-    .join(", ");
-
-  return fromParts || event.location_line || "";
+  return event.location_line || "";
 }
 
 function readCheckoutSuccessFromUrl() {
@@ -469,13 +620,14 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
       eventkoi_params?.event?.instance_title ||
       "",
   );
-  const eventMeta = eventkoi_params?.event || {};
+  const eventMeta = data?.event || eventkoi_params?.event || {};
   const footerEventTitle = decodeEntities(eventMeta?.title || eventTitle || "");
   const checkoutEventTitle = footerEventTitle || eventTitle || eventInstanceTitle;
   const checkoutEventInstanceTitle = eventInstanceTitle || checkoutEventTitle;
   const footerEventLocation = formatEventLocationLine(eventMeta);
+  const renderedEventDate = getRenderedEventDatetimeText(mountEl, instanceTs);
   const footerEventDate =
-    getRenderedEventDatetimeText() ||
+    renderedEventDate ||
     formatEventDateLine(eventMeta, instanceTs);
 
   const selectedTicketItems = useMemo(
@@ -499,15 +651,14 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
   );
 
   const summaryDate =
+    renderedEventDate ||
     formatEventDateLine(eventMeta, instanceTs) ||
-    getRenderedEventDatetimeText() ||
     "";
 
   const checkoutNote = useMemo(() => {
     const parts = [];
-    const renderedDate = getRenderedEventDatetimeText();
-    if (renderedDate) {
-      parts.push(renderedDate);
+    if (renderedEventDate) {
+      parts.push(renderedEventDate);
     } else if (summaryDate) {
       parts.push(summaryDate);
     }
@@ -515,7 +666,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
       parts.push(footerEventLocation);
     }
     return parts.join(" • ");
-  }, [summaryDate, footerEventLocation]);
+  }, [renderedEventDate, summaryDate, footerEventLocation]);
 
   if (!eventId) {
     return null;
@@ -601,11 +752,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
 
   const saleEndLabel =
     latestSaleEndTs !== null
-      ? new Intl.DateTimeFormat(undefined, {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        }).format(new Date(latestSaleEndTs))
+      ? formatTicketSaleDateTime(latestSaleEndTs)
       : null;
 
   const allVisibleUnavailable =
@@ -635,11 +782,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
 
   const saleStartLabel =
     earliestSaleStartTs !== null
-      ? new Intl.DateTimeFormat(undefined, {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        }).format(new Date(earliestSaleStartTs))
+      ? formatTicketSaleDateTime(earliestSaleStartTs)
       : null;
 
   const orderTotal = visibleTickets.reduce((sum, ticket) => {
@@ -649,25 +792,11 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
   const canCheckout = selectedTicketItems.length > 0;
 
   const saleEndByTicket = (saleEnd) => {
-    if (!saleEnd) return null;
-    const parsed = Date.parse(String(saleEnd).replace(" ", "T") + "Z");
-    if (!Number.isFinite(parsed)) return null;
-    return new Intl.DateTimeFormat(undefined, {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    }).format(new Date(parsed));
+    return formatTicketSaleDateTime(saleEnd);
   };
 
   const saleStartByTicket = (saleStart) => {
-    if (!saleStart) return null;
-    const parsed = Date.parse(String(saleStart).replace(" ", "T") + "Z");
-    if (!Number.isFinite(parsed)) return null;
-    return new Intl.DateTimeFormat(undefined, {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    }).format(new Date(parsed));
+    return formatTicketSaleDateTime(saleStart);
   };
 
   const decrementQty = (ticket) => {
