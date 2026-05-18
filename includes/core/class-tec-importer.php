@@ -595,7 +595,7 @@ class TEC_Importer {
 
 		if ( is_wp_error( $tec_cats ) || empty( $tec_cats ) ) {
 			// Assign default calendar if no categories.
-			$default_cal = (int) get_option( 'eventkoi_default_event_cal', 0 );
+			$default_cal = \eventkoi_resolve_calendar_id( (int) get_option( 'eventkoi_default_event_cal', 0 ) );
 			if ( $default_cal ) {
 				wp_set_post_terms( $new_post_id, array( $default_cal ), 'event_cal' );
 			}
@@ -741,7 +741,8 @@ class TEC_Importer {
 		try {
 			$tz = ! empty( $timezone ) ? new \DateTimeZone( $timezone ) : wp_timezone();
 			$dt = new \DateTime( $date, $tz );
-			return $dt->format( 'c' ); // ISO 8601 format.
+			$dt->setTimezone( new \DateTimeZone( 'UTC' ) );
+			return $dt->format( 'Y-m-d\TH:i:s\Z' );
 		} catch ( \Exception $e ) {
 			return $date;
 		}

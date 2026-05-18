@@ -233,21 +233,14 @@ class URL_Importer {
 			return $data;
 		}
 
-		// Check @graph array.
-		if ( isset( $data['@graph'] ) && is_array( $data['@graph'] ) ) {
-			foreach ( $data['@graph'] as $item ) {
-				if ( isset( $item['@type'] ) && self::is_event_type( $item['@type'] ) ) {
-					return $item;
-				}
+		foreach ( $data as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
 			}
-		}
 
-		// Check if it's a plain array of items.
-		if ( isset( $data[0] ) ) {
-			foreach ( $data as $item ) {
-				if ( is_array( $item ) && isset( $item['@type'] ) && self::is_event_type( $item['@type'] ) ) {
-					return $item;
-				}
+			$event = self::find_event_in_json_ld( $item );
+			if ( ! empty( $event ) ) {
+				return $event;
 			}
 		}
 
@@ -288,14 +281,14 @@ class URL_Importer {
 
 		if ( is_array( $type ) ) {
 			foreach ( $type as $t ) {
-				if ( in_array( $t, $event_types, true ) ) {
+				if ( in_array( self::normalize_schema_type_name( $t ), $event_types, true ) ) {
 					return true;
 				}
 			}
 			return false;
 		}
 
-		return in_array( $type, $event_types, true );
+		return in_array( self::normalize_schema_type_name( $type ), $event_types, true );
 	}
 
 	/**
@@ -313,6 +306,8 @@ class URL_Importer {
 			'timezone'         => '',
 			'type'             => 'inperson',
 			'image_url'        => '',
+			'all_day'          => false,
+			'all_day_timezone' => '',
 			'location_name'    => '',
 			'location_address' => '',
 			'location_city'    => '',
@@ -320,6 +315,7 @@ class URL_Importer {
 			'location_country' => '',
 			'location_zip'     => '',
 			'virtual_url'      => '',
+			'locations'        => array(),
 		);
 
 		// Title.
@@ -333,13 +329,21 @@ class URL_Importer {
 
 		// Extract timezone from the raw source date before converting to UTC.
 		$raw_start = $event['startDate'] ?? '';
-		if ( ! empty( $raw_start ) ) {
+		if ( ! empty( $raw_start ) && ! self::is_schema_date_only( $raw_start ) ) {
 			$data['timezone'] = self::extract_timezone_from_iso( $raw_start );
 		}
 
 		// Dates — converted to UTC for internal storage.
-		$data['start_date'] = self::normalize_iso_date( $raw_start );
-		$data['end_date']   = self::normalize_iso_date( $event['endDate'] ?? '' );
+		$raw_end         = $event['endDate'] ?? '';
+		$data['all_day'] = self::is_schema_date_only( $raw_start ) && ( empty( $raw_end ) || self::is_schema_date_only( $raw_end ) );
+		if ( $data['all_day'] ) {
+			$data['all_day_timezone'] = wp_timezone()->getName();
+			$data['start_date']       = self::normalize_iso_date( $raw_start );
+			$data['end_date']         = self::normalize_schema_all_day_end_date( ! empty( $raw_end ) ? $raw_end : $raw_start );
+		} else {
+			$data['start_date'] = self::normalize_iso_date( $raw_start );
+			$data['end_date']   = self::normalize_iso_date( $raw_end );
+		}
 
 		// Image.
 		$image = $event['image'] ?? '';
@@ -364,45 +368,500 @@ class URL_Importer {
 			$locations = isset( $location['@type'] ) ? array( $location ) : ( isset( $location[0] ) ? $location : array( $location ) );
 
 			foreach ( $locations as $loc ) {
-				$loc_type = $loc['@type'] ?? '';
+				if ( ! is_array( $loc ) ) {
+					continue;
+				}
 
-				if ( 'VirtualLocation' === $loc_type ) {
-					$data['virtual_url'] = esc_url_raw( $loc['url'] ?? '' );
-				} else {
-					$data['location_name'] = sanitize_text_field( $loc['name'] ?? '' );
+				$mapped = self::map_schema_location( $loc );
+				if ( empty( $mapped ) ) {
+					continue;
+				}
 
-					$address = $loc['address'] ?? null;
-					if ( is_string( $address ) ) {
-						$data['location_address'] = sanitize_text_field( $address );
-					} elseif ( is_array( $address ) ) {
-						$data['location_address'] = sanitize_text_field( $address['streetAddress'] ?? '' );
-						$data['location_city']    = sanitize_text_field( $address['addressLocality'] ?? '' );
-						$data['location_state']   = sanitize_text_field( $address['addressRegion'] ?? '' );
-						$data['location_country'] = sanitize_text_field( $address['addressCountry'] ?? '' );
-						$data['location_zip']     = sanitize_text_field( $address['postalCode'] ?? '' );
+				$data['locations'][] = $mapped;
+
+				if ( in_array( $mapped['type'], array( 'online', 'virtual' ), true ) ) {
+					if ( empty( $data['virtual_url'] ) ) {
+						$data['virtual_url'] = esc_url_raw( (string) ( $mapped['virtual_url'] ?? '' ) );
 					}
+					continue;
+				}
+
+				if ( empty( $data['location_name'] ) && empty( $data['location_address'] ) ) {
+					$data['location_name']    = sanitize_text_field( (string) ( $mapped['name'] ?? '' ) );
+					$data['location_address'] = sanitize_text_field( (string) ( $mapped['address1'] ?? '' ) );
+					$data['location_city']    = sanitize_text_field( (string) ( $mapped['city'] ?? '' ) );
+					$data['location_state']   = sanitize_text_field( (string) ( $mapped['state'] ?? '' ) );
+					$data['location_country'] = sanitize_text_field( (string) ( $mapped['country'] ?? '' ) );
+					$data['location_zip']     = sanitize_text_field( (string) ( $mapped['zip'] ?? '' ) );
 				}
 			}
 		} elseif ( is_string( $location ) && ! empty( $location ) ) {
 			$data['location_name'] = sanitize_text_field( $location );
+			$data['locations'][]   = array(
+				'id'          => wp_generate_uuid4(),
+				'type'        => 'physical',
+				'name'        => sanitize_text_field( $location ),
+				'address1'    => '',
+				'address2'    => '',
+				'address3'    => '',
+				'city'        => '',
+				'state'       => '',
+				'country'     => '',
+				'zip'         => '',
+				'embed_gmap'  => false,
+				'gmap_link'   => '',
+				'virtual_url' => '',
+				'latitude'    => '',
+				'longitude'   => '',
+			);
 		}
 
 		// Attendance mode.
 		$attendance_mode = $event['eventAttendanceMode'] ?? '';
 		if ( is_string( $attendance_mode ) ) {
 			if ( false !== strpos( $attendance_mode, 'Online' ) ) {
-				$data['type'] = 'virtual';
+				$data['type'] = 'online';
 			} elseif ( false !== strpos( $attendance_mode, 'Mixed' ) ) {
-				$data['type'] = 'hybrid';
+				$data['type'] = 'mixed';
 			}
 		}
 
 		// If we have a virtual URL but type is still inperson, adjust.
 		if ( ! empty( $data['virtual_url'] ) && 'inperson' === $data['type'] ) {
-			$data['type'] = empty( $data['location_name'] ) ? 'virtual' : 'hybrid';
+			$data['type'] = empty( $data['location_name'] ) ? 'online' : 'mixed';
+		}
+
+		$locations_type = self::infer_event_type_from_locations( $data['locations'] );
+		if ( '' !== $locations_type ) {
+			$data['type'] = $locations_type;
 		}
 
 		return $data;
+	}
+
+	/**
+	 * Map one Schema.org location row to EventKoi's location shape.
+	 *
+	 * @param array $location Schema.org location.
+	 * @return array
+	 */
+	private static function map_schema_location( array $location ) {
+		$type = isset( $location['@type'] ) ? $location['@type'] : '';
+
+		if ( self::schema_type_contains( $type, 'VirtualLocation' ) ) {
+			$url = isset( $location['url'] ) ? esc_url_raw( self::schema_scalar( $location['url'] ) ) : '';
+			if ( '' === $url ) {
+				return array();
+			}
+
+			return array(
+				'id'          => wp_generate_uuid4(),
+				'type'        => 'online',
+				'name'        => sanitize_text_field( self::schema_scalar( $location['name'] ?? __( 'Online', 'eventkoi-lite' ) ) ),
+				'address1'    => '',
+				'address2'    => '',
+				'address3'    => '',
+				'city'        => '',
+				'state'       => '',
+				'country'     => '',
+				'zip'         => '',
+				'embed_gmap'  => false,
+				'gmap_link'   => '',
+				'virtual_url' => $url,
+				'latitude'    => '',
+				'longitude'   => '',
+			);
+		}
+
+		$address = $location['address'] ?? array();
+		$address = is_array( $address ) ? $address : array( 'streetAddress' => (string) $address );
+		$geo     = isset( $location['geo'] ) && is_array( $location['geo'] ) ? $location['geo'] : array();
+
+		$name      = sanitize_text_field( self::schema_scalar( $location['name'] ?? '' ) );
+		$address1  = sanitize_text_field( self::schema_scalar( $address['streetAddress'] ?? '' ) );
+		$city      = sanitize_text_field( self::schema_scalar( $address['addressLocality'] ?? '' ) );
+		$state     = sanitize_text_field( self::schema_scalar( $address['addressRegion'] ?? '' ) );
+		$country   = sanitize_text_field( self::schema_scalar( $address['addressCountry'] ?? '' ) );
+		$zip       = sanitize_text_field( self::schema_scalar( $address['postalCode'] ?? '' ) );
+		$latitude  = sanitize_text_field( self::schema_scalar( $location['latitude'] ?? $location['lat'] ?? $geo['latitude'] ?? '' ) );
+		$longitude = sanitize_text_field( self::schema_scalar( $location['longitude'] ?? $location['lng'] ?? $geo['longitude'] ?? '' ) );
+
+		if ( '' === $name && '' === $address1 && '' === $city && '' === $country ) {
+			return array();
+		}
+
+		return array(
+			'id'          => wp_generate_uuid4(),
+			'type'        => 'physical',
+			'name'        => $name,
+			'address1'    => $address1,
+			'address2'    => '',
+			'address3'    => '',
+			'city'        => $city,
+			'state'       => $state,
+			'country'     => $country,
+			'zip'         => $zip,
+			'embed_gmap'  => false,
+			'gmap_link'   => '',
+			'virtual_url' => '',
+			'latitude'    => $latitude,
+			'longitude'   => $longitude,
+		);
+	}
+
+	/**
+	 * Check whether a Schema.org @type contains a value.
+	 *
+	 * @param string|array $type Schema.org type value.
+	 * @param string       $needle Type to find.
+	 * @return bool
+	 */
+	private static function schema_type_contains( $type, $needle ) {
+		if ( is_array( $type ) ) {
+			foreach ( $type as $item ) {
+				if ( self::normalize_schema_type_name( $item ) === $needle ) {
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		return self::normalize_schema_type_name( $type ) === $needle;
+	}
+
+	/**
+	 * Normalize Schema.org type names and URLs.
+	 *
+	 * @param mixed $type Raw @type value.
+	 * @return string
+	 */
+	private static function normalize_schema_type_name( $type ) {
+		if ( is_array( $type ) || is_object( $type ) ) {
+			return '';
+		}
+
+		$type = trim( (string) $type );
+		if ( '' === $type ) {
+			return '';
+		}
+
+		$type = preg_replace( '#^https?://schema\.org/#i', '', $type );
+
+		return (string) $type;
+	}
+
+	/**
+	 * Extract a scalar text value from common Schema.org nested value shapes.
+	 *
+	 * @param mixed $value Raw schema value.
+	 * @return string
+	 */
+	private static function schema_scalar( $value ) {
+		if ( is_array( $value ) ) {
+			foreach ( array( 'name', 'text', 'url', '@id' ) as $key ) {
+				if ( array_key_exists( $key, $value ) ) {
+					$text = self::schema_scalar( $value[ $key ] );
+					if ( '' !== $text ) {
+						return $text;
+					}
+				}
+			}
+
+			return '';
+		}
+
+		if ( is_object( $value ) ) {
+			return '';
+		}
+
+		return trim( (string) $value );
+	}
+
+	/**
+	 * Infer EventKoi event type from mapped locations.
+	 *
+	 * @param array $locations Locations.
+	 * @return string
+	 */
+	private static function infer_event_type_from_locations( array $locations ) {
+		$has_physical = false;
+		$has_online   = false;
+
+		foreach ( $locations as $location ) {
+			if ( ! is_array( $location ) ) {
+				continue;
+			}
+
+			$type = sanitize_key( (string) ( $location['type'] ?? '' ) );
+			if ( in_array( $type, array( 'physical', 'inperson' ), true ) ) {
+				$has_physical = true;
+			}
+			if ( in_array( $type, array( 'online', 'virtual' ), true ) ) {
+				$has_online = true;
+			}
+		}
+
+		if ( $has_physical && $has_online ) {
+			return 'mixed';
+		}
+
+		if ( $has_online ) {
+			return 'online';
+		}
+
+		return $has_physical ? 'inperson' : '';
+	}
+
+	/**
+	 * Normalize EventKoi event type values.
+	 *
+	 * @param string $type Raw event type.
+	 * @return string
+	 */
+	private static function normalize_event_type( $type ) {
+		$type = sanitize_key( (string) $type );
+
+		if ( 'physical' === $type ) {
+			return 'inperson';
+		}
+
+		if ( 'virtual' === $type ) {
+			return 'online';
+		}
+
+		if ( 'hybrid' === $type ) {
+			return 'mixed';
+		}
+
+		if ( in_array( $type, array( 'inperson', 'online', 'mixed' ), true ) ) {
+			return $type;
+		}
+
+		return 'inperson';
+	}
+
+	/**
+	 * Normalize an imported location row to EventKoi's stored shape.
+	 *
+	 * @param array $location Raw location row.
+	 * @return array
+	 */
+	private static function normalize_import_location( array $location ) {
+		$type = sanitize_key( (string) ( $location['type'] ?? '' ) );
+		if ( in_array( $type, array( 'virtual', 'online' ), true ) ) {
+			$url = self::get_location_virtual_url( $location );
+			if ( '' === $url ) {
+				return array();
+			}
+
+			return array(
+				'id'          => ! empty( $location['id'] ) ? sanitize_text_field( (string) $location['id'] ) : wp_generate_uuid4(),
+				'type'        => 'online',
+				'name'        => sanitize_text_field( self::schema_scalar( $location['name'] ?? __( 'Online', 'eventkoi-lite' ) ) ),
+				'address1'    => '',
+				'address2'    => '',
+				'address3'    => '',
+				'city'        => '',
+				'state'       => '',
+				'country'     => '',
+				'zip'         => '',
+				'embed_gmap'  => false,
+				'gmap_link'   => '',
+				'virtual_url' => $url,
+				'latitude'    => '',
+				'longitude'   => '',
+			);
+		}
+
+		$address = isset( $location['address'] ) && is_array( $location['address'] ) ? $location['address'] : array();
+		$name    = sanitize_text_field( self::schema_scalar( $location['name'] ?? '' ) );
+		$address1 = sanitize_text_field(
+			self::schema_scalar(
+				$location['address1']
+				?? $location['streetAddress']
+				?? $address['streetAddress']
+				?? ''
+			)
+		);
+		$city = sanitize_text_field(
+			self::schema_scalar(
+				$location['city']
+				?? $location['addressLocality']
+				?? $address['addressLocality']
+				?? ''
+			)
+		);
+		$state = sanitize_text_field(
+			self::schema_scalar(
+				$location['state']
+				?? $location['addressRegion']
+				?? $address['addressRegion']
+				?? ''
+			)
+		);
+		$country = sanitize_text_field(
+			self::schema_scalar(
+				$location['country']
+				?? $location['addressCountry']
+				?? $address['addressCountry']
+				?? ''
+			)
+		);
+		$zip = sanitize_text_field(
+			self::schema_scalar(
+				$location['zip']
+				?? $location['postalCode']
+				?? $address['postalCode']
+				?? ''
+			)
+		);
+		$geo = isset( $location['geo'] ) && is_array( $location['geo'] ) ? $location['geo'] : array();
+		$latitude = sanitize_text_field( self::schema_scalar( $location['latitude'] ?? $location['lat'] ?? $geo['latitude'] ?? '' ) );
+		$longitude = sanitize_text_field( self::schema_scalar( $location['longitude'] ?? $location['lng'] ?? $geo['longitude'] ?? '' ) );
+
+		if ( '' === $name && '' === $address1 && '' === $city && '' === $country ) {
+			return array();
+		}
+
+		return array(
+			'id'          => ! empty( $location['id'] ) ? sanitize_text_field( (string) $location['id'] ) : wp_generate_uuid4(),
+			'type'        => 'physical',
+			'name'        => $name,
+			'address1'    => $address1,
+			'address2'    => sanitize_text_field( (string) ( $location['address2'] ?? '' ) ),
+			'address3'    => sanitize_text_field( (string) ( $location['address3'] ?? '' ) ),
+			'city'        => $city,
+			'state'       => $state,
+			'country'     => $country,
+			'zip'         => $zip,
+			'embed_gmap'  => ! empty( $location['embed_gmap'] ),
+			'gmap_link'   => ! empty( $location['gmap_link'] ) ? esc_url_raw( (string) $location['gmap_link'] ) : '',
+			'virtual_url' => '',
+			'latitude'    => $latitude,
+			'longitude'   => $longitude,
+		);
+	}
+
+	/**
+	 * Get the first usable location row.
+	 *
+	 * @param array $locations Location rows.
+	 * @return array
+	 */
+	private static function get_first_usable_location( array $locations ) {
+		foreach ( $locations as $location ) {
+			if ( ! is_array( $location ) ) {
+				continue;
+			}
+
+			$type = sanitize_key( (string) ( $location['type'] ?? '' ) );
+			if ( in_array( $type, array( 'online', 'virtual' ), true ) && '' !== self::get_location_virtual_url( $location ) ) {
+				return $location;
+			}
+
+			if ( in_array( $type, array( 'physical', 'inperson' ), true ) ) {
+				$parts = array(
+					$location['name'] ?? '',
+					$location['address1'] ?? '',
+					$location['city'] ?? '',
+					$location['country'] ?? '',
+				);
+				if ( '' !== trim( implode( ' ', array_map( 'strval', $parts ) ) ) ) {
+					return $location;
+				}
+			}
+		}
+
+		return array();
+	}
+
+	/**
+	 * Get the first virtual URL from locations.
+	 *
+	 * @param array $locations Location rows.
+	 * @return string
+	 */
+	private static function get_first_virtual_url( array $locations ) {
+		foreach ( $locations as $location ) {
+			if ( ! is_array( $location ) ) {
+				continue;
+			}
+
+			$type = sanitize_key( (string) ( $location['type'] ?? '' ) );
+			if ( ! in_array( $type, array( 'online', 'virtual' ), true ) ) {
+				continue;
+			}
+
+			$url = self::get_location_virtual_url( $location );
+			if ( '' !== $url ) {
+				return $url;
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Check whether a locations array already contains a virtual URL.
+	 *
+	 * @param array  $locations Location rows.
+	 * @param string $virtual_url Virtual URL.
+	 * @return bool
+	 */
+	private static function locations_contain_virtual_url( array $locations, $virtual_url ) {
+		$virtual_url = esc_url_raw( (string) $virtual_url );
+		if ( '' === $virtual_url ) {
+			return false;
+		}
+
+		foreach ( $locations as $location ) {
+			if ( ! is_array( $location ) ) {
+				continue;
+			}
+
+			if ( $virtual_url === self::get_location_virtual_url( $location ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Get a virtual URL from supported location shapes.
+	 *
+	 * @param array $location Location row.
+	 * @return string
+	 */
+	private static function get_location_virtual_url( array $location ) {
+		$url = (string) ( $location['virtual_url'] ?? $location['url'] ?? '' );
+
+		return '' !== $url ? esc_url_raw( $url ) : '';
+	}
+
+	/**
+	 * Determine whether an all-day UTC range spans multiple source dates.
+	 *
+	 * @param string $start_date      UTC start date.
+	 * @param string $end_date        UTC exclusive end date.
+	 * @param string $source_timezone Source timezone.
+	 * @return bool
+	 */
+	private static function is_all_day_multi_day( $start_date, $end_date, $source_timezone ) {
+		try {
+			$timezone = '' !== (string) $source_timezone ? new \DateTimeZone( eventkoi_php_timezone( (string) $source_timezone ) ) : wp_timezone();
+			$start    = ( new \DateTimeImmutable( (string) $start_date, new \DateTimeZone( 'UTC' ) ) )->setTimezone( $timezone );
+			$end      = ( new \DateTimeImmutable( (string) $end_date, new \DateTimeZone( 'UTC' ) ) )->setTimezone( $timezone );
+
+			if ( $end > $start && '00:00:00' === $end->format( 'H:i:s' ) ) {
+				$end = $end->modify( '-1 day' );
+			}
+
+			return $start->format( 'Y-m-d' ) !== $end->format( 'Y-m-d' );
+		} catch ( \Exception $e ) {
+			return false;
+		}
 	}
 
 	/**
@@ -452,6 +911,7 @@ class URL_Importer {
 			'location_country' => '',
 			'location_zip'     => '',
 			'virtual_url'      => '',
+			'locations'        => array(),
 		);
 	}
 
@@ -467,20 +927,26 @@ class URL_Importer {
 		$start_date  = $event_data['start_date'] ?? '';
 		$end_date    = $event_data['end_date'] ?? '';
 		$timezone    = $event_data['timezone'] ?? '';
-		$event_type  = $event_data['type'] ?? 'inperson';
+		$event_type  = self::normalize_event_type( $event_data['type'] ?? 'inperson' );
 		$image_url   = $event_data['image_url'] ?? '';
 		$source_url  = $event_data['source_url'] ?? '';
 		$source_uid  = $event_data['source_uid'] ?? '';
+		$all_day     = ! empty( $event_data['all_day'] );
+		$all_day_timezone = ! empty( $event_data['all_day_timezone'] ) ? sanitize_text_field( (string) $event_data['all_day_timezone'] ) : '';
 
 		// Determine if this is a multi-day (continuous) or single-day (selected) event.
 		$is_multi_day = false;
 		if ( ! empty( $start_date ) && ! empty( $end_date ) ) {
-			try {
-				$start_dt = new \DateTime( $start_date );
-				$end_dt   = new \DateTime( $end_date );
-				$is_multi_day = $start_dt->format( 'Y-m-d' ) !== $end_dt->format( 'Y-m-d' );
-			} catch ( \Exception $e ) {
-				// Keep single-day.
+			if ( $all_day ) {
+				$is_multi_day = self::is_all_day_multi_day( $start_date, $end_date, $all_day_timezone );
+			} else {
+				try {
+					$start_dt = new \DateTime( $start_date );
+					$end_dt   = new \DateTime( $end_date );
+					$is_multi_day = $start_dt->format( 'Y-m-d' ) !== $end_dt->format( 'Y-m-d' );
+				} catch ( \Exception $e ) {
+					// Keep single-day.
+				}
 			}
 		}
 
@@ -489,27 +955,48 @@ class URL_Importer {
 		// Build event_days only for single-day (selected) events.
 		$event_days = array();
 		if ( ! $is_multi_day && ! empty( $start_date ) ) {
-			$event_days[] = array(
+			$event_day = array(
 				'start_date' => $start_date,
 				'end_date'   => ! empty( $end_date ) ? $end_date : $start_date,
-				'all_day'    => false,
+				'all_day'    => $all_day,
 			);
+			if ( $all_day && '' !== $all_day_timezone ) {
+				$event_day['all_day_timezone'] = $all_day_timezone;
+			}
+
+			$event_days[] = $event_day;
 		}
 
 		// Build locations.
 		$locations   = array();
-		$virtual_url = $event_data['virtual_url'] ?? '';
+		$virtual_url = ! empty( $event_data['virtual_url'] ) ? esc_url_raw( (string) $event_data['virtual_url'] ) : '';
+
+		if ( ! empty( $event_data['locations'] ) && is_array( $event_data['locations'] ) ) {
+			foreach ( $event_data['locations'] as $location ) {
+				if ( ! is_array( $location ) ) {
+					continue;
+				}
+
+				$normalized = self::normalize_import_location( $location );
+				if ( empty( $normalized ) ) {
+					continue;
+				}
+
+				$locations[] = $normalized;
+			}
+		}
 
 		$loc_name    = $event_data['location_name'] ?? '';
 		$loc_address = $event_data['location_address'] ?? '';
 
-		if ( ! empty( $loc_name ) || ! empty( $loc_address ) ) {
+		if ( empty( $locations ) && ( ! empty( $loc_name ) || ! empty( $loc_address ) ) ) {
 			$locations[] = array(
 				'id'          => wp_generate_uuid4(),
 				'type'        => 'physical',
 				'name'        => $loc_name,
 				'address1'    => $loc_address,
 				'address2'    => '',
+				'address3'    => '',
 				'city'        => $event_data['location_city'] ?? '',
 				'state'       => $event_data['location_state'] ?? '',
 				'country'     => $event_data['location_country'] ?? '',
@@ -522,13 +1009,18 @@ class URL_Importer {
 			);
 		}
 
-		if ( ! empty( $virtual_url ) ) {
+		if ( empty( $virtual_url ) ) {
+			$virtual_url = self::get_first_virtual_url( $locations );
+		}
+
+		if ( ! empty( $virtual_url ) && ! self::locations_contain_virtual_url( $locations, $virtual_url ) ) {
 			$locations[] = array(
 				'id'          => wp_generate_uuid4(),
 				'type'        => 'online',
 				'name'        => __( 'Online', 'eventkoi-lite' ),
 				'address1'    => '',
 				'address2'    => '',
+				'address3'    => '',
 				'city'        => '',
 				'state'       => '',
 				'country'     => '',
@@ -539,6 +1031,11 @@ class URL_Importer {
 				'latitude'    => '',
 				'longitude'   => '',
 			);
+		}
+
+		$locations_type = self::infer_event_type_from_locations( $locations );
+		if ( '' !== $locations_type ) {
+			$event_type = $locations_type;
 		}
 
 		// Create the post as a draft so the user can review before publishing.
@@ -565,10 +1062,11 @@ class URL_Importer {
 		update_post_meta( $new_post_id, 'locations', $locations );
 		update_post_meta( $new_post_id, 'type', $event_type );
 		update_post_meta( $new_post_id, 'embed_gmap', false );
-		update_post_meta( $new_post_id, 'virtual_url', sanitize_url( $virtual_url ) );
+		update_post_meta( $new_post_id, 'virtual_url', esc_url_raw( $virtual_url ) );
 		update_post_meta( $new_post_id, 'recurrence_rules', array() );
 		update_post_meta( $new_post_id, 'attendance_mode', 'none' );
 		update_post_meta( $new_post_id, 'timezone_display', false );
+		update_post_meta( $new_post_id, 'all_day', $all_day );
 
 		if ( ! empty( $start_date ) ) {
 			update_post_meta( $new_post_id, 'start_date', $start_date );
@@ -582,13 +1080,20 @@ class URL_Importer {
 
 		if ( ! empty( $timezone ) ) {
 			update_post_meta( $new_post_id, 'timezone', $timezone );
+		} elseif ( $all_day && '' !== $all_day_timezone ) {
+			update_post_meta( $new_post_id, 'timezone', $all_day_timezone );
 		}
 
 		// Legacy location fields.
-		if ( ! empty( $locations[0] ) ) {
-			$primary = $locations[0];
+		$primary = self::get_first_usable_location( $locations );
+		if ( ! empty( $primary ) ) {
 			update_post_meta( $new_post_id, 'location', $primary );
-			update_post_meta( $new_post_id, 'address1', $primary['address1'] ?? '' );
+			update_post_meta( $new_post_id, 'address1', (string) ( $primary['address1'] ?? '' ) );
+			update_post_meta( $new_post_id, 'address2', (string) ( $primary['address2'] ?? '' ) );
+			update_post_meta( $new_post_id, 'address3', (string) ( $primary['address3'] ?? '' ) );
+			update_post_meta( $new_post_id, 'latitude', (string) ( $primary['latitude'] ?? '' ) );
+			update_post_meta( $new_post_id, 'longitude', (string) ( $primary['longitude'] ?? '' ) );
+			update_post_meta( $new_post_id, 'gmap_link', (string) ( $primary['gmap_link'] ?? '' ) );
 		}
 
 		// Store source for dedup.
@@ -600,7 +1105,7 @@ class URL_Importer {
 		}
 
 		// Assign default calendar.
-		$default_cal = (int) get_option( 'eventkoi_default_event_cal', 0 );
+		$default_cal = \eventkoi_resolve_calendar_id( (int) get_option( 'eventkoi_default_event_cal', 0 ) );
 		if ( $default_cal ) {
 			wp_set_post_terms( $new_post_id, array( $default_cal ), 'event_cal' );
 		}
@@ -687,6 +1192,41 @@ class URL_Importer {
 	}
 
 	/**
+	 * Check whether a Schema.org date value is date-only.
+	 *
+	 * @param mixed $date Date value.
+	 * @return bool
+	 */
+	private static function is_schema_date_only( $date ) {
+		return is_string( $date ) && 1 === preg_match( '/^\d{4}-\d{2}-\d{2}$/', trim( $date ) );
+	}
+
+	/**
+	 * Normalize a Schema.org date-only end date to EventKoi's exclusive UTC end.
+	 *
+	 * @param string $date Date-only value.
+	 * @return string UTC ISO 8601 date or empty string.
+	 */
+	private static function normalize_schema_all_day_end_date( $date ) {
+		if ( ! self::is_schema_date_only( $date ) ) {
+			return '';
+		}
+
+		try {
+			$dt = \DateTimeImmutable::createFromFormat( '!Y-m-d', trim( $date ), wp_timezone() );
+			if ( ! $dt ) {
+				return '';
+			}
+
+			return $dt->modify( '+1 day' )
+				->setTimezone( new \DateTimeZone( 'UTC' ) )
+				->format( 'Y-m-d\TH:i:s\Z' );
+		} catch ( \Exception $e ) {
+			return '';
+		}
+	}
+
+	/**
 	 * Extract timezone from an ISO 8601 date string.
 	 *
 	 * @param string $date ISO 8601 date string.
@@ -703,7 +1243,7 @@ class URL_Importer {
 			if ( $tz ) {
 				$tz_name = $tz->getName();
 				// Skip generic offset-only timezones.
-				if ( '+00:00' !== $tz_name && 'Z' !== $tz_name && ! preg_match( '/^[+-]\d{2}:\d{2}$/', $tz_name ) ) {
+				if ( '+00:00' !== $tz_name && 'Z' !== $tz_name && 'UTC' !== $tz_name && ! preg_match( '/^[+-]\d{2}:\d{2}$/', $tz_name ) ) {
 					return $tz_name;
 				}
 			}
