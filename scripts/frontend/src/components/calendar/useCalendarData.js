@@ -34,6 +34,7 @@ export function useCalendarData({
 
   const lastRangeRef = useRef(null);
   const hasLoadedView = useRef(false);
+  const viewRequestIdRef = useRef(0);
 
   // Use calendars if present, otherwise id
   const effectiveId = calendars || id;
@@ -113,6 +114,11 @@ export function useCalendarData({
   };
 
   const loadEventsForView = async (start, end) => {
+    // Claim a sequence number so out-of-order responses (fast month/week nav)
+    // don't overwrite fresh state with stale results.
+    const requestId = viewRequestIdRef.current + 1;
+    viewRequestIdRef.current = requestId;
+
     try {
       setLoading(true);
 
@@ -128,6 +134,10 @@ export function useCalendarData({
         method: "get",
       });
 
+      if (requestId !== viewRequestIdRef.current) {
+        return; // A newer view-fetch superseded this one.
+      }
+
       setEvents(response.events);
       setCalendar(response.calendar);
 
@@ -138,7 +148,9 @@ export function useCalendarData({
     } catch (err) {
       console.error("Failed to load events for view", err);
     } finally {
-      setLoading(false);
+      if (requestId === viewRequestIdRef.current) {
+        setLoading(false);
+      }
     }
   };
 

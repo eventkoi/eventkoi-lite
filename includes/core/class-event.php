@@ -1234,9 +1234,10 @@ class Event {
 			if ( is_array( $selected_day ) ) {
 				return array_merge(
 					array(
-						'start_date' => '',
-						'end_date'   => '',
-						'all_day'    => false,
+						'start_date'       => '',
+						'end_date'         => '',
+						'all_day'          => false,
+						'all_day_timezone' => '',
 					),
 					$selected_day
 				);
@@ -1248,9 +1249,10 @@ class Event {
 			// short-circuit before the post-meta fallback below.
 			if ( ! empty( $days[0]['start_date'] ) ) {
 				return array(
-					'start_date' => $days[0]['start_date'],
-					'end_date'   => $days[0]['end_date'] ?? '',
-					'all_day'    => ! empty( $days[0]['all_day'] ),
+					'start_date'       => $days[0]['start_date'],
+					'end_date'         => $days[0]['end_date'] ?? '',
+					'all_day'          => ! empty( $days[0]['all_day'] ),
+					'all_day_timezone' => (string) ( $days[0]['all_day_timezone'] ?? '' ),
 				);
 			}
 		}
@@ -1259,18 +1261,20 @@ class Event {
 			$rules = self::get_recurrence_rules();
 			if ( ! empty( $rules[0]['start_date'] ) ) {
 				return array(
-					'start_date' => $rules[0]['start_date'],
-					'end_date'   => $rules[0]['end_date'] ?? '',
-					'all_day'    => ! empty( $rules[0]['all_day'] ),
+					'start_date'       => $rules[0]['start_date'],
+					'end_date'         => $rules[0]['end_date'] ?? '',
+					'all_day'          => ! empty( $rules[0]['all_day'] ),
+					'all_day_timezone' => (string) ( $rules[0]['all_day_timezone'] ?? '' ),
 				);
 			}
 		}
 
 		// Fallback to legacy post-meta start_date / end_date.
 		return array(
-			'start_date' => self::get_start_date( true ),
-			'end_date'   => self::get_end_date( true ),
-			'all_day'    => false,
+			'start_date'       => self::get_start_date( true ),
+			'end_date'         => self::get_end_date( true ),
+			'all_day'          => false,
+			'all_day_timezone' => '',
 		);
 	}
 
@@ -3185,28 +3189,13 @@ class Event {
 
 		try {
 			$rrule = new \EKLIB\RRule\RRule( $options );
-			$seen  = 0;
-			$limit = (int) apply_filters( 'eventkoi_max_recurrence_iterations', 500 );
-			$limit = max( 50, $limit );
 
-			foreach ( $rrule as $occurrence ) {
-				++$seen;
-				if ( $seen > $limit ) {
-					break;
-				}
-
-				if ( ! ( $occurrence instanceof \DateTimeInterface ) ) {
-					continue;
-				}
-
-				$occurrence_ts = (int) $occurrence->getTimestamp();
-				if ( $occurrence_ts === (int) $instance_ts ) {
-					return true;
-				}
-
-				if ( $occurrence_ts > (int) $instance_ts ) {
-					break;
-				}
+			// Use occursAt() — the library's deterministic membership check.
+			// Avoids the previous fixed-iteration loop that silently rejected
+			// valid occurrences past iteration ~500 for long-running rules.
+			$candidate = ( new \DateTimeImmutable( '@' . (int) $instance_ts ) )->setTimezone( $timezone );
+			if ( $rrule->occursAt( $candidate ) ) {
+				return true;
 			}
 		} catch ( \Exception $e ) {
 			return false;

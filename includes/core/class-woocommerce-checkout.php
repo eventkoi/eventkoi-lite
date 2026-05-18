@@ -562,9 +562,19 @@ class WooCommerce_Checkout {
 			return; // Not an EventKoi order.
 		}
 
-		// Prevent duplicate processing.
+		// Prevent duplicate processing. The persisted meta is a get-then-set
+		// guard so back-to-back status-change hooks (payment_complete +
+		// processing + completed) and concurrent gateway-callback + admin-
+		// completion flows can both pass. Wrap with an atomic wp_cache_add
+		// claim: persistent object caches reject the second caller; default
+		// in-memory cache catches in-request re-entry.
 		if ( 'yes' === $order->get_meta( '_eventkoi_synced' ) ) {
 			return;
+		}
+
+		$lock_added = wp_cache_add( 'ek_wc_synced_' . absint( $wc_order_id ), 1, 'eventkoi_locks', HOUR_IN_SECONDS );
+		if ( ! $lock_added ) {
+			return; // another worker / hook re-entry is already syncing this order.
 		}
 
 		$instance_ts         = absint( $order->get_meta( '_eventkoi_instance_ts' ) );
