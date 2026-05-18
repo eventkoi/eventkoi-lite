@@ -1,7 +1,11 @@
 import { CalendarToolbar } from "@/components/calendar/calendar-toolbar";
 import { EventPopover } from "@/components/calendar/EventPopover";
 import { TimezonePicker } from "@/components/timezone-picker";
-import { getInitialDate, safeNormalizeTimeZone } from "@/lib/date-utils";
+import {
+  getInitialDate,
+  safeNormalizeTimeZone,
+  wpToLuxonFormat,
+} from "@/lib/date-utils";
 import apiRequest from "@wordpress/api-fetch";
 import { InspectorControls, useBlockProps } from "@wordpress/block-editor";
 import { useEffect, useRef, useState } from "react";
@@ -13,6 +17,7 @@ import listPlugin from "@fullcalendar/list";
 import luxonPlugin from "@fullcalendar/luxon3";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
+import { DateTime } from "luxon";
 
 import { Controls } from "./controls.js";
 
@@ -44,6 +49,35 @@ try {
 } catch {
   localeToUse = "en";
 }
+
+const getDisplayTimezoneForUrl = (timezone, calendarTimeZone) => {
+  if (timezone === "local") {
+    return (
+      Intl.DateTimeFormat().resolvedOptions().timeZone ||
+      calendarTimeZone ||
+      "UTC"
+    );
+  }
+
+  return calendarTimeZone || timezone || eventkoi_params?.timezone || "UTC";
+};
+
+const getEventUrlWithTimezone = (url, timezone, calendarTimeZone) => {
+  if (!url) {
+    return url;
+  }
+
+  try {
+    const nextUrl = new URL(url, window.location.href);
+    nextUrl.searchParams.set(
+      "tz",
+      getDisplayTimezoneForUrl(timezone, calendarTimeZone)
+    );
+    return nextUrl.toString();
+  } catch {
+    return url;
+  }
+};
 
 export default function Edit({
   attributes,
@@ -93,6 +127,10 @@ export default function Edit({
   const [timezone, setTimezone] = useState(
     safeNormalizeTimeZone(initialRawTimezone)
   );
+  const getRequestTimezone = () =>
+    timezone === "local"
+      ? Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
+      : timezone || eventkoi_params?.timezone || "UTC";
 
   const calendarRef = useRef(null);
   const ignoreNextOutsideClick = useRef(false);
@@ -168,6 +206,7 @@ export default function Edit({
       const params = new URLSearchParams({ id: currentId, display });
       if (start) params.set("start", start.toISOString());
       if (end) params.set("end", end.toISOString());
+      if (display === "calendar") params.set("timezone", getRequestTimezone());
 
       const calendarEndpoint = `${
         eventkoi_params.api
@@ -339,6 +378,97 @@ export default function Edit({
       : timezone
       ? timezone
       : null;
+  const resolvedWpTimeFormat =
+    eventkoi_params?.time_format_string ||
+    (timeFormat === "24" ? "H:i" : "g:i a");
+  const formatWpTime = (dt) => {
+    if (!dt?.isValid) {
+      return "";
+    }
+
+    let formatted = dt
+      .setLocale(localeToUse)
+      .toFormat(wpToLuxonFormat(resolvedWpTimeFormat));
+
+    if (resolvedWpTimeFormat.includes("A")) {
+      formatted = formatted.replace(/\b(am|pm)\b/g, (match) =>
+        match.toUpperCase()
+      );
+    } else if (resolvedWpTimeFormat.includes("a")) {
+      formatted = formatted.replace(/\b(AM|PM)\b/g, (match) =>
+        match.toLowerCase()
+      );
+    }
+
+    return formatted;
+  };
+  const formatCalendarTime = (date, dateStr) => {
+    let dt = dateStr ? DateTime.fromISO(dateStr, { setZone: true }) : null;
+
+    if (!dt?.isValid && date instanceof Date) {
+      dt = DateTime.fromJSDate(date, { zone: calendarTimeZone || "UTC" });
+    }
+
+    if (!dt?.isValid) {
+      return "";
+    }
+
+    if (calendarTimeZone) {
+      dt = dt.setZone(calendarTimeZone);
+    }
+
+    return formatWpTime(dt);
+  };
+  const shouldShowEventEndTime = (arg) => {
+    return (
+      arg.view?.type?.startsWith("timeGrid") &&
+      arg.event?.start instanceof Date &&
+      arg.event?.end instanceof Date &&
+      arg.event.end > arg.event.start
+    );
+  };
+  const formatCalendarTimeRange = (arg) => {
+    const startText = formatCalendarTime(arg.event.start, arg.event.startStr);
+
+    if (!startText) {
+      return "";
+    }
+
+    if (!shouldShowEventEndTime(arg)) {
+      return startText;
+    }
+
+    const endText = formatCalendarTime(arg.event.end, arg.event.endStr);
+
+    if (!endText || endText === startText) {
+      return startText;
+    }
+
+    return `${startText} – ${endText}`;
+  };
+  const renderEventContent = (arg) => {
+    const title = arg.event?.title || "";
+
+    if (arg.event?.allDay || !arg.event?.start) {
+      return <span className="fc-event-title">{title}</span>;
+    }
+
+    const timeText = formatCalendarTimeRange(arg) || arg.timeText;
+
+    return (
+      <>
+        {timeText ? <span className="fc-event-time">{timeText}</span> : null}
+        {timeText ? " " : null}
+        <span className="fc-event-title">{title}</span>
+      </>
+    );
+  };
+  const eventsWithTimezone = Array.isArray(events)
+    ? events.map((event) => ({
+        ...event,
+        url: getEventUrlWithTimezone(event.url, timezone, calendarTimeZone),
+      }))
+    : events;
   const formatInCalendarTz = (date, options) => {
     const opts = calendarTimeZone
       ? { ...options, timeZone: calendarTimeZone }
@@ -364,7 +494,11 @@ export default function Edit({
 
   const formatSlotLabel = (date) => {
     if (timeFormat === "24") {
-      return null;
+      return formatInCalendarTz(date, {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
     }
 
     const formatted = formatInCalendarTz(date, {
@@ -385,9 +519,9 @@ export default function Edit({
 
   const globalDayStart = eventkoi_params?.day_start_time || "00:00";
   const dayStartTime = calendar?.day_start_time || globalDayStart;
+  const scrollTime = normalizeTimeValue(dayStartTime) || "07:00:00";
   const slotMinTime = "00:00:00";
   const slotMaxTime = "24:00:00";
-  const scrollTime = normalizeTimeValue(dayStartTime) || "07:00:00";
   const isTimeGridView = typeof view === "string" && view.startsWith("timeGrid");
   const startHour = parseInt(scrollTime.slice(0, 2), 10);
   const endHour = 23; // 11pm
@@ -430,6 +564,10 @@ export default function Edit({
   const timeGridHeight = useDefaultTimeGrid
     ? "auto"
     : slotsToShow * slotHeightPx;
+  const closeEventPopover = () => {
+    setSelectedEvent(null);
+    setAnchorPos(null);
+  };
 
   return (
     <div {...blockProps}>
@@ -484,7 +622,7 @@ export default function Edit({
             locales={allLocales}
             locale={localeToUse}
             plugins={[dayGridPlugin, timeGridPlugin, listPlugin, luxonPlugin]}
-            events={events}
+            events={eventsWithTimezone}
             initialView={view}
             initialDate={initialDate}
             weekends={true}
@@ -500,6 +638,7 @@ export default function Edit({
             scrollTime={scrollTime}
             scrollTimeReset={false}
             eventTimeFormat={eventTimeFormat}
+            eventContent={renderEventContent}
             slotLabelContent={(args) => {
               const label = formatSlotLabel(args.date);
               return label ? <span>{label}</span> : null;
@@ -556,12 +695,16 @@ export default function Edit({
             }}
             datesSet={({ start, end, view }) => {
               // Create a unique key for this range
-              const key = `${start.toISOString()}_${end.toISOString()}`;
+              const key = `${start.toISOString()}_${end.toISOString()}_${
+                view?.type || ""
+              }_${calendarTimeZone || timezone || "UTC"}`;
 
               // If we already processed this exact range, do nothing
               if (lastRangeRef.current === key) {
                 return;
               }
+
+              closeEventPopover();
 
               // Otherwise, store it and continue
               lastRangeRef.current = key;
@@ -639,10 +782,7 @@ export default function Edit({
             <EventPopover
               event={selectedEvent}
               anchor={anchorPos}
-              onClose={() => {
-                setSelectedEvent(null);
-                setAnchorPos(null);
-              }}
+              onClose={closeEventPopover}
               ignoreNextOutsideClick={ignoreNextOutsideClick}
               timezone={timezone ? timezone : undefined}
             />

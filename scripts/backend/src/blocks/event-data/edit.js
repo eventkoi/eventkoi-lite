@@ -16,6 +16,35 @@ import { Image as ImageIcon } from "lucide-react";
 import { EventDataControls } from "./event-data-controls";
 import { useFetchEvent } from "./fetch-event";
 
+const getLocationVirtualUrl = (location = {}) =>
+  location?.virtual_url || location?.url || "";
+
+const formatLocationLine = (location = {}) => {
+  const address = location?.address || {};
+  const virtualUrl = getLocationVirtualUrl(location);
+  if (virtualUrl) {
+    return virtualUrl;
+  }
+
+  return [
+    location?.name,
+    location?.address1 || address?.streetAddress,
+    location?.address2,
+    location?.address3,
+    [location?.city || address?.addressLocality, location?.state || address?.addressRegion, location?.zip || address?.postalCode]
+      .filter(Boolean)
+      .join(", "),
+    location?.country || address?.addressCountry,
+  ]
+    .filter(Boolean)
+    .join(", ");
+};
+
+const getPrimaryLocation = (event = {}) => {
+  const locations = Array.isArray(event?.locations) ? event.locations : [];
+  return locations.find((location) => formatLocationLine(location)) || {};
+};
+
 export default function Edit({ attributes, setAttributes, clientId }) {
   const { field, tagName = "div", textAlign, eventId = 0 } = attributes;
 
@@ -301,18 +330,19 @@ export default function Edit({ attributes, setAttributes, clientId }) {
       break;
 
     case "location":
-      const loc = event.locations?.[0] ?? {};
+      const loc = getPrimaryLocation(event);
       const isVirtual = loc.type === "virtual" || loc.type === "online";
-      const locationLine = event.location_line;
-      const hasVirtual = isVirtual && loc.virtual_url;
+      const virtualUrl = getLocationVirtualUrl(loc);
+      const locationLine = event.location_line || formatLocationLine(loc);
+      const hasVirtual = isVirtual && virtualUrl;
 
       let locationContent = null;
 
       if (hasVirtual) {
-        const label = loc.link_text || loc.virtual_url;
+        const label = loc.link_text || virtualUrl;
         locationContent = (
           <a
-            href={loc.virtual_url}
+            href={virtualUrl}
             className="underline underline-offset-4 truncate"
             title={label}
             target="_blank"

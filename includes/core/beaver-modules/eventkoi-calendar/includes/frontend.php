@@ -24,7 +24,7 @@ $args = array(
 	'context'       => 'block',
 );
 
-$calendar_id = (int) get_option( 'eventkoi_default_event_cal', 0 );
+$calendar_id = eventkoi_resolve_calendar_id( (int) get_option( 'eventkoi_default_event_cal', 0 ) );
 
 echo '<div class="eventkoi-calendar-wrapper">';
 echo wp_kses_post(

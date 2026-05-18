@@ -213,7 +213,7 @@ class Template {
 	public static function get_default_event_template() {
 		ob_start();
 
-		include_once EVENTKOI_PLUGIN_DIR . 'templates/single-event.php';
+		include EVENTKOI_PLUGIN_DIR . 'templates/single-event.php';
 
 		$content = ob_get_clean();
 
@@ -287,7 +287,7 @@ class Template {
 	public static function get_event_series_template() {
 		ob_start();
 
-		include_once EVENTKOI_PLUGIN_DIR . 'templates/single-event-series.php';
+		include EVENTKOI_PLUGIN_DIR . 'templates/single-event-series.php';
 
 		$content = ob_get_clean();
 

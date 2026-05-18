@@ -72,6 +72,26 @@ class Shortcodes {
 	}
 
 	/**
+	 * Parse a shortcode attribute as a boolean while preserving bare attributes.
+	 *
+	 * @param mixed $value Raw shortcode attribute value.
+	 * @param bool  $bare  Whether the attribute was provided without a value.
+	 * @return bool
+	 */
+	private static function parse_boolean_attribute( $value, $bare = false ) {
+		if ( $bare ) {
+			return true;
+		}
+
+		$filtered = filter_var( $value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
+		if ( null !== $filtered ) {
+			return (bool) $filtered;
+		}
+
+		return ! empty( $value );
+	}
+
+	/**
 	 * Resolve event ID from shortcode attribute or post context.
 	 *
 	 * @param int $event_id Event ID from shortcode attribute.
@@ -155,7 +175,8 @@ class Shortcodes {
 
 		// Default fallback.
 		if ( empty( $ids ) ) {
-			$ids = array( (int) get_option( 'eventkoi_default_event_cal', 0 ) );
+			$default_id = \eventkoi_resolve_calendar_id( (int) get_option( 'eventkoi_default_event_cal', 0 ) );
+			$ids        = $default_id ? array( $default_id ) : array();
 		}
 
 		$primary_id = $ids[0];
@@ -293,8 +314,9 @@ class Shortcodes {
 
 		$keys        = array_map( 'trim', explode( ',', $attributes['data'] ) );
 		$parts       = array();
+		$bare_parts  = array();
 		$auto_unwrap = false;
-		$show_label  = ! empty( $attributes['with_name'] ) || ( is_array( $user_attributes ) && in_array( 'with_name', $user_attributes, true ) );
+		$show_label  = self::parse_boolean_attribute( $attributes['with_name'] ?? false, is_array( $user_attributes ) && in_array( 'with_name', $user_attributes, true ) );
 
 		foreach ( $keys as $key ) {
 			$normalized_key = strtolower( str_replace( '-', '_', $key ) );
@@ -306,13 +328,20 @@ class Shortcodes {
 					\EventKoi\Core\Event::suppress_inline_rulesummary( true );
 				}
 
-				if ( in_array( $normalized_key, array( 'image_url', 'event_image_url' ), true ) ) {
+				if ( in_array( $normalized_key, array( 'image_url', 'event_image_url', 'url', 'event_url', 'ical', 'event_ical' ), true ) ) {
 					$auto_unwrap = true;
 				}
 
-				$value = \EventKoi\Core\Event::render_meta( $normalized_key );
+				$value      = \EventKoi\Core\Event::render_meta( $normalized_key );
+				$bare_value = null;
 				if ( '' === $value ) {
 					continue;
+				}
+
+				if ( in_array( $normalized_key, array( 'url', 'event_url' ), true ) ) {
+					$bare_value = \EventKoi\Core\Event::get_url();
+				} elseif ( in_array( $normalized_key, array( 'ical', 'event_ical' ), true ) ) {
+					$bare_value = \EventKoi\Core\Event::get_ical();
 				}
 
 				if ( $show_label ) {
@@ -335,7 +364,8 @@ class Shortcodes {
 					}
 				}
 
-				$parts[] = $value;
+				$parts[]      = $value;
+				$bare_parts[] = $bare_value;
 			}
 		}
 
@@ -350,7 +380,13 @@ class Shortcodes {
 
 		// Automatically avoid wrapping when only an image URL is requested.
 		if ( true === $auto_unwrap && 1 === count( array_filter( $parts ) ) ) {
-			return wp_strip_all_tags( reset( $parts ) );
+			$filtered_parts = array_filter( $parts );
+			$part_index     = key( $filtered_parts );
+			if ( null !== $part_index && isset( $bare_parts[ $part_index ] ) && null !== $bare_parts[ $part_index ] ) {
+				return (string) $bare_parts[ $part_index ];
+			}
+
+			return wp_strip_all_tags( reset( $filtered_parts ) );
 		}
 
 		$wrapped = implode(

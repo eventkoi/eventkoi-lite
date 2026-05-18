@@ -962,9 +962,9 @@ JS;
 		$order             = isset( $query['order'] ) ? sanitize_text_field( $query['order'] ) : 'desc';
 		$orderby           = isset( $query['orderBy'] ) ? sanitize_key( $query['orderBy'] ) : 'modified';
 		$calendar_ids      = array_filter( array_map( 'absint', $attrs['calendars'] ?? array() ) );
-		$include_instances = ! empty( $attrs['includeInstances'] );
+		$include_instances = self::parse_boolean_attribute( $attrs['includeInstances'] ?? false );
 
-		$show_instances_for_event = ! empty( $attrs['showInstancesForEvent'] ) && ! empty( $attrs['instanceParentId'] );
+		$show_instances_for_event = self::parse_boolean_attribute( $attrs['showInstancesForEvent'] ?? false ) && ! empty( $attrs['instanceParentId'] );
 		$instance_parent_id       = isset( $attrs['instanceParentId'] ) ? absint( $attrs['instanceParentId'] ) : 0;
 
 		$start_date = ! empty( $attrs['startDate'] ) ? sanitize_text_field( $attrs['startDate'] ) : '';
@@ -1070,11 +1070,26 @@ JS;
 				esc_attr( $wrapper_class ),
 				$rendered
 			)
-		);
-	}
+			);
+		}
 
-	/**
-	 * Normalize preset style shorthands (e.g., var:preset|spacing|20) into CSS variables.
+		/**
+		 * Parse a block attribute as a strict boolean.
+		 *
+		 * @param mixed $value Raw block attribute value.
+		 * @return bool
+		 */
+		private static function parse_boolean_attribute( $value ) {
+			$filtered = filter_var( $value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
+			if ( null !== $filtered ) {
+				return (bool) $filtered;
+			}
+
+			return ! empty( $value );
+		}
+
+		/**
+		 * Normalize preset style shorthands (e.g., var:preset|spacing|20) into CSS variables.
 	 *
 	 * @param string $html HTML string potentially containing shorthand preset vars.
 	 * @return string Normalized HTML.
@@ -1249,9 +1264,9 @@ JS;
 		$show_label  = true;
 
 		if ( isset( $pagination_block['context']['showLabel'] ) ) {
-			$show_label = (bool) $pagination_block['context']['showLabel'];
+			$show_label = self::parse_boolean_attribute( $pagination_block['context']['showLabel'] );
 		} elseif ( isset( $attrs['showLabel'] ) ) {
-			$show_label = (bool) $attrs['showLabel'];
+			$show_label = self::parse_boolean_attribute( $attrs['showLabel'] );
 		}
 
 		if ( ! empty( $attrs['className'] ) ) {
@@ -1566,6 +1581,11 @@ JS;
 				: '',
 			'timeline' => ! empty( $event['datetime'] )
 				? ( function () use ( $event ) {
+				$is_all_day = self::parse_boolean_attribute( $event['allDay'] ?? false )
+					|| self::parse_boolean_attribute( $event['all_day'] ?? false )
+					|| self::parse_boolean_attribute( $event['event_days'][0]['all_day'] ?? false )
+					|| self::parse_boolean_attribute( $event['recurrence_rules'][0]['all_day'] ?? false );
+
 				$start_iso = $event['start_date_iso'] ?? '';
 				$end_iso   = '';
 
@@ -1576,7 +1596,7 @@ JS;
 
 				if ( empty( $end_iso ) && ! empty( $event['event_days'][0]['end_date'] ) ) {
 					$end_dt = new \DateTimeImmutable( $event['event_days'][0]['end_date'], new \DateTimeZone( 'UTC' ) );
-					if ( ! empty( $event['event_days'][0]['all_day'] ) ) {
+					if ( self::parse_boolean_attribute( $event['event_days'][0]['all_day'] ?? false ) ) {
 						$end_dt = $end_dt->modify( '+1 day' )->setTime( 0, 0, 0 );
 					}
 					$end_iso = $end_dt->format( 'Y-m-d\TH:i:s\Z' );
@@ -1590,18 +1610,22 @@ JS;
 					$end_iso = $event['end'];
 				}
 
+				if ( $is_all_day && ! empty( $event['end_real'] ) ) {
+					$end_iso = $event['end_real'];
+				}
+
 				if ( empty( $start_iso ) && ! empty( $event['recurrence_rules'][0]['start_date'] ) ) {
 					$start_dt = new \DateTimeImmutable( $event['recurrence_rules'][0]['start_date'], new \DateTimeZone( 'UTC' ) );
 					$start_iso = $start_dt->format( 'Y-m-d\TH:i:s\Z' );
 				}
 
-				if ( empty( $end_iso ) && ! empty( $event['recurrence_rules'][0]['end_date'] ) ) {
-					$end_dt = new \DateTimeImmutable( $event['recurrence_rules'][0]['end_date'], new \DateTimeZone( 'UTC' ) );
-					if ( ! empty( $event['recurrence_rules'][0]['all_day'] ) ) {
-						$end_dt = $end_dt->modify( '+1 day' )->setTime( 0, 0, 0 );
+					if ( empty( $end_iso ) && ! empty( $event['recurrence_rules'][0]['end_date'] ) ) {
+						$end_dt = new \DateTimeImmutable( $event['recurrence_rules'][0]['end_date'], new \DateTimeZone( 'UTC' ) );
+						if ( self::parse_boolean_attribute( $event['recurrence_rules'][0]['all_day'] ?? false ) ) {
+							$end_dt = $end_dt->modify( '+1 day' )->setTime( 0, 0, 0 );
+						}
+						$end_iso = $end_dt->format( 'Y-m-d\TH:i:s\Z' );
 					}
-					$end_iso = $end_dt->format( 'Y-m-d\TH:i:s\Z' );
-				}
 
 				// Absolute fallback to wp_start_ts/wp_end_ts if provided.
 				if ( empty( $start_iso ) && ! empty( $event['wp_start_ts'] ) ) {
@@ -1615,16 +1639,60 @@ JS;
 					?? $event['timezone_display']
 					?? wp_timezone_string();
 
-				$is_all_day = ! empty( $event['allDay'] )
-					|| ! empty( $event['event_days'][0]['all_day'] )
-					|| ! empty( $event['recurrence_rules'][0]['all_day'] );
+				$all_day_attrs = '';
+					if ( $is_all_day && ! empty( $start_iso ) ) {
+						$event_id         = absint( $event['event_id'] ?? ( $event['id'] ?? 0 ) );
+						$stored_timezone  = $event_id ? (string) get_post_meta( $event_id, 'timezone', true ) : '';
+						$inferred_timezone = function_exists( 'eventkoi_infer_all_day_timezone_from_utc_range' )
+							? eventkoi_infer_all_day_timezone_from_utc_range( $start_iso, $end_iso )
+							: '';
+						$all_day_timezone = (string) ( $event['all_day_timezone'] ?? ( $event['event_days'][0]['all_day_timezone'] ?? '' ) );
+						$all_day_start_date = (string) ( $event['all_day_start_date'] ?? ( $event['event_days'][0]['all_day_start_date'] ?? '' ) );
+						$all_day_end_date   = (string) ( $event['all_day_end_date'] ?? ( $event['event_days'][0]['all_day_end_date'] ?? '' ) );
+						if ( '' === $all_day_timezone ) {
+							if ( function_exists( 'eventkoi_all_day_timezone_should_prefer_stored' ) && eventkoi_all_day_timezone_should_prefer_stored( $stored_timezone, $inferred_timezone, $start_iso, $end_iso ) ) {
+								$all_day_timezone = $stored_timezone;
+							} elseif ( '' !== $inferred_timezone ) {
+								$all_day_timezone = $inferred_timezone;
+							} else {
+								$all_day_timezone = $stored_timezone;
+							}
+						}
+						$all_day_timezone = $all_day_timezone ? $all_day_timezone : $tz;
+
+					try {
+						$all_day_tz = new \DateTimeZone( eventkoi_php_timezone( $all_day_timezone ) );
+						$start_day = '' !== $all_day_start_date
+							? new \DateTimeImmutable( $all_day_start_date, $all_day_tz )
+							: ( new \DateTimeImmutable( $start_iso, new \DateTimeZone( 'UTC' ) ) )->setTimezone( $all_day_tz );
+						$end_day = '' !== $all_day_end_date
+							? new \DateTimeImmutable( $all_day_end_date, $all_day_tz )
+							: ( ! empty( $end_iso )
+							? ( new \DateTimeImmutable( $end_iso, new \DateTimeZone( 'UTC' ) ) )->setTimezone( $all_day_tz )
+							: $start_day );
+
+						if ( ! $end_day || $end_day < $start_day || eventkoi_is_single_all_day_span( $start_day->getTimestamp(), $end_day->getTimestamp() ) ) {
+							$end_day = $start_day;
+						}
+
+						$all_day_attrs = sprintf(
+							' data-all-day-start-date="%1$s" data-all-day-end-date="%2$s" data-all-day-tz="%3$s"',
+							esc_attr( $start_day->format( 'Y-m-d' ) ),
+							esc_attr( $end_day->format( 'Y-m-d' ) ),
+							esc_attr( $all_day_tz->getName() )
+						);
+					} catch ( \Exception $e ) {
+						$all_day_attrs = '';
+					}
+				}
 
 				$wrapped = sprintf(
-					'<span class="ek-datetime" data-start="%1$s" data-end="%2$s" data-tz="%3$s" data-all-day="%4$s">%5$s</span>',
+					'<span class="ek-datetime" data-start="%1$s" data-end="%2$s" data-tz="%3$s" data-all-day="%4$s"%5$s>%6$s</span>',
 					esc_attr( $start_iso ),
 					esc_attr( $end_iso ),
 					esc_attr( $tz ),
 					$is_all_day ? '1' : '0',
+					$all_day_attrs,
 					wp_kses_post( $event['datetime'] )
 				);
 
@@ -1648,14 +1716,14 @@ JS;
 		);
 
 		$visibility = array(
-			'title'    => $attributes['showTitle'] ?? true,
-			'timeline' => $attributes['showDatetime'] ?? true,
-			'excerpt'  => $attributes['showDescription'] ?? true,
-			'location' => $attributes['showLocation'] ?? true,
-			'image'    => $attributes['showImage'] ?? true,
+			'title'    => array_key_exists( 'showTitle', $attributes ) ? self::parse_boolean_attribute( $attributes['showTitle'] ) : true,
+			'timeline' => array_key_exists( 'showDatetime', $attributes ) ? self::parse_boolean_attribute( $attributes['showDatetime'] ) : true,
+			'excerpt'  => array_key_exists( 'showDescription', $attributes ) ? self::parse_boolean_attribute( $attributes['showDescription'] ) : true,
+			'location' => array_key_exists( 'showLocation', $attributes ) ? self::parse_boolean_attribute( $attributes['showLocation'] ) : true,
+			'image'    => array_key_exists( 'showImage', $attributes ) ? self::parse_boolean_attribute( $attributes['showImage'] ) : true,
 		);
 
-		if ( array_key_exists( $field, $visibility ) && empty( $visibility[ $field ] ) ) {
+		if ( array_key_exists( $field, $visibility ) && ! $visibility[ $field ] ) {
 			return '';
 		}
 
@@ -1668,19 +1736,107 @@ JS;
 		if ( 0 === strpos( $field, 'event_' ) && function_exists( 'eventkoi_get_event_data_options' ) ) {
 			$allowed = eventkoi_get_event_data_options();
 			if ( isset( $allowed[ $field ] ) ) {
-				$event_id = isset( $event['id'] ) ? absint( $event['id'] ) : 0;
-				if ( $event_id > 0 ) {
-					$event_obj = new Event( $event_id );
-					return (string) $event_obj::render_meta( $field );
+					$event_id = isset( $event['event_id'] ) ? absint( $event['event_id'] ) : ( isset( $event['id'] ) ? absint( $event['id'] ) : 0 );
+					if ( $event_id > 0 ) {
+						$event_day_override          = self::get_selected_event_day_context_index( $event, $event_id );
+						$had_event_day_context       = false;
+						$previous_event_day_context  = null;
+						$event_day_context_container = null;
+
+						if ( null !== $event_day_override ) {
+							if ( empty( $GLOBALS['eventkoi_selected_event_day_context'] ) || ! is_array( $GLOBALS['eventkoi_selected_event_day_context'] ) ) {
+								$GLOBALS['eventkoi_selected_event_day_context'] = array();
+							}
+
+							$event_day_context_container = &$GLOBALS['eventkoi_selected_event_day_context'];
+							$had_event_day_context       = array_key_exists( $event_id, $event_day_context_container );
+							$previous_event_day_context  = $had_event_day_context ? $event_day_context_container[ $event_id ] : null;
+							$event_day_context_container[ $event_id ] = $event_day_override;
+						}
+
+						try {
+							$event_obj = new Event( $event_id );
+							$value     = (string) $event_obj::render_meta( $field );
+						} finally {
+							if ( null !== $event_day_override && is_array( $event_day_context_container ) ) {
+								if ( $had_event_day_context ) {
+									$event_day_context_container[ $event_id ] = $previous_event_day_context;
+								} else {
+									unset( $event_day_context_container[ $event_id ] );
+								}
+							}
+						}
+
+						return $value;
+					}
 				}
 			}
+
+			return '';
 		}
 
-		return '';
-	}
+		/**
+		 * Resolve a selected standard event_days index from a query-loop row.
+		 *
+		 * @param array $event    Event row payload.
+		 * @param int   $event_id Event post ID.
+		 * @return int|null
+		 */
+		private static function get_selected_event_day_context_index( $event, $event_id ) {
+			if ( ! is_array( $event ) || 'standard' !== ( $event['date_type'] ?? '' ) || 'selected' !== ( $event['standard_type'] ?? '' ) ) {
+				return null;
+			}
 
-	/**
-	 * Render a bound paragraph if matched.
+			if ( isset( $event['event_day'] ) && is_numeric( $event['event_day'] ) ) {
+				return absint( $event['event_day'] );
+			}
+
+			if ( ! empty( $event['id'] ) && is_scalar( $event['id'] ) && preg_match( '/-day(\d+)$/', (string) $event['id'], $matches ) ) {
+				return absint( $matches[1] );
+			}
+
+			if ( ! empty( $event['url'] ) && is_scalar( $event['url'] ) ) {
+				$query = wp_parse_url( html_entity_decode( (string) $event['url'], ENT_QUOTES ), PHP_URL_QUERY );
+				if ( is_string( $query ) && '' !== $query ) {
+					$params = array();
+					parse_str( $query, $params );
+					if ( isset( $params['event_day'] ) && is_scalar( $params['event_day'] ) && ctype_digit( (string) $params['event_day'] ) ) {
+						return absint( $params['event_day'] );
+					}
+				}
+			}
+
+			$row_days = isset( $event['event_days'] ) && is_array( $event['event_days'] ) ? array_values( $event['event_days'] ) : array();
+			if ( 1 !== count( $row_days ) || empty( $row_days[0]['start_date'] ) ) {
+				return null;
+			}
+
+			$row_start_ts = strtotime( (string) $row_days[0]['start_date'] );
+			if ( ! $row_start_ts ) {
+				return null;
+			}
+
+			$stored_days = get_post_meta( $event_id, 'event_days', true );
+			if ( empty( $stored_days ) || ! is_array( $stored_days ) ) {
+				return null;
+			}
+
+			foreach ( array_values( $stored_days ) as $index => $day ) {
+				if ( empty( $day['start_date'] ) ) {
+					continue;
+				}
+
+				$day_start_ts = strtotime( (string) $day['start_date'] );
+				if ( $day_start_ts && abs( (int) $day_start_ts - (int) $row_start_ts ) <= 1 ) {
+					return (int) $index;
+				}
+			}
+
+			return null;
+		}
+
+		/**
+		 * Render a bound paragraph if matched.
 	 *
 	 * @param array $block Block array.
 	 * @param Event $event Event instance.
@@ -1742,7 +1898,7 @@ JS;
 	private static function render_calendar_type( $type, $attrs ) {
 		// "Select all calendars" expands at render time so future calendars get
 		// picked up automatically across every page where the block is embedded.
-		if ( ! empty( $attrs['selectAllCalendars'] ) ) {
+		if ( self::parse_boolean_attribute( $attrs['selectAllCalendars'] ?? false ) ) {
 			$attrs['calendars'] = self::get_all_calendar_term_ids();
 		}
 
@@ -1764,14 +1920,14 @@ JS;
 				'context'       => 'block',
 			);
 		} else {
-			$args = array(
-				'calendars'        => $attrs['calendars'] ?? '',
-				'show_image'       => isset( $attrs['showImage'] ) ? 'no' : 'yes',
-				'show_location'    => isset( $attrs['showLocation'] ) ? 'no' : 'yes',
-				'show_description' => isset( $attrs['showDescription'] ) ? 'no' : 'yes',
-				'border_style'     => $attrs['borderStyle'] ?? 'dotted',
-				'border_size'      => $attrs['borderSize'] ?? '2px',
-			);
+				$args = array(
+					'calendars'        => $attrs['calendars'] ?? '',
+					'show_image'       => array_key_exists( 'showImage', $attrs ) && ! self::parse_boolean_attribute( $attrs['showImage'] ) ? 'no' : 'yes',
+					'show_location'    => array_key_exists( 'showLocation', $attrs ) && ! self::parse_boolean_attribute( $attrs['showLocation'] ) ? 'no' : 'yes',
+					'show_description' => array_key_exists( 'showDescription', $attrs ) && ! self::parse_boolean_attribute( $attrs['showDescription'] ) ? 'no' : 'yes',
+					'border_style'     => $attrs['borderStyle'] ?? 'dotted',
+					'border_size'      => $attrs['borderSize'] ?? '2px',
+				);
 		}
 
 		$args['layout'] = $attrs['layout'] ?? array();
