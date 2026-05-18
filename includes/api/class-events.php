@@ -131,8 +131,8 @@ class Events {
 		);
 
 		// Dashboard shortcut: try upcoming → live → ongoing and return first non-empty set.
-		$dashboard_events = $request->get_param( 'dashboard_events' );
-		if ( ! empty( $dashboard_events ) ) {
+		$dashboard_events = rest_sanitize_boolean( $request->get_param( 'dashboard_events' ) );
+		if ( $dashboard_events ) {
 			$number = ! empty( $params['number'] ) ? $params['number'] : 3;
 			foreach ( array( 'upcoming', 'live', 'ongoing' ) as $try_status ) {
 				$try_params                 = $params;
@@ -151,8 +151,8 @@ class Events {
 		$response = Query::get_events( array_filter( $params ) );
 
 		// Optionally include status counts to avoid a separate API call.
-		$include_counts = $request->get_param( 'include_counts' );
-		if ( ! empty( $include_counts ) ) {
+		$include_counts = rest_sanitize_boolean( $request->get_param( 'include_counts' ) );
+		if ( $include_counts ) {
 			$count_params = array(
 				'event_status' => $params['event_status'],
 				'calendar'     => $params['calendar'],

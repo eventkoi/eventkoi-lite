@@ -21,6 +21,214 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Events {
 
 	/**
+	 * Normalize an admin date filter value to a date-only key.
+	 *
+	 * @param string $date Date filter value.
+	 * @return string
+	 */
+	private static function normalize_admin_filter_date( $date ) {
+		$date = trim( (string) $date );
+		if ( '' === $date ) {
+			return '';
+		}
+
+		if ( preg_match( '/^\d{4}-\d{2}-\d{2}$/', $date ) ) {
+			return $date;
+		}
+
+		$timestamp = strtotime( $date );
+		return $timestamp ? gmdate( 'Y-m-d', (int) $timestamp ) : '';
+	}
+
+	/**
+	 * Resolve the source timezone for an all-day filter row.
+	 *
+	 * @param array $day  Event day row.
+	 * @param array $meta Event meta.
+	 * @return \DateTimeZone
+	 */
+	private static function resolve_all_day_filter_timezone( array $day, array $meta ) {
+		$start_raw = $day['start_date'] ?? ( $meta['start_date'] ?? '' );
+		$end_raw   = $day['end_date'] ?? ( $meta['end_date'] ?? '' );
+		$stored    = (string) ( $meta['timezone'] ?? '' );
+		$inferred  = function_exists( 'eventkoi_infer_all_day_timezone_from_utc_range' )
+			? eventkoi_infer_all_day_timezone_from_utc_range( $start_raw, $end_raw )
+			: '';
+
+		$candidates = array(
+			$day['all_day_timezone'] ?? '',
+			$meta['all_day_timezone'] ?? '',
+			function_exists( 'eventkoi_all_day_timezone_should_prefer_stored' ) && eventkoi_all_day_timezone_should_prefer_stored( $stored, $inferred, $start_raw, $end_raw ) ? $stored : '',
+			$inferred,
+			$meta['timezone'] ?? '',
+			function_exists( 'eventkoi_timezone' ) ? eventkoi_timezone() : '',
+			wp_timezone_string(),
+			'UTC',
+		);
+
+		foreach ( $candidates as $candidate ) {
+			$candidate = trim( (string) $candidate );
+			if ( '' === $candidate ) {
+				continue;
+			}
+
+			try {
+				return new \DateTimeZone( function_exists( 'eventkoi_php_timezone' ) ? eventkoi_php_timezone( $candidate ) : $candidate );
+			} catch ( \Exception $e ) {
+				continue;
+			}
+		}
+
+		return wp_timezone();
+	}
+
+	/**
+	 * Resolve inclusive display end date for an all-day range.
+	 *
+	 * @param \DateTimeImmutable      $start Start date in source timezone.
+	 * @param \DateTimeImmutable|null $end   End date in source timezone.
+	 * @return \DateTimeImmutable
+	 */
+	private static function get_all_day_filter_display_end( \DateTimeImmutable $start, $end ) {
+		if ( ! $end instanceof \DateTimeImmutable ) {
+			return $start;
+		}
+
+		if ( function_exists( 'eventkoi_is_single_all_day_span' ) && eventkoi_is_single_all_day_span( $start->getTimestamp(), $end->getTimestamp() ) ) {
+			return $start;
+		}
+
+		if ( '00:00:00' === $end->format( 'H:i:s' ) && $end->format( 'Y-m-d' ) !== $start->format( 'Y-m-d' ) ) {
+			return $end->modify( '-1 day' );
+		}
+
+		return $end;
+	}
+
+	/**
+	 * Get all-day source calendar ranges from event meta.
+	 *
+	 * @param array $meta Event meta.
+	 * @return array<int,array{start:string,end:string}>
+	 */
+	private static function get_all_day_filter_ranges( array $meta ) {
+		$ranges = array();
+		$days   = ! empty( $meta['event_days'] ) && is_array( $meta['event_days'] ) ? $meta['event_days'] : array();
+
+		if ( ! empty( $meta['all_day'] ) ) {
+			$days[] = array(
+				'all_day'                    => true,
+				'start_date'                 => $meta['start_date'] ?? ( $meta['start_date_iso'] ?? ( isset( $meta['start_timestamp'] ) ? gmdate( 'c', (int) $meta['start_timestamp'] ) : '' ) ),
+				'end_date'                   => $meta['end_date'] ?? ( $meta['end_date_iso'] ?? ( isset( $meta['end_timestamp'] ) ? gmdate( 'c', (int) $meta['end_timestamp'] ) : '' ) ),
+				'all_day_timezone'           => $meta['all_day_timezone'] ?? '',
+				'all_day_start_date'         => $meta['all_day_start_date'] ?? '',
+				'all_day_end_date'           => $meta['all_day_end_date'] ?? '',
+				'all_day_end_exclusive_date' => $meta['all_day_end_exclusive_date'] ?? '',
+			);
+		}
+
+		foreach ( $days as $day ) {
+			if ( ! is_array( $day ) || empty( $day['all_day'] ) ) {
+				continue;
+			}
+
+			$start_date = ! empty( $day['all_day_start_date'] ) ? self::normalize_admin_filter_date( $day['all_day_start_date'] ) : '';
+			$end_date   = ! empty( $day['all_day_end_date'] ) ? self::normalize_admin_filter_date( $day['all_day_end_date'] ) : '';
+
+			if ( '' === $start_date && ! empty( $day['start_date'] ) ) {
+				$start_ts = strtotime( (string) $day['start_date'] );
+				if ( $start_ts ) {
+					$timezone = self::resolve_all_day_filter_timezone( $day, $meta );
+					$start    = ( new \DateTimeImmutable( '@' . (int) $start_ts ) )->setTimezone( $timezone );
+					$end      = null;
+
+					if ( ! empty( $day['end_date'] ) ) {
+						$end_ts = strtotime( (string) $day['end_date'] );
+						if ( $end_ts && $end_ts >= $start_ts ) {
+							$end = ( new \DateTimeImmutable( '@' . (int) $end_ts ) )->setTimezone( $timezone );
+						}
+					}
+
+					$display_end = self::get_all_day_filter_display_end( $start, $end );
+					$start_date  = $start->setTime( 0, 0, 0 )->format( 'Y-m-d' );
+					$end_date    = $display_end->setTime( 0, 0, 0 )->format( 'Y-m-d' );
+				}
+			}
+
+			if ( '' === $start_date ) {
+				continue;
+			}
+
+			if ( '' === $end_date ) {
+				$end_date = $start_date;
+			}
+
+			if ( $end_date < $start_date ) {
+				$end_date = $start_date;
+			}
+
+			$ranges[] = array(
+				'start' => $start_date,
+				'end'   => $end_date,
+			);
+		}
+
+		return $ranges;
+	}
+
+	/**
+	 * Whether event meta matches the admin date range filter.
+	 *
+	 * Timed events retain the existing timestamp comparison. All-day events
+	 * compare source calendar dates so UTC storage boundaries do not shift them
+	 * out of the selected admin day.
+	 *
+	 * @param array  $meta      Event meta.
+	 * @param int    $from_ts   Timestamp lower bound.
+	 * @param int    $to_ts     Timestamp upper bound.
+	 * @param string $from_date Date-only lower bound.
+	 * @param string $to_date   Date-only upper bound.
+	 * @return bool
+	 */
+	private static function event_matches_admin_date_filter( array $meta, $from_ts, $to_ts, $from_date, $to_date ) {
+		$all_day_ranges = self::get_all_day_filter_ranges( $meta );
+
+		if ( ! empty( $all_day_ranges ) && ( '' !== $from_date || '' !== $to_date ) ) {
+			foreach ( $all_day_ranges as $range ) {
+				if ( '' !== $from_date && $range['end'] < $from_date ) {
+					continue;
+				}
+
+				if ( '' !== $to_date && $range['start'] > $to_date ) {
+					continue;
+				}
+
+				return true;
+			}
+
+			return false;
+		}
+
+		$start_value = $meta['start_timestamp'] ?? ( $meta['start_date_iso'] ?? ( $meta['start_date'] ?? '' ) );
+		$start_ts    = is_numeric( $start_value ) ? (int) $start_value : strtotime( (string) $start_value );
+		$start_ts    = $start_ts ? (int) $start_ts : 0;
+
+		if ( $start_ts <= 0 ) {
+			return false;
+		}
+
+		if ( $from_ts && $start_ts < (int) $from_ts ) {
+			return false;
+		}
+
+		if ( $to_ts && $start_ts > (int) $to_ts ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
 	 * Retrieve events based on parameters.
 	 *
 	 * Builds a WP_Query with meta and taxonomy filters, optimized for
@@ -35,7 +243,7 @@ class Events {
 		// Create a unique cache key for this filter combination.
 		// Bumpable cache key to refresh metrics (RSVP usage, etc.).
 		$cache_version = absint( get_option( 'eventkoi_events_cache_version', 1 ) );
-		$cache_key     = 'eventkoi_events_v3_' . $cache_version . '_' . md5( wp_json_encode( $args ) );
+		$cache_key     = 'eventkoi_events_v4_' . $cache_version . '_' . md5( wp_json_encode( $args ) );
 
 		// Attempt to load from cache first.
 		$cached = get_transient( $cache_key );
@@ -43,17 +251,22 @@ class Events {
 			return $cached;
 		}
 
-		$calendar = ! empty( $args['calendar'] ) ? array_map( 'absint', explode( ',', $args['calendar'] ) ) : array();
-		$statuses = ! empty( $args['event_status'] ) ? array_map( 'sanitize_text_field', explode( ',', $args['event_status'] ) ) : array();
-		$from     = ! empty( $args['from'] ) ? sanitize_text_field( $args['from'] ) : '';
-		$to       = ! empty( $args['to'] ) ? sanitize_text_field( $args['to'] ) : '';
-		$number   = isset( $args['number'] ) ? absint( $args['number'] ) : -1;
+		$calendar                  = ! empty( $args['calendar'] ) ? array_map( 'absint', explode( ',', $args['calendar'] ) ) : array();
+		$statuses                  = ! empty( $args['event_status'] ) ? array_map( 'sanitize_text_field', explode( ',', $args['event_status'] ) ) : array();
+		$from                      = ! empty( $args['from'] ) ? sanitize_text_field( $args['from'] ) : '';
+		$to                        = ! empty( $args['to'] ) ? sanitize_text_field( $args['to'] ) : '';
+		$from_date                 = self::normalize_admin_filter_date( $from );
+		$to_date                   = self::normalize_admin_filter_date( $to );
+		$from_ts                   = $from ? strtotime( $from ) : 0;
+		$to_ts                     = $to ? strtotime( $to . ' +23 hours 59 minutes' ) : 0;
+		$requires_post_date_filter = ( '' !== $from || '' !== $to );
+		$number                    = isset( $args['number'] ) ? absint( $args['number'] ) : -1;
 
 		$query_args = array(
 			'post_type'      => 'eventkoi_event',
 			'orderby'        => 'modified',
 			'order'          => 'DESC',
-			'posts_per_page' => $number,
+			'posts_per_page' => $requires_post_date_filter ? -1 : $number,
 			'post_status'    => array( 'publish', 'draft' ),
 		);
 
@@ -77,7 +290,6 @@ class Events {
 		// Build meta queries for event status.
 		if ( ! empty( $statuses ) || $from || $to ) {
 			$meta_status = array();
-			$date_filter = array();
 
 			foreach ( $statuses as $status_item ) {
 				switch ( $status_item ) {
@@ -147,30 +359,23 @@ class Events {
 				}
 			}
 
-			// Apply date range filter.
-			if ( $from || $to ) {
-				$date_filter = array(
-					'key'  => 'start_timestamp',
-					'type' => 'NUMERIC',
-				);
+			$status_meta_query = array();
 
-				if ( $from && $to ) {
-					$date_filter['value']   = array( strtotime( $from ), strtotime( $to . ' +23 hours 59 minutes' ) );
-					$date_filter['compare'] = 'BETWEEN';
-				} elseif ( $from ) {
-					$date_filter['value']   = strtotime( $from );
-					$date_filter['compare'] = '>=';
-				} elseif ( $to ) {
-					$date_filter['value']   = strtotime( $to . ' +23 hours 59 minutes' );
-					$date_filter['compare'] = '<=';
-				}
+			if ( ! empty( $meta_status ) ) {
+				$status_meta_query[] = array_merge( array( 'relation' => 'OR' ), $meta_status );
 			}
 
-			$query_args['meta_query'] = array(
-				'relation' => 'AND',
-				array_merge( array( 'relation' => 'OR' ), $meta_status ),
-				$date_filter,
-			);
+			if ( ! empty( $status_meta_query ) ) {
+				if ( ! empty( $query_args['meta_query'] ) && is_array( $query_args['meta_query'] ) ) {
+					$query_args['meta_query'] = array(
+						'relation' => 'AND',
+						$query_args['meta_query'],
+						$status_meta_query,
+					);
+				} else {
+					$query_args['meta_query'] = $status_meta_query;
+				}
+			}
 		}
 
 		// Filter by calendar taxonomy.
@@ -187,16 +392,42 @@ class Events {
 		// Execute query.
 		$query = new \WP_Query( $query_args );
 
-		// Return count if requested.
-		if ( ! empty( $args['counts_only'] ) ) {
-			set_transient( $cache_key, (int) $query->found_posts, HOUR_IN_SECONDS );
-			return (int) $query->found_posts;
-		}
-
 		// Preload post meta to reduce individual lookups.
 		update_postmeta_cache( wp_list_pluck( $query->posts, 'ID' ) );
 
-		$event_ids   = wp_list_pluck( $query->posts, 'ID' );
+		$posts       = $query->posts;
+		$metas_by_id = array();
+
+		if ( $requires_post_date_filter ) {
+			$filtered_posts = array();
+
+			foreach ( $posts as $post ) {
+				$event = new Event( $post );
+				$meta  = $event::get_meta();
+
+				if ( ! self::event_matches_admin_date_filter( $meta, (int) $from_ts, (int) $to_ts, $from_date, $to_date ) ) {
+					continue;
+				}
+
+				$filtered_posts[]               = $post;
+				$metas_by_id[ (int) $post->ID ] = $meta;
+			}
+
+			$posts = $filtered_posts;
+		}
+
+		// Return count if requested.
+		if ( ! empty( $args['counts_only'] ) ) {
+			$count = $requires_post_date_filter ? count( $posts ) : (int) $query->found_posts;
+			set_transient( $cache_key, $count, HOUR_IN_SECONDS );
+			return $count;
+		}
+
+		if ( $requires_post_date_filter && $number > 0 ) {
+			$posts = array_slice( $posts, 0, $number );
+		}
+
+		$event_ids   = wp_list_pluck( $posts, 'ID' );
 		$rsvp_counts = array();
 
 		if ( ! empty( $event_ids ) ) {
@@ -283,9 +514,14 @@ class Events {
 
 		$results = array();
 
-		foreach ( $query->posts as $post ) {
-			$event                          = new Event( $post );
-			$meta                           = $event::get_meta();
+		foreach ( $posts as $post ) {
+			if ( isset( $metas_by_id[ (int) $post->ID ] ) ) {
+				$meta = $metas_by_id[ (int) $post->ID ];
+			} else {
+				$event = new Event( $post );
+				$meta  = $event::get_meta();
+			}
+
 			$meta['rsvp_used']              = isset( $rsvp_counts[ $post->ID ] ) ? $rsvp_counts[ $post->ID ] : 0;
 			$meta['tickets_total']          = isset( $tickets_total[ $post->ID ] ) ? $tickets_total[ $post->ID ] : 0;
 			$meta['tickets_sold']           = isset( $tickets_sold[ $post->ID ] ) ? $tickets_sold[ $post->ID ] : 0;

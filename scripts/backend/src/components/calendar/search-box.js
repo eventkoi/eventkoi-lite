@@ -6,9 +6,103 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
+import { normalizeTimeZone, wpToLuxonFormat } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
 import { Search } from "lucide-react";
 import { DateTime } from "luxon";
+
+function isTruthy(value) {
+  return value === true || value === 1 || value === "1" || value === "true";
+}
+
+function isAllDayEvent(event) {
+  const firstRule = Array.isArray(event?.recurrence_rules)
+    ? event.recurrence_rules[0]
+    : null;
+  const firstDay = Array.isArray(event?.event_days) ? event.event_days[0] : null;
+
+  return (
+    isTruthy(event?.allDay) ||
+    isTruthy(event?.all_day) ||
+    isTruthy(firstRule?.all_day) ||
+    isTruthy(firstDay?.all_day)
+  );
+}
+
+function normalizeZone(zone) {
+  const normalized = normalizeTimeZone(zone || "UTC");
+  return DateTime.now().setZone(normalized).isValid ? normalized : "UTC";
+}
+
+function getEventPageUrl(event, timezone) {
+  const source = event?.url || "";
+
+  if (!source) {
+    return "";
+  }
+
+  try {
+    const url = new URL(source, window.location.href);
+
+    url.searchParams.set("tz", normalizeZone(timezone));
+    return url.toString();
+  } catch {
+    return source;
+  }
+}
+
+function parseSearchDate(value, zone) {
+  if (!value) {
+    return null;
+  }
+
+  const raw = String(value);
+  const dt = /^\d{4}-\d{2}-\d{2}$/.test(raw)
+    ? DateTime.fromISO(raw, { zone })
+    : DateTime.fromISO(raw, { zone: "utc" }).setZone(zone);
+
+  return dt.isValid ? dt : null;
+}
+
+function formatSearchDate(event, timezone, timeFormat) {
+  const params = typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
+  const locale = (params.locale || "en").replace("_", "-");
+  const dateFormat = wpToLuxonFormat(params.date_format || "F j, Y");
+  const timePreference = timeFormat || params.time_format || "12";
+  const wpTimeFormat =
+    params.time_format_string || (timePreference === "24" ? "H:i" : "g:i a");
+  const luxonTimeFormat = wpToLuxonFormat(wpTimeFormat);
+
+  const formatTime = (dt) => {
+    let formatted = dt.toFormat(luxonTimeFormat);
+
+    if (wpTimeFormat.includes("A")) {
+      formatted = formatted.replace(/\b(am|pm)\b/g, (m) => m.toUpperCase());
+    } else if (wpTimeFormat.includes("a")) {
+      formatted = formatted.replace(/\b(AM|PM)\b/g, (m) => m.toLowerCase());
+    }
+
+    return formatted;
+  };
+
+  if (isAllDayEvent(event)) {
+    const allDayValue =
+      event?.all_day_start_date || event?.start_date || event?.start;
+    const allDayZone = normalizeZone(
+      event?.all_day_timezone || event?.allDayTimezone || timezone
+    );
+    const dt = parseSearchDate(allDayValue, allDayZone);
+
+    return dt?.isValid ? dt.setLocale(locale).toFormat(dateFormat) : "";
+  }
+
+  const value = event?.start_date || event?.start;
+  const displayZone = normalizeZone(timezone);
+  const dt = parseSearchDate(value, displayZone);
+  const localized = dt?.isValid ? dt.setLocale(locale) : null;
+
+  return localized ? `${localized.toFormat(dateFormat)}, ${formatTime(localized)}` : "";
+}
 
 export function SearchBox({
   inputRef,
@@ -66,24 +160,18 @@ export function SearchBox({
                     value={event.title}
                     onMouseDown={(e) => {
                       e.preventDefault();
-                      window.open(event.url, "_blank", "noopener,noreferrer");
+                      window.open(
+                        getEventPageUrl(event, timezone),
+                        "_blank",
+                        "noopener,noreferrer"
+                      );
                       setOpen(false);
                       setSearchOpen?.(false);
                     }}
                     className="grid gap-1 p-2 cursor-pointer text-sm text-foreground rounded-md hover:!bg-accent"
                   >
                     <span className="font-normal block">
-                      {DateTime.fromISO(event.start_date || event.start, {
-                        zone: "utc",
-                      })
-                        .setZone(timezone)
-                        .toFormat(
-                          timeFormat === "24"
-                            ? "d MMM yyyy, EEE • HH:mm"
-                            : "d MMM yyyy, EEE • h:mma"
-                        )
-                        .replace("AM", "am")
-                        .replace("PM", "pm")}
+                      {formatSearchDate(event, timezone, timeFormat)}
                     </span>
                     <span className="font-medium">{event.title}</span>
                   </CommandItem>

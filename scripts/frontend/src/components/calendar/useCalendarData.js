@@ -44,6 +44,28 @@ export function useCalendarData({
     Number.isFinite(parsedMaxResults) && parsedMaxResults > 0
       ? parsedMaxResults
       : 0;
+  const getRequestTimezone = () => {
+    if (typeof window === "undefined") {
+      return eventkoi_params?.timezone || "UTC";
+    }
+
+    const params = new URLSearchParams(window.location.search);
+    const requested = params.get("tz");
+
+    if (requested) {
+      return requested === "local"
+        ? Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
+        : requested;
+    }
+
+    if (eventkoi_params?.auto_detect_timezone) {
+      return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    }
+
+    return (
+      eventkoi_params?.timezone_override || eventkoi_params?.timezone || "UTC"
+    );
+  };
 
   const getInitialCalendar = async () => {
     try {
@@ -99,6 +121,7 @@ export function useCalendarData({
       if (shouldApplyListSorting && order) params.set("order", order);
       if (start) params.set("start", start.toISOString());
       if (end) params.set("end", end.toISOString());
+      if (display === "calendar") params.set("timezone", getRequestTimezone());
 
       const response = await publicApi({
         path: `/calendar_events?${params.toString()}`,

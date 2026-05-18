@@ -150,9 +150,11 @@ class Calendar {
 		$display = sanitize_text_field( $request->get_param( 'display' ) );
 		$order   = 'desc';
 		$orderby = 'date_modified';
-		$max_results = 0;
-		$date_start = '';
-		$date_end   = '';
+		$max_results           = 0;
+		$date_start            = '';
+		$date_end              = '';
+		$calendar_window_start = '';
+		$calendar_window_end   = '';
 
 		if ( 'list' === $display ) {
 			$order   = strtolower( sanitize_key( (string) $request->get_param( 'order' ) ) );
@@ -190,6 +192,35 @@ class Calendar {
 
 			$per_page    = $per_page > 0 ? min( $per_page, 100 ) : 10;
 			$max_results = $max_results > 0 ? min( $max_results, 1000 ) : 0;
+		} elseif ( 'calendar' === $display ) {
+			$calendar_timezone = self::get_request_timezone( $request );
+			$start             = sanitize_text_field( (string) $request->get_param( 'start' ) );
+			$end               = sanitize_text_field( (string) $request->get_param( 'end' ) );
+
+			if ( ! empty( $start ) && ! empty( $end ) ) {
+				try {
+					$start_dt         = new \DateTimeImmutable( $start, new \DateTimeZone( 'UTC' ) );
+					$end_dt           = new \DateTimeImmutable( $end, new \DateTimeZone( 'UTC' ) );
+					$display_start_dt = $start_dt->setTimezone( $calendar_timezone );
+					$display_end_dt   = $end_dt->setTimezone( $calendar_timezone )->modify( '-1 second' );
+
+					if ( $display_end_dt < $display_start_dt ) {
+						$display_end_dt = $display_start_dt;
+					}
+
+					$date_start = $display_start_dt->format( 'Y-m-d' );
+					$date_end   = $display_end_dt->format( 'Y-m-d' );
+
+					$site_timezone         = wp_timezone();
+					$calendar_window_start = ( new \DateTimeImmutable( $date_start . ' 00:00:00', $site_timezone ) )->format( \DateTimeInterface::ATOM );
+					$calendar_window_end   = ( new \DateTimeImmutable( $date_end . ' 23:59:59', $site_timezone ) )->format( \DateTimeInterface::ATOM );
+				} catch ( \Exception $e ) {
+					$date_start            = '';
+					$date_end              = '';
+					$calendar_window_start = '';
+					$calendar_window_end   = '';
+				}
+			}
 		} else {
 			$orderby    = sanitize_key( (string) $request->get_param( 'orderby' ) );
 			$order      = strtolower( sanitize_key( (string) $request->get_param( 'order' ) ) );
@@ -214,17 +245,20 @@ class Calendar {
 		if ( $expand_instances_marker ) {
 			$expand_instances = true;
 		}
-		$event_data       = $calendar::get_events(
+		$event_data = $calendar::get_events(
 			$ids,
 			$expand_instances,
 			array(
-				'per_page'   => $per_page,
-				'page'       => $page,
-				'orderby'    => $orderby,
-				'order'      => $order,
-				'start_date' => $date_start,
-				'end_date'   => $date_end,
-				'max_results' => $max_results,
+				'per_page'     => $per_page,
+				'page'         => $page,
+				'orderby'      => $orderby,
+				'order'        => $order,
+				'start_date'   => $date_start,
+				'end_date'     => $date_end,
+				'max_results'  => $max_results,
+				'display'      => $display,
+				'window_start' => $calendar_window_start,
+				'window_end'   => $calendar_window_end,
 			)
 		);
 
@@ -245,7 +279,7 @@ class Calendar {
 	 */
 	public static function get_query_events( WP_REST_Request $request ) {
 		$include_param     = sanitize_text_field( $request->get_param( 'include' ) );
-		$include_instances = (bool) $request->get_param( 'include_instances' );
+		$include_instances = rest_sanitize_boolean( $request->get_param( 'include_instances' ) );
 		$parent_event      = absint( $request->get_param( 'parent_event' ) );
 
 		$exclude_param     = sanitize_text_field( $request->get_param( 'exclude' ) );
@@ -400,6 +434,7 @@ class Calendar {
 				'orderby'    => $orderby,
 				'start_date' => $start_date,
 				'end_date'   => $end_date,
+				'exclude'    => $exclude_instances,
 			)
 		);
 
@@ -452,6 +487,28 @@ class Calendar {
 		}
 
 		return $events;
+	}
+
+	/**
+	 * Resolve the requested calendar display timezone.
+	 *
+	 * @param WP_REST_Request $request The REST request.
+	 * @return \DateTimeZone
+	 */
+	private static function get_request_timezone( WP_REST_Request $request ) {
+		$timezone = sanitize_text_field( (string) ( $request->get_param( 'timezone' ) ?: $request->get_param( 'tz' ) ) );
+
+		if ( '' === $timezone ) {
+			return wp_timezone();
+		}
+
+		$timezone = eventkoi_php_timezone( $timezone );
+
+		try {
+			return new \DateTimeZone( $timezone );
+		} catch ( \Exception $e ) {
+			return wp_timezone();
+		}
 	}
 
 	/**

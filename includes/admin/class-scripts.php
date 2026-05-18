@@ -151,10 +151,10 @@ class Scripts {
 		$hot_file   = $build_dir . '.vite-hot';
 		$is_dev     = file_exists( $hot_file );
 
-		$default_cal_id = (int) get_option( 'eventkoi_default_event_cal', 0 );
-		$default_cal    = get_term_by( 'id', $default_cal_id, 'event_cal' );
-		$cal_url        = $default_cal ? get_term_link( $default_cal, 'event_cal' ) : '';
-		$cal_url        = $default_cal ? str_replace( $default_cal->slug, '', $cal_url ) : '';
+			$default_cal_id = eventkoi_resolve_calendar_id( (int) get_option( 'eventkoi_default_event_cal', 0 ) );
+			$default_cal    = $default_cal_id ? get_term_by( 'id', $default_cal_id, 'event_cal' ) : false;
+			$cal_url        = $default_cal ? get_term_link( $default_cal, 'event_cal' ) : '';
+			$cal_url        = ( $default_cal && ! is_wp_error( $cal_url ) ) ? str_replace( $default_cal->slug, '', $cal_url ) : '';
 
 		$settings      = Settings::get();
 		$safe_settings = self::get_client_safe_settings( $settings );
@@ -176,9 +176,9 @@ class Scripts {
 			'wc_settings_url'     => admin_url( 'admin.php?page=wc-settings' ),
 			'api_key'             => REST::get_api_key(),
 			'is_admin'            => current_user_can( 'manage_options' ),
-			'date_now'            => eventkoi_date( 'j M Y' ),
-			'date_24h'            => eventkoi_date( 'j M Y', strtotime( '+1 day' ) ),
-			'time_now'            => eventkoi_date( 'g:i A', strtotime( '+1 hour' ) ),
+			'date_now'            => wp_date( 'j M Y' ),
+			'date_24h'            => wp_date( 'j M Y', strtotime( '+1 day' ) ),
+			'time_now'            => wp_date( 'g:i A', strtotime( '+1 hour' ) ),
 			'new_event'           => Event::get_meta(),
 			'new_calendar'        => Calendar::get_meta(),
 			'default_cal'         => $default_cal_id,
@@ -278,7 +278,7 @@ class Scripts {
 				array(
 					'restUrl' => esc_url_raw( rest_url( EVENTKOI_API . '/auto-updates' ) ),
 					'nonce'   => wp_create_nonce( 'wp_rest' ),
-					'enabled' => (bool) ( \EventKoi\Core\Settings::get()['auto_updates_enabled'] ?? false ),
+					'enabled' => rest_sanitize_boolean( \EventKoi\Core\Settings::get()['auto_updates_enabled'] ?? false ),
 				)
 			);
 		}

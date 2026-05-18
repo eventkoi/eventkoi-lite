@@ -152,7 +152,7 @@ export function SettingsOverview() {
     return () => {
       cancelled = true;
     };
-  }, [dateFormat, timeFormatString]);
+  }, [dateFormat, timeFormatString, settings?.time_format]);
 
   const handleTimeFormatChange = (val) => {
     setTimeFormat(val);

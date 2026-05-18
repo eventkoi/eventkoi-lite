@@ -182,7 +182,7 @@ export function Calendar(props) {
         eventColor={eventColor}
         timeFormat={timeFormat}
         startday={startday}
-        initialDate={initialDate}
+        initialDate={currentDate || initialDate}
       />
     </div>
   );

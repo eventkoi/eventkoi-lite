@@ -67,7 +67,7 @@ class Calendars {
 	 */
 	public static function delete_calendars( $ids = array() ) {
 
-		$eventkoi_default_calendar = (int) get_option( 'eventkoi_default_event_cal', 0 );
+		$eventkoi_default_calendar = \eventkoi_resolve_calendar_id( (int) get_option( 'eventkoi_default_event_cal', 0 ) );
 
 		foreach ( $ids as $id ) {
 			// Do not delete default calendar.
