@@ -280,38 +280,77 @@ export function CalendarGridMode({
     }
     return dt.setLocale(localeToUse).toFormat("ccc");
   };
+  const toCalendarDateTime = (date, dateStr) => {
+    let dt = dateStr ? DateTime.fromISO(dateStr, { setZone: true }) : null;
+    if (!dt?.isValid && date instanceof Date) {
+      dt = DateTime.fromJSDate(date, { zone: calendarTimeZone || "UTC" });
+    }
+    if (!dt?.isValid) {
+      return null;
+    }
+    return calendarTimeZone ? dt.setZone(calendarTimeZone) : dt;
+  };
+  // Google-style compact time formatter for week-view tile labels.
+  // 12h: "9 – 11am", "1:30 – 3pm", "11am – 2pm". 24h: "9 – 11", "13:30 – 15".
+  const formatCompactTime = (dt) => {
+    if (!dt) return "";
+    const m = dt.minute;
+    const mPart = m === 0 ? "" : `:${String(m).padStart(2, "0")}`;
+    if (timeFormat === "24") {
+      return `${dt.hour}${mPart}`;
+    }
+    const h12 = ((dt.hour + 11) % 12) + 1;
+    return `${h12}${mPart}`;
+  };
+  const formatCompactRange = (start, end) => {
+    const sStr = formatCompactTime(start);
+    const eStr = formatCompactTime(end);
+    if (timeFormat === "24") {
+      return `${sStr} – ${eStr}`;
+    }
+    const sP = start.hour < 12 ? "am" : "pm";
+    const eP = end.hour < 12 ? "am" : "pm";
+    if (sP === eP) {
+      return `${sStr} – ${eStr}${eP}`;
+    }
+    return `${sStr}${sP} – ${eStr}${eP}`;
+  };
   const formatCalendarTimeRange = (arg) => {
-    const startText = formatCalendarTime(arg.event.start, arg.event.startStr);
-
-    if (!startText) {
+    const startDt = toCalendarDateTime(arg.event.start, arg.event.startStr);
+    if (!startDt) {
       return "";
     }
 
     if (!shouldShowEventEndTime(arg)) {
-      return startText;
+      return formatCalendarTime(arg.event.start, arg.event.startStr);
     }
 
-    const endText = formatCalendarTime(arg.event.end, arg.event.endStr);
-
-    if (!endText || endText === startText) {
-      return startText;
+    const endDt = toCalendarDateTime(arg.event.end, arg.event.endStr);
+    if (!endDt) {
+      return formatCalendarTime(arg.event.start, arg.event.startStr);
     }
 
     // Google-style multi-day display: start segment shows the full range
-    // including the end weekday ("3:00 am – Sun 8:00 pm"). Middle/end
-    // segments show title only.
+    // including the end weekday ("3am – Sun 8pm"). Middle/end segments
+    // show title only.
     if (isTimedMultiDayEvent(arg)) {
       const isStartSegment = arg.isStart !== false;
       if (!isStartSegment) {
         return "";
       }
       const endDay = formatCalendarEndDay(arg.event.end, arg.event.endStr);
+      const sCompact = formatCompactTime(startDt);
+      const eCompact = formatCompactTime(endDt);
+      const sP = timeFormat === "24" ? "" : startDt.hour < 12 ? "am" : "pm";
+      const eP = timeFormat === "24" ? "" : endDt.hour < 12 ? "am" : "pm";
+      const startPart = `${sCompact}${sP}`;
+      const endPart = `${eCompact}${eP}`;
       return endDay
-        ? `${startText} – ${endDay} ${endText}`
-        : `${startText} – ${endText}`;
+        ? `${startPart} – ${endDay} ${endPart}`
+        : `${startPart} – ${endPart}`;
     }
 
-    return `${startText} – ${endText}`;
+    return formatCompactRange(startDt, endDt);
   };
   const renderEventContent = (arg) => {
     const title = arg.event?.title || "";
