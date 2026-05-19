@@ -198,7 +198,13 @@ export function EventEdit() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (showOnboardingHint && onboardingStep === 4) {
-      window.localStorage.setItem("eventkoi_onboarding_demo_complete", "1");
+      // Safari private mode / iframed admin throw on setItem — wrap so the
+      // editor render doesn't crash.
+      try {
+        window.localStorage.setItem("eventkoi_onboarding_demo_complete", "1");
+      } catch (e) {
+        // Best-effort onboarding preference.
+      }
     }
   }, [showOnboardingHint, onboardingStep]);
 

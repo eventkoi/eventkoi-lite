@@ -205,7 +205,11 @@ export function EventEditManageTickets() {
       acc[String(key)] = value;
       return acc;
     }, {});
-    window.localStorage.setItem(expandedStorageKey, JSON.stringify(stored));
+    try {
+      window.localStorage.setItem(expandedStorageKey, JSON.stringify(stored));
+    } catch (e) {
+      // Safari private mode can throw — preference loss is acceptable.
+    }
   }, [expandedTickets, expandedStorageKey, event?.id, hasLoadedTickets]);
 
   const handleToggle = (key) => {

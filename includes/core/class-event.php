@@ -881,7 +881,9 @@ class Event {
 				$day['all_day_timezone'],
 				$day['all_day_start_date'],
 				$day['all_day_end_date'],
-				$day['all_day_end_exclusive_date']
+				$day['all_day_end_exclusive_date'],
+				// Client-side React-key identity; never persist.
+				$day['_uid']
 			);
 
 			foreach ( array( 'start_date', 'end_date' ) as $date_key ) {
@@ -919,7 +921,9 @@ class Event {
 			unset(
 				$rule['all_day_start_date'],
 				$rule['all_day_end_date'],
-				$rule['all_day_end_exclusive_date']
+				$rule['all_day_end_exclusive_date'],
+				// Client-side React-key identity; never persist.
+				$rule['_uid']
 			);
 
 			foreach ( array( 'start_date', 'end_date' ) as $date_key ) {

@@ -321,6 +321,10 @@ export function EventDateMultiple({ showAttributes }) {
     end.setHours(17, 0, 0, 0);
 
     const newDay = {
+      // Stable React-key identifier (stripped server-side before persist).
+      // Was key={index} before — input focus + per-row state attached to
+      // the wrong row after middle-row delete.
+      _uid: `day_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       start_date: null,
       end_date: null,
       all_day: false,
@@ -393,10 +397,12 @@ export function EventDateMultiple({ showAttributes }) {
               : wpTz;
             const startDate = getDayStartDate(day, event, wpTz);
             const endDate = getDayEndDate(day, event, wpTz);
+            const rowKey = day._uid
+              || (day.start_date ? `srv_${day.start_date}_${day.end_date || ""}` : `idx_${index}`);
 
             return (
               <div
-                key={index}
+                key={rowKey}
                 className="flex flex-wrap items-center gap-2 md:gap-4 group"
               >
                 {/* Date Picker: updates both start and end date parts, preserves time */}

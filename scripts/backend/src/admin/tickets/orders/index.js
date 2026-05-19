@@ -131,7 +131,15 @@ export function Orders() {
     const from = dateRange.from ? new Date(dateRange.from).getTime() : 0;
     const to = dateRange.to ? new Date(dateRange.to).getTime() : Infinity;
     return data.filter((row) => {
-      const created = new Date(row.created_at).getTime();
+      // created_at may arrive as either UTC ISO or MySQL datetime without a
+      // zone. Plain `new Date()` parses the latter in BROWSER LOCAL time,
+      // misclassifying boundary rows. Normalize to UTC first.
+      const raw = String(row.created_at || "");
+      const iso =
+        /Z$|[+-]\d{2}:?\d{2}$/.test(raw)
+          ? raw
+          : raw.replace(" ", "T") + "Z";
+      const created = new Date(iso).getTime();
       return created >= from && created <= to;
     });
   }, [data, dateRange]);

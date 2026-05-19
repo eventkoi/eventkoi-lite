@@ -225,6 +225,8 @@ export const EventDateRecurring = memo(function EventDateRecurring({
     defaultEnd.setFullYear(defaultEnd.getFullYear() + 1);
 
     const rule = {
+      // Stable React-key identifier (stripped server-side before persist).
+      _uid: `rule_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       start_date: DateTime.fromJSDate(now, { zone: wpTz })
         .setZone("utc")
         .toISO({ suppressMilliseconds: true }),
@@ -414,6 +416,8 @@ export const EventDateRecurring = memo(function EventDateRecurring({
   return (
     <div className="flex flex-col gap-6">
       {rules.map((rule, index) => {
+      const ruleKey = rule._uid
+        || (rule.start_date ? `srv_${rule.start_date}_${rule.frequency || ""}_${rule.every || 1}` : `idx_${index}`);
       const start = normalizeJsDate(
         getDateInTimezone(ensureUtcZ(rule.start_date), wpTz)
       );
@@ -448,7 +452,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
         const safeMonths = Array.isArray(rule.months) ? rule.months : [];
 
         return (
-          <div key={index} className="border rounded-md p-4 space-y-6">
+          <div key={ruleKey} className="border rounded-md p-4 space-y-6">
             <div className="flex flex-wrap items-center gap-2 md:gap-4">
               <FloatingDatePicker
                 value={start}
