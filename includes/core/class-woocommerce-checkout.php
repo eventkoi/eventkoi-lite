@@ -572,10 +572,21 @@ class WooCommerce_Checkout {
 			return;
 		}
 
-		$lock_added = wp_cache_add( 'ek_wc_synced_' . absint( $wc_order_id ), 1, 'eventkoi_locks', HOUR_IN_SECONDS );
+		$lock_key   = 'ek_wc_synced_' . absint( $wc_order_id );
+		$lock_added = wp_cache_add( $lock_key, 1, 'eventkoi_locks', HOUR_IN_SECONDS );
 		if ( ! $lock_added ) {
 			return; // another worker / hook re-entry is already syncing this order.
 		}
+
+		// Release the lock if this handler dies before the durable
+		// _eventkoi_synced meta is written so the next WC status-change
+		// retry isn't silently rejected for an hour.
+		$release_lock = static function () use ( $lock_key, $order ) {
+			if ( 'yes' !== $order->get_meta( '_eventkoi_synced' ) ) {
+				wp_cache_delete( $lock_key, 'eventkoi_locks' );
+			}
+		};
+		register_shutdown_function( $release_lock );
 
 		$instance_ts         = absint( $order->get_meta( '_eventkoi_instance_ts' ) );
 		$event_title         = (string) $order->get_meta( '_eventkoi_event_title' );

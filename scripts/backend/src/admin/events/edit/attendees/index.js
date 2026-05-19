@@ -1863,9 +1863,17 @@ export function EventEditAttendees() {
             <SortButton title={__("Order date", "eventkoi-lite")} column={column} />
           ),
           cell: ({ row }) => {
-            const created = row.original.created_at
-              ? new Date(row.original.created_at).toISOString()
-              : "";
+            // created_at may arrive as either UTC ISO or MySQL datetime
+            // without a zone. Plain new Date() reads zone-less strings as
+            // browser-local, misclassifying boundary rows. Normalize to UTC.
+            const raw = String(row.original.created_at || "");
+            let created = "";
+            if (raw) {
+              const iso = /Z$|[+-]\d{2}:?\d{2}$/.test(raw)
+                ? raw
+                : raw.replace(" ", "T") + "Z";
+              created = new Date(iso).toISOString();
+            }
             return (
               <div className="text-foreground whitespace-pre-line">
                 {formatWPtime(created)}
