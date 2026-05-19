@@ -138,27 +138,27 @@ export function DataTable({
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
-        {!hideStatusFilters && (
-          <div className="flex flex-wrap items-center text-sm gap-x-4 gap-y-2">
-            <StatusFilters
-              statusFilters={statusFilters}
-              base={base}
-              data={data}
-              counts={statusCounts}
-            />
-          </div>
-        )}
-        {!hideBottomBar && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+          {!hideStatusFilters && (
+            <div className="flex flex-wrap items-center text-sm gap-x-4 gap-y-2">
+              <StatusFilters
+                statusFilters={statusFilters}
+                base={base}
+                data={data}
+                counts={statusCounts}
+              />
+            </div>
+          )}
+          {!hideBottomBar && (
             <div className="text-sm text-muted-foreground">
               <TableSelectedRows table={table} compact={compact} />
             </div>
-            {table.getRowModel().rows?.length > 0 && (
-              <div className="flex items-center gap-3 text-foreground">
-                <TablePage table={table} />
-                <Pagination table={table} />
-              </div>
-            )}
+          )}
+        </div>
+        {!hideBottomBar && table.getRowModel().rows?.length > 0 && (
+          <div className="flex items-center gap-4 text-foreground">
+            <TablePage table={table} />
+            <Pagination table={table} />
           </div>
         )}
       </div>
@@ -312,7 +312,7 @@ export function DataTable({
           </div>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-12 text-foreground">
             <RowsPerPage table={table} />
-            <div className="flex gap-4">
+            <div className="flex items-center gap-4">
               <TablePage table={table} />
               <Pagination table={table} />
             </div>
