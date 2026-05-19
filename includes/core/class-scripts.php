@@ -134,6 +134,9 @@ class Scripts {
 			'day_start_time'       => $settings['day_start_time'] ?? '07:00',
 			'locale'               => determine_locale(),
 			'startday'             => empty( $calendar['startday'] ) ? $settings['week_starts_on'] : $calendar['startday'],
+			'working_days'         => isset( $settings['working_days'] ) && is_array( $settings['working_days'] )
+				? array_values( array_map( 'intval', $settings['working_days'] ) )
+				: array( 0, 1, 2, 3, 4 ),
 				'auto_detect_timezone' => rest_sanitize_boolean( $settings['auto_detect_timezone'] ?? false ),
 			'nonce'                => wp_create_nonce( 'wp_rest' ),
 			'rsvp_user'            => $rsvp_user,

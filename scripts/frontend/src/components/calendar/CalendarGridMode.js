@@ -575,6 +575,18 @@ export function CalendarGridMode({
         headerToolbar={false}
         slotEventOverlap={true}
         nowIndicator={true}
+        dayCellClassNames={(arg) => {
+          // Tint days NOT in the user's configured working_days
+          // (eventkoi_settings.working_days, Mon-first 0..6). Falls
+          // back to Sat/Sun when the setting is unavailable.
+          const wd = window.eventkoi_params?.working_days;
+          const jsDay = arg.date.getDay();
+          const monFirst = (jsDay + 6) % 7;
+          const isWorking = Array.isArray(wd)
+            ? wd.map((n) => Number(n)).includes(monFirst)
+            : monFirst < 5;
+          return isWorking ? "" : "ek-non-working-day";
+        }}
         eventsSet={() => scheduleCascade()}
         windowResize={() => scheduleCascade()}
         contentHeight={isTimeGridView ? timeGridHeight : "auto"}
