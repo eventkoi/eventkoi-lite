@@ -574,6 +574,7 @@ export function CalendarGridMode({
         firstDay={start_day}
         headerToolbar={false}
         slotEventOverlap={true}
+        nowIndicator={true}
         eventsSet={() => scheduleCascade()}
         windowResize={() => scheduleCascade()}
         contentHeight={isTimeGridView ? timeGridHeight : "auto"}

@@ -270,6 +270,21 @@
     border: 0;
     box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.18);
   }
+  // Google-Calendar-style "now" indicator: thin red line across all
+  // timegrid columns with a circular dot pinned to the time axis.
+  .fc-timegrid-now-indicator-line {
+    border-top: 2px solid #ea4335;
+    border-color: #ea4335;
+  }
+  .fc-timegrid-now-indicator-arrow {
+    border: 0;
+    margin-top: -5px;
+    margin-left: -5px;
+    width: 10px;
+    height: 10px;
+    background: #ea4335;
+    border-radius: 50%;
+  }
   // The overlapping (level > 0) event gets a strong card edge — a white
   // ring against its underlying neighbor plus a soft drop-shadow so it
   // visibly floats on top.
