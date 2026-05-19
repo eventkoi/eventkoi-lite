@@ -264,11 +264,13 @@ class Shortcodes {
 		wp_enqueue_style( 'eventkoi-frontend' );
 
 		$css = sprintf(
-			':root { --fc-event-bg-color: %1$s; --fc-event-border-color: %1$s; }',
+			':root { --fc-event-bg-color: %1$s; --fc-event-border-color: %1$s; --ek-calendar-accent: %1$s; }',
 			esc_attr( $calendar::get_color() )
 		);
 
-		wp_add_inline_style( 'eventkoi-frontend', $css );
+		// eventkoi-frontend is only registered in production; attach to
+		// eventkoi-frontend-tw which is always registered (dev + prod).
+		wp_add_inline_style( 'eventkoi-frontend-tw', $css );
 
 		return ob_get_clean();
 	}

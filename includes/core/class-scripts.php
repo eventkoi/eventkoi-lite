@@ -168,11 +168,14 @@ class Scripts {
 				$color    = $calendar::get_color();
 
 				$css = sprintf(
-					':root { --fc-event-bg-color: %1$s; --fc-event-border-color: %1$s; }',
+					':root { --fc-event-bg-color: %1$s; --fc-event-border-color: %1$s; --ek-calendar-accent: %1$s; }',
 					esc_attr( $color )
 				);
 
-				wp_add_inline_style( 'eventkoi-frontend', $css );
+				// eventkoi-frontend is only registered in production; in dev
+				// mode (vite) it doesn't exist and wp_add_inline_style would
+				// silently no-op. eventkoi-frontend-tw is always registered.
+				wp_add_inline_style( 'eventkoi-frontend-tw', $css );
 			}
 		}
 	}
