@@ -249,6 +249,37 @@ export function CalendarGridMode({
       arg.event.end > arg.event.start
     );
   };
+  const getCalendarDateKey = (date, dateStr) => {
+    let dt = dateStr ? DateTime.fromISO(dateStr, { setZone: true }) : null;
+    if (!dt?.isValid && date instanceof Date) {
+      dt = DateTime.fromJSDate(date, { zone: calendarTimeZone || "UTC" });
+    }
+    if (!dt?.isValid) {
+      return "";
+    }
+    return (calendarTimeZone ? dt.setZone(calendarTimeZone) : dt).toISODate();
+  };
+  const isTimedMultiDayEvent = (arg) => {
+    if (!shouldShowEventEndTime(arg)) {
+      return false;
+    }
+    const startKey = getCalendarDateKey(arg.event.start, arg.event.startStr);
+    const endKey = getCalendarDateKey(arg.event.end, arg.event.endStr);
+    return !!startKey && !!endKey && startKey !== endKey;
+  };
+  const formatCalendarEndDay = (date, dateStr) => {
+    let dt = dateStr ? DateTime.fromISO(dateStr, { setZone: true }) : null;
+    if (!dt?.isValid && date instanceof Date) {
+      dt = DateTime.fromJSDate(date, { zone: calendarTimeZone || "UTC" });
+    }
+    if (!dt?.isValid) {
+      return "";
+    }
+    if (calendarTimeZone) {
+      dt = dt.setZone(calendarTimeZone);
+    }
+    return dt.setLocale(localeToUse).toFormat("ccc");
+  };
   const formatCalendarTimeRange = (arg) => {
     const startText = formatCalendarTime(arg.event.start, arg.event.startStr);
 
@@ -266,6 +297,20 @@ export function CalendarGridMode({
       return startText;
     }
 
+    // Google-style multi-day display: start segment shows the full range
+    // including the end weekday ("3:00 am – Sun 8:00 pm"). Middle/end
+    // segments show title only.
+    if (isTimedMultiDayEvent(arg)) {
+      const isStartSegment = arg.isStart !== false;
+      if (!isStartSegment) {
+        return "";
+      }
+      const endDay = formatCalendarEndDay(arg.event.end, arg.event.endStr);
+      return endDay
+        ? `${startText} – ${endDay} ${endText}`
+        : `${startText} – ${endText}`;
+    }
+
     return `${startText} – ${endText}`;
   };
   const renderEventContent = (arg) => {
@@ -275,7 +320,10 @@ export function CalendarGridMode({
       return <span className="fc-event-title">{title}</span>;
     }
 
-    const timeText = formatCalendarTimeRange(arg) || arg.timeText;
+    // Empty return from formatCalendarTimeRange is intentional (multi-day
+    // middle/end segment, Google style). Don't fall through to FC's
+    // default which would resurrect the hidden time.
+    const timeText = formatCalendarTimeRange(arg);
 
     return (
       <>
