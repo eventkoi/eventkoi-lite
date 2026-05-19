@@ -355,6 +355,8 @@ class Activator {
 			  WHERE r.instance_ts <> CAST(pm.meta_value AS UNSIGNED)"
 		);
 
+		$audit_entries = array();
+
 		foreach ( (array) $event_ids as $event_id ) {
 			$event_id = (int) $event_id;
 			if ( $event_id <= 0 ) {
@@ -371,6 +373,33 @@ class Activator {
 				continue;
 			}
 
+			// Count stale rows and would-collide rows so admins can audit
+			// migration outcome instead of guessing why attendee counts shifted.
+			$stale_count = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$rsvps_table} WHERE event_id = %d AND instance_ts <> %d",
+					$event_id,
+					$current_ts
+				)
+			);
+
+			$would_collide = (int) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COUNT(*) FROM {$rsvps_table} r1
+					   WHERE r1.event_id = %d
+					     AND r1.instance_ts <> %d
+					     AND EXISTS (
+					        SELECT 1 FROM {$rsvps_table} r2
+					         WHERE r2.event_id = r1.event_id
+					           AND r2.instance_ts = %d
+					           AND r2.email = r1.email
+					     )",
+					$event_id,
+					$current_ts,
+					$current_ts
+				)
+			);
+
 			$wpdb->query(
 				$wpdb->prepare(
 					"UPDATE IGNORE {$rsvps_table}
@@ -382,8 +411,32 @@ class Activator {
 					$current_ts
 				)
 			);
+			$migrated = (int) $wpdb->rows_affected;
+			$dropped  = max( 0, $stale_count - $migrated );
+
+			if ( $stale_count > 0 ) {
+				$audit_entries[] = array(
+					'event_id'       => $event_id,
+					'target_ts'      => $current_ts,
+					'stale_total'    => $stale_count,
+					'would_collide'  => $would_collide,
+					'migrated'       => $migrated,
+					'dropped_silent' => $dropped,
+				);
+			}
 		}
 		// phpcs:enable
+
+		if ( ! empty( $audit_entries ) ) {
+			update_option(
+				'eventkoi_rsvp_heal_audit',
+				array(
+					'completed_at' => gmdate( 'c' ),
+					'entries'      => $audit_entries,
+				),
+				false
+			);
+		}
 
 		update_option( 'eventkoi_rsvp_instance_ts_healed', '1' );
 	}

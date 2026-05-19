@@ -263,6 +263,14 @@ class Event {
 			return rest_ensure_response( $response );
 		}
 
+		// Per-event ownership / capability check. The route-level cap is a
+		// flat boolean: any holder could otherwise edit any event regardless
+		// of authorship. Defer to WP's map-meta-cap so sites that grant the
+		// EventKoi cap to a self-service "submitter" role retain ownership.
+		if ( ! current_user_can( 'edit_post', $event_id ) ) {
+			return new WP_Error( 'eventkoi_forbidden', __( 'You are not allowed to edit this event.', 'eventkoi-lite' ), array( 'status' => 403 ) );
+		}
+
 		$query    = new SingleEvent( $event_id );
 		$response = $query::update( $event, $status );
 
@@ -281,6 +289,10 @@ class Event {
 
 		if ( empty( $event_id ) ) {
 			return new WP_Error( 'eventkoi_missing_id', __( 'Missing event ID.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
+		if ( ! current_user_can( 'edit_post', $event_id ) ) {
+			return new WP_Error( 'eventkoi_forbidden', __( 'You are not allowed to restore this event.', 'eventkoi-lite' ), array( 'status' => 403 ) );
 		}
 
 		$response = SingleEvent::restore_event( $event_id );
@@ -302,6 +314,10 @@ class Event {
 			return new WP_Error( 'eventkoi_missing_id', __( 'Missing event ID.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
+		if ( ! current_user_can( 'read_post', $event_id ) ) {
+			return new WP_Error( 'eventkoi_forbidden', __( 'You are not allowed to duplicate this event.', 'eventkoi-lite' ), array( 'status' => 403 ) );
+		}
+
 		$event    = new SingleEvent( $event_id );
 		$response = $event::duplicate_event();
 
@@ -320,6 +336,10 @@ class Event {
 
 		if ( empty( $event_id ) ) {
 			return new WP_Error( 'eventkoi_missing_id', __( 'Missing event ID.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
+		if ( ! current_user_can( 'delete_post', $event_id ) ) {
+			return new WP_Error( 'eventkoi_forbidden', __( 'You are not allowed to delete this event.', 'eventkoi-lite' ), array( 'status' => 403 ) );
 		}
 
 		$response = SingleEvent::delete_event( $event_id );
@@ -379,6 +399,10 @@ class Event {
 				'eventkoi_invalid_instance_data',
 				__( 'Missing or invalid instance override data.', 'eventkoi-lite' )
 			);
+		}
+
+		if ( ! current_user_can( 'edit_post', $event_id ) ) {
+			return new \WP_Error( 'eventkoi_forbidden', __( 'You are not allowed to edit this event.', 'eventkoi-lite' ), array( 'status' => 403 ) );
 		}
 
 		$existing = eventkoi_get_instance_override( $event_id, $timestamp );
