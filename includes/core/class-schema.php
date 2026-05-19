@@ -85,6 +85,16 @@ class Schema {
 			$schema['offers'] = $offers;
 		}
 
+		// Emit eventSchedule for recurring series so Google understands the
+		// rule and doesn't flag the clamped endDate as inconsistent with the
+		// long-running series.
+		if ( 'recurring' === $event::get_date_type() ) {
+			$schedules = self::get_schema_event_schedule( $event );
+			if ( ! empty( $schedules ) ) {
+				$schema['eventSchedule'] = $schedules;
+			}
+		}
+
 		// Allow developers to modify the schema.
 		$schema = apply_filters( 'eventkoi_get_event_schema', $schema );
 
@@ -157,10 +167,137 @@ class Schema {
 	 * @param Event $event Event model.
 	 * @return array{start:string,end:string}
 	 */
+	/**
+	 * Build schema.org Schedule entries for a recurring series so Google can
+	 * interpret the rule (the single-Event payload only describes the first
+	 * occurrence; the Schedule carries the full recurrence).
+	 *
+	 * @param Event $event Event model.
+	 * @return array<int,array<string,mixed>>
+	 */
+	private static function get_schema_event_schedule( Event $event ) {
+		$rules = $event::get_recurrence_rules();
+		if ( ! is_array( $rules ) || empty( $rules ) ) {
+			return array();
+		}
+
+		$tz       = self::get_schema_timezone();
+		$tz_name  = ( $tz instanceof \DateTimeZone ) ? $tz->getName() : 'UTC';
+		$schedules = array();
+
+		$weekday_names = array(
+			0 => 'https://schema.org/Sunday',
+			1 => 'https://schema.org/Monday',
+			2 => 'https://schema.org/Tuesday',
+			3 => 'https://schema.org/Wednesday',
+			4 => 'https://schema.org/Thursday',
+			5 => 'https://schema.org/Friday',
+			6 => 'https://schema.org/Saturday',
+		);
+
+		foreach ( $rules as $rule ) {
+			if ( ! is_array( $rule ) || empty( $rule['start_date'] ) || empty( $rule['frequency'] ) ) {
+				continue;
+			}
+
+			$interval = max( 1, absint( $rule['interval'] ?? 1 ) );
+
+			switch ( (string) $rule['frequency'] ) {
+				case 'day':
+				case 'working_day':
+					$repeat = 'P' . $interval . 'D';
+					break;
+				case 'week':
+					$repeat = 'P' . $interval . 'W';
+					break;
+				case 'month':
+					$repeat = 'P' . $interval . 'M';
+					break;
+				case 'year':
+					$repeat = 'P' . $interval . 'Y';
+					break;
+				default:
+					continue 2;
+			}
+
+			$entry = array(
+				'@type'           => 'Schedule',
+				'repeatFrequency' => $repeat,
+				'scheduleTimezone' => $tz_name,
+			);
+
+			$start_local = self::utc_to_local_iso( (string) $rule['start_date'] );
+			if ( '' !== $start_local ) {
+				$entry['startDate'] = $start_local;
+			}
+
+			if ( ! empty( $rule['end_date'] ) ) {
+				$end_local = self::utc_to_local_iso( (string) $rule['end_date'] );
+				if ( '' !== $end_local ) {
+					$entry['endDate'] = $end_local;
+				}
+			}
+
+			if ( ! empty( $rule['ends_after'] ) ) {
+				$entry['repeatCount'] = absint( $rule['ends_after'] );
+			}
+
+			if ( ! empty( $rule['ends_on'] ) ) {
+				$entry['endDate'] = self::utc_to_local_iso( (string) $rule['ends_on'] );
+			}
+
+			$by_day = array();
+			if ( 'working_day' === $rule['frequency'] ) {
+				$by_day = array(
+					$weekday_names[1],
+					$weekday_names[2],
+					$weekday_names[3],
+					$weekday_names[4],
+					$weekday_names[5],
+				);
+			} elseif ( ! empty( $rule['weekdays'] ) && is_array( $rule['weekdays'] ) ) {
+				foreach ( $rule['weekdays'] as $w ) {
+					$wi = (int) $w;
+					if ( isset( $weekday_names[ $wi ] ) ) {
+						$by_day[] = $weekday_names[ $wi ];
+					}
+				}
+			}
+			if ( ! empty( $by_day ) ) {
+				$entry['byDay'] = array_values( array_unique( $by_day ) );
+			}
+
+			if ( ! empty( $rule['months'] ) && is_array( $rule['months'] ) ) {
+				$months = array_values( array_filter( array_map( 'absint', $rule['months'] ) ) );
+				if ( ! empty( $months ) ) {
+					$entry['byMonth'] = $months;
+				}
+			}
+
+			$schedules[] = $entry;
+		}
+
+		return $schedules;
+	}
+
 	private static function get_schema_dates( Event $event ) {
 		$context   = self::get_schema_date_context( $event );
 		$start_utc = (string) ( $context['start_date'] ?? '' );
 		$end_utc   = (string) ( $context['end_date'] ?? '' );
+
+		// Google rejects Event entries whose endDate is more than ~24h after
+		// startDate without an eventSchedule. For a recurring series without a
+		// specific instance selected, our stored end_date is the LAST
+		// occurrence's end. Clamp to the FIRST occurrence's end and let
+		// eventSchedule (emitted by add_event_schema) describe the rule.
+		if ( 'recurring' === $event::get_date_type() ) {
+			$rules = $event::get_recurrence_rules();
+			if ( ! empty( $rules[0]['end_date'] ) ) {
+				$end_utc = (string) $rules[0]['end_date'];
+			} elseif ( ! empty( $rules[0]['start_date'] ) ) {
+				$end_utc = (string) $rules[0]['start_date'];
+			}
+		}
 
 		if ( ! empty( $context['all_day'] ) ) {
 			return array(
