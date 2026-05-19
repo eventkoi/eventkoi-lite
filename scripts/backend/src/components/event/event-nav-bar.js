@@ -193,29 +193,34 @@ export function EventNavBar() {
 
     const eventToSave = { ...event, wp_status: status };
 
-    const response = await handleAction("update_event", { event: eventToSave });
+    // try/finally so the publish/disable flags always reset, even when
+    // handleAction throws. Previously the reset only ran on success, leaving
+    // the publish button permanently disabled until full reload.
+    try {
+      const response = await handleAction("update_event", { event: eventToSave });
 
-    if (response?.id) {
-      // Always trust the server response for the ID
-      setEvent?.(response);
+      if (response?.id) {
+        // Always trust the server response for the ID
+        setEvent?.(response);
 
-      // Mark that we have a permanent ID now
-      if (!hasSavedOnce.current) {
-        hasSavedOnce.current = true;
+        // Mark that we have a permanent ID now
+        if (!hasSavedOnce.current) {
+          hasSavedOnce.current = true;
 
-        // Fix the URL only once
-        if (window.location.hash.includes("/events/add/")) {
-          window.location.hash = window.location.hash.replace(
-            "/events/add/",
-            `/events/${response.id}/`
-          );
+          // Fix the URL only once
+          if (window.location.hash.includes("/events/add/")) {
+            window.location.hash = window.location.hash.replace(
+              "/events/add/",
+              `/events/${response.id}/`
+            );
+          }
         }
       }
-    }
-
-    if (status === "publish") {
-      setIsPublishing?.(false);
-      setDisableAutoSave?.(false);
+    } finally {
+      if (status === "publish") {
+        setIsPublishing?.(false);
+        setDisableAutoSave?.(false);
+      }
     }
   };
 

@@ -472,54 +472,68 @@ export function EventEditManageTickets() {
       }
 
       const savedTickets = [];
+      // Track persisted indices so a partial loop-failure can splice the
+      // already-IDed tickets back into local state. Without this, retry
+      // re-POSTs the successful-but-unacknowledged tickets → duplicates.
+      const persistedIndexes = new Set();
 
-      for (let index = 0; index < filteredTickets.length; index += 1) {
-        const ticket = filteredTickets[index];
-        const payload = {
-          name: ticket.name,
-          description: ticket.description || "",
-          price: ticket.price !== "" ? parseFloat(ticket.price) : 0,
-          currency: ticket.currency || DEFAULT_CURRENCY,
-          quantity_available:
-            ticket.quantity_available === "" ||
-            ticket.quantity_available === null
-              ? null
-              : parseInt(ticket.quantity_available, 10),
-          max_per_order:
-            ticket.max_per_order === "" || ticket.max_per_order === null
-              ? null
-              : parseInt(ticket.max_per_order, 10),
-          sale_start:
-            ticket.sale_start === undefined || ticket.sale_start === null
-              ? ""
-              : ticket.sale_start,
-          sale_end:
-            ticket.sale_end === undefined || ticket.sale_end === null
-              ? ""
-              : ticket.sale_end,
-          terms_conditions: ticket.terms_conditions || "",
-          sort_order: index,
-          status: ticket.status || "active",
-        };
+      try {
+        for (let index = 0; index < filteredTickets.length; index += 1) {
+          const ticket = filteredTickets[index];
+          const payload = {
+            name: ticket.name,
+            description: ticket.description || "",
+            price: ticket.price !== "" ? parseFloat(ticket.price) : 0,
+            currency: ticket.currency || DEFAULT_CURRENCY,
+            quantity_available:
+              ticket.quantity_available === "" ||
+              ticket.quantity_available === null
+                ? null
+                : parseInt(ticket.quantity_available, 10),
+            max_per_order:
+              ticket.max_per_order === "" || ticket.max_per_order === null
+                ? null
+                : parseInt(ticket.max_per_order, 10),
+            sale_start:
+              ticket.sale_start === undefined || ticket.sale_start === null
+                ? ""
+                : ticket.sale_start,
+            sale_end:
+              ticket.sale_end === undefined || ticket.sale_end === null
+                ? ""
+                : ticket.sale_end,
+            terms_conditions: ticket.terms_conditions || "",
+            sort_order: index,
+            status: ticket.status || "active",
+          };
 
-        if (ticket.id) {
-          const response = await callLocalApi(`tickets/${ticket.id}`, {
-            method: "PUT",
-            data: payload,
-          });
-          savedTickets.push(normalizeTicket(response?.ticket || ticket));
-        } else {
-          const response = await callLocalApi(
-            `events/${event.id}/tickets`,
-            {
-              method: "POST",
+          if (ticket.id) {
+            const response = await callLocalApi(`tickets/${ticket.id}`, {
+              method: "PUT",
               data: payload,
+            });
+            savedTickets.push(normalizeTicket(response?.ticket || ticket));
+            persistedIndexes.add(index);
+          } else {
+            const response = await callLocalApi(
+              `events/${event.id}/tickets`,
+              {
+                method: "POST",
+                data: payload,
+              }
+            );
+            if (response?.ticket) {
+              savedTickets.push(normalizeTicket(response.ticket));
+              persistedIndexes.add(index);
             }
-          );
-          if (response?.ticket) {
-            savedTickets.push(normalizeTicket(response.ticket));
           }
         }
+      } catch (loopError) {
+        const remaining = filteredTickets
+          .map((t, i) => (persistedIndexes.has(i) ? null : t))
+          .filter(Boolean);
+        setTickets([...savedTickets, ...remaining]);
+        throw loopError;
       }
 
       setTickets(savedTickets);

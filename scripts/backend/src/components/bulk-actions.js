@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { showToast, showToastError } from "@/lib/toast";
 
 import { EllipsisVertical } from "lucide-react";
 import { __, sprintf } from "@wordpress/i18n";
@@ -77,22 +78,36 @@ export function BulkActions({
 
     const apiURL = `${eventkoi_params.api}/${action}_${base}`;
 
-    await apiRequest({
-      path: apiURL,
-      method: "post",
-      data: data,
-      headers: {
-        "EVENTKOI-API-KEY": eventkoi_params.api_key,
-      },
-    })
-      .then((response) => {
-        table.setRowSelection({});
-        fetchResults(response.success);
-        if (refreshCounts) {
-          refreshCounts();
-        }
-      })
-      .catch((error) => {});
+    try {
+      const response = await apiRequest({
+        path: apiURL,
+        method: "post",
+        data: data,
+        headers: {
+          "EVENTKOI-API-KEY": eventkoi_params.api_key,
+        },
+      });
+      table.setRowSelection({});
+      fetchResults(response?.success);
+      if (refreshCounts) {
+        refreshCounts();
+      }
+    } catch (error) {
+      // The previous .catch(() => {}) swallowed every failure — table didn't
+      // refresh, selection stayed, user kept clicking with no feedback.
+      const fallback =
+        action === "restore"
+          ? __("Failed to restore selected items.", "eventkoi-lite")
+          : action === "remove"
+          ? __("Failed to permanently delete selected items.", "eventkoi-lite")
+          : action === "delete"
+          ? __("Failed to move selected items to trash.", "eventkoi-lite")
+          : action === "duplicate"
+          ? __("Failed to duplicate selected items.", "eventkoi-lite")
+          : __("Bulk action failed.", "eventkoi-lite");
+      showToastError(String(error?.message || "").trim() || fallback);
+      fetchResults?.();
+    }
   };
 
   return (
@@ -127,7 +142,8 @@ export function BulkActions({
             <DropdownMenuItem
               disabled={selectedCount == 0}
               onClick={() => {
-                runAction("restore");
+                setConfirmAction("restore");
+                setConfirmOpen(true);
               }}
             >
               <span>{__("Restore", "eventkoi-lite")}</span>
@@ -135,7 +151,8 @@ export function BulkActions({
             <DropdownMenuItem
               disabled={selectedCount == 0}
               onClick={() => {
-                runAction("remove");
+                setConfirmAction("remove");
+                setConfirmOpen(true);
               }}
             >
               <span>{__("Delete permanently", "eventkoi-lite")}</span>
@@ -147,7 +164,8 @@ export function BulkActions({
               <DropdownMenuItem
                 disabled={selectedCount == 0}
                 onClick={() => {
-                  runAction("duplicate");
+                  setConfirmAction("duplicate");
+                  setConfirmOpen(true);
                 }}
               >
                 <span>{__("Duplicate", "eventkoi-lite")}</span>
@@ -156,7 +174,8 @@ export function BulkActions({
             <DropdownMenuItem
               disabled={selectedCount == 0}
               onClick={() => {
-                runAction("delete");
+                setConfirmAction("delete");
+                setConfirmOpen(true);
               }}
             >
               <span>
@@ -210,6 +229,41 @@ export function BulkActions({
           confirmAction === "unarchive"
             ? __("Unarchive", "eventkoi-lite")
             : __("Archive", "eventkoi-lite")
+        }
+        onConfirm={() => runAction(confirmAction)}
+      />
+    )}
+    {!isOrders && ["delete","remove","restore","duplicate"].includes(confirmAction) && (
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        icon={confirmAction === "remove" ? "delete" : "default"}
+        title={
+          confirmAction === "remove"
+            ? __("Delete permanently?", "eventkoi-lite")
+            : confirmAction === "delete"
+            ? __("Move to trash?", "eventkoi-lite")
+            : confirmAction === "restore"
+            ? __("Restore?", "eventkoi-lite")
+            : __("Duplicate?", "eventkoi-lite")
+        }
+        description={
+          confirmAction === "remove"
+            ? sprintf(__("%d item(s) will be permanently deleted. This cannot be undone.", "eventkoi-lite"), selectedCount)
+            : confirmAction === "delete"
+            ? sprintf(__("%d item(s) will be moved to trash. You can restore them later.", "eventkoi-lite"), selectedCount)
+            : confirmAction === "restore"
+            ? sprintf(__("%d item(s) will be restored from trash.", "eventkoi-lite"), selectedCount)
+            : sprintf(__("%d duplicate item(s) will be created as drafts.", "eventkoi-lite"), selectedCount)
+        }
+        confirmLabel={
+          confirmAction === "remove"
+            ? __("Delete permanently", "eventkoi-lite")
+            : confirmAction === "delete"
+            ? __("Move to trash", "eventkoi-lite")
+            : confirmAction === "restore"
+            ? __("Restore", "eventkoi-lite")
+            : __("Duplicate", "eventkoi-lite")
         }
         onConfirm={() => runAction(confirmAction)}
       />
