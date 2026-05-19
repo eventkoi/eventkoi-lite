@@ -156,11 +156,22 @@ export default function Edit({
   const [allEvents, setAllEvents] = useState([]);
   const [view, setView] = useState();
 
-  // Define calendars once at the top
-  const calendars =
-    attributes.calendars && attributes.calendars.length > 0
-      ? attributes.calendars.map(String).join(",")
-      : null;
+  // Define calendars once at the top.
+  // Honor "Select all calendars": frontend expands the empty list to
+  // every term ID at render time — mirror that here so editor preview
+  // matches what visitors see.
+  const allCalendarIds =
+    Array.isArray(eventkoi_params?.calendars)
+      ? eventkoi_params.calendars
+          .map((c) => c?.id ?? c?.term_id)
+          .filter((id) => id && Number(id) > 0)
+          .map(String)
+      : [];
+  const calendars = attributes?.selectAllCalendars
+    ? (allCalendarIds.length > 0 ? allCalendarIds.join(",") : null)
+    : attributes.calendars && attributes.calendars.length > 0
+    ? attributes.calendars.map(String).join(",")
+    : null;
 
   let id = attributes.calendar_id;
 
