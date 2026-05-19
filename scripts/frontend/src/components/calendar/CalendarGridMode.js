@@ -73,11 +73,10 @@ const getEventUrlWithTimezone = (url, timezone, calendarTimeZone) => {
 
 // Google-Calendar-style cascade for overlapping events in week/day view.
 // FullCalendar's default splits overlappers into equal-width side-by-side
-// columns; we instead indent each later event by CASCADE_GUTTER and let it
-// extend to the column's right edge so events remain readable and the
-// stacking order is visible.
-const CASCADE_GUTTER = 14;
-
+// columns. We instead let each subsequent overlapper take a generous left
+// indent (so the underlying event's left half stays readable) while still
+// extending to the column's right edge. With rounded corners + shadow on
+// the overlapper, the stack reads as separate floating cards.
 const cascadeTimegridColumn = (col) => {
   const harnesses = Array.from(
     col.querySelectorAll(":scope > .fc-timegrid-event-harness")
@@ -87,9 +86,12 @@ const cascadeTimegridColumn = (col) => {
       h.style.insetInlineStart = "0";
       h.style.insetInlineEnd = "0";
       h.style.zIndex = "1";
+      h.classList.remove("ek-cascade-overlap");
     });
     return;
   }
+
+  const colWidth = col.getBoundingClientRect().width || 200;
 
   const rects = harnesses.map((el) => {
     const top = parseFloat(el.style.top) || 0;
@@ -122,8 +124,14 @@ const cascadeTimegridColumn = (col) => {
     active.push({ bottom: r.bottom, level });
   });
 
+  // Indent each level by ~45% of the column width so the lower event's
+  // left half stays clear and readable. Cap at 140px to avoid silly
+  // indents on very wide columns; floor at 28px so narrow columns still
+  // show a meaningful offset.
+  const gutter = Math.max(28, Math.min(colWidth * 0.45, 140));
+
   rects.forEach((r) => {
-    r.el.style.insetInlineStart = `${r.level * CASCADE_GUTTER}px`;
+    r.el.style.insetInlineStart = `${r.level * gutter}px`;
     r.el.style.insetInlineEnd = "0";
     r.el.style.zIndex = String(r.level + 1);
     if (r.level > 0) {

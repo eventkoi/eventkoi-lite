@@ -208,7 +208,7 @@
     }
   }
   .fc-timegrid .fc-event-main {
-    font-size: 14px;
+    font-size: 13px;
   }
   .fc-timegrid-slot {
     font-size: 14px;
@@ -220,18 +220,34 @@
     font-size: 15px;
   }
   .fc-timegrid-col .fc-event-main {
-    padding: 4px;
+    padding: 4px 6px;
+    .fc-event-time,
+    .fc-event-title {
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 100%;
+    }
     .fc-event-title {
       font-weight: 500;
     }
   }
-  // Google-Calendar-style cascade for overlapping timegrid events.
-  // The indent and z-index are set inline by cascadeTimegridColumn(); CSS
-  // gives the overlappers a thin white separator + soft shadow so the
-  // stack is visually distinct rather than reading as one merged block.
+  // Google-Calendar-style cards for timegrid events: rounded corners
+  // + clipped content so overlapping cards never bleed into the next
+  // day column. Cascade indent + z-index are set inline by
+  // cascadeTimegridColumn().
+  .fc-timegrid-event {
+    border-radius: 8px;
+    border: 0;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.18);
+  }
+  // The overlapping (level > 0) event gets a strong card edge — a white
+  // ring against its underlying neighbor plus a soft drop-shadow so it
+  // visibly floats on top.
   .fc-timegrid-event-harness.ek-cascade-overlap .fc-timegrid-event {
-    box-shadow: -1px 0 0 0 rgb(255 255 255 / 0.95),
-      0 1px 4px rgb(0 0 0 / 0.18);
+    box-shadow: 0 0 0 2px #fff, 0 6px 14px rgb(0 0 0 / 0.22);
   }
   .fc-timegrid-axis-cushion::first-letter {
     text-transform: uppercase;
