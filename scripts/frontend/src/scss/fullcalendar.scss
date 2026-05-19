@@ -247,18 +247,27 @@
       text-overflow: ellipsis;
       max-width: 100%;
     }
+    // Multi-day continuation bars (Sat/Sun of a Fri-Sun event) span the
+    // whole column from 00:00, so the title would scroll off-screen as
+    // soon as the user scrolls to business hours. Sticky-pinning the
+    // title keeps it visible at the top of the bar's visible portion —
+    // matching Google Calendar's behavior.
     .fc-event-title {
       font-weight: 500;
+      position: sticky;
+      top: 4px;
     }
   }
-  // Google-Calendar-style cards for timegrid events: rounded corners
-  // + clipped content so overlapping cards never bleed into the next
-  // day column. Cascade indent + z-index are set inline by
-  // cascadeTimegridColumn().
+  // Google-Calendar-style cards for timegrid events. Cascade indent +
+  // z-index are set inline by cascadeTimegridColumn().
+  // NOTE: NO overflow on this element — any overflow (hidden / clip /
+  // auto) traps `position: sticky` on the title, defeating the keep-
+  // visible-on-scroll behavior for multi-day continuation bars. The
+  // .fc-event-time/.fc-event-title spans inside already clip via
+  // `text-overflow: ellipsis`, so text never escapes the card.
   .fc-timegrid-event {
     border-radius: 8px;
     border: 0;
-    overflow: hidden;
     box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.18);
   }
   // The overlapping (level > 0) event gets a strong card edge — a white
