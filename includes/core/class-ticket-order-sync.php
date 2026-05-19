@@ -211,12 +211,18 @@ class Ticket_Order_Sync {
 			self::$prefetched_ids = $existing_map;
 		}
 
+		// try/finally so the prefetched_ids static is always cleared even if
+		// sync_order_to_local throws. In persistent runners a stale map would
+		// otherwise cause the next batch to short-circuit with null IDs and
+		// INSERT duplicates.
 		$total = 0;
-		foreach ( $orders as $order ) {
-			$total += self::sync_order_to_local( $order );
+		try {
+			foreach ( $orders as $order ) {
+				$total += self::sync_order_to_local( $order );
+			}
+		} finally {
+			self::$prefetched_ids = null;
 		}
-
-		self::$prefetched_ids = null;
 
 		return $total;
 	}

@@ -323,8 +323,24 @@ class Rsvps {
 		$handle = fopen( 'php://temp', 'r+' );
 		fputcsv( $handle, array( 'Name', 'Email', 'Check-in code', 'Guests', 'RSVP date' ) );
 
+		// Prevent CSV-formula injection: any cell starting with =, +, -, @, tab
+		// or CR is interpreted as a formula by Excel/Sheets/Numbers. Attendee
+		// name fields are an open vector; prefix a single quote so the cell
+		// renders as text.
+		$sanitize_cell = static function ( $value ) {
+			$str = (string) $value;
+			if ( '' === $str ) {
+				return $str;
+			}
+			$first = $str[0];
+			if ( '=' === $first || '+' === $first || '-' === $first || '@' === $first || "\t" === $first || "\r" === $first ) {
+				return "'" . $str;
+			}
+			return $str;
+		};
+
 		foreach ( $rows as $row ) {
-			fputcsv( $handle, array_values( $row ) );
+			fputcsv( $handle, array_map( $sanitize_cell, array_values( $row ) ) );
 		}
 
 		rewind( $handle );
