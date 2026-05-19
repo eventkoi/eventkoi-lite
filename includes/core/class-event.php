@@ -1894,6 +1894,14 @@ class Event {
 			$standard_type = 'continuous';
 		}
 
+		// Defensive normalize: legacy / stale data may carry values like
+		// 'single' that the current code paths and UI don't accept. Map any
+		// unrecognised value to the safe default.
+		$allowed = array( 'continuous', 'selected' );
+		if ( ! in_array( $standard_type, $allowed, true ) ) {
+			$standard_type = 'continuous';
+		}
+
 		return apply_filters( 'eventkoi_get_event_standard_type', (string) $standard_type, self::$event_id, self::$event );
 	}
 
