@@ -113,6 +113,7 @@ const cascadeTimegridColumn = (col) => {
   rects.sort((a, b) => a.top - b.top || a.bottom - b.bottom);
 
   const active = [];
+  let maxLevel = 0;
   rects.forEach((r) => {
     for (let i = active.length - 1; i >= 0; i--) {
       if (active[i].bottom <= r.top + 0.5) active.splice(i, 1);
@@ -121,14 +122,21 @@ const cascadeTimegridColumn = (col) => {
     let level = 0;
     while (used.has(level)) level++;
     r.level = level;
+    if (level > maxLevel) maxLevel = level;
     active.push({ bottom: r.bottom, level });
   });
 
-  // Indent each level by ~45% of the column width so the lower event's
-  // left half stays clear and readable. Cap at 140px to avoid silly
-  // indents on very wide columns; floor at 28px so narrow columns still
-  // show a meaningful offset.
-  const gutter = Math.max(28, Math.min(colWidth * 0.45, 140));
+  // Scale the per-level indent to the cascade depth so the deepest card
+  // still has at least MIN_VISIBLE width. For a 2-event stack this falls
+  // out to ~45% of the column; deeper stacks use a smaller step so the
+  // bottom card isn't crushed.
+  const MIN_VISIBLE = 56;
+  const idealForDepth =
+    maxLevel > 0 ? (colWidth - MIN_VISIBLE) / maxLevel : colWidth * 0.45;
+  const gutter = Math.max(
+    20,
+    Math.min(idealForDepth, colWidth * 0.45, 140)
+  );
 
   rects.forEach((r) => {
     r.el.style.insetInlineStart = `${r.level * gutter}px`;
