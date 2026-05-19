@@ -58,6 +58,13 @@
     &.fc-daygrid-dot-event {
       background-color: transparent !important;
     }
+    // Block-bar events (all-day / multi-day) already paint their full
+    // background with the calendar color, so the colored dot is redundant
+    // — and being display:block it pushes the title onto a second line.
+    &.fc-h-event .fc-daygrid-event-dot,
+    &.fc-daygrid-block-event .fc-daygrid-event-dot {
+      display: none;
+    }
     // All-day / multi-day chip in week-view all-day row and month cells:
     // rounded card matching the timegrid event style.
     &.fc-h-event {

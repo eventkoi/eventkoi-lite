@@ -668,8 +668,16 @@ export function CalendarGridMode({
             const containerRect = document
               .querySelector(".fc")
               .getBoundingClientRect();
-            const relY = rect.bottom - containerRect.top + 6;
             const popoverWidth = 370;
+            // Multi-day harnesses can span hundreds of pixels of column
+            // height; anchoring to rect.bottom drops the popover far
+            // below the click. Anchor just below the click point and
+            // cap at the harness bottom.
+            const anchorY =
+              typeof e.clientY === "number"
+                ? Math.min(e.clientY + 14, rect.bottom + 6)
+                : rect.bottom + 6;
+            const relY = anchorY - containerRect.top;
 
             let relX;
             if (
