@@ -758,6 +758,16 @@ class Template {
 			return $block_content;
 		}
 
+		// Honor the Settings → Overview toggle (default true).
+		$settings = Settings::get();
+		$enabled  = ! isset( $settings['show_series_backlink'] )
+			|| '1' === (string) $settings['show_series_backlink']
+			|| 1 === $settings['show_series_backlink']
+			|| true === $settings['show_series_backlink'];
+		if ( ! $enabled ) {
+			return $block_content;
+		}
+
 		$instance_ts = function_exists( 'eventkoi_get_instance_id' ) ? eventkoi_get_instance_id() : null;
 
 		// Only apply to specific instances (not parent event).
