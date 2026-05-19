@@ -71,6 +71,74 @@ const getEventUrlWithTimezone = (url, timezone, calendarTimeZone) => {
   }
 };
 
+// Google-Calendar-style cascade for overlapping events in week/day view.
+// FullCalendar's default splits overlappers into equal-width side-by-side
+// columns; we instead indent each later event by CASCADE_GUTTER and let it
+// extend to the column's right edge so events remain readable and the
+// stacking order is visible.
+const CASCADE_GUTTER = 14;
+
+const cascadeTimegridColumn = (col) => {
+  const harnesses = Array.from(
+    col.querySelectorAll(":scope > .fc-timegrid-event-harness")
+  );
+  if (harnesses.length < 2) {
+    harnesses.forEach((h) => {
+      h.style.insetInlineStart = "0";
+      h.style.insetInlineEnd = "0";
+      h.style.zIndex = "1";
+    });
+    return;
+  }
+
+  const rects = harnesses.map((el) => {
+    const top = parseFloat(el.style.top) || 0;
+    const bottomCss = parseFloat(el.style.bottom);
+    const heightCss = parseFloat(el.style.height);
+    let bottom;
+    if (Number.isFinite(bottomCss)) {
+      const parentH = el.parentElement?.getBoundingClientRect().height || 0;
+      bottom = parentH - bottomCss;
+    } else if (Number.isFinite(heightCss)) {
+      bottom = top + heightCss;
+    } else {
+      const r = el.getBoundingClientRect();
+      bottom = top + r.height;
+    }
+    return { el, top, bottom };
+  });
+
+  rects.sort((a, b) => a.top - b.top || a.bottom - b.bottom);
+
+  const active = [];
+  rects.forEach((r) => {
+    for (let i = active.length - 1; i >= 0; i--) {
+      if (active[i].bottom <= r.top + 0.5) active.splice(i, 1);
+    }
+    const used = new Set(active.map((a) => a.level));
+    let level = 0;
+    while (used.has(level)) level++;
+    r.level = level;
+    active.push({ bottom: r.bottom, level });
+  });
+
+  rects.forEach((r) => {
+    r.el.style.insetInlineStart = `${r.level * CASCADE_GUTTER}px`;
+    r.el.style.insetInlineEnd = "0";
+    r.el.style.zIndex = String(r.level + 1);
+    if (r.level > 0) {
+      r.el.classList.add("ek-cascade-overlap");
+    } else {
+      r.el.classList.remove("ek-cascade-overlap");
+    }
+  });
+};
+
+const cascadeTimegrid = (root) => {
+  const cols = (root || document).querySelectorAll(".fc-timegrid-col-events");
+  cols.forEach(cascadeTimegridColumn);
+};
+
 export function CalendarGridMode({
   calendarRef,
   events,
@@ -105,6 +173,16 @@ export function CalendarGridMode({
       : null;
   const displayTimezoneKey = calendarTimeZone || timezone || "UTC";
   const previousTimezoneRef = useRef(displayTimezoneKey);
+  const cascadeScheduledRef = useRef(false);
+  const scheduleCascade = () => {
+    if (cascadeScheduledRef.current) return;
+    cascadeScheduledRef.current = true;
+    requestAnimationFrame(() => {
+      cascadeScheduledRef.current = false;
+      const root = calendarRef?.current?.elRef?.current || document;
+      cascadeTimegrid(root);
+    });
+  };
   const resolvedWpTimeFormat =
     (typeof eventkoi_params !== "undefined" &&
       eventkoi_params?.time_format_string) ||
@@ -392,6 +470,9 @@ export function CalendarGridMode({
         weekends={true}
         firstDay={start_day}
         headerToolbar={false}
+        slotEventOverlap={true}
+        eventsSet={() => scheduleCascade()}
+        windowResize={() => scheduleCascade()}
         contentHeight={isTimeGridView ? timeGridHeight : "auto"}
         expandRows={!isTimeGridView}
         height={isTimeGridView ? timeGridHeight : "auto"}
@@ -509,6 +590,10 @@ export function CalendarGridMode({
             "aria-label",
             `${info.event.title}, starts ${info.event.start.toLocaleString()}`,
           );
+
+          if (info.view?.type?.startsWith("timeGrid")) {
+            scheduleCascade();
+          }
 
           // Attach click handler to open your popover
           info.el.addEventListener("click", (e) => {
