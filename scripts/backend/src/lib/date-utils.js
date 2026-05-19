@@ -1216,6 +1216,14 @@ export function safeNormalizeTimeZone(tz) {
  */
 export function getInitialDate(attributes) {
   const now = DateTime.utc();
+
+  // Week view always lands on the week containing today, regardless of
+  // default month/year — matches the frontend so editor preview mirrors
+  // what visitors actually see.
+  if (attributes?.timeframe === "week") {
+    return now.toISODate();
+  }
+
   let year = now.year;
   let month = now.month;
 
