@@ -1279,3 +1279,99 @@ export function getInitialCalendarDate(calendar) {
   // Always return explicit first-of-month in UTC
   return DateTime.utc(year, month, 1).toISODate();
 }
+
+/**
+ * Internal helpers + WP PHP-format date formatter ported from Pro.
+ * Needed by block-panels/date-range-controls.js which imports
+ * formatWpDateTime from this module. Previously missing in Lite,
+ * which broke the production build (Rollup error at import time).
+ */
+function _ekOrdinalSuffix(day) {
+  const mod100 = day % 100;
+  if (mod100 >= 11 && mod100 <= 13) return "th";
+  switch (day % 10) {
+    case 1:
+      return "st";
+    case 2:
+      return "nd";
+    case 3:
+      return "rd";
+    default:
+      return "th";
+  }
+}
+
+function _ekPad(value, length = 2) {
+  return String(value).padStart(length, "0");
+}
+
+function _ekSwatchInternetTime(dt) {
+  const utc = dt.toUTC();
+  const seconds =
+    utc.hour * 3600 + utc.minute * 60 + utc.second + utc.millisecond / 1000;
+  const beats = Math.floor(((seconds + 3600) % 86400) / 86.4);
+  return _ekPad(beats, 3);
+}
+
+export function formatWpDateTime(dt, phpFormat = "F j, Y") {
+  if (!dt?.isValid) return "";
+
+  const handlers = {
+    Y: () => dt.toFormat("yyyy"),
+    y: () => dt.toFormat("yy"),
+    F: () => dt.toFormat("LLLL"),
+    M: () => dt.toFormat("LLL"),
+    m: () => dt.toFormat("LL"),
+    n: () => String(dt.month),
+    d: () => dt.toFormat("dd"),
+    j: () => String(dt.day),
+    N: () => String(dt.weekday),
+    S: () => _ekOrdinalSuffix(dt.day),
+    w: () => String(dt.weekday % 7),
+    z: () => String(dt.ordinal - 1),
+    D: () => dt.toFormat("ccc"),
+    l: () => dt.toFormat("cccc"),
+    W: () => _ekPad(dt.weekNumber),
+    t: () => String(dt.daysInMonth),
+    L: () => (dt.isInLeapYear ? "1" : "0"),
+    o: () => String(dt.weekYear),
+    g: () => String(dt.hour % 12 || 12),
+    G: () => String(dt.hour),
+    h: () => _ekPad(dt.hour % 12 || 12),
+    H: () => _ekPad(dt.hour),
+    i: () => _ekPad(dt.minute),
+    s: () => _ekPad(dt.second),
+    u: () => `${_ekPad(dt.millisecond, 3)}000`,
+    v: () => _ekPad(dt.millisecond, 3),
+    a: () => (dt.hour < 12 ? "am" : "pm"),
+    A: () => (dt.hour < 12 ? "AM" : "PM"),
+    B: () => _ekSwatchInternetTime(dt),
+    U: () => String(Math.floor(dt.toSeconds())),
+    c: () => dt.toISO({ suppressMilliseconds: true }),
+    r: () => dt.toRFC2822(),
+    I: () => (dt.isInDST ? "1" : "0"),
+    O: () => dt.toFormat("ZZ").replace(":", ""),
+    P: () => dt.toFormat("ZZ"),
+    T: () => dt.offsetNameShort || "",
+    Z: () => String(dt.offset * 60),
+    e: () => dt.zoneName || "",
+  };
+
+  let output = "";
+  let escaped = false;
+
+  for (const char of String(phpFormat || "")) {
+    if (escaped) {
+      output += char;
+      escaped = false;
+      continue;
+    }
+    if (char === "\\") {
+      escaped = true;
+      continue;
+    }
+    output += handlers[char] ? handlers[char]() : char;
+  }
+
+  return output;
+}
