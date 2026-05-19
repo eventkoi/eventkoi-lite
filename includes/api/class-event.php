@@ -314,7 +314,10 @@ class Event {
 			return new WP_Error( 'eventkoi_missing_id', __( 'Missing event ID.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
-		if ( ! self::user_can_read_event( $event_id ) ) {
+		// Duplicate copies all meta from the source. user_can_read_event
+		// returns true for any published event; require edit-equivalent so
+		// bare-cap roles can't clone events authored by other users.
+		if ( ! self::user_can_edit_event( $event_id ) ) {
 			return new WP_Error( 'eventkoi_forbidden', __( 'You are not allowed to duplicate this event.', 'eventkoi-lite' ), array( 'status' => 403 ) );
 		}
 
