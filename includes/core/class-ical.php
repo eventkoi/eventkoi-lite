@@ -133,14 +133,11 @@ class ICal {
 	 * @return void
 	 */
 	private function output_single_vevent( $event, $vevent ) {
-		$content  = "BEGIN:VCALENDAR\nVERSION:2.0\nMETHOD:PUBLISH\n";
-		$content .= $vevent . "\nEND:VCALENDAR\n";
-
 		$this->send_headers(
 			sanitize_title_with_dashes( $event->get_title() ) . '-' . bin2hex( random_bytes( 2 ) ) . '.ics'
 		);
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- iCal text is RFC 5545-escaped at build time; wp_kses_post would mangle &, <, > in legitimate SUMMARY/DESCRIPTION/URL output.
-		echo trim( $content );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- iCal text is RFC 5545-escaped + line-folded by build_vcalendar; wp_kses_post would mangle &, <, > in legitimate SUMMARY/DESCRIPTION/URL output.
+		echo $this->build_vcalendar( array( $vevent ) );
 		exit;
 	}
 
@@ -162,6 +159,10 @@ class ICal {
 			foreach ( $rules as $rule ) {
 				$vevent = $this->build_instance_vevent( $event, $rule, $timezone );
 				if ( '' !== $vevent ) {
+					$rrule = $this->build_rrule_line( $rule );
+					if ( '' !== $rrule ) {
+						$vevent = preg_replace( "/(\nEND:VEVENT)$/", "\n" . $rrule . '$1', $vevent, 1 );
+					}
 					$vevents[] = $vevent;
 				}
 			}
@@ -169,15 +170,160 @@ class ICal {
 			$vevents = $this->build_standard_vevents( $event, $timezone );
 		}
 
-		$content  = "BEGIN:VCALENDAR\nVERSION:2.0\nMETHOD:PUBLISH\n";
-		$content .= implode( "\n", $vevents );
-		$content .= "\nEND:VCALENDAR\n";
-
 		$this->send_headers( $filename );
 
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- iCal text is RFC 5545-escaped at build time; wp_kses_post would mangle &, <, > in legitimate SUMMARY/DESCRIPTION/URL output.
-		echo trim( $content );
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- iCal text is RFC 5545-escaped + line-folded by build_vcalendar; wp_kses_post would mangle &, <, > in legitimate SUMMARY/DESCRIPTION/URL output.
+		echo $this->build_vcalendar( $vevents );
 		exit;
+	}
+
+	/**
+	 * Assemble a fully RFC 5545-compliant VCALENDAR around the given VEVENTs.
+	 *
+	 * Adds REQUIRED VERSION + PRODID + CALSCALE headers, applies RFC 5545
+	 * line folding (each content line ≤75 octets), and joins with CRLF.
+	 *
+	 * @param string[] $vevents VEVENT blocks (each may use LF separators internally).
+	 * @return string Fully assembled iCalendar payload.
+	 */
+	private function build_vcalendar( array $vevents ) {
+		$version = function_exists( 'eventkoi_lite_version' ) ? eventkoi_lite_version() : ( defined( 'EVENTKOI_LITE_VERSION' ) ? EVENTKOI_LITE_VERSION : '1.0' );
+
+		$lines = array(
+			'BEGIN:VCALENDAR',
+			'VERSION:2.0',
+			'PRODID:-//EventKoi//EventKoi Lite ' . $version . '//EN',
+			'CALSCALE:GREGORIAN',
+			'METHOD:PUBLISH',
+		);
+
+		foreach ( $vevents as $vevent ) {
+			$vevent = trim( (string) $vevent );
+			if ( '' === $vevent ) {
+				continue;
+			}
+			foreach ( preg_split( "/\r\n|\n|\r/", $vevent ) as $line ) {
+				if ( '' === $line ) {
+					continue;
+				}
+				$lines[] = $line;
+			}
+		}
+
+		$lines[] = 'END:VCALENDAR';
+
+		$folded = array();
+		foreach ( $lines as $line ) {
+			$folded[] = $this->fold_ical_line( $line );
+		}
+
+		return implode( "\r\n", $folded ) . "\r\n";
+	}
+
+	/**
+	 * Fold a single content line per RFC 5545 §3.1.
+	 *
+	 * @param string $line Single content line (no embedded CR/LF).
+	 * @return string Folded line, possibly multi-line.
+	 */
+	private function fold_ical_line( $line ) {
+		if ( strlen( $line ) <= 75 ) {
+			return $line;
+		}
+
+		$result    = '';
+		$remaining = $line;
+		$first     = true;
+		while ( '' !== $remaining ) {
+			$chunk_size = $first ? 75 : 74;
+			$chunk      = substr( $remaining, 0, $chunk_size );
+			$remaining  = substr( $remaining, $chunk_size );
+			if ( $first ) {
+				$result = $chunk;
+				$first  = false;
+			} else {
+				$result .= "\r\n " . $chunk;
+			}
+			if ( false === $remaining ) {
+				break;
+			}
+		}
+
+		return $result;
+	}
+
+	/**
+	 * Build an RFC 5545 RRULE line from an EventKoi recurrence rule.
+	 *
+	 * @param array $rule Recurrence rule.
+	 * @return string RRULE:... line, or '' when the rule isn't representable.
+	 */
+	private function build_rrule_line( $rule ) {
+		if ( ! is_array( $rule ) || empty( $rule['frequency'] ) ) {
+			return '';
+		}
+
+		$interval = max( 1, absint( $rule['interval'] ?? 1 ) );
+		$parts    = array();
+
+		switch ( (string) $rule['frequency'] ) {
+			case 'day':
+			case 'working_day':
+				$parts[] = 'FREQ=DAILY';
+				break;
+			case 'week':
+				$parts[] = 'FREQ=WEEKLY';
+				break;
+			case 'month':
+				$parts[] = 'FREQ=MONTHLY';
+				break;
+			case 'year':
+				$parts[] = 'FREQ=YEARLY';
+				break;
+			default:
+				return '';
+		}
+
+		if ( $interval > 1 ) {
+			$parts[] = 'INTERVAL=' . $interval;
+		}
+
+		$byday_codes = array(
+			0 => 'SU', 1 => 'MO', 2 => 'TU', 3 => 'WE',
+			4 => 'TH', 5 => 'FR', 6 => 'SA',
+		);
+		$byday       = array();
+		if ( 'working_day' === $rule['frequency'] ) {
+			$byday = array( 'MO', 'TU', 'WE', 'TH', 'FR' );
+		} elseif ( ! empty( $rule['weekdays'] ) && is_array( $rule['weekdays'] ) ) {
+			foreach ( $rule['weekdays'] as $w ) {
+				$wi = (int) $w;
+				if ( isset( $byday_codes[ $wi ] ) ) {
+					$byday[] = $byday_codes[ $wi ];
+				}
+			}
+		}
+		if ( ! empty( $byday ) ) {
+			$parts[] = 'BYDAY=' . implode( ',', array_values( array_unique( $byday ) ) );
+		}
+
+		if ( ! empty( $rule['months'] ) && is_array( $rule['months'] ) ) {
+			$months = array_values( array_filter( array_map( 'absint', $rule['months'] ) ) );
+			if ( ! empty( $months ) ) {
+				$parts[] = 'BYMONTH=' . implode( ',', $months );
+			}
+		}
+
+		if ( ! empty( $rule['ends_after'] ) ) {
+			$parts[] = 'COUNT=' . absint( $rule['ends_after'] );
+		} elseif ( ! empty( $rule['ends_on'] ) ) {
+			$until_ts = strtotime( (string) $rule['ends_on'] );
+			if ( false !== $until_ts ) {
+				$parts[] = 'UNTIL=' . gmdate( 'Ymd\THis\Z', $until_ts );
+			}
+		}
+
+		return 'RRULE:' . implode( ';', $parts );
 	}
 
 	/**
