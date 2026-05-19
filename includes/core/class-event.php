@@ -465,7 +465,8 @@ class Event {
 
 		do_action( 'eventkoi_before_update_event_meta', $meta, self::$event_id, self::$event );
 
-		$timezone_display = array_key_exists( 'timezone_display', $meta ) ? self::normalize_boolean_meta( $meta['timezone_display'] ) : false;
+		// Default ON for new events to match the editor's default toggle.
+		$timezone_display = array_key_exists( 'timezone_display', $meta ) ? self::normalize_boolean_meta( $meta['timezone_display'] ) : true;
 		$tbc              = array_key_exists( 'tbc', $meta ) ? self::normalize_boolean_meta( $meta['tbc'] ) : false;
 		$tbc_note         = ! empty( $meta['tbc_note'] ) ? esc_attr( $meta['tbc_note'] ) : '';
 		$start_date       = array_key_exists( 'start_date', $meta ) ? self::normalize_utc_datetime_iso_string( $meta['start_date'] ) : '';
@@ -1588,9 +1589,14 @@ class Event {
 	 * Returns whether the timezone should be shown.
 	 */
 	public static function get_timezone_display() {
-		$timezone_display = get_post_meta( self::$event_id, 'timezone_display', true );
+		// Default to TRUE when the meta key is absent (new events that
+		// haven't been saved yet). Saved events with an explicit 0 stay off.
+		$has_meta         = metadata_exists( 'post', self::$event_id, 'timezone_display' );
+		$timezone_display = $has_meta
+			? self::normalize_boolean_meta( get_post_meta( self::$event_id, 'timezone_display', true ) )
+			: true;
 
-		return apply_filters( 'eventkoi_get_timezone_display', self::normalize_boolean_meta( $timezone_display ), self::$event_id, self::$event );
+		return apply_filters( 'eventkoi_get_timezone_display', $timezone_display, self::$event_id, self::$event );
 	}
 
 	/**
