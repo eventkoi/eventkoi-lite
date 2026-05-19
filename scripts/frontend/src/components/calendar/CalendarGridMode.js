@@ -315,13 +315,25 @@ export function CalendarGridMode({
     }
     return `${sStr}${sP} – ${eStr}${eP}`;
   };
+  const formatCompactStart = (dt) => {
+    const core = formatCompactTime(dt);
+    if (timeFormat === "24") return core;
+    return `${core}${dt.hour < 12 ? "am" : "pm"}`;
+  };
   const formatCalendarTimeRange = (arg) => {
     const startDt = toCalendarDateTime(arg.event.start, arg.event.startStr);
     if (!startDt) {
       return "";
     }
 
+    const isDayGrid = arg.view?.type?.startsWith("dayGrid");
+
     if (!shouldShowEventEndTime(arg)) {
+      // Compact start time in month/list dot events so narrow cells
+      // don't truncate the title.
+      if (isDayGrid) {
+        return formatCompactStart(startDt);
+      }
       return formatCalendarTime(arg.event.start, arg.event.startStr);
     }
 
