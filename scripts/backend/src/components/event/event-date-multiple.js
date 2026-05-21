@@ -115,6 +115,37 @@ const clearAllDayFields = (day) => {
   delete day.all_day_end_exclusive_date;
 };
 
+const getEndAfterStartChange = (previousStart, previousEnd, newStart) => {
+  const fallback = newStart.plus({ hours: 1 });
+
+  if (
+    !previousStart?.isValid ||
+    !previousEnd?.isValid ||
+    previousEnd <= previousStart
+  ) {
+    return fallback;
+  }
+
+  const duration = previousEnd.diff(previousStart);
+  const durationMinutes = duration.as("minutes");
+  const isGeneratedNineToFiveRange =
+    previousStart.hasSame(previousEnd, "day") &&
+    previousStart.hour === 9 &&
+    previousStart.minute === 0 &&
+    previousEnd.hour === 17 &&
+    previousEnd.minute === 0;
+
+  if (
+    !Number.isFinite(durationMinutes) ||
+    durationMinutes <= 0 ||
+    isGeneratedNineToFiveRange
+  ) {
+    return fallback;
+  }
+
+  return newStart.plus(duration);
+};
+
 const getDayStartDate = (day, event, wpTz) => {
   if (!day?.start_date) {
     return undefined;
@@ -427,13 +458,16 @@ export function EventDateMultiple({ showAttributes }) {
                       return;
                     }
 
-                    const startTime = startDate
-                      ? { h: startDate.getHours(), m: startDate.getMinutes() }
+                    const startWall = startDate
+                      ? DateTime.fromJSDate(startDate, { zone: wpTz })
+                      : null;
+                    const startTime = startWall?.isValid
+                      ? { h: startWall.hour, m: startWall.minute }
                       : { h: 9, m: 0 };
 
-                    const endTime = endDate
-                      ? { h: endDate.getHours(), m: endDate.getMinutes() }
-                      : { h: 17, m: 0 };
+                    const endWall = endDate
+                      ? DateTime.fromJSDate(endDate, { zone: wpTz })
+                      : null;
 
                     // pickedDate is already Luxon in WP tz
                     const newStart = pickedDate.set({
@@ -443,12 +477,11 @@ export function EventDateMultiple({ showAttributes }) {
                       millisecond: 0,
                     });
 
-                    const newEnd = pickedDate.set({
-                      hour: endTime.h,
-                      minute: endTime.m,
-                      second: 0,
-                      millisecond: 0,
-                    });
+                    const newEnd = getEndAfterStartChange(
+                      startWall,
+                      endWall,
+                      newStart
+                    );
 
                     updateDayDateAndTimes(
                       index,
@@ -490,13 +523,11 @@ export function EventDateMultiple({ showAttributes }) {
                         const currentEnd = endDate
                           ? DateTime.fromJSDate(endDate, { zone: wpTz })
                           : null;
-                        const nextEnd =
-                          !currentEnd ||
-                          !currentEnd.isValid ||
-                          currentEnd <= currentStart ||
-                          currentEnd < dtWall
-                            ? dtWall.plus({ hours: 1 })
-                            : currentEnd;
+                        const nextEnd = getEndAfterStartChange(
+                          currentStart,
+                          currentEnd,
+                          dtWall
+                        );
 
                         updateDayDateAndTimes(
                           index,

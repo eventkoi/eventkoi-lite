@@ -102,6 +102,37 @@ const clearAllDayFields = (day) => {
   delete day.all_day_end_exclusive_date;
 };
 
+const getEndAfterStartChange = (previousStart, previousEnd, newStart) => {
+  const fallback = newStart.plus({ hours: 1 });
+
+  if (
+    !previousStart?.isValid ||
+    !previousEnd?.isValid ||
+    previousEnd <= previousStart
+  ) {
+    return fallback;
+  }
+
+  const duration = previousEnd.diff(previousStart);
+  const durationMinutes = duration.as("minutes");
+  const isGeneratedNineToFiveRange =
+    previousStart.hasSame(previousEnd, "day") &&
+    previousStart.hour === 9 &&
+    previousStart.minute === 0 &&
+    previousEnd.hour === 17 &&
+    previousEnd.minute === 0;
+
+  if (
+    !Number.isFinite(durationMinutes) ||
+    durationMinutes <= 0 ||
+    isGeneratedNineToFiveRange
+  ) {
+    return fallback;
+  }
+
+  return newStart.plus(duration);
+};
+
 export function ContinuousEventDates({ event, updateDay, updateEvent, tbc }) {
   const wpTz = event?.timezone || "UTC";
 
@@ -285,6 +316,20 @@ export function ContinuousEventDates({ event, updateDay, updateEvent, tbc }) {
             });
 
             updateContinuous("start", dtWall.toJSDate());
+
+            const previousStart = startDate
+              ? DateTime.fromJSDate(startDate, { zone: wpTz })
+              : null;
+            const previousEnd = endDate
+              ? DateTime.fromJSDate(endDate, { zone: wpTz })
+              : null;
+            const newEnd = getEndAfterStartChange(
+              previousStart,
+              previousEnd,
+              dtWall
+            );
+
+            updateContinuous("end", newEnd.toJSDate());
           }}
           disabled={tbc}
         />
@@ -315,19 +360,16 @@ export function ContinuousEventDates({ event, updateDay, updateEvent, tbc }) {
               const previousStart = startDate
                 ? DateTime.fromJSDate(startDate, { zone: wpTz })
                 : null;
-              const endDt = endDate
+              const previousEnd = endDate
                 ? DateTime.fromJSDate(endDate, { zone: wpTz })
                 : null;
-              const shouldDefaultEnd =
-                !endDt ||
-                !endDt.isValid ||
-                !previousStart ||
-                endDt <= previousStart ||
-                endDt < newStart;
+              const newEnd = getEndAfterStartChange(
+                previousStart,
+                previousEnd,
+                newStart
+              );
 
-              if (shouldDefaultEnd) {
-                updateContinuous("end", newStart.plus({ hours: 1 }).toJSDate());
-              }
+              updateContinuous("end", newEnd.toJSDate());
             }}
             wpTz={wpTz}
           />

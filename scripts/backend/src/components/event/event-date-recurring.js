@@ -83,6 +83,37 @@ function getJsWeekdayFromLuxon(dt) {
   return dt.weekday % 7;
 }
 
+const getEndAfterStartChange = (previousStart, previousEnd, newStart) => {
+  const fallback = newStart.plus({ hours: 1 });
+
+  if (
+    !previousStart?.isValid ||
+    !previousEnd?.isValid ||
+    previousEnd <= previousStart
+  ) {
+    return fallback;
+  }
+
+  const duration = previousEnd.diff(previousStart);
+  const durationMinutes = duration.as("minutes");
+  const isGeneratedNineToFiveRange =
+    previousStart.hasSame(previousEnd, "day") &&
+    previousStart.hour === 9 &&
+    previousStart.minute === 0 &&
+    previousEnd.hour === 17 &&
+    previousEnd.minute === 0;
+
+  if (
+    !Number.isFinite(durationMinutes) ||
+    durationMinutes <= 0 ||
+    isGeneratedNineToFiveRange
+  ) {
+    return fallback;
+  }
+
+  return newStart.plus(duration);
+};
+
 function getRecurringSummary(rule, wpTz) {
   const freqPlural = {
     day: "days",
@@ -474,18 +505,19 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                     millisecond: 0,
                   });
 
-                  // Always preserve duration
-                  let endUTC = null;
-                  if (!rule.all_day && start && end) {
-                    const prevWallEnd = DateTime.fromJSDate(end, {
-                      zone: wpTz,
-                    });
-                    const duration = prevWallEnd.diff(prevWallStart); // ✅ actual duration
-                    const newWallEnd = dtWallStart.plus(duration);
-                    endUTC = newWallEnd
-                      .toUTC()
-                      .toISO({ suppressMilliseconds: true });
-                  }
+                  const prevWallEnd = end
+                    ? DateTime.fromJSDate(end, { zone: wpTz })
+                    : null;
+                  const newWallEnd = !rule.all_day
+                    ? getEndAfterStartChange(
+                        prevWallStart,
+                        prevWallEnd,
+                        dtWallStart
+                      )
+                    : null;
+                  const endUTC = newWallEnd
+                    ? newWallEnd.toUTC().toISO({ suppressMilliseconds: true })
+                    : null;
 
                   const startUTC = dtWallStart
                     .toUTC()
@@ -531,18 +563,14 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                           .toISO({ suppressMilliseconds: true }),
                       };
 
-                      if (prevWallEnd && prevWallStart && prevWallEnd > prevWallStart) {
-                        const duration = prevWallEnd.diff(prevWallStart);
-                        updates.end_date = newWallStart
-                          .plus(duration)
-                          .toUTC()
-                          .toISO({ suppressMilliseconds: true });
-                      } else {
-                        const newWallEnd = newWallStart.plus({ hours: 1 });
-                        updates.end_date = newWallEnd
-                          .toUTC()
-                          .toISO({ suppressMilliseconds: true });
-                      }
+                      const newWallEnd = getEndAfterStartChange(
+                        prevWallStart,
+                        prevWallEnd,
+                        newWallStart
+                      );
+                      updates.end_date = newWallEnd
+                        .toUTC()
+                        .toISO({ suppressMilliseconds: true });
 
                       updateMultiple(index, updates);
                     }}
