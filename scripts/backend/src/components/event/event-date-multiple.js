@@ -468,8 +468,9 @@ export function EventDateMultiple({ showAttributes }) {
                     <TimeInput
                       date={startDate}
                       wpTz={wpTz}
+                      commitOnValidChange
                       setDate={(utcDate) => {
-                        if (!utcDate || !startDate) return;
+                        if (!utcDate) return;
 
                         // `utcDate` from TimeInput is already in UTC
                         const parsedUtc = DateTime.fromJSDate(utcDate, {
@@ -477,19 +478,30 @@ export function EventDateMultiple({ showAttributes }) {
                         }).setZone(wpTz);
 
                         // Take existing WP wall date and replace time
-                        const dtWall = DateTime.fromJSDate(startDate, {
-                          zone: wpTz,
-                        }).set({
+                        const currentStart = startDate
+                          ? DateTime.fromJSDate(startDate, { zone: wpTz })
+                          : DateTime.now().setZone(wpTz).startOf("day");
+                        const dtWall = currentStart.set({
                           hour: parsedUtc.hour,
                           minute: parsedUtc.minute,
                           second: 0,
                           millisecond: 0,
                         });
+                        const currentEnd = endDate
+                          ? DateTime.fromJSDate(endDate, { zone: wpTz })
+                          : null;
+                        const nextEnd =
+                          !currentEnd ||
+                          !currentEnd.isValid ||
+                          currentEnd <= currentStart ||
+                          currentEnd < dtWall
+                            ? dtWall.plus({ hours: 1 })
+                            : currentEnd;
 
-                        updateDay(
+                        updateDayDateAndTimes(
                           index,
-                          "start_date",
-                          dtWall.toISO({ suppressMilliseconds: true })
+                          dtWall.toUTC().toISO({ suppressMilliseconds: true }),
+                          nextEnd.toUTC().toISO({ suppressMilliseconds: true })
                         );
                       }}
                       disabled={tbc}

@@ -423,6 +423,10 @@ class Event {
 			'status',
 		);
 
+		if ( array_key_exists( 'description', $overrides ) ) {
+			$overrides['description'] = SingleEvent::sanitize_description_html( $overrides['description'] );
+		}
+
 		$filtered = array_filter(
 			$overrides,
 			static fn( $key ) => in_array( $key, $allowed_keys, true ),

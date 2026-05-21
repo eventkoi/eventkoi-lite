@@ -1,5 +1,79 @@
+import {
+  Button as WordPressButton,
+  Modal,
+  Notice,
+  TextControl,
+  __experimentalHStack as HStack,
+} from "@wordpress/components";
 import { __ } from "@wordpress/i18n";
 import { useEffect, useId, useRef, useState } from "react";
+
+const escapeAttribute = (value = "") =>
+  String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+const getYouTubeVideoId = (rawUrl = "") => {
+  const input = String(rawUrl || "").trim();
+  if (!input) {
+    return "";
+  }
+
+  try {
+    const url = new URL(input);
+    const host = url.hostname.toLowerCase().replace(/^www\./, "");
+    const parts = url.pathname.split("/").filter(Boolean);
+
+    if (host === "youtu.be") {
+      return parts[0] || "";
+    }
+
+    if (
+      host === "youtube.com" ||
+      host === "m.youtube.com" ||
+      host === "youtube-nocookie.com"
+    ) {
+      if (parts[0] === "embed" || parts[0] === "shorts" || parts[0] === "live") {
+        return parts[1] || "";
+      }
+
+      if (url.searchParams.has("v")) {
+        return url.searchParams.get("v") || "";
+      }
+    }
+  } catch (error) {
+    return "";
+  }
+
+  return "";
+};
+
+const buildYouTubeEmbedHtml = (rawUrl = "") => {
+  const id = getYouTubeVideoId(rawUrl);
+  if (!/^[A-Za-z0-9_-]{6,}$/.test(id)) {
+    return "";
+  }
+
+  const src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}`;
+
+  return `<figure class="eventkoi-video-embed"><iframe src="${src}" width="560" height="315" title="${escapeAttribute(
+    __("YouTube video", "eventkoi-lite")
+  )}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></figure>`;
+};
+
+const buildMediaVideoHtml = (attachment = {}) => {
+  const url = attachment.url || "";
+  if (!url) {
+    return "";
+  }
+
+  const title = attachment.alt || attachment.title || __("Video", "eventkoi-lite");
+  return `<video controls preload="metadata" src="${escapeAttribute(
+    url
+  )}" title="${escapeAttribute(title)}"></video>`;
+};
 
 export function RichTextEditor({
   id,
@@ -7,6 +81,7 @@ export function RichTextEditor({
   onChange,
   height = 250,
   disabled = false,
+  allowVideoEmbeds = false,
 }) {
   const editorRef = useRef();
   const uniqueId = useId();
@@ -16,7 +91,11 @@ export function RichTextEditor({
   const lastEditorValue = useRef(value || "");
   const latestValueRef = useRef(value || "");
   const onChangeRef = useRef(onChange);
+  const insertContentRef = useRef(null);
   const [tinymceReady, setTinymceReady] = useState(!!window.tinymce);
+  const [youtubeModalOpen, setYoutubeModalOpen] = useState(false);
+  const [youtubeUrl, setYoutubeUrl] = useState("");
+  const [youtubeError, setYoutubeError] = useState("");
 
   useEffect(() => {
     if (tinymceReady) return;
@@ -61,6 +140,8 @@ export function RichTextEditor({
       oldEditor.remove();
     }
 
+    const mediaToolbar = allowVideoEmbeds ? " | insertVideo insertYoutube" : "";
+
     window.tinymce.init({
       target: editorRef.current,
       height,
@@ -72,7 +153,7 @@ export function RichTextEditor({
       readonly: disabled,
       plugins: "lists link image wordpress",
       toolbar:
-        "undo redo | heading1 heading2 heading3 heading4 | bold italic underline | bullist numlist | link | insertImage | removeformat | htmlToggle",
+        `undo redo | heading1 heading2 heading3 heading4 | bold italic underline | bullist numlist | link | insertImage${mediaToolbar} | removeformat | htmlToggle`,
       block_formats:
         "Paragraph=p; Heading 1=h1; Heading 2=h2; Heading 3=h3; Heading 4=h4",
       content_style: `
@@ -84,9 +165,38 @@ export function RichTextEditor({
           color: #1f2937;
           background: transparent;
         }
-        img { max-width: 100%; height: auto; }
+        img,
+        video,
+        iframe {
+          max-width: 100%;
+        }
+        img,
+        video {
+          height: auto;
+        }
+        .eventkoi-video-embed {
+          margin: 1em 0;
+        }
+        .eventkoi-video-embed iframe {
+          aspect-ratio: 16 / 9;
+          width: 100%;
+          height: auto;
+          min-height: 220px;
+        }
       `,
       setup: (ed) => {
+        const insertContent = (html) => {
+          if (!html) {
+            return;
+          }
+
+          ed.execCommand("mceInsertContent", false, html);
+          const content = ed.getContent();
+          lastEditorValue.current = content;
+          onChangeRef.current?.(content);
+        };
+        insertContentRef.current = insertContent;
+
         const headings = [
           { id: "heading1", label: "H1", block: "h1" },
           { id: "heading2", label: "H2", block: "h2" },
@@ -122,15 +232,45 @@ export function RichTextEditor({
               const attachment = frame.state().get("selection").first().toJSON();
               const url = attachment.url;
               const alt = attachment.alt || attachment.title || "";
-              ed.execCommand(
-                "mceInsertContent",
-                false,
-                `<img src="${url}" alt="${alt}" />`,
+              insertContent(
+                `<img src="${escapeAttribute(url)}" alt="${escapeAttribute(
+                  alt
+                )}" />`
               );
             });
             frame?.open();
           },
         });
+
+        if (allowVideoEmbeds) {
+          ed.addButton("insertVideo", {
+            text: __("Video", "eventkoi-lite"),
+            tooltip: __("Insert video from media library", "eventkoi-lite"),
+            onclick: () => {
+              const frame = window.wp?.media({
+                title: __("Insert video", "eventkoi-lite"),
+                button: { text: __("Insert", "eventkoi-lite") },
+                library: { type: "video" },
+                multiple: false,
+              });
+              frame?.on("select", () => {
+                const attachment = frame.state().get("selection").first().toJSON();
+                insertContent(buildMediaVideoHtml(attachment));
+              });
+              frame?.open();
+            },
+          });
+
+          ed.addButton("insertYoutube", {
+            text: __("YouTube", "eventkoi-lite"),
+            tooltip: __("Embed YouTube video", "eventkoi-lite"),
+            onclick: () => {
+              setYoutubeUrl("");
+              setYoutubeError("");
+              setYoutubeModalOpen(true);
+            },
+          });
+        }
 
         ed.addButton("htmlToggle", {
           text: "Switch to Code Editor",
@@ -162,8 +302,70 @@ export function RichTextEditor({
       if (inst) {
         inst.remove();
       }
+      insertContentRef.current = null;
     };
-  }, [tinymceReady, showHTML, editorId, height, disabled]);
+  }, [tinymceReady, showHTML, editorId, height, disabled, allowVideoEmbeds]);
+
+  const closeYoutubeModal = () => {
+    setYoutubeModalOpen(false);
+    setYoutubeUrl("");
+    setYoutubeError("");
+    window.tinymce?.get(editorId)?.focus();
+  };
+
+  const submitYoutubeEmbed = (event) => {
+    event.preventDefault();
+
+    const html = buildYouTubeEmbedHtml(youtubeUrl);
+    if (!html) {
+      setYoutubeError(__("Enter a valid YouTube URL.", "eventkoi-lite"));
+      return;
+    }
+
+    insertContentRef.current?.(html);
+    closeYoutubeModal();
+  };
+
+  const youtubeModal = allowVideoEmbeds && youtubeModalOpen && (
+    <Modal
+      title={__("Embed YouTube video", "eventkoi-lite")}
+      onRequestClose={closeYoutubeModal}
+      className="eventkoi-youtube-embed-modal"
+    >
+      <form onSubmit={submitYoutubeEmbed}>
+        <TextControl
+          label={__("YouTube URL", "eventkoi-lite")}
+          help={__(
+            "Paste a YouTube watch, Shorts, Live, or youtu.be URL.",
+            "eventkoi-lite"
+          )}
+          value={youtubeUrl}
+          onChange={(nextValue) => {
+            setYoutubeUrl(nextValue);
+            if (youtubeError) {
+              setYoutubeError("");
+            }
+          }}
+          autoFocus
+        />
+
+        {youtubeError ? (
+          <Notice status="error" isDismissible={false}>
+            {youtubeError}
+          </Notice>
+        ) : null}
+
+        <HStack justify="flex-end" className="mt-6">
+          <WordPressButton variant="tertiary" onClick={closeYoutubeModal}>
+            {__("Cancel", "eventkoi-lite")}
+          </WordPressButton>
+          <WordPressButton variant="primary" type="submit">
+            {__("Embed video", "eventkoi-lite")}
+          </WordPressButton>
+        </HStack>
+      </form>
+    </Modal>
+  );
 
   if (showHTML) {
     return (
@@ -189,5 +391,10 @@ export function RichTextEditor({
     );
   }
 
-  return <textarea id={editorId} ref={editorRef} />;
+  return (
+    <>
+      <textarea id={editorId} ref={editorRef} />
+      {youtubeModal}
+    </>
+  );
 }

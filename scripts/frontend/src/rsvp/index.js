@@ -135,7 +135,10 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
   const allowGuests = summary?.allow_guests;
   const maxGuests = summary?.max_guests || 0;
   const capacity = summary?.capacity || 0;
+  const showCount = summary?.show_count !== false;
   const showRemaining = summary?.show_remaining !== false;
+  const showRemainingStat = showRemaining;
+  const showStats = showCount || showRemainingStat;
   const isEnabled = summary?.rsvp_enabled !== false;
   const eventTitle = decodeEntities(summary?.event_title || "");
   const allowEdit = summary?.allow_edit !== false;
@@ -319,45 +322,54 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
           {eventTitle}
         </div>
       ) : null}
-      <div className="rounded-2xl border border-input bg-card px-4 py-3 shadow-sm">
-        <div
-          className={cn(
-            "grid gap-4 text-center",
-            showRemaining ? "grid-cols-2" : "grid-cols-1"
-          )}
-        >
-          <div className="flex flex-col gap-1">
-            <div className="text-4xl font-semibold text-foreground tabular-nums">
-              {goingCount}
-            </div>
-            <div className="text-sm font-medium text-muted-foreground">
-              {__("Going", "eventkoi-lite")}
-            </div>
-          </div>
-          {showRemaining && (
-            <div className="flex flex-col gap-1 border-l border-input pl-4">
-              <div className="text-4xl font-semibold text-foreground tabular-nums">
-                {capacity > 0 ? remaining : "—"}
+      {showStats && (
+        <div className="rounded-2xl border border-input bg-card px-4 py-3 shadow-sm">
+          <div
+            className={cn(
+              "grid gap-4 text-center",
+              showCount && showRemainingStat ? "grid-cols-2" : "grid-cols-1"
+            )}
+          >
+            {showCount && (
+              <div className="flex flex-col gap-1">
+                <div className="text-4xl font-semibold text-foreground tabular-nums">
+                  {goingCount}
+                </div>
+                <div className="text-sm font-medium text-muted-foreground">
+                  {__("Going", "eventkoi-lite")}
+                </div>
               </div>
-              <div className="text-sm font-medium text-muted-foreground">
-                {__("Remaining", "eventkoi-lite")}
+            )}
+            {showRemainingStat && (
+              <div
+                className={cn(
+                  "flex flex-col gap-1",
+                  showCount && "border-l border-input pl-4"
+                )}
+              >
+                <div className="text-4xl font-semibold text-foreground tabular-nums">
+                  {capacity > 0 ? remaining : "—"}
+                </div>
+                <div className="text-sm font-medium text-muted-foreground">
+                  {__("Remaining", "eventkoi-lite")}
+                </div>
+              </div>
+            )}
+          </div>
+          {capacity > 0 && showRemaining && (
+            <div className="mt-4">
+              <div className="relative h-2 w-full overflow-hidden rounded-full bg-ring/10">
+                <div
+                  className="h-full bg-primary transition-all"
+                  style={{
+                    width: `${capacity ? Math.min((used / capacity) * 100, 100) : 0}%`,
+                  }}
+                />
               </div>
             </div>
           )}
         </div>
-        {capacity > 0 && showRemaining && (
-          <div className="mt-4">
-            <div className="relative h-2 w-full overflow-hidden rounded-full bg-ring/10">
-              <div
-                className="h-full bg-primary transition-all"
-                style={{
-                  width: `${capacity ? Math.min((used / capacity) * 100, 100) : 0}%`,
-                }}
-              />
-            </div>
-          </div>
-        )}
-      </div>
+      )}
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>

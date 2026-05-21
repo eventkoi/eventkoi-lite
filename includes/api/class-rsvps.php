@@ -482,6 +482,7 @@ class Rsvps {
 				'rsvp'            => $rsvp_data,
 				'summary'         => $summary,
 				'capacity'        => Event::get_rsvp_capacity(),
+				'show_count'      => Event::get_rsvp_show_count(),
 				'show_remaining'  => Event::get_rsvp_show_remaining(),
 				'allow_guests'    => Event::get_rsvp_allow_guests(),
 				'max_guests'      => Event::get_rsvp_max_guests(),
@@ -656,7 +657,8 @@ class Rsvps {
 		}
 
 		if ( 'standard' === Event::get_date_type() && 'selected' !== Event::get_standard_type() ) {
-			return absint( get_post_meta( $event_id, 'start_timestamp', true ) ) ?: $record_instance_ts;
+			$start_timestamp = absint( get_post_meta( $event_id, 'start_timestamp', true ) );
+			return $start_timestamp ? $start_timestamp : $record_instance_ts;
 		}
 
 		return $record_instance_ts;
@@ -1016,10 +1018,10 @@ class Rsvps {
 	 * Normalize EventKoi and raw Schema.org location types.
 	 *
 	 * @param array  $location Location row.
-	 * @param string $default  Optional default normalized type.
+	 * @param string $default_type Optional default normalized type.
 	 * @return string
 	 */
-	private static function get_location_type( array $location, $default = '' ) {
+	private static function get_location_type( array $location, $default_type = '' ) {
 		$type = sanitize_key( self::location_text_value( $location, 'type' ) );
 		if ( 'physical' === $type ) {
 			return 'inperson';
@@ -1045,6 +1047,6 @@ class Rsvps {
 			return 'inperson';
 		}
 
-		return sanitize_key( $default );
+		return sanitize_key( $default_type );
 	}
 }

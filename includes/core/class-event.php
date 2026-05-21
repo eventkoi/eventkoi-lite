@@ -83,6 +83,7 @@ class Event {
 		'attendance_mode',
 		'rsvp_enabled',
 		'rsvp_capacity',
+		'rsvp_show_count',
 		'rsvp_show_remaining',
 		'rsvp_allow_guests',
 		'rsvp_max_guests',
@@ -481,7 +482,7 @@ class Event {
 		$embed_gmap       = array_key_exists( 'embed_gmap', $meta ) ? self::normalize_boolean_meta( $meta['embed_gmap'] ) : false;
 		$gmap_link        = ! empty( $meta['gmap_link'] ) ? sanitize_url( self::extract_map_url( $meta['gmap_link'] ) ) : '';
 		$virtual_url      = ! empty( $meta['virtual_url'] ) ? esc_attr( $meta['virtual_url'] ) : '';
-		$description      = ! empty( $meta['description'] ) ? wp_kses_post( $meta['description'] ) : '';
+		$description      = ! empty( $meta['description'] ) ? self::sanitize_description_html( $meta['description'] ) : '';
 		$image            = ! empty( $meta['image'] ) ? sanitize_url( $meta['image'] ) : '';
 		$image_id         = ! empty( $meta['image_id'] ) ? absint( $meta['image_id'] ) : 0;
 		$date_type        = ! empty( $meta['date_type'] ) ? esc_attr( $meta['date_type'] ) : 'standard';
@@ -502,8 +503,9 @@ class Event {
 		$attendance_mode             = isset( $meta['attendance_mode'] )
 			? sanitize_text_field( $meta['attendance_mode'] )
 			: ( ! empty( $stored_attendance_mode ) ? sanitize_text_field( $stored_attendance_mode ) : ( self::$event_id ? 'rsvp' : 'none' ) );
-		$rsvp_enabled                = ( 'rsvp' === $attendance_mode );
+		$rsvp_enabled        = ( 'rsvp' === $attendance_mode );
 		$rsvp_capacity       = isset( $meta['rsvp_capacity'] ) ? absint( $meta['rsvp_capacity'] ) : 0;
+		$rsvp_show_count     = array_key_exists( 'rsvp_show_count', $meta ) ? self::normalize_boolean_meta( $meta['rsvp_show_count'] ) : true;
 		$rsvp_show_remaining = array_key_exists( 'rsvp_show_remaining', $meta ) ? self::normalize_boolean_meta( $meta['rsvp_show_remaining'] ) : true;
 		$rsvp_allow_guests   = array_key_exists( 'rsvp_allow_guests', $meta ) ? self::normalize_boolean_meta( $meta['rsvp_allow_guests'] ) : false;
 		$rsvp_max_guests     = isset( $meta['rsvp_max_guests'] ) ? absint( $meta['rsvp_max_guests'] ) : 0;
@@ -538,6 +540,7 @@ class Event {
 		update_post_meta( self::$event_id, 'recurrence_rules', $recurrence_rules );
 		update_post_meta( self::$event_id, 'rsvp_enabled', $rsvp_enabled ? 1 : 0 );
 		update_post_meta( self::$event_id, 'rsvp_capacity', $rsvp_capacity );
+		update_post_meta( self::$event_id, 'rsvp_show_count', $rsvp_show_count ? 1 : 0 );
 		update_post_meta( self::$event_id, 'rsvp_show_remaining', $rsvp_show_remaining ? 1 : 0 );
 		update_post_meta( self::$event_id, 'rsvp_allow_guests', $rsvp_allow_guests ? 1 : 0 );
 		update_post_meta( self::$event_id, 'rsvp_max_guests', $rsvp_max_guests );
@@ -1018,7 +1021,119 @@ class Event {
 	public static function get_description() {
 		$description = get_post_meta( self::$event_id, 'description', true );
 
-		return apply_filters( 'eventkoi_get_event_description', wp_kses_post( $description ), self::$event_id, self::$event );
+		return apply_filters( 'eventkoi_get_event_description', self::sanitize_description_html( $description ), self::$event_id, self::$event );
+	}
+
+	/**
+	 * Sanitize event description HTML.
+	 *
+	 * @param mixed $description Raw description.
+	 * @return string
+	 */
+	public static function sanitize_description_html( $description ) {
+		if ( ! is_scalar( $description ) ) {
+			return '';
+		}
+
+		$description = (string) $description;
+		if ( '' === trim( $description ) ) {
+			return '';
+		}
+
+		$description = self::normalize_description_iframes( $description );
+
+		return wp_kses( $description, self::get_description_allowed_html() );
+	}
+
+	/**
+	 * Get allowed HTML for event descriptions.
+	 *
+	 * @return array
+	 */
+	private static function get_description_allowed_html() {
+		$allowed = wp_kses_allowed_html( 'post' );
+
+		$allowed['iframe'] = array(
+			'allow'           => true,
+			'allowfullscreen' => true,
+			'class'           => true,
+			'frameborder'     => true,
+			'height'          => true,
+			'loading'         => true,
+			'referrerpolicy'  => true,
+			'src'             => true,
+			'title'           => true,
+			'width'           => true,
+		);
+
+		return $allowed;
+	}
+
+	/**
+	 * Replace iframes with normalized safe YouTube embeds.
+	 *
+	 * @param string $description Raw description HTML.
+	 * @return string
+	 */
+	private static function normalize_description_iframes( $description ) {
+		return preg_replace_callback(
+			'/<iframe\b[^>]*>(?:\s*<\/iframe>)?/i',
+			static function ( $matches ) {
+				$tag = $matches[0];
+				if ( ! preg_match( '/\bsrc\s*=\s*([\'"])(.*?)\1/i', $tag, $src_match ) ) {
+					return '';
+				}
+
+				$src = html_entity_decode( (string) $src_match[2], ENT_QUOTES, get_bloginfo( 'charset' ) );
+				$src = self::normalize_youtube_embed_url( $src );
+				if ( '' === $src ) {
+					return '';
+				}
+
+				return sprintf(
+					'<iframe src="%1$s" width="560" height="315" title="%2$s" frameborder="0" allow="%3$s" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe>',
+					esc_url( $src ),
+					esc_attr__( 'YouTube video', 'eventkoi-lite' ),
+					esc_attr( 'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share' )
+				);
+			},
+			$description
+		);
+	}
+
+	/**
+	 * Normalize a YouTube URL to a privacy-enhanced embed URL.
+	 *
+	 * @param string $url Raw URL.
+	 * @return string
+	 */
+	private static function normalize_youtube_embed_url( $url ) {
+		$parts = wp_parse_url( trim( (string) $url ) );
+		if ( empty( $parts['host'] ) ) {
+			return '';
+		}
+
+		$host  = preg_replace( '/^www\./', '', strtolower( $parts['host'] ) );
+		$path  = isset( $parts['path'] ) ? trim( $parts['path'], '/' ) : '';
+		$paths = '' !== $path ? explode( '/', $path ) : array();
+		$id    = '';
+
+		if ( 'youtu.be' === $host ) {
+			$id = $paths[0] ?? '';
+		} elseif ( in_array( $host, array( 'youtube.com', 'm.youtube.com', 'youtube-nocookie.com' ), true ) ) {
+			if ( in_array( $paths[0] ?? '', array( 'embed', 'shorts', 'live' ), true ) ) {
+				$id = $paths[1] ?? '';
+			} elseif ( ! empty( $parts['query'] ) ) {
+				parse_str( $parts['query'], $query );
+				$id = isset( $query['v'] ) ? (string) $query['v'] : '';
+			}
+		}
+
+		if ( ! preg_match( '/^[A-Za-z0-9_-]{6,}$/', $id ) ) {
+			return '';
+		}
+
+		return 'https://www.youtube-nocookie.com/embed/' . rawurlencode( $id );
 	}
 
 	/**
@@ -2132,6 +2247,20 @@ class Event {
 	}
 
 	/**
+	 * Whether to show RSVP count.
+	 *
+	 * @return bool
+	 */
+	public static function get_rsvp_show_count() {
+		$show_count = get_post_meta( self::$event_id, 'rsvp_show_count', true );
+		if ( ! metadata_exists( 'post', self::$event_id, 'rsvp_show_count' ) && ( '' === $show_count || false === $show_count || null === $show_count ) ) {
+			$show_count = true;
+		}
+
+		return apply_filters( 'eventkoi_get_event_rsvp_show_count', self::normalize_boolean_meta( $show_count ), self::$event_id, self::$event );
+	}
+
+	/**
 	 * Whether to show remaining spots.
 	 *
 	 * @return bool
@@ -2724,9 +2853,10 @@ class Event {
 	public static function rendered_details() {
 		$details = self::get_instance_field( 'description' );
 
-		if ( ! empty( $details ) && trim( wp_strip_all_tags( $details ) ) ) {
+		$has_content = ! empty( $details ) && ( trim( wp_strip_all_tags( $details ) ) || preg_match( '/<[a-z][a-z0-9]*[\s\/>]/i', $details ) );
+		if ( $has_content ) {
 			// Allow safe HTML output, since this content comes from an RTE.
-			$details = wp_kses_post( $details );
+			$details = self::sanitize_description_html( $details );
 		} else {
 			$details = __( 'No event details.', 'eventkoi-lite' );
 		}
@@ -4456,6 +4586,10 @@ class Event {
 	 * @return string
 	 */
 	public static function rendered_rsvp_going() {
+		if ( ! self::get_rsvp_show_count() ) {
+			return apply_filters( 'eventkoi_rendered_event_rsvp_going', '', self::$event_id, self::$event );
+		}
+
 		$snap = self::get_rsvp_snapshot();
 		return apply_filters( 'eventkoi_rendered_event_rsvp_going', (string) $snap['going'], self::$event_id, self::$event );
 	}

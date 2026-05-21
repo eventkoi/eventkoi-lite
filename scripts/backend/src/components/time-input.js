@@ -31,7 +31,13 @@ const hasUnescapedToken = (format, token) => {
   return false;
 };
 
-export function TimeInput({ date, setDate, disabled, wpTz = "UTC" }) {
+export function TimeInput({
+  date,
+  setDate,
+  disabled,
+  wpTz = "UTC",
+  commitOnValidChange = false,
+}) {
   const { settings } = useSettings();
   const params = typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
   const formatParams = { ...params, ...(settings || {}) };
@@ -116,6 +122,14 @@ export function TimeInput({ date, setDate, disabled, wpTz = "UTC" }) {
   const inputRef = useRef(null);
   const optionRefs = useRef([]);
 
+  useEffect(() => {
+    if (document.activeElement === inputRef.current) {
+      return;
+    }
+
+    setInputValue(date && isValid(date) ? formatTime(date) : "");
+  }, [date, wpTz, wpLocale, luxonTimeFormat, wpTimeFormatRaw]);
+
   // Parse a typed time string in WP tz → return UTC Date
   const parseTime = (input) => {
     if (!input) return null;
@@ -171,6 +185,24 @@ export function TimeInput({ date, setDate, disabled, wpTz = "UTC" }) {
     return null;
   };
 
+  const isCompleteTypedTime = (input) => {
+    const cleaned = String(input || "").toLowerCase().replace(/\s/g, "");
+
+    if (/^\d{1,2}:\d{2}(am|pm)?$/.test(cleaned)) {
+      return true;
+    }
+
+    if (/^\d{1,2}(am|pm)$/.test(cleaned)) {
+      return true;
+    }
+
+    if (/^\d{1,2}\d{2}(am|pm)?$/.test(cleaned)) {
+      return true;
+    }
+
+    return prefers24h && /^\d{1,2}$/.test(cleaned);
+  };
+
   const handleChange = (e) => {
     const value = e.target.value;
     setInputValue(value);
@@ -179,6 +211,9 @@ export function TimeInput({ date, setDate, disabled, wpTz = "UTC" }) {
     const parsed = parseTime(value);
     if (parsed && isValid(parsed)) {
       setHighlightedIndex(findOptionIndex(parsed));
+      if (commitOnValidChange && isCompleteTypedTime(value)) {
+        setDate(parsed);
+      }
     } else {
       setHighlightedIndex(-1);
     }

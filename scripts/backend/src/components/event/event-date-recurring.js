@@ -507,12 +507,18 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                   <TimeInput
                     date={start}
                     wpTz={wpTz}
+                    commitOnValidChange
                     setDate={(utcDate) => {
                       if (!utcDate) return;
 
                       const newWallStart = DateTime.fromJSDate(utcDate, {
                         zone: "utc",
                       }).setZone(wpTz);
+                      const prevWallStart = start
+                        ? DateTime.fromJSDate(start, { zone: "utc" }).setZone(
+                            wpTz
+                          )
+                        : null;
                       const prevWallEnd = end
                         ? DateTime.fromJSDate(end, { zone: "utc" }).setZone(
                             wpTz
@@ -525,14 +531,14 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                           .toISO({ suppressMilliseconds: true }),
                       };
 
-                      // Preserve duration if we have an end
-                      if (prevWallEnd) {
-                        const duration = prevWallEnd.diff(
-                          DateTime.fromJSDate(start, { zone: "utc" }).setZone(
-                            wpTz
-                          )
-                        );
-                        const newWallEnd = newWallStart.plus(duration);
+                      if (prevWallEnd && prevWallStart && prevWallEnd > prevWallStart) {
+                        const duration = prevWallEnd.diff(prevWallStart);
+                        updates.end_date = newWallStart
+                          .plus(duration)
+                          .toUTC()
+                          .toISO({ suppressMilliseconds: true });
+                      } else {
+                        const newWallEnd = newWallStart.plus({ hours: 1 });
                         updates.end_date = newWallEnd
                           .toUTC()
                           .toISO({ suppressMilliseconds: true });

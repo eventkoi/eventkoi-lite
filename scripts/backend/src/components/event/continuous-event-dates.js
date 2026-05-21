@@ -293,6 +293,7 @@ export function ContinuousEventDates({ event, updateDay, updateEvent, tbc }) {
         {!allDay && (
           <TimeInput
             date={startDate}
+            commitOnValidChange
             setDate={(time) => {
               if (!time) return;
               // `time` is a UTC JS Date whose wpTz wall-clock hour/minute
@@ -311,18 +312,21 @@ export function ContinuousEventDates({ event, updateDay, updateEvent, tbc }) {
               });
               updateContinuous("start", newStart.toJSDate());
 
-              // If end is now before start, bump end's time to match.
+              const previousStart = startDate
+                ? DateTime.fromJSDate(startDate, { zone: wpTz })
+                : null;
               const endDt = endDate
                 ? DateTime.fromJSDate(endDate, { zone: wpTz })
                 : null;
-              if (endDt && endDt < newStart) {
-                const bumpedEnd = endDt.set({
-                  hour: timeDt.hour,
-                  minute: timeDt.minute,
-                  second: 0,
-                  millisecond: 0,
-                });
-                updateContinuous("end", bumpedEnd.toJSDate());
+              const shouldDefaultEnd =
+                !endDt ||
+                !endDt.isValid ||
+                !previousStart ||
+                endDt <= previousStart ||
+                endDt < newStart;
+
+              if (shouldDefaultEnd) {
+                updateContinuous("end", newStart.plus({ hours: 1 }).toJSDate());
               }
             }}
             wpTz={wpTz}
