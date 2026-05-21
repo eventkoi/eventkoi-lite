@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 6.9
 Requires PHP: 8.0
-Stable tag: 1.3.11.0
+Stable tag: 1.3.12.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -230,6 +230,47 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.12.0 – Google-style week view, timezone-aware pipeline & dozens of fixes – 2026-05-21 =
+* New: REST API supports custom orderby on `/wp/v2/eventkoi_event` (start_date, event_start, upcoming, past) for use in core Query Loop blocks and headless integrations.
+* New: Empty Trash button on the Events list (subtle link after bulk actions).
+* Improvement: Week view — Google-style overlap cascade so stacked events stay readable instead of collapsing into "+more".
+* Improvement: Week view — sticky event title on multi-day continuation bars (title visible on every visible day, not just the first).
+* Improvement: Week view — compact Google-style time format (`9 AM` / `3pm` depending on the 12/24-hr toggle).
+* Improvement: Week view — red "now" indicator line.
+* Improvement: Week view — non-working days tinted using the working_days setting.
+* Improvement: Month view — compact time prefix on dot-style events.
+* Improvement: Week view — Google-style multi-day + all-day chip layout.
+* Improvement: Event popover anchors at the click point instead of jumping.
+* Improvement: Calendar + List blocks — "Select all calendars" is now honored in the editor preview (matches the frontend).
+* Improvement: Calendar block editor preview lands on the current week when timeframe is set to "week".
+* Improvement: Events admin — top toolbar layout (selected count left, pagination right) matches the footer.
+* Improvement: Empty states for "Event not found" and "Event in Trash" — centered card with icon + CTA.
+* Improvement: Sold-out ticket widget stays visible (with sold-out label) instead of disappearing once capacity is reached.
+* Improvement: Event editor date and media UX hardened — end-time defaults, draft cleanup, structured-field guards.
+* Improvement: Tickets / Orders / Emails — instance-aware titles, itemized refunds, multi-seat expansion fixes.
+* Improvement: RSVPs — standard events can now run in event-wide RSVP mode (vs. per-instance).
+* Improvement: TEC importer — paragraphs preserved, address split into structured fields, organizer email/phone/website mapped, `_EventCost` mapped to ticket price, `_EventURL` imported as virtual location.
+* Improvement: Per-event ownership checks across admin endpoints + healer audit trail.
+* Improvement: i18n — more admin strings wrapped in `__()` for Loco / translate.wp.org.
+* Improvement: Default "Display timezone in event page" toggle now defaults ON for new events.
+* Fix: Multi-day timed events — time now shows on every visible day instead of only the last; nested "+1 more" stops cascading.
+* Fix: iCal export — full RFC 5545 compliance (CRLF, line folding, proper PRODID, RRULE syntax).
+* Fix: JSON-LD — recurring event endDate is now Google-compliant; each instance gets its own JSON-LD block.
+* Fix: iCal UIDs are stable across recurrences (previously regenerated, breaking subscriber dedup).
+* Fix: Recurrence cap enforced on UNTIL-style rules; recurring rule summary validated against the cap.
+* Fix: Ticket checkout — TOCTOU race fixed (no more oversell under load).
+* Fix: Tickets — duplication and refund-state regressions resolved.
+* Fix: RSVP capacity claim uses FOR UPDATE locking so two concurrent submitters don't both succeed against the last slot.
+* Fix: RSVP CSV export sanitises against Excel formula injection.
+* Fix: RSVP prefetch no longer leaks event meta into unauthenticated responses.
+* Fix: Calendar admin — archive-view event color leak fixed; static-singleton state resets between renders.
+* Fix: Editor block preview no longer renders the wrong week when timeframe is "week".
+* Fix: Bulk confirm dialogs surface backend errors instead of silently failing.
+* Fix: Sorting in admin tables is disabled when pagination is server-side, so sort no longer reorders just the current page.
+* Fix: RSVP phantom-instance gate — RSVPs no longer attach to non-existent instances.
+* Fix: "Invalid Date" guard in attendee TZ normalize.
+* Fix: Plugin `.zip` build now excludes `.vite-hot` and agent artifacts.
 
 = 1.3.11.0 – User permissions & custom date/time formats – 2026-05-11 =
 * New: Settings → User permissions — grant non-admin WP roles access to specific EventKoi areas (events, calendars, attendees, orders, settings sub-tabs) without sharing the admin password. Admins always have full access; the panel is empty by default so existing behaviour is unchanged until you grant something.
