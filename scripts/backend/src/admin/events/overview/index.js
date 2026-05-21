@@ -1051,6 +1051,7 @@ export function EventsOverview() {
             </div>
           ) : null
         }
+        statusFiltersBelowControls
       />
       )}
     </div>

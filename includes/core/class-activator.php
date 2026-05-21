@@ -58,6 +58,8 @@ class Activator {
 
 		// Queue a one-time rewrite rules flush after activation.
 		update_option( 'eventkoi_flush_needed', 'yes' );
+
+		Hooks::maybe_schedule_empty_auto_draft_cleanup();
 	}
 
 	/**

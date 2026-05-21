@@ -306,7 +306,7 @@ export function ContinuousEventDates({ event, updateDay, updateEvent, tbc }) {
 
             const base = startDate
               ? DateTime.fromJSDate(startDate, { zone: wpTz })
-              : DateTime.fromObject({ hour: 0, minute: 0 }, { zone: wpTz });
+              : DateTime.fromObject({ hour: 9, minute: 0 }, { zone: wpTz });
 
             const dtWall = pickedDate.set({
               hour: base.hour,
@@ -408,8 +408,8 @@ export function ContinuousEventDates({ event, updateDay, updateEvent, tbc }) {
             const base = endDate
               ? DateTime.fromJSDate(endDate, { zone: wpTz })
               : startDate
-              ? DateTime.fromJSDate(startDate, { zone: wpTz })
-              : DateTime.fromObject({ hour: 0, minute: 0 }, { zone: wpTz });
+              ? DateTime.fromJSDate(startDate, { zone: wpTz }).plus({ hours: 1 })
+              : DateTime.fromObject({ hour: 10, minute: 0 }, { zone: wpTz });
 
             const dtWall = pickedDate.set({
               hour: base.hour,
