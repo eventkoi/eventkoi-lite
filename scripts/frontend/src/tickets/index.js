@@ -508,12 +508,18 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
         : tickets.filter((ticket) => !getTicketLimits(ticket).unavailable),
     [tickets, showUnavailableTickets],
   );
+  const soldOutTickets = useMemo(
+    () => tickets.filter((ticket) => getTicketLimits(ticket).soldOut),
+    [tickets],
+  );
+  const displayTickets =
+    visibleTickets.length > 0 ? visibleTickets : soldOutTickets;
 
   useEffect(() => {
-    if (!visibleTickets.length) return;
+    if (!displayTickets.length) return;
     setQuantities((prev) => {
       const next = { ...prev };
-      visibleTickets.forEach((ticket) => {
+      displayTickets.forEach((ticket) => {
         const id = String(ticket.id);
         const { maxAllowedQty, unavailable } = getTicketLimits(ticket);
         if (typeof next[id] !== "number") {
@@ -530,7 +536,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
       });
       return next;
     });
-  }, [visibleTickets]);
+  }, [displayTickets]);
 
   useEffect(() => {
     if (!isDialogOpen) {
@@ -632,7 +638,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
 
   const selectedTicketItems = useMemo(
     () =>
-      visibleTickets
+      displayTickets
         .map((ticket) => {
           const qty = Math.max(0, Number(quantities[String(ticket.id)] || 0));
           if (qty < 1) return null;
@@ -647,7 +653,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
           };
         })
         .filter(Boolean),
-    [visibleTickets, quantities],
+    [displayTickets, quantities],
   );
 
   const summaryDate =
@@ -704,11 +710,11 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
     return null;
   }
 
-  if (visibleTickets.length === 0) {
+  if (displayTickets.length === 0) {
     return null;
   }
 
-  const prices = visibleTickets
+  const prices = displayTickets
     .map((ticket) => Number(ticket.price))
     .filter((price) => Number.isFinite(price) && price >= 0);
 
@@ -718,7 +724,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
 
   const minPrice = Math.min(...prices);
   const maxPrice = Math.max(...prices);
-  const currency = visibleTickets[0]?.currency || tickets[0]?.currency || "USD";
+  const currency = displayTickets[0]?.currency || tickets[0]?.currency || "USD";
 
   const formatWholeCurrency = (amount) => {
     try {
@@ -741,7 +747,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
           maxPrice,
         ).replace(/^[^0-9]+/, "")}`;
 
-  const latestSaleEndTs = visibleTickets.reduce((latest, ticket) => {
+  const latestSaleEndTs = displayTickets.reduce((latest, ticket) => {
     if (!ticket?.sale_end) return latest;
     const normalized = String(ticket.sale_end).replace(" ", "T") + "Z";
     const parsed = Date.parse(normalized);
@@ -755,23 +761,23 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
       ? formatTicketSaleDateTime(latestSaleEndTs)
       : null;
 
-  const allVisibleUnavailable =
-    visibleTickets.length > 0 &&
-    visibleTickets.every((ticket) => getTicketLimits(ticket).unavailable);
+  const allDisplayedUnavailable =
+    displayTickets.length > 0 &&
+    displayTickets.every((ticket) => getTicketLimits(ticket).unavailable);
 
-  const allVisibleSoldOut =
-    visibleTickets.length > 0 &&
-    visibleTickets.every((ticket) => getTicketLimits(ticket).soldOut);
+  const allDisplayedSoldOut =
+    displayTickets.length > 0 &&
+    displayTickets.every((ticket) => getTicketLimits(ticket).soldOut);
 
-  const allVisibleNotStarted =
-    visibleTickets.length > 0 &&
-    visibleTickets.every((ticket) => getTicketLimits(ticket).saleNotStarted);
+  const allDisplayedNotStarted =
+    displayTickets.length > 0 &&
+    displayTickets.every((ticket) => getTicketLimits(ticket).saleNotStarted);
 
-  const allVisibleSaleEnded =
-    visibleTickets.length > 0 &&
-    visibleTickets.every((ticket) => getTicketLimits(ticket).saleEnded);
+  const allDisplayedSaleEnded =
+    displayTickets.length > 0 &&
+    displayTickets.every((ticket) => getTicketLimits(ticket).saleEnded);
 
-  const earliestSaleStartTs = visibleTickets.reduce((earliest, ticket) => {
+  const earliestSaleStartTs = displayTickets.reduce((earliest, ticket) => {
     if (!ticket?.sale_start) return earliest;
     const normalized = String(ticket.sale_start).replace(" ", "T") + "Z";
     const parsed = Date.parse(normalized);
@@ -785,7 +791,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
       ? formatTicketSaleDateTime(earliestSaleStartTs)
       : null;
 
-  const orderTotal = visibleTickets.reduce((sum, ticket) => {
+  const orderTotal = displayTickets.reduce((sum, ticket) => {
     const qty = Math.max(0, Number(quantities[String(ticket.id)] || 0));
     return sum + (Number(ticket.price) || 0) * qty;
   }, 0);
@@ -1076,7 +1082,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
           </div>
         </div>
 
-        {allVisibleSaleEnded && saleEndLabel ? (
+        {allDisplayedSaleEnded && saleEndLabel ? (
           <div className="text-base text-muted-foreground">
             {sprintf(__("Ticket sales ended on %s.", "eventkoi-lite"), saleEndLabel)}
           </div>
@@ -1098,16 +1104,18 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
           type="button"
           className="h-14 w-full text-base font-semibold"
           onClick={() => {
-            if (!allVisibleSoldOut) {
+            if (!allDisplayedSoldOut) {
               setIsDialogOpen(true);
             }
           }}
-          disabled={allVisibleSoldOut}
+          disabled={allDisplayedSoldOut}
         >
           <Ticket className="mr-2 size-5" aria-hidden="true" />
-          {allVisibleSoldOut
+          {allDisplayedSoldOut
             ? __("Sold out", "eventkoi-lite")
-            : allVisibleUnavailable && !allVisibleNotStarted && !allVisibleSaleEnded
+            : allDisplayedUnavailable &&
+                !allDisplayedNotStarted &&
+                !allDisplayedSaleEnded
               ? __("Not on sale", "eventkoi-lite")
               : __("Get tickets", "eventkoi-lite")}
         </Button>
@@ -1135,7 +1143,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                 </div>
 
                 <div className="px-5 sm:px-6">
-                  {visibleTickets.map((ticket, idx) => {
+                  {displayTickets.map((ticket, idx) => {
                     const qty = Math.max(
                       0,
                       Number(quantities[String(ticket.id)] || 0),
@@ -1334,7 +1342,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                           className="text-sm leading-[20px] text-foreground border-0 border-b border-transparent hover:border-foreground transition-none"
                           onClick={() => {
                             const cleared = {};
-                            visibleTickets.forEach((ticket) => {
+                            displayTickets.forEach((ticket) => {
                               cleared[String(ticket.id)] = 0;
                             });
                             setQuantities(cleared);
@@ -1347,7 +1355,11 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                           type="button"
                           data-ek-react-checkout="1"
                           className="!block min-w-[118px] rounded-md border border-transparent bg-primary px-4 py-[8px] text-sm font-medium text-primary-foreground text-center transition-none hover:bg-primary/90 hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
-                          disabled={!canCheckout || allVisibleNotStarted || allVisibleSaleEnded}
+                          disabled={
+                            !canCheckout ||
+                            allDisplayedNotStarted ||
+                            allDisplayedSaleEnded
+                          }
                           onClick={() => {
                             setCheckoutError("");
                             setDialogStep("checkout");
@@ -1356,14 +1368,14 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                           {__("Checkout", "eventkoi-lite")}
                         </button>
                       </div>
-                      {allVisibleNotStarted && saleStartLabel ? (
+                      {allDisplayedNotStarted && saleStartLabel ? (
                         <div className="mt-1 text-sm font-medium text-destructive text-right">
                           {sprintf(
                             __("Ticket sales start on %s.", "eventkoi-lite"),
                             saleStartLabel,
                           )}
                         </div>
-                      ) : allVisibleSaleEnded ? (
+                      ) : allDisplayedSaleEnded ? (
                         <div className="mt-1 text-sm font-medium text-destructive text-right">
                           {__("Ticket sales have ended.", "eventkoi-lite")}
                         </div>
