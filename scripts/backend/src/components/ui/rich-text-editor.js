@@ -58,7 +58,7 @@ const buildYouTubeEmbedHtml = (rawUrl = "") => {
 
   const src = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(id)}`;
 
-  return `<figure class="eventkoi-video-embed"><iframe src="${src}" width="560" height="315" title="${escapeAttribute(
+  return `<figure class="eventkoi-video-embed eventkoi-video-embed--center"><iframe src="${src}" width="560" height="315" title="${escapeAttribute(
     __("YouTube video", "eventkoi-lite")
   )}" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen loading="lazy" referrerpolicy="strict-origin-when-cross-origin"></iframe></figure>`;
 };
@@ -70,9 +70,9 @@ const buildMediaVideoHtml = (attachment = {}) => {
   }
 
   const title = attachment.alt || attachment.title || __("Video", "eventkoi-lite");
-  return `<video controls preload="metadata" src="${escapeAttribute(
+  return `<figure class="eventkoi-video-embed eventkoi-video-embed--center"><video controls preload="metadata" src="${escapeAttribute(
     url
-  )}" title="${escapeAttribute(title)}"></video>`;
+  )}" title="${escapeAttribute(title)}"></video></figure>`;
 };
 
 export function RichTextEditor({
@@ -140,7 +140,9 @@ export function RichTextEditor({
       oldEditor.remove();
     }
 
-    const mediaToolbar = allowVideoEmbeds ? " | insertVideo insertYoutube" : "";
+    const mediaToolbar = allowVideoEmbeds
+      ? " | insertVideo insertYoutube | alignVideoCenter alignVideoWide alignVideoFull"
+      : "";
 
     window.tinymce.init({
       target: editorRef.current,
@@ -174,6 +176,7 @@ export function RichTextEditor({
         video {
           height: auto;
         }
+        /* Legacy unwrapped <video> (pre-alignment classes). */
         video {
           display: block;
           max-width: 560px;
@@ -181,13 +184,39 @@ export function RichTextEditor({
         }
         .eventkoi-video-embed {
           margin: 1em auto;
+        }
+        .eventkoi-video-embed--center {
           max-width: 560px;
+          margin-left: auto;
+          margin-right: auto;
+        }
+        .eventkoi-video-embed--wide {
+          max-width: 1100px;
+          margin-left: auto;
+          margin-right: auto;
+        }
+        .eventkoi-video-embed--full {
+          max-width: 100%;
+          margin-left: 0;
+          margin-right: 0;
         }
         .eventkoi-video-embed iframe {
           aspect-ratio: 16 / 9;
           width: 100%;
           height: auto;
           min-height: 220px;
+        }
+        .eventkoi-video-embed video {
+          display: block;
+          width: 100%;
+          max-width: 100%;
+          height: auto;
+          margin: 0;
+        }
+        .eventkoi-video-embed.mce-content-body-selected,
+        .eventkoi-video-embed[data-mce-selected] {
+          outline: 2px solid #2271b1;
+          outline-offset: 2px;
         }
       `,
       setup: (ed) => {
@@ -275,6 +304,53 @@ export function RichTextEditor({
               setYoutubeError("");
               setYoutubeModalOpen(true);
             },
+          });
+
+          const findSelectedVideoFigure = () => {
+            const root = ed.getBody();
+            let node = ed.selection.getNode();
+            while (node && node !== root) {
+              if (
+                node.classList &&
+                node.classList.contains("eventkoi-video-embed")
+              ) {
+                return node;
+              }
+              node = node.parentNode;
+            }
+            return null;
+          };
+
+          const applyVideoAlignment = (align) => {
+            const fig = findSelectedVideoFigure();
+            if (!fig) {
+              return;
+            }
+            fig.classList.remove(
+              "eventkoi-video-embed--center",
+              "eventkoi-video-embed--wide",
+              "eventkoi-video-embed--full"
+            );
+            fig.classList.add(`eventkoi-video-embed--${align}`);
+            ed.fire("Change");
+          };
+
+          ed.addButton("alignVideoCenter", {
+            text: __("Center video", "eventkoi-lite"),
+            tooltip: __("Align video center (default)", "eventkoi-lite"),
+            onclick: () => applyVideoAlignment("center"),
+          });
+
+          ed.addButton("alignVideoWide", {
+            text: __("Wide video", "eventkoi-lite"),
+            tooltip: __("Align video wide", "eventkoi-lite"),
+            onclick: () => applyVideoAlignment("wide"),
+          });
+
+          ed.addButton("alignVideoFull", {
+            text: __("Full video", "eventkoi-lite"),
+            tooltip: __("Align video full width", "eventkoi-lite"),
+            onclick: () => applyVideoAlignment("full"),
           });
         }
 

@@ -37,6 +37,7 @@ export function EventDescription({ isInstance = false, value, onChange }) {
         id={editorId}
         value={currentValue}
         onChange={handleChange}
+        height={400}
         allowVideoEmbeds
       />
     </Panel>
