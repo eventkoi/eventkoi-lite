@@ -434,8 +434,14 @@ For more information, see https://radix-ui.com/primitives/docs/components/alert-
         video {
           height: auto;
         }
+        video {
+          display: block;
+          max-width: 560px;
+          margin: 1em auto;
+        }
         .eventkoi-video-embed {
-          margin: 1em 0;
+          margin: 1em auto;
+          max-width: 560px;
         }
         .eventkoi-video-embed iframe {
           aspect-ratio: 16 / 9;
