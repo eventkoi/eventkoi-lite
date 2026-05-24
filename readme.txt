@@ -3,9 +3,9 @@ Contributors: eventkoi, lesleysim, ahmedfouaddev
 Donate link: https://donate.stripe.com/fZubJ1auN86Y1PU8cSdUY01
 Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
-Tested up to: 6.9
+Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.3.12.0
+Stable tag: 1.3.12.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -230,6 +230,9 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.12.1 – WordPress 7.0 compatibility – 2026-05-24 =
+* Compatibility: tested against WordPress 7.0 — admin Settings, calendar, event editor and frontend all verified.
 
 = 1.3.12.0 – Google-style week view, timezone-aware pipeline & dozens of fixes – 2026-05-21 =
 * New: REST API supports custom orderby on `/wp/v2/eventkoi_event` (start_date, event_start, upcoming, past) for use in core Query Loop blocks and headless integrations.
