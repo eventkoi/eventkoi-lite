@@ -5,7 +5,7 @@ import {
   TextControl,
   __experimentalHStack as HStack,
 } from "@wordpress/components";
-import { __ } from "@wordpress/i18n";
+import { __, sprintf } from "@wordpress/i18n";
 import { useEffect, useId, useRef, useState } from "react";
 
 const escapeAttribute = (value = "") =>
@@ -93,9 +93,8 @@ export function RichTextEditor({
   const onChangeRef = useRef(onChange);
   const insertContentRef = useRef(null);
   const [tinymceReady, setTinymceReady] = useState(!!window.tinymce);
-  const [youtubeModalOpen, setYoutubeModalOpen] = useState(false);
-  const [youtubeUrl, setYoutubeUrl] = useState("");
-  const [youtubeError, setYoutubeError] = useState("");
+  const [videoModal, setVideoModal] = useState(null);
+  const videoEditTargetRef = useRef(null);
 
   useEffect(() => {
     if (tinymceReady) return;
@@ -154,8 +153,7 @@ export function RichTextEditor({
       plugins: "lists link image wordpress",
       toolbar:
         `undo redo | heading1 heading2 heading3 heading4 | bold italic underline | bullist numlist | link | insertImage${mediaToolbar} | removeformat | htmlToggle`,
-      block_formats:
-        "Paragraph=p; Heading 1=h1; Heading 2=h2; Heading 3=h3; Heading 4=h4",
+      block_formats: `${__("Paragraph", "eventkoi-lite")}=p; ${__("Heading 1", "eventkoi-lite")}=h1; ${__("Heading 2", "eventkoi-lite")}=h2; ${__("Heading 3", "eventkoi-lite")}=h3; ${__("Heading 4", "eventkoi-lite")}=h4`,
       content_style: `
         body {
           padding: 2px 14px;
@@ -201,6 +199,21 @@ export function RichTextEditor({
           height: auto;
           margin: 0;
         }
+        .eventkoi-video-embed {
+          position: relative;
+          cursor: pointer;
+        }
+        .eventkoi-video-embed::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          z-index: 2;
+          background: transparent;
+        }
+        .eventkoi-video-embed:hover {
+          outline: 2px solid #2271b1;
+          outline-offset: 2px;
+        }
       `,
       setup: (ed) => {
         const insertContent = (html) => {
@@ -225,7 +238,11 @@ export function RichTextEditor({
         headings.forEach(({ id, label, block }) => {
           ed.addButton(id, {
             text: label,
-            tooltip: `Heading ${label}`,
+            tooltip: sprintf(
+              /* translators: %s: heading level, for example H1. */
+              __("Heading %s", "eventkoi-lite"),
+              label
+            ),
             onclick: () => ed.execCommand("FormatBlock", false, block),
             onPostRender() {
               const btn = this;
@@ -237,12 +254,12 @@ export function RichTextEditor({
         });
 
         ed.addButton("insertImage", {
-          tooltip: "Insert image",
+          tooltip: __("Insert image", "eventkoi-lite"),
           icon: "image",
           onclick: () => {
             const frame = window.wp?.media({
-              title: "Insert image",
-              button: { text: "Insert" },
+              title: __("Insert image", "eventkoi-lite"),
+              button: { text: __("Insert", "eventkoi-lite") },
               library: { type: "image" },
               multiple: false,
             });
@@ -273,7 +290,15 @@ export function RichTextEditor({
               });
               frame?.on("select", () => {
                 const attachment = frame.state().get("selection").first().toJSON();
-                insertContent(buildMediaVideoHtml(attachment));
+                videoEditTargetRef.current = null;
+                setVideoModal({
+                  kind: "media",
+                  url: attachment.url || "",
+                  urlReadOnly: true,
+                  widthMode: "custom",
+                  widthPx: 560,
+                  error: "",
+                });
               });
               frame?.open();
             },
@@ -283,17 +308,67 @@ export function RichTextEditor({
             text: __("YouTube", "eventkoi-lite"),
             tooltip: __("Embed YouTube video", "eventkoi-lite"),
             onclick: () => {
-              setYoutubeUrl("");
-              setYoutubeError("");
-              setYoutubeModalOpen(true);
+              videoEditTargetRef.current = null;
+              setVideoModal({
+                kind: "youtube",
+                url: "",
+                urlReadOnly: false,
+                widthMode: "custom",
+                widthPx: 560,
+                error: "",
+              });
             },
           });
 
+          ed.on("click", (event) => {
+            const root = ed.getBody();
+            let node = event.target;
+            while (node && node !== root) {
+              if (
+                node.classList &&
+                node.classList.contains("eventkoi-video-embed")
+              ) {
+                break;
+              }
+              node = node.parentNode;
+            }
+            if (!node || node === root) {
+              return;
+            }
+            const iframe = node.querySelector("iframe");
+            const videoEl = node.querySelector("video");
+            const kind = iframe ? "youtube" : "media";
+            let url = "";
+            if (iframe) {
+              const match = (iframe.getAttribute("src") || "").match(
+                /\/embed\/([^?&/]+)/
+              );
+              if (match) {
+                url = `https://www.youtube.com/watch?v=${match[1]}`;
+              }
+            } else if (videoEl) {
+              url = videoEl.getAttribute("src") || "";
+            }
+            const inlineMaxWidth = node.style.maxWidth || "";
+            const isFull = inlineMaxWidth === "100%";
+            const pxMatch = inlineMaxWidth.match(/^(\d+)px$/);
+            videoEditTargetRef.current = node;
+            setVideoModal({
+              kind,
+              url,
+              urlReadOnly: kind === "media",
+              widthMode: isFull ? "full" : "custom",
+              widthPx: pxMatch ? parseInt(pxMatch[1], 10) : 560,
+              error: "",
+            });
+            event.preventDefault();
+            event.stopPropagation();
+          });
         }
 
         ed.addButton("htmlToggle", {
-          text: "Switch to Code Editor",
-          tooltip: "Toggle HTML view",
+          text: __("Switch to Code Editor", "eventkoi-lite"),
+          tooltip: __("Toggle HTML view", "eventkoi-lite"),
           onclick: () => {
             const content = ed.getContent({ format: "html" });
             setHtmlContent(content);
@@ -325,61 +400,176 @@ export function RichTextEditor({
     };
   }, [tinymceReady, showHTML, editorId, height, disabled, allowVideoEmbeds]);
 
-  const closeYoutubeModal = () => {
-    setYoutubeModalOpen(false);
-    setYoutubeUrl("");
-    setYoutubeError("");
+  const closeVideoModal = () => {
+    setVideoModal(null);
+    videoEditTargetRef.current = null;
     window.tinymce?.get(editorId)?.focus();
   };
 
-  const submitYoutubeEmbed = (event) => {
+  const submitVideoModal = (event) => {
     event.preventDefault();
-
-    const html = buildYouTubeEmbedHtml(youtubeUrl);
-    if (!html) {
-      setYoutubeError(__("Enter a valid YouTube URL.", "eventkoi-lite"));
+    if (!videoModal) {
       return;
     }
 
-    insertContentRef.current?.(html);
-    closeYoutubeModal();
+    const ed = window.tinymce?.get(editorId);
+    if (!ed) {
+      return;
+    }
+
+    let styleAttr = "";
+    if (videoModal.widthMode === "full") {
+      styleAttr = ' style="max-width:100%"';
+    } else {
+      const px = Math.max(
+        120,
+        Math.min(2000, parseInt(videoModal.widthPx, 10) || 560)
+      );
+      styleAttr = ` style="max-width:${px}px"`;
+    }
+
+    let innerHtml;
+    if (videoModal.kind === "youtube") {
+      const wrapped = buildYouTubeEmbedHtml(videoModal.url);
+      if (!wrapped) {
+        setVideoModal({
+          ...videoModal,
+          error: __("Enter a valid YouTube URL.", "eventkoi-lite"),
+        });
+        return;
+      }
+      innerHtml = wrapped.replace(/^<figure[^>]*>|<\/figure>$/g, "");
+    } else {
+      const src = (videoModal.url || "").trim();
+      if (!src) {
+        setVideoModal({
+          ...videoModal,
+          error: __("Video URL is required.", "eventkoi-lite"),
+        });
+        return;
+      }
+      innerHtml = `<video controls preload="metadata" src="${escapeAttribute(
+        src
+      )}"></video>`;
+    }
+
+    const newFigureHtml = `<figure class="eventkoi-video-embed"${styleAttr}>${innerHtml}</figure>`;
+
+    if (videoEditTargetRef.current) {
+      const tmp = ed.getDoc().createElement("div");
+      tmp.innerHTML = newFigureHtml;
+      const newFig = tmp.firstChild;
+      videoEditTargetRef.current.replaceWith(newFig);
+      const content = ed.getContent();
+      lastEditorValue.current = content;
+      onChangeRef.current?.(content);
+    } else {
+      insertContentRef.current?.(newFigureHtml);
+    }
+
+    closeVideoModal();
   };
 
-  const youtubeModal = allowVideoEmbeds && youtubeModalOpen && (
+  const videoModalUI = allowVideoEmbeds && videoModal && (
     <Modal
-      title={__("Embed YouTube video", "eventkoi-lite")}
-      onRequestClose={closeYoutubeModal}
-      className="eventkoi-youtube-embed-modal"
+      title={
+        videoEditTargetRef.current
+          ? __("Edit video", "eventkoi-lite")
+          : videoModal.kind === "youtube"
+          ? __("Embed YouTube video", "eventkoi-lite")
+          : __("Insert video", "eventkoi-lite")
+      }
+      onRequestClose={closeVideoModal}
+      className="eventkoi-video-embed-modal"
     >
-      <form onSubmit={submitYoutubeEmbed}>
+      <form onSubmit={submitVideoModal}>
         <TextControl
-          label={__("YouTube URL", "eventkoi-lite")}
-          help={__(
-            "Paste a YouTube watch, Shorts, Live, or youtu.be URL.",
-            "eventkoi-lite"
-          )}
-          value={youtubeUrl}
-          onChange={(nextValue) => {
-            setYoutubeUrl(nextValue);
-            if (youtubeError) {
-              setYoutubeError("");
-            }
-          }}
-          autoFocus
+          label={
+            videoModal.kind === "youtube"
+              ? __("YouTube URL", "eventkoi-lite")
+              : __("Video URL", "eventkoi-lite")
+          }
+          help={
+            videoModal.kind === "youtube"
+              ? __(
+                  "Paste a YouTube watch, Shorts, Live, or youtu.be URL.",
+                  "eventkoi-lite"
+                )
+              : undefined
+          }
+          value={videoModal.url}
+          readOnly={videoModal.urlReadOnly}
+          disabled={videoModal.urlReadOnly}
+          onChange={(nextValue) =>
+            setVideoModal({ ...videoModal, url: nextValue, error: "" })
+          }
+          autoFocus={!videoModal.urlReadOnly}
         />
 
-        {youtubeError ? (
+        <div style={{ marginTop: 16 }}>
+          <strong style={{ display: "block", marginBottom: 8 }}>
+            {__("Width", "eventkoi-lite")}
+          </strong>
+          <label style={{ display: "inline-flex", alignItems: "center", gap: 6, marginRight: 16 }}>
+            <input
+              type="radio"
+              name={`ek-video-width-${editorId}`}
+              value="custom"
+              checked={videoModal.widthMode === "custom"}
+              onChange={() =>
+                setVideoModal({ ...videoModal, widthMode: "custom" })
+              }
+            />
+            {__("Custom", "eventkoi-lite")}
+          </label>
+          <label style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+            <input
+              type="radio"
+              name={`ek-video-width-${editorId}`}
+              value="full"
+              checked={videoModal.widthMode === "full"}
+              onChange={() =>
+                setVideoModal({ ...videoModal, widthMode: "full" })
+              }
+            />
+            {__("Full width", "eventkoi-lite")}
+          </label>
+
+          {videoModal.widthMode === "custom" && (
+            <div style={{ marginTop: 10, display: "flex", alignItems: "center", gap: 8 }}>
+              <input
+                type="number"
+                min={120}
+                max={2000}
+                step={10}
+                value={videoModal.widthPx}
+                onChange={(e) =>
+                  setVideoModal({
+                    ...videoModal,
+                    widthPx: parseInt(e.target.value, 10) || 0,
+                  })
+                }
+                style={{ width: 100 }}
+              />
+              <span>{__("px", "eventkoi-lite")}</span>
+            </div>
+          )}
+        </div>
+
+        {videoModal.error ? (
           <Notice status="error" isDismissible={false}>
-            {youtubeError}
+            {videoModal.error}
           </Notice>
         ) : null}
 
         <HStack justify="flex-end" className="mt-6">
-          <WordPressButton variant="tertiary" onClick={closeYoutubeModal}>
+          <WordPressButton variant="tertiary" onClick={closeVideoModal}>
             {__("Cancel", "eventkoi-lite")}
           </WordPressButton>
           <WordPressButton variant="primary" type="submit">
-            {__("Embed video", "eventkoi-lite")}
+            {videoEditTargetRef.current
+              ? __("Update video", "eventkoi-lite")
+              : __("Insert video", "eventkoi-lite")}
           </WordPressButton>
         </HStack>
       </form>
@@ -413,7 +603,7 @@ export function RichTextEditor({
   return (
     <>
       <textarea id={editorId} ref={editorRef} />
-      {youtubeModal}
+      {videoModalUI}
     </>
   );
 }
