@@ -726,24 +726,27 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
   const maxPrice = Math.max(...prices);
   const currency = displayTickets[0]?.currency || tickets[0]?.currency || "USD";
 
-  const formatWholeCurrency = (amount) => {
+  const formatTicketCurrency = (amount) => {
+    const normalizedAmount = Number(amount) || 0;
+    const hasCents = Math.abs(normalizedAmount % 1) > 0.000001;
+
     try {
       return new Intl.NumberFormat(undefined, {
         style: "currency",
         currency,
         currencyDisplay: "symbol",
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(amount);
+        minimumFractionDigits: hasCents ? 2 : 0,
+        maximumFractionDigits: hasCents ? 2 : 0,
+      }).format(normalizedAmount);
     } catch (e) {
-      return formatPrice(amount, currency);
+      return formatPrice(normalizedAmount, currency);
     }
   };
 
   const priceRange =
     minPrice === maxPrice
-      ? formatWholeCurrency(minPrice)
-      : `${formatWholeCurrency(minPrice)}-${formatWholeCurrency(
+      ? formatTicketCurrency(minPrice)
+      : `${formatTicketCurrency(minPrice)}-${formatTicketCurrency(
           maxPrice,
         ).replace(/^[^0-9]+/, "")}`;
 
@@ -1175,7 +1178,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                               <Ticket className="size-5 shrink-0 text-foreground" aria-hidden="true" />
                               <div className="min-w-0">
                                 <div className="text-[20px] font-semibold leading-none text-foreground tabular-nums">
-                                  {formatWholeCurrency(
+                                  {formatTicketCurrency(
                                     Number(ticket.price) || 0,
                                   )}
                                 </div>
@@ -1332,7 +1335,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                         </span>
                         <span className="text-3xl leading-none font-semibold tabular-nums text-foreground">
                           <span role="status" aria-live="polite">
-                            {formatWholeCurrency(orderTotal)}
+                            {formatTicketCurrency(orderTotal)}
                           </span>
                         </span>
                       </div>
