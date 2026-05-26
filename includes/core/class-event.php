@@ -2791,7 +2791,7 @@ class Event {
 	 * @param string $key Field key to retrieve.
 	 * @return mixed
 	 */
-	protected static function get_instance_field( $key ) {
+	public static function get_instance_field( $key ) {
 		$instance_ts = eventkoi_get_instance_id();
 
 		if ( empty( $instance_ts ) ) {
