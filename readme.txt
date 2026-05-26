@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.3.12.1
+Stable tag: 1.3.12.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -230,6 +230,9 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.12.2 – Fix fatal on single event pages – 2026-05-26 =
+* Fix: Single event pages crashed with a PHP fatal ("Call to protected method Event::get_instance_field from scope Schema") whenever the JSON-LD generator ran. Method visibility corrected to public, matching the Pro codebase. Affected 1.3.12.0 and 1.3.12.1.
 
 = 1.3.12.1 – WordPress 7.0 compatibility – 2026-05-24 =
 * Compatibility: tested against WordPress 7.0 — admin Settings, calendar, event editor and frontend all verified.
