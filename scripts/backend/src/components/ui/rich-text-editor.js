@@ -139,7 +139,7 @@ export function RichTextEditor({
       oldEditor.remove();
     }
 
-    const mediaToolbar = allowVideoEmbeds ? " | insertVideo insertYoutube" : "";
+    const mediaToolbar = allowVideoEmbeds ? " insertVideo insertYoutube" : "";
 
     window.tinymce.init({
       target: editorRef.current,
@@ -279,7 +279,8 @@ export function RichTextEditor({
 
         if (allowVideoEmbeds) {
           ed.addButton("insertVideo", {
-            text: __("Video", "eventkoi-lite"),
+            image:
+              "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzU1NSI+PHBhdGggZD0iTTE3IDEwLjVWN2MwLS41NS0uNDUtMS0xLTFINGMtLjU1IDAtMSAuNDUtMSAxdjEwYzAgLjU1LjQ1IDEgMSAxaDEyYy41NSAwIDEtLjQ1IDEtMXYtMy41bDQgNHYtMTFsLTQgNHoiLz48L3N2Zz4=",
             tooltip: __("Insert video from media library", "eventkoi-lite"),
             onclick: () => {
               const frame = window.wp?.media({
@@ -305,7 +306,8 @@ export function RichTextEditor({
           });
 
           ed.addButton("insertYoutube", {
-            text: __("YouTube", "eventkoi-lite"),
+            image:
+              "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI0ZGMDAwMCIgZD0iTTIxLjU4MiA3LjIwN2EyLjUxIDIuNTEgMCAwIDAtMS43NjgtMS43NjhDMTguMjU0IDUgMTIgNSAxMiA1cy02LjI1NCAwLTcuODE0LjQzOUEyLjUxIDIuNTEgMCAwIDAgMi40MTggNy4yMDdDMiA4Ljc2NyAyIDEyIDIgMTJzMCAzLjIzMy40MTggNC43OTNhMi41MSAyLjUxIDAgMCAwIDEuNzY4IDEuNzY4QzUuNzQ2IDE5IDEyIDE5IDEyIDE5czYuMjU0IDAgNy44MTQtLjQzOWEyLjUxIDIuNTEgMCAwIDAgMS43NjgtMS43NjhDMjIgMTUuMjMzIDIyIDEyIDIyIDEyczAtMy4yMzMtLjQxOC00Ljc5M3oiLz48cGF0aCBmaWxsPSIjZmZmIiBkPSJNMTAgMTVWOWw1LjE5NiAzTDEwIDE1eiIvPjwvc3ZnPg==",
             tooltip: __("Embed YouTube video", "eventkoi-lite"),
             onclick: () => {
               videoEditTargetRef.current = null;
