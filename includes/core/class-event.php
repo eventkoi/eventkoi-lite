@@ -3541,14 +3541,18 @@ class Event {
 		// Fallback: full set of standard dates or recurring rules.
 		$data = ( 'recurring' === $type ) ? self::get_recurrence_rules() : self::get_event_days_for_rendering();
 
-		if ( empty( $data ) || ! is_array( $data ) ) {
+		// Standard + continuous events read directly from start_date/end_date meta
+		// and don't require event_days to be populated. Only short-circuit when
+		// the data set is empty AND we aren't in the continuous branch below.
+		$is_continuous = ( 'standard' === $type && 'continuous' === self::get_standard_type() );
+		if ( ! $is_continuous && ( empty( $data ) || ! is_array( $data ) ) ) {
 			return '';
 		}
 
 		$outputs = array();
 
 		// Handle continuous standard events using event start/end meta.
-		if ( 'standard' === $type && 'continuous' === self::get_standard_type() ) {
+		if ( $is_continuous ) {
 			$start_date = self::get_start_date(); // Already stored in UTC.
 			$end_date   = self::get_end_date();
 
