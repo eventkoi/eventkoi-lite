@@ -243,7 +243,13 @@ export function RichTextEditor({
               __("Heading %s", "eventkoi-lite"),
               label
             ),
-            onclick: () => ed.execCommand("FormatBlock", false, block),
+            onclick: () => {
+              if (ed.formatter.match(block)) {
+                ed.execCommand("FormatBlock", false, "p");
+              } else {
+                ed.execCommand("FormatBlock", false, block);
+              }
+            },
             onPostRender() {
               const btn = this;
               ed.on("NodeChange", () => {
@@ -369,8 +375,8 @@ export function RichTextEditor({
         }
 
         ed.addButton("htmlToggle", {
-          text: __("Switch to Code Editor", "eventkoi-lite"),
-          tooltip: __("Toggle HTML view", "eventkoi-lite"),
+          text: __("Switch to HTML", "eventkoi-lite"),
+          tooltip: __("Switch to HTML view", "eventkoi-lite"),
           onclick: () => {
             const content = ed.getContent({ format: "html" });
             setHtmlContent(content);
@@ -587,7 +593,7 @@ export function RichTextEditor({
             onClick={() => setShowHTML(false)}
             className="mx-[8px] px-[6px] py-[4px] mce-btn mce-btn-has-text text-sm border-none bg-transparent cursor-pointer hover:bg-[#e5e7eb] text-[#374151]"
           >
-            <span className="mce-txt">{__("Switch to Visual Editor", "eventkoi-lite")}</span>
+            <span className="mce-txt">{__("Switch to visual", "eventkoi-lite")}</span>
           </button>
         </div>
         <textarea
