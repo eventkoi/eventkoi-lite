@@ -48,6 +48,7 @@ import { SettingsEmails } from "@/admin/settings/emails";
 import { SettingsPayments } from "@/admin/settings/payments";
 import { SettingsImport } from "@/admin/settings/import";
 import { SettingsPermissions } from "@/admin/settings/permissions";
+import { SettingsSubmissions } from "@/admin/settings/submissions";
 
 import { Nav } from "@/components/nav";
 import { FeatureDisabled } from "@/components/empty-state/FeatureDisabled";
@@ -204,6 +205,7 @@ function AdminLayout() {
           )}
           <Route path="emails" element={<SettingsEmails />} />
           <Route path="fields" element={<SettingsFields />} />
+          <Route path="submissions" element={<SettingsSubmissions />} />
           <Route path="integrations" element={<SettingsIntegrations />} />
           <Route path="import" element={<SettingsImport />} />
           <Route path="permissions" element={<SettingsPermissions />} />
