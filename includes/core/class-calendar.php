@@ -628,7 +628,7 @@ class Calendar {
 		$display_context = sanitize_key( (string) $args['display'] );
 		$post_status = isset( $args['post_status'] ) ? (array) $args['post_status'] : array( 'publish' );
 
-		$allowed_orderby = array( 'modified', 'date_modified', 'date', 'publish_date', 'title', 'start_date', 'event_start', 'upcoming' );
+		$allowed_orderby = array( 'modified', 'date_modified', 'date', 'publish_date', 'title', 'start_date', 'event_start', 'upcoming', 'past', 'past_events' );
 		if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
 			$orderby = 'modified';
 		}
@@ -642,10 +642,16 @@ class Calendar {
 		if ( 'start_date' === $orderby ) {
 			$orderby = 'event_start';
 		}
+		if ( 'past_events' === $orderby ) {
+			$orderby = 'past';
+		}
+		if ( 'past' === $orderby ) {
+			$order = 'DESC';
+		}
 
 		// Map custom orderby values to valid WP_Query keys.
 		$post_orderby = $orderby;
-		if ( in_array( $orderby, array( 'start_date', 'event_start' ), true ) ) {
+		if ( in_array( $orderby, array( 'start_date', 'event_start', 'past' ), true ) ) {
 			$post_orderby = 'date';
 		}
 
@@ -949,6 +955,32 @@ class Calendar {
 		$results = array_values( $results );
 
 		if ( 'upcoming' === $orderby ) {
+			$now     = time();
+			$results = array_filter(
+				$results,
+				static function ( $item ) use ( $now ) {
+					$start_ts = ! empty( $item['start'] ) ? strtotime( (string) $item['start'] ) : 0;
+
+					return $start_ts >= $now;
+				}
+			);
+			$results = array_values( $results );
+		}
+
+		if ( 'past' === $orderby ) {
+			$now     = time();
+			$results = array_filter(
+				$results,
+				static function ( $item ) use ( $now ) {
+					$start_ts = ! empty( $item['start'] ) ? strtotime( (string) $item['start'] ) : 0;
+
+					return $start_ts > 0 && $start_ts < $now;
+				}
+			);
+			$results = array_values( $results );
+		}
+
+		if ( 'upcoming' === $orderby || 'past' === $orderby ) {
 			usort(
 				$results,
 				static function ( $a, $b ) use ( $order ) {

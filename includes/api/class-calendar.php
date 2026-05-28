@@ -169,7 +169,7 @@ class Calendar {
 				$order = 'desc';
 			}
 
-			$allowed_orderby = array( 'modified', 'date_modified', 'date', 'publish_date', 'title', 'start_date', 'event_start', 'upcoming' );
+			$allowed_orderby = array( 'modified', 'date_modified', 'date', 'publish_date', 'title', 'start_date', 'event_start', 'upcoming', 'past', 'past_events' );
 			if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
 				$orderby = 'date_modified';
 			}
@@ -184,6 +184,9 @@ class Calendar {
 
 			if ( 'event_start' === $orderby || 'start_date' === $orderby ) {
 				$orderby = 'event_start';
+			}
+			if ( 'past_events' === $orderby ) {
+				$orderby = 'past';
 			}
 
 			if ( 'upcoming' === $orderby && ! $request->has_param( 'order' ) ) {
@@ -311,7 +314,7 @@ class Calendar {
 		$orderby = isset( $orderby ) ? sanitize_text_field( $orderby ) : 'date_modified';
 
 		// Allow only known orderby values.
-		$allowed_orderby = array( 'modified', 'date_modified', 'date', 'publish_date', 'title', 'start_date', 'event_start', 'upcoming' );
+		$allowed_orderby = array( 'modified', 'date_modified', 'date', 'publish_date', 'title', 'start_date', 'event_start', 'upcoming', 'past', 'past_events' );
 		if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
 			$orderby = 'date_modified';
 		}
@@ -326,6 +329,9 @@ class Calendar {
 
 		if ( 'event_start' === $orderby || 'start_date' === $orderby ) {
 			$orderby = 'event_start';
+		}
+		if ( 'past_events' === $orderby ) {
+			$orderby = 'past';
 		}
 
 		if ( 'upcoming' === $orderby && ! $request->has_param( 'order' ) ) {

@@ -378,7 +378,7 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 	}
 
 	if ( 'list' === $display ) {
-		$allowed_orderby = array( 'modified', 'date_modified', 'date', 'publish_date', 'title', 'start_date', 'event_start', 'upcoming' );
+		$allowed_orderby = array( 'modified', 'date_modified', 'date', 'publish_date', 'title', 'start_date', 'event_start', 'upcoming', 'past', 'past_events' );
 		if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
 			$orderby = 'date_modified';
 		}
@@ -391,11 +391,17 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 		if ( 'start_date' === $orderby ) {
 			$orderby = 'event_start';
 		}
+		if ( 'past_events' === $orderby ) {
+			$orderby = 'past';
+		}
 		if ( ! in_array( $order, array( 'asc', 'desc' ), true ) ) {
 			$order = 'desc';
 		}
 		if ( 'upcoming' === $orderby && empty( $args['order'] ) ) {
 			$order = 'asc';
+		}
+		if ( 'past' === $orderby ) {
+			$order = 'desc';
 		}
 		$per_page    = $per_page > 0 ? min( $per_page, 100 ) : 10;
 		$max_results = $max_results > 0 ? min( $max_results, 1000 ) : 0;
