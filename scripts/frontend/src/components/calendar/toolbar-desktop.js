@@ -29,6 +29,8 @@ export function ToolbarDesktop(props) {
     timezone,
     timeFormat,
     searchScope,
+    onSearchScopePrev,
+    onSearchScopeNext,
     inputRef,
   } = props;
   const desktopRef = useRef(null);
@@ -146,6 +148,8 @@ export function ToolbarDesktop(props) {
             timezone={timezone}
             timeFormat={timeFormat}
             searchScope={searchScope}
+            onSearchScopePrev={onSearchScopePrev}
+            onSearchScopeNext={onSearchScopeNext}
           />
         </div>
       </div>
@@ -198,6 +202,8 @@ export function ToolbarDesktop(props) {
             timezone={timezone}
             timeFormat={timeFormat}
             searchScope={searchScope}
+            onSearchScopePrev={onSearchScopePrev}
+            onSearchScopeNext={onSearchScopeNext}
           />
         </div>
       </div>

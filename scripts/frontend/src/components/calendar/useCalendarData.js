@@ -5,13 +5,20 @@ import { useEffect, useRef, useState } from "react";
 import { DateTime } from "luxon";
 import publicApi from "@/lib/public-api";
 
-const getCalendarRequestRange = (start, end, viewType, timezone) => {
+const getCalendarRequestRange = (
+  start,
+  end,
+  viewType,
+  timezone,
+  anchorDate = null
+) => {
   if (!start || !end || !String(viewType || "").startsWith("timeGrid")) {
     return { start, end };
   }
 
   const zone = timezone || "UTC";
-  const monthStart = DateTime.fromJSDate(start, { zone }).startOf("month");
+  const monthBasis = anchorDate || start;
+  const monthStart = DateTime.fromJSDate(monthBasis, { zone }).startOf("month");
 
   if (!monthStart.isValid) {
     return { start, end };
@@ -132,13 +139,19 @@ export function useCalendarData({
     }
   };
 
-  const loadEventsForView = async (start, end, viewType = "") => {
+  const loadEventsForView = async (
+    start,
+    end,
+    viewType = "",
+    anchorDate = null
+  ) => {
     const requestTimezone = getRequestTimezone();
     const requestRange = getCalendarRequestRange(
       start,
       end,
       viewType,
-      requestTimezone
+      requestTimezone,
+      anchorDate
     );
 
     // Claim a sequence number so out-of-order responses (fast month/week nav)

@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-05-29T16:33:02+00:00\n"
+"POT-Creation-Date: 2026-05-29T16:50:14+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -841,8 +841,8 @@ msgstr ""
 
 #: includes/core/class-blocks.php:1024
 #: scripts/backend/src/blocks/event-query-loop/index.js:83
-#: scripts/frontend/src/components/calendar/search-box.js:287
-#: scripts/frontend/src/components/calendar/search-box.js:315
+#: scripts/frontend/src/components/calendar/search-box.js:289
+#: scripts/frontend/src/components/calendar/search-box.js:341
 msgid "No events found."
 msgstr ""
 
@@ -862,7 +862,7 @@ msgstr ""
 #: scripts/backend/src/blocks/event-query-loop/index.js:77
 #: scripts/backend/src/components/calendar/nav-controls.js:22
 #: scripts/backend/src/components/ui/pagination.jsx:73
-#: scripts/frontend/src/components/calendar/search-box.js:388
+#: scripts/frontend/src/components/calendar/search-box.js:414
 msgid "Next"
 msgstr ""
 
@@ -1493,9 +1493,9 @@ msgstr ""
 #: includes/core/class-post-types.php:126
 #: scripts/backend/src/components/calendar/search-box.js:199
 #: scripts/backend/src/components/calendar/toolbar-mobile.js:100
-#: scripts/frontend/src/components/calendar/search-box.js:230
-#: scripts/frontend/src/components/calendar/search-box.js:238
-#: scripts/frontend/src/components/calendar/toolbar-mobile.js:133
+#: scripts/frontend/src/components/calendar/search-box.js:232
+#: scripts/frontend/src/components/calendar/search-box.js:240
+#: scripts/frontend/src/components/calendar/toolbar-mobile.js:137
 msgid "Search events"
 msgstr ""
 
@@ -4328,7 +4328,7 @@ msgstr ""
 
 #: scripts/backend/src/blocks/event-data/event-data-controls.js:142
 #: scripts/backend/src/components/calendar/search-box.js:198
-#: scripts/frontend/src/components/calendar/search-box.js:237
+#: scripts/frontend/src/components/calendar/search-box.js:239
 msgid "Search events…"
 msgstr ""
 
@@ -6135,8 +6135,10 @@ msgstr ""
 msgid "Count updated."
 msgstr ""
 
-#: scripts/frontend/src/components/calendar/calendar-toolbar.js:42
-msgid "Search results for this month."
+#. translators: %s: month and year, for example May 2026.
+#: scripts/frontend/src/components/calendar/calendar-toolbar.js:56
+#, js-format
+msgid "Search results for %s."
 msgstr ""
 
 #: scripts/frontend/src/components/calendar/CalendarHeaderPopover.js:87
@@ -6196,30 +6198,46 @@ msgstr ""
 msgid "Go to next period"
 msgstr ""
 
-#: scripts/frontend/src/components/calendar/search-box.js:285
+#: scripts/frontend/src/components/calendar/search-box.js:287
 msgid "Loading events..."
 msgstr ""
 
 #. translators: %d: number of events found
-#: scripts/frontend/src/components/calendar/search-box.js:290
+#: scripts/frontend/src/components/calendar/search-box.js:292
 #, js-format
 msgid "%d events found."
 msgstr ""
 
-#: scripts/frontend/src/components/calendar/search-box.js:361
+#: scripts/frontend/src/components/calendar/search-box.js:319
+msgid "Search previous month"
+msgstr ""
+
+#: scripts/frontend/src/components/calendar/search-box.js:322
+msgid "Previous month"
+msgstr ""
+
+#: scripts/frontend/src/components/calendar/search-box.js:329
+msgid "Search next month"
+msgstr ""
+
+#: scripts/frontend/src/components/calendar/search-box.js:332
+msgid "Next month"
+msgstr ""
+
+#: scripts/frontend/src/components/calendar/search-box.js:387
 msgid "Previous page"
 msgstr ""
 
-#: scripts/frontend/src/components/calendar/search-box.js:365
+#: scripts/frontend/src/components/calendar/search-box.js:391
 msgid "Prev"
 msgstr ""
 
-#: scripts/frontend/src/components/calendar/search-box.js:370
+#: scripts/frontend/src/components/calendar/search-box.js:396
 #, js-format
 msgid "Page %1$d of %2$d"
 msgstr ""
 
-#: scripts/frontend/src/components/calendar/search-box.js:384
+#: scripts/frontend/src/components/calendar/search-box.js:410
 msgid "Next page"
 msgstr ""
 

@@ -1,6 +1,6 @@
 import { ToolbarDesktop } from "@/components/calendar/toolbar-desktop";
 import { ToolbarMobile } from "@/components/calendar/toolbar-mobile";
-import { __ } from "@wordpress/i18n";
+import { __, sprintf } from "@wordpress/i18n";
 import { useEffect, useRef, useState } from "react";
 
 const MAX_RESULTS = 10;
@@ -38,11 +38,41 @@ export function CalendarToolbar({
     page * MAX_RESULTS,
     (page + 1) * MAX_RESULTS
   );
-  const searchScope = String(view || "").startsWith("timeGrid")
-    ? __("Search results for this month.", "eventkoi-lite")
+  const isMonthScopedSearch = String(view || "").startsWith("timeGrid");
+  const searchScopeDate =
+    currentDate instanceof Date && !Number.isNaN(currentDate.getTime())
+      ? currentDate
+      : calendarApi?.getDate?.() || new Date();
+  const searchScopeMonth = new Intl.DateTimeFormat(
+    (eventkoi_params?.locale || "en").replace("_", "-"),
+    {
+      month: "long",
+      year: "numeric",
+    }
+  ).format(searchScopeDate);
+  const searchScope = isMonthScopedSearch
+    ? sprintf(
+        /* translators: %s: month and year, for example May 2026. */
+        __("Search results for %s.", "eventkoi-lite"),
+        searchScopeMonth
+      )
     : "";
+  const moveSearchScopeMonth = (direction) => {
+    if (!calendarApi || !isMonthScopedSearch) {
+      return;
+    }
 
-  useEffect(() => setPage(0), [search]);
+    const base = calendarApi.getDate?.() || searchScopeDate;
+    const target = new Date(base);
+
+    target.setDate(1);
+    target.setMonth(target.getMonth() + direction);
+    calendarApi.gotoDate(target);
+    setCurrentDate(target);
+    setPage(0);
+  };
+
+  useEffect(() => setPage(0), [search, searchScope]);
 
   const isTodayInRange = (() => {
     if (!calendarApi) return false;
@@ -73,6 +103,12 @@ export function CalendarToolbar({
     timezone,
     timeFormat,
     searchScope,
+    onSearchScopePrev: isMonthScopedSearch
+      ? () => moveSearchScopeMonth(-1)
+      : undefined,
+    onSearchScopeNext: isMonthScopedSearch
+      ? () => moveSearchScopeMonth(1)
+      : undefined,
     inputRef,
   };
 

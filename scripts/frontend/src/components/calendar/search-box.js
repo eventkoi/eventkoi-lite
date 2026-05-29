@@ -215,6 +215,8 @@ export function SearchBox({
   timeFormat,
   setSearchOpen,
   searchScope,
+  onSearchScopePrev,
+  onSearchScopeNext,
 }) {
   const isLoading = events === undefined || events === null;
   const isEmpty = !isLoading && events.length === 0;
@@ -306,7 +308,31 @@ export function SearchBox({
           >
             {searchScope ? (
               <div className="px-2 pb-2 text-xs text-muted-foreground">
-                {searchScope}
+                <div>{searchScope}</div>
+                {onSearchScopePrev || onSearchScopeNext ? (
+                  <div className="mt-2 flex items-center gap-2">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={onSearchScopePrev}
+                      aria-label={__("Search previous month", "eventkoi-lite")}
+                      className="h-7 cursor-pointer box-border border-none bg-transparent px-2 text-xs text-foreground shadow-none"
+                    >
+                      {__("Previous month", "eventkoi-lite")}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={onSearchScopeNext}
+                      aria-label={__("Search next month", "eventkoi-lite")}
+                      className="h-7 cursor-pointer box-border border-none bg-transparent px-2 text-xs text-foreground shadow-none"
+                    >
+                      {__("Next month", "eventkoi-lite")}
+                    </Button>
+                  </div>
+                ) : null}
               </div>
             ) : null}
 

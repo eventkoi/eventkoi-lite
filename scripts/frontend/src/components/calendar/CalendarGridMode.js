@@ -689,8 +689,12 @@ export function CalendarGridMode({
           if (lastRangeRef.current === key) return;
           closeEventPopover();
           lastRangeRef.current = key;
-          loadEventsForView(start, end, view.type);
-          setCurrentDate(view.currentStart);
+          const anchorDate =
+            calendarRef?.current?.getApi?.()?.getDate?.() ||
+            view.currentStart ||
+            start;
+          loadEventsForView(start, end, view.type, anchorDate);
+          setCurrentDate(anchorDate);
           if (view.type.startsWith("timeGrid")) {
             setTimeout(() => {
               const api = calendarRef?.current?.getApi?.();
