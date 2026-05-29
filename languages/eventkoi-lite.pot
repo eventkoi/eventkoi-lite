@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-05-29T14:40:41+00:00\n"
+"POT-Creation-Date: 2026-05-29T16:33:02+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -1708,6 +1708,7 @@ msgid "Organizer"
 msgstr ""
 
 #: includes/core/class-tec-importer.php:306
+#: scripts/backend/src/components/calendar/EventPopover.js:745
 #: scripts/backend/src/components/order/CustomerInfo.js:29
 #: scripts/frontend/src/checkin/index.js:489
 #: scripts/frontend/src/components/calendar/EventPopover.js:745
@@ -4671,6 +4672,32 @@ msgstr ""
 msgid "Share"
 msgstr ""
 
+#: scripts/backend/src/components/calendar/EventPopover.js:733
+msgid "Whatsapp"
+msgstr ""
+
+#: scripts/backend/src/components/calendar/EventPopover.js:739
+#: scripts/frontend/src/components/calendar/EventPopover.js:739
+#: scripts/frontend/src/share/index.js:89
+msgid "Instagram"
+msgstr ""
+
+#: scripts/backend/src/components/calendar/EventPopover.js:751
+#: scripts/frontend/src/components/calendar/EventPopover.js:751
+#: scripts/frontend/src/share/index.js:101
+msgid "Facebook"
+msgstr ""
+
+#: scripts/backend/src/components/calendar/EventPopover.js:754
+#: scripts/frontend/src/components/calendar/EventPopover.js:757
+#: scripts/frontend/src/share/index.js:107
+msgid "X"
+msgstr ""
+
+#: scripts/backend/src/components/calendar/EventPopover.js:758
+msgid "Linkedin"
+msgstr ""
+
 #: scripts/backend/src/components/calendar/EventPopover.js:764
 #: scripts/frontend/src/components/calendar/EventPopover.js:770
 #: scripts/frontend/src/share/index.js:119
@@ -6142,21 +6169,6 @@ msgstr ""
 msgid "WhatsApp"
 msgstr ""
 
-#: scripts/frontend/src/components/calendar/EventPopover.js:739
-#: scripts/frontend/src/share/index.js:89
-msgid "Instagram"
-msgstr ""
-
-#: scripts/frontend/src/components/calendar/EventPopover.js:751
-#: scripts/frontend/src/share/index.js:101
-msgid "Facebook"
-msgstr ""
-
-#: scripts/frontend/src/components/calendar/EventPopover.js:757
-#: scripts/frontend/src/share/index.js:107
-msgid "X"
-msgstr ""
-
 #: scripts/frontend/src/components/calendar/EventPopover.js:763
 #: scripts/frontend/src/share/index.js:113
 msgid "LinkedIn"
@@ -6170,6 +6182,18 @@ msgstr ""
 #: scripts/frontend/src/components/calendar/EventPopover.js:809
 #: scripts/frontend/src/share/index.js:153
 msgid "Event link copied to clipboard"
+msgstr ""
+
+#: scripts/frontend/src/components/calendar/list-view.js:250
+msgid "No event image"
+msgstr ""
+
+#: scripts/frontend/src/components/calendar/nav-controls.js:27
+msgid "Go to previous period"
+msgstr ""
+
+#: scripts/frontend/src/components/calendar/nav-controls.js:37
+msgid "Go to next period"
 msgstr ""
 
 #: scripts/frontend/src/components/calendar/search-box.js:285

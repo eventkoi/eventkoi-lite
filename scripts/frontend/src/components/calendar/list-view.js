@@ -1,6 +1,7 @@
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { buildTimeline, safeNormalizeTimeZone } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
+import { __ } from "@wordpress/i18n";
 import { Globe, Image, MapPin } from "lucide-react";
 
 const locationText = (source = {}, key) => {
@@ -245,7 +246,9 @@ export function ListView({
                         className="w-6 h-6 text-muted-foreground/40"
                         aria-hidden="true"
                       />
-                      <span className="sr-only">No event image</span>
+                      <span className="sr-only">
+                        {__("No event image", "eventkoi-lite")}
+                      </span>
                     </div>
                   )}
                 </AspectRatio>

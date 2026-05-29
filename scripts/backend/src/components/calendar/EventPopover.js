@@ -730,32 +730,32 @@ export function EventPopover({
               <ShareLink
                 event={event}
                 name="whatsapp"
-                title="Whatsapp"
+                title={__("Whatsapp", "eventkoi-lite")}
                 icon={<WhatsappIcon />}
               />
               <ShareLink
                 event={event}
                 name="instagram"
-                title="Instagram"
+                title={__("Instagram", "eventkoi-lite")}
                 icon={<InstagramIcon />}
               />
               <ShareLink
                 event={event}
                 name="email"
-                title="Email"
+                title={__("Email", "eventkoi-lite")}
                 icon={<EmailIcon />}
               />
               <ShareLink
                 event={event}
                 name="facebook"
-                title="Facebook"
+                title={__("Facebook", "eventkoi-lite")}
                 icon={<FacebookIcon />}
               />
-              <ShareLink event={event} name="x" title="X" icon={<XIcon />} />
+              <ShareLink event={event} name="x" title={__("X", "eventkoi-lite")} icon={<XIcon />} />
               <ShareLink
                 event={event}
                 name="linkedin"
-                title="Linkedin"
+                title={__("Linkedin", "eventkoi-lite")}
                 icon={<LinkedinIcon />}
               />
             </div>

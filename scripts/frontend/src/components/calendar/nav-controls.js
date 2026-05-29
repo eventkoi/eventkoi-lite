@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { __ } from "@wordpress/i18n";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export function NavControls({ calendarApi, currentDate, setCurrentDate }) {
@@ -23,7 +24,7 @@ export function NavControls({ calendarApi, currentDate, setCurrentDate }) {
         size="icon"
         className="text-[1px] box-border p-0 w-10 h-10 border-solid shadow-none cursor-pointer rounded"
         onClick={() => move("prev")}
-        aria-label="Go to previous period"
+        aria-label={__("Go to previous period", "eventkoi-lite")}
       >
         <ChevronLeft className="w-4 h-4" aria-hidden="true" />
       </Button>
@@ -33,7 +34,7 @@ export function NavControls({ calendarApi, currentDate, setCurrentDate }) {
         size="icon"
         className="text-[1px] box-border p-0 w-10 h-10 border-solid shadow-none cursor-pointer rounded"
         onClick={() => move("next")}
-        aria-label="Go to next period"
+        aria-label={__("Go to next period", "eventkoi-lite")}
       >
         <ChevronRight className="w-4 h-4" aria-hidden="true" />
       </Button>
