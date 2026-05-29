@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { __ } from "@wordpress/i18n";
 
 export function TodayButton({ calendarApi, setCurrentDate, isTodayInRange }) {
   const handleToday = () => {
@@ -17,11 +18,11 @@ export function TodayButton({ calendarApi, setCurrentDate, isTodayInRange }) {
       )}
       disabled={isTodayInRange}
       onClick={handleToday}
-      aria-label="Jump to today"
+      aria-label={__("Jump to today", "eventkoi-lite")}
       aria-pressed={isTodayInRange}
-      title="Jump to today"
+      title={__("Jump to today", "eventkoi-lite")}
     >
-      Today
+      {__("Today", "eventkoi-lite")}
     </Button>
   );
 }

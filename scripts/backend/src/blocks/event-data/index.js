@@ -41,9 +41,19 @@ registerBlockType("eventkoi/event-data", {
     typography: {
       fontSize: true,
       lineHeight: true,
+      textColumns: true,
+      textIndent: true,
       __experimentalFontFamily: true,
-      fontStyle: true,
+      __experimentalTextDecoration: true,
       __experimentalFontStyle: true,
+      __experimentalFontWeight: true,
+      __experimentalLetterSpacing: true,
+      __experimentalTextTransform: true,
+      __experimentalWritingMode: true,
+      fitText: true,
+      __experimentalDefaultControls: {
+        fontSize: true,
+      },
     },
     spacing: {
       margin: true,

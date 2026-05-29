@@ -1,4 +1,5 @@
 import { __, sprintf } from "@wordpress/i18n";
+import { createInterpolateElement } from "@wordpress/element";
 import { EventDateTBCSetting } from "@/components/event/event-date-tbc-setting";
 import { EventDateTimezoneSetting } from "@/components/event/event-date-timezone-setting";
 import { ShortcodeBox } from "@/components/ShortcodeBox";
@@ -36,35 +37,48 @@ import { memo, useCallback, useState } from "react";
 import { Link } from "react-router-dom";
 
 const WEEKDAY_NAMES = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
+  __("Sunday", "eventkoi-lite"),
+  __("Monday", "eventkoi-lite"),
+  __("Tuesday", "eventkoi-lite"),
+  __("Wednesday", "eventkoi-lite"),
+  __("Thursday", "eventkoi-lite"),
+  __("Friday", "eventkoi-lite"),
+  __("Saturday", "eventkoi-lite"),
 ];
 const MONTHS = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
+  __("January", "eventkoi-lite"),
+  __("February", "eventkoi-lite"),
+  __("March", "eventkoi-lite"),
+  __("April", "eventkoi-lite"),
+  __("May", "eventkoi-lite"),
+  __("June", "eventkoi-lite"),
+  __("July", "eventkoi-lite"),
+  __("August", "eventkoi-lite"),
+  __("September", "eventkoi-lite"),
+  __("October", "eventkoi-lite"),
+  __("November", "eventkoi-lite"),
+  __("December", "eventkoi-lite"),
+];
+const ORDINALS = [
+  __("first", "eventkoi-lite"),
+  __("second", "eventkoi-lite"),
+  __("third", "eventkoi-lite"),
+  __("fourth", "eventkoi-lite"),
+  __("fifth", "eventkoi-lite"),
 ];
 
 function getOrdinal(date) {
   if (!(date instanceof Date) || isNaN(date)) return "";
   const dayOfMonth = date.getDate();
   const ordinalIndex = Math.ceil(dayOfMonth / 7);
-  const ordinals = ["first", "second", "third", "fourth", "fifth"];
-  return ordinals[ordinalIndex - 1] || `${ordinalIndex}th`;
+  return (
+    ORDINALS[ordinalIndex - 1] ||
+    sprintf(
+      /* translators: %d: ordinal number fallback, for example 6th. */
+      __("%dth", "eventkoi-lite"),
+      ordinalIndex
+    )
+  );
 }
 
 function normalizeJsDate(value) {
@@ -686,15 +700,18 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                   htmlFor={`working-days-${index}`}
                   className="text-sm text-muted-foreground"
                 >
-                  {__("Only count", "eventkoi-lite")}{" "}
-                  <Link
-                    to="/settings"
-                    className="underline text-muted-foreground hover:text-primary/80"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {__("working days", "eventkoi-lite")}
-                  </Link>
-                  .
+                  {createInterpolateElement(
+                    __("Only count <link>working days</link>.", "eventkoi-lite"),
+                    {
+                      link: (
+                        <Link
+                          to="/settings"
+                          className="underline text-muted-foreground hover:text-primary/80"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      ),
+                    }
+                  )}
                 </label>
               </div>
             )}
@@ -739,17 +756,25 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="day-of-month">
-                      day {start ? start.getDate() : ""}
+                      {sprintf(
+                        /* translators: %s: day of the month. */
+                        __("day %s", "eventkoi-lite"),
+                        start ? start.getDate() : ""
+                      )}
                     </SelectItem>
                     <SelectItem value="weekday-of-month">
-                      the {getOrdinal(start)}{" "}
-                      {WEEKDAY_NAMES[
-                        getJsWeekdayFromLuxon(
-                          DateTime.fromISO(rule.start_date, { zone: "utc" }).setZone(
-                            wpTz
-                          )
-                        ) ?? 0
-                      ]}
+                      {sprintf(
+                        /* translators: 1: ordinal week in month, 2: weekday name. */
+                        __("the %1$s %2$s", "eventkoi-lite"),
+                        getOrdinal(start),
+                        WEEKDAY_NAMES[
+                          getJsWeekdayFromLuxon(
+                            DateTime.fromISO(rule.start_date, { zone: "utc" }).setZone(
+                              wpTz
+                            )
+                          ) ?? 0
+                        ]
+                      )}
                     </SelectItem>
                   </SelectContent>
                 </Select>
@@ -838,7 +863,7 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                 {/* On: Day rule selector */}
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-medium text-foreground">
-                    On
+                    {__("On", "eventkoi-lite")}
                   </span>
                   <Select
                     value={rule.month_day_rule}
@@ -851,17 +876,25 @@ export const EventDateRecurring = memo(function EventDateRecurring({
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="day-of-month">
-                      day {start ? start.getDate() : ""}
+                        {sprintf(
+                          /* translators: %s: day of the month. */
+                          __("day %s", "eventkoi-lite"),
+                          start ? start.getDate() : ""
+                        )}
                       </SelectItem>
                       <SelectItem value="weekday-of-month">
-                        the {getOrdinal(start)}{" "}
-                        {WEEKDAY_NAMES[
-                          getJsWeekdayFromLuxon(
-                            DateTime.fromISO(rule.start_date, { zone: "utc" }).setZone(
-                              wpTz
-                            )
-                          ) ?? 0
-                        ]}
+                        {sprintf(
+                          /* translators: 1: ordinal week in month, 2: weekday name. */
+                          __("the %1$s %2$s", "eventkoi-lite"),
+                          getOrdinal(start),
+                          WEEKDAY_NAMES[
+                            getJsWeekdayFromLuxon(
+                              DateTime.fromISO(rule.start_date, { zone: "utc" }).setZone(
+                                wpTz
+                              )
+                            ) ?? 0
+                          ]
+                        )}
                       </SelectItem>
                     </SelectContent>
                   </Select>

@@ -31,6 +31,9 @@ class Settings {
 				'currency' => 'USD',
 			)
 		);
+		$settings['permalinks'] = function_exists( 'eventkoi_get_permalink_structure' )
+			? eventkoi_get_permalink_structure()
+			: array();
 
 		return apply_filters( 'eventkoi_get_settings', $settings );
 	}
@@ -45,6 +48,7 @@ class Settings {
 		do_action( 'eventkoi_before_save_settings', $settings );
 
 		$settings = self::deep_sanitize( $settings );
+		unset( $settings['permalinks'] );
 
 		update_option( 'eventkoi_settings', apply_filters( 'eventkoi_set_settings', $settings ) );
 	}

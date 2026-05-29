@@ -28,6 +28,7 @@ export function ToolbarDesktop(props) {
     setPage,
     timezone,
     timeFormat,
+    searchScope,
     inputRef,
   } = props;
   const desktopRef = useRef(null);
@@ -144,6 +145,7 @@ export function ToolbarDesktop(props) {
             setPage={setPage}
             timezone={timezone}
             timeFormat={timeFormat}
+            searchScope={searchScope}
           />
         </div>
       </div>
@@ -195,6 +197,7 @@ export function ToolbarDesktop(props) {
             setPage={setPage}
             timezone={timezone}
             timeFormat={timeFormat}
+            searchScope={searchScope}
           />
         </div>
       </div>

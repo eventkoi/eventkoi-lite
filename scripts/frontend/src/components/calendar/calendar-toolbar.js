@@ -1,5 +1,6 @@
 import { ToolbarDesktop } from "@/components/calendar/toolbar-desktop";
 import { ToolbarMobile } from "@/components/calendar/toolbar-mobile";
+import { __ } from "@wordpress/i18n";
 import { useEffect, useRef, useState } from "react";
 
 const MAX_RESULTS = 10;
@@ -37,6 +38,9 @@ export function CalendarToolbar({
     page * MAX_RESULTS,
     (page + 1) * MAX_RESULTS
   );
+  const searchScope = String(view || "").startsWith("timeGrid")
+    ? __("Search results for this month.", "eventkoi-lite")
+    : "";
 
   useEffect(() => setPage(0), [search]);
 
@@ -68,6 +72,7 @@ export function CalendarToolbar({
     setPage,
     timezone,
     timeFormat,
+    searchScope,
     inputRef,
   };
 

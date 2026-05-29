@@ -35,6 +35,7 @@ class Event {
 	 */
 	private static $meta_keys = array(
 		'title',
+		'slug',
 		'description',
 		'summary',
 		'image',
@@ -161,6 +162,11 @@ class Event {
 		foreach ( self::$meta_keys as $key ) {
 			$method       = 'get_' . $key;
 			$meta[ $key ] = method_exists( __CLASS__, $method ) ? self::$method() : '';
+		}
+
+		$native_edit_url = self::get_native_edit_url();
+		if ( '' !== $native_edit_url ) {
+			$meta['native_edit_url'] = $native_edit_url;
 		}
 
 		// Apply instance-specific overrides, if any.
@@ -407,13 +413,14 @@ class Event {
 
 		$id    = $meta['id'];
 		$title = $meta['title'];
+		$slug  = ! empty( $meta['slug'] ) ? sanitize_title( $meta['slug'] ) : '';
 
 		if ( 0 === $id ) {
 			$args = array(
 				'post_type'   => 'eventkoi_event',
 				'post_status' => $status,
 				'post_title'  => $title,
-				'post_name'   => sanitize_title( $title ),
+				'post_name'   => $slug ? $slug : sanitize_title( $title ),
 				'post_author' => get_current_user_id(),
 			);
 
@@ -436,9 +443,12 @@ class Event {
 		$args = array(
 			'ID'          => $id,
 			'post_title'  => $title,
-			'post_name'   => sanitize_title( $title ),
 			'post_status' => $status,
 		);
+
+		if ( '' !== $slug ) {
+			$args['post_name'] = $slug;
+		}
 
 		$last_id        = wp_update_post( $args );
 		$event          = get_post( $last_id );
@@ -628,6 +638,17 @@ class Event {
 		$id = self::$event_id;
 
 		return apply_filters( 'eventkoi_get_event_id', $id, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Get event slug.
+	 *
+	 * @return string
+	 */
+	public static function get_slug() {
+		$slug = ! empty( self::$event->post_name ) ? self::$event->post_name : '';
+
+		return apply_filters( 'eventkoi_get_event_slug', $slug, self::$event_id, self::$event );
 	}
 
 	/**
@@ -1263,6 +1284,28 @@ class Event {
 		$url = eventkoi_append_frontend_timezone_arg( $url );
 
 		return apply_filters( 'eventkoi_get_event_url', $url, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Get the native WordPress edit URL for SEO plugin panels.
+	 *
+	 * @return string
+	 */
+	public static function get_native_edit_url() {
+		if ( empty( self::$event_id ) || ! current_user_can( 'edit_post', self::$event_id ) ) {
+			return '';
+		}
+
+		$url = add_query_arg(
+			array(
+				'post'            => absint( self::$event_id ),
+				'action'          => 'edit',
+				'eventkoi_native' => '1',
+			),
+			admin_url( 'post.php' )
+		);
+
+		return apply_filters( 'eventkoi_get_event_native_edit_url', esc_url_raw( $url ), self::$event_id, self::$event );
 	}
 
 	/**
@@ -4682,10 +4725,15 @@ class Event {
 			) {
 				try {
 					$start        = new \DateTimeImmutable( $start_date );
-					$weekday_name = $start->format( 'l' );
+					$weekday_name = wp_date( 'l', $start->getTimestamp(), $start->getTimezone() );
 					$nth          = (int) ceil( $start->format( 'j' ) / 7 );
 					$nth_str      = isset( $ordinals[ $nth ] ) ? $ordinals[ $nth ] : $nth . 'th';
-					$label       .= ', on the ' . $nth_str . ' ' . $weekday_name;
+					$label       .= sprintf(
+						/* translators: 1: ordinal week in the month, 2: weekday name. */
+						__( ', on the %1$s %2$s', 'eventkoi-lite' ),
+						$nth_str,
+						$weekday_name
+					);
 				} catch ( \Exception $e ) {} // phpcs:ignore.
 			}
 
@@ -4696,7 +4744,11 @@ class Event {
 			) {
 				try {
 					$start  = new \DateTimeImmutable( $start_date );
-					$label .= ', on day ' . (int) $start->format( 'j' );
+					$label .= sprintf(
+						/* translators: %d: day number in the month. */
+						__( ', on day %d', 'eventkoi-lite' ),
+						(int) $start->format( 'j' )
+					);
 				} catch ( \Exception $e ) {} // phpcs:ignore.
 			}
 
@@ -4726,7 +4778,11 @@ class Event {
 					}
 				}
 				if ( ! empty( $selected_months ) ) {
-					$label .= ', in ' . implode( ', ', $selected_months );
+					$label .= sprintf(
+						/* translators: %s: comma-separated month names. */
+						__( ', in %s', 'eventkoi-lite' ),
+						implode( ', ', $selected_months )
+					);
 				}
 			}
 
@@ -4739,7 +4795,11 @@ class Event {
 					}
 				}
 				if ( ! empty( $days ) ) {
-					$label .= ', on ' . implode( ', ', $days );
+					$label .= sprintf(
+						/* translators: %s: comma-separated weekday names. */
+						__( ', on %s', 'eventkoi-lite' ),
+						implode( ', ', $days )
+					);
 				}
 			}
 
@@ -4829,21 +4889,39 @@ class Event {
 					}
 					$remaining = $total - $completed;
 					if ( 0 === $total ) {
-						$label .= ', forever';
+						$label .= __( ', forever', 'eventkoi-lite' );
 					} elseif ( isset( $rule['ends'] ) && 'after' === $rule['ends'] ) {
 						if ( 0 === $remaining ) {
-							$label .= ', all ' . $total . ' events completed';
+							$label .= sprintf(
+								/* translators: %d: total completed events. */
+								_n( ', all %d event completed', ', all %d events completed', $total, 'eventkoi-lite' ),
+								$total
+							);
 						} else {
-							$label .= ', ' . $remaining . ' of ' . $total . ' events left';
+							$label .= sprintf(
+								/* translators: 1: remaining events, 2: total events. */
+								_n( ', %1$d of %2$d event left', ', %1$d of %2$d events left', $remaining, 'eventkoi-lite' ),
+								$remaining,
+								$total
+							);
 						}
 					} elseif ( isset( $rule['ends'] ) && 'on' === $rule['ends'] ) {
 						if ( 0 === $remaining ) {
-							$label .= ', all ' . $total . ' events completed';
+							$label .= sprintf(
+								/* translators: %d: total completed events. */
+								_n( ', all %d event completed', ', all %d events completed', $total, 'eventkoi-lite' ),
+								$total
+							);
 						} else {
-							$label .= ', ' . $remaining . ' of ' . $total . ' events left';
+							$label .= sprintf(
+								/* translators: 1: remaining events, 2: total events. */
+								_n( ', %1$d of %2$d event left', ', %1$d of %2$d events left', $remaining, 'eventkoi-lite' ),
+								$remaining,
+								$total
+							);
 						}
 					} else {
-						$label .= ', forever';
+						$label .= __( ', forever', 'eventkoi-lite' );
 					}
 				} catch ( \Exception $e ) {} // phpcs:ignore.
 			}

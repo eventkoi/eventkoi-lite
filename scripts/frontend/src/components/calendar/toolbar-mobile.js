@@ -31,6 +31,7 @@ export function ToolbarMobile(props) {
     setPage,
     timezone,
     timeFormat,
+    searchScope,
   } = props;
 
   const [searchOpen, setSearchOpen] = useState(false);
@@ -92,6 +93,7 @@ export function ToolbarMobile(props) {
             setPage={setPage}
             timezone={timezone}
             timeFormat={timeFormat}
+            searchScope={searchScope}
             setSearchOpen={setSearchOpen}
           />
         </div>

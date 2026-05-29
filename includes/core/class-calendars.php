@@ -43,8 +43,7 @@ class Calendars {
 		}
 
 		foreach ( $terms as $term ) {
-			$stored_color = get_term_meta( $term->term_id, 'color', true );
-			$color        = '' !== (string) $stored_color ? (string) $stored_color : eventkoi_default_calendar_color();
+			$color = eventkoi_get_stored_calendar_color( $term->term_id );
 
 			$results[] = array(
 				'id'        => $term->term_id,

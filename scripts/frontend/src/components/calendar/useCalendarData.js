@@ -2,7 +2,26 @@
 
 import { getInitialCalendarDate } from "@/lib/date-utils";
 import { useEffect, useRef, useState } from "react";
+import { DateTime } from "luxon";
 import publicApi from "@/lib/public-api";
+
+const getCalendarRequestRange = (start, end, viewType, timezone) => {
+  if (!start || !end || !String(viewType || "").startsWith("timeGrid")) {
+    return { start, end };
+  }
+
+  const zone = timezone || "UTC";
+  const monthStart = DateTime.fromJSDate(start, { zone }).startOf("month");
+
+  if (!monthStart.isValid) {
+    return { start, end };
+  }
+
+  return {
+    start: monthStart.toUTC().toJSDate(),
+    end: monthStart.plus({ months: 1 }).toUTC().toJSDate(),
+  };
+};
 
 export function useCalendarData({
   id,
@@ -113,7 +132,15 @@ export function useCalendarData({
     }
   };
 
-  const loadEventsForView = async (start, end) => {
+  const loadEventsForView = async (start, end, viewType = "") => {
+    const requestTimezone = getRequestTimezone();
+    const requestRange = getCalendarRequestRange(
+      start,
+      end,
+      viewType,
+      requestTimezone
+    );
+
     // Claim a sequence number so out-of-order responses (fast month/week nav)
     // don't overwrite fresh state with stale results.
     const requestId = viewRequestIdRef.current + 1;
@@ -125,9 +152,10 @@ export function useCalendarData({
       const params = new URLSearchParams({ id: effectiveId, display });
       if (shouldApplyListSorting && orderby) params.set("orderby", orderby);
       if (shouldApplyListSorting && order) params.set("order", order);
-      if (start) params.set("start", start.toISOString());
-      if (end) params.set("end", end.toISOString());
-      if (display === "calendar") params.set("timezone", getRequestTimezone());
+      if (requestRange.start) params.set("start", requestRange.start.toISOString());
+      if (requestRange.end) params.set("end", requestRange.end.toISOString());
+      if (viewType) params.set("view_type", viewType);
+      if (display === "calendar") params.set("timezone", requestTimezone);
 
       const response = await publicApi({
         path: `/calendar_events?${params.toString()}`,

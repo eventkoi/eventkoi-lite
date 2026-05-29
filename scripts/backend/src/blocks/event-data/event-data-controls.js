@@ -8,6 +8,31 @@ import { useState } from "@wordpress/element";
 import { __ } from "@wordpress/i18n";
 import { useEventOptions } from "./fetch-event";
 
+const DATE_TIME_FIELDS = new Set([
+  "timeline",
+  "event_datetime",
+  "event_datetime_with_summary",
+  "event_date",
+  "event_time",
+  "event_timezone",
+  "event_date_type",
+  "event_rulesummary",
+  "event_date_year",
+  "event_date_month",
+  "event_date_month_short",
+  "event_date_day",
+  "event_date_day_name",
+  "event_date_iso",
+]);
+
+const getSettingsUrl = () => {
+  const ajaxUrl = window.eventkoi_params?.ajax_url || "";
+  if (ajaxUrl) {
+    return ajaxUrl.replace(/admin-ajax\.php.*$/, "admin.php?page=eventkoi#/settings");
+  }
+  return "admin.php?page=eventkoi#/settings";
+};
+
 export function EventDataControls({
   attributes,
   setAttributes,
@@ -17,6 +42,8 @@ export function EventDataControls({
   const { field, eventId } = attributes;
   const [searchValue, setSearchValue] = useState("");
   const { options, isLoading } = useEventOptions(searchValue, eventId);
+  const isDateTimeField = DATE_TIME_FIELDS.has(field);
+  const settingsUrl = getSettingsUrl();
 
   return (
     <>
@@ -83,6 +110,16 @@ export function EventDataControls({
           ]}
           onChange={(val) => setAttributes({ field: val })}
         />
+
+        {isDateTimeField && (
+          <p className="text-xs opacity-70 mt-2">
+            {__("Date and time fields use the formats configured in", "eventkoi-lite")}{" "}
+            <a href={settingsUrl} target="_blank" rel="noreferrer">
+              {__("EventKoi settings", "eventkoi-lite")}
+            </a>
+            .
+          </p>
+        )}
       </PanelBody>
 
       {/* ---------------------------------- */}

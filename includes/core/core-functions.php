@@ -528,16 +528,31 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
  */
 function eventkoi_get_permalink_structure() {
 	$saved_permalinks = (array) get_option( 'eventkoi_permalinks', array() );
-
-	$permalinks = array(
+	$defaults         = array(
 		'event_base'             => _x( 'event', 'slug', 'eventkoi-lite' ),
 		'category_base'          => _x( 'calendar', 'slug', 'eventkoi-lite' ),
 		'use_verbose_page_rules' => false,
 	);
+	$permalinks       = wp_parse_args( $saved_permalinks, $defaults );
 
-	// Save only if values have changed.
-	if ( $saved_permalinks !== $permalinks ) {
-		update_option( 'eventkoi_permalinks', $permalinks );
+	foreach ( array( 'event_base', 'category_base' ) as $key ) {
+		$base = untrailingslashit( sanitize_title_with_dashes( (string) ( $permalinks[ $key ] ?? '' ) ) );
+		if ( '' === $base ) {
+			$base = untrailingslashit( sanitize_title_with_dashes( (string) $defaults[ $key ] ) );
+		}
+		$permalinks[ $key ] = $base;
+	}
+
+	$permalinks['use_verbose_page_rules'] = rest_sanitize_boolean( $permalinks['use_verbose_page_rules'] ?? false );
+
+	$stored = array(
+		'event_base'             => $permalinks['event_base'],
+		'category_base'          => $permalinks['category_base'],
+		'use_verbose_page_rules' => $permalinks['use_verbose_page_rules'],
+	);
+
+	if ( $saved_permalinks !== $stored ) {
+		update_option( 'eventkoi_permalinks', $stored );
 	}
 
 	// Sanitize and set rewrite slugs.
@@ -1060,6 +1075,33 @@ function eventkoi_default_calendar_color() {
 	 * @param string $color Default calendar color in hex format.
 	 */
 	return apply_filters( 'eventkoi_default_calendar_color', '#578CA7' );
+}
+
+/**
+ * Get the stored calendar color, preserving explicit transparency.
+ *
+ * @param int $calendar_id Calendar term ID.
+ * @return string Calendar color.
+ */
+function eventkoi_get_stored_calendar_color( $calendar_id = 0 ) {
+	$calendar_id = absint( $calendar_id );
+
+	if ( ! $calendar_id ) {
+		return eventkoi_default_calendar_color();
+	}
+
+	$color     = get_term_meta( $calendar_id, 'color', true );
+	$has_color = metadata_exists( 'term', $calendar_id, 'color' );
+
+	if ( $has_color && '' === (string) $color ) {
+		return 'transparent';
+	}
+
+	if ( '' === (string) $color ) {
+		return eventkoi_default_calendar_color();
+	}
+
+	return (string) $color;
 }
 
 /**

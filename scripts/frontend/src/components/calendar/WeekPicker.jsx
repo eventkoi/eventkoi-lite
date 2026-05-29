@@ -17,6 +17,23 @@ function getWeekStartDayByName(data, value) {
   return entry ? Number(entry[0]) : undefined;
 }
 
+const wpLocale =
+  typeof window !== "undefined" && window.eventkoi_params?.locale
+    ? window.eventkoi_params.locale.replace("_", "-")
+    : "en";
+
+const weekPickerFormatters = {
+  formatCaption: (date) =>
+    new Intl.DateTimeFormat(wpLocale, {
+      month: "long",
+      year: "numeric",
+    }).format(date),
+  formatWeekdayName: (date) =>
+    new Intl.DateTimeFormat(wpLocale, {
+      weekday: "short",
+    }).format(date),
+};
+
 export function WeekPicker({ calendarApi, currentDate, setCurrentDate }) {
   const { startday } = eventkoi_params;
   const weekStartsOn = getWeekStartDayByName(dayLabels, startday);
@@ -56,10 +73,6 @@ export function WeekPicker({ calendarApi, currentDate, setCurrentDate }) {
   };
 
   const handleMonthChange = (newMonth) => {
-    // Detect next / previous
-    const isNext = newMonth > displayMonth;
-    const isPrev = newMonth < displayMonth;
-
     // Keep same day number if possible
     const newSelected = setMonth(selectedDate, newMonth.getMonth());
 
@@ -81,6 +94,7 @@ export function WeekPicker({ calendarApi, currentDate, setCurrentDate }) {
       selected={selectedDays}
       month={displayMonth}
       weekStartsOn={weekStartsOn}
+      formatters={weekPickerFormatters}
       onSelect={handleDateSelect}
       onMonthChange={handleMonthChange}
       classNames={{

@@ -1,4 +1,5 @@
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { __ } from "@wordpress/i18n";
 
 export function ViewToggle({ calendarApi, view, setView }) {
   return (
@@ -14,15 +15,17 @@ export function ViewToggle({ calendarApi, view, setView }) {
     >
       <ToggleGroupItem
         value="dayGridMonth"
+        aria-label={__("Month view", "eventkoi-lite")}
         className="border-none transition-none cursor-pointer shadow-none h-full rounded-sm text-foreground hover:text-foreground data-[state=on]:bg-white data-[state=on]:font-semibold"
       >
-        Month
+        {__("Month", "eventkoi-lite")}
       </ToggleGroupItem>
       <ToggleGroupItem
         value="timeGridWeek"
+        aria-label={__("Week view", "eventkoi-lite")}
         className="border-none transition-none cursor-pointer shadow-none h-full rounded-sm text-foreground hover:text-foreground data-[state=on]:bg-white data-[state=on]:font-semibold"
       >
-        Week
+        {__("Week", "eventkoi-lite")}
       </ToggleGroupItem>
     </ToggleGroup>
   );

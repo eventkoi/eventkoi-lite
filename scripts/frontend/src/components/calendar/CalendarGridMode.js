@@ -10,6 +10,7 @@ import listPlugin from "@fullcalendar/list";
 import luxonPlugin from "@fullcalendar/luxon3";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
+import { __, sprintf } from "@wordpress/i18n";
 import { DateTime } from "luxon";
 import { useEffect, useRef } from "react";
 
@@ -343,12 +344,21 @@ export function CalendarGridMode({
     }
 
     // Google-style multi-day display: start segment shows the full range
-    // including the end weekday ("3am – Sun 8pm"). Middle/end segments
-    // show title only.
+    // including the end weekday ("3am – Sun 8pm"). Middle segments carry a
+    // "Full day" label so all-day-height spans do not look like missing data.
     if (isTimedMultiDayEvent(arg)) {
       const isStartSegment = arg.isStart !== false;
+      const isEndSegment = arg.isEnd !== false;
       if (!isStartSegment) {
-        return "";
+        if (isEndSegment) {
+          return sprintf(
+            /* translators: %s: event end time. */
+            __("Until %s", "eventkoi-lite"),
+            formatCompactStart(endDt)
+          );
+        }
+
+        return __("Full day", "eventkoi-lite");
       }
       const endDay = formatCalendarEndDay(arg.event.end, arg.event.endStr);
       const sCompact = formatCompactTime(startDt);
@@ -679,7 +689,7 @@ export function CalendarGridMode({
           if (lastRangeRef.current === key) return;
           closeEventPopover();
           lastRangeRef.current = key;
-          loadEventsForView(start, end);
+          loadEventsForView(start, end, view.type);
           setCurrentDate(view.currentStart);
           if (view.type.startsWith("timeGrid")) {
             setTimeout(() => {

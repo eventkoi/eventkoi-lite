@@ -173,19 +173,20 @@ class Calendar {
 	public static function get_meta() {
 
 		$meta = array(
-			'id'            => self::get_id(),
-			'name'          => self::get_name(),
-			'slug'          => self::get_slug(),
-			'url'           => self::get_url(),
-			'count'         => self::get_count(),
-			'display'       => self::get_display(),
-			'timeframe'     => self::get_timeframe(),
-			'startday'      => self::get_startday(),
-			'day_start_time' => self::get_day_start_time(),
-			'shortcode'     => self::get_shortcode(),
-			'color'         => self::get_color(),
-			'default_month' => self::get_default_month(),
-			'default_year'  => self::get_default_year(),
+			'id'              => self::get_id(),
+			'name'            => self::get_name(),
+			'slug'            => self::get_slug(),
+			'url'             => self::get_url(),
+			'native_edit_url' => self::get_native_edit_url(),
+			'count'           => self::get_count(),
+			'display'         => self::get_display(),
+			'timeframe'       => self::get_timeframe(),
+			'startday'        => self::get_startday(),
+			'day_start_time'  => self::get_day_start_time(),
+			'shortcode'       => self::get_shortcode(),
+			'color'           => self::get_color(),
+			'default_month'   => self::get_default_month(),
+			'default_year'    => self::get_default_year(),
 		);
 
 		return apply_filters( 'eventkoi_get_calendar_meta', $meta, self::$calendar_id, self::$calendar );
@@ -229,6 +230,29 @@ class Calendar {
 		}
 
 		return apply_filters( 'eventkoi_get_calendar_url', $url, self::$calendar_id, self::$calendar );
+	}
+
+	/**
+	 * Get the native WordPress term edit URL for SEO plugin panels.
+	 *
+	 * @return string
+	 */
+	public static function get_native_edit_url() {
+		if ( empty( self::$calendar_id ) || ! current_user_can( 'edit_term', self::$calendar_id ) ) {
+			return '';
+		}
+
+		$url = add_query_arg(
+			array(
+				'taxonomy'        => 'event_cal',
+				'tag_ID'          => absint( self::$calendar_id ),
+				'post_type'       => 'eventkoi_event',
+				'eventkoi_native' => '1',
+			),
+			admin_url( 'term.php' )
+		);
+
+		return apply_filters( 'eventkoi_get_calendar_native_edit_url', esc_url_raw( $url ), self::$calendar_id, self::$calendar );
 	}
 
 	/**
@@ -352,11 +376,7 @@ class Calendar {
 	 * Get color.
 	 */
 	public static function get_color() {
-		$color = get_term_meta( self::$calendar_id, 'color', true );
-
-		if ( empty( $color ) ) {
-			$color = eventkoi_default_calendar_color();
-		}
+		$color = eventkoi_get_stored_calendar_color( self::$calendar_id );
 
 		return apply_filters( 'eventkoi_get_calendar_color', $color, self::$calendar_id, self::$calendar );
 	}
@@ -448,7 +468,9 @@ class Calendar {
 		$timeframe      = ! empty( $meta['timeframe'] ) ? sanitize_text_field( $meta['timeframe'] ) : 'month';
 		$startday       = ! empty( $meta['startday'] ) ? sanitize_text_field( $meta['startday'] ) : 'monday';
 		$day_start_time = ! empty( $meta['day_start_time'] ) ? sanitize_text_field( $meta['day_start_time'] ) : '';
-		$color          = ! empty( $meta['color'] ) ? sanitize_text_field( $meta['color'] ) : eventkoi_default_calendar_color();
+		$has_color      = array_key_exists( 'color', $meta );
+		$raw_color      = $has_color && is_scalar( $meta['color'] ) ? sanitize_text_field( (string) $meta['color'] ) : '';
+		$color          = $has_color ? ( '' === $raw_color ? 'transparent' : $raw_color ) : eventkoi_default_calendar_color();
 		$default_month  = ! empty( $meta['default_month'] ) ? sanitize_text_field( $meta['default_month'] ) : '';
 		$default_year   = ! empty( $meta['default_year'] ) ? sanitize_text_field( $meta['default_year'] ) : '';
 

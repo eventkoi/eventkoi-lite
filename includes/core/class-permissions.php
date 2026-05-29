@@ -182,6 +182,7 @@ class Permissions {
 			// Custom PHP date/time formats — live in the Default settings tab.
 			'date_format'                => 'eventkoi_settings_defaults',
 			'time_format_string'         => 'eventkoi_settings_defaults',
+			'permalinks'                 => 'eventkoi_settings_defaults',
 		);
 	}
 

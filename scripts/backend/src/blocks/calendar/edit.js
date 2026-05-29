@@ -8,6 +8,7 @@ import {
 } from "@/lib/date-utils";
 import apiRequest from "@wordpress/api-fetch";
 import { InspectorControls, useBlockProps } from "@wordpress/block-editor";
+import { __, sprintf } from "@wordpress/i18n";
 import { useEffect, useRef, useState } from "react";
 
 import { formatDate } from "@fullcalendar/core";
@@ -438,6 +439,29 @@ export default function Edit({
       arg.event.end > arg.event.start
     );
   };
+  const getCalendarDateKey = (date, dateStr) => {
+    let dt = dateStr ? DateTime.fromISO(dateStr, { setZone: true }) : null;
+
+    if (!dt?.isValid && date instanceof Date) {
+      dt = DateTime.fromJSDate(date, { zone: calendarTimeZone || "UTC" });
+    }
+
+    if (!dt?.isValid) {
+      return "";
+    }
+
+    return (calendarTimeZone ? dt.setZone(calendarTimeZone) : dt).toISODate();
+  };
+  const isTimedMultiDayEvent = (arg) => {
+    if (!shouldShowEventEndTime(arg)) {
+      return false;
+    }
+
+    const startKey = getCalendarDateKey(arg.event.start, arg.event.startStr);
+    const endKey = getCalendarDateKey(arg.event.end, arg.event.endStr);
+
+    return !!startKey && !!endKey && startKey !== endKey;
+  };
   const formatCalendarTimeRange = (arg) => {
     const startText = formatCalendarTime(arg.event.start, arg.event.startStr);
 
@@ -453,6 +477,31 @@ export default function Edit({
 
     if (!endText || endText === startText) {
       return startText;
+    }
+
+    if (isTimedMultiDayEvent(arg)) {
+      const isStartSegment = arg.isStart !== false;
+      const isEndSegment = arg.isEnd !== false;
+
+      if (isStartSegment && !isEndSegment) {
+        return sprintf(
+          /* translators: %s: event start time. */
+          __("%s and continues", "eventkoi-lite"),
+          startText
+        );
+      }
+
+      if (!isStartSegment && isEndSegment) {
+        return sprintf(
+          /* translators: %s: event end time. */
+          __("Until %s", "eventkoi-lite"),
+          endText
+        );
+      }
+
+      if (!isStartSegment && !isEndSegment) {
+        return __("Full day", "eventkoi-lite");
+      }
     }
 
     return `${startText} – ${endText}`;

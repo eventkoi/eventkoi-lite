@@ -39,6 +39,16 @@ const dayLabels = {
 
 const themeSlug = eventkoi_params?.theme || "twentytwentyfive";
 const customTemplates = eventkoi_params?.custom_templates || [];
+const cleanPermalinkBase = (value, fallback) => {
+  const slug = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/['"]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return slug || fallback;
+};
 
 export function SettingsOverview() {
   const { settings, setSettings, refreshSettings } = useSettings();
@@ -60,6 +70,12 @@ export function SettingsOverview() {
   const [dateFormat, setDateFormat] = useState(settings?.date_format || "");
   const [timeFormatString, setTimeFormatString] = useState(
     settings?.time_format_string || ""
+  );
+  const [eventBase, setEventBase] = useState(
+    settings?.permalinks?.event_base || "event"
+  );
+  const [calendarBase, setCalendarBase] = useState(
+    settings?.permalinks?.category_base || "calendar"
   );
   const [datePreview, setDatePreview] = useState("");
   const [timePreview, setTimePreview] = useState("");
@@ -119,6 +135,20 @@ export function SettingsOverview() {
       setTimeFormatString(settings.time_format_string || "");
     }
   }, [settings?.time_format_string]);
+
+  useEffect(() => {
+    const nextEventBase = settings?.permalinks?.event_base || "event";
+    if (nextEventBase !== eventBase) {
+      setEventBase(nextEventBase);
+    }
+  }, [settings?.permalinks?.event_base]);
+
+  useEffect(() => {
+    const nextCalendarBase = settings?.permalinks?.category_base || "calendar";
+    if (nextCalendarBase !== calendarBase) {
+      setCalendarBase(nextCalendarBase);
+    }
+  }, [settings?.permalinks?.category_base]);
 
   useEffect(() => {
     let cancelled = false;
@@ -252,6 +282,27 @@ export function SettingsOverview() {
     saveSettings({ time_format_string: next });
   };
 
+  const commitPermalinks = () => {
+    const nextEventBase = cleanPermalinkBase(eventBase, "event");
+    const nextCalendarBase = cleanPermalinkBase(calendarBase, "calendar");
+    setEventBase(nextEventBase);
+    setCalendarBase(nextCalendarBase);
+
+    if (
+      nextEventBase === (settings?.permalinks?.event_base || "event") &&
+      nextCalendarBase === (settings?.permalinks?.category_base || "calendar")
+    ) {
+      return;
+    }
+
+    saveSettings({
+      permalinks: {
+        event_base: nextEventBase,
+        category_base: nextCalendarBase,
+      },
+    });
+  };
+
   const handleDefaultTemplateChange = (value) => {
     setDefaultTemplate(value);
   };
@@ -296,7 +347,7 @@ export function SettingsOverview() {
                 </SelectContent>
               </Select>
               <div className="text-muted-foreground">
-                Select the day calendars use as the start of the week.
+                {__("Select the day calendars use as the start of the week.", "eventkoi-lite")}
               </div>
             </div>
 
@@ -323,7 +374,7 @@ export function SettingsOverview() {
                 </SelectContent>
               </Select>
               <div className="text-muted-foreground">
-                Set the first visible hour in weekly view.
+                {__("Set the first visible hour in weekly view.", "eventkoi-lite")}
               </div>
             </div>
 
@@ -387,6 +438,57 @@ export function SettingsOverview() {
               </Tabs>
               <div className="text-muted-foreground">
                 Select how event times are displayed (e.g. 2:00 PM or 14:00).
+              </div>
+            </div>
+
+            {/* URL bases */}
+            <div className="grid gap-4">
+              <Label className="text-sm font-medium">{__("URL bases", "eventkoi-lite")}</Label>
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="event-url-base">{__("Event base", "eventkoi-lite")}</Label>
+                  <Input
+                    id="event-url-base"
+                    value={eventBase}
+                    onChange={(e) => setEventBase(e.target.value)}
+                    onBlur={commitPermalinks}
+                    placeholder="event"
+                    className="max-w-[350px]"
+                    disabled={isSaving}
+                  />
+                  <div className="text-muted-foreground text-sm">
+                    {`${eventkoi_params.site_url}/${cleanPermalinkBase(
+                      eventBase,
+                      "event"
+                    )}/sample-event/`}
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="calendar-url-base">
+                    {__("Calendar base", "eventkoi-lite")}
+                  </Label>
+                  <Input
+                    id="calendar-url-base"
+                    value={calendarBase}
+                    onChange={(e) => setCalendarBase(e.target.value)}
+                    onBlur={commitPermalinks}
+                    placeholder="calendar"
+                    className="max-w-[350px]"
+                    disabled={isSaving}
+                  />
+                  <div className="text-muted-foreground text-sm">
+                    {`${eventkoi_params.site_url}/${cleanPermalinkBase(
+                      calendarBase,
+                      "calendar"
+                    )}/default-calendar/`}
+                  </div>
+                </div>
+              </div>
+              <div className="text-muted-foreground">
+                {__(
+                  "Updates event and calendar URL bases after the next page load.",
+                  "eventkoi-lite"
+                )}
               </div>
             </div>
 

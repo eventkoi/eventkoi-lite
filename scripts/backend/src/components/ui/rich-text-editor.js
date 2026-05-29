@@ -15,6 +15,17 @@ const escapeAttribute = (value = "") =>
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
 
+const makeToolbarSvgIcon = (svg) =>
+  `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+
+const toolbarVideoIcon = makeToolbarSvgIcon(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#555"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>'
+);
+
+const toolbarYouTubeIcon = makeToolbarSvgIcon(
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path fill="#555" d="M21.582 7.207a2.51 2.51 0 0 0-1.768-1.768C18.254 5 12 5 12 5s-6.254 0-7.814.439a2.51 2.51 0 0 0-1.768 1.768C2 8.767 2 12 2 12s0 3.233.418 4.793a2.51 2.51 0 0 0 1.768 1.768C5.746 19 12 19 12 19s6.254 0 7.814-.439a2.51 2.51 0 0 0 1.768-1.768C22 15.233 22 12 22 12s0-3.233-.418-4.793z"/><path fill="#fff" d="M10 15V9l5.196 3L10 15z"/></svg>'
+);
+
 const getYouTubeVideoId = (rawUrl = "") => {
   const input = String(rawUrl || "").trim();
   if (!input) {
@@ -285,8 +296,7 @@ export function RichTextEditor({
 
         if (allowVideoEmbeds) {
           ed.addButton("insertVideo", {
-            image:
-              "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0iIzU1NSI+PHBhdGggZD0iTTE3IDEwLjVWN2MwLS41NS0uNDUtMS0xLTFINGMtLjU1IDAtMSAuNDUtMSAxdjEwYzAgLjU1LjQ1IDEgMSAxaDEyYy41NSAwIDEtLjQ1IDEtMXYtMy41bDQgNHYtMTFsLTQgNHoiLz48L3N2Zz4=",
+            image: toolbarVideoIcon,
             tooltip: __("Insert video from media library", "eventkoi-lite"),
             onclick: () => {
               const frame = window.wp?.media({
@@ -312,8 +322,7 @@ export function RichTextEditor({
           });
 
           ed.addButton("insertYoutube", {
-            image:
-              "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PHBhdGggZmlsbD0iI0ZGMDAwMCIgZD0iTTIxLjU4MiA3LjIwN2EyLjUxIDIuNTEgMCAwIDAtMS43NjgtMS43NjhDMTguMjU0IDUgMTIgNSAxMiA1cy02LjI1NCAwLTcuODE0LjQzOUEyLjUxIDIuNTEgMCAwIDAgMi40MTggNy4yMDdDMiA4Ljc2NyAyIDEyIDIgMTJzMCAzLjIzMy40MTggNC43OTNhMi41MSAyLjUxIDAgMCAwIDEuNzY4IDEuNzY4QzUuNzQ2IDE5IDEyIDE5IDEyIDE5czYuMjU0IDAgNy44MTQtLjQzOWEyLjUxIDIuNTEgMCAwIDAgMS43NjgtMS43NjhDMjIgMTUuMjMzIDIyIDEyIDIyIDEyczAtMy4yMzMtLjQxOC00Ljc5M3oiLz48cGF0aCBmaWxsPSIjZmZmIiBkPSJNMTAgMTVWOWw1LjE5NiAzTDEwIDE1eiIvPjwvc3ZnPg==",
+            image: toolbarYouTubeIcon,
             tooltip: __("Embed YouTube video", "eventkoi-lite"),
             onclick: () => {
               videoEditTargetRef.current = null;

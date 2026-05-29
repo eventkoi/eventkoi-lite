@@ -190,6 +190,10 @@ class Post_Types {
 	 * @param int    $post_id Post ID.
 	 */
 	public static function update_edit_event_link( $link, $post_id ) {
+		if ( ! empty( $_GET['eventkoi_native'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only link routing flag.
+			return $link;
+		}
+
 		$event = new \EventKoi\Core\Event( $post_id );
 
 		if ( $event::get_id() ) {
@@ -208,6 +212,10 @@ class Post_Types {
 	 * @return string
 	 */
 	public static function update_edit_calendar_link( $location, $term_id, $taxonomy ) {
+		if ( ! empty( $_GET['eventkoi_native'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only link routing flag.
+			return $location;
+		}
+
 		if ( 'event_cal' === $taxonomy ) {
 			return admin_url( 'admin.php?page=eventkoi#/calendars/' . absint( $term_id ) . '/main' );
 		}

@@ -22,6 +22,10 @@ function isTruthy(value) {
   return value === true || value === 1 || value === "1" || value === "true";
 }
 
+function hasExplicitValue(value) {
+  return value !== undefined && value !== null && value !== "";
+}
+
 function isAllDayEvent(event) {
   const firstRule = Array.isArray(event?.recurrence_rules)
     ? event.recurrence_rules[0]
@@ -71,6 +75,35 @@ function parseSearchDate(value, zone) {
   return dt.isValid ? dt : null;
 }
 
+function getAllDayDisplayEnd(start, rawEnd, realEnd, options = {}) {
+  if (options?.preserveDateOnlyRange) {
+    const explicitEnd = realEnd?.isValid
+      ? realEnd
+      : rawEnd?.isValid
+      ? rawEnd
+      : null;
+    return explicitEnd && explicitEnd >= start ? explicitEnd : start;
+  }
+
+  if (realEnd?.isValid) {
+    const durationMs = realEnd.toMillis() - start.toMillis();
+    return durationMs > 0 && durationMs <= 24 * 60 * 60 * 1000
+      ? start
+      : realEnd;
+  }
+
+  if (!rawEnd?.isValid) {
+    return null;
+  }
+
+  const durationMs = rawEnd.toMillis() - start.toMillis();
+  if (durationMs > 0 && durationMs <= 24 * 60 * 60 * 1000) {
+    return start;
+  }
+
+  return rawEnd.hasSame(start, "day") ? rawEnd : rawEnd.minus({ days: 1 });
+}
+
 function formatSearchDate(event, timezone, timeFormat) {
   const params = typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
   const locale = (params.locale || "en").replace("_", "-");
@@ -93,13 +126,40 @@ function formatSearchDate(event, timezone, timeFormat) {
   };
 
   if (isAllDayEvent(event)) {
-    const allDayValue =
-      event?.all_day_start_date || event?.start_date || event?.start;
     const allDayZone = normalizeZone(
       event?.all_day_timezone || event?.allDayTimezone || timezone
     );
-    const dt = parseSearchDate(allDayValue, allDayZone);
-    const formatted = dt?.isValid ? dt.setLocale(locale).toFormat(dateFormat) : "";
+    const start = parseSearchDate(
+      event?.all_day_start_date || event?.start_date || event?.start,
+      allDayZone
+    )?.setLocale(locale);
+    const realEnd = parseSearchDate(
+      event?.all_day_end_date || event?.end_real,
+      allDayZone
+    )?.setLocale(locale);
+    const rawEnd = parseSearchDate(
+      event?.all_day_end_date || event?.end,
+      allDayZone
+    )?.setLocale(locale);
+
+    if (!start?.isValid) {
+      return {
+        visible: "",
+        screenReader: "",
+      };
+    }
+
+    const displayEnd = getAllDayDisplayEnd(start, rawEnd, realEnd, {
+      preserveDateOnlyRange: hasExplicitValue(event?.all_day_end_date),
+    });
+    const formattedStart = start.toFormat(dateFormat);
+    const formattedEnd =
+      displayEnd?.isValid && !displayEnd.hasSame(start, "day")
+        ? displayEnd.toFormat(dateFormat)
+        : "";
+    const formatted = formattedEnd
+      ? `${formattedStart} – ${formattedEnd}`
+      : formattedStart;
 
     return {
       visible: formatted,
@@ -107,13 +167,31 @@ function formatSearchDate(event, timezone, timeFormat) {
     };
   }
 
-  const value = event?.start_date || event?.start;
+  const formatDateTime = (dt) => `${dt.toFormat(dateFormat)}, ${formatTime(dt)}`;
+
+  const value = event?.start_real || event?.start_date || event?.start;
+  const endValue = event?.end_real || event?.end_date || event?.end;
   const displayZone = normalizeZone(timezone);
   const dt = parseSearchDate(value, displayZone);
   const localized = dt?.isValid ? dt.setLocale(locale) : null;
-  const display = localized
-    ? `${localized.toFormat(dateFormat)}, ${formatTime(localized)}`
-    : "";
+
+  if (!localized) {
+    return {
+      visible: "",
+      screenReader: "",
+    };
+  }
+
+  const end = parseSearchDate(endValue, displayZone);
+  const localizedEnd = end?.isValid ? end.setLocale(locale) : null;
+  const startDisplay = formatDateTime(localized);
+  const endDisplay =
+    localizedEnd && localizedEnd > localized
+      ? localizedEnd.hasSame(localized, "day")
+        ? formatTime(localizedEnd)
+        : formatDateTime(localizedEnd)
+      : "";
+  const display = endDisplay ? `${startDisplay} – ${endDisplay}` : startDisplay;
 
   return {
     visible: display,
@@ -136,6 +214,7 @@ export function SearchBox({
   timezone,
   timeFormat,
   setSearchOpen,
+  searchScope,
 }) {
   const isLoading = events === undefined || events === null;
   const isEmpty = !isLoading && events.length === 0;
@@ -225,6 +304,12 @@ export function SearchBox({
             role="listbox"
             className="p-2 max-h-[400px] overflow-y-auto"
           >
+            {searchScope ? (
+              <div className="px-2 pb-2 text-xs text-muted-foreground">
+                {searchScope}
+              </div>
+            ) : null}
+
             {filteredResults.length === 0 ? (
               <CommandEmpty className="p-4 text-muted-foreground text-sm">
                 {__("No events found.", "eventkoi-lite")}

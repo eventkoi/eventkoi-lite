@@ -204,6 +204,11 @@ class Settings {
 				continue;
 			}
 
+			if ( 'permalinks' === $key ) {
+				$settings['permalinks'] = self::save_permalink_settings( $value );
+				continue;
+			}
+
 			if ( 'currency' === $key ) {
 				$currency = strtoupper( sanitize_text_field( (string) $value ) );
 				if ( ! preg_match( '/^[A-Z]{3}$/', $currency ) ) {
@@ -242,6 +247,7 @@ class Settings {
 		) {
 			$settings['currency'] = strtoupper( get_woocommerce_currency() );
 		}
+		$settings['permalinks'] = \eventkoi_get_permalink_structure();
 
 		return rest_ensure_response(
 			array(
@@ -285,5 +291,49 @@ class Settings {
 			$out[ $role ] = $role_caps;
 		}
 		return $out;
+	}
+
+	/**
+	 * Save EventKoi permalink bases outside the main settings option.
+	 *
+	 * @param mixed $value Raw permalink payload.
+	 * @return array Saved permalink structure.
+	 */
+	private static function save_permalink_settings( $value ): array {
+		$current = \eventkoi_get_permalink_structure();
+		$value   = is_array( $value ) ? $value : array();
+
+		$event_base    = self::sanitize_permalink_base( $value['event_base'] ?? $current['event_base'], 'event' );
+		$category_base = self::sanitize_permalink_base( $value['category_base'] ?? $current['category_base'], 'calendar' );
+
+		$next = array(
+			'event_base'             => $event_base,
+			'category_base'          => $category_base,
+			'use_verbose_page_rules' => false,
+		);
+
+		if ( $next !== array_intersect_key( $current, $next ) ) {
+			update_option( 'eventkoi_permalinks', $next );
+			update_option( 'eventkoi_queue_flush_rewrite_rules', 'yes' );
+		}
+
+		return \eventkoi_get_permalink_structure();
+	}
+
+	/**
+	 * Sanitize a permalink base.
+	 *
+	 * @param mixed  $value    Raw value.
+	 * @param string $fallback Fallback slug.
+	 * @return string
+	 */
+	private static function sanitize_permalink_base( $value, $fallback ): string {
+		$slug = untrailingslashit( sanitize_title_with_dashes( (string) $value ) );
+
+		if ( '' === $slug ) {
+			$slug = sanitize_title_with_dashes( $fallback );
+		}
+
+		return $slug;
 	}
 }
