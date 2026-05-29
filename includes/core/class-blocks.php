@@ -922,7 +922,7 @@ JS;
 			return $query_vars;
 		}
 
-		$calendar_ids = array_filter( array_map( 'absint', $attrs['calendars'] ?? array() ) );
+		$calendar_ids      = array_filter( array_map( 'absint', $attrs['calendars'] ?? array() ) );
 
 		$query_vars['post_type'] = 'eventkoi_event';
 
@@ -959,13 +959,9 @@ JS;
 
 		$query             = $attrs['query'] ?? array();
 		$per_page          = isset( $query['perPage'] ) ? absint( $query['perPage'] ) : 6;
-		$order             = isset( $query['order'] ) ? sanitize_text_field( $query['order'] ) : 'desc';
-		$orderby           = isset( $query['orderBy'] ) ? sanitize_key( $query['orderBy'] ) : 'modified';
+		$order             = isset( $query['order'] ) ? sanitize_text_field( $query['order'] ) : 'asc';
+		$orderby           = isset( $query['orderBy'] ) ? sanitize_key( $query['orderBy'] ) : 'upcoming';
 		$calendar_ids      = array_filter( array_map( 'absint', $attrs['calendars'] ?? array() ) );
-		$include_instances = self::parse_boolean_attribute( $attrs['includeInstances'] ?? false );
-
-		$show_instances_for_event = self::parse_boolean_attribute( $attrs['showInstancesForEvent'] ?? false ) && ! empty( $attrs['instanceParentId'] );
-		$instance_parent_id       = isset( $attrs['instanceParentId'] ) ? absint( $attrs['instanceParentId'] ) : 0;
 
 		$start_date = ! empty( $attrs['startDate'] ) ? sanitize_text_field( $attrs['startDate'] ) : '';
 		$end_date   = ! empty( $attrs['endDate'] ) ? sanitize_text_field( $attrs['endDate'] ) : '';
@@ -973,56 +969,42 @@ JS;
 		$paged = isset( $_GET['ek_page'] ) ? max( 1, absint( $_GET['ek_page'] ) ) : 1; // phpcs:ignore WordPress.Security.NonceVerification.Recommended.
 
 		// Sanitize orderby to allowed values.
-		$allowed_orderby = array( 'modified', 'date', 'title', 'start_date', 'event_start' );
+		$allowed_orderby = array( 'modified', 'date_modified', 'date', 'publish_date', 'title', 'start_date', 'event_start', 'upcoming', 'past', 'past_events' );
 		if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
+			$orderby = 'upcoming';
+		}
+		if ( 'date_modified' === $orderby ) {
 			$orderby = 'modified';
 		}
-
-		// Auto-derive the parent event when rendering a singular recurring event page.
-		if ( $include_instances && empty( $instance_parent_id ) && is_singular( 'eventkoi_event' ) ) {
-			$current_event_id = get_queried_object_id();
-			if ( $current_event_id ) {
-				$event = new Event( $current_event_id );
-				if ( method_exists( Event::class, 'get_date_type' ) && 'recurring' === $event::get_date_type() ) {
-					$instance_parent_id       = $current_event_id;
-					$show_instances_for_event = true;
-				}
-			}
+		if ( 'publish_date' === $orderby ) {
+			$orderby = 'date';
+		}
+		if ( 'start_date' === $orderby ) {
+			$orderby = 'event_start';
+		}
+		if ( 'past_events' === $orderby ) {
+			$orderby = 'past';
+		}
+		if ( 'upcoming' === $orderby && empty( $query['order'] ) ) {
+			$order = 'asc';
+		}
+		if ( 'past' === $orderby ) {
+			$order = 'desc';
 		}
 
-		// Normalize includeInstances+parent.
-		if ( $include_instances && $show_instances_for_event && empty( $instance_parent_id ) && ! empty( $_GET['parent_event'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$instance_parent_id = absint( $_GET['parent_event'] );
-		}
-
-		if ( $show_instances_for_event && $include_instances && $instance_parent_id > 0 ) {
-			$event_data = \EventKoi\Core\Calendar::get_events(
-				array(),
-				true,
-				array(
-					'include'    => array( $instance_parent_id ),
-					'per_page'   => $per_page,
-					'page'       => $paged,
-					'order'      => $order,
-					'orderby'    => $orderby,
-					'start_date' => $start_date,
-					'end_date'   => $end_date,
-				)
-			);
-		} else {
-			$event_data = \EventKoi\Core\Calendar::get_events(
-				$calendar_ids,
-				$include_instances,
-				array(
-					'per_page'   => $per_page,
-					'order'      => $order,
-					'orderby'    => $orderby,
-					'page'       => $paged,
-					'start_date' => $start_date,
-					'end_date'   => $end_date,
-				)
-			);
-		}
+		$event_data = \EventKoi\Core\Calendar::get_events(
+			$calendar_ids,
+			false,
+			array(
+				'per_page'    => $per_page,
+				'order'       => $order,
+				'orderby'     => $orderby,
+				'page'        => $paged,
+				'start_date'  => $start_date,
+				'end_date'    => $end_date,
+				'post_status' => 'publish',
+			)
+		);
 
 		$events       = $event_data['items'] ?? array();
 		$total_events = $event_data['total'] ?? count( $events );
@@ -1484,9 +1466,20 @@ JS;
 
 		if ( 'eventkoi/event-data' === $block_name ) {
 			// Already injected above; no further processing needed here.
-		} elseif ( 'core/image' === $block_name ) {
+		} elseif ( 'core/image' === $block_name || 'core/post-featured-image' === $block_name ) {
 			$block['attrs'] = isset( $block['attrs'] ) && is_array( $block['attrs'] ) ? $block['attrs'] : array();
 			if ( ! empty( $event['thumbnail'] ) ) {
+				if ( 'core/post-featured-image' === $block_name ) {
+					$block_name           = 'core/image';
+					$block['blockName']   = 'core/image';
+					$block['attrs']['id'] = 0;
+
+					if ( ! empty( $event['url'] ) ) {
+						$block['attrs']['linkDestination'] = 'custom';
+						$block['attrs']['href']            = esc_url_raw( (string) $event['url'] );
+					}
+				}
+
 				$block['attrs']['url'] = $event['thumbnail'];
 				if ( empty( $block['attrs']['alt'] ) ) {
 					$block['attrs']['alt'] = $event['title'] ?? '';
@@ -1497,6 +1490,12 @@ JS;
 						$block['innerHTML'],
 						$event['thumbnail'],
 						$event['title'] ?? ''
+					);
+				} elseif ( 'core/image' === $block['blockName'] ) {
+					$block['innerHTML'] = sprintf(
+						'<figure class="wp-block-image"><img src="%1$s" alt="%2$s" loading="lazy" decoding="async" /></figure>',
+						esc_url( $event['thumbnail'] ),
+						esc_attr( $event['title'] ?? '' )
 					);
 				}
 			}

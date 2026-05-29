@@ -5,12 +5,10 @@ import apiFetch from "@wordpress/api-fetch";
 import { InspectorControls } from "@wordpress/block-editor";
 import { createBlocksFromInnerBlocksTemplate } from "@wordpress/blocks";
 import {
-  ComboboxControl,
   PanelBody,
   RangeControl,
   SelectControl,
   TabPanel,
-  ToggleControl,
 } from "@wordpress/components";
 import { createHigherOrderComponent } from "@wordpress/compose";
 import { useDispatch, useSelect } from "@wordpress/data";
@@ -18,7 +16,6 @@ import { useEffect, useState } from "@wordpress/element";
 import { addFilter } from "@wordpress/hooks";
 import { __ } from "@wordpress/i18n";
 import { cog, Icon, styles } from "@wordpress/icons";
-import { useEventOptions } from "../blocks/event-data/fetch-event";
 
 const EVENTKOI_NAMESPACE = "eventkoi/event-query-loop";
 
@@ -61,12 +58,6 @@ const withEventKoiQueryControls = createHigherOrderComponent(
     }
 
     const [calendars, setCalendars] = useState([]);
-    const [searchValue, setSearchValue] = useState("");
-    const { options, isLoading } = useEventOptions(
-      searchValue,
-      props.attributes?.instanceParentId
-    );
-
     const handleCalendarsChange = (selected) => {
       const terms = Array.isArray(selected) ? selected : [];
       const currentQuery = props.attributes?.query || {};
@@ -92,10 +83,6 @@ const withEventKoiQueryControls = createHigherOrderComponent(
         },
       });
     };
-
-    const isEventKoiQuery =
-      props.name === "core/query" &&
-      props.attributes?.namespace === EVENTKOI_NAMESPACE;
 
     const postTemplateClientId = useSelect(
       (select) => {
@@ -133,8 +120,8 @@ const withEventKoiQueryControls = createHigherOrderComponent(
     const currentListLayout = props.attributes?.listLayoutStyle || "stack";
 
     const currentPerPage = props.attributes?.query?.perPage ?? 6;
-    const currentOrder = props.attributes?.query?.order || "desc";
-    const currentOrderBy = props.attributes?.query?.orderBy || "modified";
+    const currentOrder = props.attributes?.query?.order || "asc";
+    const currentOrderBy = props.attributes?.query?.orderBy || "upcoming";
 
     const handlePerPageChange = (value) => {
       const perPage = value || 1;
@@ -151,6 +138,7 @@ const withEventKoiQueryControls = createHigherOrderComponent(
         query: {
           ...props.attributes.query,
           orderBy: value,
+          ...(value === "upcoming" ? { order: "asc" } : {}),
         },
       });
     };
@@ -209,7 +197,10 @@ const withEventKoiQueryControls = createHigherOrderComponent(
               layout: { type: "default" },
             },
             [
-              ["core/image", { className: "eventkoi-event-image-default" }],
+              [
+                "core/post-featured-image",
+                { className: "eventkoi-event-image-default" },
+              ],
               [
                 "eventkoi/event-data",
                 { field: "title", className: "ek-event-title-default" },
@@ -250,7 +241,7 @@ const withEventKoiQueryControls = createHigherOrderComponent(
                     { width: "30%" },
                     [
                       [
-                        "core/image",
+                        "core/post-featured-image",
                         { className: "eventkoi-event-image-default" },
                       ],
                     ],
@@ -340,7 +331,7 @@ const withEventKoiQueryControls = createHigherOrderComponent(
                     { width: "30%" },
                     [
                       [
-                        "core/image",
+                        "core/post-featured-image",
                         { className: "eventkoi-event-image-default" },
                       ],
                     ],
@@ -453,6 +444,14 @@ const withEventKoiQueryControls = createHigherOrderComponent(
                         value={currentOrderBy}
                         options={[
                           {
+                            label: __("Upcoming events", "eventkoi-lite"),
+                            value: "upcoming",
+                          },
+                          {
+                            label: __("Past events", "eventkoi-lite"),
+                            value: "past",
+                          },
+                          {
                             label: __("Event start date", "eventkoi-lite"),
                             value: "start_date",
                           },
@@ -495,62 +494,6 @@ const withEventKoiQueryControls = createHigherOrderComponent(
                         attributes={props.attributes}
                         setAttributes={props.setAttributes}
                       />
-
-                      <hr style={{ margin: "8px 0 4px" }} aria-hidden="true" />
-
-                      <ToggleControl
-                        label={__("Include recurring instances", "eventkoi-lite")}
-                        help={__(
-                          "Expand recurring events into individual instances.",
-                          "eventkoi-lite"
-                        )}
-                        checked={!!props.attributes?.includeInstances}
-                        onChange={(val) =>
-                          props.setAttributes({ includeInstances: val })
-                        }
-                      />
-
-                      {props.attributes?.includeInstances && (
-                        <>
-                          <ToggleControl
-                            label={__("Limit to a specific event", "eventkoi-lite")}
-                            help={__(
-                              "Only show instances belonging to one recurring event.",
-                              "eventkoi-lite"
-                            )}
-                            checked={!!props.attributes?.showInstancesForEvent}
-                            onChange={(val) =>
-                              props.setAttributes({
-                                showInstancesForEvent: val,
-                              })
-                            }
-                          />
-
-                          {props.attributes?.showInstancesForEvent && (
-                            <ComboboxControl
-                              label={__("Select Event", "eventkoi-lite")}
-                              help={__(
-                                "Choose the parent event whose instances should be listed.",
-                                "eventkoi-lite"
-                              )}
-                              value={
-                                props.attributes?.instanceParentId > 0
-                                  ? String(props.attributes.instanceParentId)
-                                  : ""
-                              }
-                              options={options}
-                              onChange={(val) =>
-                                props.setAttributes({
-                                  instanceParentId: parseInt(val, 10) || 0,
-                                })
-                              }
-                              onFilterValueChange={setSearchValue}
-                              placeholder={__("Search events…", "eventkoi-lite")}
-                              isLoading={isLoading}
-                            />
-                          )}
-                        </>
-                      )}
                     </div>
                   </PanelBody>
                 );
