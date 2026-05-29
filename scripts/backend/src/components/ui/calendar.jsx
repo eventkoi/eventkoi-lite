@@ -1,14 +1,22 @@
 "use client";
 import { DayPicker } from "react-day-picker";
+import { __ } from "@wordpress/i18n";
 
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 function Calendar({ className, classNames, showOutsideDays = true, ...props }) {
+  const labels = {
+    labelPrevious: () => __("Go to previous month", "eventkoi-lite"),
+    labelNext: () => __("Go to next month", "eventkoi-lite"),
+    ...props.labels,
+  };
+
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
       className={cn("p-3", className)}
+      labels={labels}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",

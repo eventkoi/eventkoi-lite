@@ -8,6 +8,7 @@ import {
 import { DateTime } from "luxon";
 import { memo, useMemo } from "react";
 import { useNavigation } from "react-day-picker";
+import { __ } from "@wordpress/i18n";
 import { MemoCalendar as Calendar } from "./memo-calendar";
 
 /**
@@ -41,7 +42,7 @@ function CustomCaption({ displayMonth }) {
         <button
           onClick={() => goToMonth(new Date(year - 1, month))}
           className="p-1 hover:bg-muted rounded"
-          aria-label="Previous year"
+          aria-label={__("Previous year", "eventkoi-lite")}
         >
           <ChevronsLeft className="h-4 w-4" />
         </button>
@@ -50,7 +51,7 @@ function CustomCaption({ displayMonth }) {
         <button
           onClick={() => goToMonth(new Date(year, month - 1))}
           className="p-1 hover:bg-muted rounded"
-          aria-label="Previous month"
+          aria-label={__("Previous month", "eventkoi-lite")}
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -64,7 +65,7 @@ function CustomCaption({ displayMonth }) {
         <button
           onClick={() => goToMonth(new Date(year, month + 1))}
           className="p-1 hover:bg-muted rounded"
-          aria-label="Next month"
+          aria-label={__("Next month", "eventkoi-lite")}
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -73,7 +74,7 @@ function CustomCaption({ displayMonth }) {
         <button
           onClick={() => goToMonth(new Date(year + 1, month))}
           className="p-1 hover:bg-muted rounded"
-          aria-label="Next year"
+          aria-label={__("Next year", "eventkoi-lite")}
         >
           <ChevronsRight className="h-4 w-4" />
         </button>

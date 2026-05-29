@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-05-29T16:50:14+00:00\n"
+"POT-Creation-Date: 2026-05-29T17:37:35+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -688,7 +688,7 @@ msgstr ""
 
 #: includes/core/class-bindings.php:40
 #: includes/core/class-post-types.php:130
-#: scripts/backend/src/components/calendar/EventPopover.js:610
+#: scripts/backend/src/components/calendar/EventPopover.js:611
 #: scripts/frontend/src/components/event-image.js:118
 msgid "Event image"
 msgstr ""
@@ -833,8 +833,8 @@ msgid "Event RSVP full label"
 msgstr ""
 
 #: includes/core/class-blocks.php:611
-#: scripts/backend/src/components/calendar/EventPopover.js:724
-#: scripts/frontend/src/components/calendar/EventPopover.js:724
+#: scripts/backend/src/components/calendar/EventPopover.js:725
+#: scripts/frontend/src/components/calendar/EventPopover.js:725
 #: scripts/frontend/src/share/index.js:69
 msgid "Share this event"
 msgstr ""
@@ -1708,10 +1708,10 @@ msgid "Organizer"
 msgstr ""
 
 #: includes/core/class-tec-importer.php:306
-#: scripts/backend/src/components/calendar/EventPopover.js:745
+#: scripts/backend/src/components/calendar/EventPopover.js:752
 #: scripts/backend/src/components/order/CustomerInfo.js:29
 #: scripts/frontend/src/checkin/index.js:489
-#: scripts/frontend/src/components/calendar/EventPopover.js:745
+#: scripts/frontend/src/components/calendar/EventPopover.js:752
 #: scripts/frontend/src/rsvp/index.js:444
 #: scripts/frontend/src/share/index.js:95
 msgid "Email"
@@ -2445,10 +2445,10 @@ msgstr ""
 #: scripts/backend/src/admin/events/edit/attendees/index.js:681
 #: scripts/backend/src/components/calendar/calendar-link.js:44
 #: scripts/backend/src/components/calendar/calendar-shortcode.js:44
-#: scripts/backend/src/components/calendar/EventPopover.js:790
+#: scripts/backend/src/components/calendar/EventPopover.js:797
 #: scripts/backend/src/components/event/event-date-recurring.js:983
 #: scripts/backend/src/components/order/CopyableOrderId.js:47
-#: scripts/frontend/src/components/calendar/EventPopover.js:800
+#: scripts/frontend/src/components/calendar/EventPopover.js:807
 #: scripts/frontend/src/share/index.js:148
 msgid "Copied!"
 msgstr ""
@@ -4574,10 +4574,10 @@ msgstr ""
 
 #: scripts/backend/src/components/calendar/calendar-link.js:44
 #: scripts/backend/src/components/calendar/calendar-shortcode.js:44
-#: scripts/backend/src/components/calendar/EventPopover.js:790
+#: scripts/backend/src/components/calendar/EventPopover.js:797
 #: scripts/backend/src/components/event/event-date-recurring.js:983
 #: scripts/frontend/src/checkin/index.js:430
-#: scripts/frontend/src/components/calendar/EventPopover.js:801
+#: scripts/frontend/src/components/calendar/EventPopover.js:808
 #: scripts/frontend/src/share/index.js:149
 msgid "Copy"
 msgstr ""
@@ -4647,59 +4647,71 @@ msgid "Default time frame to display"
 msgstr ""
 
 #: scripts/backend/src/components/calendar/CalendarHeaderPopover.js:98
+#: scripts/backend/src/components/ui/calendar-picker.jsx:45
 msgid "Previous year"
 msgstr ""
 
 #: scripts/backend/src/components/calendar/CalendarHeaderPopover.js:108
+#: scripts/backend/src/components/ui/calendar-picker.jsx:77
 msgid "Next year"
 msgstr ""
 
-#: scripts/backend/src/components/calendar/EventPopover.js:587
-#: scripts/frontend/src/components/calendar/EventPopover.js:587
+#: scripts/backend/src/components/calendar/EventPopover.js:588
+#: scripts/frontend/src/components/calendar/EventPopover.js:588
 msgid "Recurring"
 msgstr ""
 
-#: scripts/backend/src/components/calendar/EventPopover.js:640
-#: scripts/frontend/src/components/calendar/EventPopover.js:640
+#: scripts/backend/src/components/calendar/EventPopover.js:641
+#: scripts/frontend/src/components/calendar/EventPopover.js:641
 msgid "Add to calendar"
 msgstr ""
 
-#: scripts/backend/src/components/calendar/EventPopover.js:695
+#: scripts/backend/src/components/calendar/EventPopover.js:696
 #: scripts/backend/src/components/event/physical-location-form.js:182
 #: scripts/backend/src/components/event/physical-location-form.js:210
 #: scripts/backend/src/components/event/physical-location-form.js:235
-#: scripts/frontend/src/components/calendar/EventPopover.js:695
+#: scripts/frontend/src/components/calendar/EventPopover.js:696
 msgid "Share"
 msgstr ""
 
-#: scripts/backend/src/components/calendar/EventPopover.js:733
-msgid "Whatsapp"
+#: scripts/backend/src/components/calendar/EventPopover.js:728
+#: scripts/frontend/src/components/calendar/EventPopover.js:728
+#: scripts/frontend/src/share/index.js:72
+msgid "Share this event using the options below or copy its link."
 msgstr ""
 
-#: scripts/backend/src/components/calendar/EventPopover.js:739
-#: scripts/frontend/src/components/calendar/EventPopover.js:739
+#: scripts/backend/src/components/calendar/EventPopover.js:740
+#: scripts/frontend/src/components/calendar/EventPopover.js:740
+#: scripts/frontend/src/share/index.js:83
+msgid "WhatsApp"
+msgstr ""
+
+#: scripts/backend/src/components/calendar/EventPopover.js:746
+#: scripts/frontend/src/components/calendar/EventPopover.js:746
 #: scripts/frontend/src/share/index.js:89
 msgid "Instagram"
 msgstr ""
 
-#: scripts/backend/src/components/calendar/EventPopover.js:751
-#: scripts/frontend/src/components/calendar/EventPopover.js:751
+#: scripts/backend/src/components/calendar/EventPopover.js:758
+#: scripts/frontend/src/components/calendar/EventPopover.js:758
 #: scripts/frontend/src/share/index.js:101
 msgid "Facebook"
 msgstr ""
 
-#: scripts/backend/src/components/calendar/EventPopover.js:754
-#: scripts/frontend/src/components/calendar/EventPopover.js:757
+#: scripts/backend/src/components/calendar/EventPopover.js:761
+#: scripts/frontend/src/components/calendar/EventPopover.js:764
 #: scripts/frontend/src/share/index.js:107
 msgid "X"
 msgstr ""
 
-#: scripts/backend/src/components/calendar/EventPopover.js:758
-msgid "Linkedin"
+#: scripts/backend/src/components/calendar/EventPopover.js:765
+#: scripts/frontend/src/components/calendar/EventPopover.js:770
+#: scripts/frontend/src/share/index.js:113
+msgid "LinkedIn"
 msgstr ""
 
-#: scripts/backend/src/components/calendar/EventPopover.js:764
-#: scripts/frontend/src/components/calendar/EventPopover.js:770
+#: scripts/backend/src/components/calendar/EventPopover.js:771
+#: scripts/frontend/src/components/calendar/EventPopover.js:777
 #: scripts/frontend/src/share/index.js:119
 msgid "Event link"
 msgstr ""
@@ -5772,6 +5784,26 @@ msgstr ""
 msgid "More"
 msgstr ""
 
+#: scripts/backend/src/components/ui/calendar-picker.jsx:54
+#: scripts/frontend/src/components/calendar/search-box.js:322
+msgid "Previous month"
+msgstr ""
+
+#: scripts/backend/src/components/ui/calendar-picker.jsx:68
+#: scripts/frontend/src/components/calendar/search-box.js:332
+msgid "Next month"
+msgstr ""
+
+#: scripts/backend/src/components/ui/calendar.jsx:10
+#: scripts/frontend/src/components/ui/calendar.jsx:17
+msgid "Go to previous month"
+msgstr ""
+
+#: scripts/backend/src/components/ui/calendar.jsx:11
+#: scripts/frontend/src/components/ui/calendar.jsx:18
+msgid "Go to next month"
+msgstr ""
+
 #: scripts/backend/src/components/ui/carousel.jsx:168
 msgid "Previous slide"
 msgstr ""
@@ -6166,22 +6198,12 @@ msgstr ""
 msgid "Select %s"
 msgstr ""
 
-#: scripts/frontend/src/components/calendar/EventPopover.js:733
-#: scripts/frontend/src/share/index.js:83
-msgid "WhatsApp"
-msgstr ""
-
-#: scripts/frontend/src/components/calendar/EventPopover.js:763
-#: scripts/frontend/src/share/index.js:113
-msgid "LinkedIn"
-msgstr ""
-
-#: scripts/frontend/src/components/calendar/EventPopover.js:783
+#: scripts/frontend/src/components/calendar/EventPopover.js:790
 #: scripts/frontend/src/share/index.js:132
 msgid "Copy event link to clipboard"
 msgstr ""
 
-#: scripts/frontend/src/components/calendar/EventPopover.js:809
+#: scripts/frontend/src/components/calendar/EventPopover.js:816
 #: scripts/frontend/src/share/index.js:153
 msgid "Event link copied to clipboard"
 msgstr ""
@@ -6212,16 +6234,8 @@ msgstr ""
 msgid "Search previous month"
 msgstr ""
 
-#: scripts/frontend/src/components/calendar/search-box.js:322
-msgid "Previous month"
-msgstr ""
-
 #: scripts/frontend/src/components/calendar/search-box.js:329
 msgid "Search next month"
-msgstr ""
-
-#: scripts/frontend/src/components/calendar/search-box.js:332
-msgid "Next month"
 msgstr ""
 
 #: scripts/frontend/src/components/calendar/search-box.js:387
@@ -6356,10 +6370,6 @@ msgstr ""
 
 #: scripts/frontend/src/rsvp/index.js:547
 msgid "This event is fully booked."
-msgstr ""
-
-#: scripts/frontend/src/share/index.js:72
-msgid "Share this event using the options below or copy its link."
 msgstr ""
 
 #: scripts/frontend/src/tickets/index.js:887

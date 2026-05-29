@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -723,6 +724,12 @@ export function EventPopover({
             <DialogTitle className="font-sans text-xl m-0 text-foreground">
               {__("Share this event", "eventkoi-lite")}
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              {__(
+                "Share this event using the options below or copy its link.",
+                "eventkoi-lite"
+              )}
+            </DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col pt-[30px] pb-[60px] px-[60px]">
@@ -730,7 +737,7 @@ export function EventPopover({
               <ShareLink
                 event={event}
                 name="whatsapp"
-                title={__("Whatsapp", "eventkoi-lite")}
+                title={__("WhatsApp", "eventkoi-lite")}
                 icon={<WhatsappIcon />}
               />
               <ShareLink
@@ -755,7 +762,7 @@ export function EventPopover({
               <ShareLink
                 event={event}
                 name="linkedin"
-                title={__("Linkedin", "eventkoi-lite")}
+                title={__("LinkedIn", "eventkoi-lite")}
                 icon={<LinkedinIcon />}
               />
             </div>
