@@ -376,9 +376,31 @@ export function CalendarGridMode({
   };
   const renderEventContent = (arg) => {
     const title = arg.event?.title || "";
+    // Only emit the colored dot in dayGrid (month) view where events
+    // render as "dot + text" on a white background. In timeGrid the
+    // whole event is already filled with the calendar's color, so a
+    // dot is redundant and just eats horizontal space.
+    const isTimeGrid = arg.view?.type?.startsWith("timeGrid");
+    const dotColor =
+      arg.event?.borderColor ||
+      arg.event?.backgroundColor ||
+      arg.borderColor ||
+      arg.backgroundColor;
+    const dot =
+      !isTimeGrid && dotColor ? (
+        <div
+          className="fc-daygrid-event-dot"
+          style={{ borderColor: dotColor }}
+        />
+      ) : null;
 
     if (arg.event?.allDay || !arg.event?.start) {
-      return <span className="fc-event-title">{title}</span>;
+      return (
+        <>
+          {dot}
+          <span className="fc-event-title">{title}</span>
+        </>
+      );
     }
 
     // Empty return from formatCalendarTimeRange is intentional (multi-day
@@ -388,6 +410,7 @@ export function CalendarGridMode({
 
     return (
       <>
+        {dot}
         {timeText ? <span className="fc-event-time">{timeText}</span> : null}
         {timeText ? " " : null}
         <span className="fc-event-title">{title}</span>
@@ -574,8 +597,50 @@ export function CalendarGridMode({
         borderColor: ev.calendar_color,
       }))
     : [];
+  // Leave undefined when no concrete color is known so the server-printed
+  // `:root` accent wins instead of being overridden by a hardcoded fallback.
+  const calendarAccent = eventColor || calendar?.color || null;
 
   let start_day = days[startday || calendar?.startday || "sunday"];
+
+  const openEventPopover = (eventEl, eventData, jsEvent) => {
+    const rect = eventEl.getBoundingClientRect();
+    const containerRect = document.querySelector(".fc")?.getBoundingClientRect();
+    if (!containerRect) return;
+
+    const popoverWidth = 370;
+    // Multi-day harnesses can span hundreds of pixels of column height, so
+    // anchoring to rect.bottom drops the popover far below the click. Anchor
+    // below the click point when we have it, capped to the harness bottom.
+    const clickY = jsEvent?.clientY;
+    const anchorY =
+      typeof clickY === "number"
+        ? Math.min(clickY + 14, rect.bottom + 6)
+        : rect.bottom + 6;
+    const relY = anchorY - containerRect.top;
+
+    let relX;
+    if (rect.right - containerRect.left + popoverWidth > containerRect.width) {
+      relX = rect.right - containerRect.left - popoverWidth;
+    } else {
+      relX = rect.left - containerRect.left;
+    }
+
+    if (window.innerWidth < 768) {
+      setAnchorPos({ x: 0, y: relY });
+    } else {
+      setAnchorPos({ x: Math.max(0, relX), y: relY });
+    }
+
+    setSelectedEvent({
+      ...eventData.extendedProps,
+      title: eventData.title,
+      start: eventData.startStr,
+      end: eventData.endStr,
+      allDay: eventData.allDay,
+      url: eventData.url,
+    });
+  };
   const closeEventPopover = () => {
     setSelectedEvent(null);
     setAnchorPos(null);
@@ -583,6 +648,10 @@ export function CalendarGridMode({
 
   return (
     <>
+      <div
+        className="relative"
+        style={calendarAccent ? { "--ek-calendar-accent": calendarAccent } : undefined}
+      >
       <FullCalendar
         ref={calendarRef}
         locales={allLocales}
@@ -702,113 +771,19 @@ export function CalendarGridMode({
             }, 0);
           }
         }}
+        eventClick={(info) => {
+          info.jsEvent.preventDefault();
+          info.jsEvent.stopPropagation();
+          openEventPopover(info.el, info.event, info.jsEvent);
+        }}
         eventDidMount={(info) => {
-          const parent = info.el.parentNode;
-
-          // If it's an <a>, remove it completely and reinsert our own <div>.
-          if (info.el.tagName === "A") {
-            const div = document.createElement("div");
-
-            // Copy classes and content
-            div.className = info.el.className;
-            div.innerHTML = info.el.innerHTML;
-
-            // Copy all attributes except href
-            for (const attr of info.el.attributes) {
-              if (attr.name !== "href") {
-                div.setAttribute(attr.name, attr.value);
-              }
-            }
-
-            // Replace <a> with <div>
-            parent.replaceChild(div, info.el);
-            info.el = div; // update reference
-          }
-
-          // Add pointer cursor and accessibility attributes
-          info.el.setAttribute("role", "button");
-          info.el.setAttribute("tabindex", "0");
-          info.el.setAttribute(
-            "aria-label",
-            `${info.event.title}, starts ${info.event.start.toLocaleString()}`,
-          );
-
+          info.el.setAttribute("aria-label", `${info.event.title}`);
           if (info.view?.type?.startsWith("timeGrid")) {
             scheduleCascade();
           }
-
-          // Attach click handler to open your popover
-          info.el.addEventListener("click", (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-
-            const rect = info.el.getBoundingClientRect();
-            const containerRect = document
-              .querySelector(".fc")
-              .getBoundingClientRect();
-            const popoverWidth = 370;
-            // Multi-day harnesses can span hundreds of pixels of column
-            // height; anchoring to rect.bottom drops the popover far
-            // below the click. Anchor just below the click point and
-            // cap at the harness bottom.
-            const anchorY =
-              typeof e.clientY === "number"
-                ? Math.min(e.clientY + 14, rect.bottom + 6)
-                : rect.bottom + 6;
-            const relY = anchorY - containerRect.top;
-
-            let relX;
-            if (
-              rect.right - containerRect.left + popoverWidth >
-              containerRect.width
-            ) {
-              relX = rect.right - containerRect.left - popoverWidth;
-            } else {
-              relX = rect.left - containerRect.left;
-            }
-
-            if (window.innerWidth < 768) {
-              setAnchorPos({ x: 0, y: relY });
-            } else {
-              setAnchorPos({ x: Math.max(0, relX), y: relY });
-            }
-
-            setSelectedEvent({
-              ...info.event.extendedProps,
-              title: info.event.title,
-              start: info.event.startStr,
-              end: info.event.endStr,
-              allDay: info.event.allDay,
-              url: info.event.url,
-            });
-          });
-
-          // Keyboard accessibility (Enter / Space)
-          info.el.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              info.el.click();
-            }
-          });
-
-          // Wait for FullCalendar to finish injecting its own <a>
-          setTimeout(() => {
-            const harness = info.el.closest(".fc-daygrid-event-harness");
-            if (!harness) return;
-
-            // Find all anchors in this harness except our main div (info.el)
-            harness.querySelectorAll("a.fc-daygrid-event").forEach((anchor) => {
-              // Hide only if it's not the same node
-              if (anchor !== info.el) {
-                anchor.setAttribute("aria-hidden", "true");
-                anchor.setAttribute("tabindex", "-1");
-                anchor.style.display = "none";
-                anchor.style.pointerEvents = "none";
-              }
-            });
-          }, 0);
         }}
       />
+      </div>
 
       {selectedEvent && anchorPos && (
         <EventPopover

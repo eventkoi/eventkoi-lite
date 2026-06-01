@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.3.13.0
+Stable tag: 1.3.13.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -230,6 +230,12 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.13.1 – Calendar event title & display fixes – 2026-06-01 =
+* Fix: Event titles no longer disappear from calendar tiles in month and week views.
+* Fix: Events that fall outside the visible week are no longer hidden.
+* Improvement: Month view now shows the calendar-coloured dot indicator on event tiles.
+* Improvement: Toolbar focus outlines on the previous/next and month controls are no longer clipped.
 
 = 1.3.13.0 – Calendar search, translations & multi-day display polish – 2026-05-31 =
 * New: Frontend Submissions preview tab in Settings (full event submission is available in EventKoi Pro).
