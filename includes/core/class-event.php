@@ -446,9 +446,9 @@ class Event {
 			'post_status' => $status,
 		);
 
-		if ( '' !== $slug ) {
-			$args['post_name'] = $slug;
-		}
+		// Empty slug regenerates from the title, so clearing the field restores
+		// the default instead of silently keeping the old post_name.
+		$args['post_name'] = '' !== $slug ? $slug : sanitize_title( $title );
 
 		$last_id        = wp_update_post( $args );
 		$event          = get_post( $last_id );

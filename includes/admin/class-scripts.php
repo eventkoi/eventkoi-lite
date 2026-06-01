@@ -175,6 +175,7 @@ class Scripts {
 			'ajax_url'            => admin_url( 'admin-ajax.php' ),
 			'wc_settings_url'     => admin_url( 'admin.php?page=wc-settings' ),
 			'api_key'             => REST::get_api_key(),
+			'has_seo_plugin'      => self::has_seo_plugin(),
 			'is_admin'            => current_user_can( 'manage_options' ),
 			'date_now'            => wp_date( 'j M Y' ),
 			'date_24h'            => wp_date( 'j M Y', strtotime( '+1 day' ) ),
@@ -354,5 +355,25 @@ class Scripts {
 		);
 
 		wp_enqueue_style( 'eventkoi-editor-tw' );
+	}
+
+	/**
+	 * Whether a known SEO plugin is active.
+	 *
+	 * Used to decide whether to surface the "Open WordPress SEO editor" link
+	 * in the event/calendar editor. Without an SEO plugin that link goes to a
+	 * native editor with no SEO panels, so it just confuses people.
+	 *
+	 * @return bool
+	 */
+	public static function has_seo_plugin() {
+		$active = defined( 'WPSEO_VERSION' )            // Yoast SEO.
+			|| class_exists( 'RankMath' )               // Rank Math.
+			|| defined( 'AIOSEO_VERSION' )              // All in One SEO.
+			|| defined( 'SEOPRESS_VERSION' )            // SEOPress.
+			|| function_exists( 'the_seo_framework' )   // The SEO Framework.
+			|| defined( 'SLIM_SEO_VER' );               // Slim SEO.
+
+		return (bool) apply_filters( 'eventkoi_has_seo_plugin', $active );
 	}
 }

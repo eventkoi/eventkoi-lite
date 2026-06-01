@@ -62,6 +62,12 @@ const getLocationGeo = (location = {}) =>
 const getLocationCoordinate = (location = {}, key, alias) => {
   const geo = getLocationGeo(location);
   const value = location?.[key] ?? location?.[alias] ?? geo?.[key];
+  // Empty strings/blanks must read as "no coordinate". Number("") is 0, which
+  // would otherwise pass isFinite and place the map at 0,0 (the ocean) or force
+  // the interactive map path on an address-only location with no lat/lng.
+  if (value === null || value === undefined || String(value).trim() === "") {
+    return null;
+  }
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
 };

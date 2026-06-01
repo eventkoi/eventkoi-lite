@@ -3,7 +3,12 @@ import { __ } from "@wordpress/i18n";
 import { ExternalLink, Search } from "lucide-react";
 
 export function SeoPluginEditorLink({ url }) {
-  if (!url) {
+  // Only surface this when an SEO plugin is active. Without one the native
+  // editor has no SEO panels, so the link just leads nowhere useful.
+  const hasSeoPlugin =
+    typeof eventkoi_params !== "undefined" && eventkoi_params?.has_seo_plugin;
+
+  if (!url || !hasSeoPlugin) {
     return null;
   }
 
