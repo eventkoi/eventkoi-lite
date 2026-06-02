@@ -1,4 +1,25 @@
 .eventkoi-front {
+  // Theme-proof responsive show/hide for the calendar toolbar + list
+  // pagination. Some themes (e.g. Beaver Builder) ship
+  // `.hidden{display:none!important}` that loads after our utilities and,
+  // being equal specificity, wins on source order and kills `lg:flex`.
+  // Scoping under `.eventkoi-front` raises specificity so it always wins.
+  .ek-desktop-only {
+    display: none !important;
+  }
+  .ek-mobile-only {
+    display: flex !important;
+  }
+
+  @media (min-width: 1024px) {
+    .ek-desktop-only {
+      display: flex !important;
+    }
+    .ek-mobile-only {
+      display: none !important;
+    }
+  }
+
   &.eventkoi-legacy {
     .wp-block-columns.is-not-stacked-on-mobile {
       gap: 20px;

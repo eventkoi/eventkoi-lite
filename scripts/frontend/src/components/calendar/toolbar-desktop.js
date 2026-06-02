@@ -65,7 +65,7 @@ export function ToolbarDesktop(props) {
       return (
         <div
           ref={desktopRef}
-          className="hidden lg:flex flex-col gap-3 w-full min-w-0"
+          className="ek-desktop-only flex-col gap-3 w-full min-w-0"
         >
           <div className="flex items-center justify-between gap-2 min-w-0">
             <div className="flex items-center gap-2 min-w-0 overflow-visible">
@@ -83,7 +83,7 @@ export function ToolbarDesktop(props) {
     return (
       <div
         ref={desktopRef}
-        className="hidden lg:flex flex-nowrap items-center justify-between gap-3 w-full min-w-0"
+        className="ek-desktop-only flex-nowrap items-center justify-between gap-3 w-full min-w-0"
       >
         {/* Left skeletons: nav + popover + today + search */}
         <div className="flex items-center gap-2 flex-nowrap min-w-0 flex-1 overflow-visible">
@@ -101,7 +101,7 @@ export function ToolbarDesktop(props) {
 
   if (isTight) {
     return (
-      <div ref={desktopRef} className="hidden lg:flex flex-col gap-3 w-full min-w-0">
+      <div ref={desktopRef} className="ek-desktop-only flex-col gap-3 w-full min-w-0">
         <div className="flex items-center justify-between gap-2 min-w-0">
           <div className="flex items-center gap-2 min-w-0 overflow-visible">
             <NavControls
@@ -159,7 +159,7 @@ export function ToolbarDesktop(props) {
   return (
     <div
       ref={desktopRef}
-      className="hidden lg:flex flex-nowrap items-center justify-between text-sm gap-3 w-full min-w-0"
+      className="ek-desktop-only flex-nowrap items-center justify-between text-sm gap-3 w-full min-w-0"
     >
       {/* Left: nav + today + popover + search */}
       <div className="flex items-center gap-2 flex-nowrap min-w-0 flex-1 overflow-visible">

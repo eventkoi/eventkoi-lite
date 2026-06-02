@@ -46,7 +46,7 @@ export function ToolbarMobile(props) {
 
   if (isEmpty) {
     return (
-      <div className="flex flex-col w-full gap-4 lg:hidden">
+      <div className="ek-mobile-only flex-col w-full gap-4">
         {/* Row 1 skeletons */}
         <div className="flex justify-between items-center">
           <Skeleton className="h-10 w-20 rounded-md" /> {/* Today */}
@@ -67,7 +67,7 @@ export function ToolbarMobile(props) {
   }
 
   return (
-    <div className="flex flex-col w-full gap-4 lg:hidden">
+    <div className="ek-mobile-only flex-col w-full gap-4">
       {/* Row 1: Today + toggle */}
       <div className="flex justify-between items-center">
         <TodayButton

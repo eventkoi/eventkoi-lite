@@ -13,7 +13,7 @@ export function Pagination(props) {
     <div className="flex items-center space-x-2">
       <Button
         variant="outline"
-        className="hidden h-8 w-8 p-0 lg:flex"
+        className="ek-desktop-only h-8 w-8 p-0"
         onClick={() => table.setPageIndex(0)}
         disabled={!table.getCanPreviousPage()}
       >
@@ -40,7 +40,7 @@ export function Pagination(props) {
       </Button>
       <Button
         variant="outline"
-        className="hidden h-8 w-8 p-0 lg:flex"
+        className="ek-desktop-only h-8 w-8 p-0"
         onClick={() => table.setPageIndex(table.getPageCount() - 1)}
         disabled={!table.getCanNextPage()}
       >
