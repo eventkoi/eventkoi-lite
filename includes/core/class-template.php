@@ -758,14 +758,26 @@ class Template {
 			return $block_content;
 		}
 
-		// Honor the Settings → Overview toggle (default true).
-		$settings = Settings::get();
-		$enabled  = ! isset( $settings['show_series_backlink'] )
-			|| '1' === (string) $settings['show_series_backlink']
-			|| 1 === $settings['show_series_backlink']
-			|| true === $settings['show_series_backlink'];
-		if ( ! $enabled ) {
+		$post_id = get_the_ID();
+		if ( ! $post_id ) {
 			return $block_content;
+		}
+
+		// Resolve visibility. A per-event override ('show'/'hide') wins over the
+		// global Settings → Overview toggle; anything else inherits the global
+		// value, whose default is true for sites that never saved the option.
+		$override = sanitize_key( (string) get_post_meta( $post_id, 'series_backlink', true ) );
+		if ( 'hide' === $override ) {
+			return $block_content;
+		} elseif ( 'show' !== $override ) {
+			$settings = Settings::get();
+			$enabled  = ! isset( $settings['show_series_backlink'] )
+				|| '1' === (string) $settings['show_series_backlink']
+				|| 1 === $settings['show_series_backlink']
+				|| true === $settings['show_series_backlink'];
+			if ( ! $enabled ) {
+				return $block_content;
+			}
 		}
 
 		$instance_ts = function_exists( 'eventkoi_get_instance_id' ) ? eventkoi_get_instance_id() : null;
@@ -780,11 +792,6 @@ class Template {
 
 		// Only target the main event container.
 		if ( strpos( $class, 'eventkoi-front' ) === false ) {
-			return $block_content;
-		}
-
-		$post_id = get_the_ID();
-		if ( ! $post_id ) {
 			return $block_content;
 		}
 
