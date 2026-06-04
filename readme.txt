@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.3.13.1
+Stable tag: 1.3.14.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -230,6 +230,12 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.14.0 – Security fix & calendar conflict fixes – 2026-06-04 =
+* Security: Event REST endpoints now restrict draft, pending, and private events to users who can edit them, preventing unauthenticated access to unpublished event data (CVE-2026-10029).
+* Improvement: The "See all events in series" back-link can now be shown or hidden per event, overriding the global setting.
+* Fix: Beaver Builder conflicts. Calendar toolbar visibility is now theme-proof, sizing uses px so it no longer shrinks under themes with a small root font, and submission styles only load when a submission form is present.
+* Fix: Editing an event no longer resets its slug, map coordinates are preserved, and the SEO editor link is gated correctly.
 
 = 1.3.13.1 – Calendar event title & display fixes – 2026-06-01 =
 * Fix: Event titles no longer disappear from calendar tiles in month and week views.
