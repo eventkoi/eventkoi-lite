@@ -240,10 +240,15 @@ class Events {
 	public static function get_events( $args = array() ) {
 		$now = time();
 
+		// Only users who can edit events may see non-published statuses. This
+		// gate is enforced again before the query runs; it is part of the cache
+		// key so privileged and public results are never shared.
+		$can_view_private = current_user_can( 'eventkoi_events_edit' );
+
 		// Create a unique cache key for this filter combination.
 		// Bumpable cache key to refresh metrics (RSVP usage, etc.).
 		$cache_version = absint( get_option( 'eventkoi_events_cache_version', 1 ) );
-		$cache_key     = 'eventkoi_events_v4_' . $cache_version . '_' . md5( wp_json_encode( $args ) );
+		$cache_key     = 'eventkoi_events_v4_' . $cache_version . '_' . ( $can_view_private ? 'priv_' : 'pub_' ) . md5( wp_json_encode( $args ) );
 
 		// Attempt to load from cache first.
 		$cached = get_transient( $cache_key );
@@ -387,6 +392,13 @@ class Events {
 					'terms'    => $calendar,
 				),
 			);
+		}
+
+		// Unauthenticated and non-editor users may only ever see published
+		// events, regardless of any status filter requested above. This closes
+		// the unauthenticated draft/pending/private exposure (CVE-2026-10029).
+		if ( ! $can_view_private ) {
+			$query_args['post_status'] = array( 'publish' );
 		}
 
 		// Execute query.
@@ -650,6 +662,14 @@ class Events {
 	public static function get_counts() {
 		global $wpdb;
 
+		// Non-editors must not learn how many draft/future/trash events exist
+		// (CVE-2026-10029). Recurring/post-status counts are restricted to
+		// published events for them.
+		$can_view_private = current_user_can( 'eventkoi_events_edit' );
+		$recurring_status = $can_view_private
+			? "('publish', 'draft', 'future')"
+			: "('publish')";
+
 		// Query counts using plugin logic.
 		$upcoming = self::get_events(
 			array(
@@ -675,20 +695,23 @@ class Events {
 		// Get basic WordPress post counts.
 		$post_counts = wp_count_posts( 'eventkoi_event' );
 
-		// Efficient recurring count with caching.
-		$cache_key   = 'eventkoi_recurring_event_count';
+		// Efficient recurring count with caching. Cache separately per privilege
+		// level so a privileged result is never served to the public.
+		$cache_key   = 'eventkoi_recurring_event_count_' . ( $can_view_private ? 'priv' : 'pub' );
 		$cache_group = 'eventkoi_counts';
 
 		$recurring_count = wp_cache_get( $cache_key, $cache_group );
 
 		if ( false === $recurring_count ) {
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			// $recurring_status is a fixed internal literal ('publish' or
+			// 'publish','draft','future'), never user input.
+			// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			$recurring_count = $wpdb->get_var(
 				$wpdb->prepare(
 					"SELECT COUNT(*) FROM {$wpdb->posts} p
 				 INNER JOIN {$wpdb->postmeta} pm ON p.ID = pm.post_id
 				 WHERE p.post_type = %s
-				   AND p.post_status IN ('publish', 'draft', 'future')
+				   AND p.post_status IN {$recurring_status}
 				   AND pm.meta_key = %s
 				   AND pm.meta_value = %s",
 					'eventkoi_event',
@@ -696,6 +719,7 @@ class Events {
 					'recurring'
 				)
 			);
+			// phpcs:enable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 
 			wp_cache_set( $cache_key, $recurring_count, $cache_group, 60 ); // Cache for 60 seconds.
 		}
@@ -704,10 +728,10 @@ class Events {
 			'upcoming'  => absint( $upcoming ),
 			'live'      => absint( $live ),
 			'completed' => absint( $completed ),
-			'draft'     => absint( $post_counts->draft ?? 0 ),
-			'trash'     => absint( $post_counts->trash ?? 0 ),
+			'draft'     => $can_view_private ? absint( $post_counts->draft ?? 0 ) : 0,
+			'trash'     => $can_view_private ? absint( $post_counts->trash ?? 0 ) : 0,
 			'publish'   => absint( $post_counts->publish ?? 0 ),
-			'future'    => absint( $post_counts->future ?? 0 ),
+			'future'    => $can_view_private ? absint( $post_counts->future ?? 0 ) : 0,
 			'recurring' => absint( $recurring_count ),
 		);
 

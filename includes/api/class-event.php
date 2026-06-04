@@ -147,6 +147,17 @@ class Event {
 			return new WP_Error( 'eventkoi_invalid_id', __( 'Invalid event ID.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
+		// Non-published events (draft, pending, future, private) are only
+		// readable by users who can edit them. This prevents unauthenticated
+		// disclosure of unpublished event data (CVE-2026-10029).
+		$post = get_post( $event_id );
+		if ( ! $post || 'eventkoi_event' !== $post->post_type ) {
+			return new WP_Error( 'eventkoi_not_found', __( 'Event not found.', 'eventkoi-lite' ), array( 'status' => 404 ) );
+		}
+		if ( 'publish' !== $post->post_status && ! current_user_can( 'edit_post', $event_id ) ) {
+			return new WP_Error( 'eventkoi_not_found', __( 'Event not found.', 'eventkoi-lite' ), array( 'status' => 404 ) );
+		}
+
 		$event    = new SingleEvent( $event_id );
 		$response = $event::get_meta();
 		$response = self::attach_rendered_event_fields( $response, $event_id );
@@ -362,6 +373,15 @@ class Event {
 
 		if ( ! $event_id || ! $timestamp ) {
 			return new \WP_Error( 'eventkoi_missing_param', __( 'Missing event ID or timestamp.', 'eventkoi-lite' ) );
+		}
+
+		// Gate unpublished instance data behind edit capability (CVE-2026-10029).
+		$post = get_post( $event_id );
+		if ( ! $post || 'eventkoi_event' !== $post->post_type ) {
+			return new \WP_Error( 'eventkoi_not_found', __( 'Event not found.', 'eventkoi-lite' ), array( 'status' => 404 ) );
+		}
+		if ( 'publish' !== $post->post_status && ! current_user_can( 'edit_post', $event_id ) ) {
+			return new \WP_Error( 'eventkoi_not_found', __( 'Event not found.', 'eventkoi-lite' ), array( 'status' => 404 ) );
 		}
 
 		$event = new \EventKoi\Core\Event( $event_id );
