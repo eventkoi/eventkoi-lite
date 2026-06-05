@@ -1025,6 +1025,13 @@ JS;
 		}
 
 		$wrapper_class     = ! empty( $attrs['className'] ) ? $attrs['className'] : 'eventkoi-query-loop';
+		// Preserve the block's wide/full alignment so FSE themes apply the
+		// matching width. The custom wrapper replaces the core query markup, so
+		// without this the alignwide/alignfull class (and its layout) is lost.
+		$loop_align = isset( $attrs['align'] ) ? sanitize_html_class( (string) $attrs['align'] ) : '';
+		if ( in_array( $loop_align, array( 'wide', 'full' ), true ) && false === strpos( $wrapper_class, 'align' . $loop_align ) ) {
+			$wrapper_class .= ' align' . $loop_align;
+		}
 		$loop_text_align   = isset( $attrs['textAlign'] ) ? sanitize_html_class( (string) $attrs['textAlign'] ) : '';
 		if ( in_array( $loop_text_align, array( 'left', 'center', 'right' ), true ) ) {
 			$wrapper_class .= ' has-text-align-' . $loop_text_align;
@@ -1546,6 +1553,37 @@ JS;
 	}
 
 	/**
+	 * Render the location field for an event-data block.
+	 *
+	 * For virtual events the value is a URL, so render it as a clickable link
+	 * using the configured link text (matching the block editor preview),
+	 * instead of printing the bare URL as plain text. Physical locations keep
+	 * their plain-text address line.
+	 *
+	 * @param array $event The event data array.
+	 * @return string Location markup, or empty string.
+	 */
+	private static function render_location_field_value( $event ) {
+		$virtual_url = isset( $event['virtual_url'] ) ? trim( (string) $event['virtual_url'] ) : '';
+
+		if ( '' !== $virtual_url ) {
+			$label = ! empty( $event['link_text'] ) ? (string) $event['link_text'] : $virtual_url;
+
+			return sprintf(
+				'<div class="ek-event-location--inner"><a href="%1$s" target="_blank" rel="noopener noreferrer">%2$s</a></div>',
+				esc_url( $virtual_url ),
+				esc_html( $label )
+			);
+		}
+
+		if ( ! empty( $event['location_line'] ) ) {
+			return '<div class="ek-event-location--inner">' . esc_html( $event['location_line'] ) . '</div>';
+		}
+
+		return '';
+	}
+
+	/**
 	 * Retrieve event field markup for a given event-data block.
 	 *
 	 * Defaults to rendering the title if no field attribute is provided.
@@ -1711,9 +1749,7 @@ JS;
 			'excerpt'  => ! empty( $event['description'] )
 				? '<div class="ek-event-excerpt--inner ek-event-excerpt-default">' . wp_kses_post( $event['description'] ) . '</div>'
 				: '',
-			'location' => ! empty( $event['location_line'] )
-				? '<div class="ek-event-location--inner">' . esc_html( $event['location_line'] ) . '</div>'
-				: '',
+			'location' => self::render_location_field_value( $event ),
 			'image'    => ! empty( $event['thumbnail'] )
 				? sprintf(
 					'<a href="%1$s" class="ek-event-image-link" rel="bookmark"><img src="%2$s" alt="%3$s" class="rounded-xl w-full h-auto object-cover ek-event-image-default" loading="lazy" decoding="async" /></a>',
