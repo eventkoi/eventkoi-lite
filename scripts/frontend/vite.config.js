@@ -7,7 +7,15 @@ import { jsxInJs, wpExternals } from '../vite-plugin-wp-externals.js';
 const shimDir = path.resolve( __dirname, '../shims' );
 
 export default defineConfig( ( { command } ) => {
-	const aliases = {};
+	// Always shim react-dom/server. It is not externalized to a WordPress
+	// global by wpExternals(), so without this the production build bundles the
+	// real react-dom/server, which reads React's legacy internals
+	// (__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED.ReactCurrentDispatcher)
+	// at load and throws on host stacks whose React object omits them, taking
+	// down the entire frontend calendar bundle.
+	const aliases = {
+		'react-dom/server': path.join( shimDir, 'react-dom-server.js' ),
+	};
 
 	if ( command === 'serve' ) {
 		Object.assign( aliases, {
