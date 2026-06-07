@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.3.14.0
+Stable tag: 1.3.14.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -230,6 +230,11 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.14.1 – Calendar & Query Loop front-end fixes – 2026-06-07 =
+* Fix: The frontend calendar no longer fails to render (which could drop recurring instances on some weeks) on hosts where a JavaScript optimizer alters the React runtime.
+* Fix: The Event Query Loop block now keeps its Wide and Full width alignment on the front end.
+* Fix: Virtual event locations in the Event Query Loop now render as a clickable link using the configured link text instead of a bare URL.
 
 = 1.3.14.0 – Security fix & calendar conflict fixes – 2026-06-04 =
 * Security: Event REST endpoints now restrict draft, pending, and private events to users who can edit them, preventing unauthenticated access to unpublished event data (CVE-2026-10029).
