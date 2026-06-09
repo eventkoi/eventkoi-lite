@@ -7,7 +7,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-06-09T11:15:45+00:00\n"
+"POT-Creation-Date: 2026-06-09T15:03:18+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -5671,15 +5671,15 @@ msgid "Search..."
 msgstr ""
 
 #: components/seo-plugin-editor-link.js:19
-msgid "SEO plugins"
+msgid "WordPress editor"
 msgstr ""
 
 #: components/seo-plugin-editor-link.js:22
-msgid "Open the WordPress editor to manage SEO plugin panels."
+msgid "Open this event in the WordPress editor to manage panels added by other plugins, such as SEO (Yoast, Rank Math) and custom fields (ACF)."
 msgstr ""
 
 #: components/seo-plugin-editor-link.js:31
-msgid "Open WordPress SEO editor"
+msgid "Open WordPress editor"
 msgstr ""
 
 #: components/settings/api.js:37
