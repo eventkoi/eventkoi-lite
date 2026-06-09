@@ -17,16 +17,28 @@ const getCalendarRequestRange = (
   }
 
   const zone = timezone || "UTC";
-  const monthBasis = anchorDate || start;
-  const monthStart = DateTime.fromJSDate(monthBasis, { zone }).startOf("month");
+  const monthStart = DateTime.fromJSDate(anchorDate || start, { zone }).startOf("month");
 
-  if (!monthStart.isValid) {
+  // The visible range can cross a month boundary (e.g. a week view week that
+  // begins in one month and ends in the next). Snap the fetch window to cover
+  // every month the range touches — not just the anchor's month — otherwise
+  // events on the days that fall in the other month are never fetched and the
+  // cells render empty.
+  const lastVisible = DateTime.fromJSDate(end, { zone }).minus({ milliseconds: 1 });
+  const monthEnd = lastVisible.startOf("month").plus({ months: 1 });
+
+  if (!monthStart.isValid || !monthEnd.isValid) {
     return { start, end };
   }
 
+  const rangeEnd =
+    monthEnd > monthStart.plus({ months: 1 })
+      ? monthEnd
+      : monthStart.plus({ months: 1 });
+
   return {
     start: monthStart.toUTC().toJSDate(),
-    end: monthStart.plus({ months: 1 }).toUTC().toJSDate(),
+    end: rangeEnd.toUTC().toJSDate(),
   };
 };
 
