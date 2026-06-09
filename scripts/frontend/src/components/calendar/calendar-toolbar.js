@@ -38,7 +38,9 @@ export function CalendarToolbar({
     page * MAX_RESULTS,
     (page + 1) * MAX_RESULTS
   );
-  const isMonthScopedSearch = String(view || "").startsWith("timeGrid");
+  const isMonthScopedSearch =
+    String(view || "").startsWith("timeGrid") ||
+    String(view || "").startsWith("dayGrid");
   const searchScopeDate =
     currentDate instanceof Date && !Number.isNaN(currentDate.getTime())
       ? currentDate

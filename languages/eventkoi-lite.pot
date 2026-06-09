@@ -7,7 +7,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-06-09T10:36:20+00:00\n"
+"POT-Creation-Date: 2026-06-09T10:48:24+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -826,7 +826,7 @@ msgstr ""
 #: core/class-blocks.php:1024
 #: blocks/event-query-loop/index.js:83
 #: components/calendar/search-box.js:289
-#: components/calendar/search-box.js:341
+#: components/calendar/search-box.js:317
 msgid "No events found."
 msgstr ""
 
@@ -846,7 +846,7 @@ msgstr ""
 #: blocks/event-query-loop/index.js:77
 #: components/calendar/nav-controls.js:22
 #: components/ui/pagination.jsx:73
-#: components/calendar/search-box.js:414
+#: components/calendar/search-box.js:389
 msgid "Next"
 msgstr ""
 
@@ -5825,12 +5825,12 @@ msgid "More"
 msgstr ""
 
 #: components/ui/calendar-picker.jsx:54
-#: components/calendar/search-box.js:322
+#: components/calendar/search-box.js:405
 msgid "Previous month"
 msgstr ""
 
 #: components/ui/calendar-picker.jsx:68
-#: components/calendar/search-box.js:332
+#: components/calendar/search-box.js:416
 msgid "Next month"
 msgstr ""
 
@@ -6208,7 +6208,7 @@ msgid "Count updated."
 msgstr ""
 
 #. translators: %s: month and year, for example May 2026.
-#: components/calendar/calendar-toolbar.js:56
+#: components/calendar/calendar-toolbar.js:58
 #, js-format
 msgid "Search results for %s."
 msgstr ""
@@ -6270,29 +6270,29 @@ msgstr ""
 msgid "%d events found."
 msgstr ""
 
-#: components/calendar/search-box.js:319
-msgid "Search previous month"
-msgstr ""
-
-#: components/calendar/search-box.js:329
-msgid "Search next month"
-msgstr ""
-
-#: components/calendar/search-box.js:387
+#: components/calendar/search-box.js:363
 msgid "Previous page"
 msgstr ""
 
-#: components/calendar/search-box.js:391
+#: components/calendar/search-box.js:367
 msgid "Prev"
 msgstr ""
 
-#: components/calendar/search-box.js:396
+#: components/calendar/search-box.js:372
 #, js-format
 msgid "Page %1$d of %2$d"
 msgstr ""
 
-#: components/calendar/search-box.js:410
+#: components/calendar/search-box.js:385
 msgid "Next page"
+msgstr ""
+
+#: components/calendar/search-box.js:402
+msgid "Search previous month"
+msgstr ""
+
+#: components/calendar/search-box.js:413
+msgid "Search next month"
 msgstr ""
 
 #: components/calendar/view-toggle.js:38

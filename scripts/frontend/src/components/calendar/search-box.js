@@ -308,31 +308,7 @@ export function SearchBox({
           >
             {searchScope ? (
               <div className="px-2 pb-2 text-xs text-muted-foreground">
-                <div>{searchScope}</div>
-                {onSearchScopePrev || onSearchScopeNext ? (
-                  <div className="mt-2 flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={onSearchScopePrev}
-                      aria-label={__("Search previous month", "eventkoi-lite")}
-                      className="h-7 cursor-pointer box-border border-none bg-transparent px-2 text-xs text-foreground shadow-none"
-                    >
-                      {__("Previous month", "eventkoi-lite")}
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={onSearchScopeNext}
-                      aria-label={__("Search next month", "eventkoi-lite")}
-                      className="h-7 cursor-pointer box-border border-none bg-transparent px-2 text-xs text-foreground shadow-none"
-                    >
-                      {__("Next month", "eventkoi-lite")}
-                    </Button>
-                  </div>
-                ) : null}
+                {searchScope}
               </div>
             ) : null}
 
@@ -341,44 +317,44 @@ export function SearchBox({
                 {__("No events found.", "eventkoi-lite")}
               </CommandEmpty>
             ) : (
-              <>
-                {paginatedResults.map((event) => {
-                  const formatted = formatSearchDate(
-                    event,
-                    timezone,
-                    timeFormat
-                  );
+              paginatedResults.map((event) => {
+                const formatted = formatSearchDate(event, timezone, timeFormat);
 
-                  return (
-                    <CommandItem
-                      key={event.id}
-                      role="option"
-                      aria-selected="false"
-                      value={event.title}
-                      onClick={() => {
-                        window.open(
-                          getEventPageUrl(event, timezone),
-                          "_blank",
-                          "noopener,noreferrer"
-                        );
-                        setOpen(false);
-                        setSearchOpen?.(false);
-                      }}
-                      className="grid gap-1 p-2 cursor-pointer text-sm text-foreground rounded-md hover:!bg-accent"
-                    >
-                      <span className="font-normal block">
-                        {formatted.visible}
-                      </span>
-                      <span className="font-medium">{event.title}</span>
-                      {/* Hidden full date for screen readers */}
-                      <span className="sr-only">{formatted.screenReader}</span>
-                    </CommandItem>
-                  );
-                })}
+                return (
+                  <CommandItem
+                    key={event.id}
+                    role="option"
+                    aria-selected="false"
+                    value={event.title}
+                    onClick={() => {
+                      window.open(
+                        getEventPageUrl(event, timezone),
+                        "_blank",
+                        "noopener,noreferrer"
+                      );
+                      setOpen(false);
+                      setSearchOpen?.(false);
+                    }}
+                    className="grid gap-1 p-2 cursor-pointer text-sm text-foreground rounded-md hover:!bg-accent"
+                  >
+                    <span className="font-normal block">
+                      {formatted.visible}
+                    </span>
+                    <span className="font-medium">{event.title}</span>
+                    {/* Hidden full date for screen readers */}
+                    <span className="sr-only">{formatted.screenReader}</span>
+                  </CommandItem>
+                );
+              })
+            )}
 
-                {totalPages > 1 && (
-                  <div className="flex justify-between items-center px-2 pt-2 text-xs text-muted-foreground">
-                    {/* Prev */}
+            {/* Pagination footer: page navigation plus month navigation. Kept
+                outside the empty/results branch so visitors can jump to another
+                month even when the current month has no matching events. */}
+            {totalPages > 1 || onSearchScopePrev || onSearchScopeNext ? (
+              <div className="mt-2 grid gap-2 border-t border-solid border-border px-2 pt-2 text-xs text-muted-foreground">
+                {totalPages > 1 ? (
+                  <div className="flex items-center justify-between">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -399,7 +375,6 @@ export function SearchBox({
                       )}
                     </span>
 
-                    {/* Next */}
                     <Button
                       variant="ghost"
                       size="sm"
@@ -414,9 +389,36 @@ export function SearchBox({
                       {__("Next", "eventkoi-lite")}
                     </Button>
                   </div>
-                )}
-              </>
-            )}
+                ) : null}
+
+                {onSearchScopePrev || onSearchScopeNext ? (
+                  <div className="flex items-center justify-between">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={onSearchScopePrev}
+                      disabled={!onSearchScopePrev}
+                      aria-label={__("Search previous month", "eventkoi-lite")}
+                      className="cursor-pointer box-border border-none bg-transparent px-0 text-foreground shadow-none"
+                    >
+                      {__("Previous month", "eventkoi-lite")}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={onSearchScopeNext}
+                      disabled={!onSearchScopeNext}
+                      aria-label={__("Search next month", "eventkoi-lite")}
+                      className="cursor-pointer box-border border-none bg-transparent px-0 text-foreground shadow-none"
+                    >
+                      {__("Next month", "eventkoi-lite")}
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
           </CommandList>
         </Command>
       )}
