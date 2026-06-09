@@ -1426,10 +1426,17 @@ function eventkoi_locate_template( $template_name, $default_path = '' ) {
 function eventkoi_resolved_date_format(): string {
 	$settings = Settings::get();
 	$custom   = isset( $settings['date_format'] ) ? trim( (string) $settings['date_format'] ) : '';
-	if ( '' !== $custom ) {
-		return $custom;
-	}
-	return (string) get_option( 'date_format', 'F j, Y' );
+	$format   = '' !== $custom ? $custom : (string) get_option( 'date_format', 'F j, Y' );
+
+	/**
+	 * Filter the resolved EventKoi date format.
+	 *
+	 * Lets a single render override the format (e.g. the Event Data block's
+	 * per-block "Date format" control) without touching the global setting.
+	 *
+	 * @param string $format Resolved PHP date format.
+	 */
+	return (string) apply_filters( 'eventkoi_resolved_date_format', $format );
 }
 
 /**
@@ -1446,10 +1453,19 @@ function eventkoi_resolved_date_format(): string {
 function eventkoi_resolved_time_format(): string {
 	$settings = Settings::get();
 	$custom   = isset( $settings['time_format_string'] ) ? trim( (string) $settings['time_format_string'] ) : '';
-	if ( '' !== $custom ) {
-		return $custom;
-	}
-	return eventkoi_apply_time_preference( (string) get_option( 'time_format', 'g:i a' ) );
+	$format   = '' !== $custom
+		? $custom
+		: eventkoi_apply_time_preference( (string) get_option( 'time_format', 'g:i a' ) );
+
+	/**
+	 * Filter the resolved EventKoi time format.
+	 *
+	 * Lets a single render override the format (e.g. the Event Data block's
+	 * per-block "Time format" control) without touching the global setting.
+	 *
+	 * @param string $format Resolved PHP time format.
+	 */
+	return (string) apply_filters( 'eventkoi_resolved_time_format', $format );
 }
 
 /**

@@ -7,7 +7,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-06-09T10:48:24+00:00\n"
+"POT-Creation-Date: 2026-06-09T11:15:45+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -433,7 +433,7 @@ msgstr ""
 #: core/beaver-modules/eventkoi-calendar/class-module-calendar.php:14
 #: core/beaver-modules/eventkoi-event/class-module-event.php:13
 #: core/beaver-modules/eventkoi-event/class-module-event.php:14
-#: core/class-blocks.php:382
+#: core/class-blocks.php:390
 #: core/class-elementor-widgets.php:53
 #: admin/settings/emails/index.js:513
 msgid "EventKoi"
@@ -503,7 +503,7 @@ msgstr ""
 #: core/class-beaver-modules.php:100
 #: core/divi-modules/class-et-builder-module-eventkoicalendar.php:54
 #: core/elementor-widgets/class-widget-calendar.php:102
-#: blocks/event-data/event-data-controls.js:76
+#: blocks/event-data/event-data-controls.js:133
 #: components/calendar/calendar-time-frame.js:35
 #: components/calendar/view-toggle.js:21
 #: components/event/event-date-recurring.js:684
@@ -603,7 +603,7 @@ msgstr ""
 
 #: core/class-beaver-modules.php:207
 #: core/elementor-widgets/class-widget-event.php:83
-#: blocks/event-data/event-data-controls.js:131
+#: blocks/event-data/event-data-controls.js:240
 msgid "Select Event"
 msgstr ""
 
@@ -817,27 +817,27 @@ msgstr ""
 msgid "Event RSVP full label"
 msgstr ""
 
-#: core/class-blocks.php:611
+#: core/class-blocks.php:619
 #: components/calendar/EventPopover.js:725
 #: share/index.js:69
 msgid "Share this event"
 msgstr ""
 
-#: core/class-blocks.php:1024
+#: core/class-blocks.php:1032
 #: blocks/event-query-loop/index.js:83
 #: components/calendar/search-box.js:289
 #: components/calendar/search-box.js:317
 msgid "No events found."
 msgstr ""
 
-#: core/class-blocks.php:1311
+#: core/class-blocks.php:1319
 #: blocks/event-query-loop/index.js:75
 #: components/calendar/nav-controls.js:13
 #: components/ui/pagination.jsx:59
 msgid "Previous"
 msgstr ""
 
-#: core/class-blocks.php:1315
+#: core/class-blocks.php:1323
 #: admin/calendars/overview/index.js:779
 #: admin/events/edit/index.js:772
 #: admin/events/edit/index.js:784
@@ -850,15 +850,15 @@ msgstr ""
 msgid "Next"
 msgstr ""
 
-#: core/class-blocks.php:1327
+#: core/class-blocks.php:1335
 msgid "Pagination"
 msgstr ""
 
-#: core/class-blocks.php:2013
+#: core/class-blocks.php:2046
 msgid "No calendar is available to display."
 msgstr ""
 
-#: core/class-blocks.php:2017
+#: core/class-blocks.php:2050
 msgid "Create a calendar"
 msgstr ""
 
@@ -978,7 +978,7 @@ msgid "Low stock"
 msgstr ""
 
 #: core/class-event.php:4652
-#: blocks/event-data/event-data-controls.js:109
+#: blocks/event-data/event-data-controls.js:166
 msgid "RSVP full"
 msgstr ""
 
@@ -2015,19 +2015,19 @@ msgid "Full event"
 msgstr ""
 
 #: core/divi-modules/class-et-builder-module-eventkoievent.php:55
-#: blocks/event-data/event-data-controls.js:59
+#: blocks/event-data/event-data-controls.js:116
 #: blocks/event-data/index.js:70
 #: plugins/event-query-loop-controls.js:466
 msgid "Title"
 msgstr ""
 
 #: core/divi-modules/class-et-builder-module-eventkoievent.php:56
-#: blocks/event-data/event-data-controls.js:89
+#: blocks/event-data/event-data-controls.js:146
 msgid "Details"
 msgstr ""
 
 #: core/divi-modules/class-et-builder-module-eventkoievent.php:57
-#: blocks/event-data/event-data-controls.js:63
+#: blocks/event-data/event-data-controls.js:120
 #: blocks/event-data/index.js:74
 msgid "Image"
 msgstr ""
@@ -2037,12 +2037,12 @@ msgid "Date & time"
 msgstr ""
 
 #: core/divi-modules/class-et-builder-module-eventkoievent.php:59
-#: blocks/event-data/event-data-controls.js:68
+#: blocks/event-data/event-data-controls.js:125
 msgid "Date only"
 msgstr ""
 
 #: core/divi-modules/class-et-builder-module-eventkoievent.php:60
-#: blocks/event-data/event-data-controls.js:69
+#: blocks/event-data/event-data-controls.js:126
 msgid "Time only"
 msgstr ""
 
@@ -2051,14 +2051,14 @@ msgid "Date, time & recurring summary"
 msgstr ""
 
 #: core/divi-modules/class-et-builder-module-eventkoievent.php:62
-#: blocks/event-data/event-data-controls.js:62
+#: blocks/event-data/event-data-controls.js:119
 #: blocks/event-data/index.js:73
 #: blocks/list/controls.js:114
 msgid "Location"
 msgstr ""
 
 #: core/divi-modules/class-et-builder-module-eventkoievent.php:63
-#: blocks/event-data/event-data-controls.js:87
+#: blocks/event-data/event-data-controls.js:144
 msgid "Google map"
 msgstr ""
 
@@ -2084,12 +2084,12 @@ msgid "Capacity"
 msgstr ""
 
 #: core/divi-modules/class-et-builder-module-eventkoievent.php:68
-#: blocks/event-data/event-data-controls.js:93
+#: blocks/event-data/event-data-controls.js:150
 msgid "Capacity remaining"
 msgstr ""
 
 #: core/divi-modules/class-et-builder-module-eventkoievent.php:69
-#: blocks/event-data/event-data-controls.js:94
+#: blocks/event-data/event-data-controls.js:151
 msgid "Capacity sold"
 msgstr ""
 
@@ -2106,17 +2106,17 @@ msgid "Ticket count"
 msgstr ""
 
 #: core/divi-modules/class-et-builder-module-eventkoievent.php:73
-#: blocks/event-data/event-data-controls.js:98
+#: blocks/event-data/event-data-controls.js:155
 msgid "Ticket summary"
 msgstr ""
 
 #: core/divi-modules/class-et-builder-module-eventkoievent.php:74
-#: blocks/event-data/event-data-controls.js:102
+#: blocks/event-data/event-data-controls.js:159
 msgid "Sales start"
 msgstr ""
 
 #: core/divi-modules/class-et-builder-module-eventkoievent.php:75
-#: blocks/event-data/event-data-controls.js:103
+#: blocks/event-data/event-data-controls.js:160
 msgid "Sales end"
 msgstr ""
 
@@ -2157,17 +2157,17 @@ msgid "Date — ISO"
 msgstr ""
 
 #: core/divi-modules/class-et-builder-module-eventkoievent.php:85
-#: blocks/event-data/event-data-controls.js:106
+#: blocks/event-data/event-data-controls.js:163
 msgid "RSVP capacity"
 msgstr ""
 
 #: core/divi-modules/class-et-builder-module-eventkoievent.php:86
-#: blocks/event-data/event-data-controls.js:107
+#: blocks/event-data/event-data-controls.js:164
 msgid "RSVP remaining"
 msgstr ""
 
 #: core/divi-modules/class-et-builder-module-eventkoievent.php:87
-#: blocks/event-data/event-data-controls.js:108
+#: blocks/event-data/event-data-controls.js:165
 msgid "RSVP going"
 msgstr ""
 
@@ -2426,7 +2426,7 @@ msgid "Copied!"
 msgstr ""
 
 #: admin/calendars/overview/index.js:151
-#: blocks/event-data/event-data-controls.js:83
+#: blocks/event-data/event-data-controls.js:140
 msgid "Calendar name"
 msgstr ""
 
@@ -3848,6 +3848,8 @@ msgstr ""
 
 #: admin/settings/overview/index.js:469
 #: admin/settings/overview/index.js:487
+#: blocks/event-data/event-data-controls.js:183
+#: blocks/event-data/event-data-controls.js:202
 msgid "Preview:"
 msgstr ""
 
@@ -3865,6 +3867,7 @@ msgid "Leave blank to use the WordPress default date format."
 msgstr ""
 
 #: admin/settings/overview/index.js:496
+#: blocks/event-data/event-data-controls.js:217
 msgid "Format reference"
 msgstr ""
 
@@ -4215,186 +4218,199 @@ msgstr ""
 msgid "Add an EventKoi calendar."
 msgstr ""
 
-#: blocks/event-data/edit.js:250
+#: blocks/event-data/edit.js:258
 msgid "No event available. Choose an event or place this block inside Event Query."
 msgstr ""
 
-#: blocks/event-data/edit.js:303
+#: blocks/event-data/edit.js:311
 msgid "No description"
 msgstr ""
 
-#: blocks/event-data/edit.js:325
+#: blocks/event-data/edit.js:333
 msgid "No time"
 msgstr ""
 
-#: blocks/event-data/edit.js:359
+#: blocks/event-data/edit.js:367
 msgid "No location"
 msgstr ""
 
-#: blocks/event-data/edit.js:421
+#: blocks/event-data/edit.js:463
 msgid "No event data"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:53
+#: blocks/event-data/event-data-controls.js:110
 msgid "Event Data Field"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:55
+#: blocks/event-data/event-data-controls.js:112
 msgid "Field"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:58
+#: blocks/event-data/event-data-controls.js:115
 msgid "— Primary —"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:60
+#: blocks/event-data/event-data-controls.js:117
 #: blocks/event-data/index.js:71
 msgid "Excerpt / Description"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:61
+#: blocks/event-data/event-data-controls.js:118
 #: blocks/event-data/index.js:72
 msgid "Date and Time"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:65
+#: blocks/event-data/event-data-controls.js:122
 msgid "— Date & time —"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:66
+#: blocks/event-data/event-data-controls.js:123
 msgid "Datetime"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:67
+#: blocks/event-data/event-data-controls.js:124
 msgid "Datetime with summary"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:70
+#: blocks/event-data/event-data-controls.js:127
 #: components/onboarding/confirm-timezone-format.jsx:64
 msgid "Timezone"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:71
+#: blocks/event-data/event-data-controls.js:128
 msgid "Date type"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:72
+#: blocks/event-data/event-data-controls.js:129
 msgid "Rule summary"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:74
+#: blocks/event-data/event-data-controls.js:131
 msgid "— Date parts —"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:75
+#: blocks/event-data/event-data-controls.js:132
 #: components/event/event-date-recurring.js:685
 msgid "Year"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:77
+#: blocks/event-data/event-data-controls.js:134
 msgid "Month (short)"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:78
+#: blocks/event-data/event-data-controls.js:135
 #: components/event/event-date-recurring.js:682
 msgid "Day"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:79
+#: blocks/event-data/event-data-controls.js:136
 msgid "Day name"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:80
+#: blocks/event-data/event-data-controls.js:137
 msgid "ISO date"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:82
+#: blocks/event-data/event-data-controls.js:139
 msgid "— Calendar & location —"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:84
+#: blocks/event-data/event-data-controls.js:141
 msgid "Calendar link (HTML)"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:85
+#: blocks/event-data/event-data-controls.js:142
 msgid "Calendar URL"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:86
+#: blocks/event-data/event-data-controls.js:143
 msgid "Location (text)"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:88
+#: blocks/event-data/event-data-controls.js:145
 msgid "Image URL"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:91
+#: blocks/event-data/event-data-controls.js:148
 msgid "— Tickets —"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:92
+#: blocks/event-data/event-data-controls.js:149
 msgid "Capacity (total)"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:95
+#: blocks/event-data/event-data-controls.js:152
 msgid "Sold out message"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:96
+#: blocks/event-data/event-data-controls.js:153
 msgid "Low stock message"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:97
+#: blocks/event-data/event-data-controls.js:154
 msgid "Ticket count (types)"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:99
+#: blocks/event-data/event-data-controls.js:156
 msgid "Price (from)"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:100
+#: blocks/event-data/event-data-controls.js:157
 msgid "Price (to)"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:101
+#: blocks/event-data/event-data-controls.js:158
 msgid "Price range"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:105
+#: blocks/event-data/event-data-controls.js:162
 msgid "— RSVP —"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:116
-msgid "Date and time fields use the formats configured in"
+#: blocks/event-data/event-data-controls.js:175
+msgid "Date format (PHP)"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:118
+#: blocks/event-data/event-data-controls.js:184
+#: blocks/event-data/event-data-controls.js:203
+msgid "Leave blank to use the global setting."
+msgstr ""
+
+#: blocks/event-data/event-data-controls.js:194
+msgid "Time format (PHP)"
+msgstr ""
+
+#: blocks/event-data/event-data-controls.js:225
+msgid "This field uses the formats configured in"
+msgstr ""
+
+#: blocks/event-data/event-data-controls.js:227
 msgid "EventKoi settings"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:129
+#: blocks/event-data/event-data-controls.js:238
 msgid "Event Source"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:132
+#: blocks/event-data/event-data-controls.js:241
 msgid "Choose which event to display. If no event is selected, this block will remain empty when used outside a query."
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:142
+#: blocks/event-data/event-data-controls.js:251
 #: components/calendar/search-box.js:198
 #: components/calendar/search-box.js:239
 msgid "Search events…"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:149
+#: blocks/event-data/event-data-controls.js:258
 msgid "Loading selected event…"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:155
+#: blocks/event-data/event-data-controls.js:264
 msgid "Displaying data for the selected event."
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:161
+#: blocks/event-data/event-data-controls.js:270
 msgid "No specific event selected — will use context if available, or remain empty if used outside an Event Query."
 msgstr ""
 

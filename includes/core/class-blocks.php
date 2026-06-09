@@ -98,7 +98,15 @@ class Blocks {
 			return '';
 		}
 
-		$value = self::get_event_field_value( $field, $event, array(), ! empty( $context_event ) );
+		$value = self::get_event_field_value(
+			$field,
+			$event,
+			array(
+				'dateFormat' => $attributes['dateFormat'] ?? '',
+				'timeFormat' => $attributes['timeFormat'] ?? '',
+			),
+			! empty( $context_event )
+		);
 
 		if ( '' === trim( (string) $value ) ) {
 			return '';
@@ -1799,6 +1807,24 @@ JS;
 							$event_day_context_container[ $event_id ] = $event_day_override;
 						}
 
+						// Per-block PHP date/time format overrides (Event Data block).
+						$ek_date_fmt = isset( $attributes['dateFormat'] ) ? trim( (string) $attributes['dateFormat'] ) : '';
+						$ek_time_fmt = isset( $attributes['timeFormat'] ) ? trim( (string) $attributes['timeFormat'] ) : '';
+						$ek_date_cb  = null;
+						$ek_time_cb  = null;
+						if ( '' !== $ek_date_fmt ) {
+							$ek_date_cb = static function () use ( $ek_date_fmt ) {
+								return $ek_date_fmt;
+							};
+							add_filter( 'eventkoi_resolved_date_format', $ek_date_cb );
+						}
+						if ( '' !== $ek_time_fmt ) {
+							$ek_time_cb = static function () use ( $ek_time_fmt ) {
+								return $ek_time_fmt;
+							};
+							add_filter( 'eventkoi_resolved_time_format', $ek_time_cb );
+						}
+
 						try {
 							$event_obj = new Event( $event_id );
 							$value     = (string) $event_obj::render_meta( $field );
@@ -1809,6 +1835,13 @@ JS;
 								} else {
 									unset( $event_day_context_container[ $event_id ] );
 								}
+							}
+
+							if ( $ek_date_cb ) {
+								remove_filter( 'eventkoi_resolved_date_format', $ek_date_cb );
+							}
+							if ( $ek_time_cb ) {
+								remove_filter( 'eventkoi_resolved_time_format', $ek_time_cb );
 							}
 						}
 
