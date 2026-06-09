@@ -318,10 +318,11 @@ export function SettingsOverview() {
 
   return (
     <div className="grid gap-8">
+      {/* Calendar & week */}
       <Box>
         <div className="grid w-full">
           <Panel variant="header">
-            <Heading level={3}>{__("General Settings", "eventkoi-lite")}</Heading>
+            <Heading level={3}>{__("Calendar & week", "eventkoi-lite")}</Heading>
           </Panel>
 
           <Separator />
@@ -347,7 +348,7 @@ export function SettingsOverview() {
                 </SelectContent>
               </Select>
               <div className="text-muted-foreground">
-                {__("Select the day calendars use as the start of the week.", "eventkoi-lite")}
+                {__("The first day of the week in calendar and week views.", "eventkoi-lite")}
               </div>
             </div>
 
@@ -374,7 +375,7 @@ export function SettingsOverview() {
                 </SelectContent>
               </Select>
               <div className="text-muted-foreground">
-                {__("Set the first visible hour in weekly view.", "eventkoi-lite")}
+                {__("The earliest hour shown in week and day views. Earlier hours stay hidden to reduce scrolling.", "eventkoi-lite")}
               </div>
             </div>
 
@@ -408,11 +409,23 @@ export function SettingsOverview() {
                 })}
               </div>
               <div className="text-muted-foreground">
-                Select your working days. These are used for recurring event
-                rules.
+                {__('Shaded in calendar views and used as the default for "every working day" recurring rules.', "eventkoi-lite")}
               </div>
             </div>
+          </Panel>
+        </div>
+      </Box>
 
+      {/* Dates & times */}
+      <Box>
+        <div className="grid w-full">
+          <Panel variant="header">
+            <Heading level={3}>{__("Dates & times", "eventkoi-lite")}</Heading>
+          </Panel>
+
+          <Separator />
+
+          <Panel className="gap-10">
             {/* Time format */}
             <div className="grid gap-2">
               <Label className="text-sm font-medium">{__("Time format", "eventkoi-lite")}</Label>
@@ -426,24 +439,108 @@ export function SettingsOverview() {
                     value="12"
                     className="flex-1 rounded-lg text-center"
                   >
-                    12-hour (AM/PM) clock
+                    {__("12-hour (AM/PM) clock", "eventkoi-lite")}
                   </TabsTrigger>
                   <TabsTrigger
                     value="24"
                     className="flex-1 rounded-lg text-center"
                   >
-                    24-hour clock
+                    {__("24-hour clock", "eventkoi-lite")}
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
               <div className="text-muted-foreground">
-                Select how event times are displayed (e.g. 2:00 PM or 14:00).
+                {__("How event times display across the site (e.g. 2:00 PM or 14:00).", "eventkoi-lite")}
               </div>
             </div>
 
-            {/* URL bases */}
+            {/* Time format (custom) */}
+            <div className="grid gap-2">
+              <Label className="text-sm font-medium">{__("Time format (custom)", "eventkoi-lite")}</Label>
+              <Input
+                value={timeFormatString}
+                onChange={(e) => setTimeFormatString(e.target.value)}
+                onBlur={commitTimeFormatString}
+                placeholder={eventkoi_params?.time_format_string || "g:i a"}
+                className="w-[350px]"
+                disabled={isSaving}
+              />
+              <div className="text-muted-foreground text-sm">
+                {timePreview ? `${__("Preview:", "eventkoi-lite")} ${timePreview}. ` : ""}
+                {__("Overrides the toggle above. Leave blank to use the default.", "eventkoi-lite")}
+              </div>
+            </div>
+
+            {/* Custom PHP date format */}
+            <div className="grid gap-2">
+              <Label className="text-sm font-medium">{__("Date format", "eventkoi-lite")}</Label>
+              <Input
+                value={dateFormat}
+                onChange={(e) => setDateFormat(e.target.value)}
+                onBlur={commitDateFormat}
+                placeholder={eventkoi_params?.date_format || "F j, Y"}
+                className="w-[350px]"
+                disabled={isSaving}
+              />
+              <div className="text-muted-foreground text-sm">
+                {datePreview
+                  ? `${__("Preview:", "eventkoi-lite")} ${datePreview}`
+                  : __("Leave blank to use the WordPress default date format.", "eventkoi-lite")}{" "}
+                &middot;{" "}
+                <a
+                  href="https://wordpress.org/documentation/article/customize-date-and-time-format/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:text-foreground"
+                >
+                  {__("Format reference", "eventkoi-lite")}
+                </a>
+              </div>
+            </div>
+
+            {/* Timezone display */}
+            <div className="grid gap-2">
+              <Label className="text-sm font-medium mb-0">
+                {__("Timezone display", "eventkoi-lite")}
+              </Label>
+              <RadioGroup
+                value={autoDetectTimezone}
+                onValueChange={handleAutoDetectChange}
+                className="grid gap-2"
+                disabled={isSaving}
+              >
+                <label className="flex items-start gap-3 text-sm text-foreground">
+                  <RadioGroupItem value="local" id="auto-tz-local" />
+                  <span className="leading-snug">
+                    {__("Visitors see event times in their local timezone.", "eventkoi-lite")}
+                  </span>
+                </label>
+                <label className="flex items-start gap-3 text-sm text-foreground">
+                  <RadioGroupItem value="site" id="auto-tz-site" />
+                  <span className="leading-snug">
+                    {__("Event times use the site's timezone.", "eventkoi-lite")}
+                  </span>
+                </label>
+              </RadioGroup>
+              <div className="text-muted-foreground">
+                {__("Controls whose clock event times follow: the visitor's local time, or your site's fixed timezone.", "eventkoi-lite")}
+              </div>
+            </div>
+          </Panel>
+        </div>
+      </Box>
+
+      {/* Event URLs */}
+      <Box>
+        <div className="grid w-full">
+          <Panel variant="header">
+            <Heading level={3}>{__("Event URLs", "eventkoi-lite")}</Heading>
+          </Panel>
+
+          <Separator />
+
+          <Panel className="gap-10">
             <div className="grid gap-4">
-              <Label className="text-sm font-medium">{__("URL bases", "eventkoi-lite")}</Label>
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="grid gap-2">
                   <Label htmlFor="event-url-base">{__("Event base", "eventkoi-lite")}</Label>
@@ -485,87 +582,28 @@ export function SettingsOverview() {
                 </div>
               </div>
               <div className="text-muted-foreground">
-                {__(
-                  "Updates event and calendar URL bases after the next page load.",
-                  "eventkoi-lite"
-                )}
+                {__("Changes to URL bases take effect after the next page load.", "eventkoi-lite")}
               </div>
             </div>
+          </Panel>
+        </div>
+      </Box>
 
-            {/* Custom PHP date / time format */}
-            <div className="grid gap-2">
-              <Label className="text-sm font-medium">Date format</Label>
-              <Input
-                value={dateFormat}
-                onChange={(e) => setDateFormat(e.target.value)}
-                onBlur={commitDateFormat}
-                placeholder={eventkoi_params?.date_format || "F j, Y"}
-                className="w-[350px]"
-                disabled={isSaving}
-              />
-              <div className="text-muted-foreground text-sm">
-                {datePreview
-                  ? `Preview: ${datePreview}`
-                  : "Leave blank to use the WordPress default date format."}{" "}
-                <a
-                  href="https://wordpress.org/documentation/article/customize-date-and-time-format/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="underline hover:text-foreground"
-                >
-                  Format reference
-                </a>
-              </div>
-            </div>
+      {/* Single event pages */}
+      <Box>
+        <div className="grid w-full">
+          <Panel variant="header">
+            <Heading level={3}>{__("Single event pages", "eventkoi-lite")}</Heading>
+          </Panel>
 
-            <div className="grid gap-2">
-              <Label className="text-sm font-medium">Time format (custom)</Label>
-              <Input
-                value={timeFormatString}
-                onChange={(e) => setTimeFormatString(e.target.value)}
-                onBlur={commitTimeFormatString}
-                placeholder={eventkoi_params?.time_format_string || "g:i a"}
-                className="w-[350px]"
-                disabled={isSaving}
-              />
-              <div className="text-muted-foreground text-sm">
-                {timePreview
-                  ? `Preview: ${timePreview}`
-                  : "Leave blank to use the WordPress default time format. When set, this overrides the 12/24-hour toggle above."}
-              </div>
-            </div>
+          <Separator />
 
-            {/* Auto-detect timezone */}
-            <div className="grid gap-2">
-              <Label className="text-sm font-medium mb-0">
-                Auto-detect timezone
-              </Label>
-              <RadioGroup
-                value={autoDetectTimezone}
-                onValueChange={handleAutoDetectChange}
-                className="grid gap-2"
-                disabled={isSaving}
-              >
-                <label className="flex items-start gap-3 text-sm text-foreground">
-                  <RadioGroupItem value="local" id="auto-tz-local" />
-                  <span className="leading-snug">
-                    Visitors see event times in their local timezone.
-                  </span>
-                </label>
-                <label className="flex items-start gap-3 text-sm text-foreground">
-                  <RadioGroupItem value="site" id="auto-tz-site" />
-                  <span className="leading-snug">
-                    Event times use the site&apos;s timezone.
-                  </span>
-                </label>
-              </RadioGroup>
-            </div>
-
+          <Panel className="gap-10">
             {/* Default event template */}
             <div className="grid gap-2">
               <Label htmlFor="default-event-template">
                 <span className="inline-flex items-center gap-2">
-                  Default event template
+                  {__("Default event template", "eventkoi-lite")}
                   <ProBadge />
                 </span>
               </Label>
@@ -590,7 +628,7 @@ export function SettingsOverview() {
                 </SelectContent>
               </Select>
               <div className="text-muted-foreground">
-                Choose the template used for all event pages by default.
+                {__("Applied to every event page unless overridden on the event itself.", "eventkoi-lite")}
               </div>
               <a
                 href={templateEditorUrl}
@@ -599,8 +637,8 @@ export function SettingsOverview() {
                 className="text-sm text-primary underline hover:text-primary/80 transition"
               >
                 {defaultTemplate && defaultTemplate !== "default"
-                  ? "Edit in Site Editor"
-                  : "View/edit templates"}
+                  ? __("Edit in Site Editor", "eventkoi-lite")
+                  : __("View/edit templates", "eventkoi-lite")}
               </a>
             </div>
             <ProLaunch
