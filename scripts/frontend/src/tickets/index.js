@@ -500,6 +500,9 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
     [data],
   );
   const showRemainingTickets = data?.tickets_show_remaining !== false;
+  const eventTermsConditions = String(
+    data?.tickets_terms_conditions || ""
+  ).trim();
   const showUnavailableTickets = true;
   const visibleTickets = useMemo(
     () =>
@@ -1190,6 +1193,14 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                                     {ticket.description}
                                   </div>
                                 ) : null}
+                                {String(ticket.terms_conditions || "").trim() ? (
+                                  <div
+                                    className="eventkoi-ticket-terms mt-1 text-xs leading-relaxed text-muted-foreground"
+                                    dangerouslySetInnerHTML={{
+                                      __html: ticket.terms_conditions,
+                                    }}
+                                  />
+                                ) : null}
                                 {saleNotStarted && ticketSaleStart && ticketSaleEnd ? (
                                   <div className="mt-2 text-xs font-semibold text-muted-foreground">
                                     {sprintf(
@@ -1307,6 +1318,13 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                     );
                   })}
                 </div>
+
+                {eventTermsConditions ? (
+                  <div
+                    className="eventkoi-ticket-terms px-5 pb-4 text-xs leading-relaxed text-muted-foreground sm:px-6"
+                    dangerouslySetInnerHTML={{ __html: eventTermsConditions }}
+                  />
+                ) : null}
 
                 <div className="border-t border-border bg-muted/30 px-5 py-5 sm:px-6 sm:py-6">
                   <div className="grid grid-cols-[1fr_auto] items-center gap-4">

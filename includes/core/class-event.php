@@ -2204,6 +2204,23 @@ class Event {
 	}
 
 	/**
+	 * Rendered ticket terms and conditions, for the data shortcode and dynamic tags.
+	 *
+	 * @return string
+	 */
+	public static function rendered_tickets_terms_conditions() {
+		$terms = trim( (string) self::get_tickets_terms_conditions() );
+
+		if ( '' === $terms ) {
+			return '';
+		}
+
+		$output = '<div class="eventkoi-ticket-terms">' . wp_kses_post( wpautop( $terms ) ) . '</div>';
+
+		return apply_filters( 'eventkoi_rendered_tickets_terms_conditions', $output, self::$event_id );
+	}
+
+	/**
 	 * Get tickets require account setting.
 	 *
 	 * @return bool
