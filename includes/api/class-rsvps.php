@@ -99,14 +99,41 @@ class Rsvps {
 			return new WP_Error( 'eventkoi_rsvp_invalid', __( 'Invalid RSVP data.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
+		$event_id = absint( $data['event_id'] ?? 0 );
+		$fields   = Core_Rsvps::sanitize_custom_field_values( $data['fields'] ?? array(), $event_id );
+
+		if ( is_wp_error( $fields ) ) {
+			return $fields;
+		}
+
 		$payload = array(
-			'event_id'    => absint( $data['event_id'] ?? 0 ),
+			'event_id'    => $event_id,
 			'instance_ts' => absint( $data['instance_ts'] ?? 0 ),
 			'name'        => sanitize_text_field( $data['name'] ?? '' ),
 			'email'       => sanitize_email( $data['email'] ?? '' ),
 			'status'      => sanitize_key( $data['status'] ?? 'going' ),
 			'guests'      => absint( $data['guests'] ?? 0 ),
+			'fields'      => $fields,
 		);
+
+		// When the built-in Name input is replaced by custom fields (e.g. a
+		// first/last name split), compose the stored name from those values.
+		if ( empty( $payload['name'] ) && $fields ) {
+			$composed = trim(
+				implode(
+					' ',
+					array_filter(
+						array(
+							$fields['first_name'] ?? '',
+							$fields['last_name'] ?? '',
+						)
+					)
+				)
+			);
+			if ( $composed ) {
+				$payload['name'] = sanitize_text_field( $composed );
+			}
+		}
 
 		$user_id = get_current_user_id();
 		if ( $user_id ) {
@@ -123,6 +150,10 @@ class Rsvps {
 			}
 			$payload['user_id'] = $user_id;
 		}
+
+		// Let integrations adjust the RSVP before it is stored, e.g. to
+		// compose the name differently or post-process custom field values.
+		$payload = apply_filters( 'eventkoi_rsvp_payload', $payload, $data );
 
 		$result = Core_Rsvps::create( $payload );
 
@@ -171,6 +202,7 @@ class Rsvps {
 		if ( ! empty( $items ) ) {
 			foreach ( $items as $item ) {
 				$email = isset( $item->email ) ? sanitize_email( $item->email ) : '';
+				$item->fields     = Core_Rsvps::get_row_fields( $item );
 				$item->avatar_url = $email
 					? get_avatar_url( $email, array( 'size' => 64, 'default' => 'identicon' ) )
 					: '';
@@ -303,6 +335,8 @@ class Rsvps {
 		$time_format = \eventkoi_resolved_time_format();
 		$datetime_format = trim( $date_format . ' ' . $time_format );
 
+		$custom_fields = Core_Rsvps::get_custom_fields( $event_id );
+
 		foreach ( $items as $item ) {
 			$is_going = strtolower( $item->status ?? '' ) === 'going';
 			$created = isset( $item->created ) ? (string) $item->created : '';
@@ -311,17 +345,29 @@ class Rsvps {
 				? wp_date( $datetime_format, $created_ts, wp_timezone() )
 				: '';
 
-			$rows[] = array(
+			$row = array(
 				'name'         => $item->name ?? '',
 				'email'        => $item->email ?? '',
 				'checkin_code' => $is_going ? ( $item->checkin_token ?? '' ) : '',
 				'guests'       => isset( $item->guests ) ? absint( $item->guests ) : 0,
 				'rsvp_date'    => $created_label,
 			);
+
+			$item_fields = Core_Rsvps::get_row_fields( $item );
+			foreach ( $custom_fields as $field ) {
+				$row[ 'field_' . $field['key'] ] = $item_fields[ $field['key'] ] ?? '';
+			}
+
+			$rows[] = $row;
+		}
+
+		$header = array( 'Name', 'Email', 'Check-in code', 'Guests', 'RSVP date' );
+		foreach ( $custom_fields as $field ) {
+			$header[] = $field['label'];
 		}
 
 		$handle = fopen( 'php://temp', 'r+' );
-		fputcsv( $handle, array( 'Name', 'Email', 'Check-in code', 'Guests', 'RSVP date' ) );
+		fputcsv( $handle, $header );
 
 		// Prevent CSV-formula injection: any cell starting with =, +, -, @, tab
 		// or CR is interpreted as a formula by Excel/Sheets/Numbers. Attendee
@@ -452,6 +498,7 @@ class Rsvps {
 					'checkin_token' => sanitize_text_field( $token_rsvp->checkin_token ?? '' ),
 					'name'          => sanitize_text_field( $token_rsvp->name ?? '' ),
 					'email'         => sanitize_email( $token_rsvp->email ?? '' ),
+					'fields'        => Core_Rsvps::get_row_fields( $token_rsvp ),
 				);
 			}
 		} elseif ( $user_id ) {
@@ -463,6 +510,7 @@ class Rsvps {
 					'checkin_token' => sanitize_text_field( $identity_rsvp->checkin_token ?? '' ),
 					'name'          => sanitize_text_field( $identity_rsvp->name ?? '' ),
 					'email'         => sanitize_email( $identity_rsvp->email ?? '' ),
+					'fields'        => Core_Rsvps::get_row_fields( $identity_rsvp ),
 				);
 			}
 		}

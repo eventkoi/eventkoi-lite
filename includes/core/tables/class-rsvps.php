@@ -23,7 +23,7 @@ class Rsvps extends Table {
 	/**
 	 * Schema version.
 	 */
-	const SCHEMA_VERSION = '1.1.0';
+	const SCHEMA_VERSION = '1.2.0';
 
 	/**
 	 * Table name.
@@ -72,6 +72,7 @@ class Rsvps extends Table {
                 `email` VARCHAR(150) NOT NULL,
                 `status` VARCHAR(30) NOT NULL DEFAULT 'going',
                 `guests` INT(10) UNSIGNED NOT NULL DEFAULT 0,
+                `meta` LONGTEXT DEFAULT NULL,
                 `checkin_token` CHAR(36) DEFAULT NULL,
                 `checked_in` DATETIME DEFAULT NULL,
                 `checked_in_count` INT(10) UNSIGNED DEFAULT NULL,

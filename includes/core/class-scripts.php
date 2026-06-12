@@ -140,6 +140,8 @@ class Scripts {
 				'auto_detect_timezone' => rest_sanitize_boolean( $settings['auto_detect_timezone'] ?? false ),
 			'nonce'                => wp_create_nonce( 'wp_rest' ),
 			'rsvp_user'            => $rsvp_user,
+			'rsvp_fields'          => Rsvps::get_custom_fields( (int) $event_id ),
+			'rsvp_show_name'       => (bool) apply_filters( 'eventkoi_rsvp_show_name_field', true, (int) $event_id ),
 		);
 
 		wp_localize_script(

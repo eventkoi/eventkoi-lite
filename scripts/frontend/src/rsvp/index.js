@@ -14,8 +14,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -41,6 +43,21 @@ function getInstanceTsFromDom(el) {
 function RsvpWidget({ eventId, instanceTs, mountEl }) {
   const prefillName = eventkoi_params?.rsvp_user?.name || "";
   const prefillEmail = eventkoi_params?.rsvp_user?.email || "";
+  const customFields = Array.isArray(eventkoi_params?.rsvp_fields)
+    ? eventkoi_params.rsvp_fields
+    : [];
+  const showNameField = eventkoi_params?.rsvp_show_name !== false;
+  const [fieldValues, setFieldValues] = useState(() => {
+    const initial = {};
+    const user = eventkoi_params?.rsvp_user || {};
+    customFields.forEach((field) => {
+      initial[field.key] =
+        field.key === "first_name" || field.key === "last_name"
+          ? user[field.key] || ""
+          : "";
+    });
+    return initial;
+  });
   const [summary, setSummary] = useState(null);
   const [status, setStatus] = useState("going");
   const [name, setName] = useState(prefillName);
@@ -115,6 +132,9 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
     }
     if (typeof rsvpData.guests === "number") {
       setGuests(String(rsvpData.guests));
+    }
+    if (rsvpData.fields && typeof rsvpData.fields === "object") {
+      setFieldValues((prev) => ({ ...prev, ...rsvpData.fields }));
     }
     if (rsvpData.status) {
       setStatus(rsvpData.status);
@@ -212,6 +232,7 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
         email,
         status,
         guests: guestsValue,
+        fields: fieldValues,
       };
 
       const res = await fetch(resolvePublicRestUrl("/rsvp"), {
@@ -428,17 +449,19 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
                 {formError}
               </div>
             )}
-            <div className="grid gap-2">
-              <Label htmlFor="eventkoi-rsvp-name">
-                {__("Name", "eventkoi-lite")}
-              </Label>
-              <Input
-                id="eventkoi-rsvp-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-            </div>
+            {showNameField && (
+              <div className="grid gap-2">
+                <Label htmlFor="eventkoi-rsvp-name">
+                  {__("Name", "eventkoi-lite")}
+                </Label>
+                <Input
+                  id="eventkoi-rsvp-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                />
+              </div>
+            )}
             <div className="grid gap-2">
               <Label htmlFor="eventkoi-rsvp-email">
                 {__("Email", "eventkoi-lite")}
@@ -451,6 +474,73 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
                 required
               />
             </div>
+            {customFields.map((field) => {
+              const fieldId = `eventkoi-rsvp-field-${field.key}`;
+              const value = fieldValues[field.key] ?? "";
+              const setValue = (next) =>
+                setFieldValues((prev) => ({ ...prev, [field.key]: next }));
+
+              if (field.type === "checkbox") {
+                return (
+                  <Label
+                    key={field.key}
+                    htmlFor={fieldId}
+                    className="flex items-center gap-2 text-sm font-normal cursor-pointer"
+                  >
+                    <Checkbox
+                      id={fieldId}
+                      checked={!!value}
+                      required={field.required}
+                      onCheckedChange={(checked) =>
+                        setValue(checked ? "1" : "")
+                      }
+                    />
+                    {field.label}
+                  </Label>
+                );
+              }
+
+              return (
+                <div key={field.key} className="grid gap-2">
+                  <Label htmlFor={fieldId}>{field.label}</Label>
+                  {field.type === "textarea" ? (
+                    <Textarea
+                      id={fieldId}
+                      value={value}
+                      placeholder={field.placeholder || undefined}
+                      required={field.required}
+                      onChange={(e) => setValue(e.target.value)}
+                    />
+                  ) : field.type === "select" ? (
+                    <select
+                      id={fieldId}
+                      value={value}
+                      required={field.required}
+                      onChange={(e) => setValue(e.target.value)}
+                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                    >
+                      <option value="">
+                        {field.placeholder || __("Select...", "eventkoi-lite")}
+                      </option>
+                      {(field.options || []).map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <Input
+                      id={fieldId}
+                      type={field.type === "text" ? undefined : field.type}
+                      value={value}
+                      placeholder={field.placeholder || undefined}
+                      required={field.required}
+                      onChange={(e) => setValue(e.target.value)}
+                    />
+                  )}
+                </div>
+              );
+            })}
             <div className="grid gap-2">
               <Label>{__("Status", "eventkoi-lite")}</Label>
               <RadioGroup
