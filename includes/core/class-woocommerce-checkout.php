@@ -293,6 +293,7 @@ class WooCommerce_Checkout {
 			'wp_user_label'       => $wp_user_label,
 			'master_checkin_code' => $master_checkin_code,
 			'ticket_items'        => $all_ticket_items,
+			'checkout_fields'     => is_array( $args['checkout_fields'] ?? null ) ? $args['checkout_fields'] : array(),
 		);
 
 		set_transient( 'eventkoi_cart_' . $token, $checkout_data, HOUR_IN_SECONDS );
@@ -540,6 +541,21 @@ class WooCommerce_Checkout {
 		$order->update_meta_data( '_eventkoi_return_url', $checkout_data['return_url'] ?? '' );
 		$order->update_meta_data( '_eventkoi_wp_user_id', $checkout_data['wp_user_id'] ?? 0 );
 		$order->update_meta_data( '_eventkoi_wp_user_label', $checkout_data['wp_user_label'] ?? '' );
+
+		$checkout_fields = is_array( $checkout_data['checkout_fields'] ?? null ) ? $checkout_data['checkout_fields'] : array();
+		if ( $checkout_fields ) {
+			$order->update_meta_data( '_eventkoi_checkout_fields', $checkout_fields );
+
+			$definitions = array();
+			foreach ( \EventKoi\Core\Orders::get_checkout_fields( absint( $checkout_data['event_id'] ?? 0 ) ) as $field ) {
+				$definitions[ $field['key'] ] = $field;
+			}
+			foreach ( $checkout_fields as $key => $value ) {
+				$label = $definitions[ $key ]['label'] ?? $key;
+				$order->add_order_note( sanitize_text_field( $label . ': ' . $value ) );
+			}
+		}
+
 		$order->save();
 
 		// Clear session data.

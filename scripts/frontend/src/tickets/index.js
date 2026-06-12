@@ -447,6 +447,10 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
   const checkoutSuccessFromUrl = readCheckoutSuccessFromUrl();
   const checkoutSuccessValue = checkoutSuccessSessionId || checkoutSuccessFromUrl;
   const [quantities, setQuantities] = useState({});
+  const checkoutCustomFields = Array.isArray(eventkoi_params?.checkout_fields)
+    ? eventkoi_params.checkout_fields
+    : [];
+  const [checkoutFieldValues, setCheckoutFieldValues] = useState({});
   const [billing, setBilling] = useState(() => ({
     first_name: String(eventkoi_params?.rsvp_user?.first_name || "").trim(),
     last_name: String(eventkoi_params?.rsvp_user?.last_name || "").trim(),
@@ -878,8 +882,16 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
     (checkoutAttempted || emailTouched) &&
     emailValue !== "" &&
     !hasValidBillingEmail;
+  const hasRequiredCheckoutFields = checkoutCustomFields.every(
+    (field) =>
+      !field.required ||
+      String(checkoutFieldValues[field.key] || "").trim() !== ""
+  );
   const hasRequiredBillingFields =
-    firstNameValue !== "" && lastNameValue !== "" && hasValidBillingEmail;
+    firstNameValue !== "" &&
+    lastNameValue !== "" &&
+    hasValidBillingEmail &&
+    hasRequiredCheckoutFields;
 
   const startHostedCheckout = async () => {
     if (!canContinueCheckout || isCheckoutLoading) return;
@@ -987,6 +999,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
           first_name: String(billing.first_name || "").trim(),
           last_name: String(billing.last_name || "").trim(),
           email,
+          fields: checkoutFieldValues,
           items: selectedTicketItems.map((item) => ({
             ticket_id: item.ticket_id,
             name: String(item.name || ""),
@@ -1564,6 +1577,105 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                         )}
                       </p>
                     </div>
+
+                    {checkoutCustomFields.map((field) => {
+                      const fieldId = `eventkoi-checkout-field-${field.key}`;
+                      const value = checkoutFieldValues[field.key] ?? "";
+                      const setValue = (next) =>
+                        setCheckoutFieldValues((prev) => ({
+                          ...prev,
+                          [field.key]: next,
+                        }));
+                      const isFieldInvalid =
+                        checkoutAttempted &&
+                        field.required &&
+                        String(value).trim() === "";
+                      const inputClass = `h-10 w-full rounded-md border bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-2 ${
+                        isFieldInvalid
+                          ? "border-destructive focus-visible:ring-destructive"
+                          : "border-input focus-visible:ring-ring"
+                      }`;
+
+                      if (field.type === "checkbox") {
+                        return (
+                          <label
+                            key={field.key}
+                            htmlFor={fieldId}
+                            className="flex items-center gap-2 text-sm font-normal text-foreground cursor-pointer"
+                          >
+                            <input
+                              id={fieldId}
+                              type="checkbox"
+                              checked={!!value}
+                              required={field.required}
+                              onChange={(event) =>
+                                setValue(event.target.checked ? "1" : "")
+                              }
+                              className="size-4 rounded border-input"
+                            />
+                            {field.label}
+                          </label>
+                        );
+                      }
+
+                      return (
+                        <div key={field.key} className="space-y-1.5">
+                          <label
+                            htmlFor={fieldId}
+                            className="font-medium text-[13px] text-foreground"
+                          >
+                            {field.label}
+                          </label>
+                          {field.type === "textarea" ? (
+                            <textarea
+                              id={fieldId}
+                              value={value}
+                              required={field.required}
+                              placeholder={field.placeholder || undefined}
+                              onChange={(event) => setValue(event.target.value)}
+                              className={`${inputClass} h-auto min-h-[80px] py-2`}
+                            />
+                          ) : field.type === "select" ? (
+                            <select
+                              id={fieldId}
+                              value={value}
+                              required={field.required}
+                              onChange={(event) => setValue(event.target.value)}
+                              className={inputClass}
+                            >
+                              <option value="">
+                                {field.placeholder ||
+                                  __("Select...", "eventkoi-lite")}
+                              </option>
+                              {(field.options || []).map((option) => (
+                                <option key={option} value={option}>
+                                  {option}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input
+                              id={fieldId}
+                              type={field.type === "text" ? "text" : field.type}
+                              value={value}
+                              required={field.required}
+                              placeholder={field.placeholder || undefined}
+                              onChange={(event) => setValue(event.target.value)}
+                              className={inputClass}
+                            />
+                          )}
+                          {isFieldInvalid ? (
+                            <p className="text-xs text-destructive">
+                              {sprintf(
+                                /* translators: %s: field label */
+                                __("%s is required.", "eventkoi-lite"),
+                                field.label
+                              )}
+                            </p>
+                          ) : null}
+                        </div>
+                      );
+                    })}
 
                     {checkoutError ? (
                       <div

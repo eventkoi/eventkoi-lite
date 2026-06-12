@@ -1062,6 +1062,14 @@ class Tickets {
 		$wp_user_id          = absint( $request->get_param( 'wp_user_id' ) );
 		$items_raw           = $request->get_param( 'items' );
 
+		$checkout_fields = \EventKoi\Core\Orders::sanitize_checkout_field_values(
+			$request->get_param( 'fields' ),
+			$event_id
+		);
+		if ( is_wp_error( $checkout_fields ) ) {
+			return $checkout_fields;
+		}
+
 		if ( ! $event_id ) {
 			return new WP_Error( 'invalid_event_id', __( 'Invalid event ID.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
@@ -1360,6 +1368,7 @@ class Tickets {
 				'wp_user_id'    => $wp_user_id,
 				'wp_user_label' => $wp_user_label,
 				'checkout_note' => $checkout_note,
+				'checkout_fields' => $checkout_fields,
 			)
 		);
 
