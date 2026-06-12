@@ -12,7 +12,31 @@ const getCalendarRequestRange = (
   timezone,
   anchorDate = null
 ) => {
-  if (!start || !end || !String(viewType || "").startsWith("timeGrid")) {
+  if (!start || !end) {
+    return { start, end };
+  }
+
+  // Month-anchored window (padded past grid spillover) keeps the cache key
+  // identical between the view fetch and the adjacent-month prefetch.
+  if (String(viewType || "").startsWith("dayGrid")) {
+    const zone = timezone || "UTC";
+    const monthBasis =
+      anchorDate || new Date((start.getTime() + end.getTime()) / 2);
+    const monthStart = DateTime.fromJSDate(monthBasis, { zone }).startOf(
+      "month"
+    );
+
+    if (!monthStart.isValid) {
+      return { start, end };
+    }
+
+    return {
+      start: monthStart.minus({ days: 7 }).toUTC().toJSDate(),
+      end: monthStart.plus({ months: 1, days: 14 }).toUTC().toJSDate(),
+    };
+  }
+
+  if (!String(viewType || "").startsWith("timeGrid")) {
     return { start, end };
   }
 
@@ -73,6 +97,9 @@ export function useCalendarData({
   const lastRangeRef = useRef(null);
   const hasLoadedView = useRef(false);
   const viewRequestIdRef = useRef(0);
+  const rangeCacheRef = useRef(new Map());
+  // range key -> in-flight prefetch promise
+  const inflightRef = useRef(new Map());
 
   // Use calendars if present, otherwise id
   const effectiveId = calendars || id;
@@ -171,6 +198,48 @@ export function useCalendarData({
     const requestId = viewRequestIdRef.current + 1;
     viewRequestIdRef.current = requestId;
 
+    const rangeKey =
+      requestRange.start && requestRange.end
+        ? `${requestRange.start.toISOString()}__${requestRange.end.toISOString()}__${
+            viewType || ""
+          }__${requestTimezone}`
+        : "";
+
+    const applyCached = () => {
+      const cached = rangeCacheRef.current.get(rangeKey);
+      setEvents(Array.isArray(cached?.events) ? cached.events : []);
+      if (cached?.calendar) {
+        setCalendar(cached.calendar);
+      }
+      setLoading(false);
+    };
+
+    if (rangeKey && rangeCacheRef.current.has(rangeKey)) {
+      if (requestId === viewRequestIdRef.current) {
+        applyCached();
+        prefetchAdjacent(start, end, viewType, anchorDate, requestTimezone);
+      }
+      return;
+    }
+
+    // Await an in-flight prefetch for this range instead of duplicating it.
+    if (rangeKey && inflightRef.current.has(rangeKey)) {
+      setLoading(true);
+      try {
+        await inflightRef.current.get(rangeKey);
+      } catch {
+        // Prefetch failed; fall through to a normal fetch.
+      }
+      if (requestId !== viewRequestIdRef.current) {
+        return;
+      }
+      if (rangeCacheRef.current.has(rangeKey)) {
+        applyCached();
+        prefetchAdjacent(start, end, viewType, anchorDate, requestTimezone);
+        return;
+      }
+    }
+
     try {
       setLoading(true);
 
@@ -187,12 +256,21 @@ export function useCalendarData({
         method: "get",
       });
 
+      if (rangeKey) {
+        rangeCacheRef.current.set(rangeKey, {
+          events: Array.isArray(response.events) ? response.events : [],
+          calendar: response.calendar || null,
+        });
+      }
+
       if (requestId !== viewRequestIdRef.current) {
         return; // A newer view-fetch superseded this one.
       }
 
       setEvents(response.events);
       setCalendar(response.calendar);
+
+      prefetchAdjacent(start, end, viewType, anchorDate, requestTimezone);
 
       if (!hasLoadedView.current) {
         hasLoadedView.current = true;
@@ -205,6 +283,80 @@ export function useCalendarData({
         setLoading(false);
       }
     }
+  };
+
+  // Prefetch adjacent windows (next + previous) for faster nav, anchored on
+  // the neighboring month so cache keys match the view fetch.
+  const prefetchAdjacent = (start, end, viewType, anchorDate, requestTimezone) => {
+    if (!start || !end) {
+      return;
+    }
+    const spanMs = end.getTime() - start.getTime();
+    if (spanMs <= 0) {
+      return;
+    }
+    const anchorBasis =
+      anchorDate || new Date((start.getTime() + end.getTime()) / 2);
+    const anchorDt = DateTime.fromJSDate(anchorBasis, {
+      zone: requestTimezone || "UTC",
+    });
+
+    const prefetch = async (pStart, pEnd, pAnchor) => {
+      const requestRange = getCalendarRequestRange(
+        pStart,
+        pEnd,
+        viewType,
+        requestTimezone,
+        pAnchor
+      );
+      if (!requestRange.start || !requestRange.end) {
+        return;
+      }
+      const key = `${requestRange.start.toISOString()}__${requestRange.end.toISOString()}__${
+        viewType || ""
+      }__${requestTimezone}`;
+      if (rangeCacheRef.current.has(key) || inflightRef.current.has(key)) {
+        return;
+      }
+      const run = (async () => {
+        const p = new URLSearchParams({ id: effectiveId, display });
+        if (shouldApplyListSorting && orderby) p.set("orderby", orderby);
+        if (shouldApplyListSorting && order) p.set("order", order);
+        p.set("start", requestRange.start.toISOString());
+        p.set("end", requestRange.end.toISOString());
+        if (viewType) p.set("view_type", viewType);
+        if (display === "calendar") p.set("timezone", requestTimezone);
+
+        const prefetched = await publicApi({
+          path: `/calendar_events?${p.toString()}`,
+          method: "get",
+        });
+
+        rangeCacheRef.current.set(key, {
+          events: Array.isArray(prefetched?.events) ? prefetched.events : [],
+          calendar: prefetched?.calendar || null,
+        });
+      })();
+      inflightRef.current.set(key, run.catch(() => {}));
+      try {
+        await run;
+      } catch {
+        // Ignore prefetch errors silently.
+      } finally {
+        inflightRef.current.delete(key);
+      }
+    };
+
+    void prefetch(
+      new Date(end.getTime()),
+      new Date(end.getTime() + spanMs),
+      anchorDt.plus({ months: 1 }).toJSDate()
+    );
+    void prefetch(
+      new Date(start.getTime() - spanMs),
+      new Date(start.getTime()),
+      anchorDt.minus({ months: 1 }).toJSDate()
+    );
   };
 
   const loadAllEvents = async () => {
