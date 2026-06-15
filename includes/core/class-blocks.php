@@ -1624,13 +1624,21 @@ JS;
 			return '';
 		}
 
+		// Selected-day events use `event_day` only to highlight one date on the
+		// same event page, so the title should link to the parent event rather
+		// than a specific day.
+		$title_url = $event['url'] ?? '';
+		if ( '' !== $title_url && 'selected' === ( $event['standard_type'] ?? '' ) ) {
+			$title_url = remove_query_arg( 'event_day', $title_url );
+		}
+
 		$map = array(
 			'title'    => ! empty( $event['title'] )
 				? sprintf(
-					$link_title && ! empty( $event['url'] ?? '' )
+					$link_title && ! empty( $title_url )
 					? '<span class="ek-event-title--inner"><a href="%1$s" rel="bookmark">%2$s</a></span>'
 					: '<span class="ek-event-title--inner">%2$s</span>',
-					esc_url( $event['url'] ?? '' ),
+					esc_url( $title_url ),
 					esc_html( $event['title'] )
 				)
 				: '',
