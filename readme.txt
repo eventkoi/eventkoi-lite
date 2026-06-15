@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.3.14.1
+Stable tag: 1.3.15.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -230,6 +230,16 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.15.0 – RSVP & checkout custom fields, ticket terms, calendar fixes – 2026-06-15 =
+* New: Add custom fields to the RSVP form with the eventkoi_rsvp_fields filter (for example a first/last name split), validated and saved with each RSVP.
+* New: Add custom fields to the ticket checkout form with the eventkoi_checkout_fields filter, saved with the order.
+* New: Ticket terms and conditions now show in the purchase dialog and can be output with [eventkoi data="tickets_terms_conditions"].
+* Improvement: Per-block date and time format controls on the Event Data block.
+* Improvement: Calendar search results pagination now has Previous and Next month controls.
+* Fix: Week view no longer drops events on weeks that span two months, and month navigation is faster.
+* Fix: Selected-day event titles in the Event Query Loop now link to the parent event instead of a single day.
+* Fix: The WordPress editor link is always available so ACF, SEO, and other plugin panels can be reached.
 
 = 1.3.14.1 – Calendar & Query Loop front-end fixes – 2026-06-07 =
 * Fix: The frontend calendar no longer fails to render (which could drop recurring instances on some weeks) on hosts where a JavaScript optimizer alters the React runtime.
