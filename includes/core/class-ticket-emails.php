@@ -958,11 +958,18 @@ class Ticket_Emails {
 			return array( '', eventkoi_timezone() );
 		}
 
-		$start_ts = $instance_ts ? $instance_ts : absint( get_post_meta( $event_id, 'start_timestamp', true ) );
-		$end_ts   = absint( get_post_meta( $event_id, 'end_timestamp', true ) );
-
 		new Event( $event_id );
-		if ( $start_ts && 'recurring' === Event::get_date_type() && $instance_ts ) {
+		$date_type      = Event::get_date_type();
+		$standard_type  = Event::get_standard_type();
+		$current_start  = absint( get_post_meta( $event_id, 'start_timestamp', true ) );
+		$start_ts       = ( 'standard' === $date_type && 'selected' !== $standard_type )
+			? $current_start
+			: ( $instance_ts ? $instance_ts : $current_start );
+		$end_ts         = absint( get_post_meta( $event_id, 'end_timestamp', true ) );
+		$first_instance = Event::get_first_instance();
+		$is_all_day     = ! empty( $first_instance['all_day'] );
+
+		if ( $start_ts && 'recurring' === $date_type && $instance_ts ) {
 			$rules = Event::get_recurrence_rules();
 			if ( is_array( $rules ) ) {
 				foreach ( $rules as $rule ) {
@@ -974,7 +981,8 @@ class Ticket_Emails {
 					$rule_end   = ! empty( $rule['end_date'] ) ? strtotime( (string) $rule['end_date'] . ' UTC' ) : null;
 					$duration   = ( $rule_start && $rule_end && $rule_end > $rule_start ) ? ( $rule_end - $rule_start ) : null;
 					if ( $duration ) {
-						$end_ts = $start_ts + $duration;
+						$end_ts     = $start_ts + $duration;
+						$is_all_day = ! empty( $rule['all_day'] );
 						break;
 					}
 				}
@@ -983,9 +991,13 @@ class Ticket_Emails {
 
 		$event_datetime = '';
 		if ( $start_ts ) {
-			$event_datetime = $end_ts
-				? eventkoi_date( 'datetime', $start_ts ) . ' — ' . eventkoi_date( 'datetime', $end_ts )
-				: eventkoi_date( 'datetime', $start_ts );
+			$event_datetime = $is_all_day
+				? eventkoi_format_datetime_range( $start_ts, $end_ts, true, array( 'timezone' => wp_timezone() ) )
+				: (
+					$end_ts
+						? eventkoi_date( 'datetime', $start_ts ) . ' — ' . eventkoi_date( 'datetime', $end_ts )
+						: eventkoi_date( 'datetime', $start_ts )
+				);
 		}
 
 		return array( $event_datetime, eventkoi_timezone() );
@@ -1013,20 +1025,36 @@ class Ticket_Emails {
 			if ( ! is_array( $location ) ) {
 				continue;
 			}
-			$type = isset( $location['type'] ) ? sanitize_key( (string) $location['type'] ) : '';
-			if ( 'physical' !== $type ) {
+			$type = self::get_location_type( $location, 'inperson' );
+			if ( 'inperson' !== $type ) {
 				continue;
 			}
 
+			$address = isset( $location['address'] ) && is_array( $location['address'] ) ? $location['address'] : array();
 			$parts = array_filter(
 				array(
-					sanitize_text_field( (string) ( $location['name'] ?? '' ) ),
-					sanitize_text_field( (string) ( $location['address1'] ?? '' ) ),
-					sanitize_text_field( (string) ( $location['address2'] ?? '' ) ),
-					sanitize_text_field( (string) ( $location['city'] ?? '' ) ),
-					sanitize_text_field( (string) ( $location['state'] ?? '' ) ),
-					sanitize_text_field( (string) ( $location['zip'] ?? '' ) ),
-					sanitize_text_field( (string) ( $location['country'] ?? '' ) ),
+					self::location_text_value( $location, 'name' ),
+					self::first_location_text(
+						self::location_text_value( $location, 'address1' ),
+						self::location_text_value( $address, 'streetAddress' )
+					),
+					self::location_text_value( $location, 'address2' ),
+					self::first_location_text(
+						self::location_text_value( $location, 'city' ),
+						self::location_text_value( $address, 'addressLocality' )
+					),
+					self::first_location_text(
+						self::location_text_value( $location, 'state' ),
+						self::location_text_value( $address, 'addressRegion' )
+					),
+					self::first_location_text(
+						self::location_text_value( $location, 'zip' ),
+						self::location_text_value( $address, 'postalCode' )
+					),
+					self::first_location_text(
+						self::location_text_value( $location, 'country' ),
+						self::location_text_value( $address, 'addressCountry' )
+					),
 				)
 			);
 
@@ -1036,6 +1064,114 @@ class Ticket_Emails {
 		}
 
 		return '';
+	}
+
+	/**
+	 * Return the first non-empty location text.
+	 *
+	 * @param string ...$values Values.
+	 * @return string
+	 */
+	private static function first_location_text( ...$values ) {
+		foreach ( $values as $value ) {
+			$value = trim( (string) $value );
+			if ( '' !== $value ) {
+				return $value;
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Get sanitized text from a location row.
+	 *
+	 * @param array  $location Location row.
+	 * @param string $key      Field key.
+	 * @return string
+	 */
+	private static function location_text_value( array $location, $key ) {
+		if ( ! array_key_exists( $key, $location ) ) {
+			return '';
+		}
+
+		$value = $location[ $key ];
+		if ( is_object( $value ) ) {
+			$value = get_object_vars( $value );
+		}
+
+		if ( is_array( $value ) ) {
+			foreach ( array( 'name', 'text', 'url', '@id' ) as $nested_key ) {
+				if ( array_key_exists( $nested_key, $value ) ) {
+					$text = self::location_scalar_text( $value[ $nested_key ] );
+					if ( '' !== $text ) {
+						return $text;
+					}
+				}
+			}
+
+			$texts = array();
+			foreach ( $value as $nested_value ) {
+				$text = self::location_scalar_text( $nested_value );
+				if ( '' !== $text ) {
+					$texts[] = $text;
+				}
+			}
+
+			return implode( ' ', array_unique( $texts ) );
+		}
+
+		return self::location_scalar_text( $value );
+	}
+
+	/**
+	 * Normalize a scalar location value to text.
+	 *
+	 * @param mixed $value Raw value.
+	 * @return string
+	 */
+	private static function location_scalar_text( $value ) {
+		if ( is_array( $value ) || is_object( $value ) ) {
+			return '';
+		}
+
+		return sanitize_text_field( (string) $value );
+	}
+
+	/**
+	 * Normalize EventKoi and raw Schema.org location types.
+	 *
+	 * @param array  $location Location row.
+	 * @param string $default  Optional default normalized type.
+	 * @return string
+	 */
+	private static function get_location_type( array $location, $default = '' ) {
+		$type = sanitize_key( self::location_text_value( $location, 'type' ) );
+		if ( 'physical' === $type ) {
+			return 'inperson';
+		}
+		if ( 'virtual' === $type ) {
+			return 'online';
+		}
+		if ( in_array( $type, array( 'inperson', 'online' ), true ) ) {
+			return $type;
+		}
+		if ( str_contains( $type, 'virtuallocation' ) ) {
+			return 'online';
+		}
+		if ( str_contains( $type, 'place' ) ) {
+			return 'inperson';
+		}
+
+		$schema_type = strtolower( self::location_text_value( $location, '@type' ) );
+		if ( str_contains( $schema_type, 'virtuallocation' ) ) {
+			return 'online';
+		}
+		if ( str_contains( $schema_type, 'place' ) ) {
+			return 'inperson';
+		}
+
+		return sanitize_key( $default );
 	}
 
 	/**

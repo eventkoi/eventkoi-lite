@@ -10,8 +10,9 @@ export function EventHeader() {
 
   return (
     <header
+      style={{ top: "var(--wp-admin--admin-bar--height, 32px)" }}
       className={cn(
-        "flex items-center text-sm h-20 sticky top-[0px] z-[100000] bg-white md:bg-muted shadow-sm border-b gap-2 md:gap-6 px-4 md:px-8"
+        "flex items-center text-sm h-20 sticky z-10 bg-white md:bg-muted shadow-sm border-b gap-2 md:gap-6 px-4 md:px-8"
       )}
     >
       <Logo />

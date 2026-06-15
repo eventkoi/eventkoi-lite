@@ -5,10 +5,12 @@ import { EventDescription } from "@/components/event/event-description";
 import { EventImage } from "@/components/event/event-image";
 import { EventLocation } from "@/components/event/event-location";
 import { EventName } from "@/components/event/event-name";
+import { EventSlug } from "@/components/event/event-slug";
 import { EventTemplate } from "@/components/event/event-template";
 import { AttendanceModeSelector } from "@/components/event/attendance-mode-selector";
 import { Heading } from "@/components/heading";
 import { ProLaunch } from "@/components/dashboard/pro-launch";
+import { SeoPluginEditorLink } from "@/components/seo-plugin-editor-link";
 import { ShortcodeBox } from "@/components/ShortcodeBox";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -24,24 +26,24 @@ export function EventEditMain() {
 
   return (
     <div className="flex flex-col w-full gap-8">
-      <Box
-        container
-        className="flex flex-col md:flex-row items-start justify-between gap-4"
-      >
-        <EventName />
-        <div className="flex items-center min-w-[170px] justify-between gap-[10px]">
-          <Label htmlFor="show-attrs" className="font-normal text-[12px]">
-            <div className="leading-[15px] flex md:block">
-              <div>{__("Show block attributes", "eventkoi-lite")}</div>
-              <div>{__("and shortcodes", "eventkoi-lite")}</div>
-            </div>
-          </Label>
-          <Switch
-            id="show-attrs"
-            checked={showAttributes}
-            onCheckedChange={setShowAttributes}
-          />
+      <Box container className="flex flex-col gap-4">
+        <div className="flex flex-col md:flex-row items-start justify-between gap-4">
+          <EventName />
+          <div className="flex items-center min-w-[170px] justify-between gap-[10px]">
+            <Label htmlFor="show-attrs" className="font-normal text-[12px]">
+              <div className="leading-[15px] flex md:block">
+                <div>{__("Show block attributes", "eventkoi-lite")}</div>
+                <div>{__("and shortcodes", "eventkoi-lite")}</div>
+              </div>
+            </Label>
+            <Switch
+              id="show-attrs"
+              checked={showAttributes}
+              onCheckedChange={setShowAttributes}
+            />
+          </div>
         </div>
+        <EventSlug />
       </Box>
 
       {/* Event Date */}
@@ -87,6 +89,7 @@ export function EventEditMain() {
           </div>
         )}
         <EventDescription />
+        <SeoPluginEditorLink url={event?.native_edit_url} />
         {showAttributes && (
           <div className="text-sm text-muted-foreground -mt-6">
             <ShortcodeBox

@@ -52,12 +52,14 @@ export function DataTable({
   defaultSort,
   customTopLeft,
   customTopRight,
+  topLeftExtra,
   hideTableBorder = false,
   tableClassName = "",
   hideSearchBox = false,
   statusCounts,
   refreshStatusCounts,
   titleColumnWidth,
+  statusFiltersBelowControls = false,
 }) {
   const [sorting, setSorting] = useState(defaultSort);
   const [columnFilters, setColumnFilters] = useState([]);
@@ -87,7 +89,7 @@ export function DataTable({
   return (
     <div className={cn("w-full grid self-start", gap ? `gap-${gap}` : "gap-6")}>
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center">
+        <div className="flex items-center gap-3">
           {customTopLeft ? (
             typeof customTopLeft === "function" ? (
               customTopLeft(table)
@@ -104,6 +106,11 @@ export function DataTable({
               refreshCounts={refreshStatusCounts}
             />
           )}
+          {topLeftExtra
+            ? typeof topLeftExtra === "function"
+              ? topLeftExtra(table)
+              : topLeftExtra
+            : null}
         </div>
         <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-end">
           {customTopRight ? (
@@ -131,31 +138,59 @@ export function DataTable({
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
-        {!hideStatusFilters && (
-          <div className="flex flex-wrap items-center text-sm gap-x-4 gap-y-2">
-            <StatusFilters
-              statusFilters={statusFilters}
-              base={base}
-              data={data}
-              counts={statusCounts}
-            />
-          </div>
-        )}
-        {!hideBottomBar && (
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6">
-            <div className="text-sm text-muted-foreground">
-              <TableSelectedRows table={table} compact={compact} />
-            </div>
-            {table.getRowModel().rows?.length > 0 && (
-              <div className="flex items-center gap-3 text-foreground">
+      {statusFiltersBelowControls ? (
+        <div className="grid gap-3">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+            {!hideBottomBar && (
+              <div className="text-sm text-muted-foreground">
+                <TableSelectedRows table={table} compact={compact} />
+              </div>
+            )}
+            {!hideBottomBar && table.getRowModel().rows?.length > 0 && (
+              <div className="flex items-center gap-4 text-foreground">
                 <TablePage table={table} />
                 <Pagination table={table} />
               </div>
             )}
           </div>
-        )}
-      </div>
+          {!hideStatusFilters && (
+            <div className="flex flex-wrap items-center text-sm gap-x-4 gap-y-2">
+              <StatusFilters
+                statusFilters={statusFilters}
+                base={base}
+                data={data}
+                counts={statusCounts}
+              />
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4">
+            {!hideStatusFilters && (
+              <div className="flex flex-wrap items-center text-sm gap-x-4 gap-y-2">
+                <StatusFilters
+                  statusFilters={statusFilters}
+                  base={base}
+                  data={data}
+                  counts={statusCounts}
+                />
+              </div>
+            )}
+            {!hideBottomBar && (
+              <div className="text-sm text-muted-foreground">
+                <TableSelectedRows table={table} compact={compact} />
+              </div>
+            )}
+          </div>
+          {!hideBottomBar && table.getRowModel().rows?.length > 0 && (
+            <div className="flex items-center gap-4 text-foreground">
+              <TablePage table={table} />
+              <Pagination table={table} />
+            </div>
+          )}
+        </div>
+      )}
 
       <div
         className={cn(
@@ -306,7 +341,7 @@ export function DataTable({
           </div>
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-12 text-foreground">
             <RowsPerPage table={table} />
-            <div className="flex gap-4">
+            <div className="flex items-center gap-4">
               <TablePage table={table} />
               <Pagination table={table} />
             </div>

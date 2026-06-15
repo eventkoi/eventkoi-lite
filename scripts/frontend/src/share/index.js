@@ -1,3 +1,4 @@
+import { __ } from "@wordpress/i18n";
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 
@@ -65,56 +66,70 @@ export function ShareButton({ base, html }) {
         >
           <DialogHeader className="flex items-center justify-center p-4 border-0 border-solid border-b-2 border-input">
             <DialogTitle className="font-sans text-xl m-0 text-foreground">
-              Share this event
+              {__("Share this event", "eventkoi-lite")}
             </DialogTitle>
-            <DialogDescription className="hidden"></DialogDescription>
+            <DialogDescription className="sr-only">
+              {__(
+                "Share this event using the options below or copy its link.",
+                "eventkoi-lite"
+              )}
+            </DialogDescription>
           </DialogHeader>
           <div className="flex flex-col pt-[30px] pb-[60px] px-[60px]">
             <div className="flex gap-4 items-center flex-wrap justify-center pb-[60px]">
               <ShareLink
                 event={event}
                 name="whatsapp"
-                title="Whatsapp"
+                title={__("WhatsApp", "eventkoi-lite")}
                 icon={<WhatsappIcon />}
               />
               <ShareLink
                 event={event}
                 name="instagram"
-                title="Instagram"
+                title={__("Instagram", "eventkoi-lite")}
                 icon={<InstagramIcon />}
               />
               <ShareLink
                 event={event}
                 name="email"
-                title="Email"
+                title={__("Email", "eventkoi-lite")}
                 icon={<EmailIcon />}
               />
               <ShareLink
                 event={event}
                 name="facebook"
-                title="Facebook"
+                title={__("Facebook", "eventkoi-lite")}
                 icon={<FacebookIcon />}
               />
-              <ShareLink event={event} name="x" title="X" icon={<XIcon />} />
+              <ShareLink
+                event={event}
+                name="x"
+                title={__("X", "eventkoi-lite")}
+                icon={<XIcon />}
+              />
               <ShareLink
                 event={event}
                 name="linkedin"
-                title="Linkedin"
+                title={__("LinkedIn", "eventkoi-lite")}
                 icon={<LinkedinIcon />}
               />
             </div>
             <div className="flex flex-col gap-3 pb-[10px]">
-              <Label className="text-base">Event link</Label>
+              <Label htmlFor="link" className="text-base">
+                {__("Event link", "eventkoi-lite")}
+              </Label>
               <div className="relative">
                 <Input
                   id="link"
                   defaultValue={event?.url}
                   readOnly
+                  aria-describedby="copy-feedback"
                   className="min-h-[66px] border border-input border-solid border-primary/30 box-border text-lg text-foreground"
                 />
                 <Button
                   variant="secondary"
-                  type="submit"
+                  type="button"
+                  aria-label={__("Copy event link to clipboard", "eventkoi-lite")}
                   className="absolute h-12 right-[9px] top-[9px] border-none cursor-pointer hover:bg-input"
                   onClick={() => {
                     setCopying(true);
@@ -129,8 +144,14 @@ export function ShareButton({ base, html }) {
                   ) : (
                     <Copy className="mr-2 h-5 w-5" />
                   )}
-                  {copying ? "Copied!" : "Copy"}
+                  {copying
+                    ? __("Copied!", "eventkoi-lite")
+                    : __("Copy", "eventkoi-lite")}
                 </Button>
+                <div id="copy-feedback" aria-live="polite" className="sr-only">
+                  {copying &&
+                    __("Event link copied to clipboard", "eventkoi-lite")}
+                </div>
               </div>
             </div>
           </div>

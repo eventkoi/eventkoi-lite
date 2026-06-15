@@ -1,4 +1,6 @@
 import { cn } from "@/lib/utils";
+import { useSettings } from "@/hooks/SettingsContext";
+import { wpToLuxonFormat } from "@/lib/date-utils";
 import { isValid } from "date-fns";
 import { DateTime } from "luxon";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -7,25 +9,109 @@ import { useEffect, useMemo, useRef, useState } from "react";
  * TimeInput: renders and parses wall times in a given timezone (wpTz),
  * but calls setDate() with a UTC Date so parent can store in UTC.
  */
-const is24h = eventkoi_params?.time_format === "24";
+const hasUnescapedToken = (format, token) => {
+  let escaped = false;
 
-export function TimeInput({ date, setDate, disabled, wpTz = "UTC" }) {
+  for (const char of format || "") {
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+
+    if (char === "\\") {
+      escaped = true;
+      continue;
+    }
+
+    if (char === token) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
+export function TimeInput({
+  date,
+  setDate,
+  disabled,
+  wpTz = "UTC",
+  commitOnValidChange = false,
+}) {
+  const { settings } = useSettings();
+  const params = typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
+  const formatParams = { ...params, ...(settings || {}) };
+  const is24h = formatParams?.time_format === "24";
+  const wpTimeFormatRaw =
+    formatParams?.time_format_string || (is24h ? "H:i" : "g:i a");
+  const luxonTimeFormat = wpToLuxonFormat(wpTimeFormatRaw);
+  const wpLocale = (formatParams?.locale || params?.locale || "en").replace("_", "-");
+  const prefers24h =
+    is24h ||
+    (!hasUnescapedToken(wpTimeFormatRaw, "a") &&
+      !hasUnescapedToken(wpTimeFormatRaw, "A") &&
+      (hasUnescapedToken(wpTimeFormatRaw, "G") ||
+        hasUnescapedToken(wpTimeFormatRaw, "H")));
+
+  const applyMeridiemCase = (value) => {
+    if (hasUnescapedToken(wpTimeFormatRaw, "A")) {
+      return value.replace(/\b(am|pm)\b/gi, (match) => match.toUpperCase());
+    }
+
+    if (hasUnescapedToken(wpTimeFormatRaw, "a")) {
+      return value.replace(/\b(am|pm)\b/gi, (match) => match.toLowerCase());
+    }
+
+    return value;
+  };
+
+  const formatDateTime = (dt) => {
+    if (!dt?.isValid) {
+      return "";
+    }
+
+    return applyMeridiemCase(dt.setLocale(wpLocale).toFormat(luxonTimeFormat));
+  };
+
   // Format a Date into wall time in WP timezone
   const formatTime = (d) =>
-    DateTime.fromJSDate(d, { zone: wpTz })
-      .toFormat(is24h ? "HH:mm" : "h:mma")
-      .toLowerCase();
+    formatDateTime(DateTime.fromJSDate(d, { zone: wpTz }));
+
+  const buildDateWithTime = (hour, minute) =>
+    DateTime.fromJSDate(date || new Date(), { zone: wpTz })
+      .set({ hour, minute, second: 0, millisecond: 0 })
+      .setZone("utc")
+      .toJSDate();
+
+  const findOptionIndex = (d) => {
+    const dt = DateTime.fromJSDate(d, { zone: "utc" }).setZone(wpTz);
+
+    if (!dt.isValid) {
+      return -1;
+    }
+
+    return TIME_OPTIONS.findIndex(
+      (option) => option.hour === dt.hour && option.minute === dt.minute
+    );
+  };
 
   // Build dropdown options once
   const TIME_OPTIONS = useMemo(() => {
     return Array.from({ length: 96 }, (_, i) => {
+      const hour = Math.floor(i / 4);
+      const minute = (i % 4) * 15;
       const dt = DateTime.fromObject(
-        { hour: Math.floor(i / 4), minute: (i % 4) * 15 },
+        { hour, minute },
         { zone: wpTz }
       );
-      return dt.toFormat(is24h ? "HH:mm" : "h:mma").toLowerCase();
+      return {
+        hour,
+        minute,
+        key: `${hour}:${minute}`,
+        label: formatDateTime(dt),
+      };
     });
-  }, [wpTz]);
+  }, [wpTz, wpLocale, luxonTimeFormat, wpTimeFormatRaw]);
 
   const [inputValue, setInputValue] = useState(() =>
     date && isValid(date) ? formatTime(date) : ""
@@ -35,6 +121,14 @@ export function TimeInput({ date, setDate, disabled, wpTz = "UTC" }) {
   const containerRef = useRef(null);
   const inputRef = useRef(null);
   const optionRefs = useRef([]);
+
+  useEffect(() => {
+    if (document.activeElement === inputRef.current) {
+      return;
+    }
+
+    setInputValue(date && isValid(date) ? formatTime(date) : "");
+  }, [date, wpTz, wpLocale, luxonTimeFormat, wpTimeFormatRaw]);
 
   // Parse a typed time string in WP tz → return UTC Date
   const parseTime = (input) => {
@@ -47,18 +141,21 @@ export function TimeInput({ date, setDate, disabled, wpTz = "UTC" }) {
       let [, h, m, ampm] = colonMatch;
       let hour = parseInt(h, 10);
       let minute = parseInt(m, 10);
-      if (is24h) {
-        if (hour > 23 || minute > 59) return null;
-      } else {
+      if (minute > 59) return null;
+
+      if (ampm) {
+        if (hour < 1 || hour > 12) return null;
+        if (ampm === "pm" && hour < 12) hour += 12;
+        if (ampm === "am" && hour === 12) hour = 0;
+      } else if (!prefers24h && hour <= 12) {
         if (!ampm) ampm = hour >= 7 && hour <= 11 ? "am" : "pm";
         if (ampm === "pm" && hour < 12) hour += 12;
         if (ampm === "am" && hour === 12) hour = 0;
+      } else if (hour > 23) {
+        return null;
       }
 
-      return DateTime.fromJSDate(date || new Date(), { zone: wpTz })
-        .set({ hour, minute, second: 0, millisecond: 0 })
-        .setZone("utc")
-        .toJSDate();
+      return buildDateWithTime(hour, minute);
     }
 
     // Match compact 230, 4pm, 1130am, or 14 (meaning 14:00 in 24h)
@@ -67,22 +164,43 @@ export function TimeInput({ date, setDate, disabled, wpTz = "UTC" }) {
       let [, h, m, ampm] = compactMatch;
       let hour = parseInt(h, 10);
       let minute = m ? parseInt(m, 10) : 0;
-      if (is24h) {
-        if (hour > 23 || minute >= 60) return null;
-      } else {
-        if (minute >= 60 || hour > 12) return null;
+      if (minute >= 60) return null;
+
+      if (ampm) {
+        if (hour < 1 || hour > 12) return null;
+        if (ampm === "pm" && hour < 12) hour += 12;
+        if (ampm === "am" && hour === 12) hour = 0;
+      } else if (!prefers24h) {
+        if (hour > 12) return null;
         if (!ampm) ampm = hour >= 7 && hour <= 11 ? "am" : "pm";
         if (ampm === "pm" && hour < 12) hour += 12;
         if (ampm === "am" && hour === 12) hour = 0;
+      } else if (hour > 23) {
+        return null;
       }
 
-      return DateTime.fromJSDate(date || new Date(), { zone: wpTz })
-        .set({ hour, minute, second: 0, millisecond: 0 })
-        .setZone("utc")
-        .toJSDate();
+      return buildDateWithTime(hour, minute);
     }
 
     return null;
+  };
+
+  const isCompleteTypedTime = (input) => {
+    const cleaned = String(input || "").toLowerCase().replace(/\s/g, "");
+
+    if (/^\d{1,2}:\d{2}(am|pm)?$/.test(cleaned)) {
+      return true;
+    }
+
+    if (/^\d{1,2}(am|pm)$/.test(cleaned)) {
+      return true;
+    }
+
+    if (/^\d{1,2}\d{2}(am|pm)?$/.test(cleaned)) {
+      return true;
+    }
+
+    return prefers24h && /^\d{1,2}$/.test(cleaned);
   };
 
   const handleChange = (e) => {
@@ -92,19 +210,18 @@ export function TimeInput({ date, setDate, disabled, wpTz = "UTC" }) {
 
     const parsed = parseTime(value);
     if (parsed && isValid(parsed)) {
-      const formatted = formatTime(
-        DateTime.fromJSDate(parsed, { zone: "utc" }).setZone(wpTz).toJSDate()
-      );
-      const index = TIME_OPTIONS.findIndex((opt) => opt === formatted);
-      setHighlightedIndex(index);
+      setHighlightedIndex(findOptionIndex(parsed));
+      if (commitOnValidChange && isCompleteTypedTime(value)) {
+        setDate(parsed);
+      }
     } else {
       setHighlightedIndex(-1);
     }
   };
 
   const handleSelect = (option) => {
-    setInputValue(option);
-    const parsed = parseTime(option);
+    setInputValue(option.label);
+    const parsed = buildDateWithTime(option.hour, option.minute);
     if (parsed && isValid(parsed)) {
       setDate(parsed); // UTC date to parent
     }
@@ -115,11 +232,7 @@ export function TimeInput({ date, setDate, disabled, wpTz = "UTC" }) {
     const parsed = parseTime(inputValue);
     if (parsed && isValid(parsed)) {
       setDate(parsed);
-      setInputValue(
-        formatTime(
-          DateTime.fromJSDate(parsed, { zone: "utc" }).setZone(wpTz).toJSDate()
-        )
-      );
+      setInputValue(formatTime(parsed));
     }
   };
 
@@ -129,11 +242,7 @@ export function TimeInput({ date, setDate, disabled, wpTz = "UTC" }) {
 
     const parsed = parseTime(inputValue);
     if (parsed && isValid(parsed)) {
-      const formatted = formatTime(
-        DateTime.fromJSDate(parsed, { zone: "utc" }).setZone(wpTz).toJSDate()
-      );
-      const index = TIME_OPTIONS.findIndex((opt) => opt === formatted);
-      setHighlightedIndex(index);
+      setHighlightedIndex(findOptionIndex(parsed));
     } else {
       setHighlightedIndex(-1);
     }
@@ -162,13 +271,7 @@ export function TimeInput({ date, setDate, disabled, wpTz = "UTC" }) {
         const parsed = parseTime(inputValue);
         if (parsed && isValid(parsed)) {
           setDate(parsed);
-          setInputValue(
-            formatTime(
-              DateTime.fromJSDate(parsed, { zone: "utc" })
-                .setZone(wpTz)
-                .toJSDate()
-            )
-          );
+          setInputValue(formatTime(parsed));
           setShowDropdown(false);
         }
       }
@@ -218,13 +321,7 @@ export function TimeInput({ date, setDate, disabled, wpTz = "UTC" }) {
             setShowDropdown(true);
             const parsed = parseTime(inputValue);
             if (parsed && isValid(parsed)) {
-              const formatted = formatTime(
-                DateTime.fromJSDate(parsed, { zone: "utc" })
-                  .setZone(wpTz)
-                  .toJSDate()
-              );
-              const index = TIME_OPTIONS.findIndex((opt) => opt === formatted);
-              setHighlightedIndex(index);
+              setHighlightedIndex(findOptionIndex(parsed));
             }
           }
         }}
@@ -244,7 +341,7 @@ export function TimeInput({ date, setDate, disabled, wpTz = "UTC" }) {
         <div className="absolute z-10 mt-1 max-h-60 w-full overflow-y-auto rounded-md border bg-popover text-sm shadow-md">
           {TIME_OPTIONS.map((option, index) => (
             <button
-              key={option}
+              key={option.key}
               type="button"
               onClick={() => handleSelect(option)}
               ref={(el) => (optionRefs.current[index] = el)}
@@ -253,7 +350,7 @@ export function TimeInput({ date, setDate, disabled, wpTz = "UTC" }) {
                 index === highlightedIndex && "bg-muted text-foreground"
               )}
             >
-              {option}
+              {option.label}
             </button>
           ))}
         </div>

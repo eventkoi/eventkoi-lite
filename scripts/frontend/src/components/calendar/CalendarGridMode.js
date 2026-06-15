@@ -2,6 +2,7 @@
 
 import { EventPopover } from "@/components/calendar/EventPopover";
 import { Skeleton } from "@/components/ui/skeleton";
+import { wpToLuxonFormat } from "@/lib/date-utils";
 import { formatDate } from "@fullcalendar/core";
 import allLocales from "@fullcalendar/core/locales-all";
 import dayGridPlugin from "@fullcalendar/daygrid";
@@ -9,6 +10,9 @@ import listPlugin from "@fullcalendar/list";
 import luxonPlugin from "@fullcalendar/luxon3";
 import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
+import { __, sprintf } from "@wordpress/i18n";
+import { DateTime } from "luxon";
+import { useEffect, useRef } from "react";
 
 const days = {
   sunday: 0,
@@ -38,6 +42,119 @@ try {
 } catch {
   localeToUse = "en";
 }
+
+const getDisplayTimezoneForUrl = (timezone, calendarTimeZone) => {
+  if (timezone === "local") {
+    return (
+      Intl.DateTimeFormat().resolvedOptions().timeZone ||
+      calendarTimeZone ||
+      "UTC"
+    );
+  }
+
+  return calendarTimeZone || timezone || eventkoi_params?.timezone || "UTC";
+};
+
+const getEventUrlWithTimezone = (url, timezone, calendarTimeZone) => {
+  if (!url) {
+    return url;
+  }
+
+  try {
+    const nextUrl = new URL(url, window.location.href);
+    nextUrl.searchParams.set(
+      "tz",
+      getDisplayTimezoneForUrl(timezone, calendarTimeZone)
+    );
+    return nextUrl.toString();
+  } catch {
+    return url;
+  }
+};
+
+// Google-Calendar-style cascade for overlapping events in week/day view.
+// FullCalendar's default splits overlappers into equal-width side-by-side
+// columns. We instead let each subsequent overlapper take a generous left
+// indent (so the underlying event's left half stays readable) while still
+// extending to the column's right edge. With rounded corners + shadow on
+// the overlapper, the stack reads as separate floating cards.
+const cascadeTimegridColumn = (col) => {
+  const harnesses = Array.from(
+    col.querySelectorAll(":scope > .fc-timegrid-event-harness")
+  );
+  if (harnesses.length < 2) {
+    harnesses.forEach((h) => {
+      h.style.insetInlineStart = "0";
+      h.style.insetInlineEnd = "0";
+      h.style.zIndex = "1";
+      h.classList.remove("ek-cascade-overlap");
+    });
+    return;
+  }
+
+  const colWidth = col.getBoundingClientRect().width || 200;
+
+  const rects = harnesses.map((el) => {
+    const top = parseFloat(el.style.top) || 0;
+    const bottomCss = parseFloat(el.style.bottom);
+    const heightCss = parseFloat(el.style.height);
+    let bottom;
+    if (Number.isFinite(bottomCss)) {
+      const parentH = el.parentElement?.getBoundingClientRect().height || 0;
+      bottom = parentH - bottomCss;
+    } else if (Number.isFinite(heightCss)) {
+      bottom = top + heightCss;
+    } else {
+      const r = el.getBoundingClientRect();
+      bottom = top + r.height;
+    }
+    return { el, top, bottom };
+  });
+
+  rects.sort((a, b) => a.top - b.top || a.bottom - b.bottom);
+
+  const active = [];
+  let maxLevel = 0;
+  rects.forEach((r) => {
+    for (let i = active.length - 1; i >= 0; i--) {
+      if (active[i].bottom <= r.top + 0.5) active.splice(i, 1);
+    }
+    const used = new Set(active.map((a) => a.level));
+    let level = 0;
+    while (used.has(level)) level++;
+    r.level = level;
+    if (level > maxLevel) maxLevel = level;
+    active.push({ bottom: r.bottom, level });
+  });
+
+  // Scale the per-level indent to the cascade depth so the deepest card
+  // still has at least MIN_VISIBLE width. For a 2-event stack this falls
+  // out to ~45% of the column; deeper stacks use a smaller step so the
+  // bottom card isn't crushed.
+  const MIN_VISIBLE = 56;
+  const idealForDepth =
+    maxLevel > 0 ? (colWidth - MIN_VISIBLE) / maxLevel : colWidth * 0.45;
+  const gutter = Math.max(
+    20,
+    Math.min(idealForDepth, colWidth * 0.45, 140)
+  );
+
+  rects.forEach((r) => {
+    r.el.style.insetInlineStart = `${r.level * gutter}px`;
+    r.el.style.insetInlineEnd = "0";
+    r.el.style.zIndex = String(r.level + 1);
+    if (r.level > 0) {
+      r.el.classList.add("ek-cascade-overlap");
+    } else {
+      r.el.classList.remove("ek-cascade-overlap");
+    }
+  });
+};
+
+const cascadeTimegrid = (root) => {
+  const cols = (root || document).querySelectorAll(".fc-timegrid-col-events");
+  cols.forEach(cascadeTimegridColumn);
+};
 
 export function CalendarGridMode({
   calendarRef,
@@ -71,6 +188,235 @@ export function CalendarGridMode({
       : timezone && timezone !== "local"
       ? timezone
       : null;
+  const displayTimezoneKey = calendarTimeZone || timezone || "UTC";
+  const previousTimezoneRef = useRef(displayTimezoneKey);
+  const cascadeScheduledRef = useRef(false);
+  const scheduleCascade = () => {
+    if (cascadeScheduledRef.current) return;
+    cascadeScheduledRef.current = true;
+    requestAnimationFrame(() => {
+      cascadeScheduledRef.current = false;
+      const root = calendarRef?.current?.elRef?.current || document;
+      cascadeTimegrid(root);
+    });
+  };
+  const resolvedWpTimeFormat =
+    (typeof eventkoi_params !== "undefined" &&
+      eventkoi_params?.time_format_string) ||
+    (timeFormat === "24" ? "H:i" : "g:i a");
+  const formatWpTime = (dt) => {
+    if (!dt?.isValid) {
+      return "";
+    }
+
+    let formatted = dt
+      .setLocale(localeToUse)
+      .toFormat(wpToLuxonFormat(resolvedWpTimeFormat));
+
+    if (resolvedWpTimeFormat.includes("A")) {
+      formatted = formatted.replace(/\b(am|pm)\b/g, (match) =>
+        match.toUpperCase()
+      );
+    } else if (resolvedWpTimeFormat.includes("a")) {
+      formatted = formatted.replace(/\b(AM|PM)\b/g, (match) =>
+        match.toLowerCase()
+      );
+    }
+
+    return formatted;
+  };
+  const formatCalendarTime = (date, dateStr) => {
+    let dt = dateStr ? DateTime.fromISO(dateStr, { setZone: true }) : null;
+
+    if (!dt?.isValid && date instanceof Date) {
+      dt = DateTime.fromJSDate(date, { zone: calendarTimeZone || "UTC" });
+    }
+
+    if (!dt?.isValid) {
+      return "";
+    }
+
+    if (calendarTimeZone) {
+      dt = dt.setZone(calendarTimeZone);
+    }
+
+    return formatWpTime(dt);
+  };
+  const shouldShowEventEndTime = (arg) => {
+    return (
+      arg.view?.type?.startsWith("timeGrid") &&
+      arg.event?.start instanceof Date &&
+      arg.event?.end instanceof Date &&
+      arg.event.end > arg.event.start
+    );
+  };
+  const getCalendarDateKey = (date, dateStr) => {
+    let dt = dateStr ? DateTime.fromISO(dateStr, { setZone: true }) : null;
+    if (!dt?.isValid && date instanceof Date) {
+      dt = DateTime.fromJSDate(date, { zone: calendarTimeZone || "UTC" });
+    }
+    if (!dt?.isValid) {
+      return "";
+    }
+    return (calendarTimeZone ? dt.setZone(calendarTimeZone) : dt).toISODate();
+  };
+  const isTimedMultiDayEvent = (arg) => {
+    if (!shouldShowEventEndTime(arg)) {
+      return false;
+    }
+    const startKey = getCalendarDateKey(arg.event.start, arg.event.startStr);
+    const endKey = getCalendarDateKey(arg.event.end, arg.event.endStr);
+    return !!startKey && !!endKey && startKey !== endKey;
+  };
+  const formatCalendarEndDay = (date, dateStr) => {
+    let dt = dateStr ? DateTime.fromISO(dateStr, { setZone: true }) : null;
+    if (!dt?.isValid && date instanceof Date) {
+      dt = DateTime.fromJSDate(date, { zone: calendarTimeZone || "UTC" });
+    }
+    if (!dt?.isValid) {
+      return "";
+    }
+    if (calendarTimeZone) {
+      dt = dt.setZone(calendarTimeZone);
+    }
+    return dt.setLocale(localeToUse).toFormat("ccc");
+  };
+  const toCalendarDateTime = (date, dateStr) => {
+    let dt = dateStr ? DateTime.fromISO(dateStr, { setZone: true }) : null;
+    if (!dt?.isValid && date instanceof Date) {
+      dt = DateTime.fromJSDate(date, { zone: calendarTimeZone || "UTC" });
+    }
+    if (!dt?.isValid) {
+      return null;
+    }
+    return calendarTimeZone ? dt.setZone(calendarTimeZone) : dt;
+  };
+  // Google-style compact time formatter for week-view tile labels.
+  // 12h: "9 – 11am", "1:30 – 3pm", "11am – 2pm". 24h: "9 – 11", "13:30 – 15".
+  const formatCompactTime = (dt) => {
+    if (!dt) return "";
+    const m = dt.minute;
+    const mPart = m === 0 ? "" : `:${String(m).padStart(2, "0")}`;
+    if (timeFormat === "24") {
+      return `${dt.hour}${mPart}`;
+    }
+    const h12 = ((dt.hour + 11) % 12) + 1;
+    return `${h12}${mPart}`;
+  };
+  const formatCompactRange = (start, end) => {
+    const sStr = formatCompactTime(start);
+    const eStr = formatCompactTime(end);
+    if (timeFormat === "24") {
+      return `${sStr} – ${eStr}`;
+    }
+    const sP = start.hour < 12 ? "am" : "pm";
+    const eP = end.hour < 12 ? "am" : "pm";
+    if (sP === eP) {
+      return `${sStr} – ${eStr}${eP}`;
+    }
+    return `${sStr}${sP} – ${eStr}${eP}`;
+  };
+  const formatCompactStart = (dt) => {
+    const core = formatCompactTime(dt);
+    if (timeFormat === "24") return core;
+    return `${core}${dt.hour < 12 ? "am" : "pm"}`;
+  };
+  const formatCalendarTimeRange = (arg) => {
+    const startDt = toCalendarDateTime(arg.event.start, arg.event.startStr);
+    if (!startDt) {
+      return "";
+    }
+
+    const isDayGrid = arg.view?.type?.startsWith("dayGrid");
+
+    if (!shouldShowEventEndTime(arg)) {
+      // Compact start time in month/list dot events so narrow cells
+      // don't truncate the title.
+      if (isDayGrid) {
+        return formatCompactStart(startDt);
+      }
+      return formatCalendarTime(arg.event.start, arg.event.startStr);
+    }
+
+    const endDt = toCalendarDateTime(arg.event.end, arg.event.endStr);
+    if (!endDt) {
+      return formatCalendarTime(arg.event.start, arg.event.startStr);
+    }
+
+    // Google-style multi-day display: start segment shows the full range
+    // including the end weekday ("3am – Sun 8pm"). Middle segments carry a
+    // "Full day" label so all-day-height spans do not look like missing data.
+    if (isTimedMultiDayEvent(arg)) {
+      const isStartSegment = arg.isStart !== false;
+      const isEndSegment = arg.isEnd !== false;
+      if (!isStartSegment) {
+        if (isEndSegment) {
+          return sprintf(
+            /* translators: %s: event end time. */
+            __("Until %s", "eventkoi-lite"),
+            formatCompactStart(endDt)
+          );
+        }
+
+        return __("Full day", "eventkoi-lite");
+      }
+      const endDay = formatCalendarEndDay(arg.event.end, arg.event.endStr);
+      const sCompact = formatCompactTime(startDt);
+      const eCompact = formatCompactTime(endDt);
+      const sP = timeFormat === "24" ? "" : startDt.hour < 12 ? "am" : "pm";
+      const eP = timeFormat === "24" ? "" : endDt.hour < 12 ? "am" : "pm";
+      const startPart = `${sCompact}${sP}`;
+      const endPart = `${eCompact}${eP}`;
+      return endDay
+        ? `${startPart} – ${endDay} ${endPart}`
+        : `${startPart} – ${endPart}`;
+    }
+
+    return formatCompactRange(startDt, endDt);
+  };
+  const renderEventContent = (arg) => {
+    const title = arg.event?.title || "";
+    // Only emit the colored dot in dayGrid (month) view where events
+    // render as "dot + text" on a white background. In timeGrid the
+    // whole event is already filled with the calendar's color, so a
+    // dot is redundant and just eats horizontal space.
+    const isTimeGrid = arg.view?.type?.startsWith("timeGrid");
+    const dotColor =
+      arg.event?.borderColor ||
+      arg.event?.backgroundColor ||
+      arg.borderColor ||
+      arg.backgroundColor;
+    const dot =
+      !isTimeGrid && dotColor ? (
+        <div
+          className="fc-daygrid-event-dot"
+          style={{ borderColor: dotColor }}
+        />
+      ) : null;
+
+    if (arg.event?.allDay || !arg.event?.start) {
+      return (
+        <>
+          {dot}
+          <span className="fc-event-title">{title}</span>
+        </>
+      );
+    }
+
+    // Empty return from formatCalendarTimeRange is intentional (multi-day
+    // middle/end segment, Google style). Don't fall through to FC's
+    // default which would resurrect the hidden time.
+    const timeText = formatCalendarTimeRange(arg);
+
+    return (
+      <>
+        {dot}
+        {timeText ? <span className="fc-event-time">{timeText}</span> : null}
+        {timeText ? " " : null}
+        <span className="fc-event-title">{title}</span>
+      </>
+    );
+  };
   const formatInCalendarTz = (date, options) => {
     const opts = calendarTimeZone
       ? { ...options, timeZone: calendarTimeZone }
@@ -138,9 +484,9 @@ export function CalendarGridMode({
 
   const globalDayStart = eventkoi_params?.day_start_time || "00:00";
   const dayStartTime = calendar?.day_start_time || globalDayStart;
+  const scrollTime = normalizeTimeValue(dayStartTime) || "07:00:00";
   const slotMinTime = "00:00:00";
   const slotMaxTime = "24:00:00";
-  const scrollTime = normalizeTimeValue(dayStartTime) || "07:00:00";
   const isTimeGridView =
     typeof view === "string" && view.startsWith("timeGrid");
   const startHour = parseInt(scrollTime.slice(0, 2), 10);
@@ -185,6 +531,51 @@ export function CalendarGridMode({
     ? "auto"
     : slotsToShow * slotHeightPx;
 
+  useEffect(() => {
+    if (previousTimezoneRef.current === displayTimezoneKey) {
+      return;
+    }
+
+    previousTimezoneRef.current = displayTimezoneKey;
+
+    const api = calendarRef?.current?.getApi?.();
+    const activeStart = api?.view?.activeStart;
+    const activeEnd = api?.view?.activeEnd;
+    const viewType = api?.view?.type || view || "";
+
+    if (!activeStart || !activeEnd) {
+      return;
+    }
+
+    const key = `${activeStart.toISOString()}_${activeEnd.toISOString()}_${viewType}_${displayTimezoneKey}`;
+    const alreadyLoaded = lastRangeRef.current === key;
+
+    setSelectedEvent(null);
+    setAnchorPos(null);
+    lastRangeRef.current = key;
+    setCurrentDate(api.view?.currentStart || api.getDate?.());
+
+    if (!alreadyLoaded) {
+      loadEventsForView(activeStart, activeEnd, viewType);
+    }
+
+    if (viewType.startsWith("timeGrid")) {
+      setTimeout(() => {
+        api?.scrollToTime?.(scrollTime);
+      }, 0);
+    }
+  }, [
+    calendarRef,
+    displayTimezoneKey,
+    lastRangeRef,
+    loadEventsForView,
+    scrollTime,
+    setAnchorPos,
+    setCurrentDate,
+    setSelectedEvent,
+    view,
+  ]);
+
   if (isEmpty) {
     return (
       <div className="w-full">
@@ -201,17 +592,67 @@ export function CalendarGridMode({
   const coloredEvents = Array.isArray(events)
     ? events.map((ev) => ({
         ...ev,
+        url: getEventUrlWithTimezone(ev.url, timezone, calendarTimeZone),
         color: ev.calendar_color,
         borderColor: ev.calendar_color,
       }))
     : [];
+  // Leave undefined when no concrete color is known so the server-printed
+  // `:root` accent wins instead of being overridden by a hardcoded fallback.
+  const calendarAccent = eventColor || calendar?.color || null;
 
   let start_day = days[startday || calendar?.startday || "sunday"];
 
+  const openEventPopover = (eventEl, eventData, jsEvent) => {
+    const rect = eventEl.getBoundingClientRect();
+    const containerRect = document.querySelector(".fc")?.getBoundingClientRect();
+    if (!containerRect) return;
+
+    const popoverWidth = 370;
+    // Multi-day harnesses can span hundreds of pixels of column height, so
+    // anchoring to rect.bottom drops the popover far below the click. Anchor
+    // below the click point when we have it, capped to the harness bottom.
+    const clickY = jsEvent?.clientY;
+    const anchorY =
+      typeof clickY === "number"
+        ? Math.min(clickY + 14, rect.bottom + 6)
+        : rect.bottom + 6;
+    const relY = anchorY - containerRect.top;
+
+    let relX;
+    if (rect.right - containerRect.left + popoverWidth > containerRect.width) {
+      relX = rect.right - containerRect.left - popoverWidth;
+    } else {
+      relX = rect.left - containerRect.left;
+    }
+
+    if (window.innerWidth < 768) {
+      setAnchorPos({ x: 0, y: relY });
+    } else {
+      setAnchorPos({ x: Math.max(0, relX), y: relY });
+    }
+
+    setSelectedEvent({
+      ...eventData.extendedProps,
+      title: eventData.title,
+      start: eventData.startStr,
+      end: eventData.endStr,
+      allDay: eventData.allDay,
+      url: eventData.url,
+    });
+  };
+  const closeEventPopover = () => {
+    setSelectedEvent(null);
+    setAnchorPos(null);
+  };
+
   return (
     <>
+      <div
+        className="relative"
+        style={calendarAccent ? { "--ek-calendar-accent": calendarAccent } : undefined}
+      >
       <FullCalendar
-        key={timezone}
         ref={calendarRef}
         locales={allLocales}
         locale={localeToUse}
@@ -223,6 +664,22 @@ export function CalendarGridMode({
         weekends={true}
         firstDay={start_day}
         headerToolbar={false}
+        slotEventOverlap={true}
+        nowIndicator={true}
+        dayCellClassNames={(arg) => {
+          // Tint days NOT in the user's configured working_days
+          // (eventkoi_settings.working_days, Mon-first 0..6). Falls
+          // back to Sat/Sun when the setting is unavailable.
+          const wd = window.eventkoi_params?.working_days;
+          const jsDay = arg.date.getDay();
+          const monFirst = (jsDay + 6) % 7;
+          const isWorking = Array.isArray(wd)
+            ? wd.map((n) => Number(n)).includes(monFirst)
+            : monFirst < 5;
+          return isWorking ? "" : "ek-non-working-day";
+        }}
+        eventsSet={() => scheduleCascade()}
+        windowResize={() => scheduleCascade()}
         contentHeight={isTimeGridView ? timeGridHeight : "auto"}
         expandRows={!isTimeGridView}
         height={isTimeGridView ? timeGridHeight : "auto"}
@@ -230,6 +687,7 @@ export function CalendarGridMode({
         slotMaxTime={slotMaxTime}
         scrollTime={scrollTime}
         eventTimeFormat={eventTimeFormat}
+        eventContent={renderEventContent}
         slotLabelContent={(args) => {
           const label = formatSlotLabel(args.date);
           return label ? <span>{label}</span> : null;
@@ -294,11 +752,18 @@ export function CalendarGridMode({
           return <span>{dayName}</span>;
         }}
         datesSet={({ start, end, view }) => {
-          const key = `${start.toISOString()}_${end.toISOString()}`;
+          const key = `${start.toISOString()}_${end.toISOString()}_${
+            view?.type || ""
+          }_${displayTimezoneKey}`;
           if (lastRangeRef.current === key) return;
+          closeEventPopover();
           lastRangeRef.current = key;
-          loadEventsForView(start, end);
-          setCurrentDate(view.currentStart);
+          const anchorDate =
+            calendarRef?.current?.getApi?.()?.getDate?.() ||
+            view.currentStart ||
+            start;
+          loadEventsForView(start, end, view.type, anchorDate);
+          setCurrentDate(anchorDate);
           if (view.type.startsWith("timeGrid")) {
             setTimeout(() => {
               const api = calendarRef?.current?.getApi?.();
@@ -306,110 +771,25 @@ export function CalendarGridMode({
             }, 0);
           }
         }}
+        eventClick={(info) => {
+          info.jsEvent.preventDefault();
+          info.jsEvent.stopPropagation();
+          openEventPopover(info.el, info.event, info.jsEvent);
+        }}
         eventDidMount={(info) => {
-          const parent = info.el.parentNode;
-
-          // If it's an <a>, remove it completely and reinsert our own <div>.
-          if (info.el.tagName === "A") {
-            const div = document.createElement("div");
-
-            // Copy classes and content
-            div.className = info.el.className;
-            div.innerHTML = info.el.innerHTML;
-
-            // Copy all attributes except href
-            for (const attr of info.el.attributes) {
-              if (attr.name !== "href") {
-                div.setAttribute(attr.name, attr.value);
-              }
-            }
-
-            // Replace <a> with <div>
-            parent.replaceChild(div, info.el);
-            info.el = div; // update reference
+          info.el.setAttribute("aria-label", `${info.event.title}`);
+          if (info.view?.type?.startsWith("timeGrid")) {
+            scheduleCascade();
           }
-
-          // Add pointer cursor and accessibility attributes
-          info.el.setAttribute("role", "button");
-          info.el.setAttribute("tabindex", "0");
-          info.el.setAttribute(
-            "aria-label",
-            `${info.event.title}, starts ${info.event.start.toLocaleString()}`,
-          );
-
-          // Attach click handler to open your popover
-          info.el.addEventListener("click", (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-
-            const rect = info.el.getBoundingClientRect();
-            const containerRect = document
-              .querySelector(".fc")
-              .getBoundingClientRect();
-            const relY = rect.bottom - containerRect.top + 6;
-            const popoverWidth = 370;
-
-            let relX;
-            if (
-              rect.right - containerRect.left + popoverWidth >
-              containerRect.width
-            ) {
-              relX = rect.right - containerRect.left - popoverWidth;
-            } else {
-              relX = rect.left - containerRect.left;
-            }
-
-            if (window.innerWidth < 768) {
-              setAnchorPos({ x: 0, y: relY });
-            } else {
-              setAnchorPos({ x: Math.max(0, relX), y: relY });
-            }
-
-            setSelectedEvent({
-              ...info.event.extendedProps,
-              title: info.event.title,
-              start: info.event.startStr,
-              end: info.event.endStr,
-              allDay: info.event.allDay,
-              url: info.event.url,
-            });
-          });
-
-          // Keyboard accessibility (Enter / Space)
-          info.el.addEventListener("keydown", (e) => {
-            if (e.key === "Enter" || e.key === " ") {
-              e.preventDefault();
-              info.el.click();
-            }
-          });
-
-          // Wait for FullCalendar to finish injecting its own <a>
-          setTimeout(() => {
-            const harness = info.el.closest(".fc-daygrid-event-harness");
-            if (!harness) return;
-
-            // Find all anchors in this harness except our main div (info.el)
-            harness.querySelectorAll("a.fc-daygrid-event").forEach((anchor) => {
-              // Hide only if it's not the same node
-              if (anchor !== info.el) {
-                anchor.setAttribute("aria-hidden", "true");
-                anchor.setAttribute("tabindex", "-1");
-                anchor.style.display = "none";
-                anchor.style.pointerEvents = "none";
-              }
-            });
-          }, 0);
         }}
       />
+      </div>
 
       {selectedEvent && anchorPos && (
         <EventPopover
           event={selectedEvent}
           anchor={anchorPos}
-          onClose={() => {
-            setSelectedEvent(null);
-            setAnchorPos(null);
-          }}
+          onClose={closeEventPopover}
           ignoreNextOutsideClick={ignoreNextOutsideClick}
           timezone={timezone}
         />

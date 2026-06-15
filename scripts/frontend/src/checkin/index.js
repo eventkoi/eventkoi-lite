@@ -41,9 +41,22 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { buildTimeline } from "@/lib/date-utils";
+import { buildTimeline, formatTimezoneLabel } from "@/lib/date-utils";
 import { resolvePublicRestUrl } from "@/lib/public-api";
 import { cn } from "@/lib/utils";
+
+function isTruthy(value) {
+  return value === true || value === 1 || value === "1" || value === "true";
+}
+
+function formatFixedOffsetLabel(timezone) {
+  const raw = String(timezone || "").trim();
+  if (!/^(Etc\/GMT|UTC[+-]\d|[+-]\d{1,2}(?::?\d{2})?$)/i.test(raw)) {
+    return raw;
+  }
+
+  return formatTimezoneLabel(raw, eventkoi_params?.time_format || "12", false);
+}
 
 function CheckinWidget({ mountEl }) {
   const initialToken = mountEl?.getAttribute("data-token") || "";
@@ -139,20 +152,21 @@ function CheckinWidget({ mountEl }) {
   };
 
   const eventTitle = decodeEntities(data?.event?.title || "");
-  const timezonePref = eventkoi_params?.auto_detect_timezone
+  const autoDetectTimezone = isTruthy(eventkoi_params?.auto_detect_timezone);
+  const siteTimezone =
+    eventkoi_params?.timezone_string?.trim() ||
+    eventkoi_params?.timezone ||
+    "UTC";
+  const timezonePref = autoDetectTimezone
     ? "local"
-    : eventkoi_params?.timezone_string?.trim() ||
-      eventkoi_params?.timezone ||
-      "UTC";
+    : siteTimezone;
   const localTimezone =
     typeof Intl !== "undefined" && Intl.DateTimeFormat
       ? Intl.DateTimeFormat().resolvedOptions().timeZone
       : "";
-  const timezoneLabel = eventkoi_params?.auto_detect_timezone
+  const timezoneLabel = autoDetectTimezone
     ? localTimezone || __("Local time", "eventkoi-lite")
-    : eventkoi_params?.timezone_string?.trim() ||
-      eventkoi_params?.timezone ||
-      "UTC";
+    : formatFixedOffsetLabel(siteTimezone);
   const schedule =
     data?.event?.start && data?.event?.date_type
       ? buildTimeline(
@@ -163,6 +177,11 @@ function CheckinWidget({ mountEl }) {
             date_type: data?.event?.date_type,
             timeline: data?.event?.timeline,
             allDay: data?.event?.allDay,
+            all_day_timezone: data?.event?.all_day_timezone,
+            all_day_start_date: data?.event?.all_day_start_date,
+            all_day_end_date: data?.event?.all_day_end_date,
+            all_day_end_exclusive_date:
+              data?.event?.all_day_end_exclusive_date,
           },
           timezonePref,
           eventkoi_params?.time_format || "12",

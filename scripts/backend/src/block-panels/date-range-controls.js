@@ -2,13 +2,53 @@
  * External dependencies.
  */
 import { useState } from "@wordpress/element";
+import { DateTime } from "luxon";
 
 /**
  * WordPress dependencies.
  */
 import { Button, DatePicker, Popover } from "@wordpress/components";
-import { dateI18n } from "@wordpress/date";
 import { __ } from "@wordpress/i18n";
+
+import { formatWpDateTime } from "@/lib/date-utils";
+
+function getFormatParams() {
+  return typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
+}
+
+function normalizeDateValue(value) {
+  if (!value) {
+    return "";
+  }
+
+  if (value instanceof Date && !Number.isNaN(value.valueOf())) {
+    return DateTime.fromJSDate(value).toISODate();
+  }
+
+  const raw = String(value);
+  const dateOnly = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+
+  if (dateOnly) {
+    return dateOnly[1];
+  }
+
+  const parsed = DateTime.fromISO(raw);
+  return parsed.isValid ? parsed.toISODate() : raw;
+}
+
+function formatDateValue(value) {
+  const date = normalizeDateValue(value);
+
+  if (!date) {
+    return "";
+  }
+
+  const params = getFormatParams();
+  const locale = (params.locale || "en").replace("_", "-");
+  const dt = DateTime.fromISO(date, { zone: "utc" }).setLocale(locale);
+
+  return formatWpDateTime(dt, params.date_format || "F j, Y");
+}
 
 /**
  * Date Range Controls for EventKoi Event Query block.
@@ -25,11 +65,8 @@ import { __ } from "@wordpress/i18n";
 export const DateRangeControls = ({ attributes, setAttributes }) => {
   const [openPicker, setOpenPicker] = useState(null);
 
-  /**
-   * Use the user's original handleSelect (no normalization).
-   */
   const handleSelect = (field, date) => {
-    setAttributes({ [field]: date });
+    setAttributes({ [field]: normalizeDateValue(date) });
     setOpenPicker(null);
   };
 
@@ -78,7 +115,7 @@ export const DateRangeControls = ({ attributes, setAttributes }) => {
         <DateTrigger
           label={
             attributes.startDate
-              ? dateI18n("F j, Y", attributes.startDate)
+              ? formatDateValue(attributes.startDate)
               : __("Select Date", "eventkoi-lite")
           }
           onClick={() => setOpenPicker(openPicker === "start" ? null : "start")}
@@ -137,7 +174,7 @@ export const DateRangeControls = ({ attributes, setAttributes }) => {
         <DateTrigger
           label={
             attributes.endDate
-              ? dateI18n("F j, Y", attributes.endDate)
+              ? formatDateValue(attributes.endDate)
               : __("Select Date", "eventkoi-lite")
           }
           onClick={() => setOpenPicker(openPicker === "end" ? null : "end")}

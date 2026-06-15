@@ -59,24 +59,134 @@ class Calendar {
 	}
 
 	/**
+	 * Get the current frontend display timezone query arg, when valid.
+	 *
+	 * @return string
+	 */
+	private static function get_frontend_timezone_query_arg() {
+		if ( empty( $_GET['tz'] ) || is_array( $_GET['tz'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only frontend display state.
+			return '';
+		}
+
+		$timezone = (string) wp_unslash( $_GET['tz'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only frontend display state.
+		$timezone = self::restore_decoded_timezone_offset( $timezone );
+		$timezone = sanitize_text_field( $timezone );
+		if ( '' === $timezone ) {
+			return '';
+		}
+
+		if ( 'local' === $timezone ) {
+			return $timezone;
+		}
+
+		try {
+			new \DateTimeZone( eventkoi_php_timezone( $timezone ) );
+		} catch ( \Exception $e ) {
+			return '';
+		}
+
+		return $timezone;
+	}
+
+	/**
+	 * Restore offset timezones when a raw plus in the query string was decoded as a space.
+	 *
+	 * @param string $timezone Timezone query arg.
+	 * @return string
+	 */
+	private static function restore_decoded_timezone_offset( $timezone ) {
+		$timezone = (string) $timezone;
+
+		if ( preg_match( '/^\s+\d{1,2}(?::?\d{2})?$/', $timezone ) ) {
+			return '+' . ltrim( $timezone );
+		}
+
+		if ( preg_match( '/^UTC\s+\d{1,2}(?::?\d{2})?$/i', $timezone ) ) {
+			return preg_replace( '/^UTC\s+/i', 'UTC+', $timezone );
+		}
+
+		return $timezone;
+	}
+
+	/**
+	 * Add a query arg using RFC3986 encoding so plus signs are not decoded as spaces.
+	 *
+	 * @param string $url   URL to update.
+	 * @param string $key   Query arg key.
+	 * @param string $value Query arg value.
+	 * @return string
+	 */
+	private static function add_encoded_query_arg( $url, $key, $value ) {
+		$fragment = '';
+		$hash_pos = strpos( $url, '#' );
+
+		if ( false !== $hash_pos ) {
+			$fragment = substr( $url, $hash_pos );
+			$url      = substr( $url, 0, $hash_pos );
+		}
+
+		$url       = remove_query_arg( $key, $url );
+		$separator = false === strpos( $url, '?' ) ? '?' : '&';
+
+		return $url . $separator . rawurlencode( $key ) . '=' . rawurlencode( $value ) . $fragment;
+	}
+
+	/**
+	 * Preserve the selected standard event-day row on occurrence links.
+	 *
+	 * @param string   $url       Event URL.
+	 * @param int|null $event_day Selected event_days index.
+	 * @return string
+	 */
+	private static function append_event_day_arg( $url, $event_day ) {
+		if ( empty( $url ) || null === $event_day ) {
+			return $url;
+		}
+
+		$event_day = absint( $event_day );
+
+		return self::add_encoded_query_arg( $url, 'event_day', (string) $event_day );
+	}
+
+	/**
+	 * Preserve the active frontend display timezone on event links.
+	 *
+	 * @param string $url Event URL.
+	 * @return string
+	 */
+	private static function append_frontend_timezone_arg( $url ) {
+		if ( empty( $url ) ) {
+			return '';
+		}
+
+		$timezone = self::get_frontend_timezone_query_arg();
+		if ( '' === $timezone ) {
+			return $url;
+		}
+
+		return self::add_encoded_query_arg( $url, 'tz', $timezone );
+	}
+
+	/**
 	 * Get meta.
 	 */
 	public static function get_meta() {
 
 		$meta = array(
-			'id'            => self::get_id(),
-			'name'          => self::get_name(),
-			'slug'          => self::get_slug(),
-			'url'           => self::get_url(),
-			'count'         => self::get_count(),
-			'display'       => self::get_display(),
-			'timeframe'     => self::get_timeframe(),
-			'startday'      => self::get_startday(),
-			'day_start_time' => self::get_day_start_time(),
-			'shortcode'     => self::get_shortcode(),
-			'color'         => self::get_color(),
-			'default_month' => self::get_default_month(),
-			'default_year'  => self::get_default_year(),
+			'id'              => self::get_id(),
+			'name'            => self::get_name(),
+			'slug'            => self::get_slug(),
+			'url'             => self::get_url(),
+			'native_edit_url' => self::get_native_edit_url(),
+			'count'           => self::get_count(),
+			'display'         => self::get_display(),
+			'timeframe'       => self::get_timeframe(),
+			'startday'        => self::get_startday(),
+			'day_start_time'  => self::get_day_start_time(),
+			'shortcode'       => self::get_shortcode(),
+			'color'           => self::get_color(),
+			'default_month'   => self::get_default_month(),
+			'default_year'    => self::get_default_year(),
 		);
 
 		return apply_filters( 'eventkoi_get_calendar_meta', $meta, self::$calendar_id, self::$calendar );
@@ -120,6 +230,29 @@ class Calendar {
 		}
 
 		return apply_filters( 'eventkoi_get_calendar_url', $url, self::$calendar_id, self::$calendar );
+	}
+
+	/**
+	 * Get the native WordPress term edit URL for SEO plugin panels.
+	 *
+	 * @return string
+	 */
+	public static function get_native_edit_url() {
+		if ( empty( self::$calendar_id ) || ! current_user_can( 'edit_term', self::$calendar_id ) ) {
+			return '';
+		}
+
+		$url = add_query_arg(
+			array(
+				'taxonomy'        => 'event_cal',
+				'tag_ID'          => absint( self::$calendar_id ),
+				'post_type'       => 'eventkoi_event',
+				'eventkoi_native' => '1',
+			),
+			admin_url( 'term.php' )
+		);
+
+		return apply_filters( 'eventkoi_get_calendar_native_edit_url', esc_url_raw( $url ), self::$calendar_id, self::$calendar );
 	}
 
 	/**
@@ -243,11 +376,7 @@ class Calendar {
 	 * Get color.
 	 */
 	public static function get_color() {
-		$color = get_term_meta( self::$calendar_id, 'color', true );
-
-		if ( empty( $color ) ) {
-			$color = eventkoi_default_calendar_color();
-		}
+		$color = eventkoi_get_stored_calendar_color( self::$calendar_id );
 
 		return apply_filters( 'eventkoi_get_calendar_color', $color, self::$calendar_id, self::$calendar );
 	}
@@ -339,7 +468,9 @@ class Calendar {
 		$timeframe      = ! empty( $meta['timeframe'] ) ? sanitize_text_field( $meta['timeframe'] ) : 'month';
 		$startday       = ! empty( $meta['startday'] ) ? sanitize_text_field( $meta['startday'] ) : 'monday';
 		$day_start_time = ! empty( $meta['day_start_time'] ) ? sanitize_text_field( $meta['day_start_time'] ) : '';
-		$color          = ! empty( $meta['color'] ) ? sanitize_text_field( $meta['color'] ) : eventkoi_default_calendar_color();
+		$has_color      = array_key_exists( 'color', $meta );
+		$raw_color      = $has_color && is_scalar( $meta['color'] ) ? sanitize_text_field( (string) $meta['color'] ) : '';
+		$color          = $has_color ? ( '' === $raw_color ? 'transparent' : $raw_color ) : eventkoi_default_calendar_color();
 		$default_month  = ! empty( $meta['default_month'] ) ? sanitize_text_field( $meta['default_month'] ) : '';
 		$default_year   = ! empty( $meta['default_year'] ) ? sanitize_text_field( $meta['default_year'] ) : '';
 
@@ -363,7 +494,7 @@ class Calendar {
 	 */
 	public static function delete_calendar( $calendar_id = 0 ) {
 
-		if ( (int) get_option( 'eventkoi_default_event_cal', 0 ) === (int) $calendar_id ) {
+		if ( \eventkoi_resolve_calendar_id( (int) get_option( 'eventkoi_default_event_cal', 0 ) ) === (int) $calendar_id ) {
 			return;
 		}
 
@@ -461,13 +592,10 @@ class Calendar {
 		? array_map( 'intval', $plugin_settings['working_days'] )
 		: array( 0, 1, 2, 3, 4 ); // Default to Mon–Fri.
 
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$start_param = isset( $_GET['start'] ) ? sanitize_text_field( wp_unslash( $_GET['start'] ) ) : '';
-        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		$end_param = isset( $_GET['end'] ) ? sanitize_text_field( wp_unslash( $_GET['end'] ) ) : '';
-
-		$window_start = $start_param ? new \DateTimeImmutable( $start_param, new \DateTimeZone( 'UTC' ) ) : null;
-		$window_end   = $end_param ? new \DateTimeImmutable( $end_param, new \DateTimeZone( 'UTC' ) ) : null;
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$raw_start_param = isset( $_GET['start'] ) ? sanitize_text_field( wp_unslash( $_GET['start'] ) ) : '';
+		// phpcs:ignore WordPress.Security.NonceVerification.Recommended
+		$raw_end_param = isset( $_GET['end'] ) ? sanitize_text_field( wp_unslash( $_GET['end'] ) ) : '';
 
 		// Merge optional args for pagination & sorting.
 		$args = wp_parse_args(
@@ -479,9 +607,27 @@ class Calendar {
 				'orderby'     => 'modified',
 				'order'       => 'DESC',
 				'max_results' => 0,
+				'display'     => '',
+				'window_start' => '',
+				'window_end'  => '',
 				'post_status' => array( 'publish' ),
 			)
 		);
+
+		$start_param = ! empty( $args['window_start'] ) ? sanitize_text_field( $args['window_start'] ) : $raw_start_param;
+		$end_param   = ! empty( $args['window_end'] ) ? sanitize_text_field( $args['window_end'] ) : $raw_end_param;
+
+		try {
+			$window_start = $start_param ? new \DateTimeImmutable( $start_param, new \DateTimeZone( 'UTC' ) ) : null;
+		} catch ( \Exception $e ) {
+			$window_start = null;
+		}
+
+		try {
+			$window_end = $end_param ? new \DateTimeImmutable( $end_param, new \DateTimeZone( 'UTC' ) ) : null;
+		} catch ( \Exception $e ) {
+			$window_end = null;
+		}
 
 		// Extract optional date filters from REST args.
 		$start_date = ! empty( $args['start_date'] ) ? sanitize_text_field( $args['start_date'] ) : '';
@@ -501,9 +647,10 @@ class Calendar {
 		$orderby     = sanitize_key( $args['orderby'] );
 		$order       = strtoupper( $args['order'] );
 		$max_results = max( 0, (int) $args['max_results'] );
+		$display_context = sanitize_key( (string) $args['display'] );
 		$post_status = isset( $args['post_status'] ) ? (array) $args['post_status'] : array( 'publish' );
 
-		$allowed_orderby = array( 'modified', 'date_modified', 'date', 'publish_date', 'title', 'start_date', 'event_start', 'upcoming' );
+		$allowed_orderby = array( 'modified', 'date_modified', 'date', 'publish_date', 'title', 'start_date', 'event_start', 'upcoming', 'past', 'past_events' );
 		if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
 			$orderby = 'modified';
 		}
@@ -517,10 +664,16 @@ class Calendar {
 		if ( 'start_date' === $orderby ) {
 			$orderby = 'event_start';
 		}
+		if ( 'past_events' === $orderby ) {
+			$orderby = 'past';
+		}
+		if ( 'past' === $orderby ) {
+			$order = 'DESC';
+		}
 
 		// Map custom orderby values to valid WP_Query keys.
 		$post_orderby = $orderby;
-		if ( in_array( $orderby, array( 'start_date', 'event_start' ), true ) ) {
+		if ( in_array( $orderby, array( 'start_date', 'event_start', 'past' ), true ) ) {
 			$post_orderby = 'date';
 		}
 
@@ -569,28 +722,11 @@ class Calendar {
 			? $override_data['locations']
 			: $event::get_locations();
 
-			$primary = ( is_array( $locations ) && ! empty( $locations[0] ) ) ? $locations[0] : array();
-
-			$primary_type      = $primary['type'] ?? '';
-			$virtual_url       = $primary['virtual_url'] ?? '';
-			$link_text         = $primary['link_text'] ?? $virtual_url;
-			$location_fallback = $virtual_url;
-
-			if ( empty( $location_fallback ) ) {
-				$location_parts = array_filter(
-					array(
-						$primary['name'] ?? '',
-						$primary['address1'] ?? '',
-						$primary['address2'] ?? '',
-						$primary['city'] ?? '',
-						$primary['state'] ?? '',
-						$primary['zip'] ?? '',
-						$primary['country'] ?? '',
-					)
-				);
-
-				$location_fallback = implode( ', ', $location_parts );
-			}
+				$primary           = self::get_primary_location_row( $locations );
+					$primary_type      = self::get_location_type( $primary );
+				$virtual_url       = self::get_location_virtual_url( $primary );
+				$link_text         = $primary['link_text'] ?? $virtual_url;
+				$location_fallback = self::format_location_line( $primary );
 
 			if ( empty( $location_fallback ) ) {
 				$location_fallback = $event::get_location_line();
@@ -618,7 +754,7 @@ class Calendar {
 						$first_day  = ! empty( $days ) && is_array( $days ) ? $days[0] : array();
 						$is_all_day = array_key_exists( 'all_day', (array) $first_day )
 							? (bool) $first_day['all_day']
-							: (bool) get_post_meta( $event::get_id(), 'all_day', true );
+							: rest_sanitize_boolean( get_post_meta( $event::get_id(), 'all_day', true ) );
 
 						// FullCalendar wants exclusive +1 day end ONLY for all-day
 						// events; timed events must keep the real end timestamp.
@@ -648,6 +784,7 @@ class Calendar {
 
 					$record = array(
 						'id'            => $event::get_id() . '-span',
+						'event_id'      => $event::get_id(),
 						'title'         => $event::get_title(),
 						'date_type'     => $event::get_date_type(),
 						'standard_type' => $event::get_standard_type(),
@@ -658,7 +795,7 @@ class Calendar {
 						'start_time'    => $start_time,
 						'end_time'      => $end_time,
 						'allDay'        => $is_all_day,
-						'url'           => $event::get_url(),
+						'url'           => self::append_frontend_timezone_arg( $event::get_url() ),
 						'description'   => $event::get_summary(),
 						'address1'      => $primary['address1'] ?? '',
 						'address2'      => $primary['address2'] ?? '',
@@ -674,6 +811,7 @@ class Calendar {
 						'locations'     => $locations,
 						'timeline'      => $event::get_timeline(),
 						'timezone'      => $event::get_timezone(),
+						'event_days'    => $days,
 					);
 
 					if ( ! empty( $args['exclude'] ) && in_array( $record['id'], (array) $args['exclude'], true ) ) {
@@ -689,8 +827,9 @@ class Calendar {
 					$first = reset( $days );
 					$last  = end( $days );
 
-					$start = '';
-					$end   = '';
+					$start    = '';
+					$end      = '';
+					$end_real = '';
 
 					if ( ! empty( $first['start_date'] ) ) {
 						$start_dt = new \DateTimeImmutable( $first['start_date'], new \DateTimeZone( 'UTC' ) );
@@ -699,6 +838,7 @@ class Calendar {
 
 					if ( ! empty( $last['end_date'] ) ) {
 						$end_dt = new \DateTimeImmutable( $last['end_date'], new \DateTimeZone( 'UTC' ) );
+						$end_real = $end_dt->format( 'Y-m-d\TH:i:s\Z' );
 
 						if ( ! empty( $last['all_day'] ) ) {
 							$end_dt = $end_dt->modify( '+1 day' )->setTime( 0, 0, 0 );
@@ -709,13 +849,16 @@ class Calendar {
 
 					$record = array(
 						'id'            => $event::get_id() . '-span',
+						'event_id'      => $event::get_id(),
 						'title'         => $event::get_title(),
 						'date_type'     => $event::get_date_type(),
 						'standard_type' => $event::get_standard_type(),
 						'start'         => $start,
 						'end'           => $end,
+						'end_real'      => $end_real,
+						'end_all_day'   => ! empty( $last['all_day'] ),
 						'allDay'        => ! empty( $first['all_day'] ),
-						'url'           => $event::get_url(),
+						'url'           => self::append_frontend_timezone_arg( $event::get_url() ),
 						'description'   => $event::get_summary(),
 						'address1'      => $primary['address1'] ?? '',
 						'address2'      => $primary['address2'] ?? '',
@@ -744,8 +887,9 @@ class Calendar {
 				} else {
 					// Original loop for other cases.
 					foreach ( $days as $i => $instance ) {
-						$start = '';
-						$end   = '';
+						$start    = '';
+						$end      = '';
+						$end_real = '';
 
 						if ( ! empty( $instance['start_date'] ) ) {
 							$start_dt = new \DateTimeImmutable( $instance['start_date'], new \DateTimeZone( 'UTC' ) );
@@ -754,6 +898,7 @@ class Calendar {
 
 						if ( ! empty( $instance['end_date'] ) ) {
 							$end_dt = new \DateTimeImmutable( $instance['end_date'], new \DateTimeZone( 'UTC' ) );
+							$end_real = $end_dt->format( 'Y-m-d\TH:i:s\Z' );
 
 							if ( ! empty( $instance['all_day'] ) ) {
 								$end_dt = $end_dt->modify( '+1 day' )->setTime( 0, 0, 0 );
@@ -764,13 +909,17 @@ class Calendar {
 
 						$record = array(
 							'id'            => $event::get_id() . '-day' . $i,
+							'event_id'      => $event::get_id(),
+							'event_day'     => (int) $i,
 							'title'         => $event::get_title(),
 							'date_type'     => $event::get_date_type(),
 							'standard_type' => $event::get_standard_type(),
 							'start'         => $start,
 							'end'           => $end,
+							'end_real'      => $end_real,
+							'end_all_day'   => ! empty( $instance['all_day'] ),
 							'allDay'        => ! empty( $instance['all_day'] ),
-							'url'           => $event::get_url(),
+							'url'           => self::append_event_day_arg( self::append_frontend_timezone_arg( $event::get_url() ), $i ),
 							'description'   => $event::get_summary(),
 							'address1'      => $primary['address1'] ?? '',
 							'address2'      => $primary['address2'] ?? '',
@@ -828,6 +977,32 @@ class Calendar {
 		$results = array_values( $results );
 
 		if ( 'upcoming' === $orderby ) {
+			$now     = time();
+			$results = array_filter(
+				$results,
+				static function ( $item ) use ( $now ) {
+					$start_ts = ! empty( $item['start'] ) ? strtotime( (string) $item['start'] ) : 0;
+
+					return $start_ts >= $now;
+				}
+			);
+			$results = array_values( $results );
+		}
+
+		if ( 'past' === $orderby ) {
+			$now     = time();
+			$results = array_filter(
+				$results,
+				static function ( $item ) use ( $now ) {
+					$start_ts = ! empty( $item['start'] ) ? strtotime( (string) $item['start'] ) : 0;
+
+					return $start_ts > 0 && $start_ts < $now;
+				}
+			);
+			$results = array_values( $results );
+		}
+
+		if ( 'upcoming' === $orderby || 'past' === $orderby ) {
 			usort(
 				$results,
 				static function ( $a, $b ) use ( $order ) {
@@ -855,10 +1030,487 @@ class Calendar {
 			$results = array_slice( $results, $offset, $per_page );
 		}
 
+		if ( ! empty( $results ) ) {
+			foreach ( $results as &$evt ) {
+				$evt      = self::prepare_all_day_display_dates( $evt, wp_timezone() );
+				$datetime = self::format_calendar_row_datetime( $evt );
+				if ( '' !== $datetime ) {
+					$evt['datetime'] = $datetime;
+				}
+				if ( 'calendar' === $display_context ) {
+					$evt = self::prepare_fullcalendar_row( $evt );
+				}
+			}
+			unset( $evt );
+		}
+
 		return array(
 			'items' => $results,
 			'total' => $total,
 		);
+	}
+
+	/**
+	 * Format a calendar response row using its concrete start/end metadata.
+	 *
+	 * @param array $row Calendar response row.
+	 * @return string
+	 */
+	protected static function format_calendar_row_datetime( array $row ) {
+		$event_id = isset( $row['event_id'] ) ? absint( $row['event_id'] ) : absint( $row['id'] ?? 0 );
+
+		if ( $event_id > 0 ) {
+			static $tbc_cache = array();
+
+			if ( ! array_key_exists( $event_id, $tbc_cache ) ) {
+				$tbc_cache[ $event_id ] = rest_sanitize_boolean( get_post_meta( $event_id, 'tbc', true ) );
+			}
+
+			if ( ! empty( $tbc_cache[ $event_id ] ) ) {
+				return isset( $row['datetime'] ) ? (string) $row['datetime'] : '';
+			}
+		}
+
+		if ( 'recurring' === ( $row['date_type'] ?? '' ) && empty( $row['next_occurrence_ts'] ) ) {
+			return isset( $row['datetime'] ) ? (string) $row['datetime'] : '';
+		}
+
+		$timezone = wp_timezone();
+
+		if (
+			'standard' === ( $row['date_type'] ?? '' )
+			&& 'selected' === ( $row['standard_type'] ?? '' )
+			&& ! empty( $row['event_days'] )
+			&& is_array( $row['event_days'] )
+		) {
+			$selected_datetime = self::format_selected_event_days_datetime(
+				$row['event_days'],
+				$timezone,
+				self::calendar_row_all_day_timezone( $row, $timezone )
+			);
+			if ( '' !== $selected_datetime ) {
+				return $selected_datetime;
+			}
+		}
+
+		$start    = self::parse_calendar_row_datetime( $row['start'] ?? '', $timezone );
+
+		if ( ! $start ) {
+			return isset( $row['datetime'] ) ? (string) $row['datetime'] : '';
+		}
+
+		$end_real = self::parse_calendar_row_datetime( $row['end_real'] ?? '', $timezone );
+		$end      = self::parse_calendar_row_datetime( $row['end'] ?? '', $timezone );
+		$all_day  = self::calendar_row_flag( $row['allDay'] ?? ( $row['all_day'] ?? false ) );
+
+		$date_format = eventkoi_resolved_date_format();
+		$time_format = eventkoi_resolved_time_format();
+		$separator   = ' – ';
+
+		if ( $all_day ) {
+			$all_day_timezone = self::calendar_row_all_day_timezone( $row, $timezone );
+			$all_day_dates    = self::calendar_row_all_day_display_dates( $row, $all_day_timezone );
+
+			if ( ! empty( $all_day_dates['start'] ) ) {
+				$start       = $all_day_dates['start'];
+				$display_end = $all_day_dates['end'] ?? null;
+			} else {
+				$display_end = self::calendar_row_display_end( $start, $end_real, $end );
+			}
+
+			if (
+				! $display_end ||
+				$start->format( 'Y-m-d' ) === $display_end->format( 'Y-m-d' ) ||
+				eventkoi_is_single_all_day_span( $start->getTimestamp(), $display_end->getTimestamp() )
+			) {
+				return wp_date( $date_format, $start->getTimestamp(), $all_day_timezone );
+			}
+
+			return wp_date( $date_format, $start->getTimestamp(), $all_day_timezone )
+				. $separator
+				. wp_date( $date_format, $display_end->getTimestamp(), $all_day_timezone );
+		}
+
+		$end_all_day = self::calendar_row_flag( $row['end_all_day'] ?? ( $row['endAllDay'] ?? false ) );
+
+		if ( $end_all_day ) {
+			$display_end = self::calendar_row_display_end( $start, $end_real, $end );
+			$start_str   = wp_date( $date_format . ', ' . $time_format, $start->getTimestamp(), $timezone );
+
+			if ( ! $display_end || $start->format( 'Y-m-d' ) === $display_end->format( 'Y-m-d' ) ) {
+				return $start_str;
+			}
+
+			return $start_str
+				. $separator
+				. wp_date( $date_format, $display_end->getTimestamp(), $timezone );
+		}
+
+		return eventkoi_format_datetime_range(
+			$start->getTimestamp(),
+			$end ? $end->getTimestamp() : null,
+			false,
+			array(
+				'separator' => $separator,
+				'timezone'  => $timezone,
+			)
+		);
+	}
+
+	/**
+	 * Format selected standard-event dates independently for collapsed list rows.
+	 *
+	 * @param array         $event_days Selected event day rows.
+	 * @param \DateTimeZone $timezone   Display timezone.
+	 * @return string
+	 */
+	protected static function format_selected_event_days_datetime( array $event_days, \DateTimeZone $timezone, $all_day_timezone = null ) {
+		$lines = array();
+
+		foreach ( $event_days as $day ) {
+			if ( ! is_array( $day ) || empty( $day['start_date'] ) ) {
+				continue;
+			}
+
+			$start = self::parse_calendar_row_datetime( $day['start_date'], $timezone );
+			if ( ! $start ) {
+				continue;
+			}
+
+			$end = self::parse_calendar_row_datetime( $day['end_date'] ?? '', $timezone );
+			if ( $end && $end->getTimestamp() < $start->getTimestamp() ) {
+				$end = null;
+			}
+
+			$day_all_day = self::calendar_row_flag( $day['all_day'] ?? false );
+			$day_timezone = $timezone;
+			if ( $day_all_day ) {
+				$day_timezone = self::calendar_row_all_day_timezone(
+					$day,
+					$all_day_timezone instanceof \DateTimeZone ? $all_day_timezone : $timezone
+				);
+			}
+
+			$lines[] = eventkoi_format_datetime_range(
+				$start->getTimestamp(),
+				$end ? $end->getTimestamp() : null,
+				$day_all_day,
+				array(
+					'separator' => ' – ',
+					'timezone'  => $day_timezone,
+				)
+			);
+		}
+
+		$lines = array_values( array_filter( $lines ) );
+
+		return implode( "\n", $lines );
+	}
+
+	/**
+	 * Parse a calendar row date value as UTC and convert it to WP timezone.
+	 *
+	 * @param mixed         $value    Date value.
+	 * @param \DateTimeZone $timezone Target timezone.
+	 * @return \DateTimeImmutable|null
+	 */
+	protected static function parse_calendar_row_datetime( $value, \DateTimeZone $timezone ) {
+		if ( empty( $value ) ) {
+			return null;
+		}
+
+		try {
+			return ( new \DateTimeImmutable( (string) $value, new \DateTimeZone( 'UTC' ) ) )->setTimezone( $timezone );
+		} catch ( \Exception $e ) {
+			return null;
+		}
+	}
+
+	/**
+	 * Resolve a boolean-ish calendar row flag.
+	 *
+	 * @param mixed $value Flag value.
+	 * @return bool
+	 */
+	protected static function calendar_row_flag( $value ) {
+		if ( is_bool( $value ) ) {
+			return $value;
+		}
+
+		if ( is_numeric( $value ) ) {
+			return 0 !== (int) $value;
+		}
+
+		if ( is_string( $value ) ) {
+			return in_array( strtolower( trim( $value ) ), array( '1', 'true', 'yes', 'on' ), true );
+		}
+
+		return false;
+	}
+
+	/**
+	 * Get the inclusive display end for calendar row timeline strings.
+	 *
+	 * @param \DateTimeImmutable      $start    Start datetime.
+	 * @param \DateTimeImmutable|null $end_real Inclusive real end, if present.
+	 * @param \DateTimeImmutable|null $end      Row display end.
+	 * @return \DateTimeImmutable|null
+	 */
+	protected static function calendar_row_display_end( \DateTimeImmutable $start, $end_real, $end ) {
+		if ( $end_real instanceof \DateTimeImmutable ) {
+			if ( eventkoi_is_single_all_day_span( $start->getTimestamp(), $end_real->getTimestamp() ) ) {
+				return $start;
+			}
+
+			return $end_real;
+		}
+
+		if ( ! $end instanceof \DateTimeImmutable ) {
+			return null;
+		}
+
+		if ( $end->format( 'H:i:s' ) === '00:00:00' && $end->format( 'Y-m-d' ) !== $start->format( 'Y-m-d' ) ) {
+			return $end->modify( '-1 day' );
+		}
+
+		return $end;
+	}
+
+	/**
+	 * Add stable source-date fields for all-day calendar rows.
+	 *
+	 * @param array         $row               Calendar response row.
+	 * @param \DateTimeZone $fallback_timezone Site timezone fallback.
+	 * @return array
+	 */
+	protected static function prepare_all_day_display_dates( array $row, \DateTimeZone $fallback_timezone ) {
+		$all_day = self::calendar_row_flag( $row['allDay'] ?? ( $row['all_day'] ?? false ) );
+
+		if ( ! $all_day ) {
+			return $row;
+		}
+
+		$timezone = self::calendar_row_all_day_timezone( $row, $fallback_timezone );
+		$dates    = self::calendar_row_all_day_display_dates( $row, $timezone );
+
+		if ( empty( $dates['start'] ) ) {
+			return $row;
+		}
+
+		$display_end = $dates['end'] ?? $dates['start'];
+		$row['all_day_timezone']           = $timezone->getName();
+		$row['all_day_start_date']         = $dates['start']->format( 'Y-m-d' );
+		$row['all_day_end_date']           = $display_end->format( 'Y-m-d' );
+		$row['all_day_end_exclusive_date'] = $display_end->setTime( 0, 0, 0 )->modify( '+1 day' )->format( 'Y-m-d' );
+
+		return $row;
+	}
+
+	/**
+	 * Resolve the timezone used for all-day date boundaries.
+	 *
+	 * @param array         $row               Calendar response row.
+	 * @param \DateTimeZone $fallback_timezone Fallback timezone.
+	 * @return \DateTimeZone
+	 */
+	protected static function calendar_row_all_day_timezone( array $row, \DateTimeZone $fallback_timezone ) {
+		$candidates = array();
+
+		if ( ! empty( $row['all_day_timezone'] ) ) {
+			$candidates[] = (string) $row['all_day_timezone'];
+		}
+
+		$event_id = isset( $row['event_id'] ) ? absint( $row['event_id'] ) : absint( $row['id'] ?? 0 );
+		$stored   = '';
+		if ( $event_id > 0 ) {
+			static $event_timezone_cache = array();
+
+			if ( ! array_key_exists( $event_id, $event_timezone_cache ) ) {
+				$event_timezone_cache[ $event_id ] = (string) get_post_meta( $event_id, 'timezone', true );
+			}
+
+			$stored = $event_timezone_cache[ $event_id ];
+		}
+
+		$start_raw = $row['start_real'] ?? ( $row['start'] ?? ( $row['start_date'] ?? '' ) );
+		$end_raw   = $row['end_real'] ?? ( $row['end'] ?? ( $row['end_date'] ?? '' ) );
+
+		$inferred = '';
+		if ( function_exists( 'eventkoi_infer_all_day_timezone_from_utc_range' ) ) {
+			$inferred = eventkoi_infer_all_day_timezone_from_utc_range(
+				$start_raw,
+				$end_raw
+			);
+		}
+
+		if ( function_exists( 'eventkoi_all_day_timezone_should_prefer_stored' ) && eventkoi_all_day_timezone_should_prefer_stored( $stored, $inferred, $start_raw, $end_raw ) ) {
+			$candidates[] = $stored;
+		}
+
+		if ( '' !== $inferred ) {
+			$candidates[] = $inferred;
+		}
+
+		if ( '' !== $stored ) {
+			$candidates[] = $stored;
+		}
+
+		foreach ( $candidates as $candidate ) {
+			try {
+				return new \DateTimeZone( eventkoi_php_timezone( $candidate ) );
+			} catch ( \Exception $e ) {
+				continue;
+			}
+		}
+
+		return $fallback_timezone;
+	}
+
+	/**
+	 * Resolve inclusive all-day display date boundaries from a row.
+	 *
+	 * @param array         $row      Calendar response row.
+	 * @param \DateTimeZone $timezone Source timezone.
+	 * @return array{start:\DateTimeImmutable|null,end:\DateTimeImmutable|null}
+	 */
+	protected static function calendar_row_all_day_display_dates( array $row, \DateTimeZone $timezone ) {
+		$start_raw = (string) ( $row['start_real'] ?? ( $row['start'] ?? '' ) );
+		$end_raw   = (string) ( $row['end_real'] ?? ( $row['end'] ?? '' ) );
+
+		if ( empty( $start_raw ) ) {
+			return array(
+				'start' => null,
+				'end'   => null,
+			);
+		}
+
+		$start = self::parse_fullcalendar_all_day_boundary( $start_raw, $timezone );
+		if ( ! $start ) {
+			return array(
+				'start' => null,
+				'end'   => null,
+			);
+		}
+
+		$end         = self::parse_fullcalendar_all_day_boundary( $end_raw, $timezone );
+		$display_end = self::calendar_row_display_end( $start, $end, $end );
+
+		if ( ! $display_end || $display_end < $start ) {
+			$display_end = $start;
+		}
+
+		return array(
+			'start' => $start->setTime( 0, 0, 0 ),
+			'end'   => $display_end->setTime( 0, 0, 0 ),
+		);
+	}
+
+	/**
+	 * Shape all-day rows for FullCalendar without changing saved UTC metadata.
+	 *
+	 * @param array $row Calendar response row.
+	 * @return array
+	 */
+	protected static function prepare_fullcalendar_row( array $row ) {
+		$all_day = self::calendar_row_flag( $row['allDay'] ?? ( $row['all_day'] ?? false ) );
+
+		if ( ! $all_day ) {
+			return $row;
+		}
+
+		$timezone  = self::calendar_row_all_day_timezone( $row, wp_timezone() );
+		$start_raw = (string) ( $row['start_real'] ?? ( $row['start'] ?? '' ) );
+		$end_raw   = (string) ( $row['end_real'] ?? ( $row['end'] ?? '' ) );
+
+		if ( empty( $start_raw ) ) {
+			return $row;
+		}
+
+		if ( empty( $row['start_real'] ) && ! empty( $row['start'] ) && false !== strpos( (string) $row['start'], 'T' ) ) {
+			$row['start_real'] = (string) $row['start'];
+		}
+
+		if ( empty( $row['end_real'] ) && ! empty( $row['end'] ) && false !== strpos( (string) $row['end'], 'T' ) ) {
+			$row['end_real'] = (string) $row['end'];
+		}
+
+		$start = ! empty( $row['all_day_start_date'] )
+			? self::parse_fullcalendar_all_day_boundary( (string) $row['all_day_start_date'], $timezone )
+			: self::parse_fullcalendar_all_day_boundary( $start_raw, $timezone );
+		$end   = ! empty( $row['all_day_end_date'] )
+			? self::parse_fullcalendar_all_day_boundary( (string) $row['all_day_end_date'], $timezone )
+			: self::parse_fullcalendar_all_day_boundary( $end_raw, $timezone );
+
+		if ( ! $start ) {
+			return $row;
+		}
+
+		$exclusive_end = ! empty( $row['all_day_end_exclusive_date'] )
+			? self::parse_fullcalendar_all_day_boundary( (string) $row['all_day_end_exclusive_date'], $timezone )
+			: self::fullcalendar_all_day_exclusive_end( $start, $end );
+
+		if ( ! $exclusive_end ) {
+			$exclusive_end = self::fullcalendar_all_day_exclusive_end( $start, $end );
+		}
+
+		$row['start'] = $start->format( 'Y-m-d' );
+		$row['end']   = $exclusive_end->format( 'Y-m-d' );
+
+		return $row;
+	}
+
+	/**
+	 * Parse an all-day boundary into the WordPress timezone.
+	 *
+	 * @param string        $value    Date value.
+	 * @param \DateTimeZone $timezone Target timezone.
+	 * @return \DateTimeImmutable|null
+	 */
+	protected static function parse_fullcalendar_all_day_boundary( $value, \DateTimeZone $timezone ) {
+		if ( empty( $value ) ) {
+			return null;
+		}
+
+		try {
+			if ( preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $value ) ) {
+				return new \DateTimeImmutable( (string) $value . ' 00:00:00', $timezone );
+			}
+
+			return ( new \DateTimeImmutable( (string) $value, new \DateTimeZone( 'UTC' ) ) )->setTimezone( $timezone );
+		} catch ( \Exception $e ) {
+			return null;
+		}
+	}
+
+	/**
+	 * Convert stored all-day end metadata into FullCalendar's exclusive end date.
+	 *
+	 * @param \DateTimeImmutable      $start Start boundary in site timezone.
+	 * @param \DateTimeImmutable|null $end   End boundary in site timezone.
+	 * @return \DateTimeImmutable
+	 */
+	protected static function fullcalendar_all_day_exclusive_end( \DateTimeImmutable $start, $end ) {
+		$start_day = $start->setTime( 0, 0, 0 );
+
+		if ( ! $end instanceof \DateTimeImmutable || $end->getTimestamp() <= $start->getTimestamp() ) {
+			return $start_day->modify( '+1 day' );
+		}
+
+		if ( eventkoi_is_single_all_day_span( $start->getTimestamp(), $end->getTimestamp() ) ) {
+			return $start_day->modify( '+1 day' );
+		}
+
+		$end_day = $end->setTime( 0, 0, 0 );
+
+		if ( $end_day <= $start_day ) {
+			return $start_day->modify( '+1 day' );
+		}
+
+		if ( '00:00:00' === $end->format( 'H:i:s' ) ) {
+			return $end_day;
+		}
+
+		return $end_day->modify( '+1 day' );
 	}
 
 	/**
@@ -906,36 +1558,27 @@ class Calendar {
 			$url = add_query_arg( 'instance', $utc_timestamp, $url );
 		}
 
+		$url = self::append_frontend_timezone_arg( $url );
+
 		// Load instance override (if any).
 		$overrides = $event::get_recurrence_overrides();
 		$override  = $overrides[ $utc_timestamp ] ?? array();
 
 		// Use override locations if available.
-		$override_locations = isset( $override['locations'] ) && is_array( $override['locations'] ) ? $override['locations'] : $locations;
-		$override_primary   = ! empty( $override_locations[0] ) ? $override_locations[0] : $primary;
+			$override_locations = isset( $override['locations'] ) && is_array( $override['locations'] ) ? $override['locations'] : $locations;
+			$override_primary   = self::get_primary_location_row( $override_locations );
+			if ( empty( $override_primary ) ) {
+				$override_primary = $primary;
+			}
 
-		$override_primary_type = $override_primary['type'] ?? $primary_type;
-		$override_virtual_url  = $override_primary['virtual_url'] ?? $virtual_url;
-		$override_link_text    = $override_primary['link_text'] ?? $override_virtual_url;
+				$override_primary_type = ! empty( $override_primary ) ? self::get_location_type( $override_primary ) : $primary_type;
+			$override_virtual_url  = ! empty( $override_primary ) ? self::get_location_virtual_url( $override_primary ) : $virtual_url;
+			$override_link_text    = $override_primary['link_text'] ?? $override_virtual_url;
 
-		$override_location_line = $override_virtual_url;
-		if ( empty( $override_location_line ) ) {
-			$parts                  = array_filter(
-				array(
-					$override_primary['name'] ?? '',
-					$override_primary['address1'] ?? '',
-					$override_primary['address2'] ?? '',
-					$override_primary['city'] ?? '',
-					$override_primary['state'] ?? '',
-					$override_primary['zip'] ?? '',
-					$override_primary['country'] ?? '',
-				)
-			);
-			$override_location_line = implode( ', ', $parts );
-		}
-		if ( empty( $override_location_line ) ) {
-			$override_location_line = $event::get_location_line();
-		}
+			$override_location_line = self::format_location_line( $override_primary );
+			if ( empty( $override_location_line ) ) {
+				$override_location_line = $event::get_location_line();
+			}
 
 		$data = array(
 			'id'            => $event::get_id() . '-' . $dt->format( 'YmdHis' ),
@@ -974,6 +1617,211 @@ class Calendar {
 			}
 		}
 
-		return $data;
+			return $data;
+		}
+
+		/**
+		 * Get the first usable location row from a locations array.
+		 *
+		 * @param array $locations Locations.
+		 * @return array
+		 */
+		protected static function get_primary_location_row( $locations ) {
+			if ( ! is_array( $locations ) ) {
+				return array();
+			}
+
+			foreach ( $locations as $location ) {
+				if ( ! is_array( $location ) || empty( $location ) ) {
+					continue;
+				}
+
+				if ( '' !== self::format_location_line( $location ) ) {
+					return $location;
+				}
+			}
+
+			return array();
+		}
+
+		/**
+		 * Format one location row for calendar payloads.
+		 *
+		 * @param array $location Location row.
+		 * @return string
+		 */
+		protected static function format_location_line( $location ) {
+			if ( ! is_array( $location ) || empty( $location ) ) {
+				return '';
+			}
+
+			$virtual_url = self::get_location_virtual_url( $location );
+			if ( '' !== $virtual_url ) {
+				return $virtual_url;
+			}
+
+			$address = isset( $location['address'] ) && is_array( $location['address'] ) ? $location['address'] : array();
+			$city_line = implode(
+				', ',
+				array_filter(
+					array(
+						self::first_location_text(
+							self::location_text_value( $location, 'city' ),
+							self::location_text_value( $address, 'addressLocality' )
+						),
+						self::first_location_text(
+							self::location_text_value( $location, 'state' ),
+							self::location_text_value( $address, 'addressRegion' )
+						),
+						self::first_location_text(
+							self::location_text_value( $location, 'zip' ),
+							self::location_text_value( $address, 'postalCode' )
+						),
+					)
+				)
+			);
+
+			return implode(
+				', ',
+				array_unique(
+					array_filter(
+						array(
+							self::location_text_value( $location, 'name' ),
+							self::first_location_text(
+								self::location_text_value( $location, 'address1' ),
+								self::location_text_value( $address, 'streetAddress' )
+							),
+							self::location_text_value( $location, 'address2' ),
+							self::location_text_value( $location, 'address3' ),
+							$city_line,
+							self::first_location_text(
+								self::location_text_value( $location, 'country' ),
+								self::location_text_value( $address, 'addressCountry' )
+							),
+						)
+					)
+				)
+			);
+		}
+
+		/**
+		 * Return the first non-empty location text.
+		 *
+		 * @param string ...$values Values.
+		 * @return string
+		 */
+		protected static function first_location_text( ...$values ) {
+			foreach ( $values as $value ) {
+				$value = trim( (string) $value );
+				if ( '' !== $value ) {
+					return $value;
+				}
+			}
+
+			return '';
+		}
+
+		/**
+		 * Get sanitized text from a location row.
+		 *
+		 * @param array  $location Location row.
+		 * @param string $key      Field key.
+		 * @return string
+		 */
+	protected static function location_text_value( array $location, $key ) {
+		if ( ! array_key_exists( $key, $location ) ) {
+			return '';
+		}
+
+		$value = $location[ $key ];
+		if ( is_object( $value ) ) {
+			$value = get_object_vars( $value );
+		}
+
+		if ( is_array( $value ) ) {
+			foreach ( array( 'name', 'text', 'url', '@id' ) as $nested_key ) {
+				if ( array_key_exists( $nested_key, $value ) ) {
+					$text = self::location_scalar_text( $value[ $nested_key ] );
+					if ( '' !== $text ) {
+						return $text;
+					}
+				}
+			}
+
+			$texts = array();
+			foreach ( $value as $nested_value ) {
+				$text = self::location_scalar_text( $nested_value );
+				if ( '' !== $text ) {
+					$texts[] = $text;
+				}
+			}
+
+			return implode( ' ', array_unique( $texts ) );
+		}
+
+		return self::location_scalar_text( $value );
 	}
-}
+
+	/**
+	 * Normalize a scalar location value to text.
+	 *
+	 * @param mixed $value Raw value.
+	 * @return string
+	 */
+	protected static function location_scalar_text( $value ) {
+		if ( is_array( $value ) || is_object( $value ) ) {
+			return '';
+		}
+
+		return sanitize_text_field( (string) $value );
+	}
+
+		/**
+		 * Get the virtual URL from supported location shapes.
+		 *
+		 * @param array $location Location row.
+		 * @return string
+		 */
+	protected static function get_location_virtual_url( array $location ) {
+		return self::first_location_text(
+			self::location_text_value( $location, 'virtual_url' ),
+			self::location_text_value( $location, 'url' )
+		);
+	}
+
+	/**
+	 * Normalize EventKoi and raw Schema.org location types.
+	 *
+	 * @param array  $location Location row.
+	 * @param string $default  Optional default normalized type.
+	 * @return string
+	 */
+	protected static function get_location_type( array $location, $default = '' ) {
+		$type = sanitize_key( self::location_text_value( $location, 'type' ) );
+		if ( 'physical' === $type ) {
+			return 'inperson';
+		}
+		if ( 'virtual' === $type ) {
+			return 'online';
+		}
+		if ( in_array( $type, array( 'inperson', 'online' ), true ) ) {
+			return $type;
+		}
+		if ( str_contains( $type, 'virtuallocation' ) ) {
+			return 'online';
+		}
+		if ( str_contains( $type, 'place' ) ) {
+			return 'inperson';
+		}
+
+		$schema_type = strtolower( self::location_text_value( $location, '@type' ) );
+		if ( str_contains( $schema_type, 'virtuallocation' ) ) {
+			return 'online';
+		}
+		if ( str_contains( $schema_type, 'place' ) ) {
+			return 'inperson';
+		}
+
+		return sanitize_key( $default );
+	}
+	}

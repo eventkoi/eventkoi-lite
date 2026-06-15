@@ -176,6 +176,31 @@ export function OrderRefundView() {
       return;
     }
 
+    // Refuse overage client-side (was server-only validation, vague error).
+    if (totalRefundCents > availableRefundCents) {
+      showToastError(
+        __(
+          "Refund amount exceeds the remaining refundable balance on this order.",
+          "eventkoi-lite"
+        )
+      );
+      return;
+    }
+
+    // Catch the silent-drop case where all selected lines have ticket_id <= 0
+    // (e.g. only the synthetic 'fallback' row is selected) — confirmRefund's
+    // filter would drop them and show a confusing post-confirm toast.
+    const validLines = selectedItems.filter((item) => Number(item?.ticket_id || 0) > 0);
+    if (!validLines.length) {
+      showToastError(
+        __(
+          "Selected line items can't be refunded individually. Use the order-level refund instead.",
+          "eventkoi-lite"
+        )
+      );
+      return;
+    }
+
     setConfirmOpen(true);
   };
 

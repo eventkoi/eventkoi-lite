@@ -317,8 +317,8 @@ class Tickets {
 		}
 
 		$table_name       = $wpdb->prefix . 'eventkoi_ticket_orders';
-		$include_archived = (bool) $request->get_param( 'include_archived' );
-		$only_archived    = (bool) $request->get_param( 'only_archived' );
+		$include_archived = rest_sanitize_boolean( $request->get_param( 'include_archived' ) );
+		$only_archived    = rest_sanitize_boolean( $request->get_param( 'only_archived' ) );
 		$where            = self::build_ticket_orders_where(
 			array(
 				'event_id'         => $event_id,
@@ -822,6 +822,52 @@ class Tickets {
 	}
 
 	/**
+	 * Build the public event context needed by the ticket widget.
+	 *
+	 * @param int $event_id Event ID.
+	 * @return array
+	 */
+	private static function get_public_event_payload( $event_id ) {
+		$meta = Event::get_meta();
+
+		$keys    = array(
+			'id',
+			'title',
+			'date_type',
+			'standard_type',
+			'timezone',
+			'timezone_display',
+			'tbc',
+			'tbc_note',
+			'start_date',
+			'end_date',
+			'event_days',
+			'recurrence_rules',
+			'rulesummary',
+			'location_line',
+			'locations',
+			'type',
+			'url',
+		);
+		$payload = array();
+
+		foreach ( $keys as $key ) {
+			if ( array_key_exists( $key, $meta ) ) {
+				$payload[ $key ] = $meta[ $key ];
+			}
+		}
+
+		$payload['id']    = absint( $event_id );
+		$payload['title'] = get_the_title( $event_id );
+
+		if ( empty( $payload['timezone'] ) ) {
+			$payload['timezone'] = wp_timezone_string() ? wp_timezone_string() : 'UTC';
+		}
+
+		return $payload;
+	}
+
+	/**
 	 * Get public ticket data for an event.
 	 *
 	 * @param WP_REST_Request $request Request object.
@@ -887,6 +933,7 @@ class Tickets {
 			return new WP_Error( 'database_error', __( 'Database error occurred.', 'eventkoi-lite' ), array( 'status' => 500 ) );
 		}
 
+		$ticket_sales    = self::get_remote_ticket_sales( $event_id );
 		$now             = ( new \DateTimeImmutable( 'now', wp_timezone() ) )->getTimestamp();
 		$tickets         = array();
 		$global_currency = self::get_global_currency();
@@ -908,8 +955,10 @@ class Tickets {
 				$quantity_available = null;
 			}
 
-			$quantity_sold = isset( $ticket->quantity_sold ) ? absint( $ticket->quantity_sold ) : 0;
-			$remaining = null;
+			$local_sold    = isset( $ticket->quantity_sold ) ? absint( $ticket->quantity_sold ) : 0;
+			$remote_sold   = isset( $ticket_sales[ (int) $ticket->id ] ) ? absint( $ticket_sales[ (int) $ticket->id ] ) : 0;
+			$quantity_sold = max( $local_sold, $remote_sold );
+			$remaining     = null;
 			if ( null !== $quantity_available ) {
 				$held_qty  = self::get_held_quantity( $event_id, (int) $ticket->id );
 				$remaining = max( $quantity_available - $quantity_sold - $held_qty, 0 );
@@ -937,6 +986,7 @@ class Tickets {
 				'success'                     => true,
 				'event_id'                    => $event_id,
 				'event_title'                 => get_the_title( $event_id ),
+				'event'                       => self::get_public_event_payload( $event_id ),
 				'attendance_mode'             => $event::get_attendance_mode(),
 				'tickets_enabled'             => $event::get_tickets_enabled(),
 				'tickets_auto_create_account' => $event::get_tickets_auto_create_account(),
@@ -949,6 +999,43 @@ class Tickets {
 			),
 			200
 		);
+	}
+
+	/**
+	 * Get sold quantity per ticket from local paid order rows.
+	 *
+	 * @param int $event_id Event ID.
+	 * @return array<int,int>
+	 */
+	private static function get_remote_ticket_sales( $event_id ) {
+		global $wpdb;
+
+		$event_id = absint( $event_id );
+		if ( $event_id <= 0 ) {
+			return array();
+		}
+
+		$table = $wpdb->prefix . 'eventkoi_ticket_orders';
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT ticket_id, SUM(quantity) AS quantity_sold FROM {$table} WHERE event_id = %d AND payment_status IN ('complete','completed','succeeded','paid','partially_refunded') GROUP BY ticket_id", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$event_id
+			)
+		);
+
+		$mapped = array();
+		if ( $rows ) {
+			foreach ( $rows as $row ) {
+				$tid = absint( $row->ticket_id ?? 0 );
+				if ( $tid > 0 ) {
+					$mapped[ $tid ] = absint( $row->quantity_sold ?? 0 );
+				}
+			}
+		}
+
+		return $mapped;
 	}
 
 	/**
@@ -975,17 +1062,27 @@ class Tickets {
 		$wp_user_id          = absint( $request->get_param( 'wp_user_id' ) );
 		$items_raw           = $request->get_param( 'items' );
 
+		$checkout_fields = \EventKoi\Core\Orders::sanitize_checkout_field_values(
+			$request->get_param( 'fields' ),
+			$event_id
+		);
+		if ( is_wp_error( $checkout_fields ) ) {
+			return $checkout_fields;
+		}
+
 		if ( ! $event_id ) {
 			return new WP_Error( 'invalid_event_id', __( 'Invalid event ID.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
 		$event_post = get_post( $event_id );
-		if ( ! ( $event_post instanceof \WP_Post ) || 'eventkoi_event' !== $event_post->post_type ) {
-			return new WP_Error( 'invalid_event', __( 'Invalid event.', 'eventkoi-lite' ), array( 'status' => 404 ) );
-		}
+			if ( ! ( $event_post instanceof \WP_Post ) || 'eventkoi_event' !== $event_post->post_type ) {
+				return new WP_Error( 'invalid_event', __( 'Invalid event.', 'eventkoi-lite' ), array( 'status' => 404 ) );
+			}
 
-		// Block purchases for completed, cancelled, or past events.
-		$event_status = get_post_meta( $event_id, 'status', true );
+			$event = new Event( $event_id );
+
+			// Block purchases for completed, cancelled, or past events.
+			$event_status = get_post_meta( $event_id, 'status', true );
 		if ( 'completed' === $event_status || 'cancelled' === $event_status ) {
 			return new WP_Error( 'event_ended', __( 'This event has ended and is no longer accepting ticket purchases.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
@@ -1056,13 +1153,13 @@ class Tickets {
 		if ( $wp_user_id <= 0 ) {
 			$wp_user_id = get_current_user_id() ? absint( get_current_user_id() ) : 0;
 		}
-		if ( empty( $email ) ) {
-			return new WP_Error( 'invalid_email', __( 'A valid email address is required.', 'eventkoi-lite' ), array( 'status' => 400 ) );
-		}
-		if ( $wp_user_id <= 0 && ! empty( $email ) ) {
-			$auto_create_account = (bool) get_post_meta( $event_id, 'tickets_auto_create_account', true );
-			$wp_user_id          = self::resolve_checkout_wp_user_id( $email, $auto_create_account, $first_name, $last_name );
-		}
+			if ( empty( $email ) ) {
+				return new WP_Error( 'invalid_email', __( 'A valid email address is required.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+			}
+			if ( $wp_user_id <= 0 && ! empty( $email ) ) {
+				$auto_create_account = $event::get_tickets_auto_create_account();
+				$wp_user_id          = self::resolve_checkout_wp_user_id( $email, $auto_create_account, $first_name, $last_name );
+			}
 		$wp_user_label = '';
 		if ( $wp_user_id > 0 ) {
 			$wp_user = get_userdata( $wp_user_id );
@@ -1123,7 +1220,8 @@ class Tickets {
 			$tickets_by_id[ (int) $row->id ] = $row;
 		}
 
-			$now        = ( new \DateTimeImmutable( 'now', wp_timezone() ) )->getTimestamp();
+		$ticket_sales   = self::get_remote_ticket_sales( $event_id );
+		$now            = ( new \DateTimeImmutable( 'now', wp_timezone() ) )->getTimestamp();
 		$currency       = self::get_global_currency();
 		$total_cents    = 0;
 		$total_quantity = 0;
@@ -1155,8 +1253,11 @@ class Tickets {
 			}
 
 			if ( null !== $ticket->quantity_available ) {
+				$local_sold  = absint( $ticket->quantity_sold );
+				$remote_sold = isset( $ticket_sales[ $ticket_id ] ) ? absint( $ticket_sales[ $ticket_id ] ) : 0;
+				$sold_qty    = max( $local_sold, $remote_sold );
 				$held_qty  = self::get_held_quantity( $event_id, $ticket_id );
-				$remaining = max( absint( $ticket->quantity_available ) - absint( $ticket->quantity_sold ) - $held_qty, 0 );
+				$remaining = max( absint( $ticket->quantity_available ) - $sold_qty - $held_qty, 0 );
 				if ( $quantity > $remaining ) {
 					return new WP_Error( 'insufficient_quantity', __( 'Not enough tickets remaining for one or more selections.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 				}
@@ -1233,9 +1334,15 @@ class Tickets {
 			'metadata'             => $metadata,
 		);
 
-		// Create inventory holds for all selected tickets.
-		$hold_id = 'hold_' . wp_generate_uuid4();
-		self::create_inventory_holds( $hold_id, $event_id, $sanitized_items, $tickets_by_id, $currency, $email, $customer_name );
+		// Create inventory holds for all selected tickets. Helper wraps the
+		// per-ticket capacity check + insert in a transaction with FOR UPDATE
+		// so two concurrent checkout-session requests can't both oversell.
+		// Returns WP_Error on contention.
+		$hold_id     = 'hold_' . wp_generate_uuid4();
+		$hold_result = self::create_inventory_holds( $hold_id, $event_id, $sanitized_items, $tickets_by_id, $currency, $email, $customer_name );
+		if ( is_wp_error( $hold_result ) ) {
+			return $hold_result;
+		}
 
 		// Lite requires WooCommerce for checkout.
 		if ( ! class_exists( 'WooCommerce' ) ) {
@@ -1261,6 +1368,7 @@ class Tickets {
 				'wp_user_id'    => $wp_user_id,
 				'wp_user_label' => $wp_user_label,
 				'checkout_note' => $checkout_note,
+				'checkout_fields' => $checkout_fields,
 			)
 		);
 
@@ -2113,8 +2221,9 @@ class Tickets {
 	private static function create_inventory_holds( $hold_id, $event_id, $items, $tickets_by_id, $currency, $email, $customer_name ) {
 		global $wpdb;
 
-		$table      = $wpdb->prefix . 'eventkoi_ticket_orders';
-		$created_at = gmdate( 'Y-m-d H:i:s' );
+		$table         = $wpdb->prefix . 'eventkoi_ticket_orders';
+		$tickets_table = $wpdb->prefix . 'eventkoi_tickets';
+		$created_at    = gmdate( 'Y-m-d H:i:s' );
 
 		self::cleanup_expired_holds();
 
@@ -2129,36 +2238,89 @@ class Tickets {
 			)
 		);
 
-		foreach ( $items as $item ) {
-			$ticket_id = (int) $item['ticket_id'];
-			$quantity  = (int) $item['quantity'];
-			$ticket    = $tickets_by_id[ $ticket_id ] ?? null;
+		// Lock + recheck + insert in a single transaction so two parallel
+		// checkout-session requests can't both pass the earlier (unlocked)
+		// availability gate and oversell. Deterministic ticket_id order
+		// avoids deadlocks across overlapping carts.
+		$ordered_items = $items;
+		usort(
+			$ordered_items,
+			static function ( $a, $b ) {
+				return (int) ( $a['ticket_id'] ?? 0 ) <=> (int) ( $b['ticket_id'] ?? 0 );
+			}
+		);
 
-			if ( null === $ticket || null === $ticket->quantity_available ) {
-				continue;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Transaction control.
+		$wpdb->query( 'START TRANSACTION' );
+
+		try {
+			foreach ( $ordered_items as $item ) {
+				$ticket_id = (int) $item['ticket_id'];
+				$quantity  = (int) $item['quantity'];
+				$ticket    = $tickets_by_id[ $ticket_id ] ?? null;
+
+				if ( null === $ticket || $ticket_id <= 0 || $quantity <= 0 ) {
+					continue;
+				}
+
+				// Lock the ticket row even when unlimited so concurrent
+				// capacity changes are observed under the same lock.
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- FOR UPDATE row lock; table from prefix.
+				$wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT id FROM {$tickets_table} WHERE id = %d FOR UPDATE",
+						$ticket_id
+					)
+				);
+
+				if ( null !== $ticket->quantity_available ) {
+					$cap       = absint( $ticket->quantity_available );
+					$sold      = absint( $ticket->quantity_sold );
+					$held      = self::get_held_quantity( $event_id, $ticket_id );
+					$remaining = max( $cap - $sold - $held, 0 );
+
+					if ( $quantity > $remaining ) {
+						// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Transaction control.
+						$wpdb->query( 'ROLLBACK' );
+						return new WP_Error(
+							'insufficient_quantity',
+							__( 'Not enough tickets remaining for one or more selections.', 'eventkoi-lite' ),
+							array( 'status' => 409 )
+						);
+					}
+				}
+
+				$unit_price = (float) ( $ticket->price ?? 0 );
+
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
+				$wpdb->insert(
+					$table,
+					array(
+						'event_id'       => $event_id,
+						'ticket_id'      => $ticket_id,
+						'order_id'       => $hold_id . ':' . $ticket_id,
+						'customer_name'  => $customer_name,
+						'customer_email' => $email,
+						'quantity'       => $quantity,
+						'unit_price'     => $unit_price,
+						'total_amount'   => $unit_price * $quantity,
+						'currency'       => $currency,
+						'payment_status' => 'hold',
+						'created_at'     => $created_at,
+					),
+					array( '%d', '%d', '%s', '%s', '%s', '%d', '%f', '%f', '%s', '%s', '%s' )
+				);
 			}
 
-			$unit_price = (float) ( $ticket->price ?? 0 );
-
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery
-			$wpdb->insert(
-				$table,
-				array(
-					'event_id'       => $event_id,
-					'ticket_id'      => $ticket_id,
-					'order_id'       => $hold_id . ':' . $ticket_id,
-					'customer_name'  => $customer_name,
-					'customer_email' => $email,
-					'quantity'       => $quantity,
-					'unit_price'     => $unit_price,
-					'total_amount'   => $unit_price * $quantity,
-					'currency'       => $currency,
-					'payment_status' => 'hold',
-					'created_at'     => $created_at,
-				),
-				array( '%d', '%d', '%s', '%s', '%s', '%d', '%f', '%f', '%s', '%s', '%s' )
-			);
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Transaction control.
+			$wpdb->query( 'COMMIT' );
+		} catch ( \Throwable $e ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Transaction control.
+			$wpdb->query( 'ROLLBACK' );
+			return new WP_Error( 'hold_creation_failed', $e->getMessage(), array( 'status' => 500 ) );
 		}
+
+		return true;
 	}
 
 	/**

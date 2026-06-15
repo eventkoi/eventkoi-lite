@@ -98,7 +98,15 @@ class Blocks {
 			return '';
 		}
 
-		$value = self::get_event_field_value( $field, $event, array(), ! empty( $context_event ) );
+		$value = self::get_event_field_value(
+			$field,
+			$event,
+			array(
+				'dateFormat' => $attributes['dateFormat'] ?? '',
+				'timeFormat' => $attributes['timeFormat'] ?? '',
+			),
+			! empty( $context_event )
+		);
 
 		if ( '' === trim( (string) $value ) ) {
 			return '';
@@ -238,9 +246,19 @@ class Blocks {
 					'typography' => array(
 						'fontSize'                 => true,
 						'lineHeight'               => true,
+						'textColumns'              => true,
+						'textIndent'               => true,
 						'__experimentalFontFamily' => true,
-						'fontStyle'                => true,
+						'__experimentalTextDecoration' => true,
 						'__experimentalFontStyle'  => true,
+						'__experimentalFontWeight' => true,
+						'__experimentalLetterSpacing' => true,
+						'__experimentalTextTransform' => true,
+						'__experimentalWritingMode' => true,
+						'fitText'                  => true,
+						'__experimentalDefaultControls' => array(
+							'fontSize' => true,
+						),
 					),
 					'spacing'    => array(
 						'margin'  => true,
@@ -922,7 +940,7 @@ JS;
 			return $query_vars;
 		}
 
-		$calendar_ids = array_filter( array_map( 'absint', $attrs['calendars'] ?? array() ) );
+		$calendar_ids      = array_filter( array_map( 'absint', $attrs['calendars'] ?? array() ) );
 
 		$query_vars['post_type'] = 'eventkoi_event';
 
@@ -959,13 +977,9 @@ JS;
 
 		$query             = $attrs['query'] ?? array();
 		$per_page          = isset( $query['perPage'] ) ? absint( $query['perPage'] ) : 6;
-		$order             = isset( $query['order'] ) ? sanitize_text_field( $query['order'] ) : 'desc';
-		$orderby           = isset( $query['orderBy'] ) ? sanitize_key( $query['orderBy'] ) : 'modified';
+		$order             = isset( $query['order'] ) ? sanitize_text_field( $query['order'] ) : 'asc';
+		$orderby           = isset( $query['orderBy'] ) ? sanitize_key( $query['orderBy'] ) : 'upcoming';
 		$calendar_ids      = array_filter( array_map( 'absint', $attrs['calendars'] ?? array() ) );
-		$include_instances = ! empty( $attrs['includeInstances'] );
-
-		$show_instances_for_event = ! empty( $attrs['showInstancesForEvent'] ) && ! empty( $attrs['instanceParentId'] );
-		$instance_parent_id       = isset( $attrs['instanceParentId'] ) ? absint( $attrs['instanceParentId'] ) : 0;
 
 		$start_date = ! empty( $attrs['startDate'] ) ? sanitize_text_field( $attrs['startDate'] ) : '';
 		$end_date   = ! empty( $attrs['endDate'] ) ? sanitize_text_field( $attrs['endDate'] ) : '';
@@ -973,56 +987,42 @@ JS;
 		$paged = isset( $_GET['ek_page'] ) ? max( 1, absint( $_GET['ek_page'] ) ) : 1; // phpcs:ignore WordPress.Security.NonceVerification.Recommended.
 
 		// Sanitize orderby to allowed values.
-		$allowed_orderby = array( 'modified', 'date', 'title', 'start_date', 'event_start' );
+		$allowed_orderby = array( 'modified', 'date_modified', 'date', 'publish_date', 'title', 'start_date', 'event_start', 'upcoming', 'past', 'past_events' );
 		if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
+			$orderby = 'upcoming';
+		}
+		if ( 'date_modified' === $orderby ) {
 			$orderby = 'modified';
 		}
-
-		// Auto-derive the parent event when rendering a singular recurring event page.
-		if ( $include_instances && empty( $instance_parent_id ) && is_singular( 'eventkoi_event' ) ) {
-			$current_event_id = get_queried_object_id();
-			if ( $current_event_id ) {
-				$event = new Event( $current_event_id );
-				if ( method_exists( Event::class, 'get_date_type' ) && 'recurring' === $event::get_date_type() ) {
-					$instance_parent_id       = $current_event_id;
-					$show_instances_for_event = true;
-				}
-			}
+		if ( 'publish_date' === $orderby ) {
+			$orderby = 'date';
+		}
+		if ( 'start_date' === $orderby ) {
+			$orderby = 'event_start';
+		}
+		if ( 'past_events' === $orderby ) {
+			$orderby = 'past';
+		}
+		if ( 'upcoming' === $orderby && empty( $query['order'] ) ) {
+			$order = 'asc';
+		}
+		if ( 'past' === $orderby ) {
+			$order = 'desc';
 		}
 
-		// Normalize includeInstances+parent.
-		if ( $include_instances && $show_instances_for_event && empty( $instance_parent_id ) && ! empty( $_GET['parent_event'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-			$instance_parent_id = absint( $_GET['parent_event'] );
-		}
-
-		if ( $show_instances_for_event && $include_instances && $instance_parent_id > 0 ) {
-			$event_data = \EventKoi\Core\Calendar::get_events(
-				array(),
-				true,
-				array(
-					'include'    => array( $instance_parent_id ),
-					'per_page'   => $per_page,
-					'page'       => $paged,
-					'order'      => $order,
-					'orderby'    => $orderby,
-					'start_date' => $start_date,
-					'end_date'   => $end_date,
-				)
-			);
-		} else {
-			$event_data = \EventKoi\Core\Calendar::get_events(
-				$calendar_ids,
-				$include_instances,
-				array(
-					'per_page'   => $per_page,
-					'order'      => $order,
-					'orderby'    => $orderby,
-					'page'       => $paged,
-					'start_date' => $start_date,
-					'end_date'   => $end_date,
-				)
-			);
-		}
+		$event_data = \EventKoi\Core\Calendar::get_events(
+			$calendar_ids,
+			false,
+			array(
+				'per_page'    => $per_page,
+				'order'       => $order,
+				'orderby'     => $orderby,
+				'page'        => $paged,
+				'start_date'  => $start_date,
+				'end_date'    => $end_date,
+				'post_status' => 'publish',
+			)
+		);
 
 		$events       = $event_data['items'] ?? array();
 		$total_events = $event_data['total'] ?? count( $events );
@@ -1033,6 +1033,13 @@ JS;
 		}
 
 		$wrapper_class     = ! empty( $attrs['className'] ) ? $attrs['className'] : 'eventkoi-query-loop';
+		// Preserve the block's wide/full alignment so FSE themes apply the
+		// matching width. The custom wrapper replaces the core query markup, so
+		// without this the alignwide/alignfull class (and its layout) is lost.
+		$loop_align = isset( $attrs['align'] ) ? sanitize_html_class( (string) $attrs['align'] ) : '';
+		if ( in_array( $loop_align, array( 'wide', 'full' ), true ) && false === strpos( $wrapper_class, 'align' . $loop_align ) ) {
+			$wrapper_class .= ' align' . $loop_align;
+		}
 		$loop_text_align   = isset( $attrs['textAlign'] ) ? sanitize_html_class( (string) $attrs['textAlign'] ) : '';
 		if ( in_array( $loop_text_align, array( 'left', 'center', 'right' ), true ) ) {
 			$wrapper_class .= ' has-text-align-' . $loop_text_align;
@@ -1070,11 +1077,26 @@ JS;
 				esc_attr( $wrapper_class ),
 				$rendered
 			)
-		);
-	}
+			);
+		}
 
-	/**
-	 * Normalize preset style shorthands (e.g., var:preset|spacing|20) into CSS variables.
+		/**
+		 * Parse a block attribute as a strict boolean.
+		 *
+		 * @param mixed $value Raw block attribute value.
+		 * @return bool
+		 */
+		private static function parse_boolean_attribute( $value ) {
+			$filtered = filter_var( $value, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE );
+			if ( null !== $filtered ) {
+				return (bool) $filtered;
+			}
+
+			return ! empty( $value );
+		}
+
+		/**
+		 * Normalize preset style shorthands (e.g., var:preset|spacing|20) into CSS variables.
 	 *
 	 * @param string $html HTML string potentially containing shorthand preset vars.
 	 * @return string Normalized HTML.
@@ -1249,9 +1271,9 @@ JS;
 		$show_label  = true;
 
 		if ( isset( $pagination_block['context']['showLabel'] ) ) {
-			$show_label = (bool) $pagination_block['context']['showLabel'];
+			$show_label = self::parse_boolean_attribute( $pagination_block['context']['showLabel'] );
 		} elseif ( isset( $attrs['showLabel'] ) ) {
-			$show_label = (bool) $attrs['showLabel'];
+			$show_label = self::parse_boolean_attribute( $attrs['showLabel'] );
 		}
 
 		if ( ! empty( $attrs['className'] ) ) {
@@ -1469,9 +1491,20 @@ JS;
 
 		if ( 'eventkoi/event-data' === $block_name ) {
 			// Already injected above; no further processing needed here.
-		} elseif ( 'core/image' === $block_name ) {
+		} elseif ( 'core/image' === $block_name || 'core/post-featured-image' === $block_name ) {
 			$block['attrs'] = isset( $block['attrs'] ) && is_array( $block['attrs'] ) ? $block['attrs'] : array();
 			if ( ! empty( $event['thumbnail'] ) ) {
+				if ( 'core/post-featured-image' === $block_name ) {
+					$block_name           = 'core/image';
+					$block['blockName']   = 'core/image';
+					$block['attrs']['id'] = 0;
+
+					if ( ! empty( $event['url'] ) ) {
+						$block['attrs']['linkDestination'] = 'custom';
+						$block['attrs']['href']            = esc_url_raw( (string) $event['url'] );
+					}
+				}
+
 				$block['attrs']['url'] = $event['thumbnail'];
 				if ( empty( $block['attrs']['alt'] ) ) {
 					$block['attrs']['alt'] = $event['title'] ?? '';
@@ -1482,6 +1515,12 @@ JS;
 						$block['innerHTML'],
 						$event['thumbnail'],
 						$event['title'] ?? ''
+					);
+				} elseif ( 'core/image' === $block['blockName'] ) {
+					$block['innerHTML'] = sprintf(
+						'<figure class="wp-block-image"><img src="%1$s" alt="%2$s" loading="lazy" decoding="async" /></figure>',
+						esc_url( $event['thumbnail'] ),
+						esc_attr( $event['title'] ?? '' )
 					);
 				}
 			}
@@ -1522,6 +1561,37 @@ JS;
 	}
 
 	/**
+	 * Render the location field for an event-data block.
+	 *
+	 * For virtual events the value is a URL, so render it as a clickable link
+	 * using the configured link text (matching the block editor preview),
+	 * instead of printing the bare URL as plain text. Physical locations keep
+	 * their plain-text address line.
+	 *
+	 * @param array $event The event data array.
+	 * @return string Location markup, or empty string.
+	 */
+	private static function render_location_field_value( $event ) {
+		$virtual_url = isset( $event['virtual_url'] ) ? trim( (string) $event['virtual_url'] ) : '';
+
+		if ( '' !== $virtual_url ) {
+			$label = ! empty( $event['link_text'] ) ? (string) $event['link_text'] : $virtual_url;
+
+			return sprintf(
+				'<div class="ek-event-location--inner"><a href="%1$s" target="_blank" rel="noopener noreferrer">%2$s</a></div>',
+				esc_url( $virtual_url ),
+				esc_html( $label )
+			);
+		}
+
+		if ( ! empty( $event['location_line'] ) ) {
+			return '<div class="ek-event-location--inner">' . esc_html( $event['location_line'] ) . '</div>';
+		}
+
+		return '';
+	}
+
+	/**
 	 * Retrieve event field markup for a given event-data block.
 	 *
 	 * Defaults to rendering the title if no field attribute is provided.
@@ -1554,18 +1624,31 @@ JS;
 			return '';
 		}
 
+		// Selected-day events use `event_day` only to highlight one date on the
+		// same event page, so the title should link to the parent event rather
+		// than a specific day.
+		$title_url = $event['url'] ?? '';
+		if ( '' !== $title_url && 'selected' === ( $event['standard_type'] ?? '' ) ) {
+			$title_url = remove_query_arg( 'event_day', $title_url );
+		}
+
 		$map = array(
 			'title'    => ! empty( $event['title'] )
 				? sprintf(
-					$link_title && ! empty( $event['url'] ?? '' )
+					$link_title && ! empty( $title_url )
 					? '<span class="ek-event-title--inner"><a href="%1$s" rel="bookmark">%2$s</a></span>'
 					: '<span class="ek-event-title--inner">%2$s</span>',
-					esc_url( $event['url'] ?? '' ),
+					esc_url( $title_url ),
 					esc_html( $event['title'] )
 				)
 				: '',
 			'timeline' => ! empty( $event['datetime'] )
 				? ( function () use ( $event ) {
+				$is_all_day = self::parse_boolean_attribute( $event['allDay'] ?? false )
+					|| self::parse_boolean_attribute( $event['all_day'] ?? false )
+					|| self::parse_boolean_attribute( $event['event_days'][0]['all_day'] ?? false )
+					|| self::parse_boolean_attribute( $event['recurrence_rules'][0]['all_day'] ?? false );
+
 				$start_iso = $event['start_date_iso'] ?? '';
 				$end_iso   = '';
 
@@ -1576,7 +1659,7 @@ JS;
 
 				if ( empty( $end_iso ) && ! empty( $event['event_days'][0]['end_date'] ) ) {
 					$end_dt = new \DateTimeImmutable( $event['event_days'][0]['end_date'], new \DateTimeZone( 'UTC' ) );
-					if ( ! empty( $event['event_days'][0]['all_day'] ) ) {
+					if ( self::parse_boolean_attribute( $event['event_days'][0]['all_day'] ?? false ) ) {
 						$end_dt = $end_dt->modify( '+1 day' )->setTime( 0, 0, 0 );
 					}
 					$end_iso = $end_dt->format( 'Y-m-d\TH:i:s\Z' );
@@ -1590,18 +1673,22 @@ JS;
 					$end_iso = $event['end'];
 				}
 
+				if ( $is_all_day && ! empty( $event['end_real'] ) ) {
+					$end_iso = $event['end_real'];
+				}
+
 				if ( empty( $start_iso ) && ! empty( $event['recurrence_rules'][0]['start_date'] ) ) {
 					$start_dt = new \DateTimeImmutable( $event['recurrence_rules'][0]['start_date'], new \DateTimeZone( 'UTC' ) );
 					$start_iso = $start_dt->format( 'Y-m-d\TH:i:s\Z' );
 				}
 
-				if ( empty( $end_iso ) && ! empty( $event['recurrence_rules'][0]['end_date'] ) ) {
-					$end_dt = new \DateTimeImmutable( $event['recurrence_rules'][0]['end_date'], new \DateTimeZone( 'UTC' ) );
-					if ( ! empty( $event['recurrence_rules'][0]['all_day'] ) ) {
-						$end_dt = $end_dt->modify( '+1 day' )->setTime( 0, 0, 0 );
+					if ( empty( $end_iso ) && ! empty( $event['recurrence_rules'][0]['end_date'] ) ) {
+						$end_dt = new \DateTimeImmutable( $event['recurrence_rules'][0]['end_date'], new \DateTimeZone( 'UTC' ) );
+						if ( self::parse_boolean_attribute( $event['recurrence_rules'][0]['all_day'] ?? false ) ) {
+							$end_dt = $end_dt->modify( '+1 day' )->setTime( 0, 0, 0 );
+						}
+						$end_iso = $end_dt->format( 'Y-m-d\TH:i:s\Z' );
 					}
-					$end_iso = $end_dt->format( 'Y-m-d\TH:i:s\Z' );
-				}
 
 				// Absolute fallback to wp_start_ts/wp_end_ts if provided.
 				if ( empty( $start_iso ) && ! empty( $event['wp_start_ts'] ) ) {
@@ -1615,16 +1702,60 @@ JS;
 					?? $event['timezone_display']
 					?? wp_timezone_string();
 
-				$is_all_day = ! empty( $event['allDay'] )
-					|| ! empty( $event['event_days'][0]['all_day'] )
-					|| ! empty( $event['recurrence_rules'][0]['all_day'] );
+				$all_day_attrs = '';
+					if ( $is_all_day && ! empty( $start_iso ) ) {
+						$event_id         = absint( $event['event_id'] ?? ( $event['id'] ?? 0 ) );
+						$stored_timezone  = $event_id ? (string) get_post_meta( $event_id, 'timezone', true ) : '';
+						$inferred_timezone = function_exists( 'eventkoi_infer_all_day_timezone_from_utc_range' )
+							? eventkoi_infer_all_day_timezone_from_utc_range( $start_iso, $end_iso )
+							: '';
+						$all_day_timezone = (string) ( $event['all_day_timezone'] ?? ( $event['event_days'][0]['all_day_timezone'] ?? '' ) );
+						$all_day_start_date = (string) ( $event['all_day_start_date'] ?? ( $event['event_days'][0]['all_day_start_date'] ?? '' ) );
+						$all_day_end_date   = (string) ( $event['all_day_end_date'] ?? ( $event['event_days'][0]['all_day_end_date'] ?? '' ) );
+						if ( '' === $all_day_timezone ) {
+							if ( function_exists( 'eventkoi_all_day_timezone_should_prefer_stored' ) && eventkoi_all_day_timezone_should_prefer_stored( $stored_timezone, $inferred_timezone, $start_iso, $end_iso ) ) {
+								$all_day_timezone = $stored_timezone;
+							} elseif ( '' !== $inferred_timezone ) {
+								$all_day_timezone = $inferred_timezone;
+							} else {
+								$all_day_timezone = $stored_timezone;
+							}
+						}
+						$all_day_timezone = $all_day_timezone ? $all_day_timezone : $tz;
+
+					try {
+						$all_day_tz = new \DateTimeZone( eventkoi_php_timezone( $all_day_timezone ) );
+						$start_day = '' !== $all_day_start_date
+							? new \DateTimeImmutable( $all_day_start_date, $all_day_tz )
+							: ( new \DateTimeImmutable( $start_iso, new \DateTimeZone( 'UTC' ) ) )->setTimezone( $all_day_tz );
+						$end_day = '' !== $all_day_end_date
+							? new \DateTimeImmutable( $all_day_end_date, $all_day_tz )
+							: ( ! empty( $end_iso )
+							? ( new \DateTimeImmutable( $end_iso, new \DateTimeZone( 'UTC' ) ) )->setTimezone( $all_day_tz )
+							: $start_day );
+
+						if ( ! $end_day || $end_day < $start_day || eventkoi_is_single_all_day_span( $start_day->getTimestamp(), $end_day->getTimestamp() ) ) {
+							$end_day = $start_day;
+						}
+
+						$all_day_attrs = sprintf(
+							' data-all-day-start-date="%1$s" data-all-day-end-date="%2$s" data-all-day-tz="%3$s"',
+							esc_attr( $start_day->format( 'Y-m-d' ) ),
+							esc_attr( $end_day->format( 'Y-m-d' ) ),
+							esc_attr( $all_day_tz->getName() )
+						);
+					} catch ( \Exception $e ) {
+						$all_day_attrs = '';
+					}
+				}
 
 				$wrapped = sprintf(
-					'<span class="ek-datetime" data-start="%1$s" data-end="%2$s" data-tz="%3$s" data-all-day="%4$s">%5$s</span>',
+					'<span class="ek-datetime" data-start="%1$s" data-end="%2$s" data-tz="%3$s" data-all-day="%4$s"%5$s>%6$s</span>',
 					esc_attr( $start_iso ),
 					esc_attr( $end_iso ),
 					esc_attr( $tz ),
 					$is_all_day ? '1' : '0',
+					$all_day_attrs,
 					wp_kses_post( $event['datetime'] )
 				);
 
@@ -1634,9 +1765,7 @@ JS;
 			'excerpt'  => ! empty( $event['description'] )
 				? '<div class="ek-event-excerpt--inner ek-event-excerpt-default">' . wp_kses_post( $event['description'] ) . '</div>'
 				: '',
-			'location' => ! empty( $event['location_line'] )
-				? '<div class="ek-event-location--inner">' . esc_html( $event['location_line'] ) . '</div>'
-				: '',
+			'location' => self::render_location_field_value( $event ),
 			'image'    => ! empty( $event['thumbnail'] )
 				? sprintf(
 					'<a href="%1$s" class="ek-event-image-link" rel="bookmark"><img src="%2$s" alt="%3$s" class="rounded-xl w-full h-auto object-cover ek-event-image-default" loading="lazy" decoding="async" /></a>',
@@ -1648,14 +1777,14 @@ JS;
 		);
 
 		$visibility = array(
-			'title'    => $attributes['showTitle'] ?? true,
-			'timeline' => $attributes['showDatetime'] ?? true,
-			'excerpt'  => $attributes['showDescription'] ?? true,
-			'location' => $attributes['showLocation'] ?? true,
-			'image'    => $attributes['showImage'] ?? true,
+			'title'    => array_key_exists( 'showTitle', $attributes ) ? self::parse_boolean_attribute( $attributes['showTitle'] ) : true,
+			'timeline' => array_key_exists( 'showDatetime', $attributes ) ? self::parse_boolean_attribute( $attributes['showDatetime'] ) : true,
+			'excerpt'  => array_key_exists( 'showDescription', $attributes ) ? self::parse_boolean_attribute( $attributes['showDescription'] ) : true,
+			'location' => array_key_exists( 'showLocation', $attributes ) ? self::parse_boolean_attribute( $attributes['showLocation'] ) : true,
+			'image'    => array_key_exists( 'showImage', $attributes ) ? self::parse_boolean_attribute( $attributes['showImage'] ) : true,
 		);
 
-		if ( array_key_exists( $field, $visibility ) && empty( $visibility[ $field ] ) ) {
+		if ( array_key_exists( $field, $visibility ) && ! $visibility[ $field ] ) {
 			return '';
 		}
 
@@ -1668,19 +1797,132 @@ JS;
 		if ( 0 === strpos( $field, 'event_' ) && function_exists( 'eventkoi_get_event_data_options' ) ) {
 			$allowed = eventkoi_get_event_data_options();
 			if ( isset( $allowed[ $field ] ) ) {
-				$event_id = isset( $event['id'] ) ? absint( $event['id'] ) : 0;
-				if ( $event_id > 0 ) {
-					$event_obj = new Event( $event_id );
-					return (string) $event_obj::render_meta( $field );
+					$event_id = isset( $event['event_id'] ) ? absint( $event['event_id'] ) : ( isset( $event['id'] ) ? absint( $event['id'] ) : 0 );
+					if ( $event_id > 0 ) {
+						$event_day_override          = self::get_selected_event_day_context_index( $event, $event_id );
+						$had_event_day_context       = false;
+						$previous_event_day_context  = null;
+						$event_day_context_container = null;
+
+						if ( null !== $event_day_override ) {
+							if ( empty( $GLOBALS['eventkoi_selected_event_day_context'] ) || ! is_array( $GLOBALS['eventkoi_selected_event_day_context'] ) ) {
+								$GLOBALS['eventkoi_selected_event_day_context'] = array();
+							}
+
+							$event_day_context_container = &$GLOBALS['eventkoi_selected_event_day_context'];
+							$had_event_day_context       = array_key_exists( $event_id, $event_day_context_container );
+							$previous_event_day_context  = $had_event_day_context ? $event_day_context_container[ $event_id ] : null;
+							$event_day_context_container[ $event_id ] = $event_day_override;
+						}
+
+						// Per-block PHP date/time format overrides (Event Data block).
+						$ek_date_fmt = isset( $attributes['dateFormat'] ) ? trim( (string) $attributes['dateFormat'] ) : '';
+						$ek_time_fmt = isset( $attributes['timeFormat'] ) ? trim( (string) $attributes['timeFormat'] ) : '';
+						$ek_date_cb  = null;
+						$ek_time_cb  = null;
+						if ( '' !== $ek_date_fmt ) {
+							$ek_date_cb = static function () use ( $ek_date_fmt ) {
+								return $ek_date_fmt;
+							};
+							add_filter( 'eventkoi_resolved_date_format', $ek_date_cb );
+						}
+						if ( '' !== $ek_time_fmt ) {
+							$ek_time_cb = static function () use ( $ek_time_fmt ) {
+								return $ek_time_fmt;
+							};
+							add_filter( 'eventkoi_resolved_time_format', $ek_time_cb );
+						}
+
+						try {
+							$event_obj = new Event( $event_id );
+							$value     = (string) $event_obj::render_meta( $field );
+						} finally {
+							if ( null !== $event_day_override && is_array( $event_day_context_container ) ) {
+								if ( $had_event_day_context ) {
+									$event_day_context_container[ $event_id ] = $previous_event_day_context;
+								} else {
+									unset( $event_day_context_container[ $event_id ] );
+								}
+							}
+
+							if ( $ek_date_cb ) {
+								remove_filter( 'eventkoi_resolved_date_format', $ek_date_cb );
+							}
+							if ( $ek_time_cb ) {
+								remove_filter( 'eventkoi_resolved_time_format', $ek_time_cb );
+							}
+						}
+
+						return $value;
+					}
 				}
 			}
+
+			return '';
 		}
 
-		return '';
-	}
+		/**
+		 * Resolve a selected standard event_days index from a query-loop row.
+		 *
+		 * @param array $event    Event row payload.
+		 * @param int   $event_id Event post ID.
+		 * @return int|null
+		 */
+		private static function get_selected_event_day_context_index( $event, $event_id ) {
+			if ( ! is_array( $event ) || 'standard' !== ( $event['date_type'] ?? '' ) || 'selected' !== ( $event['standard_type'] ?? '' ) ) {
+				return null;
+			}
 
-	/**
-	 * Render a bound paragraph if matched.
+			if ( isset( $event['event_day'] ) && is_numeric( $event['event_day'] ) ) {
+				return absint( $event['event_day'] );
+			}
+
+			if ( ! empty( $event['id'] ) && is_scalar( $event['id'] ) && preg_match( '/-day(\d+)$/', (string) $event['id'], $matches ) ) {
+				return absint( $matches[1] );
+			}
+
+			if ( ! empty( $event['url'] ) && is_scalar( $event['url'] ) ) {
+				$query = wp_parse_url( html_entity_decode( (string) $event['url'], ENT_QUOTES ), PHP_URL_QUERY );
+				if ( is_string( $query ) && '' !== $query ) {
+					$params = array();
+					parse_str( $query, $params );
+					if ( isset( $params['event_day'] ) && is_scalar( $params['event_day'] ) && ctype_digit( (string) $params['event_day'] ) ) {
+						return absint( $params['event_day'] );
+					}
+				}
+			}
+
+			$row_days = isset( $event['event_days'] ) && is_array( $event['event_days'] ) ? array_values( $event['event_days'] ) : array();
+			if ( 1 !== count( $row_days ) || empty( $row_days[0]['start_date'] ) ) {
+				return null;
+			}
+
+			$row_start_ts = strtotime( (string) $row_days[0]['start_date'] );
+			if ( ! $row_start_ts ) {
+				return null;
+			}
+
+			$stored_days = get_post_meta( $event_id, 'event_days', true );
+			if ( empty( $stored_days ) || ! is_array( $stored_days ) ) {
+				return null;
+			}
+
+			foreach ( array_values( $stored_days ) as $index => $day ) {
+				if ( empty( $day['start_date'] ) ) {
+					continue;
+				}
+
+				$day_start_ts = strtotime( (string) $day['start_date'] );
+				if ( $day_start_ts && abs( (int) $day_start_ts - (int) $row_start_ts ) <= 1 ) {
+					return (int) $index;
+				}
+			}
+
+			return null;
+		}
+
+		/**
+		 * Render a bound paragraph if matched.
 	 *
 	 * @param array $block Block array.
 	 * @param Event $event Event instance.
@@ -1742,7 +1984,7 @@ JS;
 	private static function render_calendar_type( $type, $attrs ) {
 		// "Select all calendars" expands at render time so future calendars get
 		// picked up automatically across every page where the block is embedded.
-		if ( ! empty( $attrs['selectAllCalendars'] ) ) {
+		if ( self::parse_boolean_attribute( $attrs['selectAllCalendars'] ?? false ) ) {
 			$attrs['calendars'] = self::get_all_calendar_term_ids();
 		}
 
@@ -1764,14 +2006,14 @@ JS;
 				'context'       => 'block',
 			);
 		} else {
-			$args = array(
-				'calendars'        => $attrs['calendars'] ?? '',
-				'show_image'       => isset( $attrs['showImage'] ) ? 'no' : 'yes',
-				'show_location'    => isset( $attrs['showLocation'] ) ? 'no' : 'yes',
-				'show_description' => isset( $attrs['showDescription'] ) ? 'no' : 'yes',
-				'border_style'     => $attrs['borderStyle'] ?? 'dotted',
-				'border_size'      => $attrs['borderSize'] ?? '2px',
-			);
+				$args = array(
+					'calendars'        => $attrs['calendars'] ?? '',
+					'show_image'       => array_key_exists( 'showImage', $attrs ) && ! self::parse_boolean_attribute( $attrs['showImage'] ) ? 'no' : 'yes',
+					'show_location'    => array_key_exists( 'showLocation', $attrs ) && ! self::parse_boolean_attribute( $attrs['showLocation'] ) ? 'no' : 'yes',
+					'show_description' => array_key_exists( 'showDescription', $attrs ) && ! self::parse_boolean_attribute( $attrs['showDescription'] ) ? 'no' : 'yes',
+					'border_style'     => $attrs['borderStyle'] ?? 'dotted',
+					'border_size'      => $attrs['borderSize'] ?? '2px',
+				);
 		}
 
 		$args['layout'] = $attrs['layout'] ?? array();

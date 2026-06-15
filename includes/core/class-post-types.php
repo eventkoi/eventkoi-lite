@@ -26,6 +26,10 @@ class Post_Types {
 		add_action( 'init', array( __CLASS__, 'register_post_types' ), 5 );
 		add_action( 'eventkoi_after_register_post_type', array( __CLASS__, 'maybe_flush_rewrite_rules' ) );
 		add_action( 'eventkoi_flush_rewrite_rules', array( __CLASS__, 'flush_rewrite_rules' ) );
+		// Allow EventKoi orderby values through the core wp/v2/eventkoi_event
+		// endpoint so the Event Query Loop block's editor preview doesn't 400.
+		add_filter( 'rest_eventkoi_event_collection_params', array( __CLASS__, 'extend_rest_orderby_enum' ), 10, 1 );
+		add_filter( 'rest_eventkoi_event_query', array( __CLASS__, 'translate_rest_orderby_query' ), 10, 2 );
 
 		add_filter( 'get_edit_post_link', array( __CLASS__, 'update_edit_event_link' ), 10, 2 );
 		add_filter( 'get_edit_term_link', array( __CLASS__, 'update_edit_calendar_link' ), 10, 4 );
@@ -186,6 +190,10 @@ class Post_Types {
 	 * @param int    $post_id Post ID.
 	 */
 	public static function update_edit_event_link( $link, $post_id ) {
+		if ( ! empty( $_GET['eventkoi_native'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only link routing flag.
+			return $link;
+		}
+
 		$event = new \EventKoi\Core\Event( $post_id );
 
 		if ( $event::get_id() ) {
@@ -204,10 +212,69 @@ class Post_Types {
 	 * @return string
 	 */
 	public static function update_edit_calendar_link( $location, $term_id, $taxonomy ) {
+		if ( ! empty( $_GET['eventkoi_native'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only link routing flag.
+			return $location;
+		}
+
 		if ( 'event_cal' === $taxonomy ) {
 			return admin_url( 'admin.php?page=eventkoi#/calendars/' . absint( $term_id ) . '/main' );
 		}
 
 		return $location;
+	}
+
+	/**
+	 * Extend wp/v2/eventkoi_event orderby enum to accept EventKoi values.
+	 *
+	 * @param array $params Collection params.
+	 * @return array
+	 */
+	public static function extend_rest_orderby_enum( $params ) {
+		if ( ! isset( $params['orderby']['enum'] ) || ! is_array( $params['orderby']['enum'] ) ) {
+			return $params;
+		}
+		$extra = array( 'start_date', 'event_start', 'upcoming', 'past' );
+		$params['orderby']['enum'] = array_values( array_unique( array_merge( $params['orderby']['enum'], $extra ) ) );
+		return $params;
+	}
+
+	/**
+	 * Translate EventKoi-only orderby values into WP_Query args at the REST
+	 * layer so editor previews return meaningful order.
+	 *
+	 * @param array            $args    WP_Query args.
+	 * @param \WP_REST_Request $request REST request.
+	 * @return array
+	 */
+	public static function translate_rest_orderby_query( $args, $request ) {
+		$orderby = (string) $request->get_param( 'orderby' );
+		if ( 'start_date' === $orderby || 'event_start' === $orderby || 'upcoming' === $orderby ) {
+			$args['meta_key'] = 'start_timestamp';
+			$args['orderby']  = 'meta_value_num';
+			if ( 'upcoming' === $orderby ) {
+				$args['order']      = 'ASC';
+				$args['meta_query'] = array(
+					array(
+						'key'     => 'start_timestamp',
+						'value'   => time(),
+						'compare' => '>=',
+						'type'    => 'NUMERIC',
+					),
+				);
+			}
+		} elseif ( 'past' === $orderby ) {
+			$args['meta_key']   = 'start_timestamp';
+			$args['orderby']    = 'meta_value_num';
+			$args['order']      = 'DESC';
+			$args['meta_query'] = array(
+				array(
+					'key'     => 'start_timestamp',
+					'value'   => time(),
+					'compare' => '<',
+					'type'    => 'NUMERIC',
+				),
+			);
+		}
+		return $args;
 	}
 }

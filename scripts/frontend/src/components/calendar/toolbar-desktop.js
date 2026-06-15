@@ -28,6 +28,9 @@ export function ToolbarDesktop(props) {
     setPage,
     timezone,
     timeFormat,
+    searchScope,
+    onSearchScopePrev,
+    onSearchScopeNext,
     inputRef,
   } = props;
   const desktopRef = useRef(null);
@@ -62,10 +65,10 @@ export function ToolbarDesktop(props) {
       return (
         <div
           ref={desktopRef}
-          className="hidden lg:flex flex-col gap-3 w-full min-w-0"
+          className="ek-desktop-only flex-col gap-3 w-full min-w-0"
         >
           <div className="flex items-center justify-between gap-2 min-w-0">
-            <div className="flex items-center gap-2 min-w-0 overflow-hidden">
+            <div className="flex items-center gap-2 min-w-0 overflow-visible">
               <Skeleton className="h-10 w-24 max-w-full rounded-md" />
               <Skeleton className="h-10 w-32 max-w-full rounded-md" />
               <Skeleton className="h-10 w-20 max-w-full rounded-md" />
@@ -80,10 +83,10 @@ export function ToolbarDesktop(props) {
     return (
       <div
         ref={desktopRef}
-        className="hidden lg:flex flex-nowrap items-center justify-between gap-3 w-full min-w-0"
+        className="ek-desktop-only flex-nowrap items-center justify-between gap-3 w-full min-w-0"
       >
         {/* Left skeletons: nav + popover + today + search */}
-        <div className="flex items-center gap-2 flex-nowrap min-w-0 flex-1 overflow-hidden">
+        <div className="flex items-center gap-2 flex-nowrap min-w-0 flex-1 overflow-visible">
           <Skeleton className="h-10 w-24 max-w-full rounded-md" /> {/* NavControls */}
           <Skeleton className="h-10 w-32 max-w-full rounded-md" /> {/* Popover */}
           <Skeleton className="h-10 w-20 max-w-full rounded-md" /> {/* Today */}
@@ -98,9 +101,9 @@ export function ToolbarDesktop(props) {
 
   if (isTight) {
     return (
-      <div ref={desktopRef} className="hidden lg:flex flex-col gap-3 w-full min-w-0">
+      <div ref={desktopRef} className="ek-desktop-only flex-col gap-3 w-full min-w-0">
         <div className="flex items-center justify-between gap-2 min-w-0">
-          <div className="flex items-center gap-2 min-w-0 overflow-hidden">
+          <div className="flex items-center gap-2 min-w-0 overflow-visible">
             <NavControls
               calendarApi={calendarApi}
               currentDate={currentDate}
@@ -144,6 +147,9 @@ export function ToolbarDesktop(props) {
             setPage={setPage}
             timezone={timezone}
             timeFormat={timeFormat}
+            searchScope={searchScope}
+            onSearchScopePrev={onSearchScopePrev}
+            onSearchScopeNext={onSearchScopeNext}
           />
         </div>
       </div>
@@ -153,10 +159,10 @@ export function ToolbarDesktop(props) {
   return (
     <div
       ref={desktopRef}
-      className="hidden lg:flex flex-nowrap items-center justify-between text-sm gap-3 w-full min-w-0"
+      className="ek-desktop-only flex-nowrap items-center justify-between text-sm gap-3 w-full min-w-0"
     >
       {/* Left: nav + today + popover + search */}
-      <div className="flex items-center gap-2 flex-nowrap min-w-0 flex-1 overflow-hidden">
+      <div className="flex items-center gap-2 flex-nowrap min-w-0 flex-1 overflow-visible">
         <NavControls
           calendarApi={calendarApi}
           currentDate={currentDate}
@@ -195,6 +201,9 @@ export function ToolbarDesktop(props) {
             setPage={setPage}
             timezone={timezone}
             timeFormat={timeFormat}
+            searchScope={searchScope}
+            onSearchScopePrev={onSearchScopePrev}
+            onSearchScopeNext={onSearchScopeNext}
           />
         </div>
       </div>

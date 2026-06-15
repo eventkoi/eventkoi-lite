@@ -36,7 +36,7 @@ export function OrderNavBack({ order, setOrder }) {
         >
           <Link to="/tickets/orders">
             <ChevronLeft className="mr-2 h-4 w-4" />
-            Back to all orders
+            {__("Back to all orders", "eventkoi-lite")}
           </Link>
         </Button>
       )}

@@ -68,6 +68,10 @@ class Order {
 			return array();
 		}
 
+		$date_format     = \eventkoi_resolved_date_format();
+		$time_format     = \eventkoi_resolved_time_format();
+		$datetime_format = trim( $date_format . ', ' . $time_format, ', ' );
+
 		$notes = DB::table( 'eventkoi_order_notes' )
 			->where( 'order_id', $order_id )
 			->orderBy( 'created', 'asc' )
@@ -90,12 +94,13 @@ class Order {
 			}
 
 			// Format timestamps.
+			$created = absint( $note->created );
 			$notes[ $key ]->formatted = array(
 				'created'     => esc_html(
-					gmdate( 'j F Y, g:ia', $note->created )
+					wp_date( $datetime_format, $created, wp_timezone() )
 				),
 				'created_gmt' => esc_html(
-					gmdate( 'j F Y, g:ia', $note->created )
+					gmdate( $datetime_format, $created )
 				),
 			);
 		}

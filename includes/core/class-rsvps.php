@@ -39,6 +39,131 @@ class Rsvps {
 	}
 
 	/**
+	 * Get custom RSVP field definitions, registered via the
+	 * `eventkoi_rsvp_fields` filter and normalized to a safe shape.
+	 *
+	 * @param int $event_id Optional event ID for per-event fields.
+	 * @return array[] List of { key, label, type, required, options, placeholder }.
+	 */
+	public static function get_custom_fields( $event_id = 0 ) {
+		$allowed_types = array( 'text', 'email', 'tel', 'number', 'textarea', 'select', 'checkbox' );
+		$raw           = apply_filters( 'eventkoi_rsvp_fields', array(), absint( $event_id ) );
+		$fields        = array();
+
+		foreach ( (array) $raw as $field ) {
+			$key = sanitize_key( $field['key'] ?? '' );
+			if ( ! $key || in_array( $key, array( 'name', 'email', 'status', 'guests' ), true ) ) {
+				continue;
+			}
+
+			$type = sanitize_key( $field['type'] ?? 'text' );
+			if ( ! in_array( $type, $allowed_types, true ) ) {
+				$type = 'text';
+			}
+
+			$options = array();
+			if ( 'select' === $type ) {
+				foreach ( (array) ( $field['options'] ?? array() ) as $option ) {
+					$option = sanitize_text_field( $option );
+					if ( '' !== $option ) {
+						$options[] = $option;
+					}
+				}
+			}
+
+			$fields[ $key ] = array(
+				'key'         => $key,
+				'label'       => sanitize_text_field( $field['label'] ?? $key ),
+				'type'        => $type,
+				'required'    => ! empty( $field['required'] ),
+				'options'     => $options,
+				'placeholder' => sanitize_text_field( $field['placeholder'] ?? '' ),
+			);
+		}
+
+		return array_values( $fields );
+	}
+
+	/**
+	 * Sanitize submitted custom field values against the registered definitions.
+	 *
+	 * @param array $values   Raw submitted values keyed by field key.
+	 * @param int   $event_id Optional event ID for per-event fields.
+	 * @return array|\WP_Error Sanitized values, or an error when a required field is empty.
+	 */
+	public static function sanitize_custom_field_values( $values, $event_id = 0 ) {
+		$values    = is_array( $values ) ? $values : array();
+		$sanitized = array();
+
+		foreach ( self::get_custom_fields( $event_id ) as $field ) {
+			$key = $field['key'];
+			$raw = $values[ $key ] ?? '';
+
+			switch ( $field['type'] ) {
+				case 'email':
+					$value = sanitize_email( $raw );
+					break;
+				case 'number':
+					$value = '' === $raw ? '' : (string) floatval( $raw );
+					break;
+				case 'checkbox':
+					$value = $raw ? '1' : '';
+					break;
+				case 'select':
+					$value = in_array( $raw, $field['options'], true ) ? $raw : '';
+					break;
+				case 'textarea':
+					$value = sanitize_textarea_field( $raw );
+					break;
+				default:
+					$value = sanitize_text_field( $raw );
+			}
+
+			if ( $field['required'] && '' === trim( (string) $value ) ) {
+				return new \WP_Error(
+					'eventkoi_rsvp_missing_fields',
+					/* translators: %s: field label */
+					sprintf( __( '%s is required.', 'eventkoi-lite' ), $field['label'] ),
+					array( 'status' => 400 )
+				);
+			}
+
+			if ( '' !== $value ) {
+				$sanitized[ $key ] = $value;
+			}
+		}
+
+		return $sanitized;
+	}
+
+	/**
+	 * Decode custom field values stored on an RSVP row.
+	 *
+	 * @param object|null $row RSVP database row.
+	 * @return array
+	 */
+	public static function get_row_fields( $row ) {
+		if ( empty( $row->meta ) ) {
+			return array();
+		}
+
+		$meta = json_decode( (string) $row->meta, true );
+		if ( ! is_array( $meta ) || empty( $meta['fields'] ) || ! is_array( $meta['fields'] ) ) {
+			return array();
+		}
+
+		$fields = array();
+		foreach ( $meta['fields'] as $key => $value ) {
+			$key = sanitize_key( $key );
+			if ( $key && is_scalar( $value ) ) {
+				$fields[ $key ] = sanitize_text_field( (string) $value );
+			}
+		}
+
+		return $fields;
+	}
+
+	/**
 	 * Create or update an RSVP.
 	 *
 	 * @param array $args RSVP data.
@@ -52,6 +177,8 @@ class Rsvps {
 		$status      = isset( $args['status'] ) ? sanitize_key( $args['status'] ) : 'going';
 		$guests      = isset( $args['guests'] ) ? absint( $args['guests'] ) : 0;
 		$user_id     = isset( $args['user_id'] ) ? absint( $args['user_id'] ) : 0;
+		$fields      = isset( $args['fields'] ) && is_array( $args['fields'] ) ? $args['fields'] : array();
+		$meta_json   = $fields ? wp_json_encode( array( 'fields' => $fields ) ) : null;
 
 		if ( ! $event_id || ! $email || ! $name ) {
 			return new \WP_Error( 'eventkoi_rsvp_missing_fields', __( 'Missing RSVP fields.', 'eventkoi-lite' ), array( 'status' => 400 ) );
@@ -180,6 +307,7 @@ class Rsvps {
 						'email'         => $email ? $email : $existing->email,
 						'status'        => $status,
 						'guests'        => $guests,
+						'meta'          => $meta_json,
 						'checkin_token' => $updated_token,
 						'checkin_status' => $existing->checkin_status ?? 'none',
 						'updated'       => $now,
@@ -220,6 +348,7 @@ class Rsvps {
 				'email'         => $email,
 				'status'        => $status,
 				'guests'        => $guests,
+				'meta'          => $meta_json,
 				'checkin_token' => $checkin_token,
 				'checked_in'    => null,
 				'checked_in_count' => null,
@@ -369,6 +498,56 @@ class Rsvps {
 			->select( 'status', 'guests' )
 			->where( 'event_id', $event_id )
 			->where( 'instance_ts', $instance_ts )
+			->getAll();
+
+		$summary = array(
+			'going'     => 0,
+			'maybe'     => 0,
+			'not_going' => 0,
+			'cancelled' => 0,
+			'used'      => 0,
+			'total'     => 0,
+		);
+
+		if ( ! empty( $rows ) ) {
+			foreach ( $rows as $row ) {
+				$status = isset( $row->status ) ? sanitize_key( $row->status ) : '';
+				$guests = absint( $row->guests ?? 0 );
+
+				if ( isset( $summary[ $status ] ) ) {
+					++$summary[ $status ];
+				}
+
+				if ( 'going' === $status ) {
+					$summary['used'] += 1 + $guests;
+				}
+			}
+		}
+
+		$summary['total'] = $summary['going'] + $summary['maybe'] + $summary['not_going'] + $summary['cancelled'];
+
+		return $summary;
+	}
+
+	/**
+	 * Get RSVP summary counts across every RSVP row for an event.
+	 *
+	 * This is used for standard single/continuous events where an event date edit
+	 * should not split capacity or attendee state by the old start timestamp.
+	 *
+	 * @param int $event_id Event ID.
+	 * @return array
+	 */
+	public static function get_summary_for_event( $event_id ) {
+		$event_id = absint( $event_id );
+
+		if ( ! $event_id ) {
+			return array();
+		}
+
+		$rows = DB::table( 'eventkoi_rsvps' )
+			->select( 'status', 'guests' )
+			->where( 'event_id', $event_id )
 			->getAll();
 
 		$summary = array(
@@ -849,52 +1028,43 @@ class Rsvps {
 
 		$event_url = self::get_event_url( $event_id, $instance_ts );
 
-		$event_timestamp     = $instance_ts ? absint( $instance_ts ) : absint( get_post_meta( $event_id, 'start_timestamp', true ) );
-		$event_end_timestamp = absint( get_post_meta( $event_id, 'end_timestamp', true ) );
+		$schedule            = self::get_event_instance_schedule( $event_id, $instance_ts );
+		$event_timestamp     = $schedule['start'];
+		$event_end_timestamp = $schedule['end'];
+		$is_all_day          = $schedule['all_day'];
 
-		new Event( $event_id );
-		$date_type = Event::get_date_type();
-
-		if ( $event_timestamp && 'recurring' === $date_type && $instance_ts ) {
-			$rules = Event::get_recurrence_rules();
-
-			if ( ! empty( $rules ) ) {
-				foreach ( $rules as $rule ) {
-					$rule_start = ! empty( $rule['start_date'] ) ? strtotime( $rule['start_date'] . ' UTC' ) : null;
-					$rule_end   = ! empty( $rule['end_date'] ) ? strtotime( $rule['end_date'] . ' UTC' ) : null;
-					$duration   = ( $rule_start && $rule_end && $rule_end > $rule_start ) ? ( $rule_end - $rule_start ) : null;
-
-					if ( $duration ) {
-						$event_end_timestamp = $event_timestamp + $duration;
-						break;
-					}
-				}
-			}
-		}
-
+		$site_timezone      = wp_timezone();
 		$utc_timezone       = new \DateTimeZone( 'UTC' );
 		$date_format        = \eventkoi_resolved_date_format();
 		$time_format        = \eventkoi_resolved_time_format();
-		$event_date         = $event_timestamp ? wp_date( $date_format, $event_timestamp, $utc_timezone ) : '';
-		$event_time         = $event_timestamp ? wp_date( $time_format, $event_timestamp, $utc_timezone ) : '';
-		$event_end_date     = $event_end_timestamp ? wp_date( $date_format, $event_end_timestamp, $utc_timezone ) : '';
-		$event_end_time     = $event_end_timestamp ? wp_date( $time_format, $event_end_timestamp, $utc_timezone ) : '';
+		$event_date         = $event_timestamp ? wp_date( $date_format, $event_timestamp, $site_timezone ) : '';
+		$event_time         = $event_timestamp && ! $is_all_day ? wp_date( $time_format, $event_timestamp, $site_timezone ) : '';
+		$event_end_date     = $event_end_timestamp ? wp_date( $date_format, $event_end_timestamp, $site_timezone ) : '';
+		$event_end_time     = $event_end_timestamp && ! $is_all_day ? wp_date( $time_format, $event_end_timestamp, $site_timezone ) : '';
+		$event_date_utc     = $event_timestamp ? wp_date( $date_format, $event_timestamp, $utc_timezone ) : '';
+		$event_time_utc     = $event_timestamp ? wp_date( $time_format, $event_timestamp, $utc_timezone ) : '';
+		$event_end_date_utc = $event_end_timestamp ? wp_date( $date_format, $event_end_timestamp, $utc_timezone ) : '';
+		$event_end_time_utc = $event_end_timestamp ? wp_date( $time_format, $event_end_timestamp, $utc_timezone ) : '';
 		$event_datetime_utc = '';
 		$event_datetime     = '';
 
 		if ( $event_timestamp ) {
 			if ( $event_end_timestamp ) {
-				$is_same_day        = $event_date === $event_end_date;
+				$is_same_day        = $event_date_utc === $event_end_date_utc;
 				$event_datetime_utc = $is_same_day
-					? sprintf( '%1$s, %2$s — %3$s', $event_date, $event_time, $event_end_time )
-					: sprintf( '%1$s, %2$s — %3$s, %4$s', $event_date, $event_time, $event_end_date, $event_end_time );
+					? sprintf( '%1$s, %2$s — %3$s', $event_date_utc, $event_time_utc, $event_end_time_utc )
+					: sprintf( '%1$s, %2$s — %3$s, %4$s', $event_date_utc, $event_time_utc, $event_end_date_utc, $event_end_time_utc );
 			} else {
-				$event_datetime_utc = sprintf( '%1$s, %2$s', $event_date, $event_time );
+				$event_datetime_utc = sprintf( '%1$s, %2$s', $event_date_utc, $event_time_utc );
 			}
 
-			$event_datetime = $event_end_timestamp
-				? eventkoi_date( 'datetime', $event_timestamp ) . ' — ' . eventkoi_date( 'datetime', $event_end_timestamp )
-				: eventkoi_date( 'datetime', $event_timestamp );
+			$event_datetime = $is_all_day
+				? eventkoi_format_datetime_range( $event_timestamp, $event_end_timestamp, true, array( 'timezone' => $site_timezone ) )
+				: (
+					$event_end_timestamp
+						? eventkoi_date( 'datetime', $event_timestamp ) . ' — ' . eventkoi_date( 'datetime', $event_end_timestamp )
+						: eventkoi_date( 'datetime', $event_timestamp )
+				);
 		}
 		$guest_count    = absint( $guests );
 		$guest_line     = $guest_count ? sprintf( __( 'Guests: %d', 'eventkoi-lite' ), $guest_count ) : '';
@@ -1057,18 +1227,34 @@ class Rsvps {
 				continue;
 			}
 
-			$type = isset( $location['type'] ) ? sanitize_key( $location['type'] ) : 'physical';
-			if ( 'physical' !== $type ) {
+			$type = self::get_location_type( $location, 'inperson' );
+			if ( 'inperson' !== $type ) {
 				continue;
 			}
 
-			$name    = isset( $location['name'] ) ? sanitize_text_field( $location['name'] ) : '';
-			$line1   = isset( $location['address1'] ) ? sanitize_text_field( $location['address1'] ) : '';
-			$line2   = isset( $location['address2'] ) ? sanitize_text_field( $location['address2'] ) : '';
-			$city    = isset( $location['city'] ) ? sanitize_text_field( $location['city'] ) : '';
-			$state   = isset( $location['state'] ) ? sanitize_text_field( $location['state'] ) : '';
-			$zip     = isset( $location['zip'] ) ? sanitize_text_field( $location['zip'] ) : '';
-			$country = isset( $location['country'] ) ? sanitize_text_field( $location['country'] ) : '';
+			$address = isset( $location['address'] ) && is_array( $location['address'] ) ? $location['address'] : array();
+			$name    = self::location_text_value( $location, 'name' );
+			$line1   = self::first_location_text(
+				self::location_text_value( $location, 'address1' ),
+				self::location_text_value( $address, 'streetAddress' )
+			);
+			$line2   = self::location_text_value( $location, 'address2' );
+			$city    = self::first_location_text(
+				self::location_text_value( $location, 'city' ),
+				self::location_text_value( $address, 'addressLocality' )
+			);
+			$state   = self::first_location_text(
+				self::location_text_value( $location, 'state' ),
+				self::location_text_value( $address, 'addressRegion' )
+			);
+			$zip     = self::first_location_text(
+				self::location_text_value( $location, 'zip' ),
+				self::location_text_value( $address, 'postalCode' )
+			);
+			$country = self::first_location_text(
+				self::location_text_value( $location, 'country' ),
+				self::location_text_value( $address, 'addressCountry' )
+			);
 
 			$city_line = implode( ', ', array_filter( array( $city, $state, $zip ) ) );
 			$parts     = array_filter( array( $name, $line1, $line2, $city_line, $country ) );
@@ -1081,6 +1267,114 @@ class Rsvps {
 		}
 
 		return '';
+	}
+
+	/**
+	 * Return the first non-empty location text.
+	 *
+	 * @param string ...$values Values.
+	 * @return string
+	 */
+	private static function first_location_text( ...$values ) {
+		foreach ( $values as $value ) {
+			$value = trim( (string) $value );
+			if ( '' !== $value ) {
+				return $value;
+			}
+		}
+
+		return '';
+	}
+
+	/**
+	 * Get sanitized text from a location row.
+	 *
+	 * @param array  $location Location row.
+	 * @param string $key      Field key.
+	 * @return string
+	 */
+	private static function location_text_value( array $location, $key ) {
+		if ( ! array_key_exists( $key, $location ) ) {
+			return '';
+		}
+
+		$value = $location[ $key ];
+		if ( is_object( $value ) ) {
+			$value = get_object_vars( $value );
+		}
+
+		if ( is_array( $value ) ) {
+			foreach ( array( 'name', 'text', 'url', '@id' ) as $nested_key ) {
+				if ( array_key_exists( $nested_key, $value ) ) {
+					$text = self::location_scalar_text( $value[ $nested_key ] );
+					if ( '' !== $text ) {
+						return $text;
+					}
+				}
+			}
+
+			$texts = array();
+			foreach ( $value as $nested_value ) {
+				$text = self::location_scalar_text( $nested_value );
+				if ( '' !== $text ) {
+					$texts[] = $text;
+				}
+			}
+
+			return implode( ' ', array_unique( $texts ) );
+		}
+
+		return self::location_scalar_text( $value );
+	}
+
+	/**
+	 * Normalize a scalar location value to text.
+	 *
+	 * @param mixed $value Raw value.
+	 * @return string
+	 */
+	private static function location_scalar_text( $value ) {
+		if ( is_array( $value ) || is_object( $value ) ) {
+			return '';
+		}
+
+		return sanitize_text_field( (string) $value );
+	}
+
+	/**
+	 * Normalize EventKoi and raw Schema.org location types.
+	 *
+	 * @param array  $location Location row.
+	 * @param string $default  Optional default normalized type.
+	 * @return string
+	 */
+	private static function get_location_type( array $location, $default = '' ) {
+		$type = sanitize_key( self::location_text_value( $location, 'type' ) );
+		if ( 'physical' === $type ) {
+			return 'inperson';
+		}
+		if ( 'virtual' === $type ) {
+			return 'online';
+		}
+		if ( in_array( $type, array( 'inperson', 'online' ), true ) ) {
+			return $type;
+		}
+		if ( str_contains( $type, 'virtuallocation' ) ) {
+			return 'online';
+		}
+		if ( str_contains( $type, 'place' ) ) {
+			return 'inperson';
+		}
+
+		$schema_type = strtolower( self::location_text_value( $location, '@type' ) );
+		if ( str_contains( $schema_type, 'virtuallocation' ) ) {
+			return 'online';
+		}
+		if ( str_contains( $schema_type, 'place' ) ) {
+			return 'inperson';
+		}
+
+		return sanitize_key( $default );
 	}
 
 	/**
@@ -1172,11 +1466,19 @@ class Rsvps {
 
 		$event_name = self::get_event_title( $event_id, $instance_ts );
 
-		$event_timestamp = $instance_ts ? absint( $instance_ts ) : absint( get_post_meta( $event_id, 'start_timestamp', true ) );
-		$utc_timezone    = new \DateTimeZone( 'UTC' );
-		$date_format     = \eventkoi_resolved_date_format();
-		$time_format     = \eventkoi_resolved_time_format();
-		$event_datetime  = $event_timestamp ? wp_date( $date_format . ' ' . $time_format, $event_timestamp, $utc_timezone ) : '';
+		$schedule            = self::get_event_instance_schedule( $event_id, $instance_ts );
+		$event_timestamp     = $schedule['start'];
+		$event_end_timestamp = $schedule['end'];
+		$is_all_day          = $schedule['all_day'];
+		$date_format         = \eventkoi_resolved_date_format();
+		$time_format         = \eventkoi_resolved_time_format();
+		$event_datetime      = '';
+
+		if ( $event_timestamp ) {
+			$event_datetime = $is_all_day
+				? eventkoi_format_datetime_range( $event_timestamp, $event_end_timestamp, true, array( 'timezone' => wp_timezone() ) )
+				: wp_date( $date_format . ' ' . $time_format, $event_timestamp, wp_timezone() );
+		}
 
 		$guest_line = $guests > 0
 			/* translators: %d: Number of guests. */
@@ -1284,5 +1586,67 @@ class Rsvps {
 			$end_ts = absint( get_post_meta( $event_id, 'start_timestamp', true ) );
 		}
 		return $end_ts;
+	}
+
+	/**
+	 * Resolve instance timestamps plus all-day state for RSVP email rendering.
+	 *
+	 * @param int $event_id    Event ID.
+	 * @param int $instance_ts Instance start timestamp.
+	 * @return array{start:int,end:int,all_day:bool}
+	 */
+	private static function get_event_instance_schedule( $event_id, $instance_ts = 0 ) {
+		$event_id    = absint( $event_id );
+		$instance_ts = absint( $instance_ts );
+
+		if ( ! $event_id ) {
+			return array(
+				'start'   => 0,
+				'end'     => 0,
+				'all_day' => false,
+			);
+		}
+
+		$current_start_timestamp = absint( get_post_meta( $event_id, 'start_timestamp', true ) );
+		$event_timestamp         = $instance_ts ? $instance_ts : $current_start_timestamp;
+		$event_end_timestamp = absint( get_post_meta( $event_id, 'end_timestamp', true ) );
+
+		new Event( $event_id );
+		$date_type      = Event::get_date_type();
+		$first_instance = Event::get_first_instance();
+		$is_all_day     = ! empty( $first_instance['all_day'] );
+
+		if ( 'standard' === $date_type ) {
+			$event_timestamp = $current_start_timestamp;
+			$instance_ts     = 0;
+		}
+
+		if ( $event_timestamp && 'recurring' === $date_type && $instance_ts ) {
+			$rules = Event::get_recurrence_rules();
+
+			if ( ! empty( $rules ) ) {
+				foreach ( $rules as $rule ) {
+					if ( ! is_array( $rule ) ) {
+						continue;
+					}
+
+					$rule_start = ! empty( $rule['start_date'] ) ? strtotime( $rule['start_date'] . ' UTC' ) : null;
+					$rule_end   = ! empty( $rule['end_date'] ) ? strtotime( $rule['end_date'] . ' UTC' ) : null;
+					$duration   = ( $rule_start && $rule_end && $rule_end > $rule_start ) ? ( $rule_end - $rule_start ) : null;
+
+					if ( $duration ) {
+						$event_end_timestamp = $event_timestamp + $duration;
+						$is_all_day          = ! empty( $rule['all_day'] );
+						break;
+					}
+				}
+			}
+		}
+
+		return array(
+			'start'   => $event_timestamp,
+			'end'     => $event_end_timestamp,
+			'all_day' => $is_all_day,
+		);
 	}
 }

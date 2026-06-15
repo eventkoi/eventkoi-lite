@@ -31,6 +31,9 @@ class Settings {
 				'currency' => 'USD',
 			)
 		);
+		$settings['permalinks'] = function_exists( 'eventkoi_get_permalink_structure' )
+			? eventkoi_get_permalink_structure()
+			: array();
 
 		return apply_filters( 'eventkoi_get_settings', $settings );
 	}
@@ -45,6 +48,7 @@ class Settings {
 		do_action( 'eventkoi_before_save_settings', $settings );
 
 		$settings = self::deep_sanitize( $settings );
+		unset( $settings['permalinks'] );
 
 		update_option( 'eventkoi_settings', apply_filters( 'eventkoi_set_settings', $settings ) );
 	}
@@ -70,6 +74,10 @@ class Settings {
 		}
 
 		if ( is_scalar( $data ) ) {
+			if ( self::is_boolean_setting_key( $key ) ) {
+				return rest_sanitize_boolean( $data ) ? '1' : '0';
+			}
+
 			if ( in_array( $key, $rich_text_keys, true ) ) {
 				return wp_kses( $data, self::get_email_template_allowed_tags() );
 			}
@@ -78,6 +86,30 @@ class Settings {
 		}
 
 		return $data;
+	}
+
+	/**
+	 * Whether a settings key stores a boolean-like toggle.
+	 *
+	 * @param string $key Settings key.
+	 * @return bool
+	 */
+	private static function is_boolean_setting_key( string $key ): bool {
+		return in_array(
+			$key,
+			array(
+				'auto_detect_timezone',
+				'auto_updates_enabled',
+				'experimental_tickets_enabled',
+				'rsvp_email_enabled',
+				'ticket_email_enabled',
+				'refund_email_enabled',
+				'admin_email_enabled',
+				'admin_rsvp_email_enabled',
+				'admin_sale_email_enabled',
+			),
+			true
+		);
 	}
 
 	/**

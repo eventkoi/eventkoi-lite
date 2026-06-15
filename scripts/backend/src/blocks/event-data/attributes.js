@@ -17,6 +17,14 @@ export const attributes = {
     type: "integer",
     default: 0, // 0 = inherit from context; >0 = override with specific event
   },
+  dateFormat: {
+    type: "string",
+    default: "", // PHP date format override; blank = use global EventKoi setting.
+  },
+  timeFormat: {
+    type: "string",
+    default: "", // PHP time format override; blank = use global EventKoi setting.
+  },
 };
 
 export default { attributes };

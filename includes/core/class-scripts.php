@@ -112,31 +112,37 @@ class Scripts {
 		}
 
 		$params = array(
-			'is_admin'          => current_user_can( 'manage_options' ),
-			'admin_page'        => admin_url( 'admin.php?page=eventkoi' ),
-			'demo_event_id'     => (int) get_option( 'eventkoi_demo_event_id', 0 ),
-			'default_cal_id'    => (int) get_option( 'eventkoi_default_event_cal', 0 ),
-			'version'           => EVENTKOI_VERSION,
-			'api'               => EVENTKOI_API,
-			'rest_url'          => esc_url_raw( rest_url( EVENTKOI_API ) ),
-			'event'             => $event ? $event::get_meta() : array(),
-			'ical'              => $event ? $event::get_ical() : '',
-			'no_events'         => __( 'No events were found.', 'eventkoi-lite' ),
-			'timezone'          => wp_timezone_string(),
-			'timezone_offset'   => ( get_option( 'gmt_offset' ) ?? 0 ) * 3600,
-			'date_format'       => \eventkoi_resolved_date_format(),
-			'time_format_string'=> \eventkoi_resolved_time_format(),
-			'gmap'              => array(
+			'is_admin'             => current_user_can( 'manage_options' ),
+			'admin_page'           => admin_url( 'admin.php?page=eventkoi' ),
+			'demo_event_id'        => (int) get_option( 'eventkoi_demo_event_id', 0 ),
+			'default_cal_id'       => \eventkoi_resolve_calendar_id( (int) get_option( 'eventkoi_default_event_cal', 0 ) ),
+			'version'              => EVENTKOI_VERSION,
+			'api'                  => EVENTKOI_API,
+			'rest_url'             => esc_url_raw( rest_url( EVENTKOI_API ) ),
+			'event'                => $event ? $event::get_meta() : array(),
+			'ical'                 => $event ? $event::get_ical() : '',
+			'no_events'            => __( 'No events were found.', 'eventkoi-lite' ),
+			'timezone'             => wp_timezone_string(),
+			'timezone_offset'      => ( get_option( 'gmt_offset' ) ?? 0 ) * 3600,
+			'date_format'          => \eventkoi_resolved_date_format(),
+			'time_format_string'   => \eventkoi_resolved_time_format(),
+			'gmap'                 => array(
 				'api_key'   => $settings['gmap_api_key'] ?? '',
 				'connected' => ! empty( $settings['gmap_connection_status'] ),
 			),
-			'time_format'       => $settings['time_format'] ?? '12',
-			'day_start_time'    => $settings['day_start_time'] ?? '07:00',
-			'locale'            => determine_locale(),
-			'startday'          => empty( $calendar['startday'] ) ? $settings['week_starts_on'] : $calendar['startday'],
-			'auto_detect_timezone' => ! empty( $settings['auto_detect_timezone'] ),
-			'nonce'             => wp_create_nonce( 'wp_rest' ),
-			'rsvp_user'         => $rsvp_user,
+			'time_format'          => $settings['time_format'] ?? '12',
+			'day_start_time'       => $settings['day_start_time'] ?? '07:00',
+			'locale'               => determine_locale(),
+			'startday'             => empty( $calendar['startday'] ) ? $settings['week_starts_on'] : $calendar['startday'],
+			'working_days'         => isset( $settings['working_days'] ) && is_array( $settings['working_days'] )
+				? array_values( array_map( 'intval', $settings['working_days'] ) )
+				: array( 0, 1, 2, 3, 4 ),
+				'auto_detect_timezone' => rest_sanitize_boolean( $settings['auto_detect_timezone'] ?? false ),
+			'nonce'                => wp_create_nonce( 'wp_rest' ),
+			'rsvp_user'            => $rsvp_user,
+			'rsvp_fields'          => Rsvps::get_custom_fields( (int) $event_id ),
+			'checkout_fields'      => Orders::get_checkout_fields( (int) $event_id ),
+			'rsvp_show_name'       => (bool) apply_filters( 'eventkoi_rsvp_show_name_field', true, (int) $event_id ),
 		);
 
 		wp_localize_script(
@@ -168,11 +174,14 @@ class Scripts {
 				$color    = $calendar::get_color();
 
 				$css = sprintf(
-					':root { --fc-event-bg-color: %1$s; --fc-event-border-color: %1$s; }',
+					':root { --fc-event-bg-color: %1$s; --fc-event-border-color: %1$s; --ek-calendar-accent: %1$s; }',
 					esc_attr( $color )
 				);
 
-				wp_add_inline_style( 'eventkoi-frontend', $css );
+				// eventkoi-frontend is only registered in production; in dev
+				// mode (vite) it doesn't exist and wp_add_inline_style would
+				// silently no-op. eventkoi-frontend-tw is always registered.
+				wp_add_inline_style( 'eventkoi-frontend-tw', $css );
 			}
 		}
 	}

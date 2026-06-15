@@ -39,6 +39,16 @@ const dayLabels = {
 
 const themeSlug = eventkoi_params?.theme || "twentytwentyfive";
 const customTemplates = eventkoi_params?.custom_templates || [];
+const cleanPermalinkBase = (value, fallback) => {
+  const slug = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/['"]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return slug || fallback;
+};
 
 export function SettingsOverview() {
   const { settings, setSettings, refreshSettings } = useSettings();
@@ -60,6 +70,12 @@ export function SettingsOverview() {
   const [dateFormat, setDateFormat] = useState(settings?.date_format || "");
   const [timeFormatString, setTimeFormatString] = useState(
     settings?.time_format_string || ""
+  );
+  const [eventBase, setEventBase] = useState(
+    settings?.permalinks?.event_base || "event"
+  );
+  const [calendarBase, setCalendarBase] = useState(
+    settings?.permalinks?.category_base || "calendar"
   );
   const [datePreview, setDatePreview] = useState("");
   const [timePreview, setTimePreview] = useState("");
@@ -121,6 +137,20 @@ export function SettingsOverview() {
   }, [settings?.time_format_string]);
 
   useEffect(() => {
+    const nextEventBase = settings?.permalinks?.event_base || "event";
+    if (nextEventBase !== eventBase) {
+      setEventBase(nextEventBase);
+    }
+  }, [settings?.permalinks?.event_base]);
+
+  useEffect(() => {
+    const nextCalendarBase = settings?.permalinks?.category_base || "calendar";
+    if (nextCalendarBase !== calendarBase) {
+      setCalendarBase(nextCalendarBase);
+    }
+  }, [settings?.permalinks?.category_base]);
+
+  useEffect(() => {
     let cancelled = false;
     const run = async () => {
       try {
@@ -152,7 +182,7 @@ export function SettingsOverview() {
     return () => {
       cancelled = true;
     };
-  }, [dateFormat, timeFormatString]);
+  }, [dateFormat, timeFormatString, settings?.time_format]);
 
   const handleTimeFormatChange = (val) => {
     setTimeFormat(val);
@@ -252,6 +282,27 @@ export function SettingsOverview() {
     saveSettings({ time_format_string: next });
   };
 
+  const commitPermalinks = () => {
+    const nextEventBase = cleanPermalinkBase(eventBase, "event");
+    const nextCalendarBase = cleanPermalinkBase(calendarBase, "calendar");
+    setEventBase(nextEventBase);
+    setCalendarBase(nextCalendarBase);
+
+    if (
+      nextEventBase === (settings?.permalinks?.event_base || "event") &&
+      nextCalendarBase === (settings?.permalinks?.category_base || "calendar")
+    ) {
+      return;
+    }
+
+    saveSettings({
+      permalinks: {
+        event_base: nextEventBase,
+        category_base: nextCalendarBase,
+      },
+    });
+  };
+
   const handleDefaultTemplateChange = (value) => {
     setDefaultTemplate(value);
   };
@@ -267,10 +318,11 @@ export function SettingsOverview() {
 
   return (
     <div className="grid gap-8">
+      {/* Calendar & week */}
       <Box>
         <div className="grid w-full">
           <Panel variant="header">
-            <Heading level={3}>{__("General Settings", "eventkoi-lite")}</Heading>
+            <Heading level={3}>{__("Calendar & week", "eventkoi-lite")}</Heading>
           </Panel>
 
           <Separator />
@@ -296,7 +348,7 @@ export function SettingsOverview() {
                 </SelectContent>
               </Select>
               <div className="text-muted-foreground">
-                Select the day calendars use as the start of the week.
+                {__("The first day of the week in calendar and week views.", "eventkoi-lite")}
               </div>
             </div>
 
@@ -323,7 +375,7 @@ export function SettingsOverview() {
                 </SelectContent>
               </Select>
               <div className="text-muted-foreground">
-                Set the first visible hour in weekly view.
+                {__("The earliest hour shown in week and day views. Earlier hours stay hidden to reduce scrolling.", "eventkoi-lite")}
               </div>
             </div>
 
@@ -357,11 +409,23 @@ export function SettingsOverview() {
                 })}
               </div>
               <div className="text-muted-foreground">
-                Select your working days. These are used for recurring event
-                rules.
+                {__('Shaded in calendar views and used as the default for "every working day" recurring rules.', "eventkoi-lite")}
               </div>
             </div>
+          </Panel>
+        </div>
+      </Box>
 
+      {/* Dates & times */}
+      <Box>
+        <div className="grid w-full">
+          <Panel variant="header">
+            <Heading level={3}>{__("Dates & times", "eventkoi-lite")}</Heading>
+          </Panel>
+
+          <Separator />
+
+          <Panel className="gap-10">
             {/* Time format */}
             <div className="grid gap-2">
               <Label className="text-sm font-medium">{__("Time format", "eventkoi-lite")}</Label>
@@ -375,24 +439,41 @@ export function SettingsOverview() {
                     value="12"
                     className="flex-1 rounded-lg text-center"
                   >
-                    12-hour (AM/PM) clock
+                    {__("12-hour (AM/PM) clock", "eventkoi-lite")}
                   </TabsTrigger>
                   <TabsTrigger
                     value="24"
                     className="flex-1 rounded-lg text-center"
                   >
-                    24-hour clock
+                    {__("24-hour clock", "eventkoi-lite")}
                   </TabsTrigger>
                 </TabsList>
               </Tabs>
               <div className="text-muted-foreground">
-                Select how event times are displayed (e.g. 2:00 PM or 14:00).
+                {__("How event times display across the site (e.g. 2:00 PM or 14:00).", "eventkoi-lite")}
               </div>
             </div>
 
-            {/* Custom PHP date / time format */}
+            {/* Time format (custom) */}
             <div className="grid gap-2">
-              <Label className="text-sm font-medium">Date format</Label>
+              <Label className="text-sm font-medium">{__("Time format (custom)", "eventkoi-lite")}</Label>
+              <Input
+                value={timeFormatString}
+                onChange={(e) => setTimeFormatString(e.target.value)}
+                onBlur={commitTimeFormatString}
+                placeholder={eventkoi_params?.time_format_string || "g:i a"}
+                className="w-[350px]"
+                disabled={isSaving}
+              />
+              <div className="text-muted-foreground text-sm">
+                {timePreview ? `${__("Preview:", "eventkoi-lite")} ${timePreview}. ` : ""}
+                {__("Overrides the toggle above. Leave blank to use the default.", "eventkoi-lite")}
+              </div>
+            </div>
+
+            {/* Custom PHP date format */}
+            <div className="grid gap-2">
+              <Label className="text-sm font-medium">{__("Date format", "eventkoi-lite")}</Label>
               <Input
                 value={dateFormat}
                 onChange={(e) => setDateFormat(e.target.value)}
@@ -403,40 +484,24 @@ export function SettingsOverview() {
               />
               <div className="text-muted-foreground text-sm">
                 {datePreview
-                  ? `Preview: ${datePreview}`
-                  : "Leave blank to use the WordPress default date format."}{" "}
+                  ? `${__("Preview:", "eventkoi-lite")} ${datePreview}`
+                  : __("Leave blank to use the WordPress default date format.", "eventkoi-lite")}{" "}
+                &middot;{" "}
                 <a
                   href="https://wordpress.org/documentation/article/customize-date-and-time-format/"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="underline hover:text-foreground"
                 >
-                  Format reference
+                  {__("Format reference", "eventkoi-lite")}
                 </a>
               </div>
             </div>
 
-            <div className="grid gap-2">
-              <Label className="text-sm font-medium">Time format (custom)</Label>
-              <Input
-                value={timeFormatString}
-                onChange={(e) => setTimeFormatString(e.target.value)}
-                onBlur={commitTimeFormatString}
-                placeholder={eventkoi_params?.time_format_string || "g:i a"}
-                className="w-[350px]"
-                disabled={isSaving}
-              />
-              <div className="text-muted-foreground text-sm">
-                {timePreview
-                  ? `Preview: ${timePreview}`
-                  : "Leave blank to use the WordPress default time format. When set, this overrides the 12/24-hour toggle above."}
-              </div>
-            </div>
-
-            {/* Auto-detect timezone */}
+            {/* Timezone display */}
             <div className="grid gap-2">
               <Label className="text-sm font-medium mb-0">
-                Auto-detect timezone
+                {__("Timezone display", "eventkoi-lite")}
               </Label>
               <RadioGroup
                 value={autoDetectTimezone}
@@ -447,23 +512,98 @@ export function SettingsOverview() {
                 <label className="flex items-start gap-3 text-sm text-foreground">
                   <RadioGroupItem value="local" id="auto-tz-local" />
                   <span className="leading-snug">
-                    Visitors see event times in their local timezone.
+                    {__("Visitors see event times in their local timezone.", "eventkoi-lite")}
                   </span>
                 </label>
                 <label className="flex items-start gap-3 text-sm text-foreground">
                   <RadioGroupItem value="site" id="auto-tz-site" />
                   <span className="leading-snug">
-                    Event times use the site&apos;s timezone.
+                    {__("Event times use the site's timezone.", "eventkoi-lite")}
                   </span>
                 </label>
               </RadioGroup>
+              <div className="text-muted-foreground">
+                {__("Controls whose clock event times follow: the visitor's local time, or your site's fixed timezone.", "eventkoi-lite")}
+              </div>
             </div>
+          </Panel>
+        </div>
+      </Box>
 
+      {/* Event URLs */}
+      <Box>
+        <div className="grid w-full">
+          <Panel variant="header">
+            <Heading level={3}>{__("Event URLs", "eventkoi-lite")}</Heading>
+          </Panel>
+
+          <Separator />
+
+          <Panel className="gap-10">
+            <div className="grid gap-4">
+              <div className="grid gap-6 md:grid-cols-2">
+                <div className="grid gap-2">
+                  <Label htmlFor="event-url-base">{__("Event base", "eventkoi-lite")}</Label>
+                  <Input
+                    id="event-url-base"
+                    value={eventBase}
+                    onChange={(e) => setEventBase(e.target.value)}
+                    onBlur={commitPermalinks}
+                    placeholder="event"
+                    className="max-w-[350px]"
+                    disabled={isSaving}
+                  />
+                  <div className="text-muted-foreground text-sm">
+                    {`${eventkoi_params.site_url}/${cleanPermalinkBase(
+                      eventBase,
+                      "event"
+                    )}/sample-event/`}
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="calendar-url-base">
+                    {__("Calendar base", "eventkoi-lite")}
+                  </Label>
+                  <Input
+                    id="calendar-url-base"
+                    value={calendarBase}
+                    onChange={(e) => setCalendarBase(e.target.value)}
+                    onBlur={commitPermalinks}
+                    placeholder="calendar"
+                    className="max-w-[350px]"
+                    disabled={isSaving}
+                  />
+                  <div className="text-muted-foreground text-sm">
+                    {`${eventkoi_params.site_url}/${cleanPermalinkBase(
+                      calendarBase,
+                      "calendar"
+                    )}/default-calendar/`}
+                  </div>
+                </div>
+              </div>
+              <div className="text-muted-foreground">
+                {__("Changes to URL bases take effect after the next page load.", "eventkoi-lite")}
+              </div>
+            </div>
+          </Panel>
+        </div>
+      </Box>
+
+      {/* Single event pages */}
+      <Box>
+        <div className="grid w-full">
+          <Panel variant="header">
+            <Heading level={3}>{__("Single event pages", "eventkoi-lite")}</Heading>
+          </Panel>
+
+          <Separator />
+
+          <Panel className="gap-10">
             {/* Default event template */}
             <div className="grid gap-2">
               <Label htmlFor="default-event-template">
                 <span className="inline-flex items-center gap-2">
-                  Default event template
+                  {__("Default event template", "eventkoi-lite")}
                   <ProBadge />
                 </span>
               </Label>
@@ -488,7 +628,7 @@ export function SettingsOverview() {
                 </SelectContent>
               </Select>
               <div className="text-muted-foreground">
-                Choose the template used for all event pages by default.
+                {__("Applied to every event page unless overridden on the event itself.", "eventkoi-lite")}
               </div>
               <a
                 href={templateEditorUrl}
@@ -497,8 +637,8 @@ export function SettingsOverview() {
                 className="text-sm text-primary underline hover:text-primary/80 transition"
               >
                 {defaultTemplate && defaultTemplate !== "default"
-                  ? "Edit in Site Editor"
-                  : "View/edit templates"}
+                  ? __("Edit in Site Editor", "eventkoi-lite")
+                  : __("View/edit templates", "eventkoi-lite")}
               </a>
             </div>
             <ProLaunch

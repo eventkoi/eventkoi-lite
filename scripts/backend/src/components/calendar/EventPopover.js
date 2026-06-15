@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -26,7 +27,7 @@ import {
   WhatsappIcon,
   XIcon,
 } from "@/icons";
-import { normalizeTimeZone } from "@/lib/date-utils";
+import { normalizeTimeZone, wpToLuxonFormat } from "@/lib/date-utils";
 import {
   Calendar,
   CheckCheck,
@@ -41,39 +42,297 @@ import { DateTime } from "luxon";
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 
-function formatTime(iso, tz = "utc", locale, timeFormat) {
-  // Fallbacks from WP params
+function formatTime(iso, tz = "utc", locale, timeFormatPref) {
   const effectiveLocale =
     locale || eventkoi_params?.locale?.replace("_", "-") || "en";
-  const effectiveFormat = timeFormat || eventkoi_params?.time_format || "12";
+
+  const pref = timeFormatPref || eventkoi_params?.time_format || "12";
+  const wpTimeFormatRaw =
+    eventkoi_params?.time_format_string || (pref === "24" ? "H:i" : "g:i a");
+  const luxonTimeFormat = wpToLuxonFormat(wpTimeFormatRaw);
 
   const dt = DateTime.fromISO(iso, {
     zone: tz === "utc" ? "UTC" : normalizeTimeZone(tz),
   }).setLocale(effectiveLocale);
 
-  return effectiveFormat === "24"
-    ? dt.toFormat("HH:mm")
-    : dt.toFormat("h:mma").toLowerCase().replace(":00", "");
+  if (!dt.isValid) {
+    return "";
+  }
+
+  let formatted = dt.toFormat(luxonTimeFormat);
+
+  if (wpTimeFormatRaw.includes("A")) {
+    formatted = formatted.replace(/\b(am|pm)\b/g, (m) => m.toUpperCase());
+  } else if (wpTimeFormatRaw.includes("a")) {
+    formatted = formatted.replace(/\b(AM|PM)\b/g, (m) => m.toLowerCase());
+  }
+
+  return formatted;
 }
 
 function formatDate(iso, tz = "utc", locale) {
   const effectiveLocale =
     locale || eventkoi_params?.locale?.replace("_", "-") || "en";
+  const dateFormat = wpToLuxonFormat(eventkoi_params?.date_format || "F j, Y");
 
-  return DateTime.fromISO(iso, {
+  const dt = DateTime.fromISO(iso, {
     zone: tz === "utc" ? "UTC" : normalizeTimeZone(tz),
-  })
-    .setLocale(effectiveLocale)
-    .toLocaleString(DateTime.DATE_MED); // e.g. Mon, Sep 1, 2025
+  }).setLocale(effectiveLocale);
+
+  return dt.isValid ? dt.toFormat(dateFormat) : "";
 }
 
-const formatCalDate = (iso, allDay) => {
-  const d = new Date(iso);
-  if (allDay) return d.toISOString().split("T")[0].replace(/-/g, "");
-  return d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+function formatDateTime(dt, locale) {
+  const effectiveLocale =
+    locale || eventkoi_params?.locale?.replace("_", "-") || "en";
+  const dateFormat = wpToLuxonFormat(eventkoi_params?.date_format || "F j, Y");
+
+  return dt?.isValid ? dt.setLocale(effectiveLocale).toFormat(dateFormat) : "";
+}
+
+function getAllDayDisplayEnd(start, realEnd, rawEnd) {
+  if (realEnd?.isValid) {
+    const durationMs = realEnd.toMillis() - start.toMillis();
+    return durationMs > 0 && durationMs <= 24 * 60 * 60 * 1000
+      ? start
+      : realEnd;
+  }
+
+  if (!rawEnd?.isValid) {
+    return null;
+  }
+
+  const durationMs = rawEnd.toMillis() - start.toMillis();
+  if (durationMs > 0 && durationMs <= 24 * 60 * 60 * 1000) {
+    return start;
+  }
+
+  return rawEnd.hasSame(start, "day") ? rawEnd : rawEnd.minus({ days: 1 });
+}
+
+function parsePopoverDate(iso, tz = "utc", locale) {
+  if (!iso) {
+    return null;
+  }
+
+  const effectiveLocale =
+    locale || eventkoi_params?.locale?.replace("_", "-") || "en";
+  const dt = DateTime.fromISO(iso, {
+    zone: tz === "utc" ? "UTC" : normalizeTimeZone(tz),
+  }).setLocale(effectiveLocale);
+
+  return dt.isValid ? dt : null;
+}
+
+const parseCalendarExportDate = (value, timezone = "UTC") => {
+  if (!value) {
+    return null;
+  }
+
+  if (value instanceof Date) {
+    const dt = DateTime.fromJSDate(value, {
+      zone: timezone === "utc" ? "UTC" : normalizeTimeZone(timezone),
+    });
+    return dt.isValid ? dt : null;
+  }
+
+  const dt = DateTime.fromISO(String(value), {
+    zone: timezone === "utc" ? "UTC" : normalizeTimeZone(timezone),
+  });
+
+  return dt.isValid ? dt : null;
+};
+
+const getExclusiveAllDayExportEnd = (start, end) => {
+  const startDate = start.startOf("day");
+
+  if (!end || end.toMillis() <= start.toMillis()) {
+    return startDate.plus({ days: 1 });
+  }
+
+  if (end.toMillis() - start.toMillis() <= 24 * 60 * 60 * 1000) {
+    return startDate.plus({ days: 1 });
+  }
+
+  const endDate = end.startOf("day");
+
+  if (endDate <= startDate) {
+    return startDate.plus({ days: 1 });
+  }
+
+  return end.equals(endDate) ? endDate : endDate.plus({ days: 1 });
+};
+
+const formatTimedCalendarExportDate = (value) => {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+};
+
+const formatGoogleCalendarDates = (event, timezone = "UTC") => {
+  if (event.allDay) {
+    if (event.all_day_start_date) {
+      const startDate = String(event.all_day_start_date).replace(/-/g, "");
+      const endDate = String(
+        event.all_day_end_exclusive_date ||
+          DateTime.fromISO(event.all_day_end_date || event.all_day_start_date)
+            .plus({ days: 1 })
+            .toISODate()
+      ).replace(/-/g, "");
+
+      return `${startDate}/${endDate}`;
+    }
+
+    const allDayTimezone =
+      event.all_day_timezone || event.allDayTimezone || timezone;
+    const start = parseCalendarExportDate(
+      event.start || event.start_real,
+      allDayTimezone
+    );
+
+    if (!start) {
+      return "";
+    }
+
+    let end = parseCalendarExportDate(event.end, allDayTimezone);
+
+    end = getExclusiveAllDayExportEnd(
+      start,
+      end || parseCalendarExportDate(event.end_real, allDayTimezone)
+    );
+
+    return `${start.toFormat("yyyyMMdd")}/${end.toFormat("yyyyMMdd")}`;
+  }
+
+  const start = formatTimedCalendarExportDate(event.start || event.start_real);
+  const end = formatTimedCalendarExportDate(
+    event.end || event.end_real || event.start || event.start_real
+  );
+
+  if (!start || !end) {
+    return "";
+  }
+
+  return `${start}/${end}`;
+};
+
+const formatOutlookCalendarDates = (event, timezone = "UTC") => {
+  if (event.allDay) {
+    if (event.all_day_start_date) {
+      const endDate =
+        event.all_day_end_exclusive_date ||
+        DateTime.fromISO(event.all_day_end_date || event.all_day_start_date)
+          .plus({ days: 1 })
+          .toISODate();
+
+      return {
+        start: event.all_day_start_date,
+        end: endDate,
+        allDay: true,
+      };
+    }
+
+    const allDayTimezone =
+      event.all_day_timezone || event.allDayTimezone || timezone;
+    const start = parseCalendarExportDate(
+      event.start || event.start_real,
+      allDayTimezone
+    );
+
+    if (!start) {
+      return null;
+    }
+
+    let end = parseCalendarExportDate(event.end, allDayTimezone);
+
+    end = getExclusiveAllDayExportEnd(
+      start,
+      end || parseCalendarExportDate(event.end_real, allDayTimezone)
+    );
+
+    return {
+      start: start.toISODate(),
+      end: end.toISODate(),
+      allDay: true,
+    };
+  }
+
+  const start = new Date(event.start || event.start_real);
+  const end = new Date(
+    event.end || event.end_real || event.start || event.start_real
+  );
+
+  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+    return null;
+  }
+
+  return {
+    start: start.toISOString(),
+    end: end.toISOString(),
+    allDay: false,
+  };
 };
 
 const openWindow = (url) => window.open(url, "_blank", "noopener,noreferrer");
+
+const getCalendarExportTimezone = (timezone) => {
+  return normalizeTimeZone(timezone || eventkoi_params?.timezone || "UTC");
+};
+
+const getEventIcalUrl = (event, timezone = "UTC") => {
+  const source = event?.url || eventkoi_params?.ical || "";
+
+  if (!source) {
+    return "";
+  }
+
+  try {
+    const url = new URL(source, window.location.href);
+
+    url.searchParams.set("ical", "1");
+    url.searchParams.set("tz", getCalendarExportTimezone(timezone));
+
+    const directEventDay =
+      event?.event_day ?? event?.eventDay ?? event?.selected_day_index;
+    const eventDay =
+      directEventDay !== undefined && directEventDay !== null
+        ? String(directEventDay)
+        : String(event?.id || "").match(/-day(\d+)$/)?.[1] || "";
+
+    if (
+      event?.date_type === "standard" &&
+      event?.standard_type === "selected" &&
+      /^\d+$/.test(eventDay)
+    ) {
+      url.searchParams.set("event_day", String(parseInt(eventDay, 10)));
+    }
+
+    return url.toString().replace(/^https?:/i, "webcal:");
+  } catch {
+    return eventkoi_params?.ical || "";
+  }
+};
+
+const getEventPageUrl = (event, timezone = "UTC") => {
+  const source = event?.url || "";
+
+  if (!source) {
+    return "";
+  }
+
+  try {
+    const url = new URL(source, window.location.href);
+
+    url.searchParams.set("tz", getCalendarExportTimezone(timezone));
+    return url.toString();
+  } catch {
+    return source;
+  }
+};
 
 export function EventPopover({
   event,
@@ -94,48 +353,88 @@ export function EventPopover({
     const locale = eventkoi_params?.locale?.replace("_", "-") || "en";
     const timeFormat = eventkoi_params?.time_format || "12";
 
-    // force override: continuous events should NEVER be treated as allDay
     const isContinuous =
       event.date_type === "standard" && event.standard_type === "continuous";
-    const isAllDay = event.allDay && !isContinuous;
+    const isAllDay = Boolean(event.allDay);
+    const isContinuousTimed = isContinuous && !isAllDay;
 
-    // === continuous standard events (show times)
-    if (isContinuous || (event.start_time && event.end_time)) {
+    // === timed events that provide explicit start/end display times
+    if (isContinuousTimed || (!isAllDay && event.start_time && event.end_time)) {
       const startIso = event.start_real || event.start;
       const endIso = event.end_real || event.end;
+      const startDt = parsePopoverDate(startIso, tz, locale);
+      const endDt = parsePopoverDate(endIso, tz, locale);
 
-      if (startIso !== endIso) {
-        return `${formatDate(startIso, tz, locale)}, ${formatTime(
+      if (!startDt) {
+        return "";
+      }
+
+      if (endDt?.isValid && startDt.hasSame(endDt, "day")) {
+        return `${formatDateTime(startDt, locale)}, ${formatTime(
           startIso,
           tz,
           locale,
           timeFormat
-        )} – ${formatDate(endIso, tz, locale)}, ${formatTime(
-          endIso,
+        )} – ${formatTime(endIso, tz, locale, timeFormat)}`;
+      }
+
+      if (endDt?.isValid) {
+        return `${formatDateTime(startDt, locale)}, ${formatTime(
+          startIso,
           tz,
           locale,
           timeFormat
-        )}`;
-      } else {
-        return `${formatDate(startIso, tz, locale)} – ${formatTime(
+        )} – ${formatDateTime(endDt, locale)}, ${formatTime(
           endIso,
           tz,
           locale,
           timeFormat
         )}`;
       }
+
+      return `${formatDateTime(startDt, locale)}, ${formatTime(
+        startIso,
+        tz,
+        locale,
+        timeFormat
+      )}`;
     }
 
     // === pure all-day events
     if (isAllDay) {
-      if (event.start.split("T")[0] !== event.end.split("T")[0]) {
-        return `${formatDate(event.start, tz, locale)} – ${formatDate(
-          event.end_real,
-          tz,
-          locale
-        )}`;
+      const allDayTz = normalizeTimeZone(
+        event.all_day_timezone || event.allDayTimezone || tz
+      );
+      const start = parsePopoverDate(
+        event.all_day_start_date || event.start_real || event.start,
+        allDayTz,
+        locale
+      );
+      const realEnd = parsePopoverDate(
+        event.all_day_end_date || event.end_real,
+        allDayTz,
+        locale
+      );
+      const rawEnd = parsePopoverDate(
+        event.all_day_end_date || event.end,
+        allDayTz,
+        locale
+      );
+
+      if (!start) {
+        return "";
       }
-      return formatDate(event.start, tz, locale);
+
+      const displayEnd = getAllDayDisplayEnd(start, realEnd, rawEnd);
+
+      if (!displayEnd || displayEnd < start || displayEnd.hasSame(start, "day")) {
+        return formatDateTime(start, locale);
+      }
+
+      return `${formatDateTime(start, locale)} – ${formatDateTime(
+        displayEnd,
+        locale
+      )}`;
     }
 
     // === normal timed events
@@ -170,16 +469,35 @@ export function EventPopover({
     const url = new URL("https://www.google.com/calendar/render");
     url.searchParams.set("action", "TEMPLATE");
     url.searchParams.set("text", event.title || "");
-    url.searchParams.set(
-      "dates",
-      `${formatCalDate(event.start, event.allDay)}/${formatCalDate(
-        event.end,
-        event.allDay
-      )}`
-    );
+    const dates = formatGoogleCalendarDates(event, timezone);
+
+    if (!dates) {
+      return;
+    }
+
+    url.searchParams.set("dates", dates);
     url.searchParams.set("details", event.description || "");
     url.searchParams.set("location", location || "");
     url.searchParams.set("output", "xml");
+    openWindow(url.toString());
+  };
+
+  const handleOutlookCal = (baseUrl) => {
+    const dates = formatOutlookCalendarDates(event, timezone);
+
+    if (!dates) {
+      return;
+    }
+
+    const url = new URL(baseUrl);
+    url.searchParams.set("path", "/calendar/action/compose");
+    url.searchParams.set("rru", "addevent");
+    url.searchParams.set("allday", dates.allDay ? "true" : "false");
+    url.searchParams.set("startdt", dates.start);
+    url.searchParams.set("enddt", dates.end);
+    url.searchParams.set("location", location || "");
+    url.searchParams.set("subject", event.title || "");
+    url.searchParams.set("body", event.description || "");
     openWindow(url.toString());
   };
 
@@ -207,6 +525,7 @@ export function EventPopover({
   if (!event || !fixedAnchor) return null;
 
   const calendarContainer = document.querySelector(".fc");
+  const eventPageUrl = getEventPageUrl(event, timezone);
 
   return createPortal(
     <>
@@ -240,7 +559,7 @@ export function EventPopover({
               size="icon"
               variant="ghost"
               className="h-8 w-8 p-0 shadow-none border-none bg-transparent hover:bg-muted/20 cursor-pointer"
-              onClick={() => window.open(event.url, "_self")}
+              onClick={() => window.open(eventPageUrl || event.url, "_self")}
             >
               <Maximize2 className="h-4 w-4" />
             </Button>
@@ -256,7 +575,7 @@ export function EventPopover({
 
           <div className="flex flex-col gap-2 pe-[58px]">
             <a
-              href={event.url}
+              href={eventPageUrl || event.url}
               className="text-base font-semibold leading-snug text-foreground no-underline hover:underline line-clamp-2 block"
             >
               {event.title}
@@ -335,7 +654,13 @@ export function EventPopover({
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={() =>
-                  requestAnimationFrame(() => openWindow(eventkoi_params.ical))
+                  requestAnimationFrame(() => {
+                    const url = getEventIcalUrl(event, timezone);
+
+                    if (url) {
+                      openWindow(url);
+                    }
+                  })
                 }
               >
                 iCalendar
@@ -343,7 +668,7 @@ export function EventPopover({
               <DropdownMenuItem
                 onClick={() =>
                   requestAnimationFrame(() =>
-                    openWindow("https://outlook.office.com/owa/")
+                    handleOutlookCal("https://outlook.office.com/owa/")
                   )
                 }
               >
@@ -352,7 +677,7 @@ export function EventPopover({
               <DropdownMenuItem
                 onClick={() =>
                   requestAnimationFrame(() =>
-                    openWindow("https://outlook.live.com/owa/")
+                    handleOutlookCal("https://outlook.live.com/owa/")
                   )
                 }
               >
@@ -399,6 +724,12 @@ export function EventPopover({
             <DialogTitle className="font-sans text-xl m-0 text-foreground">
               {__("Share this event", "eventkoi-lite")}
             </DialogTitle>
+            <DialogDescription className="sr-only">
+              {__(
+                "Share this event using the options below or copy its link.",
+                "eventkoi-lite"
+              )}
+            </DialogDescription>
           </DialogHeader>
 
           <div className="flex flex-col pt-[30px] pb-[60px] px-[60px]">
@@ -406,32 +737,32 @@ export function EventPopover({
               <ShareLink
                 event={event}
                 name="whatsapp"
-                title="Whatsapp"
+                title={__("WhatsApp", "eventkoi-lite")}
                 icon={<WhatsappIcon />}
               />
               <ShareLink
                 event={event}
                 name="instagram"
-                title="Instagram"
+                title={__("Instagram", "eventkoi-lite")}
                 icon={<InstagramIcon />}
               />
               <ShareLink
                 event={event}
                 name="email"
-                title="Email"
+                title={__("Email", "eventkoi-lite")}
                 icon={<EmailIcon />}
               />
               <ShareLink
                 event={event}
                 name="facebook"
-                title="Facebook"
+                title={__("Facebook", "eventkoi-lite")}
                 icon={<FacebookIcon />}
               />
-              <ShareLink event={event} name="x" title="X" icon={<XIcon />} />
+              <ShareLink event={event} name="x" title={__("X", "eventkoi-lite")} icon={<XIcon />} />
               <ShareLink
                 event={event}
                 name="linkedin"
-                title="Linkedin"
+                title={__("LinkedIn", "eventkoi-lite")}
                 icon={<LinkedinIcon />}
               />
             </div>

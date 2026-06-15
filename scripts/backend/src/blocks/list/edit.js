@@ -41,7 +41,18 @@ export default function Edit({
     id = eventkoi_params.default_cal;
   }
 
-  if (attributes.calendars && attributes.calendars.length > 0) {
+  // Honor "Select all calendars" so editor preview matches the frontend.
+  if (attributes?.selectAllCalendars) {
+    const allCalendarIds = Array.isArray(eventkoi_params?.calendars)
+      ? eventkoi_params.calendars
+          .map((c) => c?.id ?? c?.term_id)
+          .filter((cid) => cid && Number(cid) > 0)
+          .map(String)
+      : [];
+    if (allCalendarIds.length > 0) {
+      id = allCalendarIds.join(",");
+    }
+  } else if (attributes.calendars && attributes.calendars.length > 0) {
     id = attributes.calendars.map(String).join(",");
   }
 

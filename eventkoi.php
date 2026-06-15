@@ -3,7 +3,7 @@
  * Plugin Name:       EventKoi Lite
  * Plugin URI:        https://eventkoi.com
  * Description:       Event and calendar management for WordPress.
- * Version:           1.3.11.0
+ * Version:           1.3.15.0
  * Author:            EventKoi
  * Author URI:        https://eventkoi.com/
  * License:           GPLv2 or later
@@ -11,6 +11,7 @@
  * Text Domain:       eventkoi-lite
  * Domain Path:       /languages
  * Requires at least: 6.7
+ * Tested up to:      7.0
  * Requires PHP:      8.0
  *
  * @package EventKoi
@@ -32,7 +33,7 @@ if ( is_plugin_active( 'eventkoi/eventkoi.php' ) ) {
 }
 
 // Define constants for the plugin.
-define( 'EVENTKOI_VERSION', '1.3.11.0' );
+define( 'EVENTKOI_VERSION', '1.3.15.0' );
 define( 'EVENTKOI_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'EVENTKOI_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
 define( 'EVENTKOI_PLUGIN_FILE', __FILE__ );

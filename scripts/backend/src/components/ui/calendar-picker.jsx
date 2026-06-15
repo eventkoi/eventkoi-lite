@@ -8,6 +8,7 @@ import {
 import { DateTime } from "luxon";
 import { memo, useMemo } from "react";
 import { useNavigation } from "react-day-picker";
+import { __ } from "@wordpress/i18n";
 import { MemoCalendar as Calendar } from "./memo-calendar";
 
 /**
@@ -41,7 +42,7 @@ function CustomCaption({ displayMonth }) {
         <button
           onClick={() => goToMonth(new Date(year - 1, month))}
           className="p-1 hover:bg-muted rounded"
-          aria-label="Previous year"
+          aria-label={__("Previous year", "eventkoi-lite")}
         >
           <ChevronsLeft className="h-4 w-4" />
         </button>
@@ -50,7 +51,7 @@ function CustomCaption({ displayMonth }) {
         <button
           onClick={() => goToMonth(new Date(year, month - 1))}
           className="p-1 hover:bg-muted rounded"
-          aria-label="Previous month"
+          aria-label={__("Previous month", "eventkoi-lite")}
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -64,7 +65,7 @@ function CustomCaption({ displayMonth }) {
         <button
           onClick={() => goToMonth(new Date(year, month + 1))}
           className="p-1 hover:bg-muted rounded"
-          aria-label="Next month"
+          aria-label={__("Next month", "eventkoi-lite")}
         >
           <ChevronRight className="h-4 w-4" />
         </button>
@@ -73,7 +74,7 @@ function CustomCaption({ displayMonth }) {
         <button
           onClick={() => goToMonth(new Date(year + 1, month))}
           className="p-1 hover:bg-muted rounded"
-          aria-label="Next year"
+          aria-label={__("Next year", "eventkoi-lite")}
         >
           <ChevronsRight className="h-4 w-4" />
         </button>
@@ -89,12 +90,20 @@ export const CalendarPicker = memo(function CalendarPicker({
   value,
   onChange,
   className,
+  fallbackMonth,
 }) {
   const { settings } = useSettings();
 
   const defaultMonth = useMemo(() => {
-    return value instanceof Date && !isNaN(value) ? value : new Date();
-  }, [value?.getFullYear(), value?.getMonth()]);
+    if (value instanceof Date && !isNaN(value)) return value;
+    if (fallbackMonth instanceof Date && !isNaN(fallbackMonth)) return fallbackMonth;
+    return new Date();
+  }, [
+    value?.getFullYear(),
+    value?.getMonth(),
+    fallbackMonth?.getFullYear(),
+    fallbackMonth?.getMonth(),
+  ]);
 
   const key = `${defaultMonth.getFullYear()}-${defaultMonth.getMonth()}`;
 
@@ -122,14 +131,6 @@ export const CalendarPicker = memo(function CalendarPicker({
       ? normalizeLocale(eventkoi_params.locale)
       : "en";
 
-  // Generate localized weekday labels using Luxon
-  const weekdays = Array.from({ length: 7 }, (_, i) =>
-    DateTime.now()
-      .setLocale(wpLocale)
-      .set({ weekday: i + 1 })
-      .toFormat("ccc")
-  );
-
   return (
     <div key={key}>
       <Calendar
@@ -143,7 +144,8 @@ export const CalendarPicker = memo(function CalendarPicker({
           Caption: CustomCaption,
         }}
         formatters={{
-          formatWeekdayName: (day) => weekdays[day],
+          formatWeekdayName: (day) =>
+            DateTime.fromJSDate(day).setLocale(wpLocale).toFormat("ccc").toUpperCase(),
         }}
       />
     </div>

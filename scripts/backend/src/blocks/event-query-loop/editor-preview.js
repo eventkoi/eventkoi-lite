@@ -1,6 +1,6 @@
 import apiFetch from "@wordpress/api-fetch";
 import { AlignmentControl, BlockControls } from "@wordpress/block-editor";
-import { useEffect } from "@wordpress/element";
+import { useEffect, useRef } from "@wordpress/element";
 import { __ } from "@wordpress/i18n";
 
 const BLOCK_NAMESPACE = "eventkoi/event-query-loop";
@@ -12,6 +12,42 @@ let activeCount = 0;
 let activeConfig = null;
 const mediaCache = new Map(); // map of pseudo featured_media IDs to thumbnail data.
 let fetchCounter = 0; // increments per API fetch to force unique synthetic IDs.
+
+const fetchFeaturedMediaMap = async (events = []) => {
+  const ids = Array.from(
+    new Set(
+      events
+        .map((evt) => parseInt(evt?.event_id, 10))
+        .filter((id) => Number.isFinite(id) && id > 0)
+    )
+  );
+
+  if (!ids.length) {
+    return {};
+  }
+
+  try {
+    const records = await apiFetch({
+      path: `/wp/v2/eventkoi_event?include=${encodeURIComponent(
+        ids.join(",")
+      )}&per_page=${ids.length}&context=view&_fields=id,featured_media`,
+      __eventkoiProxy: true,
+    });
+
+    const map = {};
+    (Array.isArray(records) ? records : []).forEach((record) => {
+      const recordId = parseInt(record?.id, 10);
+      if (!Number.isFinite(recordId) || recordId <= 0) {
+        return;
+      }
+      map[recordId] = parseInt(record?.featured_media, 10) || 0;
+    });
+
+    return map;
+  } catch (e) {
+    return {};
+  }
+};
 
 /**
  * Middleware: intercept core Query's REST request for eventkoi_event and
@@ -26,12 +62,21 @@ apiFetch.use((options, next) => {
 
   if (options?.path && typeof options.path === "string") {
     const pathStr = options.path;
-    // Bypass single-event fetches and search queries (used by combobox).
-    if (
-      pathStr.match(/\/wp\/v2\/eventkoi_event\/\d+/) ||
-      pathStr.includes("search=")
-    ) {
-      return next(options);
+    // Only bypass the editor combobox lookup request, not query loop fetching.
+    if (pathStr.includes("/wp/v2/eventkoi_event")) {
+      try {
+        const bypassUrl = new URL(pathStr, "https://example.com");
+        const isComboboxLookup =
+          bypassUrl.searchParams.has("search") &&
+          "any" === bypassUrl.searchParams.get("status") &&
+          "edit" === bypassUrl.searchParams.get("context");
+
+        if (isComboboxLookup) {
+          return next(options);
+        }
+      } catch (e) {
+        // Continue to normal handling if URL parsing fails.
+      }
     }
   }
 
@@ -84,13 +129,114 @@ apiFetch.use((options, next) => {
 
   try {
     const url = new URL(path, "https://example.com"); // base required for URL parsing.
+    const rootUrl = window?.wpApiSettings?.root || "/wp-json/";
+    const normalizedRoot = rootUrl.replace(/\/$/, "");
+    const singleMatch = url.pathname.match(/\/wp\/v2\/eventkoi_event\/(\d+)$/);
+
+    // Support core/post-featured-image in editor by serving single post payloads
+    // from the EventKoi preview cache instead of hitting wp/v2 for synthetic IDs.
+    if (singleMatch) {
+      const singleId = singleMatch[1];
+      const cachedMap =
+        typeof window !== "undefined" ? window.__eventkoiEventMap || {} : {};
+      const evt = cachedMap[String(singleId)];
+
+      if (!evt) {
+        return next(options);
+      }
+
+      const syntheticMediaId = Number.parseInt(singleId, 10) + 500000;
+      const sourceEventId = parseInt(evt?.event_id, 10) || 0;
+      const realFeaturedMediaId =
+        parseInt(evt?._eventkoi_featured_media_id, 10) ||
+        (sourceEventId > 0
+          ? parseInt(
+              (typeof window !== "undefined"
+                ? window.__eventkoiFeaturedMediaMap || {}
+                : {})[sourceEventId],
+              10
+            ) || 0
+          : 0);
+      const title = evt?.title?.rendered || evt?.title || "";
+      const featuredMediaId =
+        realFeaturedMediaId || (evt?.thumbnail ? syntheticMediaId : 0);
+      const mediaLink = `${normalizedRoot}/wp/v2/media/${featuredMediaId}`;
+      let embeddedMedia = null;
+
+      if (!realFeaturedMediaId && evt?.thumbnail) {
+        const stubImage = {
+          id: syntheticMediaId,
+          source_url: evt.thumbnail,
+          alt_text: title,
+          title: { rendered: title },
+          caption: { rendered: "" },
+          media_type: "image",
+          mime_type: "image/jpeg",
+          media_details: {
+            width: evt?.thumbnail_width || null,
+            height: evt?.thumbnail_height || null,
+            sizes: {
+              full: {
+                source_url: evt.thumbnail,
+                width: evt?.thumbnail_width || null,
+                height: evt?.thumbnail_height || null,
+              },
+            },
+          },
+        };
+        mediaCache.set(syntheticMediaId, stubImage);
+        embeddedMedia = stubImage;
+      }
+
+      const postObj = {
+        id: Number.parseInt(singleId, 10),
+        type: "eventkoi_event",
+        link: evt?.url || "",
+        title: { rendered: title },
+        excerpt: {
+          rendered: evt?.excerpt?.rendered || evt?.description || "",
+        },
+        content: { rendered: "" },
+        featured_media: featuredMediaId,
+        _eventkoi: evt,
+        _links: {
+          "wp:featuredmedia": featuredMediaId
+            ? [
+                {
+                  href: mediaLink,
+                },
+              ]
+            : [],
+        },
+        _embedded: embeddedMedia
+          ? {
+              "wp:featuredmedia": [embeddedMedia],
+            }
+          : undefined,
+      };
+
+      if (options && typeof options === "object" && options.parse === false) {
+        return Promise.resolve(
+          new Response(JSON.stringify(postObj), {
+            status: 200,
+            headers: {
+              "Content-Type": "application/json",
+            },
+          })
+        );
+      }
+
+      return Promise.resolve(postObj);
+    }
+
     const params = url.searchParams;
 
     const perPage =
       parseInt(params.get("per_page"), 10) || activeConfig.perPage || 6;
     const page = parseInt(params.get("page"), 10) || activeConfig.page || 1;
-    const order = params.get("order") || activeConfig.order || "desc";
-    const orderby = params.get("orderby") || activeConfig.orderBy || "modified";
+    const order = params.get("order") || activeConfig.order || "asc";
+    const orderby =
+      params.get("orderby") || activeConfig.orderBy || "upcoming";
 
     const base = (getApiBase() || "").replace(/\/$/, "");
     const qs = new URLSearchParams({
@@ -98,7 +244,7 @@ apiFetch.use((options, next) => {
       page,
       order,
       orderby,
-      include_instances: activeConfig.includeInstances ? 1 : 0,
+      include_instances: 0,
     });
 
     if (activeConfig.startDate) {
@@ -108,11 +254,7 @@ apiFetch.use((options, next) => {
       qs.set("end_date", stripDate(activeConfig.endDate));
     }
 
-    if (activeConfig.includeInstances && activeConfig.showInstancesForEvent) {
-      if (activeConfig.instanceParentId) {
-        qs.set("parent_event", activeConfig.instanceParentId);
-      }
-    } else if (activeConfig.calendars?.length) {
+    if (activeConfig.calendars?.length) {
       qs.set("id", activeConfig.calendars.join(","));
     }
 
@@ -121,8 +263,6 @@ apiFetch.use((options, next) => {
     const separator = root.includes("rest_route=") ? "&" : "?";
     const apiPath = `${base}/query_events${separator}${qs.toString()}`;
 
-    const rootUrl = window?.wpApiSettings?.root || "/wp-json/";
-    const normalizedRoot = rootUrl.replace(/\/$/, "");
     const normalizedPath = apiPath.replace(/^\//, "");
     const fullUrl = apiPath.startsWith("http")
       ? apiPath
@@ -142,12 +282,13 @@ apiFetch.use((options, next) => {
 
     return fetch(fullUrl, fetchOptions)
       .then((res) => res.json())
-      .then((response) => {
+      .then(async (response) => {
         mediaCache.clear();
         fetchCounter += 1;
 
         const events = response?.events || [];
         const total = response?.total || events.length || 0;
+        const featuredMediaMap = await fetchFeaturedMediaMap(events);
 
         // Map EventKoi events to a minimal WP post shape for Query Loop.
         // Use synthetic IDs so each row is unique and map back to events.
@@ -155,13 +296,20 @@ apiFetch.use((options, next) => {
 
         const posts = events.map((evt, index) => {
           const syntheticMediaId = fetchCounter * 100000 + (index + 1);
+          const syntheticPostId = fetchCounter * 1000000 + (index + 1);
           const rawId = evt?.id || evt?.event_id;
-          const id = rawId ? String(rawId) : String(syntheticMediaId);
+          const sourceEventId = parseInt(evt?.event_id, 10) || 0;
+          const realFeaturedMediaId = sourceEventId
+            ? parseInt(featuredMediaMap[sourceEventId], 10) || 0
+            : 0;
+          const id = syntheticPostId;
           const title = evt?.title?.rendered || evt?.title || "";
-          const mediaLink = `${normalizedRoot}/wp/v2/media/${syntheticMediaId}`;
+          const featuredMediaId =
+            realFeaturedMediaId || (evt?.thumbnail ? syntheticMediaId : 0);
+          const mediaLink = `${normalizedRoot}/wp/v2/media/${featuredMediaId}`;
           let embeddedMedia = null;
 
-          if (evt?.thumbnail) {
+          if (!realFeaturedMediaId && evt?.thumbnail) {
             const stubImage = {
               id: syntheticMediaId,
               source_url: evt.thumbnail,
@@ -186,8 +334,13 @@ apiFetch.use((options, next) => {
             embeddedMedia = stubImage;
           }
 
+          evt._eventkoi_featured_media_id = featuredMediaId;
+
           // Store for editor consumption (to avoid per-row fetch).
           eventMap[String(id)] = evt;
+          if (rawId) {
+            eventMap[String(rawId)] = evt;
+          }
 
           return {
             id,
@@ -199,10 +352,10 @@ apiFetch.use((options, next) => {
               rendered: evt?.excerpt?.rendered || evt?.description || "",
             },
             content: { rendered: "" },
-            featured_media: evt?.thumbnail ? syntheticMediaId : 0,
+            featured_media: featuredMediaId,
             _eventkoi: evt, // keep the raw event for consumers if needed.
             _links: {
-              "wp:featuredmedia": evt?.thumbnail
+              "wp:featuredmedia": featuredMediaId
                 ? [
                     {
                       href: mediaLink,
@@ -220,6 +373,7 @@ apiFetch.use((options, next) => {
 
         if (typeof window !== "undefined") {
           window.__eventkoiEventMap = eventMap;
+          window.__eventkoiFeaturedMediaMap = featuredMediaMap;
           window.__eventkoiEventMapVersion = fetchCounter;
           window.dispatchEvent(
             new CustomEvent("eventkoiEventMapUpdated", {
@@ -262,18 +416,12 @@ apiFetch.use((options, next) => {
  */
 const useEventKoiQuerySync = (attributes) => {
   useEffect(() => {
-    const normalizedShowInstances =
-      !!attributes?.showInstancesForEvent && !!attributes?.instanceParentId;
-
     const sigParts = [
       attributes?.calendars?.join(",") || "",
       attributes?.startDate || "",
       attributes?.endDate || "",
-      attributes?.includeInstances ? "1" : "0",
-      normalizedShowInstances ? "1" : "0",
-      attributes?.instanceParentId || "",
-      attributes?.query?.order || "desc",
-      attributes?.query?.orderBy || "modified",
+      attributes?.query?.order || "asc",
+      attributes?.query?.orderBy || "upcoming",
       attributes?.query?.perPage || "6",
       attributes?.query?.pages || "1",
     ];
@@ -283,14 +431,14 @@ const useEventKoiQuerySync = (attributes) => {
     activeConfig = {
       perPage: attributes?.query?.perPage || 6,
       page: attributes?.query?.pages || 1,
-      order: attributes?.query?.order || "desc",
-      orderBy: attributes?.query?.orderBy || "modified",
+      order: attributes?.query?.order || "asc",
+      orderBy: attributes?.query?.orderBy || "upcoming",
       calendars: attributes?.calendars || [],
       startDate: attributes?.startDate || "",
       endDate: attributes?.endDate || "",
-      includeInstances: !!attributes?.includeInstances,
-      showInstancesForEvent: normalizedShowInstances,
-      instanceParentId: attributes?.instanceParentId || 0,
+      includeInstances: false,
+      showInstancesForEvent: false,
+      instanceParentId: 0,
       sig,
     };
 
@@ -309,9 +457,6 @@ const useEventKoiQuerySync = (attributes) => {
     attributes?.calendars?.join(","),
     attributes?.startDate,
     attributes?.endDate,
-    attributes?.includeInstances,
-    attributes?.showInstancesForEvent,
-    attributes?.instanceParentId,
     attributes?.query?.order,
     attributes?.query?.orderBy,
     attributes?.query?.perPage,
@@ -330,42 +475,45 @@ export const withEventKoiQueryData = (BlockEdit) => (props) => {
   useEventKoiQuerySync(props.attributes);
 
   // Force core/query to refetch when EventKoi filters change by bumping a signature in the query args.
+  const lastSigRef = useRef("");
+  const refreshKeyRef = useRef(0);
+
   useEffect(() => {
     const { attributes, setAttributes } = props;
     const { query = {} } = attributes;
-    const normalizedShowInstances =
-      !!attributes?.showInstancesForEvent && !!attributes?.instanceParentId;
     const sigParts = [
       attributes?.calendars?.join(",") || "",
       attributes?.startDate || "",
       attributes?.endDate || "",
-      attributes?.includeInstances ? "1" : "0",
-      normalizedShowInstances ? "1" : "0",
-      attributes?.instanceParentId || "",
-      attributes?.query?.order || "desc",
-      attributes?.query?.orderBy || "modified",
+      attributes?.query?.order || "asc",
+      attributes?.query?.orderBy || "upcoming",
       attributes?.query?.perPage || "6",
       attributes?.query?.pages || "1",
     ];
     const sig = sigParts.join("|");
+    const previousSig = lastSigRef.current;
 
-    if (query.eventkoiSig === sig) {
+    if (sig !== previousSig) {
+      refreshKeyRef.current += 1;
+      lastSigRef.current = sig;
+    }
+
+    const queryRefreshSig = `${sig}|${refreshKeyRef.current}`;
+
+    if (query.eventkoiSig === queryRefreshSig) {
       return;
     }
 
     setAttributes({
       query: {
         ...query,
-        eventkoiSig: sig,
+        eventkoiSig: queryRefreshSig,
       },
     });
   }, [
     props.attributes?.calendars?.join(","),
     props.attributes?.startDate,
     props.attributes?.endDate,
-    props.attributes?.includeInstances,
-    props.attributes?.showInstancesForEvent,
-    props.attributes?.instanceParentId,
     props.attributes?.query?.eventkoiSig,
     props.attributes?.query?.order,
     props.attributes?.query?.orderBy,

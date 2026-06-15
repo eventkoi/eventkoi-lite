@@ -22,5 +22,6 @@ class Deactivator {
 	 * Dectivate.
 	 */
 	public static function deactivate() {
+		Hooks::clear_scheduled_events();
 	}
 }

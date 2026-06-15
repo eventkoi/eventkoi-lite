@@ -13,8 +13,8 @@ const QUERY_DEFAULTS = {
 	pages: 0,
 	offset: 0,
 	postType: "eventkoi_event",
-	order: "desc",
-	orderBy: "modified",
+	order: "asc",
+	orderBy: "upcoming",
 	author: "",
 	search: "",
 	sticky: "",
@@ -39,7 +39,10 @@ const QUERY_TEMPLATE = [
 							className: "eventkoi-event-loop-card",
 						},
 						[
-							["core/image", { className: "eventkoi-event-image-default" }],
+							[
+								"core/post-featured-image",
+								{ className: "eventkoi-event-image-default" },
+							],
 							[
 								"eventkoi/event-data",
 								{ field: "title", className: "ek-event-title-default" },

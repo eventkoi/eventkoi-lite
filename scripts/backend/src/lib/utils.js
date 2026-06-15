@@ -114,7 +114,10 @@ export function groupTimezones() {
     siteDefault,
     { value: "local", label: `Local Time (${localTz})` },
     { value: "UTC", label: "UTC" },
-  ];
+  ].filter(
+    (tz, index, zones) =>
+      zones.findIndex((candidate) => candidate.value === tz.value) === index
+  );
 
   const allZones = getAllTimezones();
 

@@ -81,16 +81,28 @@ body.eventkoi-active
     box-sizing: border-box;
   }
 
-  /* Toolbar container */
+  /* Toolbar container — single row with horizontal scroll on overflow. */
   .mce-container-body .mce-toolbar-grp {
     background-color: #f9fafb;
     border-bottom: 0;
     padding: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .mce-container-body .mce-toolbar-grp::-webkit-scrollbar {
+    height: 4px;
+  }
+  .mce-container-body .mce-toolbar-grp::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.18);
+    border-radius: 2px;
   }
 
   .mce-container-body.mce-flow-layout {
     display: flex;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    .mce-btn-group {
+      flex-shrink: 0;
+    }
     .mce-btn-group.mce-last {
       margin-left: auto;
     }

@@ -368,7 +368,7 @@ class ICS_Importer {
 		}
 
 		// Assign default calendar.
-		$default_cal = (int) get_option( 'eventkoi_default_event_cal', 0 );
+		$default_cal = \eventkoi_resolve_calendar_id( (int) get_option( 'eventkoi_default_event_cal', 0 ) );
 		if ( $default_cal ) {
 			wp_set_post_terms( $new_post_id, array( $default_cal ), 'event_cal' );
 		}
@@ -511,7 +511,7 @@ class ICS_Importer {
 	 */
 	private static function extract_timezone( $params ) {
 		if ( preg_match( '/TZID=([^;:]+)/i', $params, $m ) ) {
-			return trim( $m[1] );
+			return trim( $m[1], " \t\n\r\0\x0B\"'" );
 		}
 		return '';
 	}
@@ -538,7 +538,8 @@ class ICS_Importer {
 				$dt = \DateTime::createFromFormat( 'Ymd', $ics_date, wp_timezone() );
 				if ( $dt ) {
 					$dt->setTime( 0, 0, 0 );
-					return $dt->format( 'c' );
+					$dt->setTimezone( new \DateTimeZone( 'UTC' ) );
+					return $dt->format( 'Y-m-d\TH:i:s\Z' );
 				}
 			}
 
@@ -547,7 +548,8 @@ class ICS_Importer {
 				$clean = str_replace( array( 'T', 'Z' ), array( '', '' ), $ics_date );
 				$dt    = \DateTime::createFromFormat( 'YmdHis', $clean, new \DateTimeZone( 'UTC' ) );
 				if ( $dt ) {
-					return $dt->format( 'c' );
+					$dt->setTimezone( new \DateTimeZone( 'UTC' ) );
+					return $dt->format( 'Y-m-d\TH:i:s\Z' );
 				}
 			}
 
@@ -556,7 +558,8 @@ class ICS_Importer {
 			$tz    = ! empty( $timezone ) ? new \DateTimeZone( $timezone ) : wp_timezone();
 			$dt    = \DateTime::createFromFormat( 'YmdHis', $clean, $tz );
 			if ( $dt ) {
-				return $dt->format( 'c' );
+				$dt->setTimezone( new \DateTimeZone( 'UTC' ) );
+				return $dt->format( 'Y-m-d\TH:i:s\Z' );
 			}
 		} catch ( \Exception $e ) {
 			unset( $e );

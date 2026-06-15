@@ -293,6 +293,7 @@ class WooCommerce_Checkout {
 			'wp_user_label'       => $wp_user_label,
 			'master_checkin_code' => $master_checkin_code,
 			'ticket_items'        => $all_ticket_items,
+			'checkout_fields'     => is_array( $args['checkout_fields'] ?? null ) ? $args['checkout_fields'] : array(),
 		);
 
 		set_transient( 'eventkoi_cart_' . $token, $checkout_data, HOUR_IN_SECONDS );
@@ -540,6 +541,21 @@ class WooCommerce_Checkout {
 		$order->update_meta_data( '_eventkoi_return_url', $checkout_data['return_url'] ?? '' );
 		$order->update_meta_data( '_eventkoi_wp_user_id', $checkout_data['wp_user_id'] ?? 0 );
 		$order->update_meta_data( '_eventkoi_wp_user_label', $checkout_data['wp_user_label'] ?? '' );
+
+		$checkout_fields = is_array( $checkout_data['checkout_fields'] ?? null ) ? $checkout_data['checkout_fields'] : array();
+		if ( $checkout_fields ) {
+			$order->update_meta_data( '_eventkoi_checkout_fields', $checkout_fields );
+
+			$definitions = array();
+			foreach ( \EventKoi\Core\Orders::get_checkout_fields( absint( $checkout_data['event_id'] ?? 0 ) ) as $field ) {
+				$definitions[ $field['key'] ] = $field;
+			}
+			foreach ( $checkout_fields as $key => $value ) {
+				$label = $definitions[ $key ]['label'] ?? $key;
+				$order->add_order_note( sanitize_text_field( $label . ': ' . $value ) );
+			}
+		}
+
 		$order->save();
 
 		// Clear session data.
@@ -562,10 +578,31 @@ class WooCommerce_Checkout {
 			return; // Not an EventKoi order.
 		}
 
-		// Prevent duplicate processing.
+		// Prevent duplicate processing. The persisted meta is a get-then-set
+		// guard so back-to-back status-change hooks (payment_complete +
+		// processing + completed) and concurrent gateway-callback + admin-
+		// completion flows can both pass. Wrap with an atomic wp_cache_add
+		// claim: persistent object caches reject the second caller; default
+		// in-memory cache catches in-request re-entry.
 		if ( 'yes' === $order->get_meta( '_eventkoi_synced' ) ) {
 			return;
 		}
+
+		$lock_key   = 'ek_wc_synced_' . absint( $wc_order_id );
+		$lock_added = wp_cache_add( $lock_key, 1, 'eventkoi_locks', HOUR_IN_SECONDS );
+		if ( ! $lock_added ) {
+			return; // another worker / hook re-entry is already syncing this order.
+		}
+
+		// Release the lock if this handler dies before the durable
+		// _eventkoi_synced meta is written so the next WC status-change
+		// retry isn't silently rejected for an hour.
+		$release_lock = static function () use ( $lock_key, $order ) {
+			if ( 'yes' !== $order->get_meta( '_eventkoi_synced' ) ) {
+				wp_cache_delete( $lock_key, 'eventkoi_locks' );
+			}
+		};
+		register_shutdown_function( $release_lock );
 
 		$instance_ts         = absint( $order->get_meta( '_eventkoi_instance_ts' ) );
 		$event_title         = (string) $order->get_meta( '_eventkoi_event_title' );

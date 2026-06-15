@@ -4,17 +4,102 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { normalizeTimeZone } from "@/lib/date-utils";
+import { DateTime } from "luxon";
 import { useEffect } from "react";
 import { createRoot } from "react-dom/client";
 
+function isTruthy(value) {
+  return value === true || value === 1 || value === "1" || value === "true";
+}
+
+function getDateStartSeconds(value) {
+  const ms = Date.parse(value);
+
+  if (!Number.isFinite(ms)) {
+    return 0;
+  }
+
+  return Math.floor(ms / 1000);
+}
+
+function isDateOnly(value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(String(value || ""));
+}
+
 // --- Utility: pick first instance based on date type ---
+function getSelectedEventDayIndex(event) {
+  if (
+    event?.date_type !== "standard" ||
+    event?.standard_type !== "selected" ||
+    typeof window === "undefined"
+  ) {
+    return null;
+  }
+
+  const parseIndex = (value) => {
+    const raw = String(value ?? "");
+    return /^\d+$/.test(raw) ? Number(raw) : null;
+  };
+
+  const fromQuery = parseIndex(
+    new URLSearchParams(window.location.search).get("event_day")
+  );
+  if (fromQuery !== null) {
+    return fromQuery;
+  }
+
+  try {
+    const fromEventUrl = parseIndex(
+      new URL(event?.url || "", window.location.href).searchParams.get(
+        "event_day"
+      )
+    );
+    return fromEventUrl;
+  } catch {
+    return null;
+  }
+}
+
+function getSelectedStandardInstance(event) {
+  if (
+    event?.date_type !== "standard" ||
+    event?.standard_type !== "selected" ||
+    !Array.isArray(event?.event_days) ||
+    !event.event_days.length
+  ) {
+    return null;
+  }
+
+  const selectedIndex = getSelectedEventDayIndex(event);
+  if (
+    selectedIndex !== null &&
+    event.event_days[selectedIndex]?.start_date
+  ) {
+    return event.event_days[selectedIndex];
+  }
+
+  const activeStart = getDateStartSeconds(event.start_date || event.start || "");
+  if (activeStart) {
+    const activeDay = event.event_days.find(
+      (day) => getDateStartSeconds(day?.start_date) === activeStart
+    );
+
+    if (activeDay?.start_date) {
+      return activeDay;
+    }
+  }
+
+  return null;
+}
+
 function getFirstInstance(event) {
   if (
     event.date_type === "standard" &&
     Array.isArray(event.event_days) &&
     event.event_days.length
   ) {
-    return event.event_days[0];
+    return getSelectedStandardInstance(event) || event.event_days[0];
   }
   if (
     event.date_type === "recurring" &&
@@ -30,12 +115,80 @@ function getFirstInstance(event) {
   };
 }
 
-// --- Utility: parse ?instance= param and apply duration ---
-function getActiveInstance(event) {
+function getRenderedInstanceFromNode(node) {
+  return {
+    start_date: node.getAttribute("data-start") || "",
+    end_date: node.getAttribute("data-end") || "",
+    all_day: isTruthy(node.getAttribute("data-all-day")),
+    all_day_start_date: node.getAttribute("data-all-day-start-date") || "",
+    all_day_end_date: node.getAttribute("data-all-day-end-date") || "",
+    all_day_timezone: node.getAttribute("data-all-day-tz") || "",
+    label: (node.textContent || "").replace(/\s+/g, " ").trim(),
+  };
+}
+
+function getRenderedDateScopes(mountEl) {
+  if (typeof document === "undefined") {
+    return [];
+  }
+
+  const scopes = [];
+  const closestScope = mountEl?.closest?.(
+    "article, main, .entry-content, .wp-block-post-content, .eventkoi, .eventkoi-event"
+  );
+
+  if (closestScope) {
+    scopes.push(closestScope);
+  }
+
+  scopes.push(document);
+
+  return scopes;
+}
+
+function getRenderedInstances(mountEl, instanceTimestamp = 0) {
+  const scopes = getRenderedDateScopes(mountEl);
+  const seen = new Set();
+
+  for (const scope of scopes) {
+    if (!scope || seen.has(scope)) {
+      continue;
+    }
+
+    seen.add(scope);
+
+    const nodes = scope.querySelectorAll(".ek-datetime[data-start]");
+    const instances = [];
+
+    for (const node of nodes) {
+      const startDate = node.getAttribute("data-start") || "";
+
+      if (
+        instanceTimestamp &&
+        getDateStartSeconds(startDate) !== instanceTimestamp
+      ) {
+        continue;
+      }
+
+      instances.push(getRenderedInstanceFromNode(node));
+    }
+
+    if (instances.length) {
+      return instances;
+    }
+  }
+
+  return [];
+}
+
+function getRenderedActiveInstance(mountEl, instanceTimestamp = 0) {
+  return getRenderedInstances(mountEl, instanceTimestamp)[0] || null;
+}
+
+function getActiveInstanceTimestamp() {
   const urlParams = new URLSearchParams(window.location.search);
   let instanceTimestamp = urlParams.get("instance");
 
-  // Fallback: check URL path ending with /{timestamp}/
   if (!instanceTimestamp) {
     const match = window.location.pathname.match(/\/(\d+)\/?$/);
     if (match) {
@@ -43,13 +196,34 @@ function getActiveInstance(event) {
     }
   }
 
-  if (
-    event.date_type === "recurring" &&
-    instanceTimestamp &&
-    !isNaN(Number(instanceTimestamp))
-  ) {
+  return instanceTimestamp && !isNaN(Number(instanceTimestamp))
+    ? Number(instanceTimestamp)
+    : 0;
+}
+
+function getCalendarInstances(event, mountEl = null) {
+  const timestamp = getActiveInstanceTimestamp();
+  const renderedInstances = getRenderedInstances(mountEl, timestamp);
+
+  if (renderedInstances.length) {
+    return renderedInstances;
+  }
+
+  return [getActiveInstance(event, mountEl)].filter(Boolean);
+}
+
+// --- Utility: parse ?instance= param and apply duration ---
+function getActiveInstance(event, mountEl = null) {
+  const timestamp = getActiveInstanceTimestamp();
+  const renderedInstance = getRenderedActiveInstance(mountEl, timestamp);
+
+  if (renderedInstance) {
+    return renderedInstance;
+  }
+
+  if (event.date_type === "recurring" && timestamp) {
     const rule = event.recurrence_rules?.[0];
-    const start = new Date(Number(instanceTimestamp) * 1000);
+    const start = new Date(timestamp * 1000);
     let end;
 
     if (rule?.start_date && rule?.end_date) {
@@ -60,7 +234,7 @@ function getActiveInstance(event) {
 
     return {
       start_date: start.toISOString(),
-      end_date: end?.toISOString(),
+      end_date: end?.toISOString() || "",
       all_day: rule?.all_day ?? false,
     };
   }
@@ -68,28 +242,243 @@ function getActiveInstance(event) {
   return getFirstInstance(event);
 }
 
-// --- Utility: format Google Calendar date string ---
-function formatGoogleCalDate(dt, allDay = false) {
-  if (!dt) return "";
-  const dateObj = new Date(dt);
-  if (isNaN(dateObj)) return "";
-  if (allDay) {
-    return dateObj.toISOString().slice(0, 10).replace(/-/g, "");
-  }
-  return (
-    dateObj
-      .toISOString()
-      .replace(/[-:]/g, "")
-      .replace(".000Z", "Z")
-      .slice(0, 16) + "00Z"
-  );
+function getEventTimezone(event) {
+  return normalizeTimeZone(event?.timezone || eventkoi_params?.timezone || "UTC");
 }
 
-// --- Utility: fallback ISO date ---
-const toIsoDate = (dt, allDay = false) => {
-  if (!dt) return "";
-  return allDay ? dt.slice(0, 10) : dt;
-};
+function isAutoDetectTimezoneEnabled() {
+  const value = eventkoi_params?.auto_detect_timezone;
+  return value === true || value === 1 || value === "1" || value === "true";
+}
+
+function getDisplayTimezone(event) {
+  if (typeof window !== "undefined") {
+    const params = new URLSearchParams(window.location.search);
+    const requested = params.get("tz");
+
+    if (requested) {
+      return normalizeTimeZone(
+        requested === "local"
+          ? Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
+          : requested
+      );
+    }
+
+    if (isAutoDetectTimezoneEnabled()) {
+      return normalizeTimeZone(
+        Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
+      );
+    }
+  }
+
+  return getEventTimezone(event);
+}
+
+function getIcalUrl(event) {
+  const source = eventkoi_params?.ical || "";
+
+  if (!source) {
+    return "";
+  }
+
+  try {
+    const url = new URL(source, window.location.href);
+    url.searchParams.set("tz", getDisplayTimezone(event));
+    return url.toString();
+  } catch {
+    return source;
+  }
+}
+
+function parseAllDayDate(value, timezone) {
+  if (!value) {
+    return null;
+  }
+
+  const dt = DateTime.fromISO(String(value), {
+    zone: timezone === "utc" ? "UTC" : timezone,
+  });
+
+  return dt.isValid ? dt : null;
+}
+
+function getExclusiveAllDayEndDate(start, end, isEndDateOnly = false) {
+  const startDate = start.startOf("day");
+
+  if (!end || end.toMillis() <= start.toMillis()) {
+    return startDate.plus({ days: 1 });
+  }
+
+  const endDate = end.startOf("day");
+
+  if (isEndDateOnly) {
+    return endDate <= startDate
+      ? startDate.plus({ days: 1 })
+      : endDate.plus({ days: 1 });
+  }
+
+  if (end.toMillis() - start.toMillis() <= 24 * 60 * 60 * 1000) {
+    return startDate.plus({ days: 1 });
+  }
+
+  if (endDate <= startDate) {
+    return startDate.plus({ days: 1 });
+  }
+
+  const isExclusiveMidnight = end.equals(endDate);
+
+  return isExclusiveMidnight ? endDate : endDate.plus({ days: 1 });
+}
+
+function formatGoogleTimedDate(value) {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+}
+
+function getCalendarDates(instance, timezone) {
+  if (!instance?.start_date) {
+    return null;
+  }
+
+  if (instance.all_day) {
+    const allDayTimezone = normalizeTimeZone(
+      instance.all_day_timezone || instance.timezone || timezone
+    );
+    const startValue = instance.all_day_start_date || instance.start_date;
+    const endValue = instance.all_day_end_date || instance.end_date;
+    const start = parseAllDayDate(startValue, allDayTimezone);
+
+    if (!start) {
+      return null;
+    }
+
+    const end = getExclusiveAllDayEndDate(
+      start,
+      parseAllDayDate(endValue, allDayTimezone),
+      isDateOnly(endValue)
+    );
+
+    return {
+      googleStart: start.toFormat("yyyyMMdd"),
+      googleEnd: end.toFormat("yyyyMMdd"),
+      outlookStart: start.toISODate(),
+      outlookEnd: end.toISODate(),
+      allDay: true,
+    };
+  }
+
+  const start = new Date(instance.start_date);
+  let end = new Date(instance.end_date || instance.start_date);
+
+  if (Number.isNaN(start.getTime())) {
+    return null;
+  }
+
+  if (Number.isNaN(end.getTime()) || end.getTime() < start.getTime()) {
+    end = start;
+  }
+
+  return {
+    googleStart: formatGoogleTimedDate(start),
+    googleEnd: formatGoogleTimedDate(end),
+    outlookStart: start.toISOString(),
+    outlookEnd: end.toISOString(),
+    allDay: false,
+  };
+}
+
+function getOccurrenceLabel(option, index) {
+  return option?.instance?.label || `Date ${index + 1}`;
+}
+
+function CalendarProviderMenuItem({ label, options, onSelect }) {
+  if (options.length <= 1) {
+    return (
+      <DropdownMenuItem
+        disabled={!options[0]?.dates}
+        onClick={() => {
+          if (options[0]?.dates) {
+            onSelect(options[0].dates);
+          }
+        }}
+      >
+        {label}
+      </DropdownMenuItem>
+    );
+  }
+
+  return options.map((option, index) => {
+    const occurrenceLabel = getOccurrenceLabel(option, index);
+
+    return (
+      <DropdownMenuItem
+        key={`${label}-${option.instance?.start_date || index}-${index}`}
+        disabled={!option.dates}
+        title={`${label}: ${occurrenceLabel}`}
+        onClick={() => {
+          if (option.dates) {
+            onSelect(option.dates);
+          }
+        }}
+      >
+        <span className="min-w-0 truncate">
+          {label}: {occurrenceLabel}
+        </span>
+      </DropdownMenuItem>
+    );
+  });
+}
+
+function getMenuWidthClass(options) {
+  return options.length > 1
+    ? "w-[300px] max-w-[calc(100vw-2rem)]"
+    : "w-[180px]";
+}
+
+function getEventLocationLine(event = {}) {
+  const locations = Array.isArray(event.locations) ? event.locations : [];
+
+  for (const location of locations) {
+    const virtualUrl = location?.virtual_url || location?.url || "";
+    if (location?.type === "virtual" || location?.type === "online") {
+      if (virtualUrl) {
+        return virtualUrl;
+      }
+      continue;
+    }
+
+    const address = location?.address || {};
+    const cityLine = [
+      location?.city || address?.addressLocality,
+      location?.state || address?.addressRegion,
+      location?.zip || address?.postalCode,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    const physicalLine = [
+      location?.name,
+      location?.address1 || address?.streetAddress,
+      location?.address2,
+      location?.address3,
+      cityLine,
+      location?.country || address?.addressCountry,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    if (physicalLine) {
+      return physicalLine;
+    }
+  }
+
+  return event.location_line || "";
+}
 
 export function AddToCal({ base, html }) {
   const { event } = eventkoi_params;
@@ -101,58 +490,51 @@ export function AddToCal({ base, html }) {
     }
   }, [base]);
 
-  const instance = getActiveInstance(event);
-  const startDateToUse = instance?.start_date;
-  const endDateToUse = instance?.end_date;
+  const timezone = getDisplayTimezone(event);
+  const calendarOptions = getCalendarInstances(event, base).map((instance) => ({
+    instance,
+    dates: getCalendarDates(instance, timezone),
+  }));
 
-  const starts = formatGoogleCalDate(startDateToUse, instance?.all_day);
-  const ends = formatGoogleCalDate(endDateToUse, instance?.all_day);
-
-  const location =
-    event.locations?.[0]?.type === "virtual"
-      ? event.locations[0]?.virtual_url || event.location_line || ""
-      : [
-          event.locations?.[0]?.name,
-          event.locations?.[0]?.address1,
-          event.locations?.[0]?.address2,
-          event.locations?.[0]?.city,
-          event.locations?.[0]?.state,
-          event.locations?.[0]?.zip,
-          event.locations?.[0]?.country,
-        ]
-          .filter(Boolean)
-          .join(", ") ||
-        event.location_line ||
-        "";
+  const location = getEventLocationLine(event);
 
   const openWindow = (url) => {
     window.open(url, "_blank", "noopener,noreferrer");
   };
 
-  const generateGoogleCal = () => {
+  const generateGoogleCal = (calendarDates) => {
+    if (!calendarDates) {
+      return;
+    }
+
     const url = new URL("https://www.google.com/calendar/render");
     url.searchParams.set("action", "TEMPLATE");
     url.searchParams.set("text", event.title || "");
-    url.searchParams.set("dates", `${starts}/${ends}`);
+    url.searchParams.set(
+      "dates",
+      `${calendarDates.googleStart}/${calendarDates.googleEnd}`
+    );
     url.searchParams.set("details", event.summary || "");
     url.searchParams.set("location", location);
     url.searchParams.set("output", "xml");
-    openWindow(url);
+    openWindow(url.toString());
   };
 
-  const generateOutlook = (baseUrl) => {
+  const generateOutlook = (baseUrl, calendarDates) => {
+    if (!calendarDates) {
+      return;
+    }
+
     const url = new URL(baseUrl);
     url.searchParams.set("path", "/calendar/action/compose");
-    url.searchParams.set("rrv", "addevent");
-    url.searchParams.set(
-      "startdt",
-      toIsoDate(startDateToUse, instance?.all_day)
-    );
-    url.searchParams.set("enddt", toIsoDate(endDateToUse, instance?.all_day));
+    url.searchParams.set("rru", "addevent");
+    url.searchParams.set("allday", calendarDates.allDay ? "true" : "false");
+    url.searchParams.set("startdt", calendarDates.outlookStart);
+    url.searchParams.set("enddt", calendarDates.outlookEnd);
     url.searchParams.set("location", location);
     url.searchParams.set("subject", event.title || "");
     url.searchParams.set("body", event.summary || "");
-    openWindow(url);
+    openWindow(url.toString());
   };
 
   return (
@@ -162,24 +544,30 @@ export function AddToCal({ base, html }) {
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"
-        className="w-[180px] px-3 py-2 shadow-2xl border border-border bg-popover rounded-md"
+        className={`${getMenuWidthClass(calendarOptions)} px-3 py-2 shadow-2xl border border-border bg-popover rounded-md`}
       >
-        <DropdownMenuItem onClick={generateGoogleCal}>
-          Google Calendar
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => openWindow(eventkoi_params.ical)}>
+        <CalendarProviderMenuItem
+          label="Google Calendar"
+          options={calendarOptions}
+          onSelect={generateGoogleCal}
+        />
+        <DropdownMenuItem onClick={() => openWindow(getIcalUrl(event))}>
           iCalendar
         </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => generateOutlook("https://outlook.office.com/owa/")}
-        >
-          Outlook 365
-        </DropdownMenuItem>
-        <DropdownMenuItem
-          onClick={() => generateOutlook("https://outlook.live.com/owa/")}
-        >
-          Outlook Live
-        </DropdownMenuItem>
+        <CalendarProviderMenuItem
+          label="Outlook 365"
+          options={calendarOptions}
+          onSelect={(calendarDates) =>
+            generateOutlook("https://outlook.office.com/owa/", calendarDates)
+          }
+        />
+        <CalendarProviderMenuItem
+          label="Outlook Live"
+          options={calendarOptions}
+          onSelect={(calendarDates) =>
+            generateOutlook("https://outlook.live.com/owa/", calendarDates)
+          }
+        />
       </DropdownMenuContent>
     </DropdownMenu>
   );

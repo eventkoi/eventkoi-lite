@@ -1,10 +1,90 @@
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { buildTimeline, safeNormalizeTimeZone } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
+import { __ } from "@wordpress/i18n";
 import { Globe, Image, MapPin } from "lucide-react";
+
+const locationText = (source = {}, key) => {
+  const value = source?.[key];
+  if (value === null || value === undefined) return "";
+  if (Array.isArray(value)) {
+    const texts = value
+      .map((item) => {
+        if (typeof item === "string" || typeof item === "number") {
+          return String(item).trim();
+        }
+        if (item && typeof item === "object") {
+          for (const nestedKey of ["name", "text", "url", "@id"]) {
+            const nested = item?.[nestedKey];
+            if (typeof nested === "string" || typeof nested === "number") {
+              return String(nested).trim();
+            }
+          }
+        }
+        return "";
+      })
+      .filter(Boolean);
+    return [...new Set(texts)].join(" ");
+  }
+  if (typeof value === "object") {
+    for (const nestedKey of ["name", "text", "url", "@id"]) {
+      const nested = value?.[nestedKey];
+      if (typeof nested === "string" || typeof nested === "number") {
+        const text = String(nested).trim();
+        if (text) return text;
+      }
+    }
+    return "";
+  }
+  return String(value).trim();
+};
+
+const getLocationVirtualUrl = (location = {}) =>
+  locationText(location, "virtual_url") || locationText(location, "url");
+
+const getLocationType = (location = {}) => {
+  const type = locationText(location, "type").toLowerCase();
+  if (type === "virtual" || type === "online") return "online";
+  if (type === "physical" || type === "inperson") return "inperson";
+  if (type.includes("virtuallocation")) return "online";
+  if (type.includes("place")) return "inperson";
+
+  const schemaType = locationText(location, "@type").toLowerCase();
+  if (schemaType.includes("virtuallocation")) return "online";
+  if (schemaType.includes("place")) return "inperson";
+
+  return "";
+};
+
+const formatLocationLine = (location = {}) => {
+  const address = location?.address || {};
+  const virtualUrl = getLocationVirtualUrl(location);
+  if (getLocationType(location) === "online" && virtualUrl) {
+    return virtualUrl;
+  }
+
+  return [
+    locationText(location, "name"),
+    locationText(location, "address1") || locationText(address, "streetAddress"),
+    locationText(location, "address2"),
+    locationText(location, "address3"),
+    [locationText(location, "city") || locationText(address, "addressLocality"), locationText(location, "state") || locationText(address, "addressRegion"), locationText(location, "zip") || locationText(address, "postalCode")]
+      .filter(Boolean)
+      .join(", "),
+    locationText(location, "country") || locationText(address, "addressCountry"),
+  ]
+    .filter(Boolean)
+    .join(", ");
+};
+
+const getPrimaryLocation = (event = {}) => {
+  const locations = Array.isArray(event?.locations) ? event.locations : [];
+  return locations.find((location) => formatLocationLine(location)) || {};
+};
 
 export function ListView({
   events,
+  timezone,
   showImage,
   showDescription,
   showLocation,
@@ -36,6 +116,26 @@ export function ListView({
 
   const urlParams = new URLSearchParams(window.location.search);
   const tzFromQuery = urlParams.get("tz");
+  const getEventUrl = (event, displayTimezone) => {
+    const source = event?.url || "";
+
+    if (!source) {
+      return "";
+    }
+
+    try {
+      const url = new URL(source, window.location.href);
+      const resolvedTimezone =
+        displayTimezone === "local"
+          ? Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
+          : safeNormalizeTimeZone(displayTimezone || timezone || "UTC");
+
+      url.searchParams.set("tz", resolvedTimezone);
+      return url.toString();
+    } catch {
+      return source;
+    }
+  };
 
   return (
     <ul className="grid list-none m-0 p-0" role="list">
@@ -50,22 +150,23 @@ export function ListView({
                 "UTC"
             );
 
-        const loc = event.locations?.[0] ?? {};
-        const isVirtual = loc.type === "virtual" || loc.type === "online";
-        const isPhysical = loc.type === "inperson" || loc.type === "physical";
-        const locationLine = event.location_line;
+        const loc = getPrimaryLocation(event);
+        const isVirtual = getLocationType(loc) === "online";
+        const isPhysical = getLocationType(loc) === "inperson";
+        const virtualUrl = getLocationVirtualUrl(loc);
+        const locationLine = event.location_line || formatLocationLine(loc);
 
-        const hasVirtual = isVirtual && loc.virtual_url;
-        const hasPhysical = isPhysical && loc.address1;
+        const hasVirtual = isVirtual && virtualUrl;
+        const hasPhysical = isPhysical && locationLine;
 
         const renderLocation = () => {
           if (!showLocation) return null;
 
           if (hasVirtual) {
-            const label = loc.link_text || loc.virtual_url;
+            const label = loc.link_text || virtualUrl;
             return (
               <a
-                href={loc.virtual_url}
+                href={virtualUrl}
                 className="flex gap-2 text-muted-foreground/90 text-sm underline underline-offset-4 truncate"
                 title={label}
                 target="_blank"
@@ -81,7 +182,7 @@ export function ListView({
             return (
               <span className="flex text-muted-foreground/90 text-sm gap-2">
                 <MapPin className="w-4 h-4 min-w-4 text-muted-foreground/90" />
-                {event.location_line}
+                {locationLine}
               </span>
             );
           }
@@ -126,7 +227,7 @@ export function ListView({
                     <div className="h-full w-full flex items-center justify-center relative">
                       {/* Decorative image link (avoid duplicate links with aria-hidden) */}
                       <a
-                        href={event.url}
+                        href={getEventUrl(event, wpTz)}
                         className="h-full w-full rounded-xl block"
                         aria-hidden="true"
                         tabIndex={-1}
@@ -145,7 +246,9 @@ export function ListView({
                         className="w-6 h-6 text-muted-foreground/40"
                         aria-hidden="true"
                       />
-                      <span className="sr-only">No event image</span>
+                      <span className="sr-only">
+                        {__("No event image", "eventkoi-lite")}
+                      </span>
                     </div>
                   )}
                 </AspectRatio>
@@ -154,7 +257,7 @@ export function ListView({
 
             <div className="ek-meta flex flex-col gap-2 grow min-w-0">
               <div
-                className="flex md:hidden text-muted-foreground"
+                className="flex md:hidden text-muted-foreground whitespace-pre-line"
                 role="group"
                 aria-hidden="true"
                 aria-label={`Event time: ${buildTimeline(
@@ -167,7 +270,7 @@ export function ListView({
               </div>
 
               <h3 className="m-0">
-                <a href={event.url} className="no-underline">
+                <a href={getEventUrl(event, wpTz)} className="no-underline">
                   {event.title}
                   <span className="sr-only"> — View event details</span>
                 </a>
@@ -183,7 +286,7 @@ export function ListView({
             </div>
 
             <div
-              className="hidden md:block ml-auto text-[14px] text-muted-foreground min-w-[200px] text-right"
+              className="hidden md:block ml-auto text-[14px] text-muted-foreground min-w-[200px] text-right whitespace-pre-line"
               role="group"
               aria-label={`Event time: ${buildTimeline(
                 event,

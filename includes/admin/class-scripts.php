@@ -151,10 +151,10 @@ class Scripts {
 		$hot_file   = $build_dir . '.vite-hot';
 		$is_dev     = file_exists( $hot_file );
 
-		$default_cal_id = (int) get_option( 'eventkoi_default_event_cal', 0 );
-		$default_cal    = get_term_by( 'id', $default_cal_id, 'event_cal' );
-		$cal_url        = $default_cal ? get_term_link( $default_cal, 'event_cal' ) : '';
-		$cal_url        = $default_cal ? str_replace( $default_cal->slug, '', $cal_url ) : '';
+			$default_cal_id = eventkoi_resolve_calendar_id( (int) get_option( 'eventkoi_default_event_cal', 0 ) );
+			$default_cal    = $default_cal_id ? get_term_by( 'id', $default_cal_id, 'event_cal' ) : false;
+			$cal_url        = $default_cal ? get_term_link( $default_cal, 'event_cal' ) : '';
+			$cal_url        = ( $default_cal && ! is_wp_error( $cal_url ) ) ? str_replace( $default_cal->slug, '', $cal_url ) : '';
 
 		$settings      = Settings::get();
 		$safe_settings = self::get_client_safe_settings( $settings );
@@ -175,10 +175,11 @@ class Scripts {
 			'ajax_url'            => admin_url( 'admin-ajax.php' ),
 			'wc_settings_url'     => admin_url( 'admin.php?page=wc-settings' ),
 			'api_key'             => REST::get_api_key(),
+			'has_seo_plugin'      => self::has_seo_plugin(),
 			'is_admin'            => current_user_can( 'manage_options' ),
-			'date_now'            => eventkoi_date( 'j M Y' ),
-			'date_24h'            => eventkoi_date( 'j M Y', strtotime( '+1 day' ) ),
-			'time_now'            => eventkoi_date( 'g:i A', strtotime( '+1 hour' ) ),
+			'date_now'            => wp_date( 'j M Y' ),
+			'date_24h'            => wp_date( 'j M Y', strtotime( '+1 day' ) ),
+			'time_now'            => wp_date( 'g:i A', strtotime( '+1 hour' ) ),
 			'new_event'           => Event::get_meta(),
 			'new_calendar'        => Calendar::get_meta(),
 			'default_cal'         => $default_cal_id,
@@ -278,7 +279,7 @@ class Scripts {
 				array(
 					'restUrl' => esc_url_raw( rest_url( EVENTKOI_API . '/auto-updates' ) ),
 					'nonce'   => wp_create_nonce( 'wp_rest' ),
-					'enabled' => (bool) ( \EventKoi\Core\Settings::get()['auto_updates_enabled'] ?? false ),
+					'enabled' => rest_sanitize_boolean( \EventKoi\Core\Settings::get()['auto_updates_enabled'] ?? false ),
 				)
 			);
 		}
@@ -354,5 +355,25 @@ class Scripts {
 		);
 
 		wp_enqueue_style( 'eventkoi-editor-tw' );
+	}
+
+	/**
+	 * Whether a known SEO plugin is active.
+	 *
+	 * Used to decide whether to surface the "Open WordPress SEO editor" link
+	 * in the event/calendar editor. Without an SEO plugin that link goes to a
+	 * native editor with no SEO panels, so it just confuses people.
+	 *
+	 * @return bool
+	 */
+	public static function has_seo_plugin() {
+		$active = defined( 'WPSEO_VERSION' )            // Yoast SEO.
+			|| class_exists( 'RankMath' )               // Rank Math.
+			|| defined( 'AIOSEO_VERSION' )              // All in One SEO.
+			|| defined( 'SEOPRESS_VERSION' )            // SEOPress.
+			|| function_exists( 'the_seo_framework' )   // The SEO Framework.
+			|| defined( 'SLIM_SEO_VER' );               // Slim SEO.
+
+		return (bool) apply_filters( 'eventkoi_has_seo_plugin', $active );
 	}
 }

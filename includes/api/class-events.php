@@ -97,6 +97,18 @@ class Events {
 				},
 			)
 		);
+
+		register_rest_route(
+			EVENTKOI_API,
+			'/empty_trash',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( self::class, 'empty_trash' ),
+				'permission_callback' => function () {
+					return current_user_can( 'eventkoi_events_edit' );
+				},
+			)
+		);
 	}
 
 	/**
@@ -119,8 +131,8 @@ class Events {
 		);
 
 		// Dashboard shortcut: try upcoming → live → ongoing and return first non-empty set.
-		$dashboard_events = $request->get_param( 'dashboard_events' );
-		if ( ! empty( $dashboard_events ) ) {
+		$dashboard_events = rest_sanitize_boolean( $request->get_param( 'dashboard_events' ) );
+		if ( $dashboard_events ) {
 			$number = ! empty( $params['number'] ) ? $params['number'] : 3;
 			foreach ( array( 'upcoming', 'live', 'ongoing' ) as $try_status ) {
 				$try_params                 = $params;
@@ -139,8 +151,8 @@ class Events {
 		$response = Query::get_events( array_filter( $params ) );
 
 		// Optionally include status counts to avoid a separate API call.
-		$include_counts = $request->get_param( 'include_counts' );
-		if ( ! empty( $include_counts ) ) {
+		$include_counts = rest_sanitize_boolean( $request->get_param( 'include_counts' ) );
+		if ( $include_counts ) {
 			$count_params = array(
 				'event_status' => $params['event_status'],
 				'calendar'     => $params['calendar'],
@@ -214,6 +226,27 @@ class Events {
 		 * @param array|null $ids The removed event IDs.
 		 */
 		do_action( 'eventkoi_after_events_removed', $ids );
+
+		return rest_ensure_response( $response );
+	}
+
+	/**
+	 * Permanently delete every trashed event the current user is allowed to delete.
+	 *
+	 * @param \WP_REST_Request $request The request (no body needed).
+	 * @return \WP_REST_Response|\WP_Error The response with deleted IDs and a summary.
+	 */
+	public static function empty_trash( WP_REST_Request $request ) {
+		unset( $request );
+
+		$response = Query::empty_trash();
+
+		/**
+		 * Fires after the events trash has been emptied.
+		 *
+		 * @param array $ids The IDs that were permanently removed.
+		 */
+		do_action( 'eventkoi_after_events_trash_emptied', $response['ids'] ?? array() );
 
 		return rest_ensure_response( $response );
 	}

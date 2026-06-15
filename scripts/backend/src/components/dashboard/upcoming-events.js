@@ -110,7 +110,7 @@ export function UpcomingEvents() {
                 </span>
 
                 {event.status !== "tbc" && (
-                  <span className="block text-muted-foreground">
+                  <span className="block text-muted-foreground whitespace-pre-line">
                     {buildTimelineFromApi(event, event.timezone)}
                   </span>
                 )}

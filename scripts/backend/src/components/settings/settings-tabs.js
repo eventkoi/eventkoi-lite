@@ -18,6 +18,17 @@ const tabs = [
     to: "fields",
     cap: "eventkoi_settings_fields",
   },
+  {
+    key: "submissions",
+    label: (
+      <span className="inline-flex items-center gap-2">
+        Frontend submissions
+        <ProBadge />
+      </span>
+    ),
+    to: "submissions",
+    cap: "eventkoi_settings_fields",
+  },
   { key: "emails", label: "Emails", to: "emails", cap: "eventkoi_settings_emails" },
   { key: "payments", label: "Payments", to: "payments", cap: "eventkoi_settings_payments" },
   { key: "integrations", label: "API & integrations", to: "integrations", cap: "eventkoi_settings_integrations" },

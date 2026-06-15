@@ -147,6 +147,17 @@ class Event {
 			return new WP_Error( 'eventkoi_invalid_id', __( 'Invalid event ID.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
+		// Non-published events (draft, pending, future, private) are only
+		// readable by users who can edit them. This prevents unauthenticated
+		// disclosure of unpublished event data (CVE-2026-10029).
+		$post = get_post( $event_id );
+		if ( ! $post || 'eventkoi_event' !== $post->post_type ) {
+			return new WP_Error( 'eventkoi_not_found', __( 'Event not found.', 'eventkoi-lite' ), array( 'status' => 404 ) );
+		}
+		if ( 'publish' !== $post->post_status && ! current_user_can( 'edit_post', $event_id ) ) {
+			return new WP_Error( 'eventkoi_not_found', __( 'Event not found.', 'eventkoi-lite' ), array( 'status' => 404 ) );
+		}
+
 		$event    = new SingleEvent( $event_id );
 		$response = $event::get_meta();
 		$response = self::attach_rendered_event_fields( $response, $event_id );
@@ -263,6 +274,14 @@ class Event {
 			return rest_ensure_response( $response );
 		}
 
+		// Per-event ownership / capability check. The route-level cap is a
+		// flat boolean: any holder could otherwise edit any event regardless
+		// of authorship. Defer to WP's map-meta-cap so sites that grant the
+		// EventKoi cap to a self-service "submitter" role retain ownership.
+		if ( ! self::user_can_edit_event( $event_id ) ) {
+			return new WP_Error( 'eventkoi_forbidden', __( 'You are not allowed to edit this event.', 'eventkoi-lite' ), array( 'status' => 403 ) );
+		}
+
 		$query    = new SingleEvent( $event_id );
 		$response = $query::update( $event, $status );
 
@@ -283,6 +302,10 @@ class Event {
 			return new WP_Error( 'eventkoi_missing_id', __( 'Missing event ID.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
+		if ( ! self::user_can_edit_event( $event_id ) ) {
+			return new WP_Error( 'eventkoi_forbidden', __( 'You are not allowed to restore this event.', 'eventkoi-lite' ), array( 'status' => 403 ) );
+		}
+
 		$response = SingleEvent::restore_event( $event_id );
 
 		return rest_ensure_response( $response );
@@ -300,6 +323,13 @@ class Event {
 
 		if ( empty( $event_id ) ) {
 			return new WP_Error( 'eventkoi_missing_id', __( 'Missing event ID.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
+		// Duplicate copies all meta from the source. user_can_read_event
+		// returns true for any published event; require edit-equivalent so
+		// bare-cap roles can't clone events authored by other users.
+		if ( ! self::user_can_edit_event( $event_id ) ) {
+			return new WP_Error( 'eventkoi_forbidden', __( 'You are not allowed to duplicate this event.', 'eventkoi-lite' ), array( 'status' => 403 ) );
 		}
 
 		$event    = new SingleEvent( $event_id );
@@ -322,6 +352,10 @@ class Event {
 			return new WP_Error( 'eventkoi_missing_id', __( 'Missing event ID.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
+		if ( ! self::user_can_delete_event( $event_id ) ) {
+			return new WP_Error( 'eventkoi_forbidden', __( 'You are not allowed to delete this event.', 'eventkoi-lite' ), array( 'status' => 403 ) );
+		}
+
 		$response = SingleEvent::delete_event( $event_id );
 
 		return rest_ensure_response( $response );
@@ -339,6 +373,15 @@ class Event {
 
 		if ( ! $event_id || ! $timestamp ) {
 			return new \WP_Error( 'eventkoi_missing_param', __( 'Missing event ID or timestamp.', 'eventkoi-lite' ) );
+		}
+
+		// Gate unpublished instance data behind edit capability (CVE-2026-10029).
+		$post = get_post( $event_id );
+		if ( ! $post || 'eventkoi_event' !== $post->post_type ) {
+			return new \WP_Error( 'eventkoi_not_found', __( 'Event not found.', 'eventkoi-lite' ), array( 'status' => 404 ) );
+		}
+		if ( 'publish' !== $post->post_status && ! current_user_can( 'edit_post', $event_id ) ) {
+			return new \WP_Error( 'eventkoi_not_found', __( 'Event not found.', 'eventkoi-lite' ), array( 'status' => 404 ) );
 		}
 
 		$event = new \EventKoi\Core\Event( $event_id );
@@ -381,6 +424,10 @@ class Event {
 			);
 		}
 
+		if ( ! self::user_can_edit_event( $event_id ) ) {
+			return new \WP_Error( 'eventkoi_forbidden', __( 'You are not allowed to edit this event.', 'eventkoi-lite' ), array( 'status' => 403 ) );
+		}
+
 		$existing = eventkoi_get_instance_override( $event_id, $timestamp );
 		$existing = is_array( $existing ) ? $existing : array();
 
@@ -395,6 +442,10 @@ class Event {
 			'modified_at',
 			'status',
 		);
+
+		if ( array_key_exists( 'description', $overrides ) ) {
+			$overrides['description'] = SingleEvent::sanitize_description_html( $overrides['description'] );
+		}
 
 		$filtered = array_filter(
 			$overrides,
@@ -463,5 +514,63 @@ class Event {
 				'message'   => __( 'Instance overrides reset to defaults.', 'eventkoi-lite' ),
 			)
 		);
+	}
+
+	/**
+	 * Per-event "can edit" check. Doesn't rely on the CPT's capability_type=post
+	 * chain because custom EventKoi-only roles (Submitter) typically only hold
+	 * eventkoi_events_edit, not edit_others_posts. Allows authors to mutate
+	 * their own events; users with WP's edit_others_posts or manage_options
+	 * can edit anything (preserves admin/editor flows).
+	 *
+	 * @param int $event_id Event ID.
+	 * @return bool
+	 */
+	private static function user_can_edit_event( $event_id ) {
+		$event_id = absint( $event_id );
+		if ( ! $event_id ) {
+			return false;
+		}
+		if ( current_user_can( 'edit_others_posts' ) || current_user_can( 'manage_options' ) ) {
+			return true;
+		}
+		$author_id = (int) get_post_field( 'post_author', $event_id );
+		$user_id   = get_current_user_id();
+		return $user_id > 0 && $author_id === $user_id;
+	}
+
+	/**
+	 * Per-event "can read" check — looser than edit: published events readable
+	 * to anyone, otherwise edit-equivalent.
+	 *
+	 * @param int $event_id Event ID.
+	 * @return bool
+	 */
+	private static function user_can_read_event( $event_id ) {
+		$event_id = absint( $event_id );
+		if ( ! $event_id ) {
+			return false;
+		}
+		$post = get_post( $event_id );
+		if ( ! $post ) {
+			return false;
+		}
+		if ( 'publish' === $post->post_status ) {
+			return true;
+		}
+		return self::user_can_edit_event( $event_id );
+	}
+
+	/**
+	 * Per-event "can delete" check. Mirrors edit boundary.
+	 *
+	 * @param int $event_id Event ID.
+	 * @return bool
+	 */
+	private static function user_can_delete_event( $event_id ) {
+		if ( current_user_can( 'delete_others_posts' ) || current_user_can( 'manage_options' ) ) {
+			return true;
+		}
+		return self::user_can_edit_event( $event_id );
 	}
 }

@@ -1,6 +1,7 @@
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
+import { __ } from "@wordpress/i18n";
 
 export function EventDateTimezoneSetting({ event, setEvent, className }) {
   return (
@@ -8,10 +9,10 @@ export function EventDateTimezoneSetting({ event, setEvent, className }) {
       <div className="flex items-center justify-between">
         <div className="space-y-1">
           <Label className="font-semibold">
-            Display timezone in event page
+            {__("Display timezone in event page", "eventkoi-lite")}
           </Label>
           <p className="text-sm text-muted-foreground">
-            Your current timezone is{" "}
+            {__("Your current timezone is", "eventkoi-lite")}{" "}
             <a
               href={eventkoi_params.general_options_url}
               target="_blank"

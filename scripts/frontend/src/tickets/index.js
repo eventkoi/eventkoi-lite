@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { decodeEntities } from "@wordpress/html-entities";
+import { DateTime } from "luxon";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -23,7 +24,89 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  buildTimeline,
+  normalizeTimeZone,
+  safeNormalizeTimeZone,
+  wpToLuxonFormat,
+} from "@/lib/date-utils";
 import publicApi, { resolvePublicRestUrl } from "@/lib/public-api";
+
+function getSiteTimezone() {
+  const params = typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
+  const normalized = normalizeTimeZone(
+    params?.timezone_string ||
+      params?.timezone_override ||
+      params?.timezone ||
+      "UTC",
+  );
+
+  return DateTime.now().setZone(normalized).isValid ? normalized : "UTC";
+}
+
+function getEventDisplayTimezone(event = {}) {
+  const params = typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
+
+  if (
+    params?.auto_detect_timezone === true ||
+    params?.auto_detect_timezone === 1 ||
+    params?.auto_detect_timezone === "1" ||
+    params?.auto_detect_timezone === "true"
+  ) {
+    return "local";
+  }
+
+  return safeNormalizeTimeZone(
+    event?.timezone ||
+      params?.timezone_string ||
+      params?.timezone_override ||
+      params?.timezone ||
+      "UTC",
+  );
+}
+
+function parseUtcDateTime(value) {
+  if (!value) return null;
+
+  if (typeof value === "number") {
+    const dt = DateTime.fromMillis(value, { zone: "UTC" });
+    return dt.isValid ? dt : null;
+  }
+
+  const raw = String(value).trim();
+  let dt = DateTime.fromISO(raw.replace(" ", "T"), { zone: "UTC" });
+
+  if (!dt.isValid) {
+    dt = DateTime.fromSQL(raw, { zone: "UTC" });
+  }
+
+  return dt.isValid ? dt : null;
+}
+
+function formatTicketSaleDateTime(value) {
+  const params = typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
+  const locale = (params.locale || "en").replace("_", "-");
+  const timePreference = params.time_format || "12";
+  const wpDateFormat = params.date_format || "F j, Y";
+  const wpTimeFormat =
+    params.time_format_string || (timePreference === "24" ? "H:i" : "g:i a");
+
+  const dt = parseUtcDateTime(value)?.setZone(getSiteTimezone()).setLocale(locale);
+
+  if (!dt?.isValid) {
+    return null;
+  }
+
+  let time = dt.toFormat(wpToLuxonFormat(wpTimeFormat));
+
+  if (wpTimeFormat.includes("A")) {
+    time = time.replace(/\b(am|pm)\b/g, (m) => m.toUpperCase());
+  } else if (wpTimeFormat.includes("a")) {
+    time = time.replace(/\b(AM|PM)\b/g, (m) => m.toLowerCase());
+  }
+
+  return `${dt.toFormat(wpToLuxonFormat(wpDateFormat))}, ${time}`;
+}
 
 function getInstanceTsFromDom(el) {
   const attr = el.getAttribute("data-instance-ts");
@@ -40,6 +123,16 @@ function getInstanceTsFromDom(el) {
   }
 
   return 0;
+}
+
+function getDateStartSeconds(value) {
+  const ms = Date.parse(value);
+
+  if (!Number.isFinite(ms)) {
+    return 0;
+  }
+
+  return Math.floor(ms / 1000);
 }
 
 function getActiveInstance(event = {}, instanceTs = 0) {
@@ -92,62 +185,120 @@ function formatEventDateLine(event = {}, instanceTs = 0) {
   const instance = getActiveInstance(event, instanceTs);
   if (!instance?.start_date) return "";
 
-  const start = new Date(instance.start_date);
-  const end = instance?.end_date ? new Date(instance.end_date) : null;
-  if (Number.isNaN(start.getTime())) return "";
+  const displayEvent = {
+    ...event,
+    date_type: "standard",
+    start: instance.start_date,
+    end: instance.end_date || instance.start_date,
+    end_real: instance.end_real || "",
+    all_day: !!instance.all_day,
+    allDay: !!instance.all_day,
+    event_days: [instance],
+  };
 
-  const sameYear = !end || start.getFullYear() === end.getFullYear();
-  const startFmt = new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  }).format(start);
-
-  if (!end || Number.isNaN(end.getTime())) {
-    return startFmt;
-  }
-
-  const endFmt = new Intl.DateTimeFormat(undefined, {
-    month: "short",
-    day: "numeric",
-    year: sameYear ? undefined : "numeric",
-  }).format(end);
-
-  return `${startFmt} - ${endFmt}`;
+  return (
+    buildTimeline(
+      displayEvent,
+      getEventDisplayTimezone(event),
+      eventkoi_params?.time_format || "12",
+    ) || ""
+  );
 }
 
-function getRenderedEventDatetimeText() {
-  if (typeof document === "undefined") return "";
-  const node = document.querySelector(".ek-datetime");
-  if (!node) return "";
+function getRenderedDateScopes(mountEl) {
+  if (typeof document === "undefined") return [];
 
-  // Keep checkout summary aligned with the event details display, but drop
-  // the recurring-rule summary ("Weekly, on Tue, Thu, ...") — the shopper
-  // is buying this specific instance, so series-level context is noise.
-  const clone = node.cloneNode(true);
-  clone.querySelectorAll(".eventkoi-rule-summary").forEach((n) => n.remove());
-  return clone.textContent?.trim() || "";
+  const scopes = [];
+  const closestScope = mountEl?.closest?.(
+    "article, main, .entry-content, .wp-block-post-content, .eventkoi, .eventkoi-event",
+  );
+
+  if (closestScope) {
+    scopes.push(closestScope);
+  }
+
+  scopes.push(document);
+
+  return scopes;
+}
+
+function getRenderedEventDatetimeText(mountEl = null, instanceTs = 0) {
+  if (typeof document === "undefined") return "";
+
+  const seen = new Set();
+  const rendered = [];
+
+  for (const scope of getRenderedDateScopes(mountEl)) {
+    if (!scope || seen.has(scope)) continue;
+    seen.add(scope);
+
+    const nodes = scope.querySelectorAll(".ek-datetime[data-start]");
+    for (const node of nodes) {
+      const startDate = node.getAttribute("data-start") || "";
+
+      if (instanceTs && getDateStartSeconds(startDate) !== Number(instanceTs)) {
+        continue;
+      }
+
+      // Keep checkout summary aligned with the event details display, but drop
+      // the recurring-rule summary. The shopper needs the concrete date(s).
+      const clone = node.cloneNode(true);
+      clone
+        .querySelectorAll(".eventkoi-rule-summary")
+        .forEach((n) => n.remove());
+
+      const text = clone.textContent?.replace(/\s+/g, " ").trim() || "";
+      if (text) {
+        rendered.push(text);
+      }
+    }
+
+    if (rendered.length) {
+      return rendered.join("\n");
+    }
+  }
+
+  return "";
 }
 
 function formatEventLocationLine(event = {}) {
-  const first = Array.isArray(event.locations) ? event.locations[0] : null;
-  if (first?.type === "virtual") {
-    return first?.virtual_url || event.location_line || "";
+  const locations = Array.isArray(event.locations) ? event.locations : [];
+
+  for (const first of locations) {
+    const virtualUrl = first?.virtual_url || first?.url || "";
+    if (first?.type === "virtual" || first?.type === "online") {
+      if (virtualUrl) {
+        return virtualUrl;
+      }
+      continue;
+    }
+
+    const address = first?.address || {};
+    const cityLine = [
+      first?.city || address?.addressLocality,
+      first?.state || address?.addressRegion,
+      first?.zip || address?.postalCode,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    const fromParts = [
+      first?.name,
+      first?.address1 || address?.streetAddress,
+      first?.address2,
+      first?.address3,
+      cityLine,
+      first?.country || address?.addressCountry,
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+    if (fromParts) {
+      return fromParts;
+    }
   }
 
-  const fromParts = [
-    first?.name,
-    first?.address1,
-    first?.address2,
-    first?.city,
-    first?.state,
-    first?.zip,
-    first?.country,
-  ]
-    .filter(Boolean)
-    .join(", ");
-
-  return fromParts || event.location_line || "";
+  return event.location_line || "";
 }
 
 function readCheckoutSuccessFromUrl() {
@@ -296,6 +447,10 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
   const checkoutSuccessFromUrl = readCheckoutSuccessFromUrl();
   const checkoutSuccessValue = checkoutSuccessSessionId || checkoutSuccessFromUrl;
   const [quantities, setQuantities] = useState({});
+  const checkoutCustomFields = Array.isArray(eventkoi_params?.checkout_fields)
+    ? eventkoi_params.checkout_fields
+    : [];
+  const [checkoutFieldValues, setCheckoutFieldValues] = useState({});
   const [billing, setBilling] = useState(() => ({
     first_name: String(eventkoi_params?.rsvp_user?.first_name || "").trim(),
     last_name: String(eventkoi_params?.rsvp_user?.last_name || "").trim(),
@@ -349,6 +504,9 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
     [data],
   );
   const showRemainingTickets = data?.tickets_show_remaining !== false;
+  const eventTermsConditions = String(
+    data?.tickets_terms_conditions || ""
+  ).trim();
   const showUnavailableTickets = true;
   const visibleTickets = useMemo(
     () =>
@@ -357,12 +515,18 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
         : tickets.filter((ticket) => !getTicketLimits(ticket).unavailable),
     [tickets, showUnavailableTickets],
   );
+  const soldOutTickets = useMemo(
+    () => tickets.filter((ticket) => getTicketLimits(ticket).soldOut),
+    [tickets],
+  );
+  const displayTickets =
+    visibleTickets.length > 0 ? visibleTickets : soldOutTickets;
 
   useEffect(() => {
-    if (!visibleTickets.length) return;
+    if (!displayTickets.length) return;
     setQuantities((prev) => {
       const next = { ...prev };
-      visibleTickets.forEach((ticket) => {
+      displayTickets.forEach((ticket) => {
         const id = String(ticket.id);
         const { maxAllowedQty, unavailable } = getTicketLimits(ticket);
         if (typeof next[id] !== "number") {
@@ -379,7 +543,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
       });
       return next;
     });
-  }, [visibleTickets]);
+  }, [displayTickets]);
 
   useEffect(() => {
     if (!isDialogOpen) {
@@ -469,18 +633,19 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
       eventkoi_params?.event?.instance_title ||
       "",
   );
-  const eventMeta = eventkoi_params?.event || {};
+  const eventMeta = data?.event || eventkoi_params?.event || {};
   const footerEventTitle = decodeEntities(eventMeta?.title || eventTitle || "");
   const checkoutEventTitle = footerEventTitle || eventTitle || eventInstanceTitle;
   const checkoutEventInstanceTitle = eventInstanceTitle || checkoutEventTitle;
   const footerEventLocation = formatEventLocationLine(eventMeta);
+  const renderedEventDate = getRenderedEventDatetimeText(mountEl, instanceTs);
   const footerEventDate =
-    getRenderedEventDatetimeText() ||
+    renderedEventDate ||
     formatEventDateLine(eventMeta, instanceTs);
 
   const selectedTicketItems = useMemo(
     () =>
-      visibleTickets
+      displayTickets
         .map((ticket) => {
           const qty = Math.max(0, Number(quantities[String(ticket.id)] || 0));
           if (qty < 1) return null;
@@ -495,19 +660,18 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
           };
         })
         .filter(Boolean),
-    [visibleTickets, quantities],
+    [displayTickets, quantities],
   );
 
   const summaryDate =
+    renderedEventDate ||
     formatEventDateLine(eventMeta, instanceTs) ||
-    getRenderedEventDatetimeText() ||
     "";
 
   const checkoutNote = useMemo(() => {
     const parts = [];
-    const renderedDate = getRenderedEventDatetimeText();
-    if (renderedDate) {
-      parts.push(renderedDate);
+    if (renderedEventDate) {
+      parts.push(renderedEventDate);
     } else if (summaryDate) {
       parts.push(summaryDate);
     }
@@ -515,7 +679,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
       parts.push(footerEventLocation);
     }
     return parts.join(" • ");
-  }, [summaryDate, footerEventLocation]);
+  }, [renderedEventDate, summaryDate, footerEventLocation]);
 
   if (!eventId) {
     return null;
@@ -553,11 +717,11 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
     return null;
   }
 
-  if (visibleTickets.length === 0) {
+  if (displayTickets.length === 0) {
     return null;
   }
 
-  const prices = visibleTickets
+  const prices = displayTickets
     .map((ticket) => Number(ticket.price))
     .filter((price) => Number.isFinite(price) && price >= 0);
 
@@ -567,30 +731,33 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
 
   const minPrice = Math.min(...prices);
   const maxPrice = Math.max(...prices);
-  const currency = visibleTickets[0]?.currency || tickets[0]?.currency || "USD";
+  const currency = displayTickets[0]?.currency || tickets[0]?.currency || "USD";
 
-  const formatWholeCurrency = (amount) => {
+  const formatTicketCurrency = (amount) => {
+    const normalizedAmount = Number(amount) || 0;
+    const hasCents = Math.abs(normalizedAmount % 1) > 0.000001;
+
     try {
       return new Intl.NumberFormat(undefined, {
         style: "currency",
         currency,
         currencyDisplay: "symbol",
-        minimumFractionDigits: 0,
-        maximumFractionDigits: 0,
-      }).format(amount);
+        minimumFractionDigits: hasCents ? 2 : 0,
+        maximumFractionDigits: hasCents ? 2 : 0,
+      }).format(normalizedAmount);
     } catch (e) {
-      return formatPrice(amount, currency);
+      return formatPrice(normalizedAmount, currency);
     }
   };
 
   const priceRange =
     minPrice === maxPrice
-      ? formatWholeCurrency(minPrice)
-      : `${formatWholeCurrency(minPrice)}-${formatWholeCurrency(
+      ? formatTicketCurrency(minPrice)
+      : `${formatTicketCurrency(minPrice)}-${formatTicketCurrency(
           maxPrice,
         ).replace(/^[^0-9]+/, "")}`;
 
-  const latestSaleEndTs = visibleTickets.reduce((latest, ticket) => {
+  const latestSaleEndTs = displayTickets.reduce((latest, ticket) => {
     if (!ticket?.sale_end) return latest;
     const normalized = String(ticket.sale_end).replace(" ", "T") + "Z";
     const parsed = Date.parse(normalized);
@@ -601,30 +768,26 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
 
   const saleEndLabel =
     latestSaleEndTs !== null
-      ? new Intl.DateTimeFormat(undefined, {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        }).format(new Date(latestSaleEndTs))
+      ? formatTicketSaleDateTime(latestSaleEndTs)
       : null;
 
-  const allVisibleUnavailable =
-    visibleTickets.length > 0 &&
-    visibleTickets.every((ticket) => getTicketLimits(ticket).unavailable);
+  const allDisplayedUnavailable =
+    displayTickets.length > 0 &&
+    displayTickets.every((ticket) => getTicketLimits(ticket).unavailable);
 
-  const allVisibleSoldOut =
-    visibleTickets.length > 0 &&
-    visibleTickets.every((ticket) => getTicketLimits(ticket).soldOut);
+  const allDisplayedSoldOut =
+    displayTickets.length > 0 &&
+    displayTickets.every((ticket) => getTicketLimits(ticket).soldOut);
 
-  const allVisibleNotStarted =
-    visibleTickets.length > 0 &&
-    visibleTickets.every((ticket) => getTicketLimits(ticket).saleNotStarted);
+  const allDisplayedNotStarted =
+    displayTickets.length > 0 &&
+    displayTickets.every((ticket) => getTicketLimits(ticket).saleNotStarted);
 
-  const allVisibleSaleEnded =
-    visibleTickets.length > 0 &&
-    visibleTickets.every((ticket) => getTicketLimits(ticket).saleEnded);
+  const allDisplayedSaleEnded =
+    displayTickets.length > 0 &&
+    displayTickets.every((ticket) => getTicketLimits(ticket).saleEnded);
 
-  const earliestSaleStartTs = visibleTickets.reduce((earliest, ticket) => {
+  const earliestSaleStartTs = displayTickets.reduce((earliest, ticket) => {
     if (!ticket?.sale_start) return earliest;
     const normalized = String(ticket.sale_start).replace(" ", "T") + "Z";
     const parsed = Date.parse(normalized);
@@ -635,39 +798,21 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
 
   const saleStartLabel =
     earliestSaleStartTs !== null
-      ? new Intl.DateTimeFormat(undefined, {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        }).format(new Date(earliestSaleStartTs))
+      ? formatTicketSaleDateTime(earliestSaleStartTs)
       : null;
 
-  const orderTotal = visibleTickets.reduce((sum, ticket) => {
+  const orderTotal = displayTickets.reduce((sum, ticket) => {
     const qty = Math.max(0, Number(quantities[String(ticket.id)] || 0));
     return sum + (Number(ticket.price) || 0) * qty;
   }, 0);
   const canCheckout = selectedTicketItems.length > 0;
 
   const saleEndByTicket = (saleEnd) => {
-    if (!saleEnd) return null;
-    const parsed = Date.parse(String(saleEnd).replace(" ", "T") + "Z");
-    if (!Number.isFinite(parsed)) return null;
-    return new Intl.DateTimeFormat(undefined, {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    }).format(new Date(parsed));
+    return formatTicketSaleDateTime(saleEnd);
   };
 
   const saleStartByTicket = (saleStart) => {
-    if (!saleStart) return null;
-    const parsed = Date.parse(String(saleStart).replace(" ", "T") + "Z");
-    if (!Number.isFinite(parsed)) return null;
-    return new Intl.DateTimeFormat(undefined, {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    }).format(new Date(parsed));
+    return formatTicketSaleDateTime(saleStart);
   };
 
   const decrementQty = (ticket) => {
@@ -737,8 +882,16 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
     (checkoutAttempted || emailTouched) &&
     emailValue !== "" &&
     !hasValidBillingEmail;
+  const hasRequiredCheckoutFields = checkoutCustomFields.every(
+    (field) =>
+      !field.required ||
+      String(checkoutFieldValues[field.key] || "").trim() !== ""
+  );
   const hasRequiredBillingFields =
-    firstNameValue !== "" && lastNameValue !== "" && hasValidBillingEmail;
+    firstNameValue !== "" &&
+    lastNameValue !== "" &&
+    hasValidBillingEmail &&
+    hasRequiredCheckoutFields;
 
   const startHostedCheckout = async () => {
     if (!canContinueCheckout || isCheckoutLoading) return;
@@ -846,6 +999,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
           first_name: String(billing.first_name || "").trim(),
           last_name: String(billing.last_name || "").trim(),
           email,
+          fields: checkoutFieldValues,
           items: selectedTicketItems.map((item) => ({
             ticket_id: item.ticket_id,
             name: String(item.name || ""),
@@ -947,7 +1101,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
           </div>
         </div>
 
-        {allVisibleSaleEnded && saleEndLabel ? (
+        {allDisplayedSaleEnded && saleEndLabel ? (
           <div className="text-base text-muted-foreground">
             {sprintf(__("Ticket sales ended on %s.", "eventkoi-lite"), saleEndLabel)}
           </div>
@@ -969,16 +1123,18 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
           type="button"
           className="h-14 w-full text-base font-semibold"
           onClick={() => {
-            if (!allVisibleSoldOut) {
+            if (!allDisplayedSoldOut) {
               setIsDialogOpen(true);
             }
           }}
-          disabled={allVisibleSoldOut}
+          disabled={allDisplayedSoldOut}
         >
           <Ticket className="mr-2 size-5" aria-hidden="true" />
-          {allVisibleSoldOut
+          {allDisplayedSoldOut
             ? __("Sold out", "eventkoi-lite")
-            : allVisibleUnavailable && !allVisibleNotStarted && !allVisibleSaleEnded
+            : allDisplayedUnavailable &&
+                !allDisplayedNotStarted &&
+                !allDisplayedSaleEnded
               ? __("Not on sale", "eventkoi-lite")
               : __("Get tickets", "eventkoi-lite")}
         </Button>
@@ -1006,7 +1162,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                 </div>
 
                 <div className="px-5 sm:px-6">
-                  {visibleTickets.map((ticket, idx) => {
+                  {displayTickets.map((ticket, idx) => {
                     const qty = Math.max(
                       0,
                       Number(quantities[String(ticket.id)] || 0),
@@ -1038,7 +1194,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                               <Ticket className="size-5 shrink-0 text-foreground" aria-hidden="true" />
                               <div className="min-w-0">
                                 <div className="text-[20px] font-semibold leading-none text-foreground tabular-nums">
-                                  {formatWholeCurrency(
+                                  {formatTicketCurrency(
                                     Number(ticket.price) || 0,
                                   )}
                                 </div>
@@ -1049,6 +1205,14 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                                   <div className="text-sm leading-relaxed text-muted-foreground">
                                     {ticket.description}
                                   </div>
+                                ) : null}
+                                {String(ticket.terms_conditions || "").trim() ? (
+                                  <div
+                                    className="eventkoi-ticket-terms mt-1 text-xs leading-relaxed text-muted-foreground"
+                                    dangerouslySetInnerHTML={{
+                                      __html: ticket.terms_conditions,
+                                    }}
+                                  />
                                 ) : null}
                                 {saleNotStarted && ticketSaleStart && ticketSaleEnd ? (
                                   <div className="mt-2 text-xs font-semibold text-muted-foreground">
@@ -1168,6 +1332,13 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                   })}
                 </div>
 
+                {eventTermsConditions ? (
+                  <div
+                    className="eventkoi-ticket-terms px-5 pb-4 text-xs leading-relaxed text-muted-foreground sm:px-6"
+                    dangerouslySetInnerHTML={{ __html: eventTermsConditions }}
+                  />
+                ) : null}
+
                 <div className="border-t border-border bg-muted/30 px-5 py-5 sm:px-6 sm:py-6">
                   <div className="grid grid-cols-[1fr_auto] items-center gap-4">
                     <div>
@@ -1195,7 +1366,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                         </span>
                         <span className="text-3xl leading-none font-semibold tabular-nums text-foreground">
                           <span role="status" aria-live="polite">
-                            {formatWholeCurrency(orderTotal)}
+                            {formatTicketCurrency(orderTotal)}
                           </span>
                         </span>
                       </div>
@@ -1205,7 +1376,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                           className="text-sm leading-[20px] text-foreground border-0 border-b border-transparent hover:border-foreground transition-none"
                           onClick={() => {
                             const cleared = {};
-                            visibleTickets.forEach((ticket) => {
+                            displayTickets.forEach((ticket) => {
                               cleared[String(ticket.id)] = 0;
                             });
                             setQuantities(cleared);
@@ -1218,7 +1389,11 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                           type="button"
                           data-ek-react-checkout="1"
                           className="!block min-w-[118px] rounded-md border border-transparent bg-primary px-4 py-[8px] text-sm font-medium text-primary-foreground text-center transition-none hover:bg-primary/90 hover:text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
-                          disabled={!canCheckout || allVisibleNotStarted || allVisibleSaleEnded}
+                          disabled={
+                            !canCheckout ||
+                            allDisplayedNotStarted ||
+                            allDisplayedSaleEnded
+                          }
                           onClick={() => {
                             setCheckoutError("");
                             setDialogStep("checkout");
@@ -1227,14 +1402,14 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                           {__("Checkout", "eventkoi-lite")}
                         </button>
                       </div>
-                      {allVisibleNotStarted && saleStartLabel ? (
+                      {allDisplayedNotStarted && saleStartLabel ? (
                         <div className="mt-1 text-sm font-medium text-destructive text-right">
                           {sprintf(
                             __("Ticket sales start on %s.", "eventkoi-lite"),
                             saleStartLabel,
                           )}
                         </div>
-                      ) : allVisibleSaleEnded ? (
+                      ) : allDisplayedSaleEnded ? (
                         <div className="mt-1 text-sm font-medium text-destructive text-right">
                           {__("Ticket sales have ended.", "eventkoi-lite")}
                         </div>
@@ -1402,6 +1577,105 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                         )}
                       </p>
                     </div>
+
+                    {checkoutCustomFields.map((field) => {
+                      const fieldId = `eventkoi-checkout-field-${field.key}`;
+                      const value = checkoutFieldValues[field.key] ?? "";
+                      const setValue = (next) =>
+                        setCheckoutFieldValues((prev) => ({
+                          ...prev,
+                          [field.key]: next,
+                        }));
+                      const isFieldInvalid =
+                        checkoutAttempted &&
+                        field.required &&
+                        String(value).trim() === "";
+                      const inputClass = `h-10 w-full rounded-md border bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-2 ${
+                        isFieldInvalid
+                          ? "border-destructive focus-visible:ring-destructive"
+                          : "border-input focus-visible:ring-ring"
+                      }`;
+
+                      if (field.type === "checkbox") {
+                        return (
+                          <label
+                            key={field.key}
+                            htmlFor={fieldId}
+                            className="flex items-center gap-2 text-sm font-normal text-foreground cursor-pointer"
+                          >
+                            <input
+                              id={fieldId}
+                              type="checkbox"
+                              checked={!!value}
+                              required={field.required}
+                              onChange={(event) =>
+                                setValue(event.target.checked ? "1" : "")
+                              }
+                              className="size-4 rounded border-input"
+                            />
+                            {field.label}
+                          </label>
+                        );
+                      }
+
+                      return (
+                        <div key={field.key} className="space-y-1.5">
+                          <label
+                            htmlFor={fieldId}
+                            className="font-medium text-[13px] text-foreground"
+                          >
+                            {field.label}
+                          </label>
+                          {field.type === "textarea" ? (
+                            <textarea
+                              id={fieldId}
+                              value={value}
+                              required={field.required}
+                              placeholder={field.placeholder || undefined}
+                              onChange={(event) => setValue(event.target.value)}
+                              className={`${inputClass} h-auto min-h-[80px] py-2`}
+                            />
+                          ) : field.type === "select" ? (
+                            <select
+                              id={fieldId}
+                              value={value}
+                              required={field.required}
+                              onChange={(event) => setValue(event.target.value)}
+                              className={inputClass}
+                            >
+                              <option value="">
+                                {field.placeholder ||
+                                  __("Select...", "eventkoi-lite")}
+                              </option>
+                              {(field.options || []).map((option) => (
+                                <option key={option} value={option}>
+                                  {option}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input
+                              id={fieldId}
+                              type={field.type === "text" ? "text" : field.type}
+                              value={value}
+                              required={field.required}
+                              placeholder={field.placeholder || undefined}
+                              onChange={(event) => setValue(event.target.value)}
+                              className={inputClass}
+                            />
+                          )}
+                          {isFieldInvalid ? (
+                            <p className="text-xs text-destructive">
+                              {sprintf(
+                                /* translators: %s: field label */
+                                __("%s is required.", "eventkoi-lite"),
+                                field.label
+                              )}
+                            </p>
+                          ) : null}
+                        </div>
+                      );
+                    })}
 
                     {checkoutError ? (
                       <div

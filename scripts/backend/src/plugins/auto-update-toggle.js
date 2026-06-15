@@ -1,5 +1,6 @@
 import apiFetch from "@wordpress/api-fetch";
 import { useState } from "@wordpress/element";
+import { __ } from "@wordpress/i18n";
 import { createRoot } from "react-dom/client";
 
 function AutoUpdateToggle() {
@@ -21,7 +22,7 @@ function AutoUpdateToggle() {
       if (result.success) setEnabled(result.enabled);
     } catch (err) {
       console.error(err);
-      alert("Error toggling auto-updates.");
+      alert(__("Error toggling auto-updates.", "eventkoi-lite"));
     } finally {
       setLoading(false);
     }
@@ -37,10 +38,10 @@ function AutoUpdateToggle() {
       style={{ opacity: loading ? 0.6 : 1 }}
     >
       {loading
-        ? "Updating…"
+        ? __("Updating…", "eventkoi-lite")
         : enabled
-        ? "Disable auto-updates"
-        : "Enable auto-updates"}
+        ? __("Disable auto-updates", "eventkoi-lite")
+        : __("Enable auto-updates", "eventkoi-lite")}
     </a>
   );
 }

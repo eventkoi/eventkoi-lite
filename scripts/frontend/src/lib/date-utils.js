@@ -30,13 +30,59 @@ export function wpToLuxonFormat(phpFormat = "F j, Y") {
   });
 }
 
+function getAllDayDisplayEnd(start, end, realEnd = null) {
+  if (realEnd?.isValid) {
+    const durationMs = realEnd.toMillis() - start.toMillis();
+    if (durationMs > 0 && durationMs <= 24 * 60 * 60 * 1000) {
+      return start;
+    }
+
+    return realEnd;
+  }
+
+  if (!end?.isValid) {
+    return null;
+  }
+
+  const durationMs = end.toMillis() - start.toMillis();
+  if (durationMs > 0 && durationMs <= 24 * 60 * 60 * 1000) {
+    return start;
+  }
+
+  if (end.hasSame(start, "day")) {
+    return end;
+  }
+
+  const displayEnd = end.minus({ days: 1 });
+  return displayEnd < start ? start : displayEnd;
+}
+
+function isTruthy(value) {
+  return value === true || value === 1 || value === "1" || value === "true";
+}
+
+function isEventAllDay(event) {
+  const firstRule = Array.isArray(event?.recurrence_rules)
+    ? event.recurrence_rules[0]
+    : null;
+  const firstDay = Array.isArray(event?.event_days) ? event.event_days[0] : null;
+
+  return (
+    isTruthy(event?.all_day) ||
+    isTruthy(event?.allDay) ||
+    isTruthy(firstRule?.all_day) ||
+    isTruthy(firstDay?.all_day)
+  );
+}
+
 /**
- * Build a human-readable event timeline in WP timezone.
+ * Build a human-readable event timeline.
  *
  * Respects:
  * - WP date_format and time_format_string
  * - EventKoi plugin 12/24 preference
- * - WP/site timezone
+ * - Display timezone for timed events
+ * - Event/site timezone for all-day date boundaries
  * - WP locale (de_DE → de-DE)
  */
 export function buildTimeline(event, wpTz, timeFormat = "12") {
@@ -44,43 +90,58 @@ export function buildTimeline(event, wpTz, timeFormat = "12") {
     return event.tbc_note || "Date and time to be confirmed";
   }
 
-  const tz = normalizeTimeZone(wpTz || "UTC");
+  const params = typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
+  const normalizeZone = (zone, fallback = "UTC") => {
+    const normalized = normalizeTimeZone(zone || fallback);
+    return DateTime.now().setZone(normalized).isValid ? normalized : fallback;
+  };
+
+  const tz = normalizeZone(wpTz || "UTC");
+  const eventTz = normalizeZone(
+    event?.all_day_timezone ||
+      event?.allDayTimezone ||
+      event?.timezone ||
+      params?.timezone_string ||
+      params?.timezone_override ||
+      params?.timezone ||
+      "UTC"
+  );
 
   const normalizeLocale = (loc) => (loc ? loc.replace("_", "-") : "en");
 
   const lang =
-    typeof eventkoi_params !== "undefined" && eventkoi_params.locale
-      ? normalizeLocale(eventkoi_params.locale)
+    typeof eventkoi_params !== "undefined" && params.locale
+      ? normalizeLocale(params.locale)
       : "en";
 
-  const dateFormat = wpToLuxonFormat(eventkoi_params?.date_format || "F j, Y");
-  const wpTimeFormat = wpToLuxonFormat(
-    eventkoi_params?.time_format_string || "g:i a"
-  );
+  const dateFormat = wpToLuxonFormat(params?.date_format || "F j, Y");
+  const wpRawTimeFormat =
+    params?.time_format_string || (timeFormat === "24" ? "H:i" : "g:i a");
+  const wpTimeFormat = wpToLuxonFormat(wpRawTimeFormat);
 
-  const parseDate = (iso) => {
+  const parseDateInZone = (iso, zone) => {
     if (!iso) return null;
-    const dt = DateTime.fromISO(iso, { zone: "utc" })
-      .setZone(tz)
-      .setLocale(lang);
-    return dt.isValid ? dt : null;
+
+    const value = String(iso);
+    const dt = /^\d{4}-\d{2}-\d{2}$/.test(value)
+      ? DateTime.fromISO(value, { zone })
+      : DateTime.fromISO(value, { zone: "utc" }).setZone(zone);
+
+    return dt.isValid ? dt.setLocale(lang) : null;
+  };
+
+  const parseDate = (iso) => parseDateInZone(iso, tz);
+  const parseEventDate = (iso) => parseDateInZone(iso, eventTz);
+  const parseTimelineDate = (iso, allDay) => {
+    const dt = allDay ? parseEventDate(iso) : parseDate(iso);
+    return dt?.isValid ? dt : null;
   };
 
   const formatTime = (dt) => {
     if (!dt?.isValid) return "";
 
-    let baseFormat;
-    if (timeFormat === "24") {
-      baseFormat = "HH:mm";
-    } else if (timeFormat === "12") {
-      baseFormat = "h:mm a";
-    } else {
-      baseFormat = wpTimeFormat;
-    }
+    let formatted = dt.toFormat(wpTimeFormat);
 
-    let formatted = dt.toFormat(baseFormat);
-
-    const wpRawTimeFormat = eventkoi_params?.time_format_string || "g:i a";
     if (wpRawTimeFormat.includes("A")) {
       formatted = formatted.replace(/\b(am|pm)\b/g, (m) => m.toUpperCase());
     } else if (wpRawTimeFormat.includes("a")) {
@@ -100,31 +161,30 @@ export function buildTimeline(event, wpTz, timeFormat = "12") {
   };
 
   if (event.date_type === "recurring" && event.timeline) {
-    const start = parseDate(event.start);
-    const end = parseDate(event.end_real) || parseDate(event.end);
+    const allDay = isEventAllDay(event);
+    const start = parseTimelineDate(
+      allDay ? event.all_day_start_date || event.start : event.start,
+      allDay
+    );
+    const realEnd = parseTimelineDate(
+      allDay ? event.all_day_end_date || event.end_real : event.end_real,
+      allDay
+    );
+    const rawEnd = parseTimelineDate(
+      allDay ? event.all_day_end_date || event.end : event.end,
+      allDay
+    );
+    const end = realEnd || rawEnd;
     if (!start) return null;
 
-    const allDay = !!event.allDay;
-    const isSameDay = end && start.hasSame(end, "day");
+    if (allDay) {
+      const displayEnd = getAllDayDisplayEnd(start, rawEnd, realEnd);
+      if (!displayEnd || displayEnd.hasSame(start, "day")) {
+        return fmt(start, "date");
+      }
 
-    if (isSameDay && !allDay) {
-      return `${fmt(start, "date")}, ${fmt(start, "time")} – ${fmt(
-        end,
-        "time"
-      )}`;
+      return `${fmt(start, "date")} – ${fmt(displayEnd, "date")}`;
     }
-
-    if (!end || isSameDay) {
-      return fmt(start, "date");
-    }
-
-    return `${fmt(start, "date")} – ${fmt(end, "date")}`;
-  }
-
-  if (event.date_type === "standard" || event.date_type === "multi") {
-    const start = parseDate(event.start);
-    const end = parseDate(event.end_real) || parseDate(event.end);
-    if (!start) return null;
 
     const isSameDay = end && start.hasSame(end, "day");
 
@@ -136,10 +196,140 @@ export function buildTimeline(event, wpTz, timeFormat = "12") {
     }
 
     if (!end) {
-      const allDay = !!event.allDay;
-      return allDay
-        ? fmt(start, "date")
-        : `${fmt(start, "date")}, ${fmt(start, "time")}`;
+      return `${fmt(start, "date")}, ${fmt(start, "time")}`;
+    }
+
+    if (event.end_all_day || event.endAllDay) {
+      const allDayEnd = parseEventDate(event.end_real || event.end) || end;
+
+      if (isSameDay) {
+        return `${fmt(start, "date")}, ${fmt(start, "time")}`;
+      }
+
+      return `${fmt(start, "date")}, ${fmt(start, "time")} – ${fmt(
+        allDayEnd,
+        "date"
+      )}`;
+    }
+
+    return `${fmt(start, "date")}, ${fmt(start, "time")} – ${fmt(
+      end,
+      "date"
+    )}, ${fmt(end, "time")}`;
+  }
+
+  if (event.date_type === "standard" || event.date_type === "multi") {
+    if (
+      event.standard_type === "selected" &&
+      Array.isArray(event.event_days) &&
+      event.event_days.length > 1
+    ) {
+      const selectedLines = event.event_days
+        .map((day) => {
+          const dayAllDay = isTruthy(day?.all_day);
+          const start = parseTimelineDate(
+            dayAllDay ? day?.all_day_start_date || day?.start_date : day?.start_date,
+            dayAllDay
+          );
+          const realEnd = parseTimelineDate(
+            dayAllDay ? day?.all_day_end_date || day?.end_real : day?.end_real,
+            dayAllDay
+          );
+          const rawEnd = parseTimelineDate(
+            dayAllDay
+              ? day?.all_day_end_date || day?.end_date || day?.end
+              : day?.end_date || day?.end,
+            dayAllDay
+          );
+          const end = realEnd || rawEnd;
+
+          if (!start) {
+            return "";
+          }
+
+          if (dayAllDay) {
+            const displayEnd = getAllDayDisplayEnd(start, rawEnd, realEnd);
+            if (!displayEnd || displayEnd.hasSame(start, "day")) {
+              return fmt(start, "date");
+            }
+
+            return `${fmt(start, "date")} – ${fmt(displayEnd, "date")}`;
+          }
+
+          const isSameDay = end && start.hasSame(end, "day");
+
+          if (isSameDay) {
+            return `${fmt(start, "date")}, ${fmt(start, "time")} – ${fmt(
+              end,
+              "time"
+            )}`;
+          }
+
+          if (!end) {
+            return `${fmt(start, "date")}, ${fmt(start, "time")}`;
+          }
+
+          return `${fmt(start, "date")}, ${fmt(start, "time")} – ${fmt(
+            end,
+            "date"
+          )}, ${fmt(end, "time")}`;
+        })
+        .filter(Boolean);
+
+      if (selectedLines.length > 0) {
+        return selectedLines.join("\n");
+      }
+    }
+
+    const allDay = isEventAllDay(event);
+    const start = parseTimelineDate(
+      allDay ? event.all_day_start_date || event.start : event.start,
+      allDay
+    );
+    const realEnd = parseTimelineDate(
+      allDay ? event.all_day_end_date || event.end_real : event.end_real,
+      allDay
+    );
+    const rawEnd = parseTimelineDate(
+      allDay ? event.all_day_end_date || event.end : event.end,
+      allDay
+    );
+    const end = realEnd || rawEnd;
+    if (!start) return null;
+
+    if (allDay) {
+      const displayEnd = getAllDayDisplayEnd(start, rawEnd, realEnd);
+      if (!displayEnd || displayEnd.hasSame(start, "day")) {
+        return fmt(start, "date");
+      }
+
+      return `${fmt(start, "date")} – ${fmt(displayEnd, "date")}`;
+    }
+
+    const isSameDay = end && start.hasSame(end, "day");
+
+    if (isSameDay) {
+      return `${fmt(start, "date")}, ${fmt(start, "time")} – ${fmt(
+        end,
+        "time"
+      )}`;
+    }
+
+    if (!end) {
+      return `${fmt(start, "date")}, ${fmt(start, "time")}`;
+    }
+
+    if (event.end_all_day || event.endAllDay) {
+      const allDayEnd = parseEventDate(event.end_real || event.end) || end;
+
+      if (isSameDay) {
+        return `${fmt(start, "date")}, ${fmt(start, "time")}`;
+      }
+
+      return `${fmt(start, "date")}, ${fmt(start, "time")} – ${fmt(
+        allDayEnd,
+        "date"
+      )}`;
     }
 
     return `${fmt(start, "date")}, ${fmt(start, "time")} – ${fmt(
@@ -174,12 +364,28 @@ export function formatTimezoneLabel(tz, timeFormat = "24", withFormat = true) {
     return appendSuffix(label);
   }
 
+  // Handle offset aliases like UTC+3 or UTC-05:30.
+  const utcOffsetMatch = tz.match(/^UTC([+-])(\d{1,2})(?::?(\d{2}))?$/i);
+  if (utcOffsetMatch) {
+    const sign = utcOffsetMatch[1];
+    const hours = parseInt(utcOffsetMatch[2], 10);
+    const mins = utcOffsetMatch[3] || "00";
+    const label =
+      mins === "00"
+        ? `UTC${sign}${hours}`
+        : `UTC${sign}${hours}:${mins.padStart(2, "0")}`;
+    return appendSuffix(label);
+  }
+
   // Handle normalized Etc/GMT±N
   if (tz.startsWith("Etc/GMT")) {
     const offset = tz.replace("Etc/GMT", "");
     const num = parseInt(offset, 10);
+    if (!Number.isFinite(num)) {
+      return appendSuffix("UTC");
+    }
     let label =
-      num === 0 ? "UTC" : `UTC${num >= 0 ? "+" : "-"}${Math.abs(num)}`;
+      num === 0 ? "UTC" : `UTC${num > 0 ? "-" : "+"}${Math.abs(num)}`;
     return appendSuffix(label);
   }
 
@@ -217,19 +423,97 @@ export function formatTimezoneLabel(tz, timeFormat = "24", withFormat = true) {
 }
 
 export function normalizeTimeZone(tz) {
-  if (tz === "local") {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone;
-  }
-  if (tz === "utc") {
+  const restoreDecodedTimezoneOffset = (value) => {
+    const raw = String(value ?? "");
+
+    if (/^\s+\d{1,2}(?::?\d{2})?$/.test(raw)) {
+      return `+${raw.trim()}`;
+    }
+
+    if (/^UTC\s+\d{1,2}(?::?\d{2})?$/i.test(raw)) {
+      return raw.replace(/^UTC\s+/i, "UTC+");
+    }
+
+    return raw.trim();
+  };
+
+  const normalizedInput = restoreDecodedTimezoneOffset(tz);
+
+  if (!normalizedInput) {
     return "UTC";
   }
-  if (!isNaN(parseFloat(tz)) && isFinite(tz)) {
-    const offset = parseFloat(tz);
-    // Flip the sign to match IANA's backwards convention
-    const sign = offset >= 0 ? "-" : "+";
-    return `Etc/GMT${sign}${Math.abs(offset)}`;
+
+  if (normalizedInput === "local") {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone;
   }
-  return tz;
+
+  if (normalizedInput.toLowerCase() === "utc") {
+    return "UTC";
+  }
+
+  const normalizeOffset = (offset) => {
+    const value = Number(offset);
+    if (!Number.isFinite(value) || value === 0) {
+      return "UTC";
+    }
+
+    const abs = Math.abs(value);
+    let hours = Math.floor(abs);
+    let minutes = Math.round((abs - hours) * 60);
+
+    if (minutes === 60) {
+      hours += 1;
+      minutes = 0;
+    }
+
+    if (minutes === 0) {
+      const sign = value >= 0 ? "-" : "+";
+      return `Etc/GMT${sign}${hours}`;
+    }
+
+    const sign = value >= 0 ? "+" : "-";
+    return `${sign}${String(hours).padStart(2, "0")}:${String(
+      minutes
+    ).padStart(2, "0")}`;
+  };
+
+  const normalizeSignedParts = (sign, hours, minutes = "0") => {
+    const offset = Number(hours) + Number(minutes || 0) / 60;
+    return normalizeOffset(sign === "-" ? -offset : offset);
+  };
+
+  const isoOffsetMatch = normalizedInput.match(
+    /^([+-])(\d{1,2})(?::?(\d{2}))?$/
+  );
+  if (isoOffsetMatch) {
+    return normalizeSignedParts(
+      isoOffsetMatch[1],
+      isoOffsetMatch[2],
+      isoOffsetMatch[3]
+    );
+  }
+
+  const utcIsoOffsetMatch = normalizedInput.match(
+    /^UTC([+-])(\d{1,2})(?::?(\d{2}))?$/i
+  );
+  if (utcIsoOffsetMatch) {
+    return normalizeSignedParts(
+      utcIsoOffsetMatch[1],
+      utcIsoOffsetMatch[2],
+      utcIsoOffsetMatch[3]
+    );
+  }
+
+  const utcOffsetMatch = normalizedInput.match(/^UTC([+-]?\d+(?:\.\d+)?)$/i);
+  if (utcOffsetMatch) {
+    return normalizeOffset(utcOffsetMatch[1]);
+  }
+
+  if (!isNaN(parseFloat(normalizedInput)) && isFinite(normalizedInput)) {
+    return normalizeOffset(normalizedInput);
+  }
+
+  return normalizedInput;
 }
 
 export function formatTimeCompact(

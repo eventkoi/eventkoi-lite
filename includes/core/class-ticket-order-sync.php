@@ -211,12 +211,18 @@ class Ticket_Order_Sync {
 			self::$prefetched_ids = $existing_map;
 		}
 
+		// try/finally so the prefetched_ids static is always cleared even if
+		// sync_order_to_local throws. In persistent runners a stale map would
+		// otherwise cause the next batch to short-circuit with null IDs and
+		// INSERT duplicates.
 		$total = 0;
-		foreach ( $orders as $order ) {
-			$total += self::sync_order_to_local( $order );
+		try {
+			foreach ( $orders as $order ) {
+				$total += self::sync_order_to_local( $order );
+			}
+		} finally {
+			self::$prefetched_ids = null;
 		}
-
-		self::$prefetched_ids = null;
 
 		return $total;
 	}
@@ -313,7 +319,7 @@ class Ticket_Order_Sync {
 
 				$ticket_id = absint( $refund_item['ticket_id'] ?? 0 );
 				$qty       = absint( $refund_item['quantity'] ?? 0 );
-				$restock   = (bool) ( $refund_item['restock_tickets'] ?? true );
+				$restock   = rest_sanitize_boolean( $refund_item['restock_tickets'] ?? true );
 
 				if ( $ticket_id > 0 && $qty > 0 && $restock ) {
 					// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Decrements local sold count after edge refund with restock.
@@ -359,8 +365,13 @@ class Ticket_Order_Sync {
 	/**
 	 * Mark a ticket order row as checked in.
 	 *
+	 * Uses a conditional UPDATE with a WHERE checked_in = 0 guard so that
+	 * two concurrent QR scans of the same code cannot both succeed — only the
+	 * first scan flips the row and writes checked_in_at; the second scan
+	 * affects zero rows and returns 0.
+	 *
 	 * @param int $row_id Local ticket_orders row ID.
-	 * @return bool
+	 * @return int|false Rows affected (1 = this caller won, 0 = already checked in by a concurrent scan), or false on DB error.
 	 */
 	public static function mark_checked_in( $row_id ) {
 		global $wpdb;
@@ -371,21 +382,23 @@ class Ticket_Order_Sync {
 		}
 
 		$table = $wpdb->prefix . 'eventkoi_ticket_orders';
+		$now   = gmdate( 'Y-m-d H:i:s' );
 
-		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Updates check-in state for QR scan.
-		$result = $wpdb->update(
-			$table,
-			array(
-				'checked_in'    => 1,
-				'checked_in_at' => gmdate( 'Y-m-d H:i:s' ),
-				'updated_at'    => gmdate( 'Y-m-d H:i:s' ),
-			),
-			array( 'id' => $row_id ),
-			array( '%d', '%s', '%s' ),
-			array( '%d' )
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Conditional update; table name interpolated from prefix.
+		$result = $wpdb->query(
+			$wpdb->prepare(
+				"UPDATE {$table} SET checked_in = 1, checked_in_at = %s, updated_at = %s WHERE id = %d AND checked_in = 0",
+				$now,
+				$now,
+				$row_id
+			)
 		);
 
-		return false !== $result;
+		if ( false === $result ) {
+			return false;
+		}
+
+		return (int) $result;
 	}
 
 	/**

@@ -28,6 +28,7 @@ export function CalendarListMode({
       </div>
       <ListView
         events={events}
+        timezone={timezone}
         showImage={showImage}
         showDescription={showDescription}
         showLocation={showLocation}

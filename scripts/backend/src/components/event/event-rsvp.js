@@ -208,6 +208,8 @@ function RsvpWindowPicker({ event, setEvent }) {
 }
 
 export function EventRsvpSettings({ event, setEvent, className }) {
+  const showCount =
+    typeof event?.rsvp_show_count === "boolean" ? event.rsvp_show_count : true;
   const showRemaining =
     typeof event?.rsvp_show_remaining === "boolean"
       ? event.rsvp_show_remaining
@@ -248,6 +250,22 @@ export function EventRsvpSettings({ event, setEvent, className }) {
               )}
             </p>
           </div>
+
+          <SettingToggle
+            id="rsvp_show_count"
+            label={__("Show RSVP count", "eventkoi-lite")}
+            description={__(
+              "Display how many people are going on the event page.",
+              "eventkoi-lite"
+            )}
+            checked={showCount}
+            onCheckedChange={(value) =>
+              setEvent((prev) => ({
+                ...prev,
+                rsvp_show_count: value,
+              }))
+            }
+          />
 
           <SettingToggle
             id="rsvp_show_remaining"

@@ -89,7 +89,7 @@ class ET_Builder_Module_EventkoiCalendar extends ET_Builder_Module {
 
 		$calendar_id = absint( $this->props['eventkoi_calendar'] ?? 0 );
 		if ( ! $calendar_id ) {
-			$calendar_id = (int) get_option( 'eventkoi_default_event_cal', 0 );
+			$calendar_id = eventkoi_resolve_calendar_id( (int) get_option( 'eventkoi_default_event_cal', 0 ) );
 		}
 
 		$args = array(

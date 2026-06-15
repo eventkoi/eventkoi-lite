@@ -28,7 +28,7 @@ addFilter(
 	"eventkoi/event-query-loop/autofill-image",
 	(BlockEdit) =>
 		function EventKoiImage(props) {
-			if (props.name !== "core/image") {
+			if (props.name !== "core/image" && props.name !== "core/post-featured-image") {
 				return <BlockEdit {...props} />;
 			}
 
@@ -41,6 +41,12 @@ addFilter(
 			const { event } = useContext(EventContext);
 
 			if (!inQuery || !event) {
+				return <BlockEdit {...props} />;
+			}
+
+			// Keep core/post-featured-image native UI/inspector settings.
+			// Preview data is provided by the query preview middleware.
+			if (props.name === "core/post-featured-image") {
 				return <BlockEdit {...props} />;
 			}
 

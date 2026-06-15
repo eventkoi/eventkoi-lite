@@ -335,6 +335,10 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 		$term_id = (int) $calendar_id;
 	}
 
+	if ( empty( $term_id ) ) {
+		$term_id = eventkoi_resolve_calendar_id( 0 );
+	}
+
 	$calendar = new \EventKoi\Core\Calendar( $term_id );
 
 	if ( $calendar::is_invalid() ) {
@@ -374,7 +378,7 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 	}
 
 	if ( 'list' === $display ) {
-		$allowed_orderby = array( 'modified', 'date_modified', 'date', 'publish_date', 'title', 'start_date', 'event_start', 'upcoming' );
+		$allowed_orderby = array( 'modified', 'date_modified', 'date', 'publish_date', 'title', 'start_date', 'event_start', 'upcoming', 'past', 'past_events' );
 		if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
 			$orderby = 'date_modified';
 		}
@@ -387,11 +391,17 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 		if ( 'start_date' === $orderby ) {
 			$orderby = 'event_start';
 		}
+		if ( 'past_events' === $orderby ) {
+			$orderby = 'past';
+		}
 		if ( ! in_array( $order, array( 'asc', 'desc' ), true ) ) {
 			$order = 'desc';
 		}
 		if ( 'upcoming' === $orderby && empty( $args['order'] ) ) {
 			$order = 'asc';
+		}
+		if ( 'past' === $orderby ) {
+			$order = 'desc';
 		}
 		$per_page    = $per_page > 0 ? min( $per_page, 100 ) : 10;
 		$max_results = $max_results > 0 ? min( $max_results, 1000 ) : 0;
@@ -518,16 +528,31 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
  */
 function eventkoi_get_permalink_structure() {
 	$saved_permalinks = (array) get_option( 'eventkoi_permalinks', array() );
-
-	$permalinks = array(
+	$defaults         = array(
 		'event_base'             => _x( 'event', 'slug', 'eventkoi-lite' ),
 		'category_base'          => _x( 'calendar', 'slug', 'eventkoi-lite' ),
 		'use_verbose_page_rules' => false,
 	);
+	$permalinks       = wp_parse_args( $saved_permalinks, $defaults );
 
-	// Save only if values have changed.
-	if ( $saved_permalinks !== $permalinks ) {
-		update_option( 'eventkoi_permalinks', $permalinks );
+	foreach ( array( 'event_base', 'category_base' ) as $key ) {
+		$base = untrailingslashit( sanitize_title_with_dashes( (string) ( $permalinks[ $key ] ?? '' ) ) );
+		if ( '' === $base ) {
+			$base = untrailingslashit( sanitize_title_with_dashes( (string) $defaults[ $key ] ) );
+		}
+		$permalinks[ $key ] = $base;
+	}
+
+	$permalinks['use_verbose_page_rules'] = rest_sanitize_boolean( $permalinks['use_verbose_page_rules'] ?? false );
+
+	$stored = array(
+		'event_base'             => $permalinks['event_base'],
+		'category_base'          => $permalinks['category_base'],
+		'use_verbose_page_rules' => $permalinks['use_verbose_page_rules'],
+	);
+
+	if ( $saved_permalinks !== $stored ) {
+		update_option( 'eventkoi_permalinks', $stored );
 	}
 
 	// Sanitize and set rewrite slugs.
@@ -636,7 +661,7 @@ function eventkoi_date_i18n( $date, $gmt = false ) {
  * @return string Default calendar URL.
  */
 function eventkoi_get_default_calendar_url() {
-	$default_cal_id = (int) get_option( 'eventkoi_default_event_cal', 0 );
+	$default_cal_id = eventkoi_resolve_calendar_id( (int) get_option( 'eventkoi_default_event_cal', 0 ) );
 
 	if ( $default_cal_id <= 0 ) {
 		// Fallback to events archive if no default calendar is set.
@@ -662,6 +687,108 @@ function eventkoi_get_default_calendar_url() {
 }
 
 /**
+ * Add a query arg with RFC3986 encoding so timezone offsets and IANA names
+ * survive frontend navigation unchanged.
+ *
+ * @param string $url   URL to update.
+ * @param string $key   Query arg key.
+ * @param string $value Query arg value.
+ * @return string
+ */
+function eventkoi_add_encoded_query_arg( $url, $key, $value ) {
+	$url = (string) $url;
+
+	if ( '' === $url ) {
+		return '';
+	}
+
+	$fragment = '';
+	$hash_pos = strpos( $url, '#' );
+
+	if ( false !== $hash_pos ) {
+		$fragment = substr( $url, $hash_pos );
+		$url      = substr( $url, 0, $hash_pos );
+	}
+
+	$url       = remove_query_arg( $key, $url );
+	$separator = false === strpos( $url, '?' ) ? '?' : '&';
+
+	return $url . $separator . rawurlencode( (string) $key ) . '=' . rawurlencode( (string) $value ) . $fragment;
+}
+
+/**
+ * Restore offset timezone values after PHP decodes a raw plus as a space.
+ *
+ * @param string $timezone Timezone query arg.
+ * @return string
+ */
+function eventkoi_restore_decoded_timezone_offset( $timezone ) {
+	$timezone = (string) $timezone;
+
+	if ( preg_match( '/^\s+\d{1,2}(?::?\d{2})?$/', $timezone ) ) {
+		return '+' . ltrim( $timezone );
+	}
+
+	if ( preg_match( '/^UTC\s+\d{1,2}(?::?\d{2})?$/i', $timezone ) ) {
+		return preg_replace( '/^UTC\s+/i', 'UTC+', $timezone );
+	}
+
+	return $timezone;
+}
+
+/**
+ * Get the current frontend display timezone query arg when it is valid.
+ *
+ * @return string
+ */
+function eventkoi_get_frontend_timezone_query_arg() {
+	if ( empty( $_GET['tz'] ) || is_array( $_GET['tz'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only frontend display state.
+		return '';
+	}
+
+	$timezone = (string) wp_unslash( $_GET['tz'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below after restoring offset notation.
+	$timezone = eventkoi_restore_decoded_timezone_offset( $timezone );
+	$timezone = sanitize_text_field( $timezone );
+
+	if ( '' === $timezone ) {
+		return '';
+	}
+
+	if ( 'local' === $timezone ) {
+		return $timezone;
+	}
+
+	try {
+		new DateTimeZone( eventkoi_php_timezone( $timezone ) );
+	} catch ( Exception $e ) {
+		return '';
+	}
+
+	return $timezone;
+}
+
+/**
+ * Preserve the active frontend display timezone on internal EventKoi links.
+ *
+ * @param string $url URL to update.
+ * @return string
+ */
+function eventkoi_append_frontend_timezone_arg( $url ) {
+	$url = (string) $url;
+
+	if ( '' === $url ) {
+		return '';
+	}
+
+	$timezone = eventkoi_get_frontend_timezone_query_arg();
+	if ( '' === $timezone ) {
+		return $url;
+	}
+
+	return eventkoi_add_encoded_query_arg( $url, 'tz', $timezone );
+}
+
+/**
  * Returns current date based on GMT and specific format.
  *
  * @param string $format Optional. A date format. Default is the plugin's default format.
@@ -683,13 +810,11 @@ function eventkoi_gmt_date( $format = '' ) {
  * @return string Timezone string.
  */
 function eventkoi_timezone() {
-	$timezone_string = wp_timezone_string();
+	$timezone_string = (string) get_option( 'timezone_string', '' );
 
-	if ( ! empty( $timezone_string ) && false === strpos( $timezone_string, '+' ) && false === strpos( $timezone_string, '-' ) ) {
-		// Named timezone like 'Africa/Egypt'.
+	if ( ! empty( $timezone_string ) ) {
 		$timezone = $timezone_string;
 	} else {
-		// Fallback to UTC offset if not a named timezone.
 		$offset = (float) get_option( 'gmt_offset', 0 );
 
 		if ( 0.0 === $offset ) {
@@ -722,10 +847,40 @@ function eventkoi_timezone() {
  * @return string
  */
 function eventkoi_php_timezone( $timezone ) {
-	$timezone = trim( (string) $timezone );
+	$timezone = (string) $timezone;
+
+	if ( preg_match( '/^\s+\d{1,2}(?::?\d{2})?$/', $timezone ) ) {
+		$timezone = '+' . ltrim( $timezone );
+	} elseif ( preg_match( '/^UTC\s+\d{1,2}(?::?\d{2})?$/i', $timezone ) ) {
+		$timezone = preg_replace( '/^UTC\s+/i', 'UTC+', $timezone );
+	}
+
+	$timezone = trim( $timezone );
 
 	if ( '' === $timezone ) {
 		return 'UTC';
+	}
+
+	if ( preg_match( '/^[+-]?\d+(?:\.\d+)?$/', $timezone ) ) {
+		$offset  = (float) $timezone;
+		$abs     = abs( $offset );
+		$hours   = (int) floor( $abs );
+		$minutes = (int) round( ( $abs - $hours ) * 60 );
+
+		if ( 60 === $minutes ) {
+			++$hours;
+			$minutes = 0;
+		}
+
+		if ( 0 === $hours && 0 === $minutes ) {
+			return 'UTC';
+		}
+
+		return sprintf( '%s%02d:%02d', $offset >= 0 ? '+' : '-', $hours, $minutes );
+	}
+
+	if ( preg_match( '/^UTC([+-]?\d+(?:\.\d+)?)$/i', $timezone, $matches ) ) {
+		return eventkoi_php_timezone( $matches[1] );
 	}
 
 	if ( preg_match( '/^UTC([+-])(\d{1,2})(?::?(\d{2}))?$/', $timezone, $matches ) ) {
@@ -740,6 +895,153 @@ function eventkoi_php_timezone( $timezone ) {
 	}
 
 	return $timezone;
+}
+
+/**
+ * Infer a fixed all-day source timezone from UTC all-day boundaries.
+ *
+ * Legacy all-day events may only have UTC start/end instants. When those
+ * instants are not UTC-midnight boundaries, the UTC time-of-day encodes the
+ * local offset that was used when the all-day date was saved.
+ *
+ * @param string $start_date UTC start date string.
+ * @param string $end_date   Optional UTC end date string.
+ * @return string PHP-compatible timezone identifier, or empty string.
+ */
+function eventkoi_infer_all_day_timezone_from_utc_range( $start_date, $end_date = '' ) {
+	$start_ts = strtotime( (string) $start_date );
+	if ( ! $start_ts ) {
+		return '';
+	}
+
+	$start_seconds = ( (int) gmdate( 'H', $start_ts ) * HOUR_IN_SECONDS )
+		+ ( (int) gmdate( 'i', $start_ts ) * MINUTE_IN_SECONDS )
+		+ (int) gmdate( 's', $start_ts );
+
+	$offset = ( DAY_IN_SECONDS - $start_seconds ) % DAY_IN_SECONDS;
+	if ( $offset > 14 * HOUR_IN_SECONDS ) {
+		$offset -= DAY_IN_SECONDS;
+	}
+
+	if ( $offset < -12 * HOUR_IN_SECONDS || $offset > 14 * HOUR_IN_SECONDS ) {
+		return '';
+	}
+
+	if ( 0 === $offset ) {
+		return 'UTC';
+	}
+
+	$sign    = $offset >= 0 ? '+' : '-';
+	$abs     = abs( $offset );
+	$hours   = (int) floor( $abs / HOUR_IN_SECONDS );
+	$minutes = (int) floor( ( $abs % HOUR_IN_SECONDS ) / MINUTE_IN_SECONDS );
+
+	return sprintf( '%s%02d:%02d', $sign, $hours, $minutes );
+}
+
+/**
+ * Check whether a timezone fits stored UTC all-day boundaries.
+ *
+ * Legacy all-day rows can be ambiguous for western offsets because a UTC
+ * midnight-equivalent like 10:00Z may be either +14 next-day midnight or
+ * Pacific/Honolulu same-day midnight. Stored event timezone metadata should
+ * disambiguate only when it actually matches the all-day boundary shape.
+ *
+ * @param string $timezone   Candidate timezone.
+ * @param string $start_date UTC start date string.
+ * @param string $end_date   Optional UTC end date string.
+ * @return bool
+ */
+function eventkoi_all_day_timezone_matches_utc_range( $timezone, $start_date, $end_date = '' ) {
+	$timezone = trim( (string) $timezone );
+	if ( '' === $timezone ) {
+		return false;
+	}
+
+	$start_ts = strtotime( (string) $start_date );
+	if ( false === $start_ts ) {
+		return false;
+	}
+
+	try {
+		$tz    = new \DateTimeZone( eventkoi_php_timezone( $timezone ) );
+		$start = ( new \DateTimeImmutable( '@' . $start_ts ) )->setTimezone( $tz );
+	} catch ( \Exception $e ) {
+		return false;
+	}
+
+	if ( '00:00:00' !== $start->format( 'H:i:s' ) ) {
+		return false;
+	}
+
+	if ( '' === (string) $end_date ) {
+		return true;
+	}
+
+	$end_ts = strtotime( (string) $end_date );
+	if ( false === $end_ts || $end_ts <= $start_ts ) {
+		return true;
+	}
+
+	$end  = ( new \DateTimeImmutable( '@' . $end_ts ) )->setTimezone( $tz );
+	$hour = (int) $end->format( 'H' );
+	$min  = (int) $end->format( 'i' );
+
+	return '00:00:00' === $end->format( 'H:i:s' ) || ( 23 === $hour && $min >= 58 );
+}
+
+/**
+ * Decide whether stored timezone metadata should override inferred offset.
+ *
+ * Keep legacy fixed-offset output when it produces the same calendar date as
+ * the stored timezone. Prefer stored timezone only when it disambiguates a
+ * different date, such as UTC-10 all-day rows that fixed-offset inference
+ * would otherwise read as +14.
+ *
+ * @param string $stored_timezone Stored event timezone.
+ * @param string $inferred        Inferred fixed-offset timezone.
+ * @param string $start_date      UTC start date string.
+ * @param string $end_date        Optional UTC end date string.
+ * @return bool
+ */
+function eventkoi_all_day_timezone_should_prefer_stored( $stored_timezone, $inferred, $start_date, $end_date = '' ) {
+	if ( ! eventkoi_all_day_timezone_matches_utc_range( $stored_timezone, $start_date, $end_date ) ) {
+		return false;
+	}
+
+	$inferred = trim( (string) $inferred );
+	if ( '' === $inferred ) {
+		return true;
+	}
+
+	$start_ts = strtotime( (string) $start_date );
+	if ( false === $start_ts ) {
+		return true;
+	}
+
+	$end_ts = '' !== (string) $end_date ? strtotime( (string) $end_date ) : false;
+
+	try {
+		$stored_tz      = new \DateTimeZone( eventkoi_php_timezone( $stored_timezone ) );
+		$inferred_tz    = new \DateTimeZone( eventkoi_php_timezone( $inferred ) );
+		$stored_start   = ( new \DateTimeImmutable( '@' . $start_ts ) )->setTimezone( $stored_tz )->format( 'Y-m-d' );
+		$inferred_start = ( new \DateTimeImmutable( '@' . $start_ts ) )->setTimezone( $inferred_tz )->format( 'Y-m-d' );
+
+		if ( $stored_start !== $inferred_start ) {
+			return true;
+		}
+
+		if ( false === $end_ts ) {
+			return false;
+		}
+
+		$stored_end   = ( new \DateTimeImmutable( '@' . $end_ts ) )->setTimezone( $stored_tz )->format( 'Y-m-d' );
+		$inferred_end = ( new \DateTimeImmutable( '@' . $end_ts ) )->setTimezone( $inferred_tz )->format( 'Y-m-d' );
+
+		return $stored_end !== $inferred_end;
+	} catch ( \Exception $e ) {
+		return true;
+	}
 }
 
 /**
@@ -773,6 +1075,33 @@ function eventkoi_default_calendar_color() {
 	 * @param string $color Default calendar color in hex format.
 	 */
 	return apply_filters( 'eventkoi_default_calendar_color', '#578CA7' );
+}
+
+/**
+ * Get the stored calendar color, preserving explicit transparency.
+ *
+ * @param int $calendar_id Calendar term ID.
+ * @return string Calendar color.
+ */
+function eventkoi_get_stored_calendar_color( $calendar_id = 0 ) {
+	$calendar_id = absint( $calendar_id );
+
+	if ( ! $calendar_id ) {
+		return eventkoi_default_calendar_color();
+	}
+
+	$color     = get_term_meta( $calendar_id, 'color', true );
+	$has_color = metadata_exists( 'term', $calendar_id, 'color' );
+
+	if ( $has_color && '' === (string) $color ) {
+		return 'transparent';
+	}
+
+	if ( '' === (string) $color ) {
+		return eventkoi_default_calendar_color();
+	}
+
+	return (string) $color;
 }
 
 /**
@@ -888,16 +1217,13 @@ function eventkoi_get_client_ip() {
  * @return string Date format string.
  */
 function eventkoi_get_field_date_format( $field ) {
-	// Define custom formats for specific fields.
-	$formats = array(
-		'last_updated' => 'j F Y, g:ia',
-		// Add other custom formats here if needed.
-	);
+	$date_format = trim( eventkoi_resolved_date_format() );
+	$time_format = trim( eventkoi_resolved_time_format() );
+	$format      = trim( $date_format . ', ' . $time_format, ', ' );
 
-	// Use custom format if defined, otherwise fallback to default.
-	$format = isset( $formats[ $field ] )
-		? $formats[ $field ]
-		: eventkoi_get_default_date_format();
+	if ( '' === $format ) {
+		$format = eventkoi_get_default_date_format();
+	}
 
 	/**
 	 * Filter the date format used for a specific field.
@@ -1008,23 +1334,18 @@ function eventkoi_generate_instance_starts( $rule, $limit = 500 ) {
 /**
  * Build an inclusive RRULE UNTIL value for a recurrence "ends on" date.
  *
- * The UI stores `ends_on` as a calendar date (e.g. "2026-05-17") or as midnight UTC
- * (e.g. "2026-05-17T00:00:00Z"). Treating that as an instant excludes any same-day
- * occurrence whose start is past midnight UTC in the event's timezone — even when
- * the user picked the very date they expected to be included. Anchor the UNTIL to
- * 23:59:59 on that calendar day in the event's timezone so RFC 5545 inclusivity
- * matches user intent.
+ * The UI saves `ends_on` as a UTC ISO instant for the selected local midnight.
+ * Convert shifted instants back to the event timezone's calendar day before anchoring
+ * UNTIL to 23:59:59, while preserving legacy date-only and exact-midnight values.
  *
  * @param string             $ends_on  Raw `ends_on` value from the rule.
  * @param \DateTimeZone|null $event_tz Event timezone. Falls back to site timezone.
  * @return \DateTimeImmutable|null End-of-day in event timezone, or null on bad input.
  */
 function eventkoi_recurrence_until( $ends_on, $event_tz = null ) {
-	if ( empty( $ends_on ) ) {
-		return null;
-	}
+	$raw = trim( (string) $ends_on );
 
-	if ( ! preg_match( '/^(\d{4}-\d{2}-\d{2})/', (string) $ends_on, $m ) ) {
+	if ( '' === $raw ) {
 		return null;
 	}
 
@@ -1032,8 +1353,31 @@ function eventkoi_recurrence_until( $ends_on, $event_tz = null ) {
 		$event_tz = wp_timezone();
 	}
 
+	$date_part = null;
+
+	if ( preg_match( '/^(\d{4}-\d{2}-\d{2})$/', $raw, $m ) ) {
+		$date_part = $m[1];
+	} elseif ( preg_match( '/^(\d{4}-\d{2}-\d{2})T00:00(?::00(?:\.0+)?)?(?:Z|[+-]\d\d:\d\d)$/i', $raw, $m ) ) {
+		$date_part = $m[1];
+	} elseif ( preg_match( '/(?:Z|[+-]\d\d:\d\d)$/i', $raw ) ) {
+		try {
+			$instant   = new \DateTimeImmutable( $raw );
+			$date_part = $instant->setTimezone( $event_tz )->format( 'Y-m-d' );
+		} catch ( \Exception $e ) {
+			$date_part = null;
+		}
+	}
+
+	if ( null === $date_part && preg_match( '/^(\d{4}-\d{2}-\d{2})/', $raw, $m ) ) {
+		$date_part = $m[1];
+	}
+
+	if ( null === $date_part ) {
+		return null;
+	}
+
 	try {
-		return new \DateTimeImmutable( $m[1] . ' 23:59:59', $event_tz );
+		return new \DateTimeImmutable( $date_part . ' 23:59:59', $event_tz );
 	} catch ( \Exception $e ) {
 		return null;
 	}
@@ -1082,10 +1426,17 @@ function eventkoi_locate_template( $template_name, $default_path = '' ) {
 function eventkoi_resolved_date_format(): string {
 	$settings = Settings::get();
 	$custom   = isset( $settings['date_format'] ) ? trim( (string) $settings['date_format'] ) : '';
-	if ( '' !== $custom ) {
-		return $custom;
-	}
-	return (string) get_option( 'date_format', 'F j, Y' );
+	$format   = '' !== $custom ? $custom : (string) get_option( 'date_format', 'F j, Y' );
+
+	/**
+	 * Filter the resolved EventKoi date format.
+	 *
+	 * Lets a single render override the format (e.g. the Event Data block's
+	 * per-block "Date format" control) without touching the global setting.
+	 *
+	 * @param string $format Resolved PHP date format.
+	 */
+	return (string) apply_filters( 'eventkoi_resolved_date_format', $format );
 }
 
 /**
@@ -1102,10 +1453,95 @@ function eventkoi_resolved_date_format(): string {
 function eventkoi_resolved_time_format(): string {
 	$settings = Settings::get();
 	$custom   = isset( $settings['time_format_string'] ) ? trim( (string) $settings['time_format_string'] ) : '';
-	if ( '' !== $custom ) {
-		return $custom;
+	$format   = '' !== $custom
+		? $custom
+		: eventkoi_apply_time_preference( (string) get_option( 'time_format', 'g:i a' ) );
+
+	/**
+	 * Filter the resolved EventKoi time format.
+	 *
+	 * Lets a single render override the format (e.g. the Event Data block's
+	 * per-block "Time format" control) without touching the global setting.
+	 *
+	 * @param string $format Resolved PHP time format.
+	 */
+	return (string) apply_filters( 'eventkoi_resolved_time_format', $format );
+}
+
+/**
+ * Check whether a PHP date format contains an unescaped token.
+ *
+ * @param string $format PHP date format string.
+ * @param array  $tokens Tokens to look for.
+ * @return bool
+ */
+function eventkoi_time_format_has_token( string $format, array $tokens ): bool {
+	$escaped = false;
+	$tokens  = array_flip( $tokens );
+
+	foreach ( str_split( $format ) as $char ) {
+		if ( $escaped ) {
+			$escaped = false;
+			continue;
+		}
+
+		if ( '\\' === $char ) {
+			$escaped = true;
+			continue;
+		}
+
+		if ( isset( $tokens[ $char ] ) ) {
+			return true;
+		}
 	}
-	return eventkoi_apply_time_preference( (string) get_option( 'time_format', 'g:i a' ) );
+
+	return false;
+}
+
+/**
+ * Replace unescaped PHP date format tokens while preserving escaped literals.
+ *
+ * @param string $format PHP date format string.
+ * @param array  $replacements Token replacement map.
+ * @return string
+ */
+function eventkoi_replace_time_format_tokens( string $format, array $replacements ): string {
+	$output  = '';
+	$escaped = false;
+
+	foreach ( str_split( $format ) as $char ) {
+		if ( $escaped ) {
+			$output .= '\\' . $char;
+			$escaped = false;
+			continue;
+		}
+
+		if ( '\\' === $char ) {
+			$escaped = true;
+			continue;
+		}
+
+		$output .= array_key_exists( $char, $replacements ) ? $replacements[ $char ] : $char;
+	}
+
+	if ( $escaped ) {
+		$output .= '\\';
+	}
+
+	return $output;
+}
+
+/**
+ * Normalize spacing after removing or appending time format tokens.
+ *
+ * @param string $format PHP date format string.
+ * @return string
+ */
+function eventkoi_tidy_time_format( string $format ): string {
+	$format = preg_replace( '/\s{2,}/', ' ', $format );
+	$format = preg_replace( '/\s+([,.:;])/', '$1', (string) $format );
+
+	return trim( (string) $format );
 }
 
 /**
@@ -1122,12 +1558,43 @@ function eventkoi_apply_time_preference( string $format ): string {
 	if ( ! empty( $settings['time_format_string'] ) ) {
 		return $format;
 	}
-	if ( ! empty( $settings['time_format'] ) && '24' === $settings['time_format'] ) {
-		$format = preg_replace( '/[gh]:i\s*[aA]/', 'H:i', $format );
-		$format = preg_replace( '/[gh]:i/', 'H:i', $format );
-		$format = str_replace( array( 'a', 'A' ), '', $format );
-		$format = trim( $format );
+
+	$preference = ! empty( $settings['time_format'] ) ? (string) $settings['time_format'] : '12';
+
+	if ( '24' === $preference ) {
+		$format = eventkoi_replace_time_format_tokens(
+			$format,
+			array(
+				'g' => 'H',
+				'h' => 'H',
+				'G' => 'H',
+				'H' => 'H',
+				'a' => '',
+				'A' => '',
+			)
+		);
+
+		return eventkoi_tidy_time_format( $format ) ?: 'H:i';
 	}
+
+	if ( '12' === $preference ) {
+		$has_meridiem = eventkoi_time_format_has_token( $format, array( 'a', 'A' ) );
+		$has_hour     = eventkoi_time_format_has_token( $format, array( 'g', 'G', 'h', 'H' ) );
+		$format       = eventkoi_replace_time_format_tokens(
+			$format,
+			array(
+				'G' => 'g',
+				'H' => 'g',
+				'h' => 'g',
+			)
+		);
+		$format       = eventkoi_tidy_time_format( $format );
+
+		if ( $has_hour && ! $has_meridiem ) {
+			$format = eventkoi_tidy_time_format( $format . ' a' );
+		}
+	}
+
 	return $format;
 }
 
@@ -1147,7 +1614,7 @@ function eventkoi_date( $type = 'datetime', $timestamp = null, $timezone = null 
 	// Honor auto-detect setting: use visitor local time when enabled and no explicit timezone passed.
 	if ( null === $timezone ) {
 		$settings = Settings::get();
-		if ( ! empty( $settings['auto_detect_timezone'] ) ) {
+		if ( rest_sanitize_boolean( $settings['auto_detect_timezone'] ?? false ) ) {
 			$timezone = wp_timezone();
 		}
 	}
@@ -1185,6 +1652,20 @@ function eventkoi_gmdate( $format, $timestamp = null ) {
 	$format = eventkoi_apply_time_preference( $format );
 
 	return gmdate( $format, $timestamp );
+}
+
+/**
+ * Determine whether an all-day UTC span represents one calendar day.
+ *
+ * @param int|null $start_ts Start timestamp.
+ * @param int|null $end_ts   Inclusive end timestamp.
+ * @return bool
+ */
+function eventkoi_is_single_all_day_span( $start_ts, $end_ts ): bool {
+	$start_ts = ! empty( $start_ts ) ? (int) $start_ts : 0;
+	$end_ts   = ! empty( $end_ts ) ? (int) $end_ts : 0;
+
+	return $start_ts > 0 && $end_ts > $start_ts && ( $end_ts - $start_ts ) <= DAY_IN_SECONDS;
 }
 
 /**
@@ -1226,6 +1707,10 @@ function eventkoi_format_datetime_range( $start_ts, $end_ts = null, $all_day = f
 	}
 
 	if ( $all_day ) {
+		if ( eventkoi_is_single_all_day_span( $start_ts, $end_ts ) ) {
+			return wp_date( $date_format, $start_ts, $timezone );
+		}
+
 		if ( ! $end_ts || $same_day ) {
 			return wp_date( $date_format, $start_ts, $timezone );
 		}

@@ -13,7 +13,8 @@ import {
   ChevronLeft,
   CircleCheck,
   CircleDotDashed,
-  TriangleAlert,
+  CalendarX,
+  Trash2,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -198,7 +199,13 @@ export function EventEdit() {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (showOnboardingHint && onboardingStep === 4) {
-      window.localStorage.setItem("eventkoi_onboarding_demo_complete", "1");
+      // Safari private mode / iframed admin throw on setItem — wrap so the
+      // editor render doesn't crash.
+      try {
+        window.localStorage.setItem("eventkoi_onboarding_demo_complete", "1");
+      } catch (e) {
+        // Best-effort onboarding preference.
+      }
     }
   }, [showOnboardingHint, onboardingStep]);
 
@@ -444,31 +451,74 @@ export function EventEdit() {
     </div>
   );
 
-  // 🛑 Guard early render if event is not ready
   if (!event || (isEditingInstance && !originalInstanceData)) {
+    if (notFound) {
+      return (
+        <div className="flex-1 flex items-center justify-center w-full min-h-[60vh] px-4">
+          <div className="w-full max-w-md rounded-xl border bg-card shadow-sm p-8 flex flex-col items-center text-center gap-5">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+              <CalendarX
+                className="h-7 w-7 text-muted-foreground"
+                strokeWidth={1.5}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <h3 className="text-lg font-semibold tracking-tight">
+                {__("Event not found", "eventkoi-lite")}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {__(
+                  "This event may have been deleted, or the link points to an ID that doesn't exist.",
+                  "eventkoi-lite"
+                )}
+              </p>
+            </div>
+            <Button asChild className="mt-1">
+              <Link to="/events">
+                <ChevronLeft className="mr-2 h-4 w-4" />
+                {__("Back to events", "eventkoi-lite")}
+              </Link>
+            </Button>
+          </div>
+        </div>
+      );
+    }
+
     return null;
   }
 
   if (event.wp_status === "trash") {
     return (
-      <div className="flex-1 flex items-center justify-center text-sm flex-col gap-4 relative w-full">
-        <div className="absolute top-4 left-4">
-          <Button variant="link" asChild>
-            <Link to="/events">
-              <ChevronLeft className="mr-2 h-4 w-4" />
-              Back
-            </Link>
-          </Button>
-        </div>
-        <TriangleAlert
-          className="w-10 h-10 text-muted-foreground"
-          strokeWidth={1}
-        />
-        <div className="text-base text-muted-foreground">
-          {__("Event has moved to Trash. Restore it before you can edit.", "eventkoi-lite")}
-        </div>
-        <div className="pt-4">
-          <Button onClick={restoreEvent}>{__("Restore event", "eventkoi-lite")}</Button>
+      <div className="flex-1 flex items-center justify-center w-full min-h-[60vh] px-4">
+        <div className="w-full max-w-md rounded-xl border bg-card shadow-sm p-8 flex flex-col items-center text-center gap-5">
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
+            <Trash2
+              className="h-7 w-7 text-muted-foreground"
+              strokeWidth={1.5}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <h3 className="text-lg font-semibold tracking-tight">
+              {__("Event is in Trash", "eventkoi-lite")}
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              {__(
+                "Restore this event to make changes. While trashed it stays hidden from the public calendar.",
+                "eventkoi-lite"
+              )}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 mt-1">
+            <Button variant="outline" asChild>
+              <Link to="/events">
+                <ChevronLeft className="mr-2 h-4 w-4" />
+                {__("Back", "eventkoi-lite")}
+              </Link>
+            </Button>
+            <Button onClick={restoreEvent}>
+              {__("Restore event", "eventkoi-lite")}
+            </Button>
+          </div>
         </div>
       </div>
     );

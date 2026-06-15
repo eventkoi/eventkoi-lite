@@ -1,5 +1,4 @@
 import { getSettings } from "@/hooks/SettingsContext";
-import { formatInTimeZone } from "date-fns-tz";
 import { DateTime } from "luxon";
 
 const monthMap = {
@@ -40,12 +39,28 @@ export function formatTimezoneLabel(tz, timeFormat = "24", withFormat = true) {
     return appendSuffix(label);
   }
 
+  // Handle offset aliases like UTC+3 or UTC-05:30.
+  const utcOffsetMatch = tz.match(/^UTC([+-])(\d{1,2})(?::?(\d{2}))?$/i);
+  if (utcOffsetMatch) {
+    const sign = utcOffsetMatch[1];
+    const hours = parseInt(utcOffsetMatch[2], 10);
+    const mins = utcOffsetMatch[3] || "00";
+    const label =
+      mins === "00"
+        ? `UTC${sign}${hours}`
+        : `UTC${sign}${hours}:${mins.padStart(2, "0")}`;
+    return appendSuffix(label);
+  }
+
   // Handle normalized Etc/GMT±N
   if (tz.startsWith("Etc/GMT")) {
     const offset = tz.replace("Etc/GMT", "");
     const num = parseInt(offset, 10);
+    if (!Number.isFinite(num)) {
+      return appendSuffix("UTC");
+    }
     let label =
-      num === 0 ? "UTC" : `UTC${num >= 0 ? "+" : "-"}${Math.abs(num)}`;
+      num === 0 ? "UTC" : `UTC${num > 0 ? "-" : "+"}${Math.abs(num)}`;
     return appendSuffix(label);
   }
 
@@ -100,14 +115,33 @@ export function buildTimelineFromApi(event, wpTz) {
     return event.tbc_note || "Date and time to be confirmed";
   }
 
-  const tz = normalizeTimeZone(wpTz || "UTC");
+  const params = typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
+  const settings = getSettings?.() || params.settings || {};
+  const formatParams = { ...params, ...settings };
+  const normalizeZone = (zone, fallback = "UTC") => {
+    const normalized = normalizeTimeZone(zone || fallback);
+    return DateTime.now().setZone(normalized).isValid ? normalized : fallback;
+  };
+
+  const tz = normalizeZone(wpTz || "UTC");
+  const eventTz = normalizeZone(
+    event?.all_day_timezone ||
+      event?.allDayTimezone ||
+      event?.timezone ||
+      params?.timezone_string ||
+      params?.timezone_override ||
+      params?.timezone ||
+      "UTC"
+  );
 
   // Plugin 12/24-hour preference.
-  const pluginTimePref = eventkoi_params?.time_format || "12"; // "12" | "24"
+  const pluginTimePref = formatParams?.time_format || "12"; // "12" | "24"
 
   // WordPress date/time format settings.
-  const wpDateFormat = eventkoi_params?.date_format || "F j, Y";
-  const wpTimeFormat = eventkoi_params?.time_format_string || "g:i a";
+  const wpDateFormat = formatParams?.date_format || "F j, Y";
+  const wpTimeFormat =
+    formatParams?.time_format_string ||
+    (pluginTimePref === "24" ? "H:i" : "g:i a");
 
   // Convert to Luxon-compatible format strings.
   const luxonDateFormat = wpToLuxonFormat(wpDateFormat);
@@ -123,38 +157,29 @@ export function buildTimelineFromApi(event, wpTz) {
 
   // Detect global locale from eventkoi_params.
   const lang =
-    typeof eventkoi_params !== "undefined" && eventkoi_params.locale
-      ? normalizeLocale(eventkoi_params.locale)
+    formatParams.locale
+      ? normalizeLocale(formatParams.locale)
       : "en";
 
-  // Parse UTC → WP timezone DateTime.
-  const parseDate = (iso) => {
+  const parseDateInZone = (iso, zone) => {
     if (!iso) {
       return null;
     }
-    const dt = DateTime.fromISO(iso, { zone: "utc" })
-      .setZone(tz)
-      .setLocale(lang);
+    const value = String(iso);
+    const dt = /^\d{4}-\d{2}-\d{2}$/.test(value)
+      ? DateTime.fromISO(value, { zone })
+      : DateTime.fromISO(value, { zone: "utc" }).setZone(zone);
     return dt.isValid ? dt : null;
   };
+  const parseDate = (iso) => parseDateInZone(iso, tz);
+  const parseEventDate = (iso) => parseDateInZone(iso, eventTz);
 
   const formatTime = (dt) => {
     if (!dt?.isValid) {
       return "";
     }
 
-    // Determine base format according to plugin preference.
-    let baseFormat;
-    if (pluginTimePref === "24") {
-      baseFormat = "HH:mm";
-    } else if (pluginTimePref === "12") {
-      baseFormat = "h:mm a";
-    } else {
-      // Fallback to WP time format.
-      baseFormat = luxonTimeFormat;
-    }
-
-    let formatted = dt.toFormat(baseFormat);
+    let formatted = dt.toFormat(luxonTimeFormat);
 
     // Adjust AM/PM casing to match WP setting.
     if (wpTimeFormat.includes("A")) {
@@ -187,16 +212,20 @@ export function buildTimelineFromApi(event, wpTz) {
   // --- Recurring events ---
   //
   if (event.date_type === "recurring") {
-    const start = parseDate(event.start_date_iso || event.start_date);
-    const end =
-      parseDate(event.end_real) ||
-      parseDate(event.end_date_iso || event.end_date);
+    const allDay = !!event.all_day || isEventAllDay(event);
+    const start = allDay
+      ? parseEventDate(event.all_day_start_date || event.start_date_iso || event.start_date)
+      : parseDate(event.start_date_iso || event.start_date);
+    const end = allDay
+      ? parseEventDate(event.all_day_end_date || event.end_real) ||
+        parseEventDate(event.all_day_end_date || event.end_date_iso || event.end_date)
+      : parseDate(event.end_real) ||
+        parseDate(event.end_date_iso || event.end_date);
 
     if (!start) {
       return null;
     }
 
-    const allDay = !!event.all_day;
     const isSameDay = end && start.hasSame(end, "day");
 
     if (isSameDay && !allDay) {
@@ -217,18 +246,80 @@ export function buildTimelineFromApi(event, wpTz) {
   // --- Standard / multi-day events ---
   //
   if (event.date_type === "standard" || event.date_type === "multi") {
-    const start = parseDate(event.start_date_iso || event.start_date);
+    if (
+      event.standard_type === "selected" &&
+      Array.isArray(event.event_days) &&
+      event.event_days.length > 1
+    ) {
+      const selectedLines = event.event_days
+        .map((day) => {
+          const dayAllDay = isTruthy(day?.all_day);
+          const start = dayAllDay
+            ? parseEventDate(day?.all_day_start_date || day?.start_date)
+            : parseDate(day?.start_date);
+          const realEnd = dayAllDay
+            ? parseEventDate(day?.all_day_end_date || day?.end_real)
+            : parseDate(day?.end_real);
+          const rawEnd = dayAllDay
+            ? parseEventDate(day?.all_day_end_date || day?.end_date || day?.end)
+            : parseDate(day?.end_date || day?.end);
+          const end = realEnd || rawEnd;
+
+          if (!start) {
+            return "";
+          }
+
+          if (dayAllDay) {
+            const displayEnd = getAllDayDisplayEnd(start, rawEnd, realEnd);
+            if (!displayEnd || displayEnd.hasSame(start, "day")) {
+              return fmt(start, "date");
+            }
+
+            return `${fmt(start, "date")} – ${fmt(displayEnd, "date")}`;
+          }
+
+          const isSameDay = end && start.hasSame(end, "day");
+
+          if (isSameDay) {
+            return `${fmt(start, "date")}, ${fmt(start, "time")} – ${fmt(
+              end,
+              "time"
+            )}`;
+          }
+
+          if (!end) {
+            return `${fmt(start, "date")}, ${fmt(start, "time")}`;
+          }
+
+          return `${fmt(start, "date")}, ${fmt(start, "time")} – ${fmt(
+            end,
+            "date"
+          )}, ${fmt(end, "time")}`;
+        })
+        .filter(Boolean);
+
+      if (selectedLines.length > 0) {
+        return selectedLines.join("\n");
+      }
+    }
+
     const hasEndDate = !!(event.end_date || event.end_real);
+    const allDay = !!event.all_day || isEventAllDay(event);
+    const start = allDay
+      ? parseEventDate(event.all_day_start_date || event.start_date_iso || event.start_date)
+      : parseDate(event.start_date_iso || event.start_date);
     const end = hasEndDate
-      ? parseDate(event.end_real) ||
-        parseDate(event.end_date_iso || event.end_date)
+      ? allDay
+        ? parseEventDate(event.all_day_end_date || event.end_real) ||
+          parseEventDate(event.all_day_end_date || event.end_date_iso || event.end_date)
+        : parseDate(event.end_real) ||
+          parseDate(event.end_date_iso || event.end_date)
       : null;
 
     if (!start) {
       return null;
     }
 
-    const allDay = !!event.all_day;
     const isSameDay = end && start.hasSame(end, "day");
 
     if (isSameDay && !allDay) {
@@ -272,7 +363,22 @@ export function buildTimeline(event, wpTz, timeFormat = "12") {
     return event.tbc_note || "Date and time to be confirmed";
   }
 
-  const tz = normalizeTimeZone(wpTz || "UTC");
+  const params = typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
+  const settings = getSettings?.() || params.settings || {};
+  const formatParams = { ...params, ...settings };
+  const normalizeZone = (zone, fallback = "UTC") => {
+    const normalized = normalizeTimeZone(zone || fallback);
+    return DateTime.now().setZone(normalized).isValid ? normalized : fallback;
+  };
+
+  const tz = normalizeZone(wpTz || "UTC");
+  const eventTz = normalizeZone(
+    event?.timezone ||
+      params?.timezone_string ||
+      params?.timezone_override ||
+      params?.timezone ||
+      "UTC"
+  );
 
   // Normalize WP locale (e.g. de_DE → de-DE).
   const normalizeLocale = (loc) => {
@@ -284,44 +390,38 @@ export function buildTimeline(event, wpTz, timeFormat = "12") {
 
   // Detect and normalize global locale from eventkoi_params.
   const lang =
-    typeof eventkoi_params !== "undefined" && eventkoi_params.locale
-      ? normalizeLocale(eventkoi_params.locale)
+    formatParams.locale
+      ? normalizeLocale(formatParams.locale)
       : "en";
 
   // --- Format setup ---
-  const wpDateFormat = eventkoi_params?.date_format || "F j, Y";
-  const wpTimeFormat = eventkoi_params?.time_format_string || "g:i a";
+  const wpDateFormat = formatParams?.date_format || "F j, Y";
+  const wpTimeFormat =
+    formatParams?.time_format_string ||
+    ((formatParams?.time_format || timeFormat) === "24" ? "H:i" : "g:i a");
   const luxonDateFormat = wpToLuxonFormat(wpDateFormat);
   const luxonTimeFormat = wpToLuxonFormat(wpTimeFormat);
 
   // --- Helpers ---
-  const parseDate = (iso) => {
+  const parseDateInZone = (iso, zone) => {
     if (!iso) {
       return null;
     }
-    const dt = DateTime.fromISO(iso, { zone: "utc" })
-      .setZone(tz)
-      .setLocale(lang);
+    const value = String(iso);
+    const dt = /^\d{4}-\d{2}-\d{2}$/.test(value)
+      ? DateTime.fromISO(value, { zone })
+      : DateTime.fromISO(value, { zone: "utc" }).setZone(zone);
     return dt.isValid ? dt : null;
   };
+  const parseDate = (iso) => parseDateInZone(iso, tz);
+  const parseEventDate = (iso) => parseDateInZone(iso, eventTz);
 
   const formatTime = (dt) => {
     if (!dt?.isValid) {
       return "";
     }
 
-    // Determine base output format according to plugin preference.
-    let baseFormat;
-    if (timeFormat === "24") {
-      baseFormat = "HH:mm";
-    } else if (timeFormat === "12") {
-      baseFormat = "h:mm a";
-    } else {
-      // Fallback to WP time format.
-      baseFormat = luxonTimeFormat;
-    }
-
-    let formatted = dt.toFormat(baseFormat);
+    let formatted = dt.toFormat(luxonTimeFormat);
 
     // Adjust AM/PM casing to match WP format style.
     if (wpTimeFormat.includes("A")) {
@@ -352,13 +452,18 @@ export function buildTimeline(event, wpTz, timeFormat = "12") {
   // --- Recurring events ---
   //
   if (event.date_type === "recurring" && event.timeline) {
-    const start = parseDate(event.start);
-    const end = parseDate(event.end_real) || parseDate(event.end);
+    const allDay = isEventAllDay(event);
+    const start = allDay
+      ? parseEventDate(event.all_day_start_date || event.start)
+      : parseDate(event.start);
+    const end = allDay
+      ? parseEventDate(event.all_day_end_date || event.end_real) ||
+        parseEventDate(event.all_day_end_date || event.end)
+      : parseDate(event.end_real) || parseDate(event.end);
     if (!start) {
       return null;
     }
 
-    const allDay = !!event.allDay;
     const isSameDay = end && start.hasSame(end, "day");
 
     if (isSameDay && !allDay) {
@@ -379,14 +484,84 @@ export function buildTimeline(event, wpTz, timeFormat = "12") {
   // --- Standard / multi-day events ---
   //
   if (event.date_type === "standard" || event.date_type === "multi") {
-    const start = parseDate(event.start);
-    const end = parseDate(event.end_real) || parseDate(event.end);
+    if (
+      event.standard_type === "selected" &&
+      Array.isArray(event.event_days) &&
+      event.event_days.length > 1
+    ) {
+      const selectedLines = event.event_days
+        .map((day) => {
+          const dayAllDay = isTruthy(day?.all_day);
+          const start = dayAllDay
+            ? parseEventDate(day?.all_day_start_date || day?.start_date)
+            : parseDate(day?.start_date);
+          const realEnd = dayAllDay
+            ? parseEventDate(day?.all_day_end_date || day?.end_real)
+            : parseDate(day?.end_real);
+          const rawEnd = dayAllDay
+            ? parseEventDate(day?.all_day_end_date || day?.end_date || day?.end)
+            : parseDate(day?.end_date || day?.end);
+          const end = realEnd || rawEnd;
+
+          if (!start) {
+            return "";
+          }
+
+          if (dayAllDay) {
+            const displayEnd = getAllDayDisplayEnd(start, rawEnd, realEnd);
+            if (!displayEnd || displayEnd.hasSame(start, "day")) {
+              return fmt(start, "date");
+            }
+
+            return `${fmt(start, "date")} – ${fmt(displayEnd, "date")}`;
+          }
+
+          const isSameDay = end && start.hasSame(end, "day");
+
+          if (isSameDay) {
+            return `${fmt(start, "date")}, ${fmt(start, "time")} – ${fmt(
+              end,
+              "time"
+            )}`;
+          }
+
+          if (!end) {
+            return `${fmt(start, "date")}, ${fmt(start, "time")}`;
+          }
+
+          return `${fmt(start, "date")}, ${fmt(start, "time")} – ${fmt(
+            end,
+            "date"
+          )}, ${fmt(end, "time")}`;
+        })
+        .filter(Boolean);
+
+      if (selectedLines.length > 0) {
+        return selectedLines.join("\n");
+      }
+    }
+
+    const allDay = isEventAllDay(event);
+    const start = allDay
+      ? parseEventDate(event.all_day_start_date || event.start)
+      : parseDate(event.start);
+    const end = allDay
+      ? parseEventDate(event.all_day_end_date || event.end_real) ||
+        parseEventDate(event.all_day_end_date || event.end)
+      : parseDate(event.end_real) || parseDate(event.end);
     if (!start) {
       return null;
     }
 
-    const allDay = !!event.allDay;
     const isSameDay = end && start.hasSame(end, "day");
+
+    if (allDay) {
+      if (!end || isSameDay) {
+        return fmt(start, "date");
+      }
+
+      return `${fmt(start, "date")} – ${fmt(end, "date")}`;
+    }
 
     if (isSameDay) {
       return `${fmt(start, "date")}, ${fmt(start, "time")} – ${fmt(
@@ -399,6 +574,19 @@ export function buildTimeline(event, wpTz, timeFormat = "12") {
       return allDay
         ? fmt(start, "date")
         : `${fmt(start, "date")}, ${fmt(start, "time")}`;
+    }
+
+    if (event.end_all_day || event.endAllDay) {
+      const allDayEnd = parseEventDate(event.end_real || event.end) || end;
+
+      if (isSameDay) {
+        return `${fmt(start, "date")}, ${fmt(start, "time")}`;
+      }
+
+      return `${fmt(start, "date")}, ${fmt(start, "time")} – ${fmt(
+        allDayEnd,
+        "date"
+      )}`;
     }
 
     return `${fmt(start, "date")}, ${fmt(start, "time")} – ${fmt(
@@ -446,16 +634,63 @@ export function wpToLuxonFormat(phpFormat = "F j, Y") {
   });
 }
 
+function getAllDayDisplayEnd(start, end, realEnd = null) {
+  if (realEnd?.isValid) {
+    const durationMs = realEnd.toMillis() - start.toMillis();
+    if (durationMs > 0 && durationMs <= 24 * 60 * 60 * 1000) {
+      return start;
+    }
+
+    return realEnd;
+  }
+
+  if (!end?.isValid) {
+    return null;
+  }
+
+  const durationMs = end.toMillis() - start.toMillis();
+  if (durationMs > 0 && durationMs <= 24 * 60 * 60 * 1000) {
+    return start;
+  }
+
+  if (end.hasSame(start, "day")) {
+    return end;
+  }
+
+  const displayEnd = end.minus({ days: 1 });
+  return displayEnd < start ? start : displayEnd;
+}
+
+function isTruthy(value) {
+  return value === true || value === 1 || value === "1" || value === "true";
+}
+
+function isEventAllDay(event) {
+  const firstRule = Array.isArray(event?.recurrence_rules)
+    ? event.recurrence_rules[0]
+    : null;
+  const firstDay = Array.isArray(event?.event_days) ? event.event_days[0] : null;
+
+  return (
+    isTruthy(event?.all_day) ||
+    isTruthy(event?.allDay) ||
+    isTruthy(firstRule?.all_day) ||
+    isTruthy(firstDay?.all_day)
+  );
+}
+
 export function formatWPtime(isoString, options = {}) {
   if (!isoString) return "";
 
   const params = typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
-  const wpLocale = (params.locale || "en").replace("_", "-");
+  const settings = options.settings || getSettings?.() || params.settings || {};
+  const wpLocale = (settings.locale || params.locale || "en").replace("_", "-");
   const tz = options.timezone || params.timezone_string || "UTC";
   const fmtType = options.format || "date-time";
 
-  const wpDateFmt = params.date_format || "F j, Y";
-  const wpTimeFmt = params.time_format_string || "g:i a";
+  const wpDateFmt = settings.date_format || params.date_format || "F j, Y";
+  const wpTimeFmt =
+    settings.time_format_string || params.time_format_string || "g:i a";
 
   const dateFmt = wpToLuxonFormat(wpDateFmt);
   const timeFmt = wpToLuxonFormat(wpTimeFmt);
@@ -521,8 +756,12 @@ export function formatShortDate(isoString, options = {}) {
 
   const params =
     typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
-  const wpLocale = (params.locale || "en").replace("_", "-");
+  const settings = options.settings || getSettings?.() || params.settings || {};
+  const wpLocale = (settings.locale || params.locale || "en").replace("_", "-");
   const tz = options.timezone || params.timezone_string || "UTC";
+  const dateFormat = wpToLuxonFormat(
+    settings.date_format || params.date_format || "F j, Y"
+  );
 
   let dt = DateTime.fromISO(isoString, { zone: "utc" });
 
@@ -532,7 +771,7 @@ export function formatShortDate(isoString, options = {}) {
 
   dt = dt.setZone(tz).setLocale(wpLocale);
 
-  return dt.isValid ? dt.toFormat("d LLL yy") : "";
+  return dt.isValid ? dt.toFormat(dateFormat) : "";
 }
 
 /**
@@ -599,21 +838,43 @@ export function ensureUtcZ(value) {
 
 /**
  * Anchor a recurrence "ends_on" value to end-of-day in the event timezone so
- * the user-picked calendar date is inclusive. Mirrors PHP eventkoi_recurrence_until():
- * the UI stores ends_on as "YYYY-MM-DD" or midnight UTC ("YYYY-MM-DDT00:00:00Z"),
- * and treating either as an instant excludes any same-day occurrence past UTC
- * midnight in the event's timezone.
+ * the user-picked calendar date is inclusive. Mirrors PHP eventkoi_recurrence_until().
+ * UI values are saved as UTC ISO instants for the selected local midnight, so
+ * explicit non-midnight instants are converted back to the event timezone
+ * calendar day. Exact midnight ISO values keep their stored date for backward
+ * compatibility.
  *
  * @param {string} endsOn Raw rule.ends_on value.
  * @param {string} zone   Event timezone (IANA name).
  * @returns {DateTime|null} Luxon DateTime at 23:59:59.999 in the event timezone, or null on bad input.
  */
 export function recurrenceUntilWall(endsOn, zone) {
-  const m = String(endsOn || "").match(/^(\d{4}-\d{2}-\d{2})/);
-  if (!m) return null;
-  const dt = DateTime.fromISO(m[1], { zone: normalizeTimeZone(zone) }).endOf(
-    "day"
+  const raw = String(endsOn || "").trim();
+  const safeZone = normalizeTimeZone(zone);
+
+  if (!raw) return null;
+
+  const dateOnlyMatch = raw.match(/^(\d{4}-\d{2}-\d{2})$/);
+  const legacyMidnightIsoMatch = raw.match(
+    /^(\d{4}-\d{2}-\d{2})T00:00(?::00(?:\.0+)?)?(?:Z|[+-]\d\d:\d\d)$/i
   );
+
+  let datePart =
+    dateOnlyMatch?.[1] || legacyMidnightIsoMatch?.[1] || null;
+
+  if (!datePart && /(?:Z|[+-]\d\d:\d\d)$/i.test(raw)) {
+    const instant = DateTime.fromISO(raw, { setZone: true }).setZone(safeZone);
+    datePart = instant.isValid ? instant.toISODate() : null;
+  }
+
+  if (!datePart) {
+    const m = raw.match(/^(\d{4}-\d{2}-\d{2})/);
+    datePart = m?.[1] || null;
+  }
+
+  if (!datePart) return null;
+
+  const dt = DateTime.fromISO(datePart, { zone: safeZone }).endOf("day");
   return dt.isValid ? dt : null;
 }
 
@@ -672,34 +933,98 @@ export const WEEKDAYS = [
  * @returns {string} Normalized IANA timezone string
  */
 export function normalizeTimeZone(tz) {
-  if (!tz) return "UTC";
+  const restoreDecodedTimezoneOffset = (value) => {
+    const raw = String(value ?? "");
 
-  if (tz === "local") {
+    if (/^\s+\d{1,2}(?::?\d{2})?$/.test(raw)) {
+      return `+${raw.trim()}`;
+    }
+
+    if (/^UTC\s+\d{1,2}(?::?\d{2})?$/i.test(raw)) {
+      return raw.replace(/^UTC\s+/i, "UTC+");
+    }
+
+    return raw.trim();
+  };
+
+  const normalizedInput = restoreDecodedTimezoneOffset(tz);
+
+  if (!normalizedInput) return "UTC";
+
+  if (normalizedInput === "local") {
     return Intl.DateTimeFormat().resolvedOptions().timeZone;
   }
 
-  if (tz.toLowerCase() === "utc") {
+  if (normalizedInput.toLowerCase() === "utc") {
     return "UTC";
   }
 
+  const normalizeOffset = (offset) => {
+    const value = Number(offset);
+    if (!Number.isFinite(value) || value === 0) {
+      return "UTC";
+    }
+
+    const abs = Math.abs(value);
+    let hours = Math.floor(abs);
+    let minutes = Math.round((abs - hours) * 60);
+
+    if (minutes === 60) {
+      hours += 1;
+      minutes = 0;
+    }
+
+    if (minutes === 0) {
+      const sign = value >= 0 ? "-" : "+";
+      return `Etc/GMT${sign}${hours}`;
+    }
+
+    const sign = value >= 0 ? "+" : "-";
+    return `${sign}${String(hours).padStart(2, "0")}:${String(
+      minutes
+    ).padStart(2, "0")}`;
+  };
+
+  const normalizeSignedParts = (sign, hours, minutes = "0") => {
+    const offset = Number(hours) + Number(minutes || 0) / 60;
+    return normalizeOffset(sign === "-" ? -offset : offset);
+  };
+
+  const isoOffsetMatch = normalizedInput.match(
+    /^([+-])(\d{1,2})(?::?(\d{2}))?$/
+  );
+  if (isoOffsetMatch) {
+    return normalizeSignedParts(
+      isoOffsetMatch[1],
+      isoOffsetMatch[2],
+      isoOffsetMatch[3]
+    );
+  }
+
+  const utcIsoOffsetMatch = normalizedInput.match(
+    /^UTC([+-])(\d{1,2})(?::?(\d{2}))?$/i
+  );
+  if (utcIsoOffsetMatch) {
+    return normalizeSignedParts(
+      utcIsoOffsetMatch[1],
+      utcIsoOffsetMatch[2],
+      utcIsoOffsetMatch[3]
+    );
+  }
+
   // Handle UTC±offset formats from WP settings (e.g. "UTC+2", "UTC-3.5")
-  const utcOffsetMatch = tz.match(/^UTC([+-]?\d+(\.\d+)?)$/i);
+  const utcOffsetMatch = normalizedInput.match(/^UTC([+-]?\d+(\.\d+)?)$/i);
   if (utcOffsetMatch) {
-    const offset = parseFloat(utcOffsetMatch[1]);
-    // IANA Etc/GMT offsets are reversed: UTC+2 → Etc/GMT-2
-    const sign = offset >= 0 ? "-" : "+";
-    return `Etc/GMT${sign}${Math.abs(offset)}`;
+    return normalizeOffset(utcOffsetMatch[1]);
   }
 
   // Handle pure numeric offsets (e.g. "3", "-2")
-  if (!isNaN(parseFloat(tz)) && isFinite(tz)) {
-    const offset = parseFloat(tz);
-    const sign = offset >= 0 ? "-" : "+";
-    return `Etc/GMT${sign}${Math.abs(offset)}`;
+  if (!isNaN(parseFloat(normalizedInput)) && isFinite(normalizedInput)) {
+    return normalizeOffset(normalizedInput);
   }
 
   // Assume it's already a valid IANA timezone
-  return tz;
+  return normalizedInput;
 }
 
 /**
@@ -817,18 +1142,62 @@ export function formatAdminDateCell(
 export function formatWallTimeRange(start, end, timezone = "UTC") {
   if (!start) return "";
 
+  const params = typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
+  const settings = getSettings?.() || params.settings || {};
+  const formatParams = { ...params, ...settings };
   const safeZone = normalizeTimeZone(timezone);
+  const locale = (formatParams.locale || params.locale || "en").replace("_", "-");
+  const timePreference = formatParams.time_format || "12";
+  const wpDateFormat = formatParams.date_format || "F j, Y";
+  const wpTimeFormat =
+    formatParams.time_format_string ||
+    (timePreference === "24" ? "H:i" : "g:i a");
+  const dateFormat = wpToLuxonFormat(wpDateFormat);
+  const timeFormat = wpToLuxonFormat(wpTimeFormat);
 
-  const startDate = typeof start === "string" ? new Date(start) : start;
-  const endDate = typeof end === "string" ? new Date(end) : end;
+  const parseDate = (value) => {
+    if (!value) {
+      return null;
+    }
 
-  const is24h = eventkoi_params?.time_format === "24";
-  const timeFmt = is24h ? "HH:mm" : "h:mm a";
-  const datePart = formatInTimeZone(startDate, safeZone, "MMM d, yyyy");
-  const startTime = formatInTimeZone(startDate, safeZone, timeFmt);
-  const endTime = endDate
-    ? formatInTimeZone(endDate, safeZone, timeFmt)
-    : null;
+    if (value instanceof Date) {
+      const dt = DateTime.fromJSDate(value, { zone: "utc" }).setZone(safeZone);
+      return dt.isValid ? dt.setLocale(locale) : null;
+    }
+
+    const raw = String(value);
+    let dt = DateTime.fromISO(raw, { zone: "utc" });
+
+    if (!dt.isValid) {
+      dt = DateTime.fromSQL(raw, { zone: "utc" });
+    }
+
+    dt = dt.setZone(safeZone);
+    return dt.isValid ? dt.setLocale(locale) : null;
+  };
+
+  const formatTime = (dt) => {
+    let formatted = dt.toFormat(timeFormat);
+
+    if (wpTimeFormat.includes("A")) {
+      formatted = formatted.replace(/\b(am|pm)\b/g, (m) => m.toUpperCase());
+    } else if (wpTimeFormat.includes("a")) {
+      formatted = formatted.replace(/\b(AM|PM)\b/g, (m) => m.toLowerCase());
+    }
+
+    return formatted;
+  };
+
+  const startDate = parseDate(start);
+  const endDate = parseDate(end);
+
+  if (!startDate) {
+    return "";
+  }
+
+  const datePart = startDate.toFormat(dateFormat);
+  const startTime = formatTime(startDate);
+  const endTime = endDate ? formatTime(endDate) : null;
 
   return `${datePart}, ${startTime}${endTime ? ` – ${endTime}` : ""}`;
 }
@@ -847,6 +1216,14 @@ export function safeNormalizeTimeZone(tz) {
  */
 export function getInitialDate(attributes) {
   const now = DateTime.utc();
+
+  // Week view always lands on the week containing today, regardless of
+  // default month/year — matches the frontend so editor preview mirrors
+  // what visitors actually see.
+  if (attributes?.timeframe === "week") {
+    return now.toISODate();
+  }
+
   let year = now.year;
   let month = now.month;
 
@@ -901,4 +1278,100 @@ export function getInitialCalendarDate(calendar) {
 
   // Always return explicit first-of-month in UTC
   return DateTime.utc(year, month, 1).toISODate();
+}
+
+/**
+ * Internal helpers + WP PHP-format date formatter ported from Pro.
+ * Needed by block-panels/date-range-controls.js which imports
+ * formatWpDateTime from this module. Previously missing in Lite,
+ * which broke the production build (Rollup error at import time).
+ */
+function _ekOrdinalSuffix(day) {
+  const mod100 = day % 100;
+  if (mod100 >= 11 && mod100 <= 13) return "th";
+  switch (day % 10) {
+    case 1:
+      return "st";
+    case 2:
+      return "nd";
+    case 3:
+      return "rd";
+    default:
+      return "th";
+  }
+}
+
+function _ekPad(value, length = 2) {
+  return String(value).padStart(length, "0");
+}
+
+function _ekSwatchInternetTime(dt) {
+  const utc = dt.toUTC();
+  const seconds =
+    utc.hour * 3600 + utc.minute * 60 + utc.second + utc.millisecond / 1000;
+  const beats = Math.floor(((seconds + 3600) % 86400) / 86.4);
+  return _ekPad(beats, 3);
+}
+
+export function formatWpDateTime(dt, phpFormat = "F j, Y") {
+  if (!dt?.isValid) return "";
+
+  const handlers = {
+    Y: () => dt.toFormat("yyyy"),
+    y: () => dt.toFormat("yy"),
+    F: () => dt.toFormat("LLLL"),
+    M: () => dt.toFormat("LLL"),
+    m: () => dt.toFormat("LL"),
+    n: () => String(dt.month),
+    d: () => dt.toFormat("dd"),
+    j: () => String(dt.day),
+    N: () => String(dt.weekday),
+    S: () => _ekOrdinalSuffix(dt.day),
+    w: () => String(dt.weekday % 7),
+    z: () => String(dt.ordinal - 1),
+    D: () => dt.toFormat("ccc"),
+    l: () => dt.toFormat("cccc"),
+    W: () => _ekPad(dt.weekNumber),
+    t: () => String(dt.daysInMonth),
+    L: () => (dt.isInLeapYear ? "1" : "0"),
+    o: () => String(dt.weekYear),
+    g: () => String(dt.hour % 12 || 12),
+    G: () => String(dt.hour),
+    h: () => _ekPad(dt.hour % 12 || 12),
+    H: () => _ekPad(dt.hour),
+    i: () => _ekPad(dt.minute),
+    s: () => _ekPad(dt.second),
+    u: () => `${_ekPad(dt.millisecond, 3)}000`,
+    v: () => _ekPad(dt.millisecond, 3),
+    a: () => (dt.hour < 12 ? "am" : "pm"),
+    A: () => (dt.hour < 12 ? "AM" : "PM"),
+    B: () => _ekSwatchInternetTime(dt),
+    U: () => String(Math.floor(dt.toSeconds())),
+    c: () => dt.toISO({ suppressMilliseconds: true }),
+    r: () => dt.toRFC2822(),
+    I: () => (dt.isInDST ? "1" : "0"),
+    O: () => dt.toFormat("ZZ").replace(":", ""),
+    P: () => dt.toFormat("ZZ"),
+    T: () => dt.offsetNameShort || "",
+    Z: () => String(dt.offset * 60),
+    e: () => dt.zoneName || "",
+  };
+
+  let output = "";
+  let escaped = false;
+
+  for (const char of String(phpFormat || "")) {
+    if (escaped) {
+      output += char;
+      escaped = false;
+      continue;
+    }
+    if (char === "\\") {
+      escaped = true;
+      continue;
+    }
+    output += handlers[char] ? handlers[char]() : char;
+  }
+
+  return output;
 }
