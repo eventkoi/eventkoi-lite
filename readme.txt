@@ -15,6 +15,8 @@ A modern, unbloated WordPress events calendar plugin. Sell tickets, create an ev
 
 **EventKoi Lite is a modern WordPress events calendar plugin** built for site owners who want an unbloated and intuitive event management plugin. Create and manage in-person and virtual events, display a beautiful events calendar or event list, sell tickets, event bookings, manage RSVPs and attendees, all from a clean, intuitive admin.
 
+https://youtu.be/7D2M6G9-q9w
+
 ✓ **Events calendar & event list** — Display events in a calendar, list, or grid view using blocks, shortcodes, Elementor, or Beaver Builder
 ✓ **Event registration & RSVP** — Let attendees register for events, manage capacity, and check in with check-in codes
 ✓ **Sell event tickets with WooCommerce** — Create multiple ticket types per event, set capacity and pricing, and sell tickets using any WooCommerce payment gateway including Stripe and PayPal
