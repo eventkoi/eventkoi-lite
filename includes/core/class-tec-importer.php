@@ -381,6 +381,11 @@ class TEC_Importer {
 		// Map TEC categories to EventKoi calendars.
 		self::map_categories( $tec_id, $new_post_id );
 
+		// When ACF is active, copy the event's ACF fields (value + field-key
+		// companion meta) verbatim so the site's existing ACF shortcodes and
+		// get_field() displays keep resolving after switching to EventKoi.
+		self::preserve_acf_fields( $tec_id, $new_post_id );
+
 		// Featured image.
 		if ( $import_images ) {
 			$thumbnail_id = get_post_thumbnail_id( $tec_id );
@@ -401,6 +406,45 @@ class TEC_Importer {
 			'event_id' => $new_post_id,
 			'title'    => $title,
 		);
+	}
+
+	/**
+	 * Copy ACF-managed fields from the source TEC event onto the new EventKoi
+	 * event so existing ACF shortcodes / get_field() keep resolving.
+	 *
+	 * ACF stores each value under its meta key and the field definition key
+	 * (field_xxxx) under a companion `_{key}`. Copying both verbatim preserves
+	 * the field, including repeater/group sub-rows which carry their own
+	 * `_{key}` companions. No-op when ACF is not active.
+	 *
+	 * @param int $tec_id      Source TEC event ID.
+	 * @param int $new_post_id New EventKoi event ID.
+	 * @return void
+	 */
+	private static function preserve_acf_fields( $tec_id, $new_post_id ) {
+		if ( ! function_exists( 'acf_get_field' ) ) {
+			return;
+		}
+
+		$all_meta = get_post_meta( $tec_id );
+		if ( ! is_array( $all_meta ) ) {
+			return;
+		}
+
+		foreach ( $all_meta as $meta_key => $meta_values ) {
+			// Companion `_{key}` entries are copied alongside their value key.
+			if ( 0 === strpos( $meta_key, '_' ) ) {
+				continue;
+			}
+
+			$companion = $all_meta[ '_' . $meta_key ][0] ?? '';
+			if ( ! is_string( $companion ) || 0 !== strpos( $companion, 'field_' ) ) {
+				continue; // Not an ACF-managed field.
+			}
+
+			update_post_meta( $new_post_id, $meta_key, maybe_unserialize( $meta_values[0] ?? '' ) );
+			update_post_meta( $new_post_id, '_' . $meta_key, $companion );
+		}
 	}
 
 	/**
