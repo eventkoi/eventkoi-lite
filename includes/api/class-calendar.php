@@ -248,6 +248,35 @@ class Calendar {
 		if ( $expand_instances_marker ) {
 			$expand_instances = true;
 		}
+		// Global calendar search: when a search term is present, return one
+		// row per matching event anchored to its upcoming occurrence, across
+		// ALL dates (independent of the visible window) so the search box finds
+		// events in any month.
+		$search_term = trim( (string) $request->get_param( 'search' ) );
+		if ( '' !== $search_term ) {
+			$search_data = $calendar::get_events(
+				$ids,
+				false,
+				array(
+					'search'           => $search_term,
+					'orderby'          => 'upcoming',
+					'order'            => 'ASC',
+					'max_results'      => 200,
+					'display'          => $display,
+					'display_timezone' => $calendar_timezone,
+				)
+			);
+
+			return rest_ensure_response(
+				array(
+					'calendar' => $calendar::get_meta(),
+					'events'   => self::enrich_events_for_editor( $search_data['items'] ?? array() ),
+					'total'    => $search_data['total'] ?? count( $search_data['items'] ?? array() ),
+					'search'   => $search_term,
+				)
+			);
+		}
+
 		$event_data = $calendar::get_events(
 			$ids,
 			$expand_instances,
