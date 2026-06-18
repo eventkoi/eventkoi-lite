@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { __, sprintf } from "@wordpress/i18n";
 import { Loader2, Search } from "lucide-react";
 import { DateTime } from "luxon";
+import { useEffect, useRef } from "react";
 
 function isTruthy(value) {
   return value === true || value === 1 || value === "1" || value === "true";
@@ -220,9 +221,45 @@ export function SearchBox({
 }) {
   const isLoading = events === undefined || events === null;
   const isEmpty = !isLoading && events.length === 0;
+  const containerRef = useRef(null);
+
+  // Close the results popover on Escape or any click outside it. These are
+  // document-level so they fire even when focus has moved onto a result item
+  // (where the input's own onKeyDown/onBlur no longer run).
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const close = () => {
+      setOpen(false);
+      setSearchOpen?.(false);
+    };
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") {
+        close();
+      }
+    };
+    const onPointerDown = (event) => {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        close();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("touchstart", onPointerDown);
+
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("touchstart", onPointerDown);
+    };
+  }, [open, setOpen, setSearchOpen]);
 
   return (
     <div
+      ref={containerRef}
       className="relative w-full min-w-0 lg:w-[350px] lg:max-w-full"
       aria-busy={isLoading}
       aria-live="polite"
