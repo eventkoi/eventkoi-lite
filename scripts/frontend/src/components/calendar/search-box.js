@@ -309,7 +309,7 @@ export function SearchBox({
           <CommandList
             id="event-search-listbox"
             role="listbox"
-            className="p-2 max-h-[400px] overflow-y-auto"
+            className="p-2 max-h-[400px] overflow-y-auto overscroll-contain"
           >
             {searchScope ? (
               <div className="px-2 pb-2 text-xs text-muted-foreground">
