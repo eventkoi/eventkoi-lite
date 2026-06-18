@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.3.17.0
+Stable tag: 1.3.17.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,9 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.17.1 – SiteGround Optimizer compatibility – 2026-06-18 =
+* Fix: The calendar now renders correctly when SiteGround Optimizer's JavaScript minification is enabled. Its minifier was mangling the bundle into a syntax error that left the calendar blank for visitors.
 
 = 1.3.17.0 – Calendar search & importer ACF fix – 2026-06-18 =
 * New: Calendar search now finds events across all months, not only the month currently in view.
