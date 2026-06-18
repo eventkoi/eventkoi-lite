@@ -650,6 +650,11 @@ class Calendar {
 		$display_context = sanitize_key( (string) $args['display'] );
 		$post_status = isset( $args['post_status'] ) ? (array) $args['post_status'] : array( 'publish' );
 
+		// When set (the calendar search box), completed events are kept in the
+		// upcoming result set and sorted after live/upcoming ones, so a search
+		// finds an event by name whether it has already happened or not.
+		$include_completed = ! empty( $args['include_completed'] );
+
 		$allowed_orderby = array( 'modified', 'date_modified', 'date', 'publish_date', 'title', 'start_date', 'event_start', 'upcoming', 'past', 'past_events' );
 		if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
 			$orderby = 'modified';
@@ -983,7 +988,7 @@ class Calendar {
 
 		$results = array_values( $results );
 
-		if ( 'upcoming' === $orderby ) {
+		if ( 'upcoming' === $orderby && ! $include_completed ) {
 			$now     = time();
 			$results = array_filter(
 				$results,
@@ -1009,7 +1014,39 @@ class Calendar {
 			$results = array_values( $results );
 		}
 
-		if ( 'upcoming' === $orderby || 'past' === $orderby ) {
+		if ( 'upcoming' === $orderby && $include_completed ) {
+			// Completed-inclusive search: live first, then upcoming (soonest
+			// first), then completed (most recent first), so the nearest match
+			// stays on top while past events remain findable below.
+			$now = time();
+			usort(
+				$results,
+				static function ( $a, $b ) use ( $now ) {
+					$rank = static function ( $item ) use ( $now ) {
+						$start_ts = ! empty( $item['start'] ) ? strtotime( (string) $item['start'] ) : 0;
+						$end_ts   = ! empty( $item['end'] ) ? strtotime( (string) $item['end'] ) : 0;
+						if ( $end_ts && $end_ts < $now ) {
+							return 2;
+						}
+						if ( $start_ts && $start_ts <= $now && ( ! $end_ts || $end_ts >= $now ) ) {
+							return 0;
+						}
+						return 1;
+					};
+
+					$a_rank = $rank( $a );
+					$b_rank = $rank( $b );
+					if ( $a_rank !== $b_rank ) {
+						return $a_rank <=> $b_rank;
+					}
+
+					$a_ts = ! empty( $a['start'] ) ? strtotime( (string) $a['start'] ) : 0;
+					$b_ts = ! empty( $b['start'] ) ? strtotime( (string) $b['start'] ) : 0;
+
+					return ( 2 === $a_rank ) ? ( $b_ts <=> $a_ts ) : ( $a_ts <=> $b_ts );
+				}
+			);
+		} elseif ( 'upcoming' === $orderby || 'past' === $orderby ) {
 			usort(
 				$results,
 				static function ( $a, $b ) use ( $order ) {

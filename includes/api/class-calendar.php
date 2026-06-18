@@ -258,12 +258,16 @@ class Calendar {
 				$ids,
 				false,
 				array(
-					'search'           => $search_term,
-					'orderby'          => 'upcoming',
-					'order'            => 'ASC',
-					'max_results'      => 200,
-					'display'          => $display,
-					'display_timezone' => $calendar_timezone,
+					'search'            => $search_term,
+					'orderby'           => 'upcoming',
+					'order'             => 'ASC',
+					// Search the whole calendar: completed events are matched too
+					// and sorted after live/upcoming ones, so the box finds an
+					// event by name whether it has already happened or not.
+					'include_completed' => true,
+					'max_results'       => 200,
+					'display'           => $display,
+					'display_timezone'  => $calendar_timezone,
 				)
 			);
 

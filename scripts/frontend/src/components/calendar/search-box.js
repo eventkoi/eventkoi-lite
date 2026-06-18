@@ -266,7 +266,12 @@ export function SearchBox({
         onChange={(e) => setSearch(e.target.value)}
         className="pl-9 h-10 w-full min-w-0 shadow-none border border-solid box-border rounded disabled:bg-background"
         autoComplete="off"
-        disabled={isLoading || isEmpty}
+        // Only disable before any search begins (calendar still loading, or a
+        // genuinely empty calendar). Never disable while a search term is
+        // present: in global-search mode the results arrive a tick later, so an
+        // empty result set is normal mid-type. Disabling then blurs the focused
+        // input and drops every keystroke after the first.
+        disabled={isLoading || (isEmpty && !search)}
       />
 
       {/* Icon */}
