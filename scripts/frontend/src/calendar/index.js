@@ -12,6 +12,7 @@ import { CalendarGridMode } from "@/components/calendar/CalendarGridMode";
 import { CalendarListMode } from "@/components/calendar/CalendarListMode";
 import { useCalendarData } from "@/components/calendar/useCalendarData";
 import { useEventPopover } from "@/components/calendar/useEventPopover";
+import publicApi from "@/lib/public-api";
 
 /**
  * Main EventKoi Calendar component.
@@ -106,6 +107,51 @@ export function Calendar(props) {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
+  const [searchResults, setSearchResults] = useState([]);
+  const effectiveId = calendars || id;
+  const trimmedSearch = (search || "").trim();
+  const isGlobalSearch = trimmedSearch.length > 0;
+
+  /**
+   * Global calendar search: fetch matching events across all dates (not just the
+   * visible month) so a search in one month surfaces events in any other month.
+   * Debounced; clears when the box is emptied.
+   */
+  useEffect(() => {
+    if (!isGlobalSearch || display === "list") {
+      setSearchResults([]);
+      return undefined;
+    }
+
+    let active = true;
+    const handle = setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({
+          id: String(effectiveId),
+          display: "calendar",
+          search: trimmedSearch,
+          tz: timezone === "local" ? "local" : timezone,
+        });
+        const res = await publicApi({
+          path: `/calendar_events?${params.toString()}`,
+          method: "get",
+        });
+        if (active) {
+          setSearchResults(Array.isArray(res?.events) ? res.events : []);
+        }
+      } catch {
+        if (active) {
+          setSearchResults([]);
+        }
+      }
+    }, 250);
+
+    return () => {
+      active = false;
+      clearTimeout(handle);
+    };
+  }, [isGlobalSearch, trimmedSearch, effectiveId, display, timezone]);
+
   const isEmpty =
     !calendar ||
     (Array.isArray(calendar) && calendar.length === 0) ||
@@ -144,7 +190,8 @@ export function Calendar(props) {
         setCurrentDate={setCurrentDate}
         view={view}
         setView={setView}
-        events={allEvents}
+        events={isGlobalSearch ? searchResults : allEvents}
+        globalSearch={isGlobalSearch}
         timezone={timezone}
         timeFormat={timeFormat}
         search={search}

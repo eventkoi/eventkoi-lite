@@ -15,6 +15,7 @@ export function CalendarToolbar({
   search,
   setSearch,
   events,
+  globalSearch = false,
   timezone,
   timeFormat,
 }) {
@@ -22,25 +23,31 @@ export function CalendarToolbar({
   const [page, setPage] = useState(0);
   const inputRef = useRef(null);
 
-  const filteredResults = search
-    ? events.filter((event) => {
-        const q = search.toLowerCase();
-        return (
-          event.title?.toLowerCase().includes(q) ||
-          event.description?.toLowerCase().includes(q) ||
-          event.location?.toLowerCase().includes(q)
-        );
-      })
-    : [];
+  // In global-search mode `events` is already the backend's matched set (across
+  // all dates), so use it as-is. Otherwise filter the visible month's events.
+  const filteredResults = !search
+    ? []
+    : globalSearch
+      ? events
+      : events.filter((event) => {
+          const q = search.toLowerCase();
+          return (
+            event.title?.toLowerCase().includes(q) ||
+            event.description?.toLowerCase().includes(q) ||
+            event.location?.toLowerCase().includes(q)
+          );
+        });
 
   const totalPages = Math.ceil(filteredResults.length / MAX_RESULTS);
   const paginatedResults = filteredResults.slice(
     page * MAX_RESULTS,
     (page + 1) * MAX_RESULTS
   );
+  // Global search spans all months, so it is never month-scoped.
   const isMonthScopedSearch =
-    String(view || "").startsWith("timeGrid") ||
-    String(view || "").startsWith("dayGrid");
+    !globalSearch &&
+    (String(view || "").startsWith("timeGrid") ||
+      String(view || "").startsWith("dayGrid"));
   const searchScopeDate =
     currentDate instanceof Date && !Number.isNaN(currentDate.getTime())
       ? currentDate

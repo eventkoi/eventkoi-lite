@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.3.16.0
+Stable tag: 1.3.17.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,10 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.17.0 – Calendar search & importer ACF fix – 2026-06-18 =
+* New: Calendar search now finds events across all months, not only the month currently in view.
+* Fix: The Events Calendar importer now keeps ACF fields as ACF, so your existing ACF shortcodes keep resolving, instead of dropping them on import.
 
 = 1.3.16.0 – Maintenance release – 2026-06-17 =
 * Maintenance: Version alignment with EventKoi Pro. No functional changes in EventKoi Lite for this release.

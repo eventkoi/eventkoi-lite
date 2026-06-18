@@ -688,6 +688,13 @@ class Calendar {
 			'no_found_rows'  => true,
 		);
 
+		// Global title search (calendar search box): match events by title across
+		// all dates, independent of the visible window.
+		$search_term = isset( $args['search'] ) ? trim( (string) $args['search'] ) : '';
+		if ( '' !== $search_term ) {
+			$query_args['s'] = $search_term;
+		}
+
 		// Handle include mode.
 		if ( ! empty( $args['include'] ) ) {
 			$query_args['post__in'] = array_map( 'absint', (array) $args['include'] );
