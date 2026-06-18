@@ -22,6 +22,27 @@ class Scripts {
 	 */
 	public function __construct() {
 		add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_scripts' ), 999 );
+
+		// SiteGround Optimizer (and similar) re-minify the already-minified Vite
+		// bundle, mangling its template literals into a syntax error that breaks
+		// the whole combined file so the calendar never renders. Exclude our
+		// bundle from re-minification only — it stays in the combined file so its
+		// React dependency order is preserved, but its (already valid) code is
+		// left untouched.
+		add_filter( 'sgo_js_minify_exclude', array( $this, 'exclude_from_js_optimizers' ) );
+	}
+
+	/**
+	 * Add EventKoi's frontend script handles to a JS-optimizer exclusion list.
+	 *
+	 * @param array $handles Script handles the optimizer will skip.
+	 * @return array
+	 */
+	public function exclude_from_js_optimizers( $handles ) {
+		$handles   = is_array( $handles ) ? $handles : array();
+		$handles[] = 'eventkoi-frontend';
+
+		return apply_filters( 'eventkoi_js_optimizer_excluded_handles', $handles );
 	}
 
 	/**
