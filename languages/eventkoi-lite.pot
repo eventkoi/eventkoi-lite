@@ -7,7 +7,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-06-09T15:03:18+00:00\n"
+"POT-Creation-Date: 2026-06-19T20:14:13+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -87,16 +87,16 @@ msgid "Invalid calendar ID."
 msgstr ""
 
 #: api/class-calendar.php:136
-#: api/class-calendar.php:552
-#: api/class-calendar.php:572
+#: api/class-calendar.php:585
+#: api/class-calendar.php:605
 msgid "Calendar ID is required."
 msgstr ""
 
-#: api/class-calendar.php:363
+#: api/class-calendar.php:396
 msgid "Invalid event IDs provided."
 msgstr ""
 
-#: api/class-calendar.php:530
+#: api/class-calendar.php:563
 msgid "Invalid calendar data."
 msgstr ""
 
@@ -110,8 +110,8 @@ msgstr ""
 #: api/class-tickets.php:316
 #: api/class-tickets.php:786
 #: api/class-tickets.php:895
-#: api/class-tickets.php:1066
-#: api/class-tickets.php:1805
+#: api/class-tickets.php:1074
+#: api/class-tickets.php:1814
 #: core/class-ical.php:41
 #: core/core-functions.php:104
 msgid "Invalid event ID."
@@ -138,9 +138,9 @@ msgstr ""
 #: api/class-event.php:302
 #: api/class-event.php:325
 #: api/class-event.php:352
-#: api/class-rsvps.php:147
-#: api/class-rsvps.php:245
-#: api/class-rsvps.php:411
+#: api/class-rsvps.php:178
+#: api/class-rsvps.php:277
+#: api/class-rsvps.php:457
 msgid "Missing event ID."
 msgstr ""
 
@@ -180,7 +180,7 @@ msgid "Invalid order ID."
 msgstr ""
 
 #: api/class-order.php:67
-#: api/class-tickets.php:1636
+#: api/class-tickets.php:1645
 #: core/class-ticket-emails.php:853
 msgid "Order not found."
 msgstr ""
@@ -206,59 +206,59 @@ msgstr ""
 msgid "Invalid RSVP data."
 msgstr ""
 
-#: api/class-rsvps.php:152
-#: api/class-rsvps.php:250
-#: api/class-rsvps.php:416
-#: api/class-rsvps.php:566
+#: api/class-rsvps.php:183
+#: api/class-rsvps.php:282
+#: api/class-rsvps.php:462
+#: api/class-rsvps.php:614
 #: api/class-tickets.php:900
-#: api/class-tickets.php:1071
-#: core/class-rsvps.php:62
+#: api/class-tickets.php:1079
+#: core/class-rsvps.php:189
 msgid "Invalid event."
 msgstr ""
 
-#: api/class-rsvps.php:160
-#: api/class-rsvps.php:167
-#: api/class-rsvps.php:258
-#: api/class-rsvps.php:265
-#: api/class-rsvps.php:435
-#: api/class-rsvps.php:442
-#: core/class-rsvps.php:69
+#: api/class-rsvps.php:191
+#: api/class-rsvps.php:198
+#: api/class-rsvps.php:290
+#: api/class-rsvps.php:297
+#: api/class-rsvps.php:481
+#: api/class-rsvps.php:488
+#: core/class-rsvps.php:196
 msgid "Missing event instance."
 msgstr ""
 
-#: api/class-rsvps.php:193
+#: api/class-rsvps.php:225
 #: api/class-stats.php:55
 #: api/class-uploads.php:194
 msgid "Invalid request."
 msgstr ""
 
-#: api/class-rsvps.php:200
+#: api/class-rsvps.php:232
 msgid "Missing required fields."
 msgstr ""
 
-#: api/class-rsvps.php:217
+#: api/class-rsvps.php:249
 msgid "Invalid action."
 msgstr ""
 
-#: api/class-rsvps.php:270
-#: core/class-rsvps.php:554
+#: api/class-rsvps.php:302
+#: core/class-rsvps.php:683
 msgid "Invalid RSVP status."
 msgstr ""
 
-#: api/class-rsvps.php:555
+#: api/class-rsvps.php:603
 msgid "Missing check-in code."
 msgstr ""
 
-#: api/class-rsvps.php:560
+#: api/class-rsvps.php:608
 msgid "Invalid check-in code."
 msgstr ""
 
-#: api/class-rsvps.php:859
+#: api/class-rsvps.php:907
 #: core/class-post-types.php:116
-#: core/class-rsvps.php:1261
+#: core/class-rsvps.php:1390
 #: core/class-template.php:150
 #: core/class-ticket-emails.php:898
-#: core/class-woocommerce-checkout.php:493
+#: core/class-woocommerce-checkout.php:494
 #: core/divi-modules/class-et-builder-module-eventkoievent.php:27
 #: core/divi-modules/class-et-builder-module-eventkoievent.php:41
 #: components/empty-state/NotFound.js:28
@@ -296,108 +296,108 @@ msgstr ""
 msgid "Tickets are not enabled."
 msgstr ""
 
-#: api/class-tickets.php:1079
-#: api/class-tickets.php:1091
+#: api/class-tickets.php:1087
+#: api/class-tickets.php:1099
 msgid "This event has ended and is no longer accepting ticket purchases."
 msgstr ""
 
-#: api/class-tickets.php:1101
+#: api/class-tickets.php:1109
 msgid "Too many requests. Please try again later."
 msgstr ""
 
-#: api/class-tickets.php:1149
+#: api/class-tickets.php:1157
 msgid "A valid email address is required."
 msgstr ""
 
-#: api/class-tickets.php:1165
-#: api/class-tickets.php:1193
+#: api/class-tickets.php:1173
+#: api/class-tickets.php:1201
 msgid "Invalid ticket selection."
 msgstr ""
 
-#: api/class-tickets.php:1188
+#: api/class-tickets.php:1196
 msgid "Select at least one ticket."
 msgstr ""
 
-#: api/class-tickets.php:1207
+#: api/class-tickets.php:1215
 msgid "Unable to validate tickets."
 msgstr ""
 
-#: api/class-tickets.php:1228
+#: api/class-tickets.php:1236
 msgid "One or more selected tickets are unavailable."
 msgstr ""
 
-#: api/class-tickets.php:1235
+#: api/class-tickets.php:1243
 msgid "One or more selected tickets are not on sale yet."
 msgstr ""
 
-#: api/class-tickets.php:1239
+#: api/class-tickets.php:1247
 msgid "One or more selected tickets are no longer on sale."
 msgstr ""
 
-#: api/class-tickets.php:1244
+#: api/class-tickets.php:1252
 msgid "Selected quantity exceeds ticket limits."
 msgstr ""
 
-#: api/class-tickets.php:1254
-#: api/class-tickets.php:2278
+#: api/class-tickets.php:1262
+#: api/class-tickets.php:2287
 msgid "Not enough tickets remaining for one or more selections."
 msgstr ""
 
-#: api/class-tickets.php:1278
+#: api/class-tickets.php:1286
 msgid "Invalid checkout total."
 msgstr ""
 
-#: api/class-tickets.php:1344
+#: api/class-tickets.php:1352
 msgid "WooCommerce must be installed and activated to process ticket payments."
 msgstr ""
 
-#: api/class-tickets.php:1394
-#: api/class-tickets.php:1419
-#: api/class-tickets.php:1448
-#: api/class-tickets.php:1617
+#: api/class-tickets.php:1403
+#: api/class-tickets.php:1428
+#: api/class-tickets.php:1457
+#: api/class-tickets.php:1626
 msgid "Missing order ID."
 msgstr ""
 
-#: api/class-tickets.php:1578
+#: api/class-tickets.php:1587
 msgid "Order archived via EventKoi."
 msgstr ""
 
-#: api/class-tickets.php:1598
+#: api/class-tickets.php:1607
 msgid "Order unarchived via EventKoi."
 msgstr ""
 
-#: api/class-tickets.php:1729
+#: api/class-tickets.php:1738
 #: core/class-ticket-emails.php:163
 msgid "Missing checkout session ID."
 msgstr ""
 
-#: api/class-tickets.php:1822
+#: api/class-tickets.php:1831
 #: admin/events/edit/tickets/manage-tickets/index.js:425
 msgid "Ticket name is required."
 msgstr ""
 
-#: api/class-tickets.php:1853
+#: api/class-tickets.php:1862
 msgid "Failed to create ticket."
 msgstr ""
 
-#: api/class-tickets.php:1890
-#: api/class-tickets.php:2021
+#: api/class-tickets.php:1899
+#: api/class-tickets.php:2030
 msgid "Invalid ticket ID."
 msgstr ""
 
-#: api/class-tickets.php:1959
+#: api/class-tickets.php:1968
 msgid "No data to update."
 msgstr ""
 
-#: api/class-tickets.php:1975
+#: api/class-tickets.php:1984
 msgid "Failed to update ticket."
 msgstr ""
 
-#: api/class-tickets.php:2034
+#: api/class-tickets.php:2043
 msgid "Failed to delete ticket."
 msgstr ""
 
-#: api/class-tickets.php:2042
+#: api/class-tickets.php:2051
 msgid "Ticket deleted successfully."
 msgstr ""
 
@@ -549,7 +549,7 @@ msgstr ""
 #: core/class-beaver-modules.php:121
 #: core/divi-modules/class-et-builder-module-eventkoicalendar.php:61
 #: core/elementor-widgets/class-widget-calendar.php:138
-#: admin/settings/overview/index.js:333
+#: admin/settings/overview/index.js:334
 #: blocks/calendar/controls.js:160
 #: components/calendar/calendar-start-day.js:59
 #: components/onboarding/set-calendar-defaults.jsx:121
@@ -819,14 +819,14 @@ msgstr ""
 
 #: core/class-blocks.php:619
 #: components/calendar/EventPopover.js:725
-#: share/index.js:69
+#: share/index.js:71
 msgid "Share this event"
 msgstr ""
 
 #: core/class-blocks.php:1032
 #: blocks/event-query-loop/index.js:83
-#: components/calendar/search-box.js:289
-#: components/calendar/search-box.js:317
+#: components/calendar/search-box.js:331
+#: components/calendar/search-box.js:359
 msgid "No events found."
 msgstr ""
 
@@ -846,7 +846,7 @@ msgstr ""
 #: blocks/event-query-loop/index.js:77
 #: components/calendar/nav-controls.js:22
 #: components/ui/pagination.jsx:73
-#: components/calendar/search-box.js:389
+#: components/calendar/search-box.js:431
 msgid "Next"
 msgstr ""
 
@@ -854,11 +854,11 @@ msgstr ""
 msgid "Pagination"
 msgstr ""
 
-#: core/class-blocks.php:2046
+#: core/class-blocks.php:2054
 msgid "No calendar is available to display."
 msgstr ""
 
-#: core/class-blocks.php:2050
+#: core/class-blocks.php:2058
 msgid "Create a calendar"
 msgstr ""
 
@@ -896,7 +896,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: core/class-event.php:381
-#: core/class-event.php:3130
+#: core/class-event.php:3147
 msgid "Attend online"
 msgstr ""
 
@@ -927,62 +927,62 @@ msgid_plural "%d more rules"
 msgstr[0] ""
 msgstr[1] ""
 
-#: core/class-event.php:2733
+#: core/class-event.php:2750
 #: core/class-events.php:651
 msgid "Event restored successfully."
 msgid_plural "Events restored successfully."
 msgstr[0] ""
 msgstr[1] ""
 
-#: core/class-event.php:2749
+#: core/class-event.php:2766
 msgid "Event moved to Trash."
 msgstr ""
 
 #. translators: %s event title
-#: core/class-event.php:2763
+#: core/class-event.php:2780
 #, php-format
 msgid "[Duplicate]: %s"
 msgstr ""
 
-#: core/class-event.php:2785
+#: core/class-event.php:2802
 msgid "Event duplicated."
 msgstr ""
 
-#: core/class-event.php:2885
+#: core/class-event.php:2902
 #: core/class-schema.php:433
 msgid "Untitled event"
 msgstr ""
 
-#: core/class-event.php:2904
+#: core/class-event.php:2921
 msgid "No event details."
 msgstr ""
 
-#: core/class-event.php:3066
-#: core/class-event.php:3152
+#: core/class-event.php:3083
+#: core/class-event.php:3169
 msgid "No location available."
 msgstr ""
 
-#: core/class-event.php:3546
-#: core/class-event.php:3812
+#: core/class-event.php:3563
+#: core/class-event.php:3829
 msgid "Date and time to be confirmed."
 msgstr ""
 
-#: core/class-event.php:4239
+#: core/class-event.php:4256
 #: tickets/index.js:406
-#: tickets/index.js:1118
+#: tickets/index.js:1134
 msgid "Sold out"
 msgstr ""
 
-#: core/class-event.php:4268
+#: core/class-event.php:4285
 msgid "Low stock"
 msgstr ""
 
-#: core/class-event.php:4652
+#: core/class-event.php:4669
 #: blocks/event-data/event-data-controls.js:166
 msgid "RSVP full"
 msgstr ""
 
-#: core/class-event.php:4675
+#: core/class-event.php:4692
 #: core/divi-modules/class-et-builder-module-eventkoicalendar.php:66
 #: core/elementor-widgets/class-widget-calendar.php:312
 #: helpers/instance.php:158
@@ -992,7 +992,7 @@ msgstr ""
 msgid "Monday"
 msgstr ""
 
-#: core/class-event.php:4676
+#: core/class-event.php:4693
 #: core/divi-modules/class-et-builder-module-eventkoicalendar.php:67
 #: core/elementor-widgets/class-widget-calendar.php:313
 #: helpers/instance.php:159
@@ -1002,7 +1002,7 @@ msgstr ""
 msgid "Tuesday"
 msgstr ""
 
-#: core/class-event.php:4677
+#: core/class-event.php:4694
 #: core/divi-modules/class-et-builder-module-eventkoicalendar.php:68
 #: core/elementor-widgets/class-widget-calendar.php:314
 #: helpers/instance.php:160
@@ -1012,7 +1012,7 @@ msgstr ""
 msgid "Wednesday"
 msgstr ""
 
-#: core/class-event.php:4678
+#: core/class-event.php:4695
 #: core/divi-modules/class-et-builder-module-eventkoicalendar.php:69
 #: core/elementor-widgets/class-widget-calendar.php:315
 #: helpers/instance.php:161
@@ -1022,7 +1022,7 @@ msgstr ""
 msgid "Thursday"
 msgstr ""
 
-#: core/class-event.php:4679
+#: core/class-event.php:4696
 #: core/divi-modules/class-et-builder-module-eventkoicalendar.php:70
 #: core/elementor-widgets/class-widget-calendar.php:316
 #: helpers/instance.php:162
@@ -1032,7 +1032,7 @@ msgstr ""
 msgid "Friday"
 msgstr ""
 
-#: core/class-event.php:4680
+#: core/class-event.php:4697
 #: core/divi-modules/class-et-builder-module-eventkoicalendar.php:71
 #: core/elementor-widgets/class-widget-calendar.php:317
 #: helpers/instance.php:163
@@ -1042,7 +1042,7 @@ msgstr ""
 msgid "Saturday"
 msgstr ""
 
-#: core/class-event.php:4681
+#: core/class-event.php:4698
 #: core/divi-modules/class-et-builder-module-eventkoicalendar.php:65
 #: core/elementor-widgets/class-widget-calendar.php:318
 #: helpers/instance.php:164
@@ -1052,82 +1052,82 @@ msgstr ""
 msgid "Sunday"
 msgstr ""
 
-#: core/class-event.php:4685
+#: core/class-event.php:4702
 #: components/event/event-date-recurring.js:63
 msgid "first"
 msgstr ""
 
-#: core/class-event.php:4686
+#: core/class-event.php:4703
 #: components/event/event-date-recurring.js:64
 msgid "second"
 msgstr ""
 
-#: core/class-event.php:4687
+#: core/class-event.php:4704
 #: components/event/event-date-recurring.js:65
 msgid "third"
 msgstr ""
 
-#: core/class-event.php:4688
+#: core/class-event.php:4705
 #: components/event/event-date-recurring.js:66
 msgid "fourth"
 msgstr ""
 
-#: core/class-event.php:4689
+#: core/class-event.php:4706
 #: components/event/event-date-recurring.js:67
 msgid "fifth"
 msgstr ""
 
-#: core/class-event.php:4701
+#: core/class-event.php:4718
 msgid "days"
 msgstr ""
 
-#: core/class-event.php:4702
+#: core/class-event.php:4719
 msgid "weeks"
 msgstr ""
 
-#: core/class-event.php:4703
+#: core/class-event.php:4720
 msgid "months"
 msgstr ""
 
-#: core/class-event.php:4704
+#: core/class-event.php:4721
 msgid "years"
 msgstr ""
 
 #. translators: %1$d: interval number (e.g., 2). %2$s: period plural (e.g., "months").
-#: core/class-event.php:4708
+#: core/class-event.php:4725
 #, php-format
 msgid "Every %1$d %2$s"
 msgstr ""
 
-#: core/class-event.php:4710
+#: core/class-event.php:4727
 msgid "Daily"
 msgstr ""
 
-#: core/class-event.php:4712
+#: core/class-event.php:4729
 msgid "Weekly"
 msgstr ""
 
-#: core/class-event.php:4714
+#: core/class-event.php:4731
 msgid "Monthly"
 msgstr ""
 
-#: core/class-event.php:4716
+#: core/class-event.php:4733
 msgid "Yearly"
 msgstr ""
 
 #. translators: 1: ordinal week in the month, 2: weekday name.
-#: core/class-event.php:4733
+#: core/class-event.php:4750
 #, php-format
 msgid ", on the %1$s %2$s"
 msgstr ""
 
 #. translators: %d: day number in the month.
-#: core/class-event.php:4749
+#: core/class-event.php:4766
 #, php-format
 msgid ", on day %d"
 msgstr ""
 
-#: core/class-event.php:4758
+#: core/class-event.php:4775
 #: core/elementor-widgets/class-widget-calendar.php:290
 #: helpers/instance.php:134
 #: blocks/calendar/controls.js:128
@@ -1136,7 +1136,7 @@ msgstr ""
 msgid "January"
 msgstr ""
 
-#: core/class-event.php:4759
+#: core/class-event.php:4776
 #: core/elementor-widgets/class-widget-calendar.php:291
 #: helpers/instance.php:135
 #: blocks/calendar/controls.js:129
@@ -1145,7 +1145,7 @@ msgstr ""
 msgid "February"
 msgstr ""
 
-#: core/class-event.php:4760
+#: core/class-event.php:4777
 #: core/elementor-widgets/class-widget-calendar.php:292
 #: helpers/instance.php:136
 #: blocks/calendar/controls.js:130
@@ -1154,7 +1154,7 @@ msgstr ""
 msgid "March"
 msgstr ""
 
-#: core/class-event.php:4761
+#: core/class-event.php:4778
 #: core/elementor-widgets/class-widget-calendar.php:293
 #: helpers/instance.php:137
 #: blocks/calendar/controls.js:131
@@ -1163,7 +1163,7 @@ msgstr ""
 msgid "April"
 msgstr ""
 
-#: core/class-event.php:4762
+#: core/class-event.php:4779
 #: core/elementor-widgets/class-widget-calendar.php:294
 #: helpers/instance.php:138
 #: blocks/calendar/controls.js:132
@@ -1172,7 +1172,7 @@ msgstr ""
 msgid "May"
 msgstr ""
 
-#: core/class-event.php:4763
+#: core/class-event.php:4780
 #: core/elementor-widgets/class-widget-calendar.php:295
 #: helpers/instance.php:139
 #: blocks/calendar/controls.js:133
@@ -1181,7 +1181,7 @@ msgstr ""
 msgid "June"
 msgstr ""
 
-#: core/class-event.php:4764
+#: core/class-event.php:4781
 #: core/elementor-widgets/class-widget-calendar.php:296
 #: helpers/instance.php:140
 #: blocks/calendar/controls.js:134
@@ -1190,7 +1190,7 @@ msgstr ""
 msgid "July"
 msgstr ""
 
-#: core/class-event.php:4765
+#: core/class-event.php:4782
 #: core/elementor-widgets/class-widget-calendar.php:297
 #: helpers/instance.php:141
 #: blocks/calendar/controls.js:135
@@ -1199,7 +1199,7 @@ msgstr ""
 msgid "August"
 msgstr ""
 
-#: core/class-event.php:4766
+#: core/class-event.php:4783
 #: core/elementor-widgets/class-widget-calendar.php:298
 #: helpers/instance.php:142
 #: blocks/calendar/controls.js:136
@@ -1208,7 +1208,7 @@ msgstr ""
 msgid "September"
 msgstr ""
 
-#: core/class-event.php:4767
+#: core/class-event.php:4784
 #: core/elementor-widgets/class-widget-calendar.php:299
 #: helpers/instance.php:143
 #: blocks/calendar/controls.js:137
@@ -1217,7 +1217,7 @@ msgstr ""
 msgid "October"
 msgstr ""
 
-#: core/class-event.php:4768
+#: core/class-event.php:4785
 #: core/elementor-widgets/class-widget-calendar.php:300
 #: helpers/instance.php:144
 #: blocks/calendar/controls.js:138
@@ -1226,7 +1226,7 @@ msgstr ""
 msgid "November"
 msgstr ""
 
-#: core/class-event.php:4769
+#: core/class-event.php:4786
 #: core/elementor-widgets/class-widget-calendar.php:301
 #: helpers/instance.php:145
 #: blocks/calendar/controls.js:139
@@ -1236,25 +1236,25 @@ msgid "December"
 msgstr ""
 
 #. translators: %s: comma-separated month names.
-#: core/class-event.php:4783
+#: core/class-event.php:4800
 #, php-format
 msgid ", in %s"
 msgstr ""
 
 #. translators: %s: comma-separated weekday names.
-#: core/class-event.php:4800
+#: core/class-event.php:4817
 #, php-format
 msgid ", on %s"
 msgstr ""
 
-#: core/class-event.php:4892
-#: core/class-event.php:4924
+#: core/class-event.php:4909
+#: core/class-event.php:4941
 msgid ", forever"
 msgstr ""
 
 #. translators: %d: total completed events.
-#: core/class-event.php:4897
-#: core/class-event.php:4912
+#: core/class-event.php:4914
+#: core/class-event.php:4929
 #, php-format
 msgid ", all %d event completed"
 msgid_plural ", all %d events completed"
@@ -1262,8 +1262,8 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: remaining events, 2: total events.
-#: core/class-event.php:4903
-#: core/class-event.php:4918
+#: core/class-event.php:4920
+#: core/class-event.php:4935
 #, php-format
 msgid ", %1$d of %2$d event left"
 msgid_plural ", %1$d of %2$d events left"
@@ -1360,6 +1360,14 @@ msgstr ""
 #: core/class-install.php:128
 msgctxt "Default calendar term"
 msgid "Default calendar"
+msgstr ""
+
+#. translators: %s: field label
+#: core/class-orders.php:115
+#: core/class-rsvps.php:126
+#: tickets/index.js:1671
+#, php-format,js-format
+msgid "%s is required."
 msgstr ""
 
 #: core/class-post-types.php:60
@@ -1477,8 +1485,8 @@ msgstr ""
 #: core/class-post-types.php:126
 #: components/calendar/search-box.js:199
 #: components/calendar/toolbar-mobile.js:100
-#: components/calendar/search-box.js:232
-#: components/calendar/search-box.js:240
+#: components/calendar/search-box.js:269
+#: components/calendar/search-box.js:277
 #: components/calendar/toolbar-mobile.js:137
 msgid "Search events"
 msgstr ""
@@ -1544,137 +1552,137 @@ msgstr ""
 msgid "QR check-in is a Pro feature. Upgrade to scan codes and check in attendees."
 msgstr ""
 
-#: core/class-rsvps.php:57
+#: core/class-rsvps.php:184
 msgid "Missing RSVP fields."
 msgstr ""
 
-#: core/class-rsvps.php:82
+#: core/class-rsvps.php:209
 msgid "RSVP is disabled for this event."
 msgstr ""
 
-#: core/class-rsvps.php:93
+#: core/class-rsvps.php:220
 msgid "This event has ended and is no longer accepting RSVPs."
 msgstr ""
 
-#: core/class-rsvps.php:104
+#: core/class-rsvps.php:231
 msgid "RSVP is not open yet."
 msgstr ""
 
-#: core/class-rsvps.php:107
+#: core/class-rsvps.php:234
 msgid "RSVP is closed."
 msgstr ""
 
-#: core/class-rsvps.php:156
+#: core/class-rsvps.php:283
 msgid "RSVP capacity reached."
 msgstr ""
 
-#: core/class-rsvps.php:166
+#: core/class-rsvps.php:293
 msgid "RSVP already exists."
 msgstr ""
 
-#: core/class-rsvps.php:597
+#: core/class-rsvps.php:726
 msgid "Failed to update RSVP status."
 msgstr ""
 
-#: core/class-rsvps.php:621
+#: core/class-rsvps.php:750
 msgid "Invalid check-in status."
 msgstr ""
 
-#: core/class-rsvps.php:662
+#: core/class-rsvps.php:791
 msgid "Failed to update check-in status."
 msgstr ""
 
-#: core/class-rsvps.php:725
+#: core/class-rsvps.php:854
 msgid "Failed to update check-in count."
 msgstr ""
 
-#: core/class-rsvps.php:828
+#: core/class-rsvps.php:957
 msgid "Failed to delete RSVPs."
 msgstr ""
 
-#: core/class-rsvps.php:898
+#: core/class-rsvps.php:1027
 #, php-format
 msgid "Your RSVP for %s"
 msgstr ""
 
 #. translators: %d: guest count
-#: core/class-rsvps.php:941
+#: core/class-rsvps.php:1070
 #: checkin/index.js:397
 #, php-format,js-format
 msgid "Guests: %d"
 msgstr ""
 
-#: core/class-rsvps.php:948
+#: core/class-rsvps.php:1077
 #: core/class-ticket-emails.php:316
 #: core/class-ticket-emails.php:459
 msgid "there"
 msgstr ""
 
-#: core/class-rsvps.php:959
+#: core/class-rsvps.php:1088
 #: admin/events/edit/attendees/index.js:187
 #: admin/events/edit/attendees/index.js:1545
 #: admin/events/edit/attendees/index.js:2116
 #: checkin/index.js:79
 #: checkin/index.js:86
-#: rsvp/index.js:91
-#: rsvp/index.js:339
+#: rsvp/index.js:110
+#: rsvp/index.js:362
 msgid "Going"
 msgstr ""
 
-#: core/class-rsvps.php:970
+#: core/class-rsvps.php:1099
 #, php-format
 msgid "Schedule (%s):"
 msgstr ""
 
-#: core/class-rsvps.php:971
+#: core/class-rsvps.php:1100
 msgid "Schedule:"
 msgstr ""
 
-#: core/class-rsvps.php:977
+#: core/class-rsvps.php:1106
 msgid "View / manage your RSVP:"
 msgstr ""
 
-#: core/class-rsvps.php:978
+#: core/class-rsvps.php:1107
 msgid "View event page:"
 msgstr ""
 
-#: core/class-rsvps.php:987
-#: core/class-rsvps.php:998
+#: core/class-rsvps.php:1116
+#: core/class-rsvps.php:1127
 #: core/class-ticket-emails.php:350
 msgid "Location:"
 msgstr ""
 
 #. translators: %d: Number of guests.
-#: core/class-rsvps.php:1356
+#: core/class-rsvps.php:1485
 msgid "Guests:"
 msgstr ""
 
-#: core/class-rsvps.php:1368
+#: core/class-rsvps.php:1497
 #: admin/settings/emails/index.js:161
 msgid "New RSVP: [event_name]"
 msgstr ""
 
-#: core/class-rsvps.php:1372
+#: core/class-rsvps.php:1501
 msgid "A new RSVP has been submitted."
 msgstr ""
 
-#: core/class-rsvps.php:1373
+#: core/class-rsvps.php:1502
 msgid "Attendee:"
 msgstr ""
 
-#: core/class-rsvps.php:1375
+#: core/class-rsvps.php:1504
 #: core/class-ticket-emails.php:488
 #: core/class-ticket-emails.php:1253
 msgid "Event:"
 msgstr ""
 
-#: core/class-rsvps.php:1376
+#: core/class-rsvps.php:1505
 #: core/class-ticket-emails.php:489
 #: core/class-ticket-emails.php:1254
 msgid "Date:"
 msgstr ""
 
-#: core/class-scripts.php:124
+#: core/class-scripts.php:145
 msgid "No events were found."
 msgstr ""
 
@@ -1695,8 +1703,8 @@ msgstr ""
 #: components/calendar/EventPopover.js:752
 #: components/order/CustomerInfo.js:29
 #: checkin/index.js:489
-#: rsvp/index.js:444
-#: share/index.js:95
+#: rsvp/index.js:475
+#: share/index.js:97
 msgid "Email"
 msgstr ""
 
@@ -1712,11 +1720,11 @@ msgstr ""
 msgid "Cost"
 msgstr ""
 
-#: core/class-tec-importer.php:573
+#: core/class-tec-importer.php:617
 msgid "General admission"
 msgstr ""
 
-#: core/class-tec-importer.php:896
+#: core/class-tec-importer.php:940
 msgid "Event website"
 msgstr ""
 
@@ -1772,7 +1780,7 @@ msgid "WooCommerce order not found."
 msgstr ""
 
 #: core/class-ticket-emails.php:308
-#: rsvp/index.js:553
+#: rsvp/index.js:654
 msgid "Check-in code:"
 msgstr ""
 
@@ -1799,7 +1807,7 @@ msgstr ""
 #: admin/events/edit/tickets/manage-tickets/index.js:612
 #: admin/tickets/overview/index.js:8
 #: components/event/event-tabs.js:61
-#: tickets/index.js:1081
+#: tickets/index.js:1097
 msgid "Tickets"
 msgstr ""
 
@@ -1916,11 +1924,11 @@ msgstr ""
 msgid "Could not create ticket product."
 msgstr ""
 
-#: core/class-woocommerce-checkout.php:689
+#: core/class-woocommerce-checkout.php:705
 msgid "EventKoi ticket order auto-completed."
 msgstr ""
 
-#: core/class-woocommerce-checkout.php:880
+#: core/class-woocommerce-checkout.php:896
 msgid "Status updated via EventKoi."
 msgstr ""
 
@@ -2421,7 +2429,7 @@ msgstr ""
 #: components/event/event-date-recurring.js:983
 #: components/order/CopyableOrderId.js:47
 #: components/calendar/EventPopover.js:807
-#: share/index.js:148
+#: share/index.js:150
 msgid "Copied!"
 msgstr ""
 
@@ -2431,8 +2439,8 @@ msgid "Calendar name"
 msgstr ""
 
 #: admin/calendars/overview/index.js:159
-#: components/calendar/calendar-slug.js:15
-#: components/event/event-slug.js:31
+#: components/calendar/calendar-slug.js:16
+#: components/event/event-slug.js:32
 msgid "Slug"
 msgstr ""
 
@@ -2542,7 +2550,7 @@ msgstr ""
 #: admin/events/edit/index.js:759
 #: admin/events/overview/index.js:878
 #: components/event/event-nav-back.js:64
-#: tickets/index.js:1598
+#: tickets/index.js:1728
 msgid "Back"
 msgstr ""
 
@@ -2641,7 +2649,7 @@ msgstr ""
 #: admin/events/edit/attendees/index.js:2119
 #: checkin/index.js:80
 #: checkin/index.js:87
-#: rsvp/index.js:92
+#: rsvp/index.js:111
 msgid "Maybe"
 msgstr ""
 
@@ -2650,7 +2658,7 @@ msgstr ""
 #: admin/events/edit/attendees/index.js:2122
 #: checkin/index.js:81
 #: checkin/index.js:88
-#: rsvp/index.js:93
+#: rsvp/index.js:112
 msgid "Not going"
 msgstr ""
 
@@ -2883,7 +2891,7 @@ msgstr ""
 #: admin/events/edit/attendees/index.js:1685
 #: components/order/CustomerInfo.js:21
 #: checkin/index.js:477
-#: rsvp/index.js:433
+#: rsvp/index.js:463
 msgid "Name"
 msgstr ""
 
@@ -2906,13 +2914,13 @@ msgstr ""
 #: admin/events/overview/index.js:550
 #: components/filters.js:67
 #: checkin/index.js:501
-#: rsvp/index.js:455
+#: rsvp/index.js:553
 msgid "Status"
 msgstr ""
 
 #: admin/events/edit/attendees/index.js:1589
 #: checkin/index.js:524
-#: rsvp/index.js:477
+#: rsvp/index.js:575
 msgid "Guests"
 msgstr ""
 
@@ -3349,7 +3357,7 @@ msgstr[1] ""
 #: components/ui/rich-text-editor.js:584
 #: components/url-import-dialog.js:134
 #: checkin/index.js:587
-#: rsvp/index.js:536
+#: rsvp/index.js:636
 msgid "Cancel"
 msgstr ""
 
@@ -3781,155 +3789,155 @@ msgstr ""
 msgid "Supports structured data & OG tags"
 msgstr ""
 
-#: admin/settings/overview/index.js:325
+#: admin/settings/overview/index.js:326
 msgid "Calendar & week"
 msgstr ""
 
-#: admin/settings/overview/index.js:340
+#: admin/settings/overview/index.js:341
 #: components/calendar/calendar-start-day.js:73
 #: components/onboarding/set-calendar-defaults.jsx:129
 msgid "Select a day"
 msgstr ""
 
-#: admin/settings/overview/index.js:351
+#: admin/settings/overview/index.js:352
 msgid "The first day of the week in calendar and week views."
 msgstr ""
 
-#: admin/settings/overview/index.js:357
+#: admin/settings/overview/index.js:358
 #: components/calendar/calendar-day-start-time.js:61
 msgid "Day starts at"
 msgstr ""
 
-#: admin/settings/overview/index.js:364
+#: admin/settings/overview/index.js:365
 #: components/calendar/calendar-day-start-time.js:76
 msgid "Select time"
 msgstr ""
 
-#: admin/settings/overview/index.js:378
+#: admin/settings/overview/index.js:379
 msgid "The earliest hour shown in week and day views. Earlier hours stay hidden to reduce scrolling."
 msgstr ""
 
-#: admin/settings/overview/index.js:384
+#: admin/settings/overview/index.js:385
 #: components/onboarding/set-calendar-defaults.jsx:149
 msgid "Working days"
 msgstr ""
 
-#: admin/settings/overview/index.js:412
+#: admin/settings/overview/index.js:413
 msgid "Shaded in calendar views and used as the default for \"every working day\" recurring rules."
 msgstr ""
 
-#: admin/settings/overview/index.js:423
+#: admin/settings/overview/index.js:424
 msgid "Dates & times"
 msgstr ""
 
-#: admin/settings/overview/index.js:431
+#: admin/settings/overview/index.js:432
 #: components/onboarding/confirm-timezone-format.jsx:92
 #: components/onboarding/set-calendar-defaults.jsx:185
 msgid "Time format"
 msgstr ""
 
-#: admin/settings/overview/index.js:442
+#: admin/settings/overview/index.js:443
 #: components/onboarding/set-calendar-defaults.jsx:197
 msgid "12-hour (AM/PM) clock"
 msgstr ""
 
-#: admin/settings/overview/index.js:448
+#: admin/settings/overview/index.js:449
 #: components/onboarding/set-calendar-defaults.jsx:203
 msgid "24-hour clock"
 msgstr ""
 
-#: admin/settings/overview/index.js:453
+#: admin/settings/overview/index.js:454
 msgid "How event times display across the site (e.g. 2:00 PM or 14:00)."
 msgstr ""
 
-#: admin/settings/overview/index.js:459
+#: admin/settings/overview/index.js:460
 msgid "Time format (custom)"
 msgstr ""
 
-#: admin/settings/overview/index.js:469
-#: admin/settings/overview/index.js:487
+#: admin/settings/overview/index.js:470
+#: admin/settings/overview/index.js:488
 #: blocks/event-data/event-data-controls.js:183
 #: blocks/event-data/event-data-controls.js:202
 msgid "Preview:"
 msgstr ""
 
-#: admin/settings/overview/index.js:470
+#: admin/settings/overview/index.js:471
 msgid "Overrides the toggle above. Leave blank to use the default."
 msgstr ""
 
-#: admin/settings/overview/index.js:476
+#: admin/settings/overview/index.js:477
 #: components/onboarding/confirm-timezone-format.jsx:78
 msgid "Date format"
 msgstr ""
 
-#: admin/settings/overview/index.js:488
+#: admin/settings/overview/index.js:489
 msgid "Leave blank to use the WordPress default date format."
 msgstr ""
 
-#: admin/settings/overview/index.js:496
+#: admin/settings/overview/index.js:497
 #: blocks/event-data/event-data-controls.js:217
 msgid "Format reference"
 msgstr ""
 
-#: admin/settings/overview/index.js:504
+#: admin/settings/overview/index.js:505
 msgid "Timezone display"
 msgstr ""
 
-#: admin/settings/overview/index.js:515
+#: admin/settings/overview/index.js:516
 msgid "Visitors see event times in their local timezone."
 msgstr ""
 
-#: admin/settings/overview/index.js:521
+#: admin/settings/overview/index.js:522
 msgid "Event times use the site's timezone."
 msgstr ""
 
-#: admin/settings/overview/index.js:526
+#: admin/settings/overview/index.js:527
 msgid "Controls whose clock event times follow: the visitor's local time, or your site's fixed timezone."
 msgstr ""
 
-#: admin/settings/overview/index.js:537
+#: admin/settings/overview/index.js:538
 msgid "Event URLs"
 msgstr ""
 
-#: admin/settings/overview/index.js:546
+#: admin/settings/overview/index.js:547
 msgid "Event base"
 msgstr ""
 
-#: admin/settings/overview/index.js:565
+#: admin/settings/overview/index.js:566
 msgid "Calendar base"
 msgstr ""
 
-#: admin/settings/overview/index.js:585
+#: admin/settings/overview/index.js:586
 msgid "Changes to URL bases take effect after the next page load."
 msgstr ""
 
-#: admin/settings/overview/index.js:596
+#: admin/settings/overview/index.js:597
 msgid "Single event pages"
 msgstr ""
 
-#: admin/settings/overview/index.js:606
+#: admin/settings/overview/index.js:607
 msgid "Default event template"
 msgstr ""
 
-#: admin/settings/overview/index.js:619
+#: admin/settings/overview/index.js:620
 #: components/event/event-template.js:77
 msgid "Select a template"
 msgstr ""
 
-#: admin/settings/overview/index.js:622
+#: admin/settings/overview/index.js:623
 #: components/event/event-template.js:80
 msgid "Default template"
 msgstr ""
 
-#: admin/settings/overview/index.js:631
+#: admin/settings/overview/index.js:632
 msgid "Applied to every event page unless overridden on the event itself."
 msgstr ""
 
-#: admin/settings/overview/index.js:640
+#: admin/settings/overview/index.js:641
 msgid "Edit in Site Editor"
 msgstr ""
 
-#: admin/settings/overview/index.js:641
+#: admin/settings/overview/index.js:642
 msgid "View/edit templates"
 msgstr ""
 
@@ -4398,7 +4406,7 @@ msgstr ""
 
 #: blocks/event-data/event-data-controls.js:251
 #: components/calendar/search-box.js:198
-#: components/calendar/search-box.js:239
+#: components/calendar/search-box.js:276
 msgid "Search events…"
 msgstr ""
 
@@ -4652,7 +4660,7 @@ msgstr ""
 #: components/event/event-date-recurring.js:983
 #: checkin/index.js:430
 #: components/calendar/EventPopover.js:808
-#: share/index.js:149
+#: share/index.js:151
 msgid "Copy"
 msgstr ""
 
@@ -4692,18 +4700,18 @@ msgstr ""
 msgid "Create duplicate calendar"
 msgstr ""
 
-#: components/calendar/calendar-slug.js:20
-#: components/event/event-slug.js:36
+#: components/calendar/calendar-slug.js:21
+#: components/event/event-slug.js:37
 #: components/event/physical-location-form.js:73
 msgid "Address"
 msgstr ""
 
-#: components/calendar/calendar-slug.js:30
+#: components/calendar/calendar-slug.js:31
 msgid "Define the URL of your calendar"
 msgstr ""
 
 #. translators: 1: calendar base URL, 2: calendar slug
-#: components/calendar/calendar-slug.js:35
+#: components/calendar/calendar-slug.js:36
 #, js-format
 msgid "(e.g. %1$s%2$s)"
 msgstr ""
@@ -4746,40 +4754,40 @@ msgid "Share"
 msgstr ""
 
 #: components/calendar/EventPopover.js:728
-#: share/index.js:72
+#: share/index.js:74
 msgid "Share this event using the options below or copy its link."
 msgstr ""
 
 #: components/calendar/EventPopover.js:740
-#: share/index.js:83
+#: share/index.js:85
 msgid "WhatsApp"
 msgstr ""
 
 #: components/calendar/EventPopover.js:746
-#: share/index.js:89
+#: share/index.js:91
 msgid "Instagram"
 msgstr ""
 
 #: components/calendar/EventPopover.js:758
-#: share/index.js:101
+#: share/index.js:103
 msgid "Facebook"
 msgstr ""
 
 #: components/calendar/EventPopover.js:761
 #: components/calendar/EventPopover.js:764
-#: share/index.js:107
+#: share/index.js:109
 msgid "X"
 msgstr ""
 
 #: components/calendar/EventPopover.js:765
 #: components/calendar/EventPopover.js:770
-#: share/index.js:113
+#: share/index.js:115
 msgid "LinkedIn"
 msgstr ""
 
 #: components/calendar/EventPopover.js:771
 #: components/calendar/EventPopover.js:777
-#: share/index.js:119
+#: share/index.js:121
 msgid "Event link"
 msgstr ""
 
@@ -5227,12 +5235,12 @@ msgstr ""
 msgid "Allow RSVP edits"
 msgstr ""
 
-#: components/event/event-slug.js:46
+#: components/event/event-slug.js:47
 msgid "Define the URL of your event"
 msgstr ""
 
 #. translators: %s: example event URL.
-#: components/event/event-slug.js:50
+#: components/event/event-slug.js:51
 #, js-format
 msgid "(e.g. %s)"
 msgstr ""
@@ -5251,8 +5259,8 @@ msgstr ""
 
 #: components/event/event-tabs.js:55
 #: checkin/index.js:461
-#: rsvp/index.js:407
-#: rsvp/index.js:419
+#: rsvp/index.js:430
+#: rsvp/index.js:444
 msgid "RSVP"
 msgstr ""
 
@@ -5586,7 +5594,7 @@ msgid "Add note"
 msgstr ""
 
 #: components/order/OrderSummary.js:156
-#: tickets/index.js:1605
+#: tickets/index.js:1735
 msgid "Order summary"
 msgstr ""
 
@@ -5595,8 +5603,8 @@ msgid "Amount"
 msgstr ""
 
 #: components/order/OrderSummary.js:199
-#: tickets/index.js:1334
-#: tickets/index.js:1644
+#: tickets/index.js:1365
+#: tickets/index.js:1774
 msgid "Total"
 msgstr ""
 
@@ -5841,12 +5849,12 @@ msgid "More"
 msgstr ""
 
 #: components/ui/calendar-picker.jsx:54
-#: components/calendar/search-box.js:405
+#: components/calendar/search-box.js:447
 msgid "Previous month"
 msgstr ""
 
 #: components/ui/calendar-picker.jsx:68
-#: components/calendar/search-box.js:416
+#: components/calendar/search-box.js:458
 msgid "Next month"
 msgstr ""
 
@@ -6144,19 +6152,19 @@ msgid "Copy check-in code"
 msgstr ""
 
 #: checkin/index.js:449
-#: rsvp/index.js:406
+#: rsvp/index.js:429
 msgid "Edit RSVP"
 msgstr ""
 
 #. translators: %s: event title
 #: checkin/index.js:458
-#: rsvp/index.js:416
+#: rsvp/index.js:441
 #, js-format
 msgid "RSVP for %s"
 msgstr ""
 
 #: checkin/index.js:464
-#: rsvp/index.js:422
+#: rsvp/index.js:447
 msgid "Let us know you're coming."
 msgstr ""
 
@@ -6164,30 +6172,30 @@ msgstr ""
 #. translators: %d: maximum count
 #: checkin/index.js:540
 #: checkin/index.js:707
-#: rsvp/index.js:493
+#: rsvp/index.js:591
 #, js-format
 msgid "Max %d"
 msgstr ""
 
 #: checkin/index.js:567
-#: rsvp/index.js:517
+#: rsvp/index.js:615
 #, js-format
 msgid "Max %d guest"
 msgstr ""
 
 #: checkin/index.js:568
-#: rsvp/index.js:518
+#: rsvp/index.js:616
 #, js-format
 msgid "Max %d guests"
 msgstr ""
 
 #: checkin/index.js:579
-#: rsvp/index.js:528
+#: rsvp/index.js:628
 msgid "Submitting..."
 msgstr ""
 
 #: checkin/index.js:580
-#: rsvp/index.js:529
+#: rsvp/index.js:629
 msgid "Submit RSVP"
 msgstr ""
 
@@ -6224,7 +6232,7 @@ msgid "Count updated."
 msgstr ""
 
 #. translators: %s: month and year, for example May 2026.
-#: components/calendar/calendar-toolbar.js:58
+#: components/calendar/calendar-toolbar.js:65
 #, js-format
 msgid "Search results for %s."
 msgstr ""
@@ -6255,12 +6263,12 @@ msgid "Select %s"
 msgstr ""
 
 #: components/calendar/EventPopover.js:790
-#: share/index.js:132
+#: share/index.js:134
 msgid "Copy event link to clipboard"
 msgstr ""
 
 #: components/calendar/EventPopover.js:816
-#: share/index.js:153
+#: share/index.js:155
 msgid "Event link copied to clipboard"
 msgstr ""
 
@@ -6276,38 +6284,38 @@ msgstr ""
 msgid "Go to next period"
 msgstr ""
 
-#: components/calendar/search-box.js:287
+#: components/calendar/search-box.js:329
 msgid "Loading events..."
 msgstr ""
 
 #. translators: %d: number of events found
-#: components/calendar/search-box.js:292
+#: components/calendar/search-box.js:334
 #, js-format
 msgid "%d events found."
 msgstr ""
 
-#: components/calendar/search-box.js:363
+#: components/calendar/search-box.js:405
 msgid "Previous page"
 msgstr ""
 
-#: components/calendar/search-box.js:367
+#: components/calendar/search-box.js:409
 msgid "Prev"
 msgstr ""
 
-#: components/calendar/search-box.js:372
+#: components/calendar/search-box.js:414
 #, js-format
 msgid "Page %1$d of %2$d"
 msgstr ""
 
-#: components/calendar/search-box.js:385
+#: components/calendar/search-box.js:427
 msgid "Next page"
 msgstr ""
 
-#: components/calendar/search-box.js:402
+#: components/calendar/search-box.js:444
 msgid "Search previous month"
 msgstr ""
 
-#: components/calendar/search-box.js:413
+#: components/calendar/search-box.js:455
 msgid "Search next month"
 msgstr ""
 
@@ -6398,220 +6406,225 @@ msgid "Selected timezone: %s"
 msgstr ""
 
 #. translators: %s: RSVP status
-#: rsvp/index.js:127
-#: rsvp/index.js:237
+#: rsvp/index.js:149
+#: rsvp/index.js:260
 #, js-format
 msgid "Your RSVP: %s"
 msgstr ""
 
-#: rsvp/index.js:354
+#: rsvp/index.js:377
 msgid "Remaining"
 msgstr ""
 
-#: rsvp/index.js:398
+#: rsvp/index.js:421
 msgid "Event ended"
 msgstr ""
 
-#: rsvp/index.js:400
+#: rsvp/index.js:423
 msgid "RSVP: Closed"
 msgstr ""
 
-#: rsvp/index.js:403
+#: rsvp/index.js:426
 msgid "RSVP opens soon"
 msgstr ""
 
-#: rsvp/index.js:404
+#: rsvp/index.js:427
 msgid "RSVP not yet open"
 msgstr ""
 
-#: rsvp/index.js:547
+#: rsvp/index.js:531
+#: tickets/index.js:1648
+msgid "Select..."
+msgstr ""
+
+#: rsvp/index.js:648
 msgid "This event is fully booked."
 msgstr ""
 
-#: tickets/index.js:887
+#: tickets/index.js:902
 msgid "Please complete all required fields."
 msgstr ""
 
-#: tickets/index.js:891
-#: tickets/index.js:1533
+#: tickets/index.js:906
+#: tickets/index.js:1564
 msgid "Please enter a valid email address."
 msgstr ""
 
-#: tickets/index.js:930
+#: tickets/index.js:945
 msgid "One or more selected tickets are no longer available."
 msgstr ""
 
-#: tickets/index.js:941
+#: tickets/index.js:956
 #, js-format
 msgid "“%s” is no longer available."
 msgstr ""
 
-#: tickets/index.js:942
-#: tickets/index.js:955
+#: tickets/index.js:957
+#: tickets/index.js:970
 msgid "Selected ticket"
 msgstr ""
 
-#: tickets/index.js:953
+#: tickets/index.js:968
 #, js-format
 msgid "Only %d left for “%s”."
 msgstr ""
 
-#: tickets/index.js:1000
+#: tickets/index.js:1016
 msgid "Checkout URL is missing."
 msgstr ""
 
-#: tickets/index.js:1007
+#: tickets/index.js:1023
 msgid "Unable to set up checkout."
 msgstr ""
 
-#: tickets/index.js:1023
+#: tickets/index.js:1039
 msgid "Payment successful"
 msgstr ""
 
-#: tickets/index.js:1026
+#: tickets/index.js:1042
 msgid "Your order is confirmed and your tickets will be sent by email."
 msgstr ""
 
-#: tickets/index.js:1040
+#: tickets/index.js:1056
 msgid "Dismiss success message"
 msgstr ""
 
-#: tickets/index.js:1054
+#: tickets/index.js:1070
 msgid "Order received"
 msgstr ""
 
-#: tickets/index.js:1057
+#: tickets/index.js:1073
 msgid "Your tickets will be sent by email once payment is confirmed."
 msgstr ""
 
-#: tickets/index.js:1071
+#: tickets/index.js:1087
 msgid "Dismiss message"
 msgstr ""
 
-#: tickets/index.js:1090
-#: tickets/index.js:1207
+#: tickets/index.js:1106
+#: tickets/index.js:1231
 #, js-format
 msgid "Ticket sales ended on %s."
 msgstr ""
 
-#: tickets/index.js:1095
-#: tickets/index.js:1196
+#: tickets/index.js:1111
+#: tickets/index.js:1220
 #, js-format
 msgid "Ticket sales starts on %1$s and ends on %2$s."
 msgstr ""
 
-#: tickets/index.js:1102
+#: tickets/index.js:1118
 #, js-format
 msgid "Ticket sales end on %s."
 msgstr ""
 
-#: tickets/index.js:1122
+#: tickets/index.js:1138
 msgid "Not on sale"
 msgstr ""
 
-#: tickets/index.js:1123
+#: tickets/index.js:1139
 msgid "Get tickets"
 msgstr ""
 
-#: tickets/index.js:1132
+#: tickets/index.js:1148
 msgid "Ticket checkout"
 msgstr ""
 
-#: tickets/index.js:1134
+#: tickets/index.js:1150
 msgid "Select tickets and complete billing information to continue to payment."
 msgstr ""
 
-#: tickets/index.js:1144
+#: tickets/index.js:1160
 msgid "Buy tickets"
 msgstr ""
 
-#: tickets/index.js:1217
+#: tickets/index.js:1241
 #, js-format
 msgid "Ticket sales started on %1$s and ends on %2$s."
 msgstr ""
 
-#: tickets/index.js:1228
+#: tickets/index.js:1252
 #, js-format
 msgid "Ticket sales ends on %s."
 msgstr ""
 
-#: tickets/index.js:1249
+#: tickets/index.js:1273
 #, js-format
 msgid "Decrease quantity for %s"
 msgstr ""
 
-#: tickets/index.js:1250
-#: tickets/index.js:1267
-#: tickets/index.js:1284
+#: tickets/index.js:1274
+#: tickets/index.js:1291
+#: tickets/index.js:1308
 msgid "ticket"
 msgstr ""
 
-#: tickets/index.js:1266
+#: tickets/index.js:1290
 #, js-format
 msgid "Quantity for %s"
 msgstr ""
 
-#: tickets/index.js:1283
+#: tickets/index.js:1307
 #, js-format
 msgid "Increase quantity for %s"
 msgstr ""
 
-#: tickets/index.js:1298
+#: tickets/index.js:1322
 #, js-format
 msgid "%d tickets left."
 msgstr ""
 
-#: tickets/index.js:1354
+#: tickets/index.js:1385
 msgid "Clear all"
 msgstr ""
 
-#: tickets/index.js:1371
-#: tickets/index.js:1394
-#: tickets/index.js:1585
+#: tickets/index.js:1402
+#: tickets/index.js:1425
+#: tickets/index.js:1715
 msgid "Checkout"
 msgstr ""
 
-#: tickets/index.js:1377
+#: tickets/index.js:1408
 #, js-format
 msgid "Ticket sales start on %s."
 msgstr ""
 
-#: tickets/index.js:1383
+#: tickets/index.js:1414
 msgid "Ticket sales have ended."
 msgstr ""
 
-#: tickets/index.js:1397
+#: tickets/index.js:1428
 msgid "Checkout billing step"
 msgstr ""
 
-#: tickets/index.js:1414
+#: tickets/index.js:1445
 msgid "Billing information"
 msgstr ""
 
-#: tickets/index.js:1422
+#: tickets/index.js:1453
 msgid "First name"
 msgstr ""
 
-#: tickets/index.js:1452
+#: tickets/index.js:1483
 msgid "First name is required."
 msgstr ""
 
-#: tickets/index.js:1461
+#: tickets/index.js:1492
 msgid "Last name"
 msgstr ""
 
-#: tickets/index.js:1490
+#: tickets/index.js:1521
 msgid "Last name is required."
 msgstr ""
 
-#: tickets/index.js:1501
+#: tickets/index.js:1532
 msgid "Email address"
 msgstr ""
 
-#: tickets/index.js:1543
+#: tickets/index.js:1574
 msgid "We will send your tickets to this email address."
 msgstr ""
 
-#: tickets/index.js:1582
+#: tickets/index.js:1712
 msgid "Setting up payment"
 msgstr ""
