@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.3.17.2
+Stable tag: 1.3.17.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,11 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.17.3 – Translations, mobile dialogs & accented slugs – 2026-06-19 =
+* New: The React interface (calendar, RSVP, share) now applies your Loco/.mo translations, so the UI is fully translatable, not just the PHP strings.
+* Improvement: On mobile, the RSVP and share dialogs are now full-width sheets with a fixed header, a scrollable body and a fixed footer, so nothing is cut off and every control stays reachable.
+* Fix: Slugs from accented titles now fold to ASCII (é→e, ç→c, ß→ss) instead of replacing each accent with a dash, giving clean URLs for French and other accented languages.
 
 = 1.3.17.2 – Calendar search refinements – 2026-06-18 =
 * Fix: Typing in calendar search no longer drops focus after the first letter.
