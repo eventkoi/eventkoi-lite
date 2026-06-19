@@ -2,10 +2,11 @@ import { Panel } from "@/components/panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useEventEditContext } from "@/hooks/EventEditContext";
+import { foldAccents } from "@/lib/slug";
 import { __, sprintf } from "@wordpress/i18n";
 
 const cleanSlug = (value) =>
-  String(value || "")
+  foldAccents(value)
     .trim()
     .toLowerCase()
     .replace(/['"]/g, "")

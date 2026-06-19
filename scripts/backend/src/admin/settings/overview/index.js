@@ -10,6 +10,7 @@ import { ProBadge } from "@/components/pro-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { foldAccents } from "@/lib/slug";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
@@ -40,7 +41,7 @@ const dayLabels = {
 const themeSlug = eventkoi_params?.theme || "twentytwentyfive";
 const customTemplates = eventkoi_params?.custom_templates || [];
 const cleanPermalinkBase = (value, fallback) => {
-  const slug = String(value || "")
+  const slug = foldAccents(value)
     .trim()
     .toLowerCase()
     .replace(/['"]/g, "")

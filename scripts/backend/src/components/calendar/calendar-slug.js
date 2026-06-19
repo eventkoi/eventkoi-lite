@@ -3,10 +3,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { Panel } from "@/components/panel";
+import { foldAccents } from "@/lib/slug";
 
 export function CalendarSlug({ calendar, setCalendar }) {
   let sanitizedSlug = calendar.name
-    ? calendar.name.replace(/\s+/g, "-").toLowerCase()
+    ? foldAccents(calendar.name).replace(/\s+/g, "-").toLowerCase()
     : "";
   const slugPath = calendar.slug ? calendar.slug : sanitizedSlug;
 
