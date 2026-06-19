@@ -4,9 +4,11 @@ import { createRoot } from "react-dom/client";
 
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogHeader,
+  dialogSheetClass,
   DialogTitle,
 } from "@/components/ui/dialog";
 
@@ -61,10 +63,10 @@ export function ShareButton({ base, html }) {
       />
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent
-          className="w-full max-w-[685px] p-0"
+          className={`${dialogSheetClass} sm:max-w-[685px]`}
           onOpenAutoFocus={(e) => e.preventDefault()}
         >
-          <DialogHeader className="flex items-center justify-center p-4 border-0 border-solid border-b-2 border-input">
+          <DialogHeader className="flex-none flex items-center justify-center p-4 border-0 border-solid border-b-2 border-input">
             <DialogTitle className="font-sans text-xl m-0 text-foreground">
               {__("Share this event", "eventkoi-lite")}
             </DialogTitle>
@@ -75,7 +77,7 @@ export function ShareButton({ base, html }) {
               )}
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col pt-[30px] pb-[60px] px-[60px]">
+          <DialogBody className="flex flex-col pt-6 pb-8 px-5 sm:pt-[30px] sm:pb-[60px] sm:px-[60px]">
             <div className="flex gap-4 items-center flex-wrap justify-center pb-[60px]">
               <ShareLink
                 event={event}
@@ -154,7 +156,7 @@ export function ShareButton({ base, html }) {
                 </div>
               </div>
             </div>
-          </div>
+          </DialogBody>
         </DialogContent>
       </Dialog>
     </>

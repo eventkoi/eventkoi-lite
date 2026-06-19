@@ -147,3 +147,20 @@
   height: auto;
   margin: 0;
 }
+
+/* Thin, unobtrusive scrollbar for the scrollable body of sheet-style modals. */
+.ek-modal-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--foreground) / 0.25) transparent;
+}
+.ek-modal-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.ek-modal-scroll::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--foreground) / 0.25);
+  border-radius: 9999px;
+}
+.ek-modal-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}

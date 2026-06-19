@@ -8,6 +8,12 @@ import { cn } from "@/lib/utils";
 
 const Dialog = DialogPrimitive.Root;
 
+// Full-screen sheet on mobile, centered capped dialog on desktop. The content is
+// a non-scrolling flex column (so the close button and a sticky footer stay put)
+// with a DialogBody handling the scroll. Each modal appends its own sm:max-w-*.
+const dialogSheetClass =
+  "flex max-h-[100dvh] w-full max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 sm:max-h-[90dvh] sm:w-[95vw] sm:rounded-lg";
+
 const DialogTrigger = DialogPrimitive.Trigger;
 
 const DialogPortal = DialogPrimitive.Portal;
@@ -79,6 +85,20 @@ const DialogFooter = ({ className, ...props }) => (
 );
 DialogFooter.displayName = "DialogFooter";
 
+// Scrollable middle region for sheet-style dialogs: grows to fill the space
+// between a fixed header and footer, scrolls its own overflow with a thin
+// scrollbar, and contains rubber-banding to the dialog.
+const DialogBody = ({ className, ...props }) => (
+  <div
+    className={cn(
+      "ek-modal-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain",
+      className
+    )}
+    {...props}
+  />
+);
+DialogBody.displayName = "DialogBody";
+
 const DialogTitle = React.forwardRef(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
@@ -102,6 +122,7 @@ DialogDescription.displayName = DialogPrimitive.Description.displayName;
 
 export {
   Dialog,
+  DialogBody,
   DialogClose,
   DialogContent,
   DialogDescription,
@@ -109,6 +130,7 @@ export {
   DialogHeader,
   DialogOverlay,
   DialogPortal,
+  dialogSheetClass,
   DialogTitle,
   DialogTrigger,
 };
