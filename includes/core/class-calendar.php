@@ -797,6 +797,7 @@ class Calendar {
 					$record = array(
 						'id'            => $event::get_id() . '-span',
 						'event_id'      => $event::get_id(),
+						'is_package'    => $event::is_package(),
 						'title'         => $event::get_title(),
 						'date_type'     => $event::get_date_type(),
 						'standard_type' => $event::get_standard_type(),
@@ -862,6 +863,7 @@ class Calendar {
 					$record = array(
 						'id'            => $event::get_id() . '-span',
 						'event_id'      => $event::get_id(),
+						'is_package'    => $event::is_package(),
 						'title'         => $event::get_title(),
 						'date_type'     => $event::get_date_type(),
 						'standard_type' => $event::get_standard_type(),
@@ -922,7 +924,8 @@ class Calendar {
 						$record = array(
 							'id'            => $event::get_id() . '-day' . $i,
 							'event_id'      => $event::get_id(),
-							'event_day'     => (int) $i,
+							'is_package'    => $event::is_package(),
+							'event_day'     => $event::is_package() ? null : (int) $i,
 							'title'         => $event::get_title(),
 							'date_type'     => $event::get_date_type(),
 							'standard_type' => $event::get_standard_type(),
@@ -931,7 +934,9 @@ class Calendar {
 							'end_real'      => $end_real,
 							'end_all_day'   => ! empty( $instance['all_day'] ),
 							'allDay'        => ! empty( $instance['all_day'] ),
-							'url'           => self::append_event_day_arg( self::append_frontend_timezone_arg( $event::get_url() ), $i ),
+							'url'           => $event::is_package()
+								? self::append_frontend_timezone_arg( $event::get_url() )
+								: self::append_event_day_arg( self::append_frontend_timezone_arg( $event::get_url() ), $i ),
 							'description'   => $event::get_summary(),
 							'address1'      => $primary['address1'] ?? '',
 							'address2'      => $primary['address2'] ?? '',

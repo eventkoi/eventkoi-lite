@@ -239,6 +239,12 @@ class WooCommerce_Checkout {
 		$event_id      = absint( $args['event_id'] ?? 0 );
 		$event_title   = sanitize_text_field( (string) ( $args['event_title'] ?? '' ) );
 		$instance_ts   = absint( $args['instance_ts'] ?? 0 );
+
+		// A single-package event is sold as one unit, so never bind a checkout to
+		// one day even if a per-day instance was somehow supplied.
+		if ( Event::is_package_event( $event_id ) ) {
+			$instance_ts = 0;
+		}
 		$email         = sanitize_email( (string) ( $args['email'] ?? '' ) );
 		$first_name    = sanitize_text_field( (string) ( $args['first_name'] ?? '' ) );
 		$last_name     = sanitize_text_field( (string) ( $args['last_name'] ?? '' ) );

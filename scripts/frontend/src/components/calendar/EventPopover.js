@@ -306,6 +306,7 @@ const getEventIcalUrl = (event, timezone = "UTC") => {
     if (
       event?.date_type === "standard" &&
       event?.standard_type === "selected" &&
+      !event?.is_package &&
       /^\d+$/.test(eventDay)
     ) {
       url.searchParams.set("event_day", String(parseInt(eventDay, 10)));

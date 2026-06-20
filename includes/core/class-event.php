@@ -81,6 +81,7 @@ class Event {
 		'recurrence_overrides',
 		'rulesummary',
 		'standard_type',
+		'event_single_package',
 		'attendance_mode',
 		'rsvp_enabled',
 		'rsvp_capacity',
@@ -547,6 +548,10 @@ class Event {
 		update_post_meta( self::$event_id, 'event_days', (array) $event_days );
 		update_post_meta( self::$event_id, 'locations', (array) $locations );
 		update_post_meta( self::$event_id, 'standard_type', (string) $standard_type );
+		// Absent key keeps the historical per-day behaviour (grandfathering); the
+		// editor sends true for new events via the new-event template default.
+		$event_single_package = array_key_exists( 'event_single_package', $meta ) ? self::normalize_boolean_meta( $meta['event_single_package'] ) : false;
+		update_post_meta( self::$event_id, 'event_single_package', $event_single_package ? 1 : 0 );
 		update_post_meta( self::$event_id, 'recurrence_rules', $recurrence_rules );
 		update_post_meta( self::$event_id, 'rsvp_enabled', $rsvp_enabled ? 1 : 0 );
 		update_post_meta( self::$event_id, 'rsvp_capacity', $rsvp_capacity );
@@ -2074,6 +2079,82 @@ class Event {
 	}
 
 	/**
+	 * Whether a multi-day selected-dates event should be treated as one package.
+	 *
+	 * New events default ON; existing events without the meta default OFF so the
+	 * historical per-day behaviour is preserved on update (grandfathering).
+	 *
+	 * @return bool
+	 */
+	public static function get_event_single_package() {
+		// New, unsaved events (the editor template runs with event id 0): default ON.
+		if ( empty( self::$event_id ) ) {
+			return apply_filters( 'eventkoi_get_event_single_package', true, self::$event_id, self::$event );
+		}
+
+		// Existing events that predate this setting keep their current per-day
+		// behaviour until the toggle is explicitly saved.
+		if ( ! metadata_exists( 'post', self::$event_id, 'event_single_package' ) ) {
+			return apply_filters( 'eventkoi_get_event_single_package', false, self::$event_id, self::$event );
+		}
+
+		$enabled = get_post_meta( self::$event_id, 'event_single_package', true );
+
+		return apply_filters( 'eventkoi_get_event_single_package', self::normalize_boolean_meta( $enabled ), self::$event_id, self::$event );
+	}
+
+	/**
+	 * Whether the current event behaves as a single multi-day package.
+	 *
+	 * True only for a standard, selected-dates event that has more than one date
+	 * row AND has the single-package toggle enabled. When true, the event links to
+	 * its bare permalink (no per-day ?event_day arg) and is sold as one unit.
+	 *
+	 * @return bool
+	 */
+	public static function is_package() {
+		if ( 'standard' !== self::get_date_type() || 'selected' !== self::get_standard_type() ) {
+			return false;
+		}
+
+		$days = self::get_event_days();
+		if ( ! is_array( $days ) || count( $days ) <= 1 ) {
+			return false;
+		}
+
+		return (bool) self::get_event_single_package();
+	}
+
+	/**
+	 * Context-safe check for whether a given event id is a single-day package.
+	 *
+	 * Saves and restores the static event context so callers that pass an
+	 * arbitrary id (e.g. checkout) do not disturb the event currently loaded.
+	 *
+	 * @param int $event_id Event ID.
+	 * @return bool
+	 */
+	public static function is_package_event( $event_id ) {
+		$event_id = absint( $event_id );
+		if ( ! $event_id ) {
+			return false;
+		}
+
+		$prev_event    = self::$event;
+		$prev_event_id = self::$event_id;
+
+		self::$event    = get_post( $event_id );
+		self::$event_id = $event_id;
+
+		$result = self::is_package();
+
+		self::$event    = $prev_event;
+		self::$event_id = $prev_event_id;
+
+		return $result;
+	}
+
+	/**
 	 * Get event location.
 	 */
 	public static function get_location() {
@@ -2604,6 +2685,94 @@ class Event {
 		}
 
 		return implode( ', ', array_unique( array_filter( $parts ) ) );
+	}
+
+	/**
+	 * Read a single text field from the primary physical location.
+	 *
+	 * Falls back to the schema.org address sub-object so imported events (which
+	 * may store the value under streetAddress/addressLocality/etc.) resolve too.
+	 *
+	 * @param string $key        Location array key (e.g. "city").
+	 * @param string $schema_key Optional schema.org address key (e.g. "addressLocality").
+	 * @return string
+	 */
+	protected static function location_field_text( $key, $schema_key = '' ) {
+		$location = self::get_primary_location();
+
+		if ( ! is_array( $location ) || empty( $location ) ) {
+			return '';
+		}
+
+		$address = isset( $location['address'] ) && is_array( $location['address'] ) ? $location['address'] : array();
+
+		return self::first_location_text(
+			self::location_text_value( $location, $key ),
+			'' !== $schema_key ? self::location_text_value( $address, $schema_key ) : ''
+		);
+	}
+
+	/**
+	 * Render the primary location's venue name.
+	 *
+	 * @return string
+	 */
+	public static function rendered_location_name() {
+		return esc_html( self::location_field_text( 'name' ) );
+	}
+
+	/**
+	 * Render the primary location's street address (line 1).
+	 *
+	 * @return string
+	 */
+	public static function rendered_location_address() {
+		return esc_html( self::location_field_text( 'address1', 'streetAddress' ) );
+	}
+
+	/**
+	 * Render the primary location's apartment / unit (address line 2).
+	 *
+	 * @return string
+	 */
+	public static function rendered_location_unit() {
+		return esc_html( self::location_field_text( 'address2' ) );
+	}
+
+	/**
+	 * Render the primary location's city.
+	 *
+	 * @return string
+	 */
+	public static function rendered_location_city() {
+		return esc_html( self::location_field_text( 'city', 'addressLocality' ) );
+	}
+
+	/**
+	 * Render the primary location's state / region.
+	 *
+	 * @return string
+	 */
+	public static function rendered_location_state() {
+		return esc_html( self::location_field_text( 'state', 'addressRegion' ) );
+	}
+
+	/**
+	 * Render the primary location's country.
+	 *
+	 * @return string
+	 */
+	public static function rendered_location_country() {
+		return esc_html( self::location_field_text( 'country', 'addressCountry' ) );
+	}
+
+	/**
+	 * Render the primary location's post code / zip.
+	 *
+	 * @return string
+	 */
+	public static function rendered_location_zip() {
+		return esc_html( self::location_field_text( 'zip', 'postalCode' ) );
 	}
 
 	/**
