@@ -198,6 +198,16 @@ class Rsvps {
 
 		if ( ! $instance_ts ) {
 			$instance_ts = absint( get_post_meta( $event_id, 'start_timestamp', true ) );
+
+			// Selected-date events (including single-package) keep their dates in
+			// event_days, not start_timestamp; anchor to the first day so a package
+			// RSVP stores against the same instance the summary reads.
+			if ( ! $instance_ts ) {
+				$eventkoi_first_days = Event::get_event_days();
+				if ( is_array( $eventkoi_first_days ) && ! empty( $eventkoi_first_days[0]['start_date'] ) ) {
+					$instance_ts = absint( strtotime( (string) $eventkoi_first_days[0]['start_date'] ) );
+				}
+			}
 		}
 
 		if ( ! in_array( $status, self::$allowed_statuses, true ) ) {

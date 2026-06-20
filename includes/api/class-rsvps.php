@@ -192,6 +192,15 @@ class Rsvps {
 			}
 
 			$instance_ts = absint( get_post_meta( $event_id, 'start_timestamp', true ) );
+
+			// Selected-date events (including single-package) keep their dates in
+			// event_days, not start_timestamp, so fall back to the first day.
+			if ( ! $instance_ts ) {
+				$eventkoi_first_days = Event::get_event_days();
+				if ( is_array( $eventkoi_first_days ) && ! empty( $eventkoi_first_days[0]['start_date'] ) ) {
+					$instance_ts = absint( strtotime( (string) $eventkoi_first_days[0]['start_date'] ) );
+				}
+			}
 		}
 
 		if ( ! $instance_ts ) {
@@ -291,6 +300,15 @@ class Rsvps {
 			}
 
 			$instance_ts = absint( get_post_meta( $event_id, 'start_timestamp', true ) );
+
+			// Selected-date events (including single-package) keep their dates in
+			// event_days, not start_timestamp, so fall back to the first day.
+			if ( ! $instance_ts ) {
+				$eventkoi_first_days = Event::get_event_days();
+				if ( is_array( $eventkoi_first_days ) && ! empty( $eventkoi_first_days[0]['start_date'] ) ) {
+					$instance_ts = absint( strtotime( (string) $eventkoi_first_days[0]['start_date'] ) );
+				}
+			}
 		}
 
 		if ( ! $instance_ts ) {
@@ -482,6 +500,17 @@ class Rsvps {
 			}
 
 			$instance_ts = absint( get_post_meta( $event_id, 'start_timestamp', true ) );
+
+			// Selected-date events (including single-package) keep their dates in
+			// event_days, not start_timestamp, so fall back to the first day. This
+			// lets package events (which no longer send a per-day instance) resolve
+			// a display instance instead of failing with "missing instance".
+			if ( ! $instance_ts ) {
+				$eventkoi_first_days = Event::get_event_days();
+				if ( is_array( $eventkoi_first_days ) && ! empty( $eventkoi_first_days[0]['start_date'] ) ) {
+					$instance_ts = absint( strtotime( (string) $eventkoi_first_days[0]['start_date'] ) );
+				}
+			}
 		}
 
 		if ( ! $instance_ts ) {
