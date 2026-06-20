@@ -13,10 +13,34 @@ $selected_week   = strtolower( sanitize_text_field( $settings->week_starts_on ??
 $selected_frame  = strtolower( sanitize_text_field( $settings->timeframe ?? 'month' ) );
 $selected_month  = strtolower( sanitize_text_field( $settings->default_month ?? 'current' ) );
 $selected_year   = trim( (string) ( $settings->default_year ?? '' ) );
-$selected_cal    = absint( $settings->calendars ?? 0 );
+$source       = isset( $settings->calendars_source ) ? sanitize_key( (string) $settings->calendars_source ) : '';
+$selected_ids = eventkoi_sanitize_calendar_selection( $settings->calendars ?? '' );
+
+// Backward compatibility: modules saved before the source control stored a single
+// calendar id in `calendars`; treat that as a "specific" selection.
+if ( '' === $source ) {
+	$source = ! empty( $selected_ids ) ? 'specific' : 'default';
+}
+
+$calendars = array();
+if ( 'all' === $source ) {
+	$term_ids = get_terms(
+		array(
+			'taxonomy'   => 'event_cal',
+			'hide_empty' => false,
+			'fields'     => 'ids',
+		)
+	);
+
+	if ( ! is_wp_error( $term_ids ) ) {
+		$calendars = array_values( array_filter( array_map( 'absint', (array) $term_ids ) ) );
+	}
+} elseif ( 'specific' === $source ) {
+	$calendars = $selected_ids;
+}
 
 $args = array(
-	'calendars'     => $selected_cal > 0 ? array( $selected_cal ) : array(),
+	'calendars'     => $calendars,
 	'startday'      => in_array( $selected_week, $weekdays, true ) ? $selected_week : 'monday',
 	'timeframe'     => in_array( $selected_frame, array( 'month', 'week' ), true ) ? $selected_frame : 'month',
 	'default_month' => ( ! empty( $selected_month ) && 'current' !== $selected_month && in_array( $selected_month, $month_options, true ) ) ? $selected_month : '',
@@ -24,7 +48,9 @@ $args = array(
 	'context'       => 'block',
 );
 
-$calendar_id = eventkoi_resolve_calendar_id( (int) get_option( 'eventkoi_default_event_cal', 0 ) );
+$calendar_id = ! empty( $calendars )
+	? (int) $calendars[0]
+	: eventkoi_resolve_calendar_id( (int) get_option( 'eventkoi_default_event_cal', 0 ) );
 
 echo '<div class="eventkoi-calendar-wrapper">';
 echo wp_kses_post(
