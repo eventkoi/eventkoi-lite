@@ -2776,6 +2776,43 @@ class Event {
 	}
 
 	/**
+	 * Whether a locations array holds at least one physical location with details.
+	 *
+	 * Pure helper (no event context) that powers the `_eventkoi_has_location`
+	 * flag, which page builders read in conditional logic to show/hide a row
+	 * depending on whether an event has a venue.
+	 *
+	 * @param mixed $locations Locations array (or its serialized form).
+	 * @return bool
+	 */
+	public static function locations_have_physical( $locations ) {
+		if ( ! is_array( $locations ) ) {
+			$locations = maybe_unserialize( $locations );
+		}
+
+		if ( ! is_array( $locations ) ) {
+			return false;
+		}
+
+		foreach ( $locations as $location ) {
+			if ( ! is_array( $location ) ) {
+				continue;
+			}
+
+			$type = self::get_location_type( $location, 'inperson' );
+			if ( ! in_array( $type, array( 'physical', 'inperson' ), true ) ) {
+				continue;
+			}
+
+			if ( '' !== trim( self::format_physical_location_line( $location, true ) ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
 	 * Return the first non-empty location text.
 	 *
 	 * @param string ...$values Values.

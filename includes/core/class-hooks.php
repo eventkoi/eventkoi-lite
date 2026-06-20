@@ -62,6 +62,12 @@ class Hooks {
 		add_action( 'save_post_event', array( __CLASS__, 'clear_recurring_cache' ) );
 		add_action( 'before_delete_post', array( __CLASS__, 'clear_recurring_cache' ) );
 
+		// Keep the `_eventkoi_has_location` flag in sync whenever an event's
+		// locations change, so page builders can use it in conditional logic to
+		// show/hide rows based on whether a venue exists.
+		add_action( 'added_post_meta', array( __CLASS__, 'sync_event_has_location' ), 10, 4 );
+		add_action( 'updated_post_meta', array( __CLASS__, 'sync_event_has_location' ), 10, 4 );
+
 		add_action( 'eventkoi_after_events_deleted', array( __CLASS__, 'clear_recurring_cache_bulk' ) );
 		add_action( 'eventkoi_after_events_removed', array( __CLASS__, 'clear_recurring_cache_bulk' ) );
 		add_action( 'eventkoi_after_events_restored', array( __CLASS__, 'clear_recurring_cache_bulk' ) );
@@ -523,6 +529,35 @@ class Hooks {
 		}
 
 		return $results;
+	}
+
+	/**
+	 * Sync the `_eventkoi_has_location` flag whenever event locations change.
+	 *
+	 * Fired on added/updated post meta for the `locations` key. Stores '1' when
+	 * the event has a physical venue with details and removes the flag otherwise,
+	 * so builder conditional logic can show/hide rows on "is not empty".
+	 *
+	 * @param int    $meta_id    Meta row ID (unused).
+	 * @param int    $object_id  Event post ID.
+	 * @param string $meta_key   Meta key being written.
+	 * @param mixed  $meta_value New meta value.
+	 * @return void
+	 */
+	public static function sync_event_has_location( $meta_id, $object_id, $meta_key, $meta_value ) {
+		if ( 'locations' !== $meta_key ) {
+			return;
+		}
+
+		if ( 'eventkoi_event' !== get_post_type( $object_id ) ) {
+			return;
+		}
+
+		if ( Event::locations_have_physical( $meta_value ) ) {
+			update_post_meta( $object_id, '_eventkoi_has_location', '1' );
+		} else {
+			delete_post_meta( $object_id, '_eventkoi_has_location' );
+		}
 	}
 
 	/**
