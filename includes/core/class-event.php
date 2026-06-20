@@ -733,6 +733,13 @@ class Event {
 	 * @return array|null
 	 */
 	protected static function get_selected_event_day_from_request() {
+		// A single-package event is rendered and sold as one unit; never resolve a
+		// per-day occurrence from the request, so no single day is shown, held, or
+		// purchased even if a stale ?event_day arg is present in the URL.
+		if ( self::is_package() ) {
+			return null;
+		}
+
 		if ( 'standard' !== self::get_date_type() || 'selected' !== self::get_standard_type() ) {
 			return null;
 		}
@@ -2123,6 +2130,52 @@ class Event {
 		}
 
 		return (bool) self::get_event_single_package();
+	}
+
+	/**
+	 * Collapse a package's day rows into one continuous span row.
+	 *
+	 * Order-independent: the span starts at the earliest day start and ends at the
+	 * latest day end (so unsorted event_days, or a day with a blank end, still
+	 * yield a correct start..end window).
+	 *
+	 * @param array $days Event day rows.
+	 * @return array Single row with start_date/end_date/all_day.
+	 */
+	public static function collapse_package_days( $days ) {
+		$min_start    = '';
+		$min_start_ts = 0;
+		$max_end      = '';
+		$max_end_ts   = 0;
+		$all_day      = false;
+
+		if ( is_array( $days ) ) {
+			foreach ( $days as $row ) {
+				if ( ! is_array( $row ) || empty( $row['start_date'] ) ) {
+					continue;
+				}
+
+				$start_ts = strtotime( (string) $row['start_date'] );
+				if ( $start_ts && ( '' === $min_start || $start_ts < $min_start_ts ) ) {
+					$min_start_ts = $start_ts;
+					$min_start    = $row['start_date'];
+					$all_day      = ! empty( $row['all_day'] );
+				}
+
+				$end    = ! empty( $row['end_date'] ) ? $row['end_date'] : $row['start_date'];
+				$end_ts = strtotime( (string) $end );
+				if ( $end_ts && $end_ts > $max_end_ts ) {
+					$max_end_ts = $end_ts;
+					$max_end    = $end;
+				}
+			}
+		}
+
+		return array(
+			'start_date' => $min_start,
+			'end_date'   => '' !== $max_end ? $max_end : $min_start,
+			'all_day'    => $all_day,
+		);
 	}
 
 	/**

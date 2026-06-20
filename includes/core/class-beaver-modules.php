@@ -410,6 +410,22 @@ class Beaver_Modules {
 
 		syncFromHidden();
 		checkboxes.forEach((cb) => cb.addEventListener('change', syncToHidden));
+
+		// Clear the selection when the source leaves "specific" so a deliberate
+		// "default"/"all" choice never leaves a stale id behind (which the render
+		// side would otherwise treat as a legacy single-calendar selection).
+		const sourceSelect = settingsTable.querySelector('select[name="calendars_source"]');
+		if (sourceSelect) {
+			sourceSelect.addEventListener('change', () => {
+				if (sourceSelect.value !== 'specific') {
+					checkboxes.forEach((cb) => { cb.checked = false; });
+					hidden.value = '';
+					if (window.jQuery) {
+						window.jQuery(hidden).trigger('change');
+					}
+				}
+			});
+		}
 	};
 
 	const run = () => {

@@ -836,9 +836,16 @@ class Calendar {
 						$results[]           = $record;
 					}
 				} elseif ( 'selected' === $event::get_standard_type() && false === $expand_instances && ! empty( $days ) ) {
-					// Use the first day's start and the last day's end.
-					$first = reset( $days );
-					$last  = end( $days );
+					// Packages collapse to an order-independent start..end span; other
+					// selected events use the first day's start and the last day's end.
+					if ( $event::is_package() ) {
+						$package_span = $event::collapse_package_days( $days );
+						$first        = $package_span;
+						$last         = $package_span;
+					} else {
+						$first = reset( $days );
+						$last  = end( $days );
+					}
 
 					$start    = '';
 					$end      = '';

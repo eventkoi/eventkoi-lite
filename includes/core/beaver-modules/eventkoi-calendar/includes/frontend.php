@@ -17,9 +17,18 @@ $source       = isset( $settings->calendars_source ) ? sanitize_key( (string) $s
 $selected_ids = eventkoi_sanitize_calendar_selection( $settings->calendars ?? '' );
 
 // Backward compatibility: modules saved before the source control stored a single
-// calendar id in `calendars`; treat that as a "specific" selection.
+// calendar id in `calendars` and Beaver fills the new control with its 'default'
+// value on re-save, orphaning that id. Whenever a saved selection exists but the
+// source is not an explicit "all"/"specific" choice, honour the selection so
+// existing single-calendar modules keep working. The picker clears `calendars`
+// when the source leaves "specific", so a deliberate "default"/"all" choice never
+// carries a stale selection into this branch.
+if ( 'all' !== $source && 'specific' !== $source && ! empty( $selected_ids ) ) {
+	$source = 'specific';
+}
+
 if ( '' === $source ) {
-	$source = ! empty( $selected_ids ) ? 'specific' : 'default';
+	$source = 'default';
 }
 
 $calendars = array();
