@@ -1001,13 +1001,26 @@ class Calendar {
 		$results = array_values( $results );
 
 		if ( 'upcoming' === $orderby && ! $include_completed ) {
-			$now     = time();
-			$results = array_filter(
+			$now          = time();
+			$include_live = (bool) apply_filters( 'eventkoi_upcoming_includes_live', true );
+			$results      = array_filter(
 				$results,
-				static function ( $item ) use ( $now ) {
+				static function ( $item ) use ( $now, $include_live ) {
 					$start_ts = ! empty( $item['start'] ) ? strtotime( (string) $item['start'] ) : 0;
 
-					return $start_ts >= $now;
+					if ( $start_ts >= $now ) {
+						return true;
+					}
+
+					// Keep an in-progress occurrence visible until it ends, so an
+					// attendee can still find a happening-now event.
+					if ( $include_live ) {
+						$end_ts = ! empty( $item['end'] ) ? strtotime( (string) $item['end'] ) : 0;
+
+						return $end_ts > 0 && $end_ts >= $now;
+					}
+
+					return false;
 				}
 			);
 			$results = array_values( $results );

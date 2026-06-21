@@ -8,14 +8,12 @@ import {
   PanelBody,
   RangeControl,
   SelectControl,
-  TabPanel,
 } from "@wordpress/components";
 import { createHigherOrderComponent } from "@wordpress/compose";
 import { useDispatch, useSelect } from "@wordpress/data";
 import { useEffect, useState } from "@wordpress/element";
 import { addFilter } from "@wordpress/hooks";
 import { __ } from "@wordpress/i18n";
-import { cog, Icon, styles } from "@wordpress/icons";
 
 const EVENTKOI_NAMESPACE = "eventkoi/event-query-loop";
 
@@ -401,35 +399,10 @@ const withEventKoiQueryControls = createHigherOrderComponent(
       <>
         <BlockEdit {...props} />
         <InspectorControls>
-          <TabPanel
-            className="eventkoi-inspector-tabs"
-            activeClass="is-active"
-            tabs={[
-              {
-                name: "settings",
-                title: (
-                  <span className="eventkoi-tab eventkoi-tab-settings">
-                    <Icon icon={cog} />
-                  </span>
-                ),
-              },
-              {
-                name: "styles",
-                title: (
-                  <span className="eventkoi-tab eventkoi-tab-styles">
-                    <Icon icon={styles} />
-                  </span>
-                ),
-              },
-            ]}
+          <PanelBody
+            title={__("Query Settings", "eventkoi-lite")}
+            initialOpen={true}
           >
-            {(tab) => {
-              if (tab.name === "settings") {
-                return (
-                  <PanelBody
-                    title={__("Query Settings", "eventkoi-lite")}
-                    initialOpen={true}
-                  >
                     <div className="eventkoi-settings-wrapper space-y-[16px]">
                       <RangeControl
                         label={__("Events per page", "eventkoi-lite")}
@@ -495,16 +468,13 @@ const withEventKoiQueryControls = createHigherOrderComponent(
                         setAttributes={props.setAttributes}
                       />
                     </div>
-                  </PanelBody>
-                );
-              }
-
-              if (tab.name === "styles") {
-                return (
-                  <PanelBody
-                    title={__("Layout & Design", "eventkoi-lite")}
-                    initialOpen={true}
-                  >
+          </PanelBody>
+        </InspectorControls>
+        <InspectorControls group="styles">
+          <PanelBody
+            title={__("Layout & Design", "eventkoi-lite")}
+            initialOpen={true}
+          >
                     <div className="eventkoi-settings-wrapper space-y-[16px]">
                       <div className="eventkoi-style-settings">
                         <SegmentedControl
@@ -559,13 +529,7 @@ const withEventKoiQueryControls = createHigherOrderComponent(
                         </p>
                       )}
                     </div>
-                  </PanelBody>
-                );
-              }
-
-              return null;
-            }}
-          </TabPanel>
+          </PanelBody>
         </InspectorControls>
       </>
     );

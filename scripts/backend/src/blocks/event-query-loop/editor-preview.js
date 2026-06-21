@@ -586,65 +586,6 @@ export const withEventKoiQueryData = (BlockEdit) => (props) => {
     };
   }, [props.isSelected, props.attributes?.namespace, props.name]);
 
-  // Hide any .components-panel__body that appears immediately before our
-  // .eventkoi-inspector-tabs section (editor-only tweak).
-  useEffect(() => {
-    if (
-      props.name !== "core/query" ||
-      props.attributes?.namespace !== BLOCK_NAMESPACE ||
-      !props.isSelected
-    ) {
-      return () => {};
-    }
-
-    const hiddenBodies = new Set();
-
-    const hideBodiesBefore = (el) => {
-      if (!el) {
-        return;
-      }
-      let sibling = el.previousElementSibling;
-      while (sibling && sibling.classList.contains("components-panel__body")) {
-        sibling.style.display = "none";
-        hiddenBodies.add(sibling);
-        sibling = sibling.previousElementSibling;
-      }
-    };
-
-    document
-      .querySelectorAll(".eventkoi-inspector-tabs")
-      .forEach((el) => hideBodiesBefore(el));
-
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        mutation.addedNodes.forEach((node) => {
-          if (!(node instanceof HTMLElement)) {
-            return;
-          }
-          if (node.classList.contains("eventkoi-inspector-tabs")) {
-            hideBodiesBefore(node);
-          } else {
-            node
-              .querySelectorAll?.(".eventkoi-inspector-tabs")
-              ?.forEach((child) => hideBodiesBefore(child));
-          }
-        });
-      });
-    });
-
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
-
-    return () => {
-      observer.disconnect();
-      hiddenBodies.forEach((panel) => {
-        panel.style.display = "";
-      });
-    };
-  }, [props.isSelected, props.attributes?.namespace, props.name]);
-
   const textAlign = props.attributes?.textAlign || "";
 
   return (
