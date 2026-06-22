@@ -93,6 +93,8 @@ class Event {
 		'rsvp_auto_account',
 		'rsvp_sale_start',
 		'rsvp_sale_end',
+		'tickets_terms_conditions_required',
+		'tickets_event_capacity',
 	);
 
 	/**
@@ -571,6 +573,9 @@ class Event {
 		$tickets_show_remaining      = array_key_exists( 'tickets_show_remaining', $meta ) ? self::normalize_boolean_meta( $meta['tickets_show_remaining'] ) : true;
 		$tickets_show_unavailable    = array_key_exists( 'tickets_show_unavailable', $meta ) ? self::normalize_boolean_meta( $meta['tickets_show_unavailable'] ) : false;
 		$tickets_terms_conditions    = isset( $meta['tickets_terms_conditions'] ) ? wp_kses_post( $meta['tickets_terms_conditions'] ) : '';
+		$tickets_terms_required      = array_key_exists( 'tickets_terms_conditions_required', $meta ) ? self::normalize_boolean_meta( $meta['tickets_terms_conditions_required'] ) : false;
+		// Total ticket quantity per event (venue capacity). 0 / empty = unlimited.
+		$tickets_event_capacity      = array_key_exists( 'tickets_event_capacity', $meta ) ? max( 0, absint( $meta['tickets_event_capacity'] ) ) : 0;
 		$tickets_display_mode        = isset( $meta['tickets_display_mode'] ) ? sanitize_key( $meta['tickets_display_mode'] ) : 'cards';
 
 		update_post_meta( self::$event_id, 'tickets_enabled', $tickets_enabled ? 1 : 0 );
@@ -579,6 +584,8 @@ class Event {
 		update_post_meta( self::$event_id, 'tickets_show_remaining', $tickets_show_remaining ? 1 : 0 );
 		update_post_meta( self::$event_id, 'tickets_show_unavailable', $tickets_show_unavailable ? 1 : 0 );
 		update_post_meta( self::$event_id, 'tickets_terms_conditions', $tickets_terms_conditions );
+		update_post_meta( self::$event_id, 'tickets_terms_conditions_required', $tickets_terms_required ? 1 : 0 );
+		update_post_meta( self::$event_id, 'tickets_event_capacity', $tickets_event_capacity );
 		update_post_meta( self::$event_id, 'tickets_display_mode', $tickets_display_mode );
 
 		// Set FSE page template if provided.
@@ -2347,6 +2354,31 @@ class Event {
 		$terms = get_post_meta( self::$event_id, 'tickets_terms_conditions', true );
 
 		return apply_filters( 'eventkoi_get_event_tickets_terms_conditions', $terms, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Whether buyers must tick a checkbox agreeing to the ticket terms.
+	 *
+	 * @return bool
+	 */
+	public static function get_tickets_terms_conditions_required() {
+		$required = self::normalize_boolean_meta( get_post_meta( self::$event_id, 'tickets_terms_conditions_required', true ) );
+
+		return (bool) apply_filters( 'eventkoi_get_event_tickets_terms_conditions_required', $required, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Total ticket quantity allowed for the whole event (venue capacity).
+	 *
+	 * Applies across every ticket type combined, on top of each ticket's own
+	 * "Quantity available". 0 means unlimited (no event-wide cap).
+	 *
+	 * @return int
+	 */
+	public static function get_tickets_event_capacity() {
+		$capacity = absint( get_post_meta( self::$event_id, 'tickets_event_capacity', true ) );
+
+		return (int) apply_filters( 'eventkoi_get_event_tickets_event_capacity', $capacity, self::$event_id, self::$event );
 	}
 
 	/**

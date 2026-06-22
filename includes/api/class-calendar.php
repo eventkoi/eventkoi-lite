@@ -111,6 +111,11 @@ class Calendar {
 		$calendar = new SingleCal( $calendar_id );
 		$response = $calendar::get_meta();
 
+		if ( is_array( $response ) && function_exists( 'eventkoi_get_calendar_feed_url' ) ) {
+			$response['feed_url']        = eventkoi_get_calendar_feed_url( $calendar_id );
+			$response['feed_webcal_url'] = eventkoi_get_calendar_feed_url( $calendar_id, 'webcal' );
+		}
+
 		return rest_ensure_response( $response );
 	}
 

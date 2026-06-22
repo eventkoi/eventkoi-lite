@@ -1761,3 +1761,37 @@ function eventkoi_get_stripe_webhook_secret() {
 	 */
 	return apply_filters( 'eventkoi_get_stripe_webhook_secret', $webhook_secret );
 }
+
+/**
+ * Build a subscribable iCal feed URL for one or more calendars.
+ *
+ * Pass a single event_cal term ID, an array of IDs, or nothing/"all" to export
+ * every calendar. The returned URL serves a live text/calendar feed that Apple
+ * and Google Calendar can subscribe to.
+ *
+ * @param int|int[]|string $calendar_ids Calendar term ID(s), or 'all'.
+ * @param string           $scheme       'https' (default) or 'webcal' for a one-click subscribe link.
+ * @return string Feed URL.
+ */
+function eventkoi_get_calendar_feed_url( $calendar_ids = array(), $scheme = 'https' ) {
+	if ( 'all' === $calendar_ids ) {
+		$value = 'all';
+	} else {
+		$ids = array();
+		foreach ( (array) $calendar_ids as $id ) {
+			$id = absint( $id );
+			if ( $id ) {
+				$ids[] = $id;
+			}
+		}
+		$value = empty( $ids ) ? 'all' : implode( ',', array_values( array_unique( $ids ) ) );
+	}
+
+	$url = add_query_arg( 'eventkoi_calendar_feed', $value, home_url( '/' ) );
+
+	if ( 'webcal' === $scheme ) {
+		$url = preg_replace( '#^https?://#', 'webcal://', $url );
+	}
+
+	return apply_filters( 'eventkoi_calendar_feed_url', $url, $calendar_ids, $scheme );
+}

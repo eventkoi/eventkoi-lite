@@ -81,7 +81,9 @@ export function EventEditManageTickets() {
     auto_create_account: false,
     show_remaining: true,
     show_unavailable: false,
+    event_capacity: "",
     terms_conditions: "",
+    terms_conditions_required: false,
   });
 
   const wpTz = useMemo(
@@ -113,7 +115,12 @@ export function EventEditManageTickets() {
           event.tickets_show_unavailable === ""
             ? false
             : !!event.tickets_show_unavailable,
+        event_capacity:
+          event.tickets_event_capacity > 0
+            ? String(event.tickets_event_capacity)
+            : "",
         terms_conditions: event.tickets_terms_conditions || "",
+        terms_conditions_required: !!event.tickets_terms_conditions_required,
       });
     }
   }, [event]);
@@ -230,6 +237,16 @@ export function EventEditManageTickets() {
     updateEvent(newSettings);
   };
 
+  const handleCapacityChange = (e) => {
+    const digits = String(e.target.value || "").replace(/[^0-9]/g, "");
+    const newSettings = {
+      ...ticketSettings,
+      event_capacity: digits,
+    };
+    setTicketSettings(newSettings);
+    updateEvent(newSettings);
+  };
+
   const updateEvent = (newSettings) => {
     if (!event?.id) return;
 
@@ -243,6 +260,11 @@ export function EventEditManageTickets() {
           ? false
           : !!newSettings.show_unavailable,
       tickets_terms_conditions: newSettings.terms_conditions,
+      tickets_terms_conditions_required: newSettings.terms_conditions_required,
+      tickets_event_capacity:
+        newSettings.event_capacity === ""
+          ? 0
+          : Math.max(0, parseInt(newSettings.event_capacity, 10) || 0),
       tickets_display_mode: "cards",
     };
 
@@ -644,6 +666,28 @@ export function EventEditManageTickets() {
           />
 
           <div className="flex flex-col gap-2 max-w-[500px] pt-4">
+            <Label className="font-medium" htmlFor="tickets-event-capacity">
+              {__("Total ticket quantity per event", "eventkoi-lite")}
+            </Label>
+            <Input
+              id="tickets-event-capacity"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              placeholder={__("Unlimited", "eventkoi-lite")}
+              value={ticketSettings.event_capacity}
+              onChange={handleCapacityChange}
+              className="max-w-[200px]"
+            />
+            <p className="text-sm text-muted-foreground">
+              {__(
+                "Caps the combined tickets sold across all ticket types, for venues with a maximum capacity. Leave empty for unlimited.",
+                "eventkoi-lite",
+              )}
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-2 max-w-[500px] pt-4">
             <Label className="font-medium" htmlFor="tickets-terms-conditions">
               {__("Terms & conditions", "eventkoi-lite")}
             </Label>
@@ -658,6 +702,21 @@ export function EventEditManageTickets() {
               className="min-h-[110px]"
             />
           </div>
+
+          {ticketSettings.terms_conditions.trim().length > 0 && (
+            <SettingToggle
+              id="tickets_terms_conditions_required"
+              label={__("Require agreement to terms", "eventkoi-lite")}
+              description={__(
+                "Show the terms as a checkbox the buyer must tick before checkout.",
+                "eventkoi-lite",
+              )}
+              checked={ticketSettings.terms_conditions_required}
+              onCheckedChange={() =>
+                handleToggle("terms_conditions_required")
+              }
+            />
+          )}
 
           <div className="flex flex-col gap-4 mt-2">
             {loadingTickets && (

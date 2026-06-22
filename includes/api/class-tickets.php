@@ -938,6 +938,13 @@ class Tickets {
 		$tickets         = array();
 		$global_currency = self::get_global_currency();
 
+		// Per-event total capacity (venue cap). null = unlimited. The storefront
+		// uses this to cap the combined quantity across all ticket types.
+		$event_capacity  = (int) $event::get_tickets_event_capacity();
+		$event_remaining = $event_capacity > 0
+			? max( $event_capacity - self::get_event_committed_quantity( $event_id, $instance_ts ), 0 )
+			: null;
+
 		foreach ( $rows as $ticket ) {
 			$sale_start_ts = ! empty( $ticket->sale_start ) ? strtotime( $ticket->sale_start ) : 0;
 			$sale_end_ts   = ! empty( $ticket->sale_end ) ? strtotime( $ticket->sale_end ) : 0;
@@ -993,6 +1000,9 @@ class Tickets {
 				'tickets_show_remaining'      => $event::get_tickets_show_remaining(),
 				'tickets_show_unavailable'    => $event::get_tickets_show_unavailable(),
 				'tickets_terms_conditions'    => wp_kses_post( $event::get_tickets_terms_conditions() ),
+				'tickets_terms_conditions_required' => $event::get_tickets_terms_conditions_required(),
+				'tickets_event_capacity'      => $event_capacity,
+				'tickets_event_remaining'     => $event_remaining,
 				'tickets_display_mode'        => $event::get_tickets_display_mode(),
 				'event_ended'                 => $event_ended,
 				'tickets'                     => $tickets,
@@ -1110,6 +1120,16 @@ class Tickets {
 					array( 'status' => 429 )
 				);
 			}
+		}
+
+		// Enforce ticket terms agreement when the event requires it. The frontend
+		// also gates this, but the server must reject direct API calls.
+		if (
+			$event::get_tickets_terms_conditions_required()
+			&& '' !== trim( (string) $event::get_tickets_terms_conditions() )
+			&& ! rest_sanitize_boolean( $request->get_param( 'terms_accepted' ) )
+		) {
+			return new WP_Error( 'terms_not_accepted', __( 'Please agree to the terms & conditions to continue.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
 		if ( empty( $return_url ) ) {
@@ -1284,6 +1304,16 @@ class Tickets {
 
 		if ( $total_cents < 0 || $total_quantity <= 0 ) {
 			return new WP_Error( 'invalid_total', __( 'Invalid checkout total.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
+		// Enforce the per-event total ticket capacity (venue cap) across all ticket
+		// types, on top of each ticket's own availability validated above.
+		$event_capacity = (int) $event::get_tickets_event_capacity();
+		if ( $event_capacity > 0 ) {
+			$event_remaining = max( $event_capacity - self::get_event_committed_quantity( $event_id, $instance_ts ), 0 );
+			if ( $total_quantity > $event_remaining ) {
+				return new WP_Error( 'event_capacity_reached', __( 'Not enough tickets remaining for this event.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+			}
 		}
 
 		$metadata = array(
@@ -2340,6 +2370,46 @@ class Tickets {
 				$wpdb->esc_like( $hold_id ) . '%'
 			)
 		);
+	}
+
+	/**
+	 * Total tickets committed across the WHOLE event (all ticket types): paid
+	 * sales plus active inventory holds. Used to enforce the per-event capacity.
+	 *
+	 * @param int $event_id    Event ID.
+	 * @param int $instance_ts Optional instance timestamp to scope the count.
+	 * @return int
+	 */
+	private static function get_event_committed_quantity( $event_id, $instance_ts = 0 ) {
+		global $wpdb;
+
+		$table     = $wpdb->prefix . 'eventkoi_ticket_orders';
+		$threshold = gmdate( 'Y-m-d H:i:s', time() - self::HOLD_DURATION );
+		$paid      = "payment_status IN ('complete','completed','succeeded','paid','partially_refunded')";
+		$active    = "( {$paid} OR ( payment_status = 'hold' AND created_at > %s ) )";
+
+		if ( $instance_ts > 0 ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$committed = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COALESCE(SUM(quantity), 0) FROM {$table} WHERE event_id = %d AND instance_ts = %d AND {$active}", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$event_id,
+					$instance_ts,
+					$threshold
+				)
+			);
+		} else {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$committed = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COALESCE(SUM(quantity), 0) FROM {$table} WHERE event_id = %d AND {$active}", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$event_id,
+					$threshold
+				)
+			);
+		}
+
+		return absint( $committed );
 	}
 
 	/**

@@ -1,6 +1,6 @@
 "use client";
 
-import { __, sprintf } from "@wordpress/i18n";
+import { __, _n, sprintf } from "@wordpress/i18n";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
@@ -439,6 +439,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
   const [checkoutError, setCheckoutError] = useState("");
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
   const [checkoutAttempted, setCheckoutAttempted] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [emailTouched, setEmailTouched] = useState(false);
   const [checkoutSuccessSessionId, setCheckoutSuccessSessionId] = useState(
     () => readCheckoutSuccessFromUrl(),
@@ -507,6 +508,8 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
   const eventTermsConditions = String(
     data?.tickets_terms_conditions || ""
   ).trim();
+  const eventTermsRequired =
+    eventTermsConditions !== "" && !!data?.tickets_terms_conditions_required;
   const showUnavailableTickets = true;
   const visibleTickets = useMemo(
     () =>
@@ -551,6 +554,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
       setCheckoutError("");
       setIsCheckoutLoading(false);
       setCheckoutAttempted(false);
+      setTermsAccepted(false);
       setEmailTouched(false);
     }
   }, [isDialogOpen]);
@@ -807,6 +811,33 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
   }, 0);
   const canCheckout = selectedTicketItems.length > 0;
 
+  // Per-event total capacity (venue cap). null = unlimited. Caps the combined
+  // quantity across all ticket types; the server enforces the same limit.
+  const eventTicketsRemaining =
+    data?.tickets_event_remaining === null ||
+    data?.tickets_event_remaining === undefined
+      ? null
+      : Math.max(0, Number(data.tickets_event_remaining) || 0);
+  const totalSelectedQty = displayTickets.reduce(
+    (sum, ticket) =>
+      sum + Math.max(0, Number(quantities[String(ticket.id)] || 0)),
+    0,
+  );
+  const eventCapReached =
+    eventTicketsRemaining !== null && totalSelectedQty >= eventTicketsRemaining;
+
+  const clampToEventCap = (ticketId, nextValue, prev) => {
+    if (eventTicketsRemaining === null) return nextValue;
+    const otherTotal = displayTickets.reduce(
+      (sum, t) =>
+        String(t.id) === String(ticketId)
+          ? sum
+          : sum + Math.max(0, Number(prev[String(t.id)] || 0)),
+      0,
+    );
+    return Math.min(nextValue, Math.max(0, eventTicketsRemaining - otherTotal));
+  };
+
   const saleEndByTicket = (saleEnd) => {
     return formatTicketSaleDateTime(saleEnd);
   };
@@ -846,7 +877,10 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
       nextValue = remainingCount;
     }
 
-    setQuantities((prev) => ({ ...prev, [id]: nextValue }));
+    setQuantities((prev) => ({
+      ...prev,
+      [id]: clampToEventCap(id, nextValue, prev),
+    }));
   };
 
   const incrementQty = (ticket) => {
@@ -867,7 +901,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
       ) {
         nextValue = remainingCount;
       }
-      return { ...prev, [id]: Math.max(0, nextValue) };
+      return { ...prev, [id]: Math.max(0, clampToEventCap(id, nextValue, prev)) };
     });
   };
 
@@ -891,7 +925,8 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
     firstNameValue !== "" &&
     lastNameValue !== "" &&
     hasValidBillingEmail &&
-    hasRequiredCheckoutFields;
+    hasRequiredCheckoutFields &&
+    (!eventTermsRequired || termsAccepted);
 
   const startHostedCheckout = async () => {
     if (!canContinueCheckout || isCheckoutLoading) return;
@@ -904,6 +939,12 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
     }
     if (!hasValidBillingEmail) {
       setCheckoutError(__("Please enter a valid email address.", "eventkoi-lite"));
+      return;
+    }
+    if (eventTermsRequired && !termsAccepted) {
+      setCheckoutError(
+        __("Please agree to the terms & conditions to continue.", "eventkoi-lite")
+      );
       return;
     }
 
@@ -1000,6 +1041,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
           last_name: String(billing.last_name || "").trim(),
           email,
           fields: checkoutFieldValues,
+          terms_accepted: termsAccepted ? "1" : "",
           items: selectedTicketItems.map((item) => ({
             ticket_id: item.ticket_id,
             name: String(item.name || ""),
@@ -1332,7 +1374,24 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                   })}
                 </div>
 
-                {eventTermsConditions ? (
+                {eventTicketsRemaining !== null && showRemainingTickets ? (
+                  <div className="px-5 pb-3 text-xs font-medium text-muted-foreground sm:px-6">
+                    {eventTicketsRemaining > 0
+                      ? sprintf(
+                          /* translators: %d: number of tickets left for the whole event. */
+                          _n(
+                            "%d ticket left for this event",
+                            "%d tickets left for this event",
+                            eventTicketsRemaining,
+                            "eventkoi-lite",
+                          ),
+                          eventTicketsRemaining,
+                        )
+                      : __("This event is sold out.", "eventkoi-lite")}
+                  </div>
+                ) : null}
+
+                {eventTermsConditions && !eventTermsRequired ? (
                   <div
                     className="eventkoi-ticket-terms px-5 pb-4 text-xs leading-relaxed text-muted-foreground sm:px-6"
                     dangerouslySetInnerHTML={{ __html: eventTermsConditions }}
@@ -1686,6 +1745,30 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                       >
                         {checkoutError}
                       </div>
+                    ) : null}
+
+                    {eventTermsRequired ? (
+                      <label
+                        htmlFor={`${idPrefix}-terms-accept`}
+                        className="flex items-start gap-2.5 text-xs leading-relaxed text-muted-foreground"
+                      >
+                        <input
+                          id={`${idPrefix}-terms-accept`}
+                          type="checkbox"
+                          checked={termsAccepted}
+                          onChange={(event) => {
+                            setTermsAccepted(event.target.checked);
+                            if (event.target.checked) setCheckoutError("");
+                          }}
+                          className="mt-0.5 size-4 shrink-0 rounded border-input"
+                        />
+                        <span
+                          className="eventkoi-ticket-terms [&_a]:underline [&_p]:inline"
+                          dangerouslySetInnerHTML={{
+                            __html: eventTermsConditions,
+                          }}
+                        />
+                      </label>
                     ) : null}
 
                     <div className="flex items-center gap-10 pt-2">
