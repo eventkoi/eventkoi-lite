@@ -57,6 +57,49 @@ import { Toaster } from "@/components/ui/sonner";
 import { SettingsProvider } from "@/hooks/SettingsContext";
 import { useWindowDimensions } from "@/lib/use-window-dimensions";
 
+// The server renders every EventKoi admin screen under the single "Events"
+// menu page, so the browser tab always reads "Events ‹ …". Capture whatever
+// suffix WordPress appended (" ‹ Site — WordPress") once, then swap only the
+// leading section per SPA route so the tab reflects where you actually are.
+const TITLE_SUFFIX = (() => {
+  const current = (typeof document !== "undefined" && document.title) || "";
+  const parts = current.split(" ‹ ");
+  return parts.length > 1 ? " ‹ " + parts.slice(1).join(" ‹ ") : " ‹ EventKoi";
+})();
+
+function getRouteTitle(pathname) {
+  const seg = String(pathname || "/")
+    .split("/")
+    .filter(Boolean);
+  const root = seg[0] || "dashboard";
+  const isId = (v) => /^\d+$/.test(String(v || ""));
+
+  switch (root) {
+    case "dashboard":
+      return __("Dashboard", "eventkoi-lite");
+    case "events":
+      if (isId(seg[1])) {
+        if (seg[2] === "instances" && seg[3] === "edit") {
+          return __("Edit instance", "eventkoi-lite");
+        }
+        return __("Edit event", "eventkoi-lite");
+      }
+      if (seg[1] === "templates") return __("Event templates", "eventkoi-lite");
+      return __("Events", "eventkoi-lite");
+    case "calendars":
+      return isId(seg[1])
+        ? __("Edit calendar", "eventkoi-lite")
+        : __("Calendars", "eventkoi-lite");
+    case "tickets":
+      return __("Ticket sales", "eventkoi-lite");
+    case "settings":
+      if (seg[1] === "fields") return __("Custom fields", "eventkoi-lite");
+      return __("Settings", "eventkoi-lite");
+    default:
+      return __("Events", "eventkoi-lite");
+  }
+}
+
 function AdminLayout() {
   const location = useLocation();
   const { width } = useWindowDimensions();
@@ -73,6 +116,8 @@ function AdminLayout() {
 
   useEffect(() => {
     jQuery(".wp-toolbar").css({ backgroundColor: "inherit" });
+
+    document.title = getRouteTitle(location.pathname) + TITLE_SUFFIX;
 
     const menu = location.pathname?.split("/")?.[1];
     jQuery("#toplevel_page_eventkoi ul.wp-submenu-wrap li").removeClass(
