@@ -694,18 +694,24 @@ class Event {
 	/**
 	 * Get the selected standard event-day index from the frontend request.
 	 *
+	 * @param bool $ignore_loop_context When true, skip the query-loop per-card
+	 *                                  selected-day context and only honor a real
+	 *                                  ?event_day request. Used by the datetime
+	 *                                  summary so a loop card lists every day.
 	 * @return int|null
 	 */
-	protected static function get_selected_event_day_index_from_request() {
+	protected static function get_selected_event_day_index_from_request( $ignore_loop_context = false ) {
 		if ( is_admin() ) {
 			return null;
 		}
 
-		$context = $GLOBALS['eventkoi_selected_event_day_context'][ self::$event_id ] ?? null;
-		if ( null !== $context && is_scalar( $context ) ) {
-			$context = (string) $context;
-			if ( ctype_digit( $context ) ) {
-				return (int) $context;
+		if ( ! $ignore_loop_context ) {
+			$context = $GLOBALS['eventkoi_selected_event_day_context'][ self::$event_id ] ?? null;
+			if ( null !== $context && is_scalar( $context ) ) {
+				$context = (string) $context;
+				if ( ctype_digit( $context ) ) {
+					return (int) $context;
+				}
 			}
 		}
 
@@ -730,9 +736,12 @@ class Event {
 	/**
 	 * Get the selected standard event-day row for frontend occurrence URLs.
 	 *
+	 * @param bool $ignore_loop_context When true, skip the query-loop per-card
+	 *                                  selected-day context (real ?event_day still
+	 *                                  applies).
 	 * @return array|null
 	 */
-	protected static function get_selected_event_day_from_request() {
+	protected static function get_selected_event_day_from_request( $ignore_loop_context = false ) {
 		// A single-package event is rendered and sold as one unit; never resolve a
 		// per-day occurrence from the request, so no single day is shown, held, or
 		// purchased even if a stale ?event_day arg is present in the URL.
@@ -744,7 +753,7 @@ class Event {
 			return null;
 		}
 
-		$index = self::get_selected_event_day_index_from_request();
+		$index = self::get_selected_event_day_index_from_request( $ignore_loop_context );
 		if ( null === $index ) {
 			return null;
 		}
@@ -760,10 +769,13 @@ class Event {
 	/**
 	 * Get event days scoped to a selected frontend occurrence when requested.
 	 *
+	 * @param bool $ignore_loop_context When true, skip the query-loop per-card
+	 *                                  selected-day context so every day is kept
+	 *                                  (real ?event_day still scopes the result).
 	 * @return array
 	 */
-	protected static function get_event_days_for_rendering() {
-		$selected_day = self::get_selected_event_day_from_request();
+	protected static function get_event_days_for_rendering( $ignore_loop_context = false ) {
+		$selected_day = self::get_selected_event_day_from_request( $ignore_loop_context );
 
 		if ( is_array( $selected_day ) ) {
 			return array( $selected_day );
@@ -3857,8 +3869,12 @@ class Event {
 			}
 		}
 
-		// Fallback: full set of standard dates or recurring rules.
-		$data = ( 'recurring' === $type ) ? self::get_recurrence_rules() : self::get_event_days_for_rendering();
+		// Fallback: full set of standard dates or recurring rules. The "with
+		// summary" field always lists the full schedule, so ignore the query-loop
+		// per-card selected-day context that anchors single-date fields to the
+		// upcoming day. A real ?event_day request on a single event page still
+		// scopes the result.
+		$data = ( 'recurring' === $type ) ? self::get_recurrence_rules() : self::get_event_days_for_rendering( true );
 
 		// Standard + continuous events read directly from start_date/end_date meta
 		// and don't require event_days to be populated. Only short-circuit when
