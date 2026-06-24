@@ -24,12 +24,12 @@ const sampleFields = [
 export function SettingsFields() {
   return (
     <div className="grid gap-8">
-      <ProLaunch headline="Upgrade to access Custom Fields" minimal />
+      <ProLaunch headline={__("Upgrade to access Custom Fields", "eventkoi-lite")} minimal />
       <Box className="gap-0">
         <Panel variant="header">
           <Heading level={3}>{__("Custom fields", "eventkoi-lite")}</Heading>
           <p className="text-sm text-muted-foreground">
-            Preview of Pro Custom Fields. Upgrade to enable.
+            {__("Preview of Pro Custom Fields. Upgrade to enable.", "eventkoi-lite")}
           </p>
         </Panel>
         <Panel className="pt-0 pb-6">
@@ -41,7 +41,7 @@ export function SettingsFields() {
                 disabled
               >
                 <ListFilter className="mr-2 h-4 w-4" aria-hidden="true" />
-                Bulk actions
+                {__("Bulk actions", "eventkoi-lite")}
               </Button>
               <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:space-x-4">
                 <Button
@@ -50,20 +50,20 @@ export function SettingsFields() {
                   disabled
                 >
                   <ListFilter className="mr-2 h-4 w-4" aria-hidden="true" />
-                  Group
+                  {__("Group", "eventkoi-lite")}
                 </Button>
                 <Button
                   className="bg-foreground border border-foreground font-normal"
                   disabled
                 >
-                  Add field
+                  {__("Add field", "eventkoi-lite")}
                 </Button>
               </div>
             </div>
 
             <div className="flex flex-wrap items-center text-sm gap-x-4 gap-y-2">
-              <span className="font-medium text-foreground">All (3)</span>
-              <span className="text-muted-foreground">Trash (0)</span>
+              <span className="font-medium text-foreground">{__("All (3)", "eventkoi-lite")}</span>
+              <span className="text-muted-foreground">{__("Trash (0)", "eventkoi-lite")}</span>
             </div>
 
             <div className="rounded-lg bg-card text-sm text-card-foreground shadow-sm w-full overflow-x-auto border">
@@ -75,7 +75,7 @@ export function SettingsFields() {
                     </TableHead>
                     <TableHead>{__("Field name", "eventkoi-lite")}</TableHead>
                     <TableHead>{__("Type", "eventkoi-lite")}</TableHead>
-                    <TableHead>ID</TableHead>
+                    <TableHead>{__("ID", "eventkoi-lite")}</TableHead>
                     <TableHead>{__("Groups", "eventkoi-lite")}</TableHead>
                     <TableHead className="text-right">{__("Last modified", "eventkoi-lite")}</TableHead>
                   </TableRow>
@@ -90,7 +90,7 @@ export function SettingsFields() {
                         {field.name}
                         {field.global && (
                           <span className="ml-2 text-xs font-normal text-muted-foreground border rounded px-1.5 py-0.5">
-                            Global
+                            {__("Global", "eventkoi-lite")}
                           </span>
                         )}
                       </TableCell>

@@ -1,4 +1,5 @@
 import { Input } from "@/components/ui/input";
+import { __ } from "@wordpress/i18n";
 
 import { Search } from "lucide-react";
 
@@ -13,7 +14,7 @@ export function SearchBox(props) {
       <Search className="absolute left-2.5 top-3 w-4 h-4 text-muted-foreground" />
       <Input
         type="search"
-        placeholder="Search..."
+        placeholder={__("Search...", "eventkoi-lite")}
         className="w-full rounded-lg bg-background pl-8 w-[250px] placeholder:text-muted-foreground/70 shadow-sm"
         value={table.getColumn(defaultCol)?.getFilterValue() ?? ""}
         onChange={(event) =>

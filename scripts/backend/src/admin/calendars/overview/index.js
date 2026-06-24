@@ -817,7 +817,7 @@ export function CalendarsOverview() {
         <DataTable
           data={data}
           columns={columns}
-          empty="No calendars are found."
+          empty={__("No calendars are found.", "eventkoi-lite")}
           base="calendars"
           hideStatusFilters
           isLoading={isLoading}

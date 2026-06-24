@@ -477,7 +477,9 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
         setData(res);
       } catch (err) {
         setError(
-          err?.message || err?.response?.message || "Unable to load tickets.",
+          err?.message ||
+            err?.response?.message ||
+            __("Unable to load tickets.", "eventkoi-lite"),
         );
       } finally {
         setLoading(false);
@@ -712,7 +714,10 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
   if (data.event_ended) {
     return (
       <div className="eventkoi-tickets__ended text-sm text-muted-foreground">
-        This event has ended and is no longer accepting ticket purchases.
+        {__(
+          "This event has ended and is no longer accepting ticket purchases.",
+          "eventkoi-lite",
+        )}
       </div>
     );
   }

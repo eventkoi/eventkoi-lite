@@ -8,11 +8,14 @@ import {
 } from "@/components/ui/select";
 
 import { Panel } from "@/components/panel";
+import { __ } from "@wordpress/i18n";
 
 export function EventTemplate({ event, setEvent }) {
   return (
     <Panel>
-      <Label htmlFor="template">Select event template</Label>
+      <Label htmlFor="template">
+        {__("Select event template", "eventkoi-lite")}
+      </Label>
       <Select
         value={event?.template}
         onValueChange={(value) => {
@@ -23,10 +26,12 @@ export function EventTemplate({ event, setEvent }) {
         }}
       >
         <SelectTrigger id="template" className="w-[250px]">
-          <SelectValue placeholder="Select a template" />
+          <SelectValue placeholder={__("Select a template", "eventkoi-lite")} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="default">Default template</SelectItem>
+          <SelectItem value="default">
+            {__("Default template", "eventkoi-lite")}
+          </SelectItem>
         </SelectContent>
       </Select>
     </Panel>

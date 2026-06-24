@@ -8,6 +8,7 @@ import { formatWPtime } from "@/lib/date-utils";
 import { showToast, showToastError } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import apiRequest from "@wordpress/api-fetch";
+import { __ } from "@wordpress/i18n";
 import {
   Ban,
   CircleAlert,
@@ -192,7 +193,7 @@ export function EventInstancesTable({
               onCheckedChange={(value) =>
                 table.toggleAllPageRowsSelected(!!value)
               }
-              aria-label="Select all"
+              aria-label={__("Select all", "eventkoi-lite")}
             />
           </div>
         ),
@@ -201,7 +202,7 @@ export function EventInstancesTable({
             <Checkbox
               checked={row.getIsSelected()}
               onCheckedChange={(value) => row.toggleSelected(!!value)}
-              aria-label="Select row"
+              aria-label={__("Select row", "eventkoi-lite")}
             />
           </div>
         ),
@@ -211,7 +212,7 @@ export function EventInstancesTable({
       {
         accessorKey: "title",
         header: ({ column }) => (
-          <SortButton title="Event name" column={column} />
+          <SortButton title={__("Event name", "eventkoi-lite")} column={column} />
         ),
         cell: ({ row }) => {
           const { instance_url, start_date, override } = row.original;
@@ -242,7 +243,7 @@ export function EventInstancesTable({
                   variant="outline"
                   className="text-xs border-[#F6EFD3] text-foreground bg-[#FBF9ED] font-medium px-2 py-1"
                 >
-                  Edited
+                  {__("Edited", "eventkoi-lite")}
                 </Badge>
               )}
 
@@ -253,7 +254,7 @@ export function EventInstancesTable({
                   className="invisible group-hover:visible min-w-5 w-5 h-5 items-center justify-center"
                   target="_blank"
                   rel="noopener noreferrer"
-                  title="View instance"
+                  title={__("View instance", "eventkoi-lite")}
                 >
                   <Link2 className="w-full h-full" />
                 </a>
@@ -265,7 +266,7 @@ export function EventInstancesTable({
       },
       {
         accessorKey: "status",
-        header: ({ column }) => <SortButton title="Status" column={column} />,
+        header: ({ column }) => <SortButton title={__("Status", "eventkoi-lite")} column={column} />,
         cell: ({ row }) => {
           const status = row.getValue("status");
           return (
@@ -279,7 +280,7 @@ export function EventInstancesTable({
       },
       {
         accessorKey: "start_date",
-        header: ({ column }) => <SortButton title="Starts" column={column} />,
+        header: ({ column }) => <SortButton title={__("Starts", "eventkoi-lite")} column={column} />,
         cell: ({ row }) => {
           const raw = row.getValue("start_date");
           const isAllDay = row.original.all_day;
@@ -296,7 +297,7 @@ export function EventInstancesTable({
       },
       {
         accessorKey: "end_date",
-        header: ({ column }) => <SortButton title="Ends" column={column} />,
+        header: ({ column }) => <SortButton title={__("Ends", "eventkoi-lite")} column={column} />,
         cell: ({ row }) => {
           const raw = row.getValue("end_date");
           const isAllDay = row.original.all_day;
@@ -314,7 +315,7 @@ export function EventInstancesTable({
       {
         accessorKey: "modified_date",
         header: ({ column }) => (
-          <SortButton title="Last modified" column={column} />
+          <SortButton title={__("Last modified", "eventkoi-lite")} column={column} />
         ),
         cell: ({ row }) => {
           const raw = row.original.override?.modified_at;
@@ -415,12 +416,12 @@ export function EventInstancesTable({
             {isTrashView ? (
               <>
                 <CircleCheck className="w-4 h-4" />
-                Restore
+                {__("Restore", "eventkoi-lite")}
               </>
             ) : (
               <>
                 <Trash2 className="w-4 h-4" />
-                Move to trash
+                {__("Move to trash", "eventkoi-lite")}
               </>
             )}
           </Button>

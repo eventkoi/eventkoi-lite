@@ -125,7 +125,7 @@ export const Controls = (props) => {
       <PanelBody title={__("Design options", "eventkoi-lite")} initialOpen={true}>
         <Grid>
           <SelectControl
-            label="Line style"
+            label={__("Line style", "eventkoi-lite")}
             value={attributes.borderStyle}
             options={[
               { label: "Solid", value: "solid" },
@@ -139,7 +139,7 @@ export const Controls = (props) => {
             __nextHasNoMarginBottom
           />
           <UnitControl
-            label="Thickness"
+            label={__("Thickness", "eventkoi-lite")}
             __next40pxDefaultSize
             onChange={(value) => setAttributes({ borderSize: value })}
             value={attributes.borderSize}

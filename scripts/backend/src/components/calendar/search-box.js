@@ -8,7 +8,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { normalizeTimeZone, wpToLuxonFormat } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
-import { __ } from "@wordpress/i18n";
+import { __, sprintf } from "@wordpress/i18n";
 import { Search } from "lucide-react";
 import { DateTime } from "luxon";
 
@@ -223,7 +223,7 @@ export function SearchBox({
           <CommandList className="p-2 max-h-[400px] overflow-y-auto">
             {filteredResults.length === 0 ? (
               <CommandEmpty className="p-4 text-muted-foreground text-sm">
-                No events found.
+                {__("No events found.", "eventkoi-lite")}
               </CommandEmpty>
             ) : (
               <>
@@ -263,10 +263,14 @@ export function SearchBox({
                       disabled={page === 0}
                       className="cursor-pointer box-border border-none text-foreground bg-transparent shadow-none"
                     >
-                      Prev
+                      {__("Prev", "eventkoi-lite")}
                     </Button>
                     <span>
-                      Page {page + 1} of {totalPages}
+                      {sprintf(
+                        __("Page %1$d of %2$d", "eventkoi-lite"),
+                        page + 1,
+                        totalPages
+                      )}
                     </span>
                     {/* Next */}
                     <Button
@@ -279,7 +283,7 @@ export function SearchBox({
                       disabled={page >= totalPages - 1}
                       className="cursor-pointer box-border border-none text-foreground bg-transparent shadow-none"
                     >
-                      Next
+                      {__("Next", "eventkoi-lite")}
                     </Button>
                   </div>
                 )}

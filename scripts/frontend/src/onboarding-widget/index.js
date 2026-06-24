@@ -1,4 +1,5 @@
 import { LogoIcon } from "@/components/logo-icon";
+import { __ } from "@wordpress/i18n";
 import { ArrowLeft, CircleCheck, CircleDotDashed } from "lucide-react";
 import { renderToStaticMarkup } from "react-dom/server";
 
@@ -25,18 +26,20 @@ const Widget = ({ steps }) => (
       data-eventkoi-continue
     >
       <ArrowLeft className="h-4 w-4" />
-      <span>Continue Guide</span>
+      <span>{__("Continue Guide", "eventkoi-lite")}</span>
     </button>
     <div className="space-y-4">
       <div className="flex items-center gap-2">
         <LogoIcon width="18" height="23" />
         <div className="text-[14px] font-semibold text-black">
-          <span className="block">EventKoi Plugin Tour</span>
+          <span className="block">
+            {__("EventKoi Plugin Tour", "eventkoi-lite")}
+          </span>
         </div>
         <button
           type="button"
           className="ml-auto text-[#555] hover:text-black transition-colors leading-none -mt-1"
-          aria-label="Close"
+          aria-label={__("Close", "eventkoi-lite")}
           style={{
             background: "transparent",
             border: "none",
@@ -94,7 +97,10 @@ const Widget = ({ steps }) => (
         <div className="h-[1px] w-full bg-border" />
       </div>
       <div className="text-[12px] text-[#555] font-sans">
-        You can restart this Tour any time in the EventKoi Dashboard.
+        {__(
+          "You can restart this Tour any time in the EventKoi Dashboard.",
+          "eventkoi-lite",
+        )}
       </div>
     </div>
   </div>
@@ -123,8 +129,16 @@ const renderWidget = () => {
   }
 
   const steps = [
-    { key: "event", title: "Publish demo event", complete: true },
-    { key: "view", title: "View default calendar", complete: false },
+    {
+      key: "event",
+      title: __("Publish demo event", "eventkoi-lite"),
+      complete: true,
+    },
+    {
+      key: "view",
+      title: __("View default calendar", "eventkoi-lite"),
+      complete: false,
+    },
   ];
 
   const html = renderToStaticMarkup(<Widget steps={steps} />);

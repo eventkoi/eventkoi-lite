@@ -3,6 +3,7 @@ import { RefundStatusIcon } from "@/components/icons/refund-status-icon";
 import { Checkbox } from "@/components/ui/checkbox";
 import { formatWPtime } from "@/lib/date-utils";
 import { cn, formatCurrency } from "@/lib/utils";
+import { __ } from "@wordpress/i18n";
 import { SquareCheck, SquareDot, SquareX } from "lucide-react";
 
 export const orderTableSearch = (row, columnId, filterValue) => {
@@ -63,7 +64,7 @@ export function createOrderColumns({ includeEventColumn = false } = {}) {
               (table.getIsSomePageRowsSelected() && "indeterminate")
             }
             onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-            aria-label="Select all"
+            aria-label={__("Select all", "eventkoi-lite")}
           />
         </div>
       ),
@@ -72,7 +73,7 @@ export function createOrderColumns({ includeEventColumn = false } = {}) {
           <Checkbox
             checked={row.getIsSelected()}
             onCheckedChange={(value) => row.toggleSelected(!!value)}
-            aria-label="Select row"
+            aria-label={__("Select row", "eventkoi-lite")}
           />
         </div>
       ),
@@ -81,7 +82,7 @@ export function createOrderColumns({ includeEventColumn = false } = {}) {
     },
     {
       accessorKey: "id",
-      header: ({ column }) => <SortButton title="Order ID" column={column} />,
+      header: ({ column }) => <SortButton title={__("Order ID", "eventkoi-lite")} column={column} />,
       cell: ({ row }) => {
         const orderId = String(row.original.id || row.original.order_id || "");
         if (!orderId) {
@@ -109,7 +110,7 @@ export function createOrderColumns({ includeEventColumn = false } = {}) {
   if (includeEventColumn) {
     columns.push({
       accessorKey: "event_ids",
-      header: ({ column }) => <SortButton title="Event ID" column={column} />,
+      header: ({ column }) => <SortButton title={__("Event ID", "eventkoi-lite")} column={column} />,
       cell: ({ row }) => {
         const eventIds = Array.isArray(row.original.event_ids)
           ? row.original.event_ids
@@ -143,7 +144,7 @@ export function createOrderColumns({ includeEventColumn = false } = {}) {
   columns.push(
     {
       accessorKey: "customer_name",
-      header: ({ column }) => <SortButton title="Customer name" column={column} />,
+      header: ({ column }) => <SortButton title={__("Customer name", "eventkoi-lite")} column={column} />,
       cell: ({ row }) => {
         const customerName =
           row.original.ticket_holder_name || row.original.customer_name || "";
@@ -173,7 +174,7 @@ export function createOrderColumns({ includeEventColumn = false } = {}) {
     },
     {
       accessorKey: "status",
-      header: ({ column }) => <SortButton title="Order status" column={column} />,
+      header: ({ column }) => <SortButton title={__("Order status", "eventkoi-lite")} column={column} />,
       cell: ({ row }) => {
         const status = row.original.is_archived
           ? "archived"
@@ -191,7 +192,7 @@ export function createOrderColumns({ includeEventColumn = false } = {}) {
     },
     {
       accessorKey: "amount_total",
-      header: ({ column }) => <SortButton title="Order total" column={column} />,
+      header: ({ column }) => <SortButton title={__("Order total", "eventkoi-lite")} column={column} />,
       cell: ({ row }) => {
         const totalCents = Number(
           row.original.amount_total ??
@@ -214,7 +215,7 @@ export function createOrderColumns({ includeEventColumn = false } = {}) {
     {
       accessorKey: "quantity",
       header: ({ column }) => (
-        <SortButton title="Ticket quantity" column={column} />
+        <SortButton title={__("Ticket quantity", "eventkoi-lite")} column={column} />
       ),
       cell: ({ row }) => (
         <div className={cn("text-foreground")}>{row.original.quantity || ""}</div>
@@ -224,7 +225,7 @@ export function createOrderColumns({ includeEventColumn = false } = {}) {
     },
     {
       accessorKey: "created_at",
-      header: ({ column }) => <SortButton title="Order date" column={column} />,
+      header: ({ column }) => <SortButton title={__("Order date", "eventkoi-lite")} column={column} />,
       cell: ({ row }) => (
         <div className="text-foreground whitespace-pre-line">
           {formatWPtime(row.original.created_at)}

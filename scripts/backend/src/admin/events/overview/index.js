@@ -573,7 +573,7 @@ export function EventsOverview() {
       {
         accessorKey: "rsvp_used",
         header: ({ column }) => (
-          <SortButton title="RSVPs/Tickets" column={column} />
+          <SortButton title={__("RSVPs/Tickets", "eventkoi-lite")} column={column} />
         ),
         cell: ({ row }) => {
           const attendanceMode = row.original.attendance_mode || "none";

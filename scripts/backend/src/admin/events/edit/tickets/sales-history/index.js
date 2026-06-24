@@ -306,7 +306,7 @@ export function EventEditSalesHistory() {
                       <TooltipTrigger asChild>
                         <button
                           type="button"
-                          aria-label="Net earnings info"
+                          aria-label={__("Net earnings info", "eventkoi-lite")}
                           className="inline-flex items-center text-muted-foreground hover:text-foreground cursor-pointer bg-transparent border-0 p-0"
                         >
                           <Info className="h-4 w-4" />

@@ -66,9 +66,9 @@ export function SettingsAPI() {
           <div className="space-y-2">
             <Label>{__("Developer API key", "eventkoi-lite")}</Label>
             <p className="text-sm text-muted-foreground">
-              This key is kept private and is not displayed. You may regenerate
-              it below if needed. The new key will be shown{" "}
-              <strong>only once</strong>, so please copy it immediately.
+              {__("This key is kept private and is not displayed. You may regenerate it below if needed. The new key will be shown", "eventkoi-lite")}{" "}
+              <strong>{__("only once", "eventkoi-lite")}</strong>
+              {__(", so please copy it immediately.", "eventkoi-lite")}
             </p>
           </div>
 

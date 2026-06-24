@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { __ } from "@wordpress/i18n";
 import { renderToStaticMarkup } from "react-dom/server";
 
 const shouldShowWidget = () => {
@@ -22,12 +23,14 @@ const Widget = () => (
         🥳
       </span>
       <div className="text-[14px] font-semibold text-[#0D5342] leading-tight">
-        <span className="block">EventKoi Plugin Tour Completed!</span>
+        <span className="block">
+          {__("EventKoi Plugin Tour Completed!", "eventkoi-lite")}
+        </span>
       </div>
       <button
         type="button"
         className="ml-auto p-0 text-[#555] hover:text-black transition-colors leading-none -mt-1"
-        aria-label="Close"
+        aria-label={__("Close", "eventkoi-lite")}
         style={{
           background: "transparent",
           border: "none",
@@ -41,7 +44,7 @@ const Widget = () => (
     <div className="p-4 border border-solid border-border bg-white rounded-b-lg flex flex-col gap-4">
       <div className="flex flex-col gap-4">
         <div className="text-[14px] text-[#161616] font-medium text-center w-full">
-          What you can do next:
+          {__("What you can do next:", "eventkoi-lite")}
         </div>
         <Button
           asChild
@@ -56,7 +59,7 @@ const Widget = () => (
               "/wp-admin/admin.php?page=eventkoi"
             }#/dashboard`}
           >
-            Go to EventKoi Dashboard
+            {__("Go to EventKoi Dashboard", "eventkoi-lite")}
           </a>
         </Button>
         <Button
@@ -71,13 +74,16 @@ const Widget = () => (
             target="_blank"
             rel="noopener noreferrer"
           >
-            Learn how to customize an Event Template
+            {__("Learn how to customize an Event Template", "eventkoi-lite")}
           </a>
         </Button>
       </div>
       <div className="h-[1px] w-full bg-border" />
       <p className="text-[12px] text-[#555] m-0 font-sans">
-        You can restart this Tour any time in the EventKoi Dashboard.
+        {__(
+          "You can restart this Tour any time in the EventKoi Dashboard.",
+          "eventkoi-lite",
+        )}
       </p>
     </div>
   </div>

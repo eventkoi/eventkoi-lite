@@ -1,3 +1,4 @@
+import { __ } from "@wordpress/i18n";
 import { toast } from "sonner";
 
 export function showToast(response) {
@@ -28,7 +29,7 @@ export function showToast(response) {
           }}
           className="underline underline-offset-2 hover:no-underline"
         >
-          View event
+          {__("View event", "eventkoi-lite")}
         </span>
       )}
     </button>,

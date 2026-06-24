@@ -7,7 +7,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-06-24T17:19:13+00:00\n"
+"POT-Creation-Date: 2026-06-24T17:37:19+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -307,6 +307,7 @@ msgstr ""
 
 #: api/class-tickets.php:1097
 #: api/class-tickets.php:1109
+#: tickets/index.js:717
 msgid "This event has ended and is no longer accepting ticket purchases."
 msgstr ""
 
@@ -315,7 +316,7 @@ msgid "Too many requests. Please try again later."
 msgstr ""
 
 #: api/class-tickets.php:1132
-#: tickets/index.js:946
+#: tickets/index.js:951
 msgid "Please agree to the terms & conditions to continue."
 msgstr ""
 
@@ -532,6 +533,7 @@ msgstr ""
 #: core/class-beaver-modules.php:125
 #: core/divi-modules/class-et-builder-module-eventkoicalendar.php:54
 #: core/elementor-widgets/class-widget-calendar.php:102
+#: blocks/calendar/controls.js:119
 #: blocks/event-data/event-data-controls.js:133
 #: components/calendar/calendar-time-frame.js:35
 #: components/calendar/view-toggle.js:21
@@ -543,6 +545,7 @@ msgstr ""
 #: core/class-beaver-modules.php:126
 #: core/divi-modules/class-et-builder-module-eventkoicalendar.php:55
 #: core/elementor-widgets/class-widget-calendar.php:106
+#: blocks/calendar/controls.js:120
 #: components/calendar/calendar-time-frame.js:42
 #: components/calendar/view-toggle.js:28
 #: components/event/event-date-recurring.js:683
@@ -716,6 +719,7 @@ msgid "Event calendar URL"
 msgstr ""
 
 #: core/class-bindings.php:43
+#: components/event/event-calendar.js:86
 msgid "Event calendar"
 msgstr ""
 
@@ -883,6 +887,7 @@ msgstr ""
 
 #: core/class-blocks.php:1032
 #: blocks/event-query-loop/index.js:83
+#: components/calendar/search-box.js:226
 #: components/calendar/search-box.js:331
 #: components/calendar/search-box.js:359
 msgid "No events found."
@@ -903,6 +908,7 @@ msgstr ""
 #: admin/events/overview/index.js:858
 #: blocks/event-query-loop/index.js:77
 #: components/calendar/nav-controls.js:22
+#: components/calendar/search-box.js:286
 #: components/ui/pagination.jsx:73
 #: components/calendar/search-box.js:431
 msgid "Next"
@@ -1027,7 +1033,7 @@ msgstr ""
 
 #: core/class-event.php:4563
 #: tickets/index.js:406
-#: tickets/index.js:1176
+#: tickets/index.js:1181
 msgid "Sold out"
 msgstr ""
 
@@ -1431,7 +1437,7 @@ msgstr ""
 #. translators: %s: field label
 #: core/class-orders.php:115
 #: core/class-rsvps.php:126
-#: tickets/index.js:1730
+#: tickets/index.js:1735
 #, php-format,js-format
 msgid "%s is required."
 msgstr ""
@@ -1529,6 +1535,7 @@ msgid "Calendars"
 msgstr ""
 
 #: core/class-post-types.php:63
+#: components/event/event-calendar.js:97
 msgid "Search calendars"
 msgstr ""
 
@@ -1602,6 +1609,7 @@ msgstr ""
 #: core/class-post-types.php:122
 #: admin/index.js:85
 #: components/event/event-nav-back.js:17
+#: components/event-nav-back.js:12
 msgid "Edit event"
 msgstr ""
 
@@ -1610,12 +1618,15 @@ msgid "New event"
 msgstr ""
 
 #: core/class-post-types.php:124
+#: admin/calendars/edit/index.js:41
+#: hooks/useEventEdit.js:37
+#: lib/toast.js:32
 msgid "View event"
 msgstr ""
 
 #: core/class-post-types.php:125
-#: admin/settings/import/index.js:325
-#: admin/settings/import/index.js:394
+#: admin/settings/import/index.js:328
+#: admin/settings/import/index.js:397
 msgid "View events"
 msgstr ""
 
@@ -1629,7 +1640,7 @@ msgid "Search events"
 msgstr ""
 
 #: core/class-post-types.php:127
-#: admin/settings/import/index.js:245
+#: admin/settings/import/index.js:248
 msgid "No events found"
 msgstr ""
 
@@ -1895,6 +1906,8 @@ msgstr ""
 #: core/class-template.php:1018
 #: admin/index.js:96
 #: admin/settings/fields/index.js:30
+#: components/dashboard/pro-launch.js:28
+#: components/settings/settings-tabs.js:15
 msgid "Custom fields"
 msgstr ""
 
@@ -1946,7 +1959,7 @@ msgstr ""
 #: admin/events/edit/tickets/manage-tickets/index.js:634
 #: admin/tickets/overview/index.js:8
 #: components/event/event-tabs.js:61
-#: tickets/index.js:1139
+#: tickets/index.js:1144
 msgid "Tickets"
 msgstr ""
 
@@ -2206,6 +2219,7 @@ msgstr ""
 #: blocks/event-data/event-data-controls.js:119
 #: blocks/event-data/index.js:73
 #: blocks/list/controls.js:114
+#: components/event-location.js:29
 msgid "Location"
 msgstr ""
 
@@ -2629,6 +2643,8 @@ msgstr ""
 
 #: admin/calendars/overview/index.js:125
 #: admin/calendars/overview/index.js:139
+#: components/ShortcodeBox.js:91
+#: components/ShortcodeBox.js:107
 msgid "Copy shortcode"
 msgstr ""
 
@@ -2640,6 +2656,8 @@ msgstr ""
 #: components/calendar/EventPopover.js:797
 #: components/event/event-date-recurring.js:983
 #: components/order/CopyableOrderId.js:47
+#: components/ShortcodeBox.js:65
+#: components/ShortcodeBox.js:106
 #: components/calendar/EventPopover.js:808
 #: share/index.js:150
 msgid "Copied!"
@@ -2673,16 +2691,19 @@ msgstr ""
 #: admin/dashboard/onboarding/index.jsx:432
 #: admin/events/edit/index.js:410
 #: admin/events/overview/index.js:100
+#: onboarding-widget/index.js:134
 msgid "Publish demo event"
 msgstr ""
 
 #: admin/calendars/overview/index.js:294
 #: admin/events/edit/index.js:414
 #: components/dashboard/upcoming-events.js:165
+#: onboarding-widget/index.js:139
 msgid "View default calendar"
 msgstr ""
 
 #: admin/calendars/overview/index.js:513
+#: onboarding-done/index.js:27
 msgid "EventKoi Plugin Tour Completed!"
 msgstr ""
 
@@ -2697,19 +2718,24 @@ msgstr ""
 #: components/ui/sheet.jsx:56
 #: plugins/admin-checklist.jsx:148
 #: plugins/onboarding-wizard-widget.jsx:251
+#: onboarding-done/index.js:33
+#: onboarding-widget/index.js:42
 msgid "Close"
 msgstr ""
 
 #: admin/calendars/overview/index.js:537
+#: onboarding-done/index.js:47
 msgid "What you can do next:"
 msgstr ""
 
 #: admin/calendars/overview/index.js:552
-#: plugins/quick-start-snackbar.js:101
+#: plugins/quick-start-snackbar.js:104
+#: onboarding-done/index.js:62
 msgid "Go to EventKoi Dashboard"
 msgstr ""
 
 #: admin/calendars/overview/index.js:567
+#: onboarding-done/index.js:77
 msgid "Learn how to customize an Event Template"
 msgstr ""
 
@@ -2717,6 +2743,8 @@ msgstr ""
 #: admin/calendars/overview/index.js:611
 #: admin/events/edit/index.js:584
 #: admin/events/overview/index.js:756
+#: onboarding-done/index.js:83
+#: onboarding-widget/index.js:100
 msgid "You can restart this Tour any time in the EventKoi Dashboard."
 msgstr ""
 
@@ -2724,6 +2752,7 @@ msgstr ""
 #: admin/events/edit/index.js:562
 #: admin/events/overview/index.js:742
 #: plugins/admin-checklist.jsx:128
+#: onboarding-widget/index.js:36
 msgid "EventKoi Plugin Tour"
 msgstr ""
 
@@ -2762,13 +2791,18 @@ msgstr ""
 #: admin/events/edit/index.js:759
 #: admin/events/overview/index.js:878
 #: components/event/event-nav-back.js:64
-#: tickets/index.js:1811
+#: tickets/index.js:1816
 msgid "Back"
 msgstr ""
 
 #: admin/calendars/overview/index.js:815
 #: components/calendar/calendar-nav-back.js:10
 msgid "Add calendar"
+msgstr ""
+
+#: admin/calendars/overview/index.js:820
+#: components/event/event-calendar.js:96
+msgid "No calendars are found."
 msgstr ""
 
 #: admin/dashboard/onboarding/index.jsx:37
@@ -2848,6 +2882,8 @@ msgid "Bulk action failed."
 msgstr ""
 
 #: admin/events/edit/attendees/index.js:176
+#: admin/settings/fields/index.js:44
+#: components/bulk-actions.js:122
 #: components/bulk-actions.js:56
 msgid "Bulk actions"
 msgstr ""
@@ -2911,6 +2947,7 @@ msgstr ""
 #: admin/events/edit/attendees/index.js:231
 #: admin/events/edit/attendees/index.js:246
 #: admin/events/edit/attendees/index.js:385
+#: components/bulk-actions.js:183
 #: components/event/event-image.js:350
 #: components/bulk-actions.js:97
 #: components/event-image.js:111
@@ -3005,7 +3042,7 @@ msgstr ""
 
 #: admin/events/edit/attendees/index.js:506
 #: components/bulk-actions.js:137
-#: components/bulk-actions.js:231
+#: components/bulk-actions.js:233
 #: components/order/order-header.js:157
 #: components/order/order-header.js:200
 msgid "Archive"
@@ -3088,14 +3125,20 @@ msgstr ""
 #: admin/events/edit/attendees/index.js:1362
 #: admin/events/edit/attendees/index.js:1667
 #: admin/events/overview/index.js:465
+#: components/event/instances-table.js:196
 #: components/filters.js:82
 #: components/filters.js:153
+#: lib/order-table-columns.js:81
+#: lib/order-table.js:67
 msgid "Select all"
 msgstr ""
 
 #: admin/events/edit/attendees/index.js:1371
 #: admin/events/edit/attendees/index.js:1676
 #: admin/events/overview/index.js:474
+#: components/event/instances-table.js:205
+#: lib/order-table-columns.js:90
+#: lib/order-table.js:76
 msgid "Select row"
 msgstr ""
 
@@ -3124,6 +3167,7 @@ msgstr ""
 
 #: admin/events/edit/attendees/index.js:1508
 #: admin/events/overview/index.js:550
+#: components/event/instances-table.js:269
 #: components/filters.js:67
 #: checkin/index.js:501
 #: rsvp/index.js:553
@@ -3136,10 +3180,16 @@ msgstr ""
 msgid "Guests"
 msgstr ""
 
+#: admin/events/edit/attendees/index.js:1599
+msgid "RSVP date"
+msgstr ""
+
 #: admin/events/edit/attendees/index.js:1808
 #: admin/settings/emails/index.js:103
 #: admin/settings/emails/index.js:143
 #: admin/settings/emails/index.js:203
+#: lib/order-table-columns.js:99
+#: lib/order-table.js:85
 msgid "Order ID"
 msgstr ""
 
@@ -3148,10 +3198,14 @@ msgid "Order Status"
 msgstr ""
 
 #: admin/events/edit/attendees/index.js:1853
+#: lib/order-table-columns.js:221
+#: lib/order-table.js:218
 msgid "Ticket quantity"
 msgstr ""
 
 #: admin/events/edit/attendees/index.js:1863
+#: lib/order-table-columns.js:230
+#: lib/order-table.js:228
 msgid "Order date"
 msgstr ""
 
@@ -3220,6 +3274,10 @@ msgstr ""
 
 #: admin/events/edit/attendees/index.js:2073
 msgid "Check-ins"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:2090
+msgid "No RSVPs are found."
 msgstr ""
 
 #: admin/events/edit/index.js:467
@@ -3477,6 +3535,11 @@ msgstr ""
 msgid "Net earnings"
 msgstr ""
 
+#: admin/events/edit/tickets/sales-history/index.js:309
+#: components/order-stats.js:216
+msgid "Net earnings info"
+msgstr ""
+
 #: admin/events/edit/tickets/sales-history/index.js:320
 #: components/order-stats.js:227
 msgid "Net earnings are calculated after platform and Stripe processing fees."
@@ -3551,21 +3614,30 @@ msgstr ""
 #: admin/settings/emails/index.js:62
 #: admin/settings/emails/index.js:174
 #: admin/settings/emails/index.js:206
+#: components/event/instances-table.js:215
+#: lib/order-table-columns.js:142
 #: components/event-name.js:21
 msgid "Event name"
 msgstr ""
 
+#: admin/events/overview/index.js:576
+msgid "RSVPs/Tickets"
+msgstr ""
+
 #: admin/events/overview/index.js:612
+#: components/event/instances-table.js:283
 msgid "Starts"
 msgstr ""
 
 #: admin/events/overview/index.js:644
 #: components/event/event-date-recurring.js:905
+#: components/event/instances-table.js:300
 msgid "Ends"
 msgstr ""
 
 #: admin/events/overview/index.js:702
 #: admin/settings/fields/index.js:80
+#: components/event/instances-table.js:318
 #: plugins/event-query-loop-controls.js:436
 msgid "Last modified"
 msgstr ""
@@ -3584,7 +3656,7 @@ msgstr[1] ""
 
 #: admin/events/overview/index.js:909
 #: admin/events/overview/index.js:992
-#: admin/settings/import/index.js:291
+#: admin/settings/import/index.js:294
 #: components/confirm-dialog.js:77
 #: components/event/event-image.js:308
 #: components/ui/rich-text-editor.js:584
@@ -3605,15 +3677,16 @@ msgstr ""
 
 #: admin/events/overview/index.js:941
 #: admin/events/overview/index.js:996
-#: admin/settings/import/index.js:260
-#: admin/settings/import/index.js:296
-#: admin/settings/import/index.js:428
+#: admin/settings/import/index.js:263
+#: admin/settings/import/index.js:299
+#: admin/settings/import/index.js:431
+#: components/settings/settings-tabs.js:36
 #: components/url-import-dialog.js:146
 msgid "Import"
 msgstr ""
 
 #: admin/events/overview/index.js:946
-#: admin/settings/import/index.js:415
+#: admin/settings/import/index.js:418
 #: components/url-import-dialog.js:79
 msgid "Import from URL"
 msgstr ""
@@ -3630,27 +3703,28 @@ msgstr ""
 
 #: admin/events/overview/index.js:953
 #: admin/events/overview/index.js:969
-#: admin/settings/import/index.js:268
+#: admin/settings/import/index.js:271
 msgid "Import from The Events Calendar"
 msgstr ""
 
 #: admin/events/overview/index.js:973
-#: admin/settings/import/index.js:272
+#: admin/settings/import/index.js:275
 msgid "This will import the following into EventKoi:"
 msgstr ""
 
 #: admin/events/overview/index.js:982
-#: admin/settings/import/index.js:281
+#: admin/settings/import/index.js:284
 msgid "Venues, categories & featured images"
 msgstr ""
 
 #: admin/events/overview/index.js:986
-#: admin/settings/import/index.js:285
+#: admin/settings/import/index.js:288
 msgid "Previously imported events will be skipped."
 msgstr ""
 
 #: admin/events/overview/index.js:1008
 #: components/event/event-nav-back.js:18
+#: components/event-nav-back.js:13
 msgid "Add event"
 msgstr ""
 
@@ -3777,6 +3851,8 @@ msgid "Customer full name"
 msgstr ""
 
 #: admin/settings/emails/index.js:104
+#: lib/order-table-columns.js:189
+#: lib/order-table.js:177
 msgid "Order status"
 msgstr ""
 
@@ -3876,6 +3952,7 @@ msgid "Failed to restore defaults."
 msgstr ""
 
 #: admin/settings/emails/index.js:415
+#: components/settings/settings-tabs.js:33
 msgid "Emails"
 msgstr ""
 
@@ -3947,6 +4024,30 @@ msgstr ""
 msgid "Tags used in the default email template."
 msgstr ""
 
+#: admin/settings/fields/index.js:27
+msgid "Upgrade to access Custom Fields"
+msgstr ""
+
+#: admin/settings/fields/index.js:32
+msgid "Preview of Pro Custom Fields. Upgrade to enable."
+msgstr ""
+
+#: admin/settings/fields/index.js:53
+msgid "Group"
+msgstr ""
+
+#: admin/settings/fields/index.js:59
+msgid "Add field"
+msgstr ""
+
+#: admin/settings/fields/index.js:65
+msgid "All (3)"
+msgstr ""
+
+#: admin/settings/fields/index.js:66
+msgid "Trash (0)"
+msgstr ""
+
 #: admin/settings/fields/index.js:76
 msgid "Field name"
 msgstr ""
@@ -3956,8 +4057,16 @@ msgstr ""
 msgid "Type"
 msgstr ""
 
+#: admin/settings/fields/index.js:78
+msgid "ID"
+msgstr ""
+
 #: admin/settings/fields/index.js:79
 msgid "Groups"
+msgstr ""
+
+#: admin/settings/fields/index.js:93
+msgid "Global"
 msgstr ""
 
 #: admin/settings/import/index.js:145
@@ -3968,59 +4077,63 @@ msgstr ""
 msgid "Import events from other calendar plugins or ICS files."
 msgstr ""
 
-#: admin/settings/import/index.js:231
+#: admin/settings/import/index.js:153
+msgid "Import events, venues, organizers, and categories from TEC."
+msgstr ""
+
+#: admin/settings/import/index.js:234
 msgid "Detecting..."
 msgstr ""
 
-#: admin/settings/import/index.js:237
+#: admin/settings/import/index.js:240
 msgid "Activate the plugin to import"
 msgstr ""
 
-#: admin/settings/import/index.js:244
+#: admin/settings/import/index.js:247
 msgid "All events already imported"
 msgstr ""
 
-#: admin/settings/import/index.js:253
+#: admin/settings/import/index.js:256
 #, js-format
 msgid "%d event available"
 msgid_plural "%d events available"
 msgstr[0] ""
 msgstr[1] ""
 
-#: admin/settings/import/index.js:307
-#: admin/settings/import/index.js:376
+#: admin/settings/import/index.js:310
+#: admin/settings/import/index.js:379
 msgid "Importing events..."
 msgstr ""
 
-#: admin/settings/import/index.js:315
-#: admin/settings/import/index.js:384
+#: admin/settings/import/index.js:318
+#: admin/settings/import/index.js:387
 #, js-format
 msgid "%d event imported"
 msgid_plural "%d events imported"
 msgstr[0] ""
 msgstr[1] ""
 
-#: admin/settings/import/index.js:353
+#: admin/settings/import/index.js:356
 msgid "ICS / iCal File"
 msgstr ""
 
-#: admin/settings/import/index.js:356
+#: admin/settings/import/index.js:359
 msgid "Import from Google Calendar, Apple Calendar, Outlook, or any .ics file."
 msgstr ""
 
-#: admin/settings/import/index.js:365
+#: admin/settings/import/index.js:368
 msgid "Select a .ics file to import"
 msgstr ""
 
-#: admin/settings/import/index.js:368
+#: admin/settings/import/index.js:371
 msgid "Upload"
 msgstr ""
 
-#: admin/settings/import/index.js:418
+#: admin/settings/import/index.js:421
 msgid "Paste a link to any event page to import it."
 msgstr ""
 
-#: admin/settings/import/index.js:425
+#: admin/settings/import/index.js:428
 msgid "Supports structured data & OG tags"
 msgstr ""
 
@@ -4156,11 +4269,13 @@ msgstr ""
 
 #: admin/settings/overview/index.js:620
 #: components/event/event-template.js:77
+#: components/event-template.js:29
 msgid "Select a template"
 msgstr ""
 
 #: admin/settings/overview/index.js:623
 #: components/event/event-template.js:80
+#: components/event-template.js:33
 msgid "Default template"
 msgstr ""
 
@@ -4169,6 +4284,7 @@ msgid "Applied to every event page unless overridden on the event itself."
 msgstr ""
 
 #: admin/settings/overview/index.js:641
+#: components/event/event-template.js:121
 msgid "Edit in Site Editor"
 msgstr ""
 
@@ -4190,6 +4306,7 @@ msgid "No additional user roles are available to configure."
 msgstr ""
 
 #: admin/settings/permissions/index.js:123
+#: components/settings/settings-tabs.js:37
 msgid "User permissions"
 msgstr ""
 
@@ -4226,6 +4343,7 @@ msgid "Upgrade to access Frontend Submissions"
 msgstr ""
 
 #: admin/settings/submissions/index.js:32
+#: components/settings/settings-tabs.js:26
 msgid "Frontend submissions"
 msgstr ""
 
@@ -4472,12 +4590,17 @@ msgstr ""
 
 #: blocks/calendar/controls.js:96
 #: blocks/list/controls.js:92
+#: components/event/event-calendar.js:95
 #: plugins/event-query-loop-controls.js:459
 msgid "Select calendar(s)"
 msgstr ""
 
 #: blocks/calendar/controls.js:149
 msgid "Current year"
+msgstr ""
+
+#: blocks/calendar/controls.js:176
+msgid "Colors"
 msgstr ""
 
 #. translators: %s: event start time.
@@ -4774,6 +4897,14 @@ msgstr ""
 msgid "Design options"
 msgstr ""
 
+#: blocks/list/controls.js:128
+msgid "Line style"
+msgstr ""
+
+#: blocks/list/controls.js:142
+msgid "Thickness"
+msgstr ""
+
 #: blocks/list/index.js:11
 msgid "EK Events List"
 msgstr ""
@@ -4799,94 +4930,97 @@ msgid "Failed to duplicate selected items."
 msgstr ""
 
 #: components/bulk-actions.js:136
-#: components/bulk-actions.js:230
+#: components/bulk-actions.js:232
 #: components/order/order-header.js:157
 #: components/order/order-header.js:200
 msgid "Unarchive"
 msgstr ""
 
 #: components/bulk-actions.js:149
-#: components/bulk-actions.js:265
+#: components/bulk-actions.js:267
+#: components/event/instances-table.js:419
 #: components/bulk-actions.js:68
 msgid "Restore"
 msgstr ""
 
 #: components/bulk-actions.js:158
-#: components/bulk-actions.js:261
+#: components/bulk-actions.js:263
 #: components/bulk-actions.js:76
 msgid "Delete permanently"
 msgstr ""
 
 #: components/bulk-actions.js:171
-#: components/bulk-actions.js:266
+#: components/bulk-actions.js:268
 #: components/bulk-actions.js:87
 msgid "Duplicate"
 msgstr ""
 
-#: components/bulk-actions.js:192
+#: components/bulk-actions.js:184
+#: components/bulk-actions.js:265
+#: components/event/event-nav-bar.js:415
+#: components/event/instances-table.js:424
+#: components/bulk-actions.js:98
+#: components/event-nav-bar.js:183
+msgid "Move to trash"
+msgstr ""
+
+#: components/bulk-actions.js:194
 #: components/bulk-actions.js:109
 msgid "Panel"
 msgstr ""
 
-#: components/bulk-actions.js:214
+#: components/bulk-actions.js:216
 msgid "Unarchive orders?"
 msgstr ""
 
-#: components/bulk-actions.js:215
+#: components/bulk-actions.js:217
 msgid "Archive orders?"
 msgstr ""
 
-#: components/bulk-actions.js:220
+#: components/bulk-actions.js:222
 #, js-format
 msgid "This will restore %d order(s) back to your order lists."
 msgstr ""
 
-#: components/bulk-actions.js:224
+#: components/bulk-actions.js:226
 #, js-format
 msgid "%d order(s) will be hidden from your order lists. Financial records remain unchanged."
 msgstr ""
 
-#: components/bulk-actions.js:243
+#: components/bulk-actions.js:245
 msgid "Delete permanently?"
 msgstr ""
 
-#: components/bulk-actions.js:245
+#: components/bulk-actions.js:247
 msgid "Move to trash?"
 msgstr ""
 
-#: components/bulk-actions.js:247
+#: components/bulk-actions.js:249
 msgid "Restore?"
 msgstr ""
 
-#: components/bulk-actions.js:248
+#: components/bulk-actions.js:250
 msgid "Duplicate?"
-msgstr ""
-
-#: components/bulk-actions.js:252
-#, js-format
-msgid "%d item(s) will be permanently deleted. This cannot be undone."
 msgstr ""
 
 #: components/bulk-actions.js:254
 #, js-format
-msgid "%d item(s) will be moved to trash. You can restore them later."
+msgid "%d item(s) will be permanently deleted. This cannot be undone."
 msgstr ""
 
 #: components/bulk-actions.js:256
 #, js-format
+msgid "%d item(s) will be moved to trash. You can restore them later."
+msgstr ""
+
+#: components/bulk-actions.js:258
+#, js-format
 msgid "%d item(s) will be restored from trash."
 msgstr ""
 
-#: components/bulk-actions.js:257
+#: components/bulk-actions.js:259
 #, js-format
 msgid "%d duplicate item(s) will be created as drafts."
-msgstr ""
-
-#: components/bulk-actions.js:263
-#: components/event/event-nav-bar.js:415
-#: components/bulk-actions.js:98
-#: components/event-nav-bar.js:183
-msgid "Move to trash"
 msgstr ""
 
 #: components/calendar/calendar-block.js:12
@@ -4989,6 +5123,10 @@ msgstr ""
 msgid "Click to edit"
 msgstr ""
 
+#: components/calendar/calendar-name.js:81
+msgid "Calendar name cannot be blank"
+msgstr ""
+
 #: components/calendar/calendar-nav-back.js:21
 msgid "Back to all calendars"
 msgstr ""
@@ -5012,7 +5150,8 @@ msgstr ""
 
 #: components/calendar/calendar-slug.js:21
 #: components/event/event-slug.js:37
-#: components/event/physical-location-form.js:74
+#: components/event/physical-location-form.js:77
+#: components/event-location.js:54
 msgid "Address"
 msgstr ""
 
@@ -5059,8 +5198,8 @@ msgid "Add to calendar"
 msgstr ""
 
 #: components/calendar/EventPopover.js:696
-#: components/event/physical-location-form.js:222
-#: components/event/physical-location-form.js:247
+#: components/event/physical-location-form.js:225
+#: components/event/physical-location-form.js:250
 #: components/calendar/EventPopover.js:697
 msgid "Share"
 msgstr ""
@@ -5107,6 +5246,17 @@ msgstr ""
 msgid "Event link"
 msgstr ""
 
+#: components/calendar/search-box.js:266
+#: components/calendar/search-box.js:409
+msgid "Prev"
+msgstr ""
+
+#: components/calendar/search-box.js:270
+#: components/calendar/search-box.js:414
+#, js-format
+msgid "Page %1$d of %2$d"
+msgstr ""
+
 #: components/calendar/today-button.js:21
 #: components/calendar/today-button.js:23
 msgid "Jump to today"
@@ -5139,6 +5289,38 @@ msgstr ""
 msgid "Begin plugin tour"
 msgstr ""
 
+#: components/dashboard/pro-launch.js:26
+msgid "Recurring events"
+msgstr ""
+
+#: components/dashboard/pro-launch.js:27
+msgid "Unlimited calendars"
+msgstr ""
+
+#: components/dashboard/pro-launch.js:29
+msgid "Priority support"
+msgstr ""
+
+#: components/dashboard/pro-launch.js:30
+msgid "30 day money-back guarantee"
+msgstr ""
+
+#: components/dashboard/pro-launch.js:42
+msgid "Access Pro features"
+msgstr ""
+
+#: components/dashboard/pro-launch.js:46
+msgid "Thanks for using EventKoi Lite. Get an exclusive 10% discount on all Pro plans when you upgrade today."
+msgstr ""
+
+#: components/dashboard/pro-launch.js:64
+msgid "Claim discount"
+msgstr ""
+
+#: components/dashboard/pro-launch.js:83
+msgid "Discount"
+msgstr ""
+
 #: components/dashboard/quick-links.js:11
 msgid "Quick links"
 msgstr ""
@@ -5163,6 +5345,14 @@ msgstr ""
 
 #: components/dashboard/upcoming-events.js:151
 msgid "View all events"
+msgstr ""
+
+#: components/date-range.js:37
+msgid "Date range"
+msgstr ""
+
+#: components/date-range.js:194
+msgid "Clear date filter"
 msgstr ""
 
 #: components/empty-state/FeatureDisabled.js:30
@@ -5236,6 +5426,18 @@ msgstr ""
 #: components/event/event-date-recurring.js:635
 #: components/event/event-date-recurring.js:640
 msgid "All day"
+msgstr ""
+
+#: components/event/event-calendar.js:90
+msgid "Select which calendars your event will show up in."
+msgstr ""
+
+#: components/event/event-date-multiple.js:313
+msgid "End must be after start."
+msgstr ""
+
+#: components/event/event-date-multiple.js:638
+msgid "Add day"
 msgstr ""
 
 #: components/event/event-date-package-setting.js:20
@@ -5418,6 +5620,10 @@ msgstr ""
 msgid "This image is no longer available. Replace it to continue."
 msgstr ""
 
+#: components/event/event-location-autocomplete.js:121
+msgid "Search address here..."
+msgstr ""
+
 #: components/event/event-location.js:101
 msgid "No locations added yet."
 msgstr ""
@@ -5434,6 +5640,10 @@ msgstr ""
 #: components/event/event-location.js:111
 #: components/event/location-item.js:47
 msgid "Online location"
+msgstr ""
+
+#: components/event/event-location.js:116
+msgid "Add location"
 msgstr ""
 
 #: components/event/event-name.js:87
@@ -5459,6 +5669,7 @@ msgstr ""
 
 #: components/event/event-nav-back.js:30
 #: components/event/event-nav-back.js:50
+#: components/event-nav-back.js:24
 msgid "Back to all events"
 msgstr ""
 
@@ -5588,6 +5799,30 @@ msgstr ""
 msgid "RSVP"
 msgstr ""
 
+#: components/event/event-template.js:59
+msgid "Event template"
+msgstr ""
+
+#: components/event/event-template.js:63
+msgid "Select or edit the design template of your event page."
+msgstr ""
+
+#: components/event/event-template.js:88
+msgid "Templates"
+msgstr ""
+
+#: components/event/event-template.js:122
+msgid "View/edit template"
+msgstr ""
+
+#: components/event/instances-table.js:246
+msgid "Edited"
+msgstr ""
+
+#: components/event/instances-table.js:257
+msgid "View instance"
+msgstr ""
+
 #: components/event/location-item.js:51
 msgid "No address yet"
 msgstr ""
@@ -5608,98 +5843,135 @@ msgstr ""
 msgid "Delete location"
 msgstr ""
 
+#: components/event/online-location-form.js:10
+msgid "Location name (optional)"
+msgstr ""
+
+#: components/event/online-location-form.js:14
+msgid "e.g., Zoom, Google Meet, or Webinar Host"
+msgstr ""
+
+#: components/event/online-location-form.js:18
+#: components/event/physical-location-form.js:69
+msgid "Give your location a name to help attendees identify it more easily."
+msgstr ""
+
 #: components/event/online-location-form.js:25
 msgid "Event link text"
 msgstr ""
 
-#: components/event/physical-location-form.js:81
+#: components/event/online-location-form.js:29
+msgid "e.g., Join on Zoom"
+msgstr ""
+
+#: components/event/physical-location-form.js:65
+msgid "e.g., Main Hall, Room A"
+msgstr ""
+
+#: components/event/physical-location-form.js:84
 msgid "Street address"
 msgstr ""
 
-#: components/event/physical-location-form.js:94
+#: components/event/physical-location-form.js:97
 msgid "Apartment, unit, building name"
 msgstr ""
 
-#: components/event/physical-location-form.js:101
-#: components/event/physical-location-form.js:105
+#: components/event/physical-location-form.js:104
+#: components/event/physical-location-form.js:108
 msgid "City"
 msgstr ""
 
-#: components/event/physical-location-form.js:111
-#: components/event/physical-location-form.js:115
+#: components/event/physical-location-form.js:114
+#: components/event/physical-location-form.js:118
 msgid "State"
 msgstr ""
 
-#: components/event/physical-location-form.js:121
-#: components/event/physical-location-form.js:125
+#: components/event/physical-location-form.js:124
+#: components/event/physical-location-form.js:128
 msgid "Country"
 msgstr ""
 
-#: components/event/physical-location-form.js:131
-#: components/event/physical-location-form.js:135
+#: components/event/physical-location-form.js:134
+#: components/event/physical-location-form.js:138
 msgid "Postal code"
 msgstr ""
 
-#: components/event/physical-location-form.js:148
+#: components/event/physical-location-form.js:151
 msgid "Embed Google Map on page."
 msgstr ""
 
-#: components/event/physical-location-form.js:156
+#: components/event/physical-location-form.js:159
 msgid "Google Maps Embed Link"
 msgstr ""
 
-#: components/event/physical-location-form.js:169
+#: components/event/physical-location-form.js:172
 msgid "Wrong embed URL. Follow the instructions below to get the correct URL."
 msgstr ""
 
-#: components/event/physical-location-form.js:180
+#: components/event/physical-location-form.js:183
 msgid "How to get the Google Maps embed link:"
 msgstr ""
 
-#: components/event/physical-location-form.js:183
+#: components/event/physical-location-form.js:186
 msgid "Find your address in Google Maps."
 msgstr ""
 
-#: components/event/physical-location-form.js:186
+#: components/event/physical-location-form.js:189
 msgid "Click on the <b>Share</b> button."
 msgstr ""
 
-#: components/event/physical-location-form.js:192
+#: components/event/physical-location-form.js:195
 msgid "Go to <b>Embed a map</b> tab."
 msgstr ""
 
-#: components/event/physical-location-form.js:196
+#: components/event/physical-location-form.js:199
 msgid "Copy the entire iframe html code."
 msgstr ""
 
-#: components/event/physical-location-form.js:197
+#: components/event/physical-location-form.js:200
 msgid "Paste it above. We’ll extract the correct embed URL."
 msgstr ""
 
-#: components/event/physical-location-form.js:199
+#: components/event/physical-location-form.js:202
 msgid "It should start with:"
 msgstr ""
 
-#: components/event/physical-location-form.js:207
+#: components/event/physical-location-form.js:210
 msgid "Do <b>NOT</b> paste:"
 msgstr ""
 
-#: components/event/physical-location-form.js:228
-#: components/event/physical-location-form.js:252
+#: components/event/physical-location-form.js:231
+#: components/event/physical-location-form.js:255
 msgid "Send a link"
 msgstr ""
 
-#: components/event/physical-location-form.js:230
-#: components/event/physical-location-form.js:254
+#: components/event/physical-location-form.js:233
+#: components/event/physical-location-form.js:257
 msgid "Embed a map"
 msgstr ""
 
-#: components/event/physical-location-form.js:236
+#: components/event/physical-location-form.js:239
 msgid "COPY TO CLIPBOARD"
 msgstr ""
 
-#: components/event/physical-location-form.js:261
+#: components/event/physical-location-form.js:264
 msgid "COPY HTML"
+msgstr ""
+
+#: components/event/standard-type-selector.js:10
+msgid "Event Type:"
+msgstr ""
+
+#: components/event/standard-type-selector.js:22
+msgid "Consecutive Days"
+msgstr ""
+
+#: components/event/standard-type-selector.js:32
+msgid "Selected Days"
+msgstr ""
+
+#: components/event/standard-type-selector.js:34
+msgid "(non-consecutive or varied times)"
 msgstr ""
 
 #: components/filters.js:18
@@ -5917,7 +6189,7 @@ msgid "Add note"
 msgstr ""
 
 #: components/order/OrderSummary.js:156
-#: tickets/index.js:1818
+#: tickets/index.js:1823
 msgid "Order summary"
 msgstr ""
 
@@ -5926,8 +6198,8 @@ msgid "Amount"
 msgstr ""
 
 #: components/order/OrderSummary.js:199
-#: tickets/index.js:1424
-#: tickets/index.js:1857
+#: tickets/index.js:1429
+#: tickets/index.js:1862
 msgid "Total"
 msgstr ""
 
@@ -5993,6 +6265,10 @@ msgstr ""
 msgid "Go to last page"
 msgstr ""
 
+#: components/rows-per-page.js:15
+msgid "Rows per page"
+msgstr ""
+
 #: components/search-box.js:16
 msgid "Search"
 msgstr ""
@@ -6031,6 +6307,18 @@ msgstr ""
 
 #: components/settings/api.js:67
 msgid "Developer API key"
+msgstr ""
+
+#: components/settings/api.js:69
+msgid "This key is kept private and is not displayed. You may regenerate it below if needed. The new key will be shown"
+msgstr ""
+
+#: components/settings/api.js:70
+msgid "only once"
+msgstr ""
+
+#: components/settings/api.js:71
+msgid ", so please copy it immediately."
 msgstr ""
 
 #: components/settings/api.js:88
@@ -6151,6 +6439,18 @@ msgstr ""
 msgid "Remove API Key"
 msgstr ""
 
+#: components/settings/settings-tabs.js:10
+msgid "Default settings"
+msgstr ""
+
+#: components/settings/settings-tabs.js:34
+msgid "Payments"
+msgstr ""
+
+#: components/settings/settings-tabs.js:35
+msgid "API & integrations"
+msgstr ""
+
 #: components/settings/woocommerce-links.js:20
 msgid "WooCommerce"
 msgstr ""
@@ -6161,6 +6461,76 @@ msgstr ""
 
 #: components/settings/woocommerce-links.js:36
 msgid "Set up currency options"
+msgstr ""
+
+#: components/ShortcodeBox.js:39
+msgid "Block attribute:"
+msgstr ""
+
+#: components/ShortcodeBox.js:50
+#: components/ShortcodeBox.js:66
+msgid "Copy attribute"
+msgstr ""
+
+#: components/ShortcodeBox.js:80
+msgid "Shortcode:"
+msgstr ""
+
+#: components/sort-button.js:14
+msgid "sorted ascending"
+msgstr ""
+
+#: components/sort-button.js:14
+msgid "sorted descending"
+msgstr ""
+
+#: components/sort-button.js:14
+msgid "not sorted"
+msgstr ""
+
+#: components/time-input.js:314
+msgid "Set time"
+msgstr ""
+
+#. translators: %s: current timezone label
+#: components/timezone-picker.js:43
+#: components/timezone-picker.js:44
+#, js-format
+msgid "Current timezone: %s. Press Enter or Space to change."
+msgstr ""
+
+#: components/timezone-picker.js:65
+#: components/timezone-picker.js:66
+msgid "Time format selection"
+msgstr ""
+
+#: components/timezone-picker.js:73
+#: components/timezone-picker.js:74
+msgid "12hr (AM/PM)"
+msgstr ""
+
+#: components/timezone-picker.js:79
+#: components/timezone-picker.js:80
+msgid "24hr"
+msgstr ""
+
+#: components/timezone-picker.js:85
+#: components/timezone-picker.js:86
+msgid "Search timezone..."
+msgstr ""
+
+#: components/timezone-picker.js:91
+#: components/timezone-picker.js:92
+msgid "Select a timezone"
+msgstr ""
+
+#: components/timezone-picker.js:94
+#: components/timezone-picker.js:95
+msgid "No timezone found."
+msgstr ""
+
+#: components/timezone-picker.js:136
+msgid "Selected timezone:"
 msgstr ""
 
 #: components/ui/breadcrumb.jsx:80
@@ -6334,7 +6704,22 @@ msgstr ""
 msgid "Event page URL"
 msgstr ""
 
+#: lib/order-table-columns.js:178
+#: lib/order-table.js:147
+msgid "Customer name"
+msgstr ""
+
+#: lib/order-table-columns.js:205
+#: lib/order-table.js:195
+msgid "Order total"
+msgstr ""
+
+#: lib/order-table.js:113
+msgid "Event ID"
+msgstr ""
+
 #: plugins/admin-checklist.jsx:122
+#: onboarding-widget/index.js:29
 msgid "Continue Guide"
 msgstr ""
 
@@ -6442,7 +6827,11 @@ msgstr ""
 msgid "Launch EventKoi Onboarding Wizard?"
 msgstr ""
 
-#: plugins/quick-start-snackbar.js:95
+#: plugins/quick-start-snackbar.js:84
+msgid "Dismiss"
+msgstr ""
+
+#: plugins/quick-start-snackbar.js:98
 msgid "Launch wizard"
 msgstr ""
 
@@ -6617,15 +7006,6 @@ msgstr ""
 msgid "Previous page"
 msgstr ""
 
-#: components/calendar/search-box.js:409
-msgid "Prev"
-msgstr ""
-
-#: components/calendar/search-box.js:414
-#, js-format
-msgid "Page %1$d of %2$d"
-msgstr ""
-
 #: components/calendar/search-box.js:427
 msgid "Next page"
 msgstr ""
@@ -6658,6 +7038,35 @@ msgstr ""
 msgid "Week picker"
 msgstr ""
 
+#: components/event-date.js:100
+msgid "Start"
+msgstr ""
+
+#: components/event-date.js:152
+msgid "End"
+msgstr ""
+
+#: components/event-date.js:213
+msgid "Date and time not confirmed."
+msgstr ""
+
+#: components/event-date.js:220
+msgid "Date and time not confirmed notification"
+msgstr ""
+
+#: components/event-date.js:226
+msgid "To be confirmed"
+msgstr ""
+
+#: components/event-date.js:240
+#, js-format
+msgid "Current timezone is: %s."
+msgstr ""
+
+#: components/event-date.js:244
+msgid "Change timezone."
+msgstr ""
+
 #: components/event-description.js:16
 msgid "Share details of this event with your guests."
 msgstr ""
@@ -6678,44 +7087,43 @@ msgstr ""
 msgid "Or click to select from media gallery."
 msgstr ""
 
+#: components/event-location.js:21
+msgid "In person event"
+msgstr ""
+
+#: components/event-location.js:24
+msgid "Virtual event"
+msgstr ""
+
+#: components/event-location.js:42
+#, js-format
+msgid "Line %d"
+msgstr ""
+
+#: components/event-location.js:45
+msgid "(Optional)"
+msgstr ""
+
+#: components/event-location.js:70
+msgid "URL"
+msgstr ""
+
+#: components/event-location.js:75
+msgid "Web address of your event"
+msgstr ""
+
 #: components/event-name.js:23
 msgid "Click to add event name"
+msgstr ""
+
+#: components/event-template.js:17
+msgid "Select event template"
 msgstr ""
 
 #. translators: %s: share service name.
 #: components/share-link.js:6
 #, js-format
 msgid "Share this event via %s"
-msgstr ""
-
-#. translators: %s: current timezone label
-#: components/timezone-picker.js:44
-#, js-format
-msgid "Current timezone: %s. Press Enter or Space to change."
-msgstr ""
-
-#: components/timezone-picker.js:66
-msgid "Time format selection"
-msgstr ""
-
-#: components/timezone-picker.js:74
-msgid "12hr (AM/PM)"
-msgstr ""
-
-#: components/timezone-picker.js:80
-msgid "24hr"
-msgstr ""
-
-#: components/timezone-picker.js:86
-msgid "Search timezone..."
-msgstr ""
-
-#: components/timezone-picker.js:92
-msgid "Select a timezone"
-msgstr ""
-
-#: components/timezone-picker.js:95
-msgid "No timezone found."
 msgstr ""
 
 #. translators: %s: selected timezone label
@@ -6752,7 +7160,7 @@ msgid "RSVP not yet open"
 msgstr ""
 
 #: rsvp/index.js:531
-#: tickets/index.js:1707
+#: tickets/index.js:1712
 msgid "Select..."
 msgstr ""
 
@@ -6760,202 +7168,206 @@ msgstr ""
 msgid "This event is fully booked."
 msgstr ""
 
-#: tickets/index.js:937
+#: tickets/index.js:482
+msgid "Unable to load tickets."
+msgstr ""
+
+#: tickets/index.js:942
 msgid "Please complete all required fields."
 msgstr ""
 
-#: tickets/index.js:941
-#: tickets/index.js:1623
+#: tickets/index.js:946
+#: tickets/index.js:1628
 msgid "Please enter a valid email address."
 msgstr ""
 
-#: tickets/index.js:986
+#: tickets/index.js:991
 msgid "One or more selected tickets are no longer available."
 msgstr ""
 
-#: tickets/index.js:997
+#: tickets/index.js:1002
 #, js-format
 msgid "“%s” is no longer available."
 msgstr ""
 
-#: tickets/index.js:998
-#: tickets/index.js:1011
+#: tickets/index.js:1003
+#: tickets/index.js:1016
 msgid "Selected ticket"
 msgstr ""
 
-#: tickets/index.js:1009
+#: tickets/index.js:1014
 #, js-format
 msgid "Only %d left for “%s”."
 msgstr ""
 
-#: tickets/index.js:1058
+#: tickets/index.js:1063
 msgid "Checkout URL is missing."
 msgstr ""
 
-#: tickets/index.js:1065
+#: tickets/index.js:1070
 msgid "Unable to set up checkout."
 msgstr ""
 
-#: tickets/index.js:1081
+#: tickets/index.js:1086
 msgid "Payment successful"
 msgstr ""
 
-#: tickets/index.js:1084
+#: tickets/index.js:1089
 msgid "Your order is confirmed and your tickets will be sent by email."
 msgstr ""
 
-#: tickets/index.js:1098
+#: tickets/index.js:1103
 msgid "Dismiss success message"
 msgstr ""
 
-#: tickets/index.js:1112
+#: tickets/index.js:1117
 msgid "Order received"
 msgstr ""
 
-#: tickets/index.js:1115
+#: tickets/index.js:1120
 msgid "Your tickets will be sent by email once payment is confirmed."
 msgstr ""
 
-#: tickets/index.js:1129
+#: tickets/index.js:1134
 msgid "Dismiss message"
 msgstr ""
 
-#: tickets/index.js:1148
-#: tickets/index.js:1273
+#: tickets/index.js:1153
+#: tickets/index.js:1278
 #, js-format
 msgid "Ticket sales ended on %s."
 msgstr ""
 
-#: tickets/index.js:1153
-#: tickets/index.js:1262
+#: tickets/index.js:1158
+#: tickets/index.js:1267
 #, js-format
 msgid "Ticket sales starts on %1$s and ends on %2$s."
 msgstr ""
 
-#: tickets/index.js:1160
+#: tickets/index.js:1165
 #, js-format
 msgid "Ticket sales end on %s."
 msgstr ""
 
-#: tickets/index.js:1180
+#: tickets/index.js:1185
 msgid "Not on sale"
 msgstr ""
 
-#: tickets/index.js:1181
+#: tickets/index.js:1186
 msgid "Get tickets"
 msgstr ""
 
-#: tickets/index.js:1190
+#: tickets/index.js:1195
 msgid "Ticket checkout"
 msgstr ""
 
-#: tickets/index.js:1192
+#: tickets/index.js:1197
 msgid "Select tickets and complete billing information to continue to payment."
 msgstr ""
 
-#: tickets/index.js:1202
+#: tickets/index.js:1207
 msgid "Buy tickets"
 msgstr ""
 
-#: tickets/index.js:1283
+#: tickets/index.js:1288
 #, js-format
 msgid "Ticket sales started on %1$s and ends on %2$s."
 msgstr ""
 
-#: tickets/index.js:1294
+#: tickets/index.js:1299
 #, js-format
 msgid "Ticket sales ends on %s."
 msgstr ""
 
-#: tickets/index.js:1315
+#: tickets/index.js:1320
 #, js-format
 msgid "Decrease quantity for %s"
 msgstr ""
 
-#: tickets/index.js:1316
-#: tickets/index.js:1333
-#: tickets/index.js:1350
+#: tickets/index.js:1321
+#: tickets/index.js:1338
+#: tickets/index.js:1355
 msgid "ticket"
 msgstr ""
 
-#: tickets/index.js:1332
+#: tickets/index.js:1337
 #, js-format
 msgid "Quantity for %s"
 msgstr ""
 
-#: tickets/index.js:1349
+#: tickets/index.js:1354
 #, js-format
 msgid "Increase quantity for %s"
 msgstr ""
 
-#: tickets/index.js:1364
+#: tickets/index.js:1369
 #, js-format
 msgid "%d tickets left."
 msgstr ""
 
 #. translators: %d: number of tickets left for the whole event.
-#: tickets/index.js:1382
+#: tickets/index.js:1387
 #, js-format
 msgid "%d ticket left for this event"
 msgid_plural "%d tickets left for this event"
 msgstr[0] ""
 msgstr[1] ""
 
-#: tickets/index.js:1390
+#: tickets/index.js:1395
 msgid "This event is sold out."
 msgstr ""
 
-#: tickets/index.js:1444
+#: tickets/index.js:1449
 msgid "Clear all"
 msgstr ""
 
-#: tickets/index.js:1461
-#: tickets/index.js:1484
-#: tickets/index.js:1798
+#: tickets/index.js:1466
+#: tickets/index.js:1489
+#: tickets/index.js:1803
 msgid "Checkout"
 msgstr ""
 
-#: tickets/index.js:1467
+#: tickets/index.js:1472
 #, js-format
 msgid "Ticket sales start on %s."
 msgstr ""
 
-#: tickets/index.js:1473
+#: tickets/index.js:1478
 msgid "Ticket sales have ended."
 msgstr ""
 
-#: tickets/index.js:1487
+#: tickets/index.js:1492
 msgid "Checkout billing step"
 msgstr ""
 
-#: tickets/index.js:1504
+#: tickets/index.js:1509
 msgid "Billing information"
 msgstr ""
 
-#: tickets/index.js:1512
+#: tickets/index.js:1517
 msgid "First name"
 msgstr ""
 
-#: tickets/index.js:1542
+#: tickets/index.js:1547
 msgid "First name is required."
 msgstr ""
 
-#: tickets/index.js:1551
+#: tickets/index.js:1556
 msgid "Last name"
 msgstr ""
 
-#: tickets/index.js:1580
+#: tickets/index.js:1585
 msgid "Last name is required."
 msgstr ""
 
-#: tickets/index.js:1591
+#: tickets/index.js:1596
 msgid "Email address"
 msgstr ""
 
-#: tickets/index.js:1633
+#: tickets/index.js:1638
 msgid "We will send your tickets to this email address."
 msgstr ""
 
-#: tickets/index.js:1795
+#: tickets/index.js:1800
 msgid "Setting up payment"
 msgstr ""

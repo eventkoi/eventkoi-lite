@@ -1596,7 +1596,7 @@ export function EventEditAttendees() {
         id: "rsvp_date",
         accessorFn: (row) => row.created,
         header: ({ column }) => (
-          <SortButton title="RSVP date" column={column} />
+          <SortButton title={__("RSVP date", "eventkoi-lite")} column={column} />
         ),
         cell: ({ row }) => {
           const createdRaw = row.original.created;
@@ -2087,7 +2087,7 @@ export function EventEditAttendees() {
       <DataTable
         data={filteredData}
         columns={columns}
-        empty={"No RSVPs are found."}
+        empty={__("No RSVPs are found.", "eventkoi-lite")}
         base={base}
         tableLayout="fixed"
         tableClassName="min-w-0 overflow-x-auto"

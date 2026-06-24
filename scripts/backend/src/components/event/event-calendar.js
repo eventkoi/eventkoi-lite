@@ -1,4 +1,5 @@
 import apiRequest from "@wordpress/api-fetch";
+import { __ } from "@wordpress/i18n";
 import { useEffect, useState } from "react";
 
 import { Panel } from "@/components/panel";
@@ -82,18 +83,18 @@ export function EventCalendar({ disabled = false }) {
   return (
     <Panel className="p-0">
       <Label htmlFor="calendar" className="inline-flex items-center">
-        Event calendar
+        {__("Event calendar", "eventkoi-lite")}
         <ProBadge />
       </Label>
       <div className="text-muted-foreground mb-2">
-        Select which calendars your event will show up in.
+        {__("Select which calendars your event will show up in.", "eventkoi-lite")}
       </div>
       {items.length > 0 && (
         <MultiSelect
           options={items}
-          placeholder="Select calendar(s)"
-          noItems="No calendars are found."
-          searchPlaceholder="Search calendars"
+          placeholder={__("Select calendar(s)", "eventkoi-lite")}
+          noItems={__("No calendars are found.", "eventkoi-lite")}
+          searchPlaceholder={__("Search calendars", "eventkoi-lite")}
           value={selected}
           onSelectionChange={setCalendars}
           disabled={isDisabled}

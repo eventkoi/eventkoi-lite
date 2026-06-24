@@ -119,7 +119,7 @@ export function BulkActions({
           className="flex font-normal w-full sm:w-auto justify-start sm:justify-center"
         >
           <EllipsisVertical className="mr-2 h-4 w-4" aria-hidden="true" />
-          Bulk actions
+          {__("Bulk actions", "eventkoi-lite")}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-[180px]">
@@ -179,7 +179,9 @@ export function BulkActions({
               }}
             >
               <span>
-                {["calendars"].includes(base) ? "Delete" : "Move to trash"}
+                {["calendars"].includes(base)
+                  ? __("Delete", "eventkoi-lite")
+                  : __("Move to trash", "eventkoi-lite")}
               </span>
             </DropdownMenuItem>
             {addTo && selectedCount > 0 && (

@@ -3,6 +3,7 @@
 import { Box } from "@/components/box";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { __ } from "@wordpress/i18n";
 
 // Correct filled Zap icon (from Lucide, your version)
 function ZapFilled({ className }) {
@@ -22,11 +23,11 @@ function ZapFilled({ className }) {
 }
 
 const features = [
-  "Recurring events",
-  "Unlimited calendars",
-  "Custom fields",
-  "Priority support",
-  "30 day money-back guarantee",
+  __("Recurring events", "eventkoi-lite"),
+  __("Unlimited calendars", "eventkoi-lite"),
+  __("Custom fields", "eventkoi-lite"),
+  __("Priority support", "eventkoi-lite"),
+  __("30 day money-back guarantee", "eventkoi-lite"),
 ];
 
 export function ProLaunch({ className, headline, minimal = false }) {
@@ -38,12 +39,14 @@ export function ProLaunch({ className, headline, minimal = false }) {
           <div className="flex items-center gap-[6px] mb-3">
             <ZapFilled />
             <div className="!m-0 !p-0 text-foreground text-[20px] font-medium">
-              {headline ? headline : "Access Pro features"}
+              {headline ? headline : __("Access Pro features", "eventkoi-lite")}
             </div>
           </div>
           <div className="text-sm leading-[1.6] text-muted-foreground mb-4">
-            Thanks for using EventKoi Lite. Get an exclusive 10% discount on all
-            Pro plans when you upgrade today.
+            {__(
+              "Thanks for using EventKoi Lite. Get an exclusive 10% discount on all Pro plans when you upgrade today.",
+              "eventkoi-lite"
+            )}
           </div>
 
           <Button
@@ -58,7 +61,7 @@ export function ProLaunch({ className, headline, minimal = false }) {
               target="_blank"
               rel="noopener noreferrer"
             >
-              Claim discount
+              {__("Claim discount", "eventkoi-lite")}
             </a>
           </Button>
         </div>
@@ -77,7 +80,7 @@ export function ProLaunch({ className, headline, minimal = false }) {
             10%
           </span>
           <span className="font-bold uppercase tracking-wide text-[16px] text-[#3A6667] mt-[4px]">
-            Discount
+            {__("Discount", "eventkoi-lite")}
           </span>
         </div>
       </div>

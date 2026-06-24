@@ -1,3 +1,4 @@
+import { __ } from "@wordpress/i18n";
 import apiRequest from "@wordpress/api-fetch";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
@@ -33,7 +34,7 @@ export function useEventEdit() {
               }}
               className="underline underline-offset-2 hover:no-underline"
             >
-              View event
+              {__("View event", "eventkoi-lite")}
             </div>
           )}
         </div>

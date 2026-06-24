@@ -150,7 +150,10 @@ export function SettingsImport() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <IntegrationCard
           name="The Events Calendar"
-          description="Import events, venues, organizers, and categories from TEC."
+          description={__(
+            "Import events, venues, organizers, and categories from TEC.",
+            "eventkoi-lite",
+          )}
           icon={<img src={TEC_ICON_URL} alt="The Events Calendar" className="h-10 w-10 rounded-lg flex-shrink-0" />}
           loading={tecLoading}
           installed={tecInstalled}

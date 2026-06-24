@@ -62,11 +62,14 @@ export function PhysicalLocationForm({ location, onChange, settings }) {
         <Input
           id={`name-${location.id}`}
           value={location.name}
-          placeholder="e.g., Main Hall, Room A"
+          placeholder={__("e.g., Main Hall, Room A", "eventkoi-lite")}
           onChange={(e) => onChange({ name: e.target.value })}
         />
         <p className="text-muted-foreground text-sm">
-          Give your location a name to help attendees identify it more easily.
+          {__(
+            "Give your location a name to help attendees identify it more easily.",
+            "eventkoi-lite",
+          )}
         </p>
       </div>
 

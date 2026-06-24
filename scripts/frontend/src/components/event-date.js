@@ -20,6 +20,8 @@ import { Panel } from "@/components/panel";
 
 import { MoveRight } from "lucide-react";
 
+import { __, sprintf } from "@wordpress/i18n";
+
 const is24h = eventkoi_params?.time_format === "24";
 
 export function EventDate({ event, setEvent }) {
@@ -95,7 +97,7 @@ export function EventDate({ event, setEvent }) {
       <div className="flex gap-4 items-start">
         <div className="flex flex-col gap-2">
           <Label className={cn(event?.tbc && "text-muted-foreground")}>
-            Start
+            {__("Start", "eventkoi-lite")}
           </Label>
           <div className="flex">
             <Popover>
@@ -147,7 +149,7 @@ export function EventDate({ event, setEvent }) {
         </div>
         <div className="flex flex-col gap-2">
           <Label className={cn(event?.tbc && "text-muted-foreground")}>
-            End
+            {__("End", "eventkoi-lite")}
           </Label>
           <div className="flex">
             <Popover>
@@ -208,20 +210,20 @@ export function EventDate({ event, setEvent }) {
           htmlFor="tbc"
           className="peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
         >
-          Date and time not confirmed.
+          {__("Date and time not confirmed.", "eventkoi-lite")}
         </label>
       </div>
 
       {event?.tbc && (
         <div className="flex flex-col gap-2 pt-2 pb-4">
           <Label htmlFor="tbc_note">
-            Date and time not confirmed notification
+            {__("Date and time not confirmed notification", "eventkoi-lite")}
           </Label>
           <Input
             type="text"
             id="tbc_note"
             value={event?.tbc_note}
-            placeholder="To be confirmed"
+            placeholder={__("To be confirmed", "eventkoi-lite")}
             className="max-w-[422px]"
             onChange={(e) => {
               setEvent((prevState) => ({
@@ -234,9 +236,12 @@ export function EventDate({ event, setEvent }) {
       )}
 
       <div>
-        Current timezone is: {event?.timezone}.{" "}
+        {sprintf(
+          __("Current timezone is: %s.", "eventkoi-lite"),
+          event?.timezone,
+        )}{" "}
         <a href="#" className="underline">
-          Change timezone.
+          {__("Change timezone.", "eventkoi-lite")}
         </a>
       </div>
     </Panel>

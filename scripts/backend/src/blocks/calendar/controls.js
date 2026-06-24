@@ -116,8 +116,8 @@ export const Controls = (props) => {
           }}
           __nextHasNoMarginBottom
         >
-          <ToggleGroupControlOption value="month" label="Month" />
-          <ToggleGroupControlOption value="week" label="Week" />
+          <ToggleGroupControlOption value="month" label={__("Month", "eventkoi-lite")} />
+          <ToggleGroupControlOption value="week" label={__("Week", "eventkoi-lite")} />
         </ToggleGroupControl>
 
         <SelectControl
@@ -173,7 +173,7 @@ export const Controls = (props) => {
         />
       </PanelBody>
       <ToolsPanel
-        label={__("Colors")}
+        label={__("Colors", "eventkoi-lite")}
         resetAll={resetColors}
         hasInnerWrapper={true}
         className="color-block-support-panel"

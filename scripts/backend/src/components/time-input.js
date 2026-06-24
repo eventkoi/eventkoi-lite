@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { __ } from "@wordpress/i18n";
 import { useSettings } from "@/hooks/SettingsContext";
 import { wpToLuxonFormat } from "@/lib/date-utils";
 import { isValid } from "date-fns";
@@ -310,7 +311,7 @@ export function TimeInput({
         ref={inputRef}
         type="text"
         value={inputValue}
-        placeholder="Set time"
+        placeholder={__("Set time", "eventkoi-lite")}
         onChange={handleChange}
         onBlur={handleBlur}
         onFocus={handleFocus}
