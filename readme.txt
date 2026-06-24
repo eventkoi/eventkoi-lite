@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.3.17.3
+Stable tag: 1.3.18.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,21 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.18.0 – Per-field location data, ticket controls & translation coverage – 2026-06-24 =
+* New: Location data is now split into separate fields (name, address, unit, city, state, country, postal code), so the Event Data block, Query Loop and bindings can show just the city, just the address, and so on.
+* New: Set a total ticket quantity cap per event, and require a Terms & Conditions checkbox before a ticket order or RSVP can be submitted.
+* New: Each calendar now has a subscribable iCal feed visitors can add to their own calendar app.
+* New: A single-package toggle for multi-day, selected-date events, so the whole set of dates can be treated as one package.
+* New: A "has location" flag for page builders, so you can show or hide elements based on whether an event has a location.
+* Improvement: The Beaver Builder calendar module can now show multiple calendars, or all of them, at once.
+* Improvement: Admin pages now have descriptive, per-screen titles in the browser tab.
+* Improvement: Much broader translation coverage. Many admin and frontend strings that could not be translated before are now translatable, sentences that were stitched together from fragments were rewritten as whole strings, and counters use proper plural forms.
+* Fix: Headings inside the event description now follow your theme's heading styles instead of being flattened by the plugin's styles.
+* Fix: "Upcoming" event lists now keep events that are currently in progress, by testing the end time, and a duplicate settings tab on the Query Loop block was removed.
+* Fix: The Date with Summary field now lists every date of a multi-date event on the front end, matching the editor.
+* Fix: RSVP summaries now resolve correctly for selected-date and package events instead of failing.
+* Fix: Corrected package date ordering, the per-day purchase guard, and Beaver Builder legacy calendar selection.
 
 = 1.3.17.3 – Translations, mobile dialogs & accented slugs – 2026-06-19 =
 * New: The React interface (calendar, RSVP, share) now applies your Loco/.mo translations, so the UI is fully translatable, not just the PHP strings.
