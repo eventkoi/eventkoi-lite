@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { __ } from "@wordpress/i18n";
+import { __, _n, sprintf } from "@wordpress/i18n";
 import apiRequest from "@wordpress/api-fetch";
 import { useNavigate } from "react-router-dom";
 import { Heading } from "@/components/heading";
@@ -249,7 +249,10 @@ function IntegrationCard({
         {!loading && available && !done && !importing && (
           <>
             <span className="text-xs text-muted-foreground">
-              {count} {count === 1 ? __("event", "eventkoi-lite") : __("events", "eventkoi-lite")} {__("available", "eventkoi-lite")}
+              {sprintf(
+                _n("%d event available", "%d events available", count, "eventkoi-lite"),
+                count,
+              )}
             </span>
             <Dialog>
               <DialogTrigger asChild>
@@ -308,7 +311,10 @@ function IntegrationCard({
         {!loading && done && (
           <>
             <span className="inline-flex items-center gap-1.5 text-xs text-green-600 font-medium">
-              {result?.imported} {result?.imported === 1 ? __("event", "eventkoi-lite") : __("events", "eventkoi-lite")} {__("imported", "eventkoi-lite")}
+              {sprintf(
+                _n("%d event imported", "%d events imported", result?.imported || 0, "eventkoi-lite"),
+                result?.imported || 0,
+              )}
             </span>
             <Button
               variant="ghost"
@@ -374,7 +380,10 @@ function ICSImportCard({
         {!importing && done && (
           <>
             <span className="inline-flex items-center gap-1.5 text-xs text-green-600 font-medium">
-              {result?.imported} {result?.imported === 1 ? __("event", "eventkoi-lite") : __("events", "eventkoi-lite")} {__("imported", "eventkoi-lite")}
+              {sprintf(
+                _n("%d event imported", "%d events imported", result?.imported || 0, "eventkoi-lite"),
+                result?.imported || 0,
+              )}
             </span>
             <Button
               variant="ghost"

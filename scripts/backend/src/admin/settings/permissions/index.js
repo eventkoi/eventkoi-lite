@@ -70,9 +70,9 @@ export function SettingsPermissions() {
       if (response?.settings) {
         setSettings(response.settings);
       }
-      showToast({ message: __("Permissions saved.", "eventkoi") });
+      showToast({ message: __("Permissions saved.", "eventkoi-lite") });
     } catch (error) {
-      showToastError(error?.message ?? __("Something went wrong.", "eventkoi"));
+      showToastError(error?.message ?? __("Something went wrong.", "eventkoi-lite"));
     } finally {
       setIsSaving(false);
     }
@@ -109,7 +109,7 @@ export function SettingsPermissions() {
       <Box>
         <Panel>
           <p className="text-sm text-muted-foreground">
-            {__("No additional user roles are available to configure.", "eventkoi")}
+            {__("No additional user roles are available to configure.", "eventkoi-lite")}
           </p>
         </Panel>
       </Box>
@@ -120,7 +120,7 @@ export function SettingsPermissions() {
     <Box>
       <div className="grid w-full">
         <Panel variant="header">
-          <Heading level={3}>{__("User permissions", "eventkoi")}</Heading>
+          <Heading level={3}>{__("User permissions", "eventkoi-lite")}</Heading>
         </Panel>
         <Separator />
         <Panel className="gap-6">
@@ -133,10 +133,10 @@ export function SettingsPermissions() {
 
           <div className="grid gap-6 md:grid-cols-[260px_1fr]">
             <div className="space-y-2">
-              <Label>{__("User role", "eventkoi")}</Label>
+              <Label>{__("User role", "eventkoi-lite")}</Label>
               <Select value={role} onValueChange={switchRole}>
                 <SelectTrigger className="w-full">
-                  <SelectValue placeholder={__("Select a role", "eventkoi")} />
+                  <SelectValue placeholder={__("Select a role", "eventkoi-lite")} />
                 </SelectTrigger>
                 <SelectContent>
                   {roles.map((r) => (
@@ -149,7 +149,7 @@ export function SettingsPermissions() {
             </div>
 
             <div className="space-y-4">
-              <Label>{__("Grant this user access to:", "eventkoi")}</Label>
+              <Label>{__("Grant this user access to:", "eventkoi-lite")}</Label>
               <div className="grid gap-5">
                 {groups.map(([groupKey, group]) => (
                   <div key={groupKey} className="space-y-2">
@@ -188,7 +188,7 @@ export function SettingsPermissions() {
                 disabled={isSaving}
                 className="text-xs text-muted-foreground"
               >
-                {__("Reset all user permissions", "eventkoi")}
+                {__("Reset all user permissions", "eventkoi-lite")}
               </Button>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -198,10 +198,10 @@ export function SettingsPermissions() {
                 disabled={isSaving || !role}
                 className="text-xs text-muted-foreground"
               >
-                {__("Reset this role's permissions", "eventkoi")}
+                {__("Reset this role's permissions", "eventkoi-lite")}
               </Button>
               <Button onClick={save} disabled={isSaving || !role}>
-                {isSaving ? __("Saving...", "eventkoi") : __("Save", "eventkoi")}
+                {isSaving ? __("Saving...", "eventkoi-lite") : __("Save", "eventkoi-lite")}
               </Button>
             </div>
           </div>

@@ -7,7 +7,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-06-24T16:55:25+00:00\n"
+"POT-Creation-Date: 2026-06-24T17:16:08+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -55,6 +55,7 @@ msgstr ""
 #: admin/class-menus.php:141
 #: admin/class-menus.php:142
 #: admin/class-menus.php:154
+#: core/class-permissions.php:68
 #: core/class-post-types.php:115
 #: admin/events/overview/index.js:935
 #: admin/index.js:88
@@ -66,6 +67,7 @@ msgstr ""
 
 #: admin/class-menus.php:155
 #: core/class-beaver-modules.php:96
+#: core/class-permissions.php:75
 #: core/class-post-types.php:58
 #: admin/calendars/overview/index.js:814
 #: admin/index.js:92
@@ -1434,6 +1436,79 @@ msgstr ""
 msgid "%s is required."
 msgstr ""
 
+#: core/class-permissions.php:70
+msgid "Add new events"
+msgstr ""
+
+#: core/class-permissions.php:71
+msgid "Edit existing events"
+msgstr ""
+
+#: core/class-permissions.php:77
+msgid "Add new calendars"
+msgstr ""
+
+#: core/class-permissions.php:78
+msgid "Edit existing calendars"
+msgstr ""
+
+#: core/class-permissions.php:82
+msgid "Tickets & RSVP"
+msgstr ""
+
+#: core/class-permissions.php:84
+msgid "Check-in attendees"
+msgstr ""
+
+#: core/class-permissions.php:85
+msgid "View attendees"
+msgstr ""
+
+#: core/class-permissions.php:86
+msgid "Manage attendees"
+msgstr ""
+
+#: core/class-permissions.php:87
+msgid "View ticket sales and orders"
+msgstr ""
+
+#: core/class-permissions.php:88
+msgid "Manage ticket sales and orders (including refunds)"
+msgstr ""
+
+#: core/class-permissions.php:92
+#: blocks/event-data/event-data-controls.js:234
+msgid "EventKoi settings"
+msgstr ""
+
+#: core/class-permissions.php:94
+msgid "View & manage default settings"
+msgstr ""
+
+#: core/class-permissions.php:95
+msgid "View & manage custom fields"
+msgstr ""
+
+#: core/class-permissions.php:96
+msgid "View & manage emails"
+msgstr ""
+
+#: core/class-permissions.php:97
+msgid "View & manage payments"
+msgstr ""
+
+#: core/class-permissions.php:98
+msgid "View & manage API & integrations"
+msgstr ""
+
+#: core/class-permissions.php:99
+msgid "View & manage import"
+msgstr ""
+
+#: core/class-permissions.php:100
+msgid "View & manage license activation"
+msgstr ""
+
 #: core/class-post-types.php:60
 msgid "Event calendars"
 msgstr ""
@@ -1539,8 +1614,8 @@ msgid "View event"
 msgstr ""
 
 #: core/class-post-types.php:125
-#: admin/settings/import/index.js:319
-#: admin/settings/import/index.js:385
+#: admin/settings/import/index.js:325
+#: admin/settings/import/index.js:394
 msgid "View events"
 msgstr ""
 
@@ -3509,7 +3584,7 @@ msgstr[1] ""
 
 #: admin/events/overview/index.js:909
 #: admin/events/overview/index.js:992
-#: admin/settings/import/index.js:288
+#: admin/settings/import/index.js:291
 #: components/confirm-dialog.js:77
 #: components/event/event-image.js:308
 #: components/ui/rich-text-editor.js:584
@@ -3530,15 +3605,15 @@ msgstr ""
 
 #: admin/events/overview/index.js:941
 #: admin/events/overview/index.js:996
-#: admin/settings/import/index.js:257
-#: admin/settings/import/index.js:293
-#: admin/settings/import/index.js:419
+#: admin/settings/import/index.js:260
+#: admin/settings/import/index.js:296
+#: admin/settings/import/index.js:428
 #: components/url-import-dialog.js:146
 msgid "Import"
 msgstr ""
 
 #: admin/events/overview/index.js:946
-#: admin/settings/import/index.js:406
+#: admin/settings/import/index.js:415
 #: components/url-import-dialog.js:79
 msgid "Import from URL"
 msgstr ""
@@ -3555,22 +3630,22 @@ msgstr ""
 
 #: admin/events/overview/index.js:953
 #: admin/events/overview/index.js:969
-#: admin/settings/import/index.js:265
+#: admin/settings/import/index.js:268
 msgid "Import from The Events Calendar"
 msgstr ""
 
 #: admin/events/overview/index.js:973
-#: admin/settings/import/index.js:269
+#: admin/settings/import/index.js:272
 msgid "This will import the following into EventKoi:"
 msgstr ""
 
 #: admin/events/overview/index.js:982
-#: admin/settings/import/index.js:278
+#: admin/settings/import/index.js:281
 msgid "Venues, categories & featured images"
 msgstr ""
 
 #: admin/events/overview/index.js:986
-#: admin/settings/import/index.js:282
+#: admin/settings/import/index.js:285
 msgid "Previously imported events will be skipped."
 msgstr ""
 
@@ -3833,6 +3908,7 @@ msgid "Restore defaults"
 msgstr ""
 
 #: admin/settings/emails/index.js:495
+#: admin/settings/permissions/index.js:204
 #: components/event/event-nav-bar.js:303
 #: components/event/event-nav-bar.js:376
 #: components/order/OrderActivity.js:190
@@ -3904,54 +3980,47 @@ msgstr ""
 msgid "All events already imported"
 msgstr ""
 
-#: admin/settings/import/index.js:252
-#: admin/settings/import/index.js:311
-#: admin/settings/import/index.js:377
-msgid "event"
-msgstr ""
+#: admin/settings/import/index.js:253
+#, js-format
+msgid "%d event available"
+msgid_plural "%d events available"
+msgstr[0] ""
+msgstr[1] ""
 
-#: admin/settings/import/index.js:252
-#: admin/settings/import/index.js:311
-#: admin/settings/import/index.js:377
-#: components/event/event-date-recurring.js:931
-msgid "events"
-msgstr ""
-
-#: admin/settings/import/index.js:252
-msgid "available"
-msgstr ""
-
-#: admin/settings/import/index.js:304
-#: admin/settings/import/index.js:370
+#: admin/settings/import/index.js:307
+#: admin/settings/import/index.js:376
 msgid "Importing events..."
 msgstr ""
 
-#: admin/settings/import/index.js:311
-#: admin/settings/import/index.js:377
-msgid "imported"
-msgstr ""
+#: admin/settings/import/index.js:315
+#: admin/settings/import/index.js:384
+#, js-format
+msgid "%d event imported"
+msgid_plural "%d events imported"
+msgstr[0] ""
+msgstr[1] ""
 
-#: admin/settings/import/index.js:347
+#: admin/settings/import/index.js:353
 msgid "ICS / iCal File"
 msgstr ""
 
-#: admin/settings/import/index.js:350
+#: admin/settings/import/index.js:356
 msgid "Import from Google Calendar, Apple Calendar, Outlook, or any .ics file."
 msgstr ""
 
-#: admin/settings/import/index.js:359
+#: admin/settings/import/index.js:365
 msgid "Select a .ics file to import"
 msgstr ""
 
-#: admin/settings/import/index.js:362
+#: admin/settings/import/index.js:368
 msgid "Upload"
 msgstr ""
 
-#: admin/settings/import/index.js:409
+#: admin/settings/import/index.js:418
 msgid "Paste a link to any event page to import it."
 msgstr ""
 
-#: admin/settings/import/index.js:416
+#: admin/settings/import/index.js:425
 msgid "Supports structured data & OG tags"
 msgstr ""
 
@@ -4105,6 +4174,51 @@ msgstr ""
 
 #: admin/settings/overview/index.js:642
 msgid "View/edit templates"
+msgstr ""
+
+#: admin/settings/permissions/index.js:73
+msgid "Permissions saved."
+msgstr ""
+
+#: admin/settings/permissions/index.js:75
+#: components/settings/api.js:40
+msgid "Something went wrong."
+msgstr ""
+
+#: admin/settings/permissions/index.js:112
+msgid "No additional user roles are available to configure."
+msgstr ""
+
+#: admin/settings/permissions/index.js:123
+msgid "User permissions"
+msgstr ""
+
+#: admin/settings/permissions/index.js:136
+msgid "User role"
+msgstr ""
+
+#: admin/settings/permissions/index.js:139
+msgid "Select a role"
+msgstr ""
+
+#: admin/settings/permissions/index.js:152
+msgid "Grant this user access to:"
+msgstr ""
+
+#: admin/settings/permissions/index.js:191
+msgid "Reset all user permissions"
+msgstr ""
+
+#: admin/settings/permissions/index.js:201
+msgid "Reset this role's permissions"
+msgstr ""
+
+#: admin/settings/permissions/index.js:204
+#: components/calendar/calendar-nav-bar.js:83
+#: components/event/event-nav-bar.js:307
+#: components/event/event-nav-bar.js:381
+#: components/event-nav-bar.js:143
+msgid "Save"
 msgstr ""
 
 #: admin/settings/submissions/index.js:22
@@ -4586,10 +4700,6 @@ msgstr ""
 msgid "This field uses the formats configured in"
 msgstr ""
 
-#: blocks/event-data/event-data-controls.js:234
-msgid "EventKoi settings"
-msgstr ""
-
 #: blocks/event-data/event-data-controls.js:245
 msgid "Event Source"
 msgstr ""
@@ -4888,13 +4998,6 @@ msgstr ""
 #: components/event/event-nav-bar.js:357
 #: components/event-nav-bar.js:130
 msgid "Preview"
-msgstr ""
-
-#: components/calendar/calendar-nav-bar.js:83
-#: components/event/event-nav-bar.js:307
-#: components/event/event-nav-bar.js:381
-#: components/event-nav-bar.js:143
-msgid "Save"
 msgstr ""
 
 #: components/calendar/calendar-nav-bar.js:83
@@ -5206,6 +5309,10 @@ msgstr ""
 
 #: components/event/event-date-recurring.js:915
 msgid "After"
+msgstr ""
+
+#: components/event/event-date-recurring.js:931
+msgid "events"
 msgstr ""
 
 #: components/event/event-date-recurring.js:1007
@@ -5896,10 +6003,6 @@ msgstr ""
 
 #: components/settings/api.js:37
 msgid "Unexpected response."
-msgstr ""
-
-#: components/settings/api.js:40
-msgid "Something went wrong."
 msgstr ""
 
 #: components/settings/api.js:50
