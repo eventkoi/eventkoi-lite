@@ -70,6 +70,7 @@ export function useCalendarData({
   id,
   calendars,
   display,
+  searchTerm = "",
   timeframe,
   context,
   defaultMonth,
@@ -383,10 +384,30 @@ export function useCalendarData({
           params.set("date_end", dateEnd);
         }
       }
+
+      const listSearch = (searchTerm || "").trim();
+      if (listSearch) {
+        params.set("search", listSearch);
+      }
+
       const response = await publicApi({
         path: `/calendar_events?${params.toString()}`,
         method: "get",
       });
+
+      // A search returns a flat set of matches across all dates (capped
+      // server-side), not a paginated window, so render it as-is.
+      if (listSearch) {
+        const matched = Array.isArray(response.events) ? response.events : [];
+        const matchedTotal =
+          Number.parseInt(response.total, 10) || matched.length;
+        setAllEvents(matched);
+        setListTotal(matchedTotal);
+        setListPage(1);
+        setListHasMore(false);
+        return;
+      }
+
       const rawFirstPageEvents = Array.isArray(response.events) ? response.events : [];
       const firstPageEvents =
         listMaxResults > 0
@@ -511,6 +532,24 @@ export function useCalendarData({
 
     getInitialCalendar();
   }, []);
+
+  // Debounced search refetch for list mode. Skips the initial mount (handled by
+  // the effect above) and re-runs on every later search change, including
+  // clearing the box, which restores the full list.
+  const listSearchInitRef = useRef(false);
+  useEffect(() => {
+    if (!listSearchInitRef.current) {
+      listSearchInitRef.current = true;
+      return undefined;
+    }
+    if (display !== "list") {
+      return undefined;
+    }
+    const handle = setTimeout(() => {
+      loadAllEvents();
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [searchTerm]);
 
   return {
     calendar,

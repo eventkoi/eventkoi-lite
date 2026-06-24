@@ -15,6 +15,8 @@ export function ToolbarDesktop(props) {
     setCurrentDate,
     view,
     setView,
+    display,
+    setDisplay,
     isTodayInRange,
     search,
     setSearch,
@@ -129,7 +131,7 @@ export function ToolbarDesktop(props) {
             />
           </div>
           <div className="shrink-0">
-            <ViewToggle calendarApi={calendarApi} view={view} setView={setView} />
+            <ViewToggle calendarApi={calendarApi} view={view} setView={setView} display={display} setDisplay={setDisplay} />
           </div>
         </div>
         <div className="w-full min-w-0">
@@ -210,7 +212,7 @@ export function ToolbarDesktop(props) {
 
       {/* Right: view toggle */}
       <div className="shrink-0">
-        <ViewToggle calendarApi={calendarApi} view={view} setView={setView} />
+        <ViewToggle calendarApi={calendarApi} view={view} setView={setView} display={display} setDisplay={setDisplay} />
       </div>
     </div>
   );

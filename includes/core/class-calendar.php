@@ -1113,6 +1113,121 @@ class Calendar {
 			unset( $evt );
 		}
 
+		/**
+		 * Inject calendar_id, calendar_color and calendar_name into each event item.
+		 *
+		 * Performance optimization:
+		 * - Fast-path when a single calendar context is requested.
+		 * - Otherwise resolve terms in bulk instead of per-event wp_get_post_terms().
+		 */
+		$requested_calendar_ids = array_values(
+			array_filter(
+				array_map( 'absint', (array) $ids )
+			)
+		);
+
+		if ( 1 === count( $requested_calendar_ids ) ) {
+			$single_calendar_id    = $requested_calendar_ids[0];
+			$single_calendar_color = eventkoi_default_calendar_color();
+			$single_calendar_name  = '';
+
+			if ( $single_calendar_id > 0 ) {
+				// Save/restore the singleton so the REST caller can still
+				// read ::get_meta() for its own context after we return.
+				$prev_calendar         = self::$calendar;
+				$prev_calendar_id      = self::$calendar_id;
+				$single_cal_obj        = new \EventKoi\Core\Calendar( $single_calendar_id );
+				$single_calendar_color = $single_cal_obj::get_color();
+				$single_calendar_name  = $single_cal_obj::get_name();
+				self::$calendar        = $prev_calendar;
+				self::$calendar_id     = $prev_calendar_id;
+			}
+
+			foreach ( $results as &$evt ) {
+				$evt['calendar_id']    = $single_calendar_id;
+				$evt['calendar_color'] = $single_calendar_color;
+				$evt['calendar_name']  = $single_calendar_name;
+			}
+			unset( $evt );
+		} elseif ( ! empty( $results ) ) {
+			$event_ids = array_values(
+				array_unique(
+					array_filter(
+						array_map(
+							static function ( $evt ) {
+								return isset( $evt['event_id'] ) ? absint( $evt['event_id'] ) : 0;
+							},
+							$results
+						)
+					)
+				)
+			);
+
+			$event_primary_calendar = array();
+			$prev_calendar          = self::$calendar;
+			$prev_calendar_id       = self::$calendar_id;
+			$calendar_color_cache   = array();
+			$calendar_name_cache    = array();
+
+			if ( ! empty( $event_ids ) ) {
+				$object_terms = wp_get_object_terms(
+					$event_ids,
+					'event_cal',
+					array( 'fields' => 'all_with_object_id' )
+				);
+
+				if ( ! is_wp_error( $object_terms ) && ! empty( $object_terms ) ) {
+					foreach ( $object_terms as $term ) {
+						$object_id = isset( $term->object_id ) ? absint( $term->object_id ) : 0;
+						$term_id   = isset( $term->term_id ) ? absint( $term->term_id ) : 0;
+
+						if ( $object_id <= 0 || $term_id <= 0 ) {
+							continue;
+						}
+
+						// Keep first term encountered as primary calendar.
+						if ( ! isset( $event_primary_calendar[ $object_id ] ) ) {
+							$event_primary_calendar[ $object_id ] = $term_id;
+						}
+					}
+				}
+			}
+
+			foreach ( $results as &$evt ) {
+				$event_id = isset( $evt['event_id'] ) ? absint( $evt['event_id'] ) : 0;
+				if ( $event_id <= 0 ) {
+					$evt['calendar_id']    = 0;
+					$evt['calendar_color'] = eventkoi_default_calendar_color();
+					continue;
+				}
+
+				$primary_cal_id = isset( $event_primary_calendar[ $event_id ] )
+					? absint( $event_primary_calendar[ $event_id ] )
+					: 0;
+
+				if ( $primary_cal_id <= 0 ) {
+					$evt['calendar_id']    = 0;
+					$evt['calendar_color'] = eventkoi_default_calendar_color();
+					continue;
+				}
+
+				if ( ! isset( $calendar_color_cache[ $primary_cal_id ] ) ) {
+					$cal_obj                                 = new \EventKoi\Core\Calendar( $primary_cal_id );
+					$calendar_color_cache[ $primary_cal_id ] = $cal_obj::get_color();
+					$calendar_name_cache[ $primary_cal_id ]  = $cal_obj::get_name();
+				}
+
+				$evt['calendar_id']    = $primary_cal_id;
+				$evt['calendar_color'] = $calendar_color_cache[ $primary_cal_id ];
+				$evt['calendar_name']  = isset( $calendar_name_cache[ $primary_cal_id ] ) ? $calendar_name_cache[ $primary_cal_id ] : '';
+			}
+			unset( $evt );
+
+			// Restore so the REST caller's ::get_meta() reads its own context.
+			self::$calendar    = $prev_calendar;
+			self::$calendar_id = $prev_calendar_id;
+		}
+
 		return array(
 			'items' => $results,
 			'total' => $total,

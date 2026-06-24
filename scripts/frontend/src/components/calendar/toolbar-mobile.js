@@ -18,6 +18,8 @@ export function ToolbarMobile(props) {
     setCurrentDate,
     view,
     setView,
+    display,
+    setDisplay,
     isTodayInRange,
     search,
     setSearch,
@@ -75,7 +77,7 @@ export function ToolbarMobile(props) {
           setCurrentDate={setCurrentDate}
           isTodayInRange={isTodayInRange}
         />
-        <ViewToggle calendarApi={calendarApi} view={view} setView={setView} />
+        <ViewToggle calendarApi={calendarApi} view={view} setView={setView} display={display} setDisplay={setDisplay} />
       </div>
 
       {/* Row 2 */}

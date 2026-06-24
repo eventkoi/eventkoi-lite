@@ -35,6 +35,19 @@ export function Calendar(props) {
 
   const calendarRef = useRef(null);
 
+  // Active display is stateful so the view toggle can switch between the
+  // calendar grid and the list in place. Initialised from the block's
+  // `display` attribute (which also acts as the default view).
+  const [activeDisplay, setActiveDisplay] = useState(
+    display === "list" ? "list" : "calendar"
+  );
+  const [search, setSearch] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+
+  const effectiveId = calendars || id;
+  const trimmedSearch = (search || "").trim();
+  const isGlobalSearch = trimmedSearch.length > 0;
+
   const {
     calendar,
     events,
@@ -51,7 +64,12 @@ export function Calendar(props) {
     loadMoreListEvents,
     loadEventsForView,
     lastRangeRef,
-  } = useCalendarData({ ...props, calendarRef });
+  } = useCalendarData({
+    ...props,
+    display: activeDisplay,
+    searchTerm: trimmedSearch,
+    calendarRef,
+  });
 
   const {
     selectedEvent,
@@ -60,8 +78,6 @@ export function Calendar(props) {
     setAnchorPos,
     ignoreNextOutsideClick,
   } = useEventPopover();
-
-  const [search, setSearch] = useState("");
 
   /**
    * Determine initial timezone from URL (?tz=), override, or site default.
@@ -107,18 +123,13 @@ export function Calendar(props) {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  const [searchResults, setSearchResults] = useState([]);
-  const effectiveId = calendars || id;
-  const trimmedSearch = (search || "").trim();
-  const isGlobalSearch = trimmedSearch.length > 0;
-
   /**
    * Global calendar search: fetch matching events across all dates (not just the
    * visible month) so a search in one month surfaces events in any other month.
    * Debounced; clears when the box is emptied.
    */
   useEffect(() => {
-    if (!isGlobalSearch || display === "list") {
+    if (!isGlobalSearch || activeDisplay === "list") {
       setSearchResults([]);
       return undefined;
     }
@@ -150,7 +161,7 @@ export function Calendar(props) {
       active = false;
       clearTimeout(handle);
     };
-  }, [isGlobalSearch, trimmedSearch, effectiveId, display, timezone]);
+  }, [isGlobalSearch, trimmedSearch, effectiveId, activeDisplay, timezone]);
 
   const isEmpty =
     !calendar ||
@@ -158,28 +169,6 @@ export function Calendar(props) {
     (!Array.isArray(calendar) && Object.keys(calendar).length === 0);
 
   const eventColor = props.color || calendar?.color;
-
-  if (display === "list") {
-    return (
-      <CalendarListMode
-        events={allEvents}
-        timezone={timezone}
-        setTimezone={setTimezone}
-        timeFormat={timeFormat}
-        setTimeFormat={setTimeFormat}
-        showImage={showImage}
-        showDescription={showDescription}
-        showLocation={showLocation}
-        borderStyle={borderStyle}
-        borderSize={borderSize}
-        loading={loading}
-        total={listTotal}
-        hasMore={listHasMore}
-        loadingMore={listLoadingMore}
-        onLoadMore={loadMoreListEvents}
-      />
-    );
-  }
 
   return (
     <div className="relative">
@@ -190,6 +179,8 @@ export function Calendar(props) {
         setCurrentDate={setCurrentDate}
         view={view}
         setView={setView}
+        display={activeDisplay}
+        setDisplay={setActiveDisplay}
         events={isGlobalSearch ? searchResults : allEvents}
         globalSearch={isGlobalSearch}
         timezone={timezone}
@@ -198,39 +189,61 @@ export function Calendar(props) {
         setSearch={setSearch}
       />
 
-      <div className="flex justify-start md:justify-end py-4 text-sm text-foreground">
-        {isEmpty ? (
-          <Skeleton className="h-5 w-40 rounded-md" />
-        ) : (
-          <TimezonePicker
-            timezone={timezone}
-            setTimezone={setTimezone}
-            timeFormat={timeFormat}
-            setTimeFormat={setTimeFormat}
-          />
-        )}
-      </div>
+      {activeDisplay === "calendar" && (
+        <div className="flex justify-start md:justify-end py-4 text-sm text-foreground">
+          {isEmpty ? (
+            <Skeleton className="h-5 w-40 rounded-md" />
+          ) : (
+            <TimezonePicker
+              timezone={timezone}
+              setTimezone={setTimezone}
+              timeFormat={timeFormat}
+              setTimeFormat={setTimeFormat}
+            />
+          )}
+        </div>
+      )}
 
-      <CalendarGridMode
-        calendarRef={calendarRef}
-        events={events}
-        view={view}
-        timezone={timezone}
-        setCurrentDate={setCurrentDate}
-        lastRangeRef={lastRangeRef}
-        loadEventsForView={loadEventsForView}
-        selectedEvent={selectedEvent}
-        setSelectedEvent={setSelectedEvent}
-        anchorPos={anchorPos}
-        setAnchorPos={setAnchorPos}
-        ignoreNextOutsideClick={ignoreNextOutsideClick}
-        calendar={calendar}
-        isEmpty={isEmpty}
-        eventColor={eventColor}
-        timeFormat={timeFormat}
-        startday={startday}
-        initialDate={currentDate || initialDate}
-      />
+      {activeDisplay === "list" ? (
+        <CalendarListMode
+          events={allEvents}
+          timezone={timezone}
+          setTimezone={setTimezone}
+          timeFormat={timeFormat}
+          setTimeFormat={setTimeFormat}
+          showImage={showImage}
+          showDescription={showDescription}
+          showLocation={showLocation}
+          borderStyle={borderStyle}
+          borderSize={borderSize}
+          loading={loading}
+          total={listTotal}
+          hasMore={listHasMore}
+          loadingMore={listLoadingMore}
+          onLoadMore={loadMoreListEvents}
+        />
+      ) : (
+        <CalendarGridMode
+          calendarRef={calendarRef}
+          events={events}
+          view={view}
+          timezone={timezone}
+          setCurrentDate={setCurrentDate}
+          lastRangeRef={lastRangeRef}
+          loadEventsForView={loadEventsForView}
+          selectedEvent={selectedEvent}
+          setSelectedEvent={setSelectedEvent}
+          anchorPos={anchorPos}
+          setAnchorPos={setAnchorPos}
+          ignoreNextOutsideClick={ignoreNextOutsideClick}
+          calendar={calendar}
+          isEmpty={isEmpty}
+          eventColor={eventColor}
+          timeFormat={timeFormat}
+          startday={startday}
+          initialDate={currentDate || initialDate}
+        />
+      )}
     </div>
   );
 }

@@ -269,6 +269,19 @@ export function ListView({
                 {buildTimeline(event, wpTz, timeFormat)}
               </div>
 
+              {event.calendar_name && (
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground m-0">
+                  <span
+                    className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{
+                      backgroundColor: event.calendar_color || "currentColor",
+                    }}
+                    aria-hidden="true"
+                  />
+                  <span>{event.calendar_name}</span>
+                </div>
+              )}
+
               <h3 className="m-0">
                 <a href={getEventUrl(event, wpTz)} className="no-underline">
                   {event.title}
