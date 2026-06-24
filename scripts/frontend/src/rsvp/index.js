@@ -1,6 +1,6 @@
 "use client";
 
-import { __, sprintf } from "@wordpress/i18n";
+import { __, _n, sprintf } from "@wordpress/i18n";
 import { useEffect, useMemo, useState } from "react";
 import { decodeEntities } from "@wordpress/html-entities";
 import { createRoot } from "react-dom/client";
@@ -610,10 +610,13 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
                 {typeof maxGuestsAllowed === "number" && (
                   <div className="text-xs text-muted-foreground">
                     {sprintf(
-                      /* translators: %d: maximum guests */
-                      maxGuestsAllowed === 1
-                        ? __("Max %d guest", "eventkoi-lite")
-                        : __("Max %d guests", "eventkoi-lite"),
+                      /* translators: %d: maximum number of guests */
+                      _n(
+                        "Max %d guest",
+                        "Max %d guests",
+                        maxGuestsAllowed,
+                        "eventkoi-lite"
+                      ),
                       maxGuestsAllowed
                     )}
                   </div>

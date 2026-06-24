@@ -1,4 +1,5 @@
 import apiRequest from "@wordpress/api-fetch";
+import { createInterpolateElement } from "@wordpress/element";
 import { __, sprintf } from "@wordpress/i18n";
 import { DateTime } from "luxon";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -412,12 +413,10 @@ export function DashboardOnboarding() {
             <div className="flex flex-col py-10 max-w-[325px] m-auto">
               <div className="">
                 <div className="text-[24px] font-medium leading-7 text-black">
-                  <span className="block">
-                    {__("You're ready to", "eventkoi-lite")}
-                  </span>
-                  <span className="block">
-                    {__("start using EventKoi!", "eventkoi-lite")}
-                  </span>
+                  {createInterpolateElement(
+                    __("You're ready to<br />start using EventKoi!", "eventkoi-lite"),
+                    { br: <br /> },
+                  )}
                 </div>
                 <div className="text-[14px] text-[#808080] mt-4 font-normal">
                   <span>
