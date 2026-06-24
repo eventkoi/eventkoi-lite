@@ -7,7 +7,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-06-24T01:45:21+00:00\n"
+"POT-Creation-Date: 2026-06-24T16:55:25+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -4909,7 +4909,7 @@ msgstr ""
 
 #: components/calendar/calendar-slug.js:21
 #: components/event/event-slug.js:37
-#: components/event/physical-location-form.js:73
+#: components/event/physical-location-form.js:74
 msgid "Address"
 msgstr ""
 
@@ -4956,9 +4956,8 @@ msgid "Add to calendar"
 msgstr ""
 
 #: components/calendar/EventPopover.js:696
-#: components/event/physical-location-form.js:182
-#: components/event/physical-location-form.js:210
-#: components/event/physical-location-form.js:235
+#: components/event/physical-location-form.js:220
+#: components/event/physical-location-form.js:245
 #: components/calendar/EventPopover.js:697
 msgid "Share"
 msgstr ""
@@ -5506,94 +5505,81 @@ msgstr ""
 msgid "Event link text"
 msgstr ""
 
-#: components/event/physical-location-form.js:80
+#: components/event/physical-location-form.js:81
 msgid "Street address"
 msgstr ""
 
-#: components/event/physical-location-form.js:93
+#: components/event/physical-location-form.js:94
 msgid "Apartment, unit, building name"
 msgstr ""
 
-#: components/event/physical-location-form.js:100
-#: components/event/physical-location-form.js:104
+#: components/event/physical-location-form.js:101
+#: components/event/physical-location-form.js:105
 msgid "City"
 msgstr ""
 
-#: components/event/physical-location-form.js:110
-#: components/event/physical-location-form.js:114
+#: components/event/physical-location-form.js:111
+#: components/event/physical-location-form.js:115
 msgid "State"
 msgstr ""
 
-#: components/event/physical-location-form.js:120
-#: components/event/physical-location-form.js:124
+#: components/event/physical-location-form.js:121
+#: components/event/physical-location-form.js:125
 msgid "Country"
 msgstr ""
 
-#: components/event/physical-location-form.js:130
-#: components/event/physical-location-form.js:134
+#: components/event/physical-location-form.js:131
+#: components/event/physical-location-form.js:135
 msgid "Postal code"
 msgstr ""
 
-#: components/event/physical-location-form.js:177
+#: components/event/physical-location-form.js:178
 msgid "How to get the Google Maps embed link:"
 msgstr ""
 
-#: components/event/physical-location-form.js:180
+#: components/event/physical-location-form.js:181
 msgid "Find your address in Google Maps."
 msgstr ""
 
-#: components/event/physical-location-form.js:182
-msgid "Click on the"
-msgstr ""
-
-#: components/event/physical-location-form.js:182
-msgid "button."
-msgstr ""
-
-#: components/event/physical-location-form.js:185
-msgid "Go to"
-msgstr ""
-
-#: components/event/physical-location-form.js:185
-#: components/event/physical-location-form.js:218
-#: components/event/physical-location-form.js:242
-msgid "Embed a map"
-msgstr ""
-
-#: components/event/physical-location-form.js:185
-msgid "tab."
-msgstr ""
-
-#: components/event/physical-location-form.js:187
-msgid "Copy the entire iframe html code."
-msgstr ""
-
-#: components/event/physical-location-form.js:188
-msgid "Paste it above. We’ll extract the correct embed URL."
+#: components/event/physical-location-form.js:184
+msgid "Click on the <b>Share</b> button."
 msgstr ""
 
 #: components/event/physical-location-form.js:190
+msgid "Go to <b>Embed a map</b> tab."
+msgstr ""
+
+#: components/event/physical-location-form.js:194
+msgid "Copy the entire iframe html code."
+msgstr ""
+
+#: components/event/physical-location-form.js:195
+msgid "Paste it above. We’ll extract the correct embed URL."
+msgstr ""
+
+#: components/event/physical-location-form.js:197
 msgid "It should start with:"
 msgstr ""
 
-#: components/event/physical-location-form.js:197
-msgid "Do"
+#: components/event/physical-location-form.js:205
+msgid "Do <b>NOT</b> paste:"
 msgstr ""
 
-#: components/event/physical-location-form.js:197
-msgid "paste:"
-msgstr ""
-
-#: components/event/physical-location-form.js:216
-#: components/event/physical-location-form.js:240
+#: components/event/physical-location-form.js:226
+#: components/event/physical-location-form.js:250
 msgid "Send a link"
 msgstr ""
 
-#: components/event/physical-location-form.js:224
+#: components/event/physical-location-form.js:228
+#: components/event/physical-location-form.js:252
+msgid "Embed a map"
+msgstr ""
+
+#: components/event/physical-location-form.js:234
 msgid "COPY TO CLIPBOARD"
 msgstr ""
 
-#: components/event/physical-location-form.js:249
+#: components/event/physical-location-form.js:259
 msgid "COPY HTML"
 msgstr ""
 

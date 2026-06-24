@@ -1,4 +1,5 @@
 import { __ } from "@wordpress/i18n";
+import { createInterpolateElement } from "@wordpress/element";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -179,10 +180,16 @@ export function PhysicalLocationForm({ location, onChange, settings }) {
               <ol className="text-sm list-decimal pl-4 mb-4">
                 <li>{__("Find your address in Google Maps.", "eventkoi-lite")}</li>
                 <li>
-                  {__("Click on the", "eventkoi-lite")} <strong>{__("Share", "eventkoi-lite")}</strong> {__("button.", "eventkoi-lite")}
+                  {createInterpolateElement(
+                    __("Click on the <b>Share</b> button.", "eventkoi-lite"),
+                    { b: <strong /> },
+                  )}
                 </li>
                 <li>
-                  {__("Go to", "eventkoi-lite")} <strong>{__("Embed a map", "eventkoi-lite")}</strong> {__("tab.", "eventkoi-lite")}
+                  {createInterpolateElement(
+                    __("Go to <b>Embed a map</b> tab.", "eventkoi-lite"),
+                    { b: <strong /> },
+                  )}
                 </li>
                 <li>{__("Copy the entire iframe html code.", "eventkoi-lite")}</li>
                 <li>{__("Paste it above. We’ll extract the correct embed URL.", "eventkoi-lite")}</li>
@@ -194,7 +201,10 @@ export function PhysicalLocationForm({ location, onChange, settings }) {
                 </li>
               </ol>
               <p className="text-sm">
-                {__("Do", "eventkoi-lite")} <strong>NOT</strong> {__("paste:", "eventkoi-lite")}
+                {createInterpolateElement(
+                  __("Do <b>NOT</b> paste:", "eventkoi-lite"),
+                  { b: <strong /> },
+                )}
                 <code className="text-inherit ml-1">
                   https://maps.app.goo.gl/
                 </code>
