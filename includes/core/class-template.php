@@ -804,16 +804,20 @@ class Template {
 
 		$parent_url   = get_permalink( $post_id );
 		$parent_title = $event->get_title();
+		$parent_link  = sprintf(
+			'<a href="%1$s" rel="bookmark">%2$s</a>',
+			esc_url( $parent_url ),
+			esc_html( $parent_title )
+		);
 
-		// Translators: %s is the linked event series title.
+		// Keep the whole sentence in one translatable string with the linked title
+		// as the only placeholder. "series" stays part of the sentence instead of
+		// being baked into the link text, so translators can position it for their
+		// language's grammar (e.g. French "de la serie %s").
 		$link_text = sprintf(
-		/* translators: %s: linked event series title including the word "series". */
-			esc_html__( '← See all events in the %s', 'eventkoi-lite' ),
-			sprintf(
-				'<a href="%1$s" rel="bookmark">%2$s</a>',
-				esc_url( $parent_url ),
-				esc_html( $parent_title . ' series' )
-			)
+			/* translators: %s: linked event title. */
+			esc_html__( '← See all events in the %s series', 'eventkoi-lite' ),
+			$parent_link
 		);
 
 		$back_link = sprintf(
