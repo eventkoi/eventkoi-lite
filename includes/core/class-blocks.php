@@ -1936,7 +1936,10 @@ JS;
 		}
 
 		if ( 'event_details' === $key ) {
-			return self::build_div_wrapper( $block['attrs'], 'eventkoi-details', $event::rendered_details() );
+			// `no-eventkoi` exempts the user's rich-text description from Tailwind's
+			// scoped preflight, so the host theme keeps styling its headings (h1-h6)
+			// instead of preflight flattening them to inherited size/weight.
+			return self::build_div_wrapper( $block['attrs'], 'eventkoi-details no-eventkoi', $event::rendered_details() );
 		}
 
 		if ( 'event_gmap' === $key ) {
