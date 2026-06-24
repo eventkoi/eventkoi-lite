@@ -1,5 +1,6 @@
 import { CalendarToolbar } from "@/components/calendar/calendar-toolbar";
 import { EventPopover } from "@/components/calendar/EventPopover";
+import { ListView } from "@/components/calendar/list-view";
 import { TimezonePicker } from "@/components/timezone-picker";
 import {
   getInitialDate,
@@ -676,7 +677,30 @@ export default function Edit({
             />
           </div>
 
-          <FullCalendar
+          {/*
+            Pre-seed FullCalendar's style root. In WP's iframed block editor,
+            FullCalendar v6 tries to inject its CSS by inserting a <style> before
+            the iframe document's first child — which is the <!doctype>, throwing
+            HierarchyRequestError and crashing the block. Rendering this empty
+            <style data-fullcalendar> first means FullCalendar finds and reuses
+            it instead of running that broken insertBefore.
+          */}
+          <style data-fullcalendar="" suppressHydrationWarning />
+
+          {view === "list" ? (
+            <ListView
+              events={allEvents}
+              timezone={timezone}
+              timeFormat={timeFormat}
+              showImage={attributes.showImage}
+              showDescription={attributes.showDescription}
+              showLocation={attributes.showLocation}
+              borderStyle={attributes.borderStyle}
+              borderSize={attributes.borderSize}
+              loading={false}
+            />
+          ) : (
+            <FullCalendar
             key={timezone}
             ref={calendarRef}
             locales={allLocales}
@@ -837,6 +861,7 @@ export default function Edit({
               setSelectedEvent(enriched);
             }}
           />
+          )}
 
           {selectedEvent && anchorPos && (
             <EventPopover

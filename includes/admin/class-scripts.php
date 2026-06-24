@@ -31,6 +31,7 @@ class Scripts {
 	public function __construct() {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ), 999 );
 		add_action( 'enqueue_block_editor_assets', array( $this, 'enqueue_block_editor_assets' ) );
+		add_action( 'enqueue_block_assets', array( $this, 'enqueue_block_assets' ) );
 
 		// Invalidate template cache when templates change.
 		foreach ( array( 'elementor_library' ) as $pt ) {
@@ -38,6 +39,47 @@ class Scripts {
 		}
 		add_action( 'delete_post', array( self::class, 'flush_template_cache' ) );
 		add_action( 'switch_theme', array( self::class, 'flush_template_cache' ) );
+	}
+
+	/**
+	 * Enqueue block styles into the editor canvas (and front).
+	 *
+	 * `enqueue_block_editor_assets` styles only load in the editor chrome, not
+	 * inside WP's iframed canvas, so the calendar block preview renders unstyled.
+	 * `enqueue_block_assets` loads them into the iframe so the preview matches
+	 * the frontend.
+	 */
+	public function enqueue_block_assets() {
+		if ( ! is_admin() ) {
+			return;
+		}
+
+		$screen          = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		$is_block_editor = $screen && method_exists( $screen, 'is_block_editor' ) && $screen->is_block_editor();
+
+		if ( ! $is_block_editor ) {
+			return;
+		}
+
+		$asset_file = include EVENTKOI_PLUGIN_DIR . 'scripts/backend/build/index.asset.php';
+		$build_url  = EVENTKOI_PLUGIN_URL . 'scripts/backend/build/';
+
+		wp_register_style(
+			'eventkoi-editor-tw',
+			$build_url . 'tailwind.css',
+			array(),
+			$asset_file['version']
+		);
+
+		wp_register_style(
+			'eventkoi-blocks',
+			$build_url . 'index.css',
+			array(),
+			$asset_file['version']
+		);
+
+		wp_enqueue_style( 'eventkoi-editor-tw' );
+		wp_enqueue_style( 'eventkoi-blocks' );
 	}
 
 	/**
@@ -295,7 +337,13 @@ class Scripts {
 				$asset_file['version']
 			);
 
-			wp_enqueue_style( 'eventkoi-admin' );
+			// Don't enqueue the admin app stylesheet on the block editor: WP copies
+			// it into the iframed canvas (an "added to the iframe incorrectly"
+			// warning) and the block already gets index.css via enqueue_block_assets.
+			$is_block_editor = method_exists( $screen, 'is_block_editor' ) && $screen->is_block_editor();
+			if ( ! $is_block_editor ) {
+				wp_enqueue_style( 'eventkoi-admin' );
+			}
 		}
 
 		// Load Tailwind CSS only on main plugin page or edit screens.
