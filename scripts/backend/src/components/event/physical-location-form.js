@@ -145,7 +145,7 @@ export function PhysicalLocationForm({ location, onChange, settings }) {
           onCheckedChange={(checked) => onChange({ embed_gmap: checked })}
         />
         <label htmlFor={`embed_gmap-${location.id}`} className="text-sm">
-          Embed Google Map on page.
+          {__("Embed Google Map on page.", "eventkoi-lite")}
         </label>
       </div>
 
@@ -153,7 +153,7 @@ export function PhysicalLocationForm({ location, onChange, settings }) {
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-2 max-w-[422px]">
             <Label htmlFor={`gmap_link-${location.id}`}>
-              Google Maps Embed Link
+              {__("Google Maps Embed Link", "eventkoi-lite")}
             </Label>
             <Input
               ref={mapLinkRef}
@@ -166,8 +166,10 @@ export function PhysicalLocationForm({ location, onChange, settings }) {
             />
             {error && (
               <p className="w-full text-xs text-[#d13d3d]">
-                Wrong embed URL. Follow the instructions below to get the
-                correct URL.
+                {__(
+                  "Wrong embed URL. Follow the instructions below to get the correct URL.",
+                  "eventkoi-lite",
+                )}
               </p>
             )}
           </div>
