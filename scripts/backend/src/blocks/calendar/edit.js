@@ -169,10 +169,20 @@ export default function Edit({
           .filter((id) => id && Number(id) > 0)
           .map(String)
       : [];
+  // Mirror the frontend (class-blocks.php) which absint-filters the list, so
+  // non-numeric sentinels like a legacy ["all"] are dropped and we fall back
+  // to the default calendar instead of sending id=all (which returns nothing).
+  const numericCalendars = Array.isArray(attributes.calendars)
+    ? attributes.calendars
+        .map(String)
+        .filter((c) => /^\d+$/.test(c) && Number(c) > 0)
+    : [];
   const calendars = attributes?.selectAllCalendars
-    ? (allCalendarIds.length > 0 ? allCalendarIds.join(",") : null)
-    : attributes.calendars && attributes.calendars.length > 0
-    ? attributes.calendars.map(String).join(",")
+    ? allCalendarIds.length > 0
+      ? allCalendarIds.join(",")
+      : null
+    : numericCalendars.length > 0
+    ? numericCalendars.join(",")
     : null;
 
   let id = attributes.calendar_id;
