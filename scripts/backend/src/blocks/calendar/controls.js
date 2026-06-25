@@ -114,6 +114,7 @@ export const Controls = (props) => {
               setView("dayGridMonth");
             }
           }}
+          __next40pxDefaultSize
           __nextHasNoMarginBottom
         >
           <ToggleGroupControlOption value="month" label={__("Month", "eventkoi-lite")} />
@@ -139,6 +140,7 @@ export const Controls = (props) => {
             { label: __("December", "eventkoi-lite"), value: "december" },
           ]}
           onChange={(newMonth) => setAttributes({ default_month: newMonth })}
+          __next40pxDefaultSize
           __nextHasNoMarginBottom
         />
 
@@ -153,6 +155,7 @@ export const Controls = (props) => {
             }),
           ]}
           onChange={(newYear) => setAttributes({ default_year: newYear })}
+          __next40pxDefaultSize
           __nextHasNoMarginBottom
         />
 
@@ -169,6 +172,7 @@ export const Controls = (props) => {
             { label: "Sunday", value: "sunday" },
           ]}
           onChange={(newStartday) => setAttributes({ startday: newStartday })}
+          __next40pxDefaultSize
           __nextHasNoMarginBottom
         />
       </PanelBody>
