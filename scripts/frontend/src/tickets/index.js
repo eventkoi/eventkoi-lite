@@ -1410,14 +1410,14 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                         {footerEventTitle}
                       </div>
                       {footerEventLocation ? (
-                        <div className="mt-1 flex items-center gap-2 text-sm text-foreground">
-                          <MapPin className="size-4" />
+                        <div className="mt-1 flex items-start gap-2 text-sm text-foreground">
+                          <MapPin className="mt-0.5 size-4 shrink-0" />
                           <span>{footerEventLocation}</span>
                         </div>
                       ) : null}
                       {footerEventDate ? (
-                        <div className="mt-1 flex items-center gap-2 text-sm text-foreground">
-                          <Calendar className="size-4" />
+                        <div className="mt-1 flex items-start gap-2 text-sm text-foreground">
+                          <Calendar className="mt-0.5 size-4 shrink-0" />
                           <span>{footerEventDate}</span>
                         </div>
                       ) : null}
@@ -1753,27 +1753,35 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                     ) : null}
 
                     {eventTermsRequired ? (
-                      <label
-                        htmlFor={`${idPrefix}-terms-accept`}
-                        className="flex items-start gap-2.5 text-xs leading-relaxed text-muted-foreground"
-                      >
-                        <input
-                          id={`${idPrefix}-terms-accept`}
-                          type="checkbox"
-                          checked={termsAccepted}
-                          onChange={(event) => {
-                            setTermsAccepted(event.target.checked);
-                            if (event.target.checked) setCheckoutError("");
-                          }}
-                          className="mt-0.5 size-4 shrink-0 rounded border-input"
-                        />
-                        <span
-                          className="eventkoi-ticket-terms [&_a]:underline [&_p]:inline"
+                      <div className="space-y-2.5">
+                        <div
+                          className="eventkoi-ticket-terms max-h-28 overflow-y-auto rounded-md border border-border bg-muted/20 p-3 text-xs leading-relaxed text-muted-foreground [&_a]:underline"
                           dangerouslySetInnerHTML={{
                             __html: eventTermsConditions,
                           }}
                         />
-                      </label>
+                        <label
+                          htmlFor={`${idPrefix}-terms-accept`}
+                          className="flex items-start gap-2.5 text-xs leading-relaxed text-muted-foreground"
+                        >
+                          <input
+                            id={`${idPrefix}-terms-accept`}
+                            type="checkbox"
+                            checked={termsAccepted}
+                            onChange={(event) => {
+                              setTermsAccepted(event.target.checked);
+                              if (event.target.checked) setCheckoutError("");
+                            }}
+                            className="mt-0.5 size-4 shrink-0 rounded border-input"
+                          />
+                          <span>
+                            {__(
+                              "I have read and agree to the terms & conditions.",
+                              "eventkoi-lite"
+                            )}
+                          </span>
+                        </label>
+                      </div>
                     ) : null}
 
                     <div className="flex items-center gap-10 pt-2">

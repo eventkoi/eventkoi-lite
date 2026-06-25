@@ -12,7 +12,7 @@ const Dialog = DialogPrimitive.Root;
 // a non-scrolling flex column (so the close button and a sticky footer stay put)
 // with a DialogBody handling the scroll. Each modal appends its own sm:max-w-*.
 const dialogSheetClass =
-  "flex max-h-[100dvh] w-full max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 sm:max-h-[90dvh] sm:w-[95vw] sm:rounded-lg";
+  "flex h-[100dvh] w-full max-w-none flex-col gap-0 overflow-hidden rounded-none p-0 sm:h-auto sm:max-h-[90dvh] sm:w-[95vw] sm:rounded-lg";
 
 const DialogTrigger = DialogPrimitive.Trigger;
 
