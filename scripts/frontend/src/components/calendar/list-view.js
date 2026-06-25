@@ -234,7 +234,7 @@ export function ListView({
                       >
                         <img
                           src={event.thumbnail}
-                          className="h-full w-full rounded-xl"
+                          className="h-full w-full rounded-xl object-cover"
                           alt="" // decorative (title already present)
                           aria-hidden="true" // prevent screen reader duplication
                         />
