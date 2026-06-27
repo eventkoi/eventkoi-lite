@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.3.18.0
+Stable tag: 1.3.19.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,15 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.19.0 – Calendar list view, mobile checkout & theme-friendly titles – 2026-06-25 =
+* New: The calendar now has a List view in the Month/Week switcher, with search, and each event shows its calendar's colour and name.
+* New: The block editor calendar preview now includes the List view too, so the editor matches the front end.
+* Fix: The event title now follows your theme's H1 styling instead of the plugin's hardcoded size, weight and colour.
+* Fix: Event images in the calendar list view are no longer stretched when they aren't 3:2; they're cropped to fit.
+* Fix: On mobile, the ticket checkout shows the terms in a scrollable box and opens as a full-screen sheet, so the form fields and the checkout button stay reachable, and the location pin no longer shrinks.
+* Fix: Broader translation coverage. More strings that were stitched together from fragments are now single translatable strings, and more counters use proper plural forms.
+* Fix: Fixed a crash in the calendar block's editor preview, and the preview now loads events.
 
 = 1.3.18.0 – Per-field location data, ticket controls & translation coverage – 2026-06-24 =
 * New: Location data is now split into separate fields (name, address, unit, city, state, country, postal code), so the Event Data block, Query Loop and bindings can show just the city, just the address, and so on.
