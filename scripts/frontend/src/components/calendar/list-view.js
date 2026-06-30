@@ -282,7 +282,7 @@ export function ListView({
                 </div>
               )}
 
-              <h3 className="m-0">
+              <h3 className="m-0 text-lg font-semibold leading-snug">
                 <a href={getEventUrl(event, wpTz)} className="no-underline">
                   {event.title}
                   <span className="sr-only"> — View event details</span>

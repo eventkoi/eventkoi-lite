@@ -147,6 +147,22 @@ module.exports = {
       isolationStrategy: isolateInsideOfContainer(".eventkoi-front", {
         except: ".no-eventkoi",
       }),
+      // Preflight unstyles headings (font-size/weight: inherit). Inside
+      // .eventkoi-front that wipes the host theme's heading typography on the
+      // event title and description. Drop just those two so the theme's H1-H6
+      // sizing/weight applies; EventKoi's own UI sets sizes via utilities.
+      modifyPreflightStyles: ({ selectorSet, property, value }) => {
+        const touchesHeading = [...selectorSet].some((s) =>
+          /^h[1-6]\b/.test(s)
+        );
+        if (
+          touchesHeading &&
+          (property === "font-size" || property === "font-weight")
+        ) {
+          return null;
+        }
+        return value;
+      },
     }),
   ],
 };
