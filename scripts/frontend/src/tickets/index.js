@@ -775,8 +775,19 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
     return latest;
   }, null);
 
+  // A shared sales window only makes sense when every ticket shares that
+  // bound. If any ticket is open-ended, sales never collectively start/end,
+  // so the aggregate "starts/ends on" line is suppressed.
+  const allHaveSaleStart =
+    displayTickets.length > 0 &&
+    displayTickets.every((ticket) => Boolean(ticket?.sale_start));
+
+  const allHaveSaleEnd =
+    displayTickets.length > 0 &&
+    displayTickets.every((ticket) => Boolean(ticket?.sale_end));
+
   const saleEndLabel =
-    latestSaleEndTs !== null
+    allHaveSaleEnd && latestSaleEndTs !== null
       ? formatTicketSaleDateTime(latestSaleEndTs)
       : null;
 
@@ -806,7 +817,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
   }, null);
 
   const saleStartLabel =
-    earliestSaleStartTs !== null
+    allHaveSaleStart && earliestSaleStartTs !== null
       ? formatTicketSaleDateTime(earliestSaleStartTs)
       : null;
 
