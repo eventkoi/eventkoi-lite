@@ -42,7 +42,7 @@ import { callLocalApi } from "@/lib/remote";
 import { BaseToast, showToast, showToastError } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 import apiRequest from "@wordpress/api-fetch";
-import { __, sprintf } from "@wordpress/i18n";
+import { __, _n, sprintf } from "@wordpress/i18n";
 import {
   ArrowDownToLine,
   ChevronDown,
@@ -148,12 +148,12 @@ function BulkRsvpActions({ table, onComplete }) {
         action === "delete"
           ? sprintf(
               /* translators: %d: number of RSVPs */
-              __("Deleted %d RSVP(s).", "eventkoi-lite"),
+              _n("Deleted %d RSVP.", "Deleted %d RSVPs.", ids.length, "eventkoi-lite"),
               ids.length,
             )
           : sprintf(
               /* translators: %d: number of RSVPs */
-              __("Updated %d RSVP(s).", "eventkoi-lite"),
+              _n("Updated %d RSVP.", "Updated %d RSVPs.", ids.length, "eventkoi-lite"),
               ids.length,
             );
 
@@ -240,7 +240,7 @@ function BulkRsvpActions({ table, onComplete }) {
         title={__("Delete RSVPs?", "eventkoi-lite")}
         description={sprintf(
           /* translators: %d: number of selected RSVPs */
-          __("This will permanently delete %d RSVP(s).", "eventkoi-lite"),
+          _n("This will permanently delete %d RSVP.", "This will permanently delete %d RSVPs.", selectedCount, "eventkoi-lite"),
           selectedCount,
         )}
         confirmLabel={__("Delete", "eventkoi-lite")}
@@ -670,7 +670,7 @@ function CheckinCodesDialog({ codes, masterCode, customerName, orderId, checkedI
         <div className="px-5 pb-2">
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-medium text-muted-foreground">
-              {sprintf(__("%d individual codes", "eventkoi-lite"), codes.length)}
+              {sprintf(_n("%d individual code", "%d individual codes", codes.length, "eventkoi-lite"), codes.length)}
             </span>
             {codes.length > 1 && (
               <button

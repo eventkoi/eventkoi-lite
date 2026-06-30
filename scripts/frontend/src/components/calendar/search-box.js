@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { normalizeTimeZone, wpToLuxonFormat } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
-import { __, sprintf } from "@wordpress/i18n";
+import { __, _n, sprintf } from "@wordpress/i18n";
 import { Loader2, Search } from "lucide-react";
 import { DateTime } from "luxon";
 import { useEffect, useRef } from "react";
@@ -331,7 +331,7 @@ export function SearchBox({
           ? __("No events found.", "eventkoi-lite")
           : sprintf(
               /* translators: %d: number of events found */
-              __("%d events found.", "eventkoi-lite"),
+              _n("%d event found.", "%d events found.", filteredResults.length, "eventkoi-lite"),
               filteredResults.length
             )}
       </div>

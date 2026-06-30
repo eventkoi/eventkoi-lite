@@ -16,7 +16,7 @@ import { ConfirmDialog } from "@/components/confirm-dialog";
 import { showToast, showToastError } from "@/lib/toast";
 
 import { EllipsisVertical } from "lucide-react";
-import { __, sprintf } from "@wordpress/i18n";
+import { __, _n, sprintf } from "@wordpress/i18n";
 import { useState } from "react";
 
 export function BulkActions({
@@ -219,11 +219,11 @@ export function BulkActions({
         description={
           confirmAction === "unarchive"
             ? sprintf(
-                __("This will restore %d order(s) back to your order lists.", "eventkoi-lite"),
+                _n("This will restore %d order back to your order lists.", "This will restore %d orders back to your order lists.", selectedCount, "eventkoi-lite"),
                 selectedCount
               )
             : sprintf(
-                __("%d order(s) will be hidden from your order lists. Financial records remain unchanged.", "eventkoi-lite"),
+                _n("%d order will be hidden from your order lists. Financial records remain unchanged.", "%d orders will be hidden from your order lists. Financial records remain unchanged.", selectedCount, "eventkoi-lite"),
                 selectedCount
               )
         }
@@ -251,12 +251,12 @@ export function BulkActions({
         }
         description={
           confirmAction === "remove"
-            ? sprintf(__("%d item(s) will be permanently deleted. This cannot be undone.", "eventkoi-lite"), selectedCount)
+            ? sprintf(_n("%d item will be permanently deleted. This cannot be undone.", "%d items will be permanently deleted. This cannot be undone.", selectedCount, "eventkoi-lite"), selectedCount)
             : confirmAction === "delete"
-            ? sprintf(__("%d item(s) will be moved to trash. You can restore them later.", "eventkoi-lite"), selectedCount)
+            ? sprintf(_n("%d item will be moved to trash. You can restore it later.", "%d items will be moved to trash. You can restore them later.", selectedCount, "eventkoi-lite"), selectedCount)
             : confirmAction === "restore"
-            ? sprintf(__("%d item(s) will be restored from trash.", "eventkoi-lite"), selectedCount)
-            : sprintf(__("%d duplicate item(s) will be created as drafts.", "eventkoi-lite"), selectedCount)
+            ? sprintf(_n("%d item will be restored from trash.", "%d items will be restored from trash.", selectedCount, "eventkoi-lite"), selectedCount)
+            : sprintf(_n("%d duplicate item will be created as a draft.", "%d duplicate items will be created as drafts.", selectedCount, "eventkoi-lite"), selectedCount)
         }
         confirmLabel={
           confirmAction === "remove"

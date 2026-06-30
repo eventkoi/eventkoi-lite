@@ -1022,7 +1022,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
         ) {
           throw new Error(
             sprintf(
-              __("Only %d left for “%s”.", "eventkoi-lite"),
+              _n("Only %d left for “%s”.", "Only %d left for “%s”.", Number(limits.remainingCount), "eventkoi-lite"),
               Number(limits.remainingCount),
               latestTicket.name || __("Selected ticket", "eventkoi-lite"),
             ),
@@ -1377,7 +1377,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                                 liveTicketsLeft !== null ? (
                                 <div className="mt-2 text-center text-xs text-muted-foreground">
                                   {sprintf(
-                                    __("%d tickets left.", "eventkoi-lite"),
+                                    _n("%d ticket left.", "%d tickets left.", liveTicketsLeft, "eventkoi-lite"),
                                     liveTicketsLeft,
                                   )}
                                 </div>
