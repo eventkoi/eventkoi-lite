@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.3.19.0
+Stable tag: 1.3.20.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,12 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.20.0 – Query Loop pagination, theme headings & ticket sales fixes – 2026-06-30 =
+* Fix: The Event Query Loop now paginates correctly. Page two no longer repeats the events from page one when the results fit on a single page.
+* Fix: Event page headings (the title and the headings in the description) now consistently follow your theme's heading styles. A leftover style reset that still overrode some heading sizes and weights has been removed.
+* Fix: When an event has ticket types with different sales dates, the ticket sales window text is no longer shown incorrectly. If any ticket type has no start date, the "sales start" line is hidden, and the same applies to the end date.
+* Fix: More counters now use proper singular and plural forms, so translations read correctly.
 
 = 1.3.19.0 – Calendar list view, mobile checkout & theme-friendly titles – 2026-06-25 =
 * New: The calendar now has a List view in the Month/Week switcher, with search, and each event shows its calendar's colour and name.
