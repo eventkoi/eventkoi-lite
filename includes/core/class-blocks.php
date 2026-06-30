@@ -1057,8 +1057,15 @@ JS;
 					continue;
 				}
 
-				if ( 'core/query-pagination' === $name && $total_pages > 1 ) {
-					$rendered .= self::render_eventkoi_pagination( $inner, $paged, $total_pages );
+				if ( 'core/query-pagination' === $name ) {
+					// Owns pagination outright. The core pagination block runs
+					// its own unfiltered query, so it reports a different total
+					// and emits ?query-page links this loop never reads, which
+					// makes every page repeat page one. Render ours, or nothing
+					// when a single page covers the results.
+					if ( $total_pages > 1 ) {
+						$rendered .= self::render_eventkoi_pagination( $inner, $paged, $total_pages );
+					}
 					continue;
 				}
 
