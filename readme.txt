@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.3.20.0
+Stable tag: 1.3.20.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,10 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.20.1 – Calendar subscribe button & block fixes – 2026-07-01 =
+* New: A Subscribe button on the calendar lets visitors add the whole calendar (a single calendar, several, or all) to their own Apple, Google, or Outlook calendar in one click, and it updates automatically as your events change.
+* Fix: In the block editor, the Event Data location field now honours center and right alignment, matching how it already looked on the front end.
 
 = 1.3.20.0 – Query Loop pagination, theme headings & ticket sales fixes – 2026-06-30 =
 * Fix: The Event Query Loop now paginates correctly. Page two no longer repeats the events from page one when the results fit on a single page.
