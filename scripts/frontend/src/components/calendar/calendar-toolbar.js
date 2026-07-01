@@ -20,6 +20,8 @@ export function CalendarToolbar({
   globalSearch = false,
   timezone,
   timeFormat,
+  feedUrl,
+  feedWebcal,
 }) {
   const [open, setOpen] = useState(false);
   const [page, setPage] = useState(0);
@@ -123,6 +125,8 @@ export function CalendarToolbar({
       ? () => moveSearchScopeMonth(1)
       : undefined,
     inputRef,
+    feedUrl,
+    feedWebcal,
   };
 
   return (

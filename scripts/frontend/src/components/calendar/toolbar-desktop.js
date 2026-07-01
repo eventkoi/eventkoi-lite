@@ -2,6 +2,7 @@ import { CalendarHeaderPopover } from "@/components/calendar/CalendarHeaderPopov
 import { NavControls } from "@/components/calendar/nav-controls";
 import { SearchBox } from "@/components/calendar/search-box";
 import { TodayButton } from "@/components/calendar/today-button";
+import { SubscribeButton } from "@/components/calendar/subscribe-button";
 import { ViewToggle } from "@/components/calendar/view-toggle";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useRef, useState } from "react";
@@ -34,6 +35,8 @@ export function ToolbarDesktop(props) {
     onSearchScopePrev,
     onSearchScopeNext,
     inputRef,
+    feedUrl,
+    feedWebcal,
   } = props;
   const desktopRef = useRef(null);
   const [isTight, setIsTight] = useState(false);
@@ -130,7 +133,8 @@ export function ToolbarDesktop(props) {
               isTodayInRange={isTodayInRange}
             />
           </div>
-          <div className="shrink-0">
+          <div className="shrink-0 flex items-center gap-2">
+            <SubscribeButton feedUrl={feedUrl} feedWebcal={feedWebcal} />
             <ViewToggle calendarApi={calendarApi} view={view} setView={setView} display={display} setDisplay={setDisplay} />
           </div>
         </div>
@@ -210,8 +214,9 @@ export function ToolbarDesktop(props) {
         </div>
       </div>
 
-      {/* Right: view toggle */}
-      <div className="shrink-0">
+      {/* Right: subscribe + view toggle */}
+      <div className="shrink-0 flex items-center gap-2">
+        <SubscribeButton feedUrl={feedUrl} feedWebcal={feedWebcal} />
         <ViewToggle calendarApi={calendarApi} view={view} setView={setView} display={display} setDisplay={setDisplay} />
       </div>
     </div>

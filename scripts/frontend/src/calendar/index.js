@@ -34,6 +34,8 @@ export function Calendar(props) {
     borderStyle,
     borderSize,
     startday,
+    feedUrl,
+    feedWebcal,
   } = props;
 
   const calendarRef = useRef(null);
@@ -235,6 +237,8 @@ export function Calendar(props) {
         timeFormat={timeFormat}
         search={search}
         setSearch={setSearch}
+        feedUrl={feedUrl}
+        feedWebcal={feedWebcal}
       />
 
       {activeDisplay === "calendar" && (
@@ -335,6 +339,8 @@ export function mountEventKoiCalendars(rootElement = document) {
         maxResults={el.getAttribute("data-max-results")}
         dateStart={el.getAttribute("data-date-start")}
         dateEnd={el.getAttribute("data-date-end")}
+        feedUrl={el.getAttribute("data-feed-url")}
+        feedWebcal={el.getAttribute("data-feed-webcal")}
       />
     );
 

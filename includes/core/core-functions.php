@@ -430,6 +430,13 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 	}
 	$style = ! empty( $style_parts ) ? implode( ';', $style_parts ) . ';' : '';
 
+	// Subscribable iCal feed for exactly the calendar set this instance shows
+	// (single, multi, or all), so visitors can add it to Apple/Google/Outlook
+	// and have events appear and update automatically.
+	$feed_calendar_ids = ! empty( $args['calendars'] ) ? array_map( 'absint', (array) $args['calendars'] ) : array( absint( $calendar::get_id() ) );
+	$feed_url          = function_exists( 'eventkoi_get_calendar_feed_url' ) ? eventkoi_get_calendar_feed_url( $feed_calendar_ids ) : '';
+	$feed_webcal_url   = function_exists( 'eventkoi_get_calendar_feed_url' ) ? eventkoi_get_calendar_feed_url( $feed_calendar_ids, 'webcal' ) : '';
+
 	$calendar_template = sprintf(
 		'<!-- wp:group {"className":"eventkoi-front"} -->
 		<div class="wp-block-group eventkoi-front" style="%13$s">
@@ -454,7 +461,9 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 				data-max-results="%20$s"
 				data-date-start="%21$s"
 				data-date-end="%22$s"
-				data-expand-instances="%23$s">
+				data-expand-instances="%23$s"
+				data-feed-url="%24$s"
+				data-feed-webcal="%25$s">
 			</div>
 		</div>
 	<!-- /wp:group -->',
@@ -480,7 +489,9 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 		esc_attr( $max_results ),                   // %20$s
 		esc_attr( $date_start ),                    // %21$s
 		esc_attr( $date_end ),                      // %22$s
-		$expand_instances ? '1' : '0'               // %23$s
+		$expand_instances ? '1' : '0',              // %23$s
+		esc_url( $feed_url ),                        // %24$s
+		esc_url( $feed_webcal_url, array( 'https', 'http', 'webcal' ) ) // %25$s
 	);
 
 	$output = do_blocks( apply_filters( 'eventkoi_get_calendar_content', $calendar_template ) );

@@ -2,6 +2,7 @@ import { __ } from "@wordpress/i18n";
 import { CalendarHeaderPopover } from "@/components/calendar/CalendarHeaderPopover";
 import { NavControls } from "@/components/calendar/nav-controls";
 import { SearchBox } from "@/components/calendar/search-box";
+import { SubscribeButton } from "@/components/calendar/subscribe-button";
 import { TodayButton } from "@/components/calendar/today-button";
 import { ViewToggle } from "@/components/calendar/view-toggle";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,8 @@ export function ToolbarMobile(props) {
     searchScope,
     onSearchScopePrev,
     onSearchScopeNext,
+    feedUrl,
+    feedWebcal,
   } = props;
 
   const [searchOpen, setSearchOpen] = useState(false);
@@ -77,7 +80,10 @@ export function ToolbarMobile(props) {
           setCurrentDate={setCurrentDate}
           isTodayInRange={isTodayInRange}
         />
-        <ViewToggle calendarApi={calendarApi} view={view} setView={setView} display={display} setDisplay={setDisplay} />
+        <div className="flex items-center gap-2">
+          <SubscribeButton feedUrl={feedUrl} feedWebcal={feedWebcal} />
+          <ViewToggle calendarApi={calendarApi} view={view} setView={setView} display={display} setDisplay={setDisplay} />
+        </div>
       </div>
 
       {/* Row 2 */}
