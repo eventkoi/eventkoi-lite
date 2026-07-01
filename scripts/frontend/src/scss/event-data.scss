@@ -38,6 +38,16 @@
   font-size: 0.9em;
   opacity: 0.85;
 
+  // Alignment control sets text-align, a no-op on a flex container. Map it to
+  // justify-content so center/right match the title and date fields.
+  &.has-text-align-center {
+    justify-content: center;
+  }
+
+  &.has-text-align-right {
+    justify-content: flex-end;
+  }
+
   a,
   span {
     display: flex;
