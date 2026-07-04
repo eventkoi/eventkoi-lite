@@ -1230,15 +1230,37 @@ class Ticket_Emails {
 
 		list( $event_datetime ) = self::get_event_datetime_parts( $event_id, $instance_ts );
 
+		// Document the terms-and-conditions consent captured at checkout: when
+		// the customer accepted, include the acceptance time and the exact
+		// terms text they consented to (snapshotted at checkout).
+		$terms_section = '';
+		$consent       = is_array( $order['terms_consent'] ?? null ) ? $order['terms_consent'] : null;
+		if ( ! empty( $consent['terms_text'] ) && ! empty( $consent['accepted_at'] ) ) {
+			$terms_section = implode(
+				"\n",
+				array(
+					'<p><strong>' . esc_html__( 'Terms and conditions:', 'eventkoi-lite' ) . '</strong> '
+						. sprintf(
+							/* translators: %s: date/time the customer accepted the terms. */
+							esc_html__( 'Accepted by the customer at checkout on %s.', 'eventkoi-lite' ),
+							esc_html( wp_date( 'Y-m-d H:i:s T', (int) $consent['accepted_at'] ) )
+						)
+						. '</p>',
+					'<div>' . wp_kses_post( $consent['terms_text'] ) . '</div>',
+				)
+			);
+		}
+
 		$tags = array(
-			'[customer_name]'  => esc_html( $customer_name ),
-			'[attendee_email]' => esc_html( $customer_email ),
-			'[order_id]'       => esc_html( (string) $order_id ),
-			'[ticket_lines]'   => implode( '<br />', array_map( 'esc_html', $lines ) ),
-			'[order_total]'    => esc_html( $formatted_total ),
-			'[event_name]'     => esc_html( $event_name ),
-			'[event_datetime]' => esc_html( (string) $event_datetime ),
-			'[site_name]'      => esc_html( get_bloginfo( 'name' ) ),
+			'[customer_name]'    => esc_html( $customer_name ),
+			'[attendee_email]'   => esc_html( $customer_email ),
+			'[order_id]'         => esc_html( (string) $order_id ),
+			'[ticket_lines]'     => implode( '<br />', array_map( 'esc_html', $lines ) ),
+			'[order_total]'      => esc_html( $formatted_total ),
+			'[event_name]'       => esc_html( $event_name ),
+			'[event_datetime]'   => esc_html( (string) $event_datetime ),
+			'[terms_acceptance]' => $terms_section,
+			'[site_name]'        => esc_html( get_bloginfo( 'name' ) ),
 		);
 
 		$default_subject  = __( 'New ticket sale: [event_name]', 'eventkoi-lite' );
@@ -1252,6 +1274,7 @@ class Ticket_Emails {
 				'<p><strong>' . esc_html__( 'Total:', 'eventkoi-lite' ) . '</strong> [order_total]</p>',
 				'<p><strong>' . esc_html__( 'Event:', 'eventkoi-lite' ) . '</strong> [event_name]</p>',
 				'<p><strong>' . esc_html__( 'Date:', 'eventkoi-lite' ) . '</strong> [event_datetime]</p>',
+				'[terms_acceptance]',
 				'<p>&mdash;<br />[site_name]</p>',
 			)
 		);

@@ -1399,6 +1399,16 @@ class Tickets {
 				'wp_user_label' => $wp_user_label,
 				'checkout_note' => $checkout_note,
 				'checkout_fields' => $checkout_fields,
+				// Snapshot the terms the customer accepted so the order record and
+				// the admin sale email document the exact consented text.
+				'terms_consent' => (
+					$event::get_tickets_terms_conditions_required()
+					&& rest_sanitize_boolean( $request->get_param( 'terms_accepted' ) )
+					&& '' !== trim( (string) $event::get_tickets_terms_conditions() )
+				) ? array(
+					'accepted_at' => time(),
+					'terms_text'  => (string) $event::get_tickets_terms_conditions(),
+				) : null,
 			)
 		);
 

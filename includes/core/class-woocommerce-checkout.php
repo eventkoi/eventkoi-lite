@@ -300,6 +300,7 @@ class WooCommerce_Checkout {
 			'master_checkin_code' => $master_checkin_code,
 			'ticket_items'        => $all_ticket_items,
 			'checkout_fields'     => is_array( $args['checkout_fields'] ?? null ) ? $args['checkout_fields'] : array(),
+			'terms_consent'       => is_array( $args['terms_consent'] ?? null ) ? $args['terms_consent'] : null,
 		);
 
 		set_transient( 'eventkoi_cart_' . $token, $checkout_data, HOUR_IN_SECONDS );
@@ -562,6 +563,19 @@ class WooCommerce_Checkout {
 			}
 		}
 
+		$consent = is_array( $checkout_data['terms_consent'] ?? null ) ? $checkout_data['terms_consent'] : null;
+		if ( ! empty( $consent['terms_text'] ) && ! empty( $consent['accepted_at'] ) ) {
+			$order->update_meta_data( '_eventkoi_terms_consent', $consent );
+			$order->add_order_note(
+				sprintf(
+					/* translators: 1: acceptance date/time, 2: the terms text the customer accepted. */
+					__( 'Terms and conditions accepted at %1$s. Terms: %2$s', 'eventkoi-lite' ),
+					wp_date( 'Y-m-d H:i:s T', (int) $consent['accepted_at'] ),
+					wp_strip_all_tags( (string) $consent['terms_text'] )
+				)
+			);
+		}
+
 		$order->save();
 
 		// Clear session data.
@@ -695,6 +709,7 @@ class WooCommerce_Checkout {
 				'id'                  => $ek_order_id,
 				'master_checkin_code' => $master_checkin_code,
 				'event_instance_ts'   => $instance_ts,
+				'terms_consent'       => is_array( $order->get_meta( '_eventkoi_terms_consent' ) ) ? $order->get_meta( '_eventkoi_terms_consent' ) : null,
 			)
 		);
 		Ticket_Emails::send_for_order_public( $email_order );
