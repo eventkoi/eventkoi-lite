@@ -73,14 +73,15 @@ export function ToolbarMobile(props) {
 
   return (
     <div className="ek-mobile-only flex-col w-full gap-4">
-      {/* Row 1: Today + toggle */}
-      <div className="flex justify-between items-center">
+      {/* Row 1: Today + toggle. Wraps so Subscribe + the three-option view
+          toggle never overflow narrow phones. */}
+      <div className="flex flex-wrap justify-between items-center gap-2">
         <TodayButton
           calendarApi={calendarApi}
           setCurrentDate={setCurrentDate}
           isTodayInRange={isTodayInRange}
         />
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-end gap-2">
           <SubscribeButton feedUrl={feedUrl} feedWebcal={feedWebcal} />
           <ViewToggle calendarApi={calendarApi} view={view} setView={setView} display={display} setDisplay={setDisplay} />
         </div>
@@ -110,7 +111,7 @@ export function ToolbarMobile(props) {
           />
         </div>
       ) : (
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <NavControls
               calendarApi={calendarApi}
