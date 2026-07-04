@@ -1,5 +1,6 @@
 import { Box } from "@/components/box";
 import { EventCalendar } from "@/components/event/event-calendar";
+import { EventTaxonomies } from "@/components/event/event-taxonomies";
 import { EventDate } from "@/components/event/event-date";
 import { EventDescription } from "@/components/event/event-description";
 import { EventImage } from "@/components/event/event-image";
@@ -115,6 +116,26 @@ export function EventEditMain() {
           minimal
         />
       </Box>
+
+      {/* Third-party taxonomies (only renders when the site registered any) */}
+      <EventTaxonomiesBox />
     </div>
+  );
+}
+
+function EventTaxonomiesBox() {
+  const { event } = useEventEditContext();
+  const hasTaxonomies =
+    Array.isArray(event?.custom_taxonomies) && event.custom_taxonomies.length > 0;
+
+  if (!hasTaxonomies) {
+    return null;
+  }
+
+  return (
+    <Box container className="gap-4">
+      <Heading level={3}>{__("Taxonomies", "eventkoi-lite")}</Heading>
+      <EventTaxonomies />
+    </Box>
   );
 }

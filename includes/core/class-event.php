@@ -173,6 +173,8 @@ class Event {
 			$meta['native_edit_url'] = $native_edit_url;
 		}
 
+		$meta['custom_taxonomies'] = self::get_custom_taxonomies();
+
 		// Apply instance-specific overrides, if any.
 		$instance_ts = eventkoi_get_instance_id();
 		if ( $instance_ts ) {
@@ -590,6 +592,10 @@ class Event {
 		update_post_meta( self::$event_id, 'tickets_agreements', $tickets_agreements );
 		update_post_meta( self::$event_id, 'tickets_event_capacity', $tickets_event_capacity );
 		update_post_meta( self::$event_id, 'tickets_display_mode', $tickets_display_mode );
+
+		if ( isset( $meta['custom_taxonomies'] ) && is_array( $meta['custom_taxonomies'] ) ) {
+			self::update_custom_taxonomies( $meta['custom_taxonomies'] );
+		}
 
 		// Set FSE page template if provided.
 		$template = ! empty( $meta['template'] ) ? sanitize_key( $meta['template'] ) : '';
@@ -1766,6 +1772,97 @@ class Event {
 		$hook = $gmt ? 'eventkoi_get_event_modified_date_gmt' : 'eventkoi_get_event_modified_date';
 
 		return apply_filters( $hook, (string) $date, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Third-party taxonomies registered for events, with their terms and the
+	 * terms assigned to this event. EventKoi's own calendar taxonomy is
+	 * excluded; it has a dedicated picker.
+	 *
+	 * @return array[]
+	 */
+	public static function get_custom_taxonomies() {
+		$taxonomies = get_object_taxonomies( 'eventkoi_event', 'objects' );
+		$payload    = array();
+
+		foreach ( $taxonomies as $taxonomy ) {
+			if ( in_array( $taxonomy->name, array( 'event_cal' ), true ) ) {
+				continue;
+			}
+
+			if ( empty( $taxonomy->show_ui ) ) {
+				continue;
+			}
+
+			$terms = get_terms(
+				array(
+					'taxonomy'   => $taxonomy->name,
+					'hide_empty' => false,
+					'number'     => 500,
+				)
+			);
+			if ( is_wp_error( $terms ) ) {
+				$terms = array();
+			}
+
+			$assigned = wp_get_object_terms( self::$event_id, $taxonomy->name, array( 'fields' => 'ids' ) );
+			if ( is_wp_error( $assigned ) ) {
+				$assigned = array();
+			}
+
+			$payload[] = array(
+				'taxonomy'     => $taxonomy->name,
+				'label'        => (string) ( $taxonomy->labels->name ?? $taxonomy->label ),
+				'hierarchical' => (bool) $taxonomy->hierarchical,
+				'terms'        => array_map(
+					static function ( $term ) {
+						return array(
+							'id'     => (int) $term->term_id,
+							'name'   => $term->name,
+							'parent' => (int) $term->parent,
+						);
+					},
+					$terms
+				),
+				'assigned'     => array_map( 'intval', $assigned ),
+			);
+		}
+
+		return apply_filters( 'eventkoi_get_event_custom_taxonomies', $payload, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Persist third-party taxonomy assignments sent back by the event editor.
+	 *
+	 * @param array $items Items shaped as array{ taxonomy: string, assigned: int[] }.
+	 * @return void
+	 */
+	public static function update_custom_taxonomies( $items ) {
+		if ( ! is_array( $items ) ) {
+			return;
+		}
+
+		foreach ( $items as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+
+			$taxonomy = sanitize_key( (string) ( $item['taxonomy'] ?? '' ) );
+			if ( '' === $taxonomy || 'event_cal' === $taxonomy ) {
+				continue;
+			}
+
+			if ( ! taxonomy_exists( $taxonomy ) || ! is_object_in_taxonomy( 'eventkoi_event', $taxonomy ) ) {
+				continue;
+			}
+
+			if ( ! array_key_exists( 'assigned', $item ) ) {
+				continue;
+			}
+
+			$term_ids = array_values( array_filter( array_map( 'absint', (array) $item['assigned'] ) ) );
+			wp_set_object_terms( self::$event_id, $term_ids, $taxonomy, false );
+		}
 	}
 
 	/**
