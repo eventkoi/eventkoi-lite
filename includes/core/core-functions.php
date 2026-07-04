@@ -546,8 +546,14 @@ function eventkoi_get_permalink_structure() {
 	);
 	$permalinks       = wp_parse_args( $saved_permalinks, $defaults );
 
+	// Sanitize per path segment so nested bases like "agenda/calendar"
+	// keep their slashes instead of collapsing to "agendacalendar".
+	$sanitize_base_path = static function ( $base ) {
+		return implode( '/', array_filter( array_map( 'sanitize_title_with_dashes', explode( '/', (string) $base ) ) ) );
+	};
+
 	foreach ( array( 'event_base', 'category_base' ) as $key ) {
-		$base = untrailingslashit( sanitize_title_with_dashes( (string) ( $permalinks[ $key ] ?? '' ) ) );
+		$base = untrailingslashit( $sanitize_base_path( $permalinks[ $key ] ?? '' ) );
 		if ( '' === $base ) {
 			$base = untrailingslashit( sanitize_title_with_dashes( (string) $defaults[ $key ] ) );
 		}
@@ -566,9 +572,9 @@ function eventkoi_get_permalink_structure() {
 		update_option( 'eventkoi_permalinks', $stored );
 	}
 
-	// Sanitize and set rewrite slugs.
-	$permalinks['event_rewrite_slug']    = untrailingslashit( sanitize_title_with_dashes( $permalinks['event_base'] ) );
-	$permalinks['category_rewrite_slug'] = untrailingslashit( sanitize_title_with_dashes( $permalinks['category_base'] ) );
+	// Rewrite slugs reuse the same per-segment sanitizer.
+	$permalinks['event_rewrite_slug']    = untrailingslashit( $sanitize_base_path( $permalinks['event_base'] ) );
+	$permalinks['category_rewrite_slug'] = untrailingslashit( $sanitize_base_path( $permalinks['category_base'] ) );
 
 	return $permalinks;
 }

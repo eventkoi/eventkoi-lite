@@ -328,7 +328,10 @@ class Settings {
 	 * @return string
 	 */
 	private static function sanitize_permalink_base( $value, $fallback ): string {
-		$slug = untrailingslashit( sanitize_title_with_dashes( (string) $value ) );
+		// Sanitize each path segment separately so nested bases like
+		// "agenda/calendar" keep their slashes.
+		$segments = array_filter( array_map( 'sanitize_title_with_dashes', explode( '/', (string) $value ) ) );
+		$slug     = implode( '/', $segments );
 
 		if ( '' === $slug ) {
 			$slug = sanitize_title_with_dashes( $fallback );

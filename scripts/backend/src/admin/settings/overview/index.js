@@ -41,12 +41,16 @@ const dayLabels = {
 const themeSlug = eventkoi_params?.theme || "twentytwentyfive";
 const customTemplates = eventkoi_params?.custom_templates || [];
 const cleanPermalinkBase = (value, fallback) => {
+  // Sanitize each path segment separately so nested bases like
+  // "agenda/calendar" keep their slashes.
   const slug = foldAccents(value)
     .trim()
     .toLowerCase()
     .replace(/['"]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
+    .split("/")
+    .map((part) => part.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, ""))
+    .filter(Boolean)
+    .join("/");
 
   return slug || fallback;
 };
