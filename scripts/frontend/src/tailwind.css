@@ -32,6 +32,25 @@
     --warning-foreground: 48 96% 89%;
     --success: 158 48% 45%;
   }
+
+  /* Themes like Hello Elementor reset buttons via attribute selectors
+     ([type=button] { padding: .5rem 1rem; border: 1px solid; ... }), which
+     outrank the scoped preflight's plain `button` reset and crush icon-only
+     buttons. Re-assert the preflight button reset at the same specificity;
+     loading later in the cascade wins, while our utilities still override. */
+  :where(.eventkoi-front)
+    :is(button, [type='button'], [type='reset'], [type='submit']) {
+    margin: 0;
+    padding: 0;
+    border: 0 solid;
+    background-color: transparent;
+    background-image: none;
+    color: inherit;
+    font: inherit;
+    line-height: inherit;
+    letter-spacing: inherit;
+    text-transform: none;
+  }
 }
 
 @layer utilities {
