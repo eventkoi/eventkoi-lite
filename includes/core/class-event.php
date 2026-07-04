@@ -61,6 +61,9 @@ class Event {
 		'ical',
 		'tbc',
 		'tbc_note',
+		'price_from_amount',
+		'price_from_url',
+		'price_from_details',
 		'type',
 		'date_type',
 		'address1',
@@ -486,6 +489,12 @@ class Event {
 		$timezone_display = array_key_exists( 'timezone_display', $meta ) ? self::normalize_boolean_meta( $meta['timezone_display'] ) : true;
 		$tbc              = array_key_exists( 'tbc', $meta ) ? self::normalize_boolean_meta( $meta['tbc'] ) : false;
 		$tbc_note         = ! empty( $meta['tbc_note'] ) ? esc_attr( $meta['tbc_note'] ) : '';
+
+		$price_from_amount  = isset( $meta['price_from_amount'] ) && '' !== $meta['price_from_amount'] && is_numeric( $meta['price_from_amount'] )
+			? (string) max( 0, (float) $meta['price_from_amount'] )
+			: '';
+		$price_from_url     = isset( $meta['price_from_url'] ) ? esc_url_raw( (string) $meta['price_from_url'] ) : '';
+		$price_from_details = isset( $meta['price_from_details'] ) ? sanitize_textarea_field( (string) $meta['price_from_details'] ) : '';
 		$start_date       = array_key_exists( 'start_date', $meta ) ? self::normalize_utc_datetime_iso_string( $meta['start_date'] ) : '';
 		$end_date         = array_key_exists( 'end_date', $meta ) ? self::normalize_utc_datetime_iso_string( $meta['end_date'] ) : '';
 		$type             = ! empty( $meta['type'] ) ? esc_attr( $meta['type'] ) : 'inperson';
@@ -536,6 +545,9 @@ class Event {
 		}
 		update_post_meta( self::$event_id, 'tbc', $tbc ? 1 : 0 );
 		update_post_meta( self::$event_id, 'tbc_note', (string) $tbc_note );
+		update_post_meta( self::$event_id, 'price_from_amount', $price_from_amount );
+		update_post_meta( self::$event_id, 'price_from_url', $price_from_url );
+		update_post_meta( self::$event_id, 'price_from_details', $price_from_details );
 		update_post_meta( self::$event_id, 'type', (string) $type );
 		update_post_meta( self::$event_id, 'location', (array) $location );
 		update_post_meta( self::$event_id, 'address1', (string) $address1 );
@@ -1886,6 +1898,39 @@ class Event {
 			: true;
 
 		return apply_filters( 'eventkoi_get_timezone_display', $timezone_display, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Get the "Price from" starting amount.
+	 *
+	 * @return string Numeric string, empty when unset.
+	 */
+	public static function get_price_from_amount() {
+		$amount = get_post_meta( self::$event_id, 'price_from_amount', true );
+
+		return apply_filters( 'eventkoi_get_event_price_from_amount', (string) $amount, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Get the "Price from" external ticket site URL.
+	 *
+	 * @return string
+	 */
+	public static function get_price_from_url() {
+		$url = get_post_meta( self::$event_id, 'price_from_url', true );
+
+		return apply_filters( 'eventkoi_get_event_price_from_url', (string) $url, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Get the "Price from" pricing details text.
+	 *
+	 * @return string
+	 */
+	public static function get_price_from_details() {
+		$details = get_post_meta( self::$event_id, 'price_from_details', true );
+
+		return apply_filters( 'eventkoi_get_event_price_from_details', (string) $details, self::$event_id, self::$event );
 	}
 
 	/**
@@ -3725,7 +3770,131 @@ class Event {
 			return apply_filters( 'eventkoi_rendered_event_rsvp', $output, self::$event_id, self::$event );
 		}
 
+		if ( 'price_from' === $mode ) {
+			return apply_filters( 'eventkoi_rendered_event_price_from', self::rendered_price_from_box(), self::$event_id, self::$event );
+		}
+
 		return '';
+	}
+
+	/**
+	 * Format a "Price from" amount in the store currency.
+	 *
+	 * @param string $amount Numeric amount string.
+	 * @return string
+	 */
+	protected static function format_price_from_amount( $amount ) {
+		if ( '' === $amount || ! is_numeric( $amount ) ) {
+			return '';
+		}
+
+		$value    = (float) $amount;
+		$settings = Settings::get();
+		$currency = strtoupper( (string) ( $settings['currency'] ?? 'USD' ) );
+		$decimals = fmod( $value, 1 ) ? 2 : 0;
+
+		if ( class_exists( '\NumberFormatter' ) ) {
+			$formatter = new \NumberFormatter( get_locale(), \NumberFormatter::CURRENCY );
+			$formatter->setAttribute( \NumberFormatter::MIN_FRACTION_DIGITS, $decimals );
+			$formatter->setAttribute( \NumberFormatter::MAX_FRACTION_DIGITS, $decimals );
+			$formatted = $formatter->formatCurrency( $value, $currency );
+			if ( false !== $formatted ) {
+				return $formatted;
+			}
+		}
+
+		$symbols = array(
+			'USD' => '$',
+			'EUR' => '€',
+			'GBP' => '£',
+			'JPY' => '¥',
+			'AUD' => 'A$',
+			'CAD' => 'C$',
+			'CHF' => 'CHF ',
+			'SEK' => 'kr ',
+			'NOK' => 'kr ',
+			'DKK' => 'kr ',
+		);
+		$symbol  = $symbols[ $currency ] ?? $currency . ' ';
+
+		return $symbol . number_format_i18n( $value, $decimals );
+	}
+
+	/**
+	 * "Price from" formatted string, e.g. "From $25".
+	 *
+	 * @return string
+	 */
+	public static function rendered_price_from() {
+		$formatted = self::format_price_from_amount( self::get_price_from_amount() );
+		if ( '' === $formatted ) {
+			return '';
+		}
+
+		/* translators: %s: formatted starting price. */
+		return sprintf( __( 'From %s', 'eventkoi-lite' ), $formatted );
+	}
+
+	/**
+	 * "Price from" external ticket site URL.
+	 *
+	 * @return string
+	 */
+	public static function rendered_price_from_url() {
+		return esc_url( self::get_price_from_url() );
+	}
+
+	/**
+	 * "Price from" details text.
+	 *
+	 * @return string
+	 */
+	public static function rendered_price_from_details() {
+		return esc_html( self::get_price_from_details() );
+	}
+
+	/**
+	 * Server-rendered "Price from" box for the event page tickets slot.
+	 *
+	 * Reuses the ticket widget's utility classes so it inherits the exact
+	 * styling of the React tickets box without loading that bundle.
+	 *
+	 * @return string
+	 */
+	protected static function rendered_price_from_box() {
+		$price_line = self::rendered_price_from();
+		$url        = self::get_price_from_url();
+		$details    = self::get_price_from_details();
+
+		if ( '' === $price_line && '' === $url && '' === $details ) {
+			return '';
+		}
+
+		Scripts::enqueue_frontend_assets();
+
+		$parts   = array();
+		$parts[] = '<div class="flex items-center justify-between gap-4">';
+		$parts[] = '<div class="text-base font-semibold uppercase tracking-normal text-foreground">' . esc_html__( 'Tickets', 'eventkoi-lite' ) . '</div>';
+		if ( '' !== $price_line ) {
+			$parts[] = '<div class="text-3xl font-semibold leading-none text-foreground tabular-nums">' . esc_html( $price_line ) . '</div>';
+		}
+		$parts[] = '</div>';
+
+		if ( '' !== $details ) {
+			$parts[] = '<div class="text-base text-muted-foreground" style="white-space:pre-line;">' . esc_html( $details ) . '</div>';
+		}
+
+		if ( '' !== $url ) {
+			$parts[] = sprintf(
+				'<a class="inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-primary text-base font-semibold text-primary-foreground no-underline transition-colors hover:bg-primary/90" href="%1$s" target="_blank" rel="noopener noreferrer">%2$s</a>',
+				esc_url( $url ),
+				esc_html__( 'Get tickets', 'eventkoi-lite' )
+			);
+		}
+
+		return '<div class="eventkoi-front"><div class="eventkoi-price-from"><div class="eventkoi-tickets__widget w-full max-w-[450px] rounded-[10px] border p-6" style="background-color:#f3f3f3;border-color:#eeeeee"><div class="flex flex-col gap-6">'
+			. implode( '', $parts )
+			. '</div></div></div></div>';
 	}
 
 	/**

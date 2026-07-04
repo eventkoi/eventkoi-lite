@@ -70,6 +70,19 @@ export function AttendanceModeSelector({ event, setEvent }) {
               </Label>
             </div>
           )}
+
+          <div className="flex items-start space-x-3">
+            <RadioGroupItem value="price_from" id="price_from" className="mt-1" />
+            <Label htmlFor="price_from" className="cursor-pointer flex-1">
+              <div className="font-medium">{__("Price from", "eventkoi-lite")}</div>
+              <div className="text-sm text-muted-foreground mt-1">
+                {__(
+                  "Show a starting price and link visitors to an external ticketing site.",
+                  "eventkoi-lite",
+                )}
+              </div>
+            </Label>
+          </div>
         </RadioGroup>
       </div>
     </div>

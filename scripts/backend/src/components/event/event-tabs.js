@@ -55,6 +55,11 @@ export function EventTabs() {
           title: __("RSVP", "eventkoi-lite"),
           children: rsvpChildTabs.rsvp,
         }]
+      : attendanceMode === 'price_from'
+      ? [{
+          name: "price-from",
+          title: __("Price from", "eventkoi-lite"),
+        }]
       : attendanceMode === 'tickets'
       ? [{
           name: "manage-tickets",

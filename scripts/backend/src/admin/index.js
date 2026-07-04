@@ -20,6 +20,7 @@ import { EventEditInstances } from "@/admin/events/edit/instances";
 import { EditInstance } from "@/admin/events/edit/instances/edit-instance";
 import { EventEditMain } from "@/admin/events/edit/main";
 import { EventEditRsvp } from "@/admin/events/edit/rsvp";
+import { EventEditPriceFrom } from "@/admin/events/edit/price-from";
 import { EventEditAttendees } from "@/admin/events/edit/attendees";
 import { EventEditManageTickets } from "@/admin/events/edit/tickets/manage-tickets";
 import { EventEditSalesHistory } from "@/admin/events/edit/tickets/sales-history";
@@ -166,6 +167,7 @@ function AdminLayout() {
         <Route path="events/:id" element={<EventEdit />}>
           <Route path="main" element={<EventEditMain />} />
           <Route path="rsvp" element={<EventEditRsvp />} />
+          <Route path="price-from" element={<EventEditPriceFrom />} />
           <Route path="instances" element={<EventEditInstances />} />
           <Route path="attendees" element={<EventEditAttendees />} />
           {ticketsEnabled ? (
