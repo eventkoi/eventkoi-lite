@@ -1235,20 +1235,34 @@ class Ticket_Emails {
 		// terms text they consented to (snapshotted at checkout).
 		$terms_section = '';
 		$consent       = is_array( $order['terms_consent'] ?? null ) ? $order['terms_consent'] : null;
-		if ( ! empty( $consent['terms_text'] ) && ! empty( $consent['accepted_at'] ) ) {
-			$terms_section = implode(
-				"\n",
-				array(
-					'<p><strong>' . esc_html__( 'Terms and conditions:', 'eventkoi-lite' ) . '</strong> '
-						. sprintf(
-							/* translators: %s: date/time the customer accepted the terms. */
-							esc_html__( 'Accepted by the customer at checkout on %s.', 'eventkoi-lite' ),
-							esc_html( wp_date( 'Y-m-d H:i:s T', (int) $consent['accepted_at'] ) )
-						)
-						. '</p>',
-					'<div>' . wp_kses_post( $consent['terms_text'] ) . '</div>',
-				)
+		$has_consent   = $consent && ! empty( $consent['accepted_at'] )
+			&& ( ! empty( $consent['terms_text'] ) || ! empty( $consent['agreements'] ) );
+		if ( $has_consent ) {
+			$section_parts = array(
+				'<p><strong>' . esc_html__( 'Terms and conditions:', 'eventkoi-lite' ) . '</strong> '
+					. sprintf(
+						/* translators: %s: date/time the customer accepted the terms. */
+						esc_html__( 'Accepted by the customer at checkout on %s.', 'eventkoi-lite' ),
+						esc_html( wp_date( 'Y-m-d H:i:s T', (int) $consent['accepted_at'] ) )
+					)
+					. '</p>',
 			);
+
+			if ( ! empty( $consent['terms_text'] ) ) {
+				$section_parts[] = '<div>' . wp_kses_post( $consent['terms_text'] ) . '</div>';
+			}
+
+			$agreement_texts = array_filter( array_map( 'trim', (array) ( $consent['agreements'] ?? array() ) ) );
+			if ( ! empty( $agreement_texts ) ) {
+				$agreement_items = array();
+				foreach ( $agreement_texts as $agreement_text ) {
+					$agreement_items[] = '<li>' . wp_kses_post( $agreement_text ) . '</li>';
+				}
+				$section_parts[] = '<p><strong>' . esc_html__( 'Agreements accepted:', 'eventkoi-lite' ) . '</strong></p>';
+				$section_parts[] = '<ul>' . implode( '', $agreement_items ) . '</ul>';
+			}
+
+			$terms_section = implode( "\n", $section_parts );
 		}
 
 		$tags = array(

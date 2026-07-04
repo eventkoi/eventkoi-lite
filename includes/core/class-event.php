@@ -94,6 +94,7 @@ class Event {
 		'rsvp_sale_start',
 		'rsvp_sale_end',
 		'tickets_terms_conditions_required',
+		'tickets_agreements',
 		'tickets_event_capacity',
 	);
 
@@ -574,6 +575,7 @@ class Event {
 		$tickets_show_unavailable    = array_key_exists( 'tickets_show_unavailable', $meta ) ? self::normalize_boolean_meta( $meta['tickets_show_unavailable'] ) : false;
 		$tickets_terms_conditions    = isset( $meta['tickets_terms_conditions'] ) ? wp_kses_post( $meta['tickets_terms_conditions'] ) : '';
 		$tickets_terms_required      = array_key_exists( 'tickets_terms_conditions_required', $meta ) ? self::normalize_boolean_meta( $meta['tickets_terms_conditions_required'] ) : false;
+		$tickets_agreements          = self::sanitize_tickets_agreements( $meta['tickets_agreements'] ?? array() );
 		// Total ticket quantity per event (venue capacity). 0 / empty = unlimited.
 		$tickets_event_capacity      = array_key_exists( 'tickets_event_capacity', $meta ) ? max( 0, absint( $meta['tickets_event_capacity'] ) ) : 0;
 		$tickets_display_mode        = isset( $meta['tickets_display_mode'] ) ? sanitize_key( $meta['tickets_display_mode'] ) : 'cards';
@@ -585,6 +587,7 @@ class Event {
 		update_post_meta( self::$event_id, 'tickets_show_unavailable', $tickets_show_unavailable ? 1 : 0 );
 		update_post_meta( self::$event_id, 'tickets_terms_conditions', $tickets_terms_conditions );
 		update_post_meta( self::$event_id, 'tickets_terms_conditions_required', $tickets_terms_required ? 1 : 0 );
+		update_post_meta( self::$event_id, 'tickets_agreements', $tickets_agreements );
 		update_post_meta( self::$event_id, 'tickets_event_capacity', $tickets_event_capacity );
 		update_post_meta( self::$event_id, 'tickets_display_mode', $tickets_display_mode );
 
@@ -2365,6 +2368,61 @@ class Event {
 		$required = self::normalize_boolean_meta( get_post_meta( self::$event_id, 'tickets_terms_conditions_required', true ) );
 
 		return (bool) apply_filters( 'eventkoi_get_event_tickets_terms_conditions_required', $required, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Additional agreement checkboxes shown at ticket checkout.
+	 *
+	 * Each item is a separate consent (e.g. privacy statement, refund policy)
+	 * with its own checkbox, on top of the main terms & conditions field.
+	 *
+	 * @return array[] Items shaped as array{ id: string, text: string, required: bool }.
+	 */
+	public static function get_tickets_agreements() {
+		$items = self::sanitize_tickets_agreements( get_post_meta( self::$event_id, 'tickets_agreements', true ) );
+
+		return apply_filters( 'eventkoi_get_event_tickets_agreements', $items, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Sanitize a raw agreements list into the canonical shape.
+	 *
+	 * Empty-text items are dropped; missing IDs are generated so the checkout
+	 * can reference each agreement stably.
+	 *
+	 * @param mixed $raw Raw agreements value (from meta or a REST payload).
+	 * @return array[]
+	 */
+	public static function sanitize_tickets_agreements( $raw ) {
+		$items = array();
+
+		if ( ! is_array( $raw ) ) {
+			return $items;
+		}
+
+		foreach ( $raw as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+
+			$text = trim( wp_kses_post( (string) ( $item['text'] ?? '' ) ) );
+			if ( '' === $text ) {
+				continue;
+			}
+
+			$id = sanitize_key( (string) ( $item['id'] ?? '' ) );
+			if ( '' === $id ) {
+				$id = 'agr_' . substr( md5( $text . wp_rand() ), 0, 8 );
+			}
+
+			$items[] = array(
+				'id'       => $id,
+				'text'     => $text,
+				'required' => self::normalize_boolean_meta( $item['required'] ?? false ),
+			);
+		}
+
+		return $items;
 	}
 
 	/**

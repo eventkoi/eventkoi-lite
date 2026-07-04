@@ -440,6 +440,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
   const [checkoutAttempted, setCheckoutAttempted] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [agreementsAccepted, setAgreementsAccepted] = useState({});
   const [emailTouched, setEmailTouched] = useState(false);
   const [checkoutSuccessSessionId, setCheckoutSuccessSessionId] = useState(
     () => readCheckoutSuccessFromUrl(),
@@ -512,6 +513,14 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
   ).trim();
   const eventTermsRequired =
     eventTermsConditions !== "" && !!data?.tickets_terms_conditions_required;
+  const eventAgreements = Array.isArray(data?.tickets_agreements)
+    ? data.tickets_agreements.filter((item) =>
+        String(item?.text || "").trim(),
+      )
+    : [];
+  const allRequiredAgreementsAccepted = eventAgreements.every(
+    (item) => item.required === false || !!agreementsAccepted[item.id],
+  );
   const showUnavailableTickets = true;
   const visibleTickets = useMemo(
     () =>
@@ -942,7 +951,8 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
     lastNameValue !== "" &&
     hasValidBillingEmail &&
     hasRequiredCheckoutFields &&
-    (!eventTermsRequired || termsAccepted);
+    (!eventTermsRequired || termsAccepted) &&
+    allRequiredAgreementsAccepted;
 
   const startHostedCheckout = async () => {
     if (!canContinueCheckout || isCheckoutLoading) return;
@@ -960,6 +970,12 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
     if (eventTermsRequired && !termsAccepted) {
       setCheckoutError(
         __("Please agree to the terms & conditions to continue.", "eventkoi-lite")
+      );
+      return;
+    }
+    if (!allRequiredAgreementsAccepted) {
+      setCheckoutError(
+        __("Please agree to all required terms to continue.", "eventkoi-lite")
       );
       return;
     }
@@ -1058,6 +1074,9 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
           email,
           fields: checkoutFieldValues,
           terms_accepted: termsAccepted ? "1" : "",
+          agreements_accepted: eventAgreements
+            .filter((item) => !!agreementsAccepted[item.id])
+            .map((item) => item.id),
           items: selectedTicketItems.map((item) => ({
             ticket_id: item.ticket_id,
             name: String(item.name || ""),
@@ -1763,35 +1782,69 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                       </div>
                     ) : null}
 
-                    {eventTermsRequired ? (
+                    {eventTermsRequired || eventAgreements.length > 0 ? (
                       <div className="space-y-2.5">
-                        <div
-                          className="eventkoi-ticket-terms max-h-28 overflow-y-auto rounded-md border border-border bg-muted/20 p-3 text-xs leading-relaxed text-muted-foreground [&_a]:underline"
-                          dangerouslySetInnerHTML={{
-                            __html: eventTermsConditions,
-                          }}
-                        />
-                        <label
-                          htmlFor={`${idPrefix}-terms-accept`}
-                          className="flex items-start gap-2.5 text-xs leading-relaxed text-muted-foreground"
-                        >
-                          <input
-                            id={`${idPrefix}-terms-accept`}
-                            type="checkbox"
-                            checked={termsAccepted}
-                            onChange={(event) => {
-                              setTermsAccepted(event.target.checked);
-                              if (event.target.checked) setCheckoutError("");
-                            }}
-                            className="mt-0.5 size-4 shrink-0 rounded border-input"
-                          />
-                          <span>
-                            {__(
-                              "I have read and agree to the terms & conditions.",
-                              "eventkoi-lite"
-                            )}
-                          </span>
-                        </label>
+                        {eventTermsRequired ? (
+                          <>
+                            <div
+                              className="eventkoi-ticket-terms max-h-28 overflow-y-auto rounded-md border border-border bg-muted/20 p-3 text-xs leading-relaxed text-muted-foreground [&_a]:underline"
+                              dangerouslySetInnerHTML={{
+                                __html: eventTermsConditions,
+                              }}
+                            />
+                            <label
+                              htmlFor={`${idPrefix}-terms-accept`}
+                              className="flex items-start gap-2.5 text-xs leading-relaxed text-muted-foreground"
+                            >
+                              <input
+                                id={`${idPrefix}-terms-accept`}
+                                type="checkbox"
+                                checked={termsAccepted}
+                                onChange={(event) => {
+                                  setTermsAccepted(event.target.checked);
+                                  if (event.target.checked) setCheckoutError("");
+                                }}
+                                className="mt-0.5 size-4 shrink-0 rounded border-input"
+                              />
+                              <span>
+                                {__(
+                                  "I have read and agree to the terms & conditions.",
+                                  "eventkoi-lite"
+                                )}
+                              </span>
+                            </label>
+                          </>
+                        ) : null}
+                        {eventAgreements.map((agreement) => (
+                          <label
+                            key={agreement.id}
+                            htmlFor={`${idPrefix}-agreement-${agreement.id}`}
+                            className="flex items-start gap-2.5 text-xs leading-relaxed text-muted-foreground"
+                          >
+                            <input
+                              id={`${idPrefix}-agreement-${agreement.id}`}
+                              type="checkbox"
+                              checked={!!agreementsAccepted[agreement.id]}
+                              onChange={(event) => {
+                                setAgreementsAccepted((prev) => ({
+                                  ...prev,
+                                  [agreement.id]: event.target.checked,
+                                }));
+                                if (event.target.checked) setCheckoutError("");
+                              }}
+                              className="mt-0.5 size-4 shrink-0 rounded border-input"
+                            />
+                            <span
+                              className="[&_a]:underline"
+                              dangerouslySetInnerHTML={{ __html: agreement.text }}
+                            />
+                            {agreement.required !== false ? (
+                              <span aria-hidden="true" className="text-destructive">
+                                *
+                              </span>
+                            ) : null}
+                          </label>
+                        ))}
                       </div>
                     ) : null}
 

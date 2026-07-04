@@ -563,15 +563,29 @@ class WooCommerce_Checkout {
 			}
 		}
 
-		$consent = is_array( $checkout_data['terms_consent'] ?? null ) ? $checkout_data['terms_consent'] : null;
-		if ( ! empty( $consent['terms_text'] ) && ! empty( $consent['accepted_at'] ) ) {
+		$consent     = is_array( $checkout_data['terms_consent'] ?? null ) ? $checkout_data['terms_consent'] : null;
+		$has_consent = $consent && ! empty( $consent['accepted_at'] )
+			&& ( ! empty( $consent['terms_text'] ) || ! empty( $consent['agreements'] ) );
+		if ( $has_consent ) {
 			$order->update_meta_data( '_eventkoi_terms_consent', $consent );
+
+			$consent_parts = array();
+			if ( ! empty( $consent['terms_text'] ) ) {
+				$consent_parts[] = wp_strip_all_tags( (string) $consent['terms_text'] );
+			}
+			foreach ( (array) ( $consent['agreements'] ?? array() ) as $agreement_text ) {
+				$agreement_text = trim( wp_strip_all_tags( (string) $agreement_text ) );
+				if ( '' !== $agreement_text ) {
+					$consent_parts[] = $agreement_text;
+				}
+			}
+
 			$order->add_order_note(
 				sprintf(
 					/* translators: 1: acceptance date/time, 2: the terms text the customer accepted. */
 					__( 'Terms and conditions accepted at %1$s. Terms: %2$s', 'eventkoi-lite' ),
 					wp_date( 'Y-m-d H:i:s T', (int) $consent['accepted_at'] ),
-					wp_strip_all_tags( (string) $consent['terms_text'] )
+					implode( ' | ', $consent_parts )
 				)
 			);
 		}

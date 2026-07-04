@@ -1001,6 +1001,7 @@ class Tickets {
 				'tickets_show_unavailable'    => $event::get_tickets_show_unavailable(),
 				'tickets_terms_conditions'    => wp_kses_post( $event::get_tickets_terms_conditions() ),
 				'tickets_terms_conditions_required' => $event::get_tickets_terms_conditions_required(),
+				'tickets_agreements'          => $event::get_tickets_agreements(),
 				'tickets_event_capacity'      => $event_capacity,
 				'tickets_event_remaining'     => $event_remaining,
 				'tickets_display_mode'        => $event::get_tickets_display_mode(),
@@ -1130,6 +1131,15 @@ class Tickets {
 			&& ! rest_sanitize_boolean( $request->get_param( 'terms_accepted' ) )
 		) {
 			return new WP_Error( 'terms_not_accepted', __( 'Please agree to the terms & conditions to continue.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
+		// Enforce every required agreement checkbox the same way.
+		$agreements          = $event::get_tickets_agreements();
+		$accepted_agreements = array_map( 'sanitize_key', (array) $request->get_param( 'agreements_accepted' ) );
+		foreach ( $agreements as $agreement ) {
+			if ( ! empty( $agreement['required'] ) && ! in_array( $agreement['id'], $accepted_agreements, true ) ) {
+				return new WP_Error( 'terms_not_accepted', __( 'Please agree to all required terms to continue.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+			}
 		}
 
 		if ( empty( $return_url ) ) {
@@ -1401,14 +1411,7 @@ class Tickets {
 				'checkout_fields' => $checkout_fields,
 				// Snapshot the terms the customer accepted so the order record and
 				// the admin sale email document the exact consented text.
-				'terms_consent' => (
-					$event::get_tickets_terms_conditions_required()
-					&& rest_sanitize_boolean( $request->get_param( 'terms_accepted' ) )
-					&& '' !== trim( (string) $event::get_tickets_terms_conditions() )
-				) ? array(
-					'accepted_at' => time(),
-					'terms_text'  => (string) $event::get_tickets_terms_conditions(),
-				) : null,
+				'terms_consent' => self::build_terms_consent( $event, $request, $agreements, $accepted_agreements ),
 			)
 		);
 
@@ -2258,6 +2261,41 @@ class Tickets {
 	 * @param string $email         Customer email.
 	 * @param string $customer_name Customer name.
 	 */
+	/**
+	 * Build the consent snapshot passed to the gateway: the accepted terms
+	 * text plus every agreement checkbox the customer ticked.
+	 *
+	 * @param \EventKoi\Core\Event $event               Event instance.
+	 * @param \WP_REST_Request      $request             Checkout request.
+	 * @param array                 $agreements          All agreement items on the event.
+	 * @param array                 $accepted_agreements Accepted agreement IDs.
+	 * @return array|null
+	 */
+	private static function build_terms_consent( $event, $request, $agreements, $accepted_agreements ) {
+		$terms_text = (
+			$event::get_tickets_terms_conditions_required()
+			&& rest_sanitize_boolean( $request->get_param( 'terms_accepted' ) )
+			&& '' !== trim( (string) $event::get_tickets_terms_conditions() )
+		) ? (string) $event::get_tickets_terms_conditions() : '';
+
+		$accepted_texts = array();
+		foreach ( $agreements as $agreement ) {
+			if ( in_array( $agreement['id'], $accepted_agreements, true ) ) {
+				$accepted_texts[] = $agreement['text'];
+			}
+		}
+
+		if ( '' === trim( $terms_text ) && empty( $accepted_texts ) ) {
+			return null;
+		}
+
+		return array(
+			'accepted_at' => time(),
+			'terms_text'  => $terms_text,
+			'agreements'  => $accepted_texts,
+		);
+	}
+
 	private static function create_inventory_holds( $hold_id, $event_id, $items, $tickets_by_id, $currency, $email, $customer_name ) {
 		global $wpdb;
 

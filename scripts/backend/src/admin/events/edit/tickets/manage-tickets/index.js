@@ -84,6 +84,7 @@ export function EventEditManageTickets() {
     event_capacity: "",
     terms_conditions: "",
     terms_conditions_required: false,
+    agreements: [],
   });
 
   const wpTz = useMemo(
@@ -121,6 +122,9 @@ export function EventEditManageTickets() {
             : "",
         terms_conditions: event.tickets_terms_conditions || "",
         terms_conditions_required: !!event.tickets_terms_conditions_required,
+        agreements: Array.isArray(event.tickets_agreements)
+          ? event.tickets_agreements
+          : [],
       });
     }
   }, [event]);
@@ -237,6 +241,40 @@ export function EventEditManageTickets() {
     updateEvent(newSettings);
   };
 
+  const updateAgreements = (nextAgreements) => {
+    const newSettings = {
+      ...ticketSettings,
+      agreements: nextAgreements,
+    };
+    setTicketSettings(newSettings);
+    updateEvent(newSettings);
+  };
+
+  const handleAgreementChange = (index, patch) => {
+    updateAgreements(
+      (ticketSettings.agreements || []).map((item, idx) =>
+        idx === index ? { ...item, ...patch } : item,
+      ),
+    );
+  };
+
+  const handleAddAgreement = () => {
+    updateAgreements([
+      ...(ticketSettings.agreements || []),
+      {
+        id: `agr_${(crypto?.randomUUID?.() || `${Date.now()}`).slice(0, 8)}`,
+        text: "",
+        required: true,
+      },
+    ]);
+  };
+
+  const handleRemoveAgreement = (index) => {
+    updateAgreements(
+      (ticketSettings.agreements || []).filter((_, idx) => idx !== index),
+    );
+  };
+
   const handleCapacityChange = (e) => {
     const digits = String(e.target.value || "").replace(/[^0-9]/g, "");
     const newSettings = {
@@ -261,6 +299,9 @@ export function EventEditManageTickets() {
           : !!newSettings.show_unavailable,
       tickets_terms_conditions: newSettings.terms_conditions,
       tickets_terms_conditions_required: newSettings.terms_conditions_required,
+      tickets_agreements: Array.isArray(newSettings.agreements)
+        ? newSettings.agreements
+        : [],
       tickets_event_capacity:
         newSettings.event_capacity === ""
           ? 0
@@ -717,6 +758,67 @@ export function EventEditManageTickets() {
               }
             />
           )}
+
+          <div className="flex flex-col gap-2 max-w-[500px] pt-4">
+            <Label className="font-medium">
+              {__("Agreement checkboxes", "eventkoi-lite")}
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              {__(
+                "Separate consents shown as individual checkboxes at checkout, for example a privacy statement or refund policy. Required ones must be ticked before the buyer can continue.",
+                "eventkoi-lite",
+              )}
+            </p>
+            {(ticketSettings.agreements || []).map((agreement, index) => (
+              <div
+                key={agreement.id || index}
+                className="flex flex-col gap-2 rounded-md border border-border p-3"
+              >
+                <Textarea
+                  aria-label={__("Agreement text", "eventkoi-lite")}
+                  placeholder={__(
+                    "e.g. I have read and accept the privacy statement.",
+                    "eventkoi-lite",
+                  )}
+                  value={agreement.text || ""}
+                  onChange={(e) =>
+                    handleAgreementChange(index, { text: e.target.value })
+                  }
+                  className="min-h-[60px]"
+                />
+                <div className="flex items-center justify-between gap-3">
+                  <label className="flex items-center gap-2 text-sm">
+                    <Switch
+                      checked={agreement.required !== false}
+                      onCheckedChange={(checked) =>
+                        handleAgreementChange(index, { required: !!checked })
+                      }
+                      aria-label={__("Require this agreement", "eventkoi-lite")}
+                    />
+                    {__("Required", "eventkoi-lite")}
+                  </label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveAgreement(index)}
+                    aria-label={__("Remove agreement", "eventkoi-lite")}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              className="w-fit"
+              onClick={handleAddAgreement}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              {__("Add agreement", "eventkoi-lite")}
+            </Button>
+          </div>
 
           <div className="flex flex-col gap-4 mt-2">
             {loadingTickets && (
