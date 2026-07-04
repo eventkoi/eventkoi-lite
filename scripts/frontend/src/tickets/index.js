@@ -851,6 +851,28 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
   const eventCapReached =
     eventTicketsRemaining !== null && totalSelectedQty >= eventTicketsRemaining;
 
+  // Remaining tickets shown on the event page box: the number a buyer can
+  // actually still purchase. Uses the event capacity remaining and the sum
+  // of per-ticket remaining counts; unlimited (null) when either source is
+  // unlimited and the other is absent.
+  const eventPageRemaining = (() => {
+    if (!showRemainingTickets || !displayTickets.length) return null;
+    const candidates = [];
+    if (eventTicketsRemaining !== null) candidates.push(eventTicketsRemaining);
+    let perTicketSum = 0;
+    let allFinite = true;
+    for (const ticket of displayTickets) {
+      const raw = ticket?.remaining;
+      if (raw === null || raw === undefined || !Number.isFinite(Number(raw))) {
+        allFinite = false;
+        break;
+      }
+      perTicketSum += Math.max(0, Number(raw));
+    }
+    if (allFinite) candidates.push(perTicketSum);
+    return candidates.length ? Math.min(...candidates) : null;
+  })();
+
   const clampToEventCap = (ticketId, nextValue, prev) => {
     if (eventTicketsRemaining === null) return nextValue;
     const otherTotal = displayTickets.reduce(
@@ -1193,6 +1215,21 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
         ) : saleEndLabel ? (
           <div className="text-base text-muted-foreground">
             {sprintf(__("Ticket sales end on %s.", "eventkoi-lite"), saleEndLabel)}
+          </div>
+        ) : null}
+
+        {eventPageRemaining !== null && eventPageRemaining > 0 ? (
+          <div className="text-base text-muted-foreground">
+            {sprintf(
+              /* translators: %s: number of tickets still available. */
+              _n(
+                "%s ticket left",
+                "%s tickets left",
+                eventPageRemaining,
+                "eventkoi-lite",
+              ),
+              new Intl.NumberFormat().format(eventPageRemaining),
+            )}
           </div>
         ) : null}
 
