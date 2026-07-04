@@ -164,3 +164,13 @@
 .ek-modal-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
+
+// Classic themes (e.g. Astra) wrap the content area in display:flex
+// containers; a flex item with no width shrink-wraps to its intrinsic
+// content width, collapsing the calendar/list wrapper to a narrow strip
+// that then renders in its compact (mobile) layout. Make the injected
+// calendar-page wrapper fill the row instead.
+main.eventkoi-main {
+  width: 100%;
+  min-width: 0;
+}
