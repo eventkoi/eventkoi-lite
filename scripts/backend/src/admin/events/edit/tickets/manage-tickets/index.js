@@ -262,7 +262,7 @@ export function EventEditManageTickets() {
     updateAgreements([
       ...(ticketSettings.agreements || []),
       {
-        id: `agr_${(crypto?.randomUUID?.() || `${Date.now()}`).slice(0, 8)}`,
+        id: `agr_${crypto?.randomUUID?.() || `${Date.now()}${Math.floor(Math.random() * 1e9)}`}`,
         text: "",
         required: true,
       },
