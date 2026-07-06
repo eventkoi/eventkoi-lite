@@ -2,7 +2,7 @@ import { Box } from "@/components/box";
 import { Heading } from "@/components/heading";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { useEventEditContext } from "@/hooks/EventEditContext";
 import { __ } from "@wordpress/i18n";
 
@@ -74,15 +74,15 @@ export function EventEditPriceFrom() {
           <Label htmlFor="price-from-details">
             {__("Pricing details", "eventkoi-lite")}
           </Label>
-          <Textarea
+          <RichTextEditor
             id="price-from-details"
-            rows={4}
             value={event?.price_from_details ?? ""}
-            onChange={(e) => updateField("price_from_details", e.target.value)}
+            onChange={(content) => updateField("price_from_details", content)}
+            height={240}
           />
           <div className="text-sm text-muted-foreground">
             {__(
-              "Optional extra information about prices, shown under the price.",
+              "Optional extra information about prices, shown under the price. Use the toolbar for lists and formatting.",
               "eventkoi-lite",
             )}
           </div>

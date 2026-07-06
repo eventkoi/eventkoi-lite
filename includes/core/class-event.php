@@ -494,7 +494,7 @@ class Event {
 			? (string) max( 0, (float) $meta['price_from_amount'] )
 			: '';
 		$price_from_url     = isset( $meta['price_from_url'] ) ? esc_url_raw( (string) $meta['price_from_url'] ) : '';
-		$price_from_details = isset( $meta['price_from_details'] ) ? sanitize_textarea_field( (string) $meta['price_from_details'] ) : '';
+		$price_from_details = isset( $meta['price_from_details'] ) ? wp_kses_post( (string) $meta['price_from_details'] ) : '';
 		$start_date       = array_key_exists( 'start_date', $meta ) ? self::normalize_utc_datetime_iso_string( $meta['start_date'] ) : '';
 		$end_date         = array_key_exists( 'end_date', $meta ) ? self::normalize_utc_datetime_iso_string( $meta['end_date'] ) : '';
 		$type             = ! empty( $meta['type'] ) ? esc_attr( $meta['type'] ) : 'inperson';
@@ -3867,7 +3867,18 @@ class Event {
 	 * @return string
 	 */
 	public static function rendered_price_from_details() {
-		return esc_html( self::get_price_from_details() );
+		$details = self::get_price_from_details();
+
+		if ( '' === trim( $details ) ) {
+			return '';
+		}
+
+		// Rich-text value: opt out of the frontend Tailwind preflight (which strips
+		// list markers) via `no-eventkoi`, mirroring the rich-text description.
+		return sprintf(
+			'<div class="eventkoi-richtext no-eventkoi">%s</div>',
+			wp_kses_post( $details )
+		);
 	}
 
 	/**
@@ -3897,8 +3908,8 @@ class Event {
 		}
 		$parts[] = '</div>';
 
-		if ( '' !== $details ) {
-			$parts[] = '<div class="text-base text-muted-foreground" style="white-space:pre-line;">' . esc_html( $details ) . '</div>';
+		if ( '' !== trim( $details ) ) {
+			$parts[] = '<div class="eventkoi-richtext no-eventkoi text-base text-muted-foreground">' . wp_kses_post( $details ) . '</div>';
 		}
 
 		if ( '' !== $url ) {
