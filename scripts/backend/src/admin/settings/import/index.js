@@ -83,6 +83,34 @@ export function SettingsImport() {
     }
   };
 
+  // Reassign this import's non-default-calendar events to the default calendar
+  // so they show on Lite's default-calendar front end.
+  const moveTecToDefault = async () => {
+    const ids = tecState.result?.non_default_ids || [];
+    if (!ids.length) return;
+    const response = await apiRequest({
+      path: `${eventkoi_params.api}/tec-import/move-to-default`,
+      method: "POST",
+      data: { event_ids: ids },
+      headers: { "EVENTKOI-API-KEY": eventkoi_params.api_key },
+    });
+    setTecState((s) => ({
+      ...s,
+      result: { ...s.result, non_default_count: 0, non_default_ids: [] },
+    }));
+    showToast({
+      message: sprintf(
+        _n(
+          "%d event moved to the default calendar.",
+          "%d events moved to the default calendar.",
+          response?.moved || 0,
+          "eventkoi-lite",
+        ),
+        response?.moved || 0,
+      ),
+    });
+  };
+
   // ICS handlers.
   const handleICSUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -164,6 +192,7 @@ export function SettingsImport() {
           totalCount={tec?.total_events || 0}
           result={tecResult}
           onImport={importTEC}
+          onMoveToDefault={moveTecToDefault}
           onViewEvents={() => navigate("/events")}
         />
 
@@ -209,9 +238,23 @@ function IntegrationCard({
   totalCount,
   result,
   onImport,
+  onMoveToDefault,
   onViewEvents,
 }) {
   const inactive = !loading && !installed;
+  const [movingToDefault, setMovingToDefault] = useState(false);
+
+  const handleMoveToDefault = async () => {
+    if (!onMoveToDefault) return;
+    setMovingToDefault(true);
+    try {
+      await onMoveToDefault();
+    } catch (err) {
+      showToastError(err?.message ?? __("Could not move events.", "eventkoi-lite"));
+    } finally {
+      setMovingToDefault(false);
+    }
+  };
 
   return (
     <div className="group flex flex-col rounded-xl border bg-card shadow-sm transition-all duration-200 hover:shadow-md">
@@ -331,6 +374,27 @@ function IntegrationCard({
           </>
         )}
       </div>
+
+      {!loading && done && result?.non_default_count > 0 && (
+        <div className="px-5 py-4 border-t bg-amber-50 dark:bg-amber-950/30">
+          <p className="text-xs leading-relaxed text-amber-900 dark:text-amber-200">
+            {__(
+              "This import includes events across multiple calendars, but EventKoi Lite only displays the default calendar. You can move everything into the default calendar now, or upgrade to Pro to keep them separated.",
+              "eventkoi-lite",
+            )}
+          </p>
+          <Button
+            size="sm"
+            variant="outline"
+            className="mt-3 h-8 text-xs"
+            onClick={handleMoveToDefault}
+            disabled={movingToDefault}
+          >
+            {movingToDefault && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+            {__("Move all events into default calendar", "eventkoi-lite")}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
