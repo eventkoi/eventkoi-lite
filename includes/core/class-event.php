@@ -5437,7 +5437,23 @@ class Event {
 			// 5. Weekly day names
 			if ( 'week' === $frequency && ! empty( $rule['weekdays'] ) ) {
 				$days = array();
-				foreach ( $rule['weekdays'] as $i ) {
+
+				// Order the days in calendar order (from the site's first day of
+				// the week) instead of the order they were selected in. Weekdays
+				// are stored 0=Monday..6=Sunday, so map to WordPress's
+				// 0=Sunday..6=Saturday before comparing against start_of_week.
+				$summary_weekdays = array_values( array_map( 'intval', (array) $rule['weekdays'] ) );
+				$start_of_week    = (int) get_option( 'start_of_week', 0 );
+				usort(
+					$summary_weekdays,
+					static function ( $a, $b ) use ( $start_of_week ) {
+						$wa = ( $a + 1 ) % 7;
+						$wb = ( $b + 1 ) % 7;
+						return ( ( $wa - $start_of_week + 7 ) % 7 ) <=> ( ( $wb - $start_of_week + 7 ) % 7 );
+					}
+				);
+
+				foreach ( $summary_weekdays as $i ) {
 					if ( isset( $weekday_names[ $i ] ) ) {
 						$days[] = $weekday_names[ $i ];
 					}
