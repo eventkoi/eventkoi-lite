@@ -215,12 +215,13 @@ export function ListView({
               borderBottomStyle: borderStyle,
             }}
           >
-            {showImage === "yes" && (
+            {showImage === "yes" && event.thumbnail && (
               <div
                 className={cn(
-                  "ek-image min-w-[140px]",
+                  "ek-image w-full sm:w-auto sm:shrink-0",
                   !event.thumbnail && "hidden md:flex"
                 )}
+                style={{ width: "220px", flexBasis: "220px", flexShrink: 0, maxWidth: "220px" }}
               >
                 <AspectRatio ratio={1.5}>
                   {event.thumbnail ? (
