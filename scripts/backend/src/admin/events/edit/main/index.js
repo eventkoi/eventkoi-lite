@@ -126,7 +126,10 @@ export function EventEditMain() {
 function EventTaxonomiesBox() {
   const { event } = useEventEditContext();
   const hasTaxonomies =
-    Array.isArray(event?.custom_taxonomies) && event.custom_taxonomies.length > 0;
+    Array.isArray(event?.custom_taxonomies) &&
+    event.custom_taxonomies.some(
+      (item) => Array.isArray(item.terms) && item.terms.length > 0
+    );
 
   if (!hasTaxonomies) {
     return null;

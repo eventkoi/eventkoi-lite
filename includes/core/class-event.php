@@ -2537,6 +2537,7 @@ class Event {
 	 */
 	public static function sanitize_tickets_agreements( $raw ) {
 		$items = array();
+		$seen  = array();
 
 		if ( ! is_array( $raw ) ) {
 			return $items;
@@ -2552,10 +2553,13 @@ class Event {
 				continue;
 			}
 
+			// A missing or duplicate id would make two checkboxes share one
+			// checkout state, so mint a fresh unique one in either case.
 			$id = sanitize_key( (string) ( $item['id'] ?? '' ) );
-			if ( '' === $id ) {
+			if ( '' === $id || isset( $seen[ $id ] ) ) {
 				$id = 'agr_' . substr( md5( $text . wp_rand() ), 0, 8 );
 			}
+			$seen[ $id ] = true;
 
 			$items[] = array(
 				'id'       => $id,
@@ -3788,22 +3792,34 @@ class Event {
 			return '';
 		}
 
-		$value    = (float) $amount;
+		$value = (float) $amount;
+
+		// A starting price of zero (or a stray negative) is not a price to show;
+		// leave it blank so no "From 0" line appears.
+		if ( $value <= 0 ) {
+			return '';
+		}
+
 		$settings = Settings::get();
 		$currency = strtoupper( (string) ( $settings['currency'] ?? 'USD' ) );
-		$decimals = fmod( $value, 1 ) ? 2 : 0;
 
 		if ( class_exists( '\NumberFormatter' ) ) {
 			$formatter = new \NumberFormatter( get_locale(), \NumberFormatter::CURRENCY );
-			$formatter->setAttribute( \NumberFormatter::MIN_FRACTION_DIGITS, $decimals );
-			$formatter->setAttribute( \NumberFormatter::MAX_FRACTION_DIGITS, $decimals );
+			// Show whole amounts with no decimals ("$25") but keep each currency's
+			// own minor units for fractional amounts ("$25.50", "KWD 25.500"). Floor
+			// so a "from" price never reads higher than the real minimum.
+			if ( 0.0 === fmod( $value, 1 ) ) {
+				$formatter->setAttribute( \NumberFormatter::MIN_FRACTION_DIGITS, 0 );
+				$formatter->setAttribute( \NumberFormatter::MAX_FRACTION_DIGITS, 0 );
+			}
+			$formatter->setAttribute( \NumberFormatter::ROUNDING_MODE, \NumberFormatter::ROUND_FLOOR );
 			$formatted = $formatter->formatCurrency( $value, $currency );
 			if ( false !== $formatted ) {
 				return $formatted;
 			}
 		}
 
-		$symbols = array(
+		$symbols  = array(
 			'USD' => '$',
 			'EUR' => '€',
 			'GBP' => '£',
@@ -3815,7 +3831,8 @@ class Event {
 			'NOK' => 'kr ',
 			'DKK' => 'kr ',
 		);
-		$symbol  = $symbols[ $currency ] ?? $currency . ' ';
+		$symbol   = $symbols[ $currency ] ?? $currency . ' ';
+		$decimals = fmod( $value, 1 ) ? 2 : 0;
 
 		return $symbol . number_format_i18n( $value, $decimals );
 	}

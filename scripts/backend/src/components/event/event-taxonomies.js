@@ -8,9 +8,11 @@ import { useEventEditContext } from "@/hooks/EventEditContext";
 // own calendar taxonomy is excluded server-side.
 export function EventTaxonomies() {
   const { event, setEvent } = useEventEditContext();
-  const taxonomies = Array.isArray(event?.custom_taxonomies)
-    ? event.custom_taxonomies
-    : [];
+  // Only surface taxonomies that actually have terms; an empty one would render
+  // a labeled box with nothing assignable inside it.
+  const taxonomies = (
+    Array.isArray(event?.custom_taxonomies) ? event.custom_taxonomies : []
+  ).filter((item) => Array.isArray(item.terms) && item.terms.length > 0);
 
   if (!taxonomies.length) {
     return null;
