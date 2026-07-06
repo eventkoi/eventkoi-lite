@@ -8,6 +8,80 @@ import {
 import { __, sprintf } from "@wordpress/i18n";
 import { useEffect, useId, useRef, useState } from "react";
 
+// Strip the styling noise that editors like Google Docs and Word inject on
+// paste (inline CSS, dir/aria/role, empty paragraphs, span wrappers), keeping
+// only structural formatting (headings, lists, links, images) and semantic
+// emphasis (bold/italic) so pasted content inherits the site styles. Runs on
+// paste only, so typed and existing content is never altered.
+const PASTE_KEEP_ATTRS = { A: ["href", "target", "rel"], IMG: ["src", "alt"] };
+
+function cleanPastedHtml(html = "") {
+  if (typeof window === "undefined" || !window.DOMParser) return html;
+  let doc;
+  try {
+    doc = new window.DOMParser().parseFromString(String(html), "text/html");
+  } catch (e) {
+    return html;
+  }
+  const body = doc && doc.body;
+  if (!body) return html;
+
+  // Google Docs wraps content in emphasis tags used purely as style resets
+  // (e.g. <b style="font-weight:normal">). Unwrap those so they do not turn
+  // the whole paste bold or italic.
+  body.querySelectorAll("b, strong, i, em, u").forEach((el) => {
+    const st = (el.getAttribute("style") || "").toLowerCase();
+    const isBoldTag = el.tagName === "B" || el.tagName === "STRONG";
+    const isItalicTag = el.tagName === "I" || el.tagName === "EM";
+    if (
+      (isBoldTag && /font-weight\s*:\s*(normal|[1-5]\d\d|100|200|300|400|500)/.test(st)) ||
+      (isItalicTag && /font-style\s*:\s*normal/.test(st))
+    ) {
+      el.replaceWith(...Array.from(el.childNodes));
+    }
+  });
+
+  // Convert inline bold/italic to semantic tags, then strip all attributes
+  // except the few that carry meaning on links and images.
+  body.querySelectorAll("*").forEach((el) => {
+    const style = (el.getAttribute("style") || "").toLowerCase();
+    const wantBold = /font-weight\s*:\s*(bold|[6-9]\d\d)/.test(style);
+    const wantItalic = /(^|[;\s])font-style\s*:\s*italic/.test(style);
+
+    Array.from(el.attributes).forEach((attr) => {
+      const allowed = PASTE_KEEP_ATTRS[el.tagName] || [];
+      if (!allowed.includes(attr.name.toLowerCase())) {
+        el.removeAttribute(attr.name);
+      }
+    });
+
+    const tag = el.tagName;
+    if (wantItalic && tag !== "EM" && tag !== "I") {
+      const em = doc.createElement("em");
+      while (el.firstChild) em.appendChild(el.firstChild);
+      el.appendChild(em);
+    }
+    if (wantBold && tag !== "STRONG" && tag !== "B") {
+      const strong = doc.createElement("strong");
+      while (el.firstChild) strong.appendChild(el.firstChild);
+      el.appendChild(strong);
+    }
+  });
+
+  // Unwrap pure style-carrier tags now that they hold nothing meaningful.
+  body.querySelectorAll("span, font").forEach((el) => {
+    el.replaceWith(...Array.from(el.childNodes));
+  });
+
+  // Drop empty blocks (Google Docs pads with <p>&nbsp;</p>).
+  body.querySelectorAll("p, li").forEach((el) => {
+    const text = el.textContent.replace(/ /g, " ").trim();
+    if (!text && !el.querySelector("img, br, iframe")) el.remove();
+  });
+
+  return body.innerHTML;
+}
+
 const escapeAttribute = (value = "") =>
   String(value)
     .replace(/&/g, "&amp;")
@@ -161,7 +235,7 @@ export function RichTextEditor({
       relative_urls: false,
       remove_script_host: false,
       readonly: disabled,
-      plugins: "lists link image wordpress",
+      plugins: "paste lists link image wordpress",
       toolbar:
         `undo redo | heading1 heading2 heading3 heading4 | bold italic underline | bullist numlist | link | insertImage${mediaToolbar} | removeformat | htmlToggle`,
       block_formats: `${__("Paragraph", "eventkoi-lite")}=p; ${__("Heading 1", "eventkoi-lite")}=h1; ${__("Heading 2", "eventkoi-lite")}=h2; ${__("Heading 3", "eventkoi-lite")}=h3; ${__("Heading 4", "eventkoi-lite")}=h4`,
@@ -227,6 +301,16 @@ export function RichTextEditor({
         }
       `,
       setup: (ed) => {
+        // Clean pasted markup on the raw content, before the paste
+        // plugin's own filtering, so bold/italic can be preserved.
+        ed.on(
+          "PastePreProcess",
+          (e) => {
+            e.content = cleanPastedHtml(e.content);
+          },
+          true
+        );
+
         const insertContent = (html) => {
           if (!html) {
             return;
