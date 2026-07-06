@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.3.20.1
+Stable tag: 1.3.21.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,22 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.21.0 – Price from attendance, event taxonomies & smoother imports – 2026-07-06 =
+* New: A new "Price from" attendance option shows a starting price on the event page and links visitors to an external ticketing site.
+* New: Assign your site's registered taxonomies (like Places or Activities) right on the event form, without opening the WordPress editor.
+* New: The event page tickets box now shows how many tickets are left, when the show-remaining setting is on.
+* New: Add multiple agreement checkboxes at checkout (for example privacy, refund policy and other consents). Each one is recorded on the order and listed in the admin sale email.
+* New: The admin sale-notification email now records the buyer's terms acceptance, with the exact terms text as it was at checkout.
+* Improvement: When importing from The Events Calendar, if events land in calendars other than the default (which Lite doesn't display), you now see a notice with a one-click option to move them all into the default calendar.
+* Improvement: Importing a recurring event from The Events Calendar now brings in its first occurrence as a standard event, with a note that full recurring events are a Pro feature, so it is clear nothing was imported incorrectly.
+* Improvement: Event URL bases can now include a nested path such as agenda/calendar; the slash is preserved instead of being stripped or turned into a dash.
+* Fix: On narrow phones, the calendar toolbar now wraps so the Subscribe button and the Month/Week/List switch never overflow the screen.
+* Fix: The calendar and list views no longer collapse to a narrow strip on flex-based classic themes such as Astra.
+* Fix: The event template share icon now follows the button's text colour instead of a fixed grey.
+* Fix: Icon-only buttons, like the ticket quantity steppers, stay intact under themes that reset button styling, such as Hello Elementor.
+* Fix: In the Divi builder, the Event module's "Current event" option can now be selected when building an event template.
+* Fix: Ticket agreement checkboxes now always get a unique id, so two agreements can never share a single checkbox at checkout.
 
 = 1.3.20.1 – Calendar subscribe button & block fixes – 2026-07-01 =
 * New: A Subscribe button on the calendar lets visitors add the whole calendar (a single calendar, several, or all) to their own Apple, Google, or Outlook calendar in one click, and it updates automatically as your events change.
