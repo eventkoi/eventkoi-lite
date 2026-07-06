@@ -181,10 +181,11 @@ class TEC_Importer
             } else {
                 ++$imported;
                 $results[] = array(
-                'tec_id'   => $tec_id,
-                'success'  => true,
-                'event_id' => $result['event_id'],
-                'title'    => $result['title'],
+                'tec_id'        => $tec_id,
+                'success'       => true,
+                'event_id'      => $result['event_id'],
+                'title'         => $result['title'],
+                'was_recurring' => ! empty($result['was_recurring']),
                 );
             }
         }
@@ -195,7 +196,13 @@ class TEC_Importer
                 $imported_ids[] = (int) $row['event_id'];
             }
         }
-        $non_default_ids = self::filter_non_default_calendar_events($imported_ids);
+        $non_default_ids     = self::filter_non_default_calendar_events($imported_ids);
+        $recurring_flattened = 0;
+        foreach ( $results as $row ) {
+            if (! empty($row['success']) && ! empty($row['was_recurring']) ) {
+                ++$recurring_flattened;
+            }
+        }
 
         return rest_ensure_response(
             array(
@@ -203,8 +210,9 @@ class TEC_Importer
             'skipped'           => $skipped,
             'errors'            => $errors,
             'results'           => $results,
-            'non_default_count' => count($non_default_ids),
-            'non_default_ids'   => $non_default_ids,
+            'non_default_count'   => count($non_default_ids),
+            'non_default_ids'     => $non_default_ids,
+            'recurring_flattened' => $recurring_flattened,
             )
         );
     }
@@ -349,20 +357,14 @@ class TEC_Importer
 
         $event_type = ! empty($locations) ? self::infer_type_from_locations($locations) : 'inperson';
 
-        // Recurrence (TEC Pro).
-        $date_type        = 'standard';
+        // Recurrence (TEC Pro). EventKoi Lite has no recurring events, so a
+        // recurring TEC event is imported as a standard event using only its
+        // first occurrence. The importer reports these so the UI can nudge an
+        // upgrade to Pro (which does import the full series).
+        $date_type       = 'standard';
         $recurrence_rules = array();
-        $recurrence_meta  = get_post_meta($tec_id, '_EventRecurrence', true);
-
-        if (! empty($recurrence_meta) && is_array($recurrence_meta) && ! empty($recurrence_meta['rules']) ) {
-            $converted = self::convert_recurrence_rules($recurrence_meta['rules'], $start_date, $end_date, $timezone);
-
-            if (! empty($converted) ) {
-                $date_type        = 'recurring';
-                $recurrence_rules = $converted;
-                $event_days       = array(); // Clear event_days for recurring events.
-            }
-        }
+        $recurrence_meta = get_post_meta($tec_id, '_EventRecurrence', true);
+        $was_recurring   = ! empty($recurrence_meta) && is_array($recurrence_meta) && ! empty($recurrence_meta['rules']);
 
         // Create the EventKoi event post.
         $new_post_id = wp_insert_post(
@@ -498,8 +500,9 @@ class TEC_Importer
         update_post_meta($new_post_id, '_tec_import_source_id', $tec_id);
 
         return array(
-        'event_id' => $new_post_id,
-        'title'    => $title,
+        'event_id'        => $new_post_id,
+        'title'           => $title,
+        'was_recurring'   => $was_recurring,
         );
     }
 

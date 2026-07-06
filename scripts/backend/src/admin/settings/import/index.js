@@ -395,6 +395,31 @@ function IntegrationCard({
           </Button>
         </div>
       )}
+
+      {!loading && done && result?.recurring_flattened > 0 && (
+        <div className="px-5 py-4 border-t bg-amber-50 dark:bg-amber-950/30">
+          <p className="text-xs leading-relaxed text-amber-900 dark:text-amber-200">
+            {sprintf(
+              /* translators: %d: number of recurring events flattened. */
+              _n(
+                "This import includes %d recurring event. EventKoi Lite doesn't support recurring events, so only its first occurrence was imported as a standard event.",
+                "This import includes %d recurring events. EventKoi Lite doesn't support recurring events, so only the first occurrence of each was imported as a standard event.",
+                result.recurring_flattened,
+                "eventkoi-lite",
+              ),
+              result.recurring_flattened,
+            )}
+          </p>
+          <a
+            href="https://eventkoi.com/upgradeqf35m3ref/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-flex h-8 items-center rounded-md border border-amber-300 bg-white px-3 text-xs font-medium text-amber-900 no-underline hover:bg-amber-100 dark:border-amber-800 dark:bg-transparent dark:text-amber-100"
+          >
+            {__("Upgrade to Pro to import recurring events", "eventkoi-lite")}
+          </a>
+        </div>
+      )}
     </div>
   );
 }
