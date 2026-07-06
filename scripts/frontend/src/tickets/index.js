@@ -1201,11 +1201,11 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
         </div>
 
         {allDisplayedSaleEnded && saleEndLabel ? (
-          <div className="text-base text-muted-foreground">
+          <div className="eventkoi-tickets__sale-window text-base text-muted-foreground">
             {sprintf(__("Ticket sales ended on %s.", "eventkoi-lite"), saleEndLabel)}
           </div>
         ) : saleStartLabel && saleEndLabel ? (
-          <div className="text-base text-muted-foreground">
+          <div className="eventkoi-tickets__sale-window text-base text-muted-foreground">
             {sprintf(
               __("Ticket sales starts on %1$s and ends on %2$s.", "eventkoi-lite"),
               saleStartLabel,
@@ -1213,7 +1213,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
             )}
           </div>
         ) : saleEndLabel ? (
-          <div className="text-base text-muted-foreground">
+          <div className="eventkoi-tickets__sale-window text-base text-muted-foreground">
             {sprintf(__("Ticket sales end on %s.", "eventkoi-lite"), saleEndLabel)}
           </div>
         ) : null}
