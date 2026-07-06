@@ -5320,13 +5320,13 @@ class Event {
 		$outputs = array();
 
 		$weekday_names = array(
-			0 => __( 'Monday', 'eventkoi-lite' ),
-			1 => __( 'Tuesday', 'eventkoi-lite' ),
-			2 => __( 'Wednesday', 'eventkoi-lite' ),
-			3 => __( 'Thursday', 'eventkoi-lite' ),
-			4 => __( 'Friday', 'eventkoi-lite' ),
-			5 => __( 'Saturday', 'eventkoi-lite' ),
-			6 => __( 'Sunday', 'eventkoi-lite' ),
+			0 => __( 'Sunday', 'eventkoi-lite' ),
+			1 => __( 'Monday', 'eventkoi-lite' ),
+			2 => __( 'Tuesday', 'eventkoi-lite' ),
+			3 => __( 'Wednesday', 'eventkoi-lite' ),
+			4 => __( 'Thursday', 'eventkoi-lite' ),
+			5 => __( 'Friday', 'eventkoi-lite' ),
+			6 => __( 'Saturday', 'eventkoi-lite' ),
 		);
 
 		$ordinals = array(
@@ -5440,16 +5440,14 @@ class Event {
 
 				// Order the days in calendar order (from the site's first day of
 				// the week) instead of the order they were selected in. Weekdays
-				// are stored 0=Monday..6=Sunday, so map to WordPress's
-				// 0=Sunday..6=Saturday before comparing against start_of_week.
+				// are stored 0=Sunday..6=Saturday, matching WordPress's
+				// start_of_week convention.
 				$summary_weekdays = array_values( array_map( 'intval', (array) $rule['weekdays'] ) );
 				$start_of_week    = (int) get_option( 'start_of_week', 0 );
 				usort(
 					$summary_weekdays,
 					static function ( $a, $b ) use ( $start_of_week ) {
-						$wa = ( $a + 1 ) % 7;
-						$wb = ( $b + 1 ) % 7;
-						return ( ( $wa - $start_of_week + 7 ) % 7 ) <=> ( ( $wb - $start_of_week + 7 ) % 7 );
+						return ( ( $a - $start_of_week + 7 ) % 7 ) <=> ( ( $b - $start_of_week + 7 ) % 7 );
 					}
 				);
 
@@ -5493,7 +5491,7 @@ class Event {
 						}
 					}
 					if ( 'week' === $frequency && ! empty( $rule['weekdays'] ) ) {
-						$map   = array( 'MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU' );
+						$map   = array( 'SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA' );
 						$byday = array();
 						foreach ( $rule['weekdays'] as $i ) {
 							if ( isset( $map[ $i ] ) ) {
@@ -5657,7 +5655,7 @@ class Event {
 
 				// 4. Weekly BYDAY
 				if ( 'week' === $freq && ! empty( $rule['weekdays'] ) ) {
-					$map   = array( 'MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU' );
+					$map   = array( 'SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA' );
 					$byday = array();
 					foreach ( $rule['weekdays'] as $i ) {
 						if ( isset( $map[ $i ] ) ) {
