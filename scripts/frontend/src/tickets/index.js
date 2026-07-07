@@ -1463,13 +1463,6 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                   </div>
                 ) : null}
 
-                {eventTermsConditions && !eventTermsRequired ? (
-                  <div
-                    className="eventkoi-ticket-terms px-5 pb-4 text-xs leading-relaxed text-muted-foreground sm:px-6"
-                    dangerouslySetInnerHTML={{ __html: eventTermsConditions }}
-                  />
-                ) : null}
-
                 <div className="border-t border-border bg-muted/30 px-5 py-5 sm:px-6 sm:py-6">
                   <div className="grid grid-cols-[1fr_auto] items-center gap-4">
                     <div>
@@ -1819,37 +1812,39 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                       </div>
                     ) : null}
 
-                    {eventTermsRequired || eventAgreements.length > 0 ? (
+                    {eventTermsConditions || eventAgreements.length > 0 ? (
                       <div className="space-y-2.5">
-                        {eventTermsRequired ? (
+                        {eventTermsConditions ? (
                           <>
                             <div
-                              className="eventkoi-ticket-terms max-h-28 overflow-y-auto rounded-md border border-border bg-muted/20 p-3 text-xs leading-relaxed text-muted-foreground [&_a]:underline"
+                              className="eventkoi-ticket-terms max-h-48 overflow-y-auto rounded-md border border-border bg-muted/20 p-3 text-xs leading-relaxed text-muted-foreground [&_a]:underline"
                               dangerouslySetInnerHTML={{
                                 __html: eventTermsConditions,
                               }}
                             />
-                            <label
-                              htmlFor={`${idPrefix}-terms-accept`}
-                              className="flex items-start gap-2.5 text-xs leading-relaxed text-muted-foreground"
-                            >
-                              <input
-                                id={`${idPrefix}-terms-accept`}
-                                type="checkbox"
-                                checked={termsAccepted}
-                                onChange={(event) => {
-                                  setTermsAccepted(event.target.checked);
-                                  if (event.target.checked) setCheckoutError("");
-                                }}
-                                className="mt-0.5 size-4 shrink-0 rounded border-input"
-                              />
-                              <span>
-                                {__(
-                                  "I have read and agree to the terms & conditions.",
-                                  "eventkoi-lite"
-                                )}
-                              </span>
-                            </label>
+                            {eventTermsRequired ? (
+                              <label
+                                htmlFor={`${idPrefix}-terms-accept`}
+                                className="flex items-start gap-2.5 text-xs leading-relaxed text-muted-foreground"
+                              >
+                                <input
+                                  id={`${idPrefix}-terms-accept`}
+                                  type="checkbox"
+                                  checked={termsAccepted}
+                                  onChange={(event) => {
+                                    setTermsAccepted(event.target.checked);
+                                    if (event.target.checked) setCheckoutError("");
+                                  }}
+                                  className="mt-0.5 size-4 shrink-0 rounded border-input"
+                                />
+                                <span>
+                                  {__(
+                                    "I have read and agree to the terms & conditions.",
+                                    "eventkoi-lite"
+                                  )}
+                                </span>
+                              </label>
+                            ) : null}
                           </>
                         ) : null}
                         {eventAgreements.map((agreement) => (
@@ -1872,7 +1867,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                               className="mt-0.5 size-4 shrink-0 rounded border-input"
                             />
                             <span
-                              className="[&_a]:underline"
+                              className="min-w-0 flex-1 [&_a]:underline"
                               dangerouslySetInnerHTML={{ __html: agreement.text }}
                             />
                             {agreement.required !== false ? (
