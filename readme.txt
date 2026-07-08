@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.3.21.0
+Stable tag: 1.3.22.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,15 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.22.0 – Editor, calendar and checkout fixes – 2026-07-08 =
+* Fix: Pasting into the rich text editor now strips inline styles and stray formatting from Google Docs and Word, while keeping your headings, lists, links, and bold or italic text.
+* Fix: The calendar list view no longer shows an empty grey image box for events that have no picture.
+* Fix: Recurring event summaries now list the weekdays in calendar order instead of the order they were picked.
+* Fix: On mobile checkout, the terms and agreements now sit inside the scrollable area of the window, so long terms no longer cover the rest of the checkout.
+* Fix: A few more strings are now translatable, including the "From" starting price and the calendar "Copy feed link".
+* Fix: Custom taxonomy boxes with no terms are now hidden, and each ticket agreement gets a unique checkbox id so two can never share one.
+* Improvement: The terms-acceptance tag is now listed in the email settings, so you can add the buyer's accepted terms to the admin sale notification.
 
 = 1.3.21.0 – Price from attendance, event taxonomies & smoother imports – 2026-07-06 =
 * New: A new "Price from" attendance option shows a starting price on the event page and links visitors to an external ticketing site.
