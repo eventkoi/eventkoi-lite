@@ -5,6 +5,9 @@ import { __ } from "@wordpress/i18n";
 
 export function AttendanceModeSelector({ event, setEvent }) {
   const ticketsEnabled = !!window?.eventkoi_params?.tickets_feature_enabled;
+  // "Price from" is retired: hidden unless a site opts back in via the
+  // eventkoi_enable_price_from filter (e.g. the EventKoi Price From add-on).
+  const priceFromEnabled = !!window?.eventkoi_params?.price_from_enabled;
   const attendanceModeRaw = event?.attendance_mode || "none";
   const attendanceMode =
     !ticketsEnabled && attendanceModeRaw === "tickets"
@@ -71,10 +74,10 @@ export function AttendanceModeSelector({ event, setEvent }) {
             </div>
           )}
 
-          {/* Price from is hidden from the attendance options. It stays visible
-              only on events already using it, so existing setups keep working;
-              new events can't select it. Back end and rendering are untouched. */}
-          {attendanceMode === "price_from" && (
+          {/* Price from is retired: shown only when re-enabled via the
+              eventkoi_enable_price_from filter, or when the event already uses
+              it (so existing setups stay editable). Back end is untouched. */}
+          {(priceFromEnabled || attendanceMode === "price_from") && (
             <div className="flex items-start space-x-3">
               <RadioGroupItem value="price_from" id="price_from" className="mt-1" />
               <Label htmlFor="price_from" className="cursor-pointer flex-1">

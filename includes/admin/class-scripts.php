@@ -247,6 +247,9 @@ class Scripts {
 			'caps'                => \EventKoi\Core\Permissions::user_caps(),
 			'caps_catalog'        => \EventKoi\Core\Permissions::all_caps(),
 			'roles_catalog'       => \EventKoi\Core\Permissions::roles_catalog(),
+			// Retired "Price from" attendance option, hidden by default. A site can
+			// re-enable it (e.g. via the EventKoi Price From add-on) by returning true.
+			'price_from_enabled'  => (bool) apply_filters( 'eventkoi_enable_price_from', false ),
 		);
 
 		$eventkoi_params['custom_templates'] = self::get_custom_templates();
