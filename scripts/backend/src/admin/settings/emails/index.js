@@ -194,6 +194,7 @@ const TEMPLATE_CONFIG = {
         "<p><strong>Total:</strong> [order_total]</p>",
         "<p><strong>Event:</strong> [event_name]</p>",
         "<p><strong>Date:</strong> [event_datetime]</p>",
+        "[terms_acceptance]",
         "<p>&mdash;<br />[site_name]</p>",
       ].join("\n"),
     },
@@ -205,6 +206,13 @@ const TEMPLATE_CONFIG = {
       { tag: "[order_total]", description: __("Formatted order total", "eventkoi-lite") },
       { tag: "[event_name]", description: __("Event name", "eventkoi-lite") },
       { tag: "[event_datetime]", description: __("Event date and time", "eventkoi-lite") },
+      {
+        tag: "[terms_acceptance]",
+        description: __(
+          "Terms and agreements the buyer accepted at checkout",
+          "eventkoi-lite",
+        ),
+      },
       { tag: "[site_name]", description: __("Site name", "eventkoi-lite") },
     ],
   },
