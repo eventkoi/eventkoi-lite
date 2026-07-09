@@ -1817,7 +1817,8 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                         {eventTermsConditions ? (
                           <>
                             <div
-                              className="eventkoi-ticket-terms max-h-48 overflow-y-auto rounded-md border border-border bg-muted/20 p-3 text-xs leading-relaxed text-muted-foreground [&_a]:underline"
+                              className="eventkoi-ticket-terms min-h-[6rem] max-h-[70vh] resize-y overflow-y-auto rounded-md border border-border bg-muted/20 p-3 text-xs leading-relaxed text-muted-foreground [&_a]:underline"
+                              style={{ height: "12rem" }}
                               dangerouslySetInnerHTML={{
                                 __html: eventTermsConditions,
                               }}
