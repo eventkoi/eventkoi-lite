@@ -971,6 +971,16 @@ class Tickets {
 				$remaining = max( $quantity_available - $quantity_sold - $held_qty, 0 );
 			}
 
+			// A single type can never sell more than the event's shared capacity
+			// still allows, so clamp the displayed per-type count to what remains
+			// overall (and cap an otherwise-unlimited type to it as well).
+			// Checkout enforces the same event cap server-side.
+			if ( null !== $event_remaining ) {
+				$remaining = ( null === $remaining )
+					? $event_remaining
+					: min( $remaining, $event_remaining );
+			}
+
 			$tickets[] = array(
 				'id'                 => (int) $ticket->id,
 				'name'               => sanitize_text_field( $ticket->name ),

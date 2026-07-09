@@ -64,6 +64,11 @@ class Settings {
 			'rsvp_email_template',
 			'ticket_email_template',
 			'refund_email_template',
+			// Admin notification templates are rich HTML too; keep their
+			// formatting instead of stripping to plain text on save.
+			'admin_sale_email_template',
+			'admin_rsvp_email_template',
+			'admin_ticket_email_template',
 		);
 
 		if ( is_array( $data ) ) {
