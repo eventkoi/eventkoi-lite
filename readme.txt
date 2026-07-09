@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.3.22.0
+Stable tag: 1.3.23.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,9 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.23.0 – Resizable checkout terms box – 2026-07-09 =
+* Improvement: The terms and conditions box at checkout can now be dragged taller, so visitors on larger screens can read long terms without scrolling a small window.
 
 = 1.3.22.0 – Editor, calendar and checkout fixes – 2026-07-08 =
 * Fix: Pasting into the rich text editor now strips inline styles and stray formatting from Google Docs and Word, while keeping your headings, lists, links, and bold or italic text.
