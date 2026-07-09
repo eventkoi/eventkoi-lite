@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.3.23.0
+Stable tag: 1.3.23.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,10 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.23.1 – Email and ticket count fixes – 2026-07-09 =
+* Fix: Admin notification emails (like the new ticket sale notification) now keep your formatting and paragraphs when you save the template.
+* Fix: A ticket type's remaining count is now capped to the event's total remaining, so it can never show more available than the event has left.
 
 = 1.3.23.0 – Resizable checkout terms box – 2026-07-09 =
 * Improvement: The terms and conditions box at checkout can now be dragged taller, so visitors on larger screens can read long terms without scrolling a small window.
