@@ -33,13 +33,19 @@
     --success: 158 48% 45%;
   }
 
-  /* Themes like Hello Elementor reset buttons via attribute selectors
-     ([type=button] { padding: .5rem 1rem; border: 1px solid; ... }), which
-     outrank the scoped preflight's plain `button` reset and crush icon-only
-     buttons. Re-assert the preflight button reset at the same specificity;
-     loading later in the cascade wins, while our utilities still override. */
-  :where(.eventkoi-front)
-    :is(button, [type='button'], [type='reset'], [type='submit']) {
+  /* Page builders and themes style bare buttons with class-scoped rules that
+     outrank a plain `button` reset: Hello Elementor's [type=button] reset
+     crushes icon buttons, and Elementor's global kit
+     (.elementor-kit-N button { background: var(--e-global-color-primary);
+     padding: 15px 30px }) repaints our radios and link buttons, hiding their
+     text. Re-assert the preflight button reset with a real `.eventkoi-front`
+     class so it beats those (0,1,1) rules, while our own !important utilities
+     (bg-*, h-*, px-*) still override it on real buttons. WordPress block
+     buttons are skipped so they keep the theme's block styling. */
+  .eventkoi-front
+    :is(button, [type='button'], [type='reset'], [type='submit']):not(
+      .wp-block-button__link
+    ):not(.wp-element-button) {
     margin: 0;
     padding: 0;
     border: 0 solid;
