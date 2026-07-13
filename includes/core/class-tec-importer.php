@@ -180,13 +180,20 @@ class TEC_Importer
                 ++$skipped;
             } else {
                 ++$imported;
-                $results[] = array(
+                $row = array(
                 'tec_id'        => $tec_id,
                 'success'       => true,
                 'event_id'      => $result['event_id'],
                 'title'         => $result['title'],
                 'was_recurring' => ! empty($result['was_recurring']),
                 );
+                if (isset($result['tickets_imported']) ) {
+                    $row['tickets_imported'] = $result['tickets_imported'];
+                }
+                if (! empty($result['tickets_notes']) ) {
+                    $row['tickets_notes'] = $result['tickets_notes'];
+                }
+                $results[] = $row;
             }
         }
 
@@ -384,14 +391,25 @@ class TEC_Importer
             return $new_post_id;
         }
 
-        // Try to map TEC cost to a real EventKoi ticket. If we create one, the cost line is
-        // omitted from the description tail (the ticket card carries the price).
+        // Real Event Tickets (RSVP / Tickets Commerce) take precedence over TEC's
+        // free-text cost field: each ticket type is imported with its capacity,
+        // sold count, and sale window. The cost-derived ticket stays as fallback.
+        $et_tickets = self::import_event_tickets($tec_id, $new_post_id);
+
         $cost_raw        = get_post_meta($tec_id, '_EventCost', true);
         $currency_symbol = get_post_meta($tec_id, '_EventCurrencySymbol', true);
         $currency_pos    = get_post_meta($tec_id, '_EventCurrencyPosition', true);
         $currency_code   = get_post_meta($tec_id, '_EventCurrencyCode', true);
-        $ticket_id       = self::maybe_create_ticket_from_cost($new_post_id, $cost_raw, $currency_symbol, $currency_code);
-        $attendance_mode = $ticket_id ? 'tickets' : 'none';
+
+        $ticket_id = 0;
+        if (! $et_tickets['found'] ) {
+            $ticket_id = self::maybe_create_ticket_from_cost($new_post_id, $cost_raw, $currency_symbol, $currency_code);
+        }
+
+        $attendance_mode = ( $ticket_id || $et_tickets['imported'] > 0 ) ? 'tickets' : 'none';
+        if ('rsvp' === $et_tickets['attendance_mode'] ) {
+            $attendance_mode = 'rsvp';
+        }
 
         // Build description: run TEC body through wpautop to preserve paragraphs, then append
         // website/organizer/cost in their own paragraph blocks.
@@ -419,7 +437,7 @@ class TEC_Importer
         }
 
         // Surface cost only when we couldn't map it to a real ticket (free / non-numeric).
-        if (! $ticket_id && '' !== (string) $cost_raw ) {
+        if (! $ticket_id && ! $et_tickets['found'] && '' !== (string) $cost_raw ) {
             $cost_display = self::format_cost_display($cost_raw, $currency_symbol, $currency_pos);
             $tail[]       = '<p><strong>' . esc_html__('Cost', 'eventkoi-lite') . ':</strong> ' . esc_html($cost_display) . '</p>';
         }
@@ -450,8 +468,20 @@ class TEC_Importer
         update_post_meta($new_post_id, 'virtual_url', $virtual_url_legacy);
         update_post_meta($new_post_id, 'recurrence_rules', $recurrence_rules);
         update_post_meta($new_post_id, 'attendance_mode', $attendance_mode);
-        update_post_meta($new_post_id, 'tickets_enabled', (bool) $ticket_id);
+        update_post_meta($new_post_id, 'tickets_enabled', 'tickets' === $attendance_mode);
         update_post_meta($new_post_id, 'timezone_display', self::tec_shows_timezone());
+
+        if ('rsvp' === $attendance_mode ) {
+            update_post_meta($new_post_id, 'rsvp_enabled', true);
+            if ($et_tickets['rsvp_capacity'] > 0 ) {
+                update_post_meta($new_post_id, 'rsvp_capacity', $et_tickets['rsvp_capacity']);
+            }
+        }
+
+        // Shared (capped/global) Event Tickets stock maps to the per-event total cap.
+        if ($et_tickets['event_capacity'] > 0 ) {
+            update_post_meta($new_post_id, 'tickets_event_capacity', $et_tickets['event_capacity']);
+        }
 
         if (! empty($end_iso) ) {
             update_post_meta($new_post_id, 'end_date', $end_iso);
@@ -506,11 +536,20 @@ class TEC_Importer
         // Store reference to original TEC event for dedup.
         update_post_meta($new_post_id, '_tec_import_source_id', $tec_id);
 
-        return array(
+        $return = array(
         'event_id'        => $new_post_id,
         'title'           => $title,
         'was_recurring'   => $was_recurring,
         );
+
+        if ($et_tickets['found'] ) {
+            $return['tickets_imported'] = $et_tickets['imported'];
+            if (! empty($et_tickets['skipped']) ) {
+                $return['tickets_notes'] = $et_tickets['skipped'];
+            }
+        }
+
+        return $return;
     }
 
     /**
@@ -794,6 +833,285 @@ class TEC_Importer
             array( '%d', '%s', '%s', '%f', '%s', '%s', '%d' )
         );
         return $ok ? (int) $wpdb->insert_id : false;
+    }
+
+    /**
+     * Import Event Tickets ticket types (RSVP and Tickets Commerce) for a TEC event.
+     *
+     * Each type becomes an eventkoi_tickets row with its price, capacity, sold
+     * count, and sale window. RSVP-only events map to EventKoi's RSVP mode with
+     * the combined capacity; events with paid tickets map to tickets mode, where
+     * RSVP types become free ticket types so their spots stay bookable. Attendees
+     * and WooCommerce (Event Tickets Plus) tickets are counted, not imported.
+     *
+     * @param  int $tec_id      TEC event post ID.
+     * @param  int $new_post_id Imported EventKoi event post ID.
+     * @return array found / attendance_mode / imported / skipped / rsvp_capacity / event_capacity.
+     */
+    private static function import_event_tickets( $tec_id, $new_post_id )
+    {
+        $summary = array(
+        'found'           => false,
+        'attendance_mode' => '',
+        'imported'        => 0,
+        'skipped'         => array(),
+        'rsvp_capacity'   => 0,
+        'event_capacity'  => 0,
+        );
+
+        if (! function_exists('eventkoi_is_tickets_feature_enabled') || ! eventkoi_is_tickets_feature_enabled() ) {
+            return $summary;
+        }
+
+        $rsvp_tickets = self::get_et_ticket_posts('tribe_rsvp_tickets', '_tribe_rsvp_for_event', $tec_id);
+        $paid_tickets = self::get_et_ticket_posts('tec_tc_ticket', '_tec_tickets_commerce_event', $tec_id);
+        $woo_count    = count(self::get_et_ticket_posts('product', '_tribe_wooticket_for_event', $tec_id));
+
+        if ($woo_count > 0 ) {
+            $summary['skipped'][] = sprintf(
+                /* translators: %d: number of WooCommerce tickets. */
+                _n('%d WooCommerce ticket (Event Tickets Plus) was not imported.', '%d WooCommerce tickets (Event Tickets Plus) were not imported.', $woo_count, 'eventkoi-lite'),
+                $woo_count
+            );
+        }
+
+        if (empty($rsvp_tickets) && empty($paid_tickets) ) {
+            return $summary;
+        }
+
+        $summary['found'] = true;
+
+        $attendee_count = self::count_et_attendees($tec_id);
+        if ($attendee_count > 0 ) {
+            $summary['skipped'][] = sprintf(
+                /* translators: %d: number of attendees. */
+                _n('%d attendee record was not imported.', '%d attendee records were not imported.', $attendee_count, 'eventkoi-lite'),
+                $attendee_count
+            );
+        }
+
+        // RSVP-only events use EventKoi's native RSVP mode; no ticket rows needed.
+        if (empty($paid_tickets) ) {
+            $summary['attendance_mode'] = 'rsvp';
+            foreach ( $rsvp_tickets as $rsvp_ticket ) {
+                $summary['rsvp_capacity'] += max(0, (int) get_post_meta($rsvp_ticket->ID, '_tribe_ticket_capacity', true));
+            }
+            return $summary;
+        }
+
+        $summary['attendance_mode'] = 'tickets';
+
+        // Tickets Commerce charges one site-wide currency. When it differs from the
+        // EventKoi checkout currency, paid types are skipped so nothing is charged
+        // under a mislabeled price (same rule as the cost-derived ticket).
+        $checkout_currency = self::get_checkout_currency();
+        $currency_ok       = self::et_currency_code() === $checkout_currency;
+        $skipped_paid      = 0;
+        $sold_total        = 0;
+        $sort_order        = 0;
+
+        foreach ( array_merge($paid_tickets, $rsvp_tickets) as $et_ticket ) {
+            $price = (float) get_post_meta($et_ticket->ID, '_price', true);
+
+            if ($price > 0 && ! $currency_ok ) {
+                ++$skipped_paid;
+                continue;
+            }
+
+            $sold = max(0, (int) get_post_meta($et_ticket->ID, 'total_sales', true));
+
+            if (self::insert_imported_ticket($new_post_id, $et_ticket, $price, $checkout_currency, $sold, $sort_order) ) {
+                ++$summary['imported'];
+                ++$sort_order;
+                $sold_total += $sold;
+            }
+        }
+
+        if ($skipped_paid > 0 ) {
+            $summary['skipped'][] = sprintf(
+                /* translators: %d: number of paid tickets. */
+                _n('%d paid ticket was skipped because its currency differs from the store currency.', '%d paid tickets were skipped because their currency differs from the store currency.', $skipped_paid, 'eventkoi-lite'),
+                $skipped_paid
+            );
+        }
+
+        if ($sold_total > 0 ) {
+            $summary['skipped'][] = sprintf(
+                /* translators: %d: number of previously sold tickets. */
+                _n('%d previously sold ticket was deducted from the imported capacity.', '%d previously sold tickets were deducted from the imported capacity.', $sold_total, 'eventkoi-lite'),
+                $sold_total
+            );
+        }
+
+        // Shared (capped/global) stock maps to EventKoi's per-event total capacity,
+        // minus the seats already sold (per-type capacities are reduced the same way).
+        $use_global = (string) get_post_meta($tec_id, '_tribe_ticket_use_global_stock', true);
+        if (in_array($use_global, array( '1', 'yes', 'true' ), true) ) {
+            $stock_level               = max(0, (int) get_post_meta($tec_id, '_tribe_ticket_global_stock_level', true));
+            $summary['event_capacity'] = max($stock_level - $sold_total, 0);
+        }
+
+        return $summary;
+    }
+
+    /**
+     * Fetch Event Tickets ticket posts linked to a TEC event.
+     *
+     * @param  string $post_type Ticket post type.
+     * @param  string $meta_key  Event-relation meta key.
+     * @param  int    $tec_id    TEC event post ID.
+     * @return \WP_Post[]
+     */
+    private static function get_et_ticket_posts( $post_type, $meta_key, $tec_id )
+    {
+        $posts = get_posts(
+            array(
+            'post_type'      => $post_type,
+            'post_status'    => 'any',
+            'posts_per_page' => -1,
+            'orderby'        => array(
+            'menu_order' => 'ASC',
+            'ID'         => 'ASC',
+            ),
+            'meta_key'       => $meta_key, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+            'meta_value'     => $tec_id, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+            )
+        );
+
+        return is_array($posts) ? $posts : array();
+    }
+
+    /**
+     * Count Event Tickets attendee records for a TEC event (RSVP + Tickets Commerce).
+     *
+     * @param  int $tec_id TEC event post ID.
+     * @return int
+     */
+    private static function count_et_attendees( $tec_id )
+    {
+        $count = 0;
+
+        $attendee_types = array(
+        'tribe_rsvp_attendees' => '_tribe_rsvp_event',
+        'tec_tc_attendee'      => '_tec_tickets_commerce_event',
+        );
+
+        foreach ( $attendee_types as $post_type => $meta_key ) {
+            $ids = get_posts(
+                array(
+                'post_type'      => $post_type,
+                'post_status'    => 'any',
+                'posts_per_page' => -1,
+                'fields'         => 'ids',
+                'meta_key'       => $meta_key, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+                'meta_value'     => $tec_id, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+                )
+            );
+
+            $count += is_array($ids) ? count($ids) : 0;
+        }
+
+        return $count;
+    }
+
+    /**
+     * The currency Tickets Commerce charges in (a site-wide option).
+     *
+     * @return string Three-letter ISO code.
+     */
+    private static function et_currency_code()
+    {
+        $code = function_exists('tribe_get_option') ? (string) tribe_get_option('tickets-commerce-currency-code', 'USD') : 'USD';
+        $code = strtoupper(sanitize_text_field($code));
+
+        return preg_match('/^[A-Z]{3}$/', $code) ? $code : 'USD';
+    }
+
+    /**
+     * Insert one imported Event Tickets type as an eventkoi_tickets row.
+     *
+     * Previously sold seats are deducted from the imported capacity instead of
+     * being stored as a sold count: attendees are not imported, so a sold count
+     * without matching orders would be ignored by instance-scoped availability.
+     *
+     * @param  int      $event_id   EventKoi event post ID.
+     * @param  \WP_Post $et_ticket  Event Tickets ticket post.
+     * @param  float    $price      Ticket price.
+     * @param  string   $currency   Three-letter ISO currency code.
+     * @param  int      $sold       Seats already sold in Event Tickets.
+     * @param  int      $sort_order Row sort order.
+     * @return bool Whether the row was inserted.
+     */
+    private static function insert_imported_ticket( $event_id, $et_ticket, $price, $currency, $sold, $sort_order )
+    {
+        global $wpdb;
+
+        $capacity = get_post_meta($et_ticket->ID, '_tribe_ticket_capacity', true);
+        $capacity = ( '' === (string) $capacity || (int) $capacity < 0 ) ? null : (int) $capacity;
+
+        $data = array(
+        'event_id'    => (int) $event_id,
+        'name'        => sanitize_text_field($et_ticket->post_title),
+        'description' => sanitize_textarea_field($et_ticket->post_excerpt),
+        'price'       => $price,
+        'currency'    => $currency,
+        'status'      => 'active',
+        'sort_order'  => (int) $sort_order,
+        );
+
+        $formats = array( '%d', '%s', '%s', '%f', '%s', '%s', '%d' );
+
+        if (null !== $capacity ) {
+            $data['quantity_available'] = max($capacity - $sold, 0);
+            $formats[]                  = '%d';
+        }
+
+        $sale_start = self::et_ticket_datetime($et_ticket->ID, '_ticket_start_date', '_ticket_start_time');
+        if (null !== $sale_start ) {
+            $data['sale_start'] = $sale_start;
+            $formats[]          = '%s';
+        }
+
+        $sale_end = self::et_ticket_datetime($et_ticket->ID, '_ticket_end_date', '_ticket_end_time');
+        if (null !== $sale_end ) {
+            $data['sale_end'] = $sale_end;
+            $formats[]        = '%s';
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+        return (bool) $wpdb->insert($wpdb->prefix . 'eventkoi_tickets', $data, $formats);
+    }
+
+    /**
+     * Read an Event Tickets sale-window boundary as a UTC MySQL datetime.
+     *
+     * Tickets Commerce stores the date and time in separate meta; RSVP stores a
+     * full datetime in the date meta. Values are wall-clock in the site timezone.
+     *
+     * @param  int    $ticket_id Ticket post ID.
+     * @param  string $date_key  Date meta key.
+     * @param  string $time_key  Time meta key.
+     * @return string|null UTC Y-m-d H:i:s, or null when unset/unparseable.
+     */
+    private static function et_ticket_datetime( $ticket_id, $date_key, $time_key )
+    {
+        $date = trim((string) get_post_meta($ticket_id, $date_key, true));
+        if ('' === $date ) {
+            return null;
+        }
+
+        $time = trim((string) get_post_meta($ticket_id, $time_key, true));
+        if ('' !== $time && false === strpos($date, ':') ) {
+            $date .= ' ' . $time;
+        }
+
+        try {
+            $dt = new \DateTime($date, wp_timezone());
+            $dt->setTimezone(new \DateTimeZone('UTC'));
+            return $dt->format('Y-m-d H:i:s');
+        } catch ( \Exception $e ) {
+            return null;
+        }
     }
 
     /**
