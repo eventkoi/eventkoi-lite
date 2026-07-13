@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.3.23.1
+Stable tag: 1.3.23.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,13 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.23.2 – Theme compatibility and importer fixes – 2026-07-13 =
+* Fix: RSVP status buttons and other controls no longer lose their text or get repainted by page-builder button styles (like the Elementor global kit).
+* Fix: The Events Calendar importer now keeps each event's original URL slug, so links to imported events keep working.
+* Fix: A TEC event's Website link no longer marks the imported event as online or hybrid. It is kept in the event description instead.
+* Fix: The importer no longer creates a ticket priced in the wrong currency when the TEC event's currency differs from your store currency.
+* Fix: Imported events now copy the "Show time zone" display setting from The Events Calendar.
 
 = 1.3.23.1 – Email and ticket count fixes – 2026-07-09 =
 * Fix: Admin notification emails (like the new ticket sale notification) now keep your formatting and paragraphs when you save the template.
