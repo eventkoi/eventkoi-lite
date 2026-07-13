@@ -7,7 +7,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-13T12:37:43+00:00\n"
+"POT-Creation-Date: 2026-07-13T13:00:07+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -116,11 +116,11 @@ msgid "No %s provided."
 msgstr ""
 
 #: api/class-event.php:147
-#: api/class-tickets.php:316
-#: api/class-tickets.php:786
-#: api/class-tickets.php:895
-#: api/class-tickets.php:1095
-#: api/class-tickets.php:1867
+#: api/class-tickets.php:326
+#: api/class-tickets.php:796
+#: api/class-tickets.php:1001
+#: api/class-tickets.php:1201
+#: api/class-tickets.php:1973
 #: core/class-ical.php:213
 #: core/core-functions.php:104
 msgid "Invalid event ID."
@@ -189,7 +189,7 @@ msgid "Invalid order ID."
 msgstr ""
 
 #: api/class-order.php:67
-#: api/class-tickets.php:1698
+#: api/class-tickets.php:1804
 #: core/class-ticket-emails.php:853
 msgid "Order not found."
 msgstr ""
@@ -219,8 +219,9 @@ msgstr ""
 #: api/class-rsvps.php:291
 #: api/class-rsvps.php:480
 #: api/class-rsvps.php:643
-#: api/class-tickets.php:900
-#: api/class-tickets.php:1100
+#: api/class-tickets.php:910
+#: api/class-tickets.php:1006
+#: api/class-tickets.php:1206
 #: core/class-rsvps.php:189
 msgid "Invalid event."
 msgstr ""
@@ -295,133 +296,157 @@ msgstr ""
 msgid "Settings updated successfully."
 msgstr ""
 
-#: api/class-tickets.php:336
-#: api/class-tickets.php:800
-#: api/class-tickets.php:933
+#: api/class-tickets.php:346
+#: api/class-tickets.php:810
+#: api/class-tickets.php:1039
 msgid "Database error occurred."
 msgstr ""
 
-#: api/class-tickets.php:1070
+#: api/class-tickets.php:900
+msgid "An attendee name is required."
+msgstr ""
+
+#: api/class-tickets.php:905
+msgid "The email address is not valid."
+msgstr ""
+
+#: api/class-tickets.php:936
+msgid "This ticket type does not belong to the selected event."
+msgstr ""
+
+#. translators: %d: number of seats left.
+#: api/class-tickets.php:945
+#, php-format
+msgid "Only %d seat is left for this ticket type."
+msgid_plural "Only %d seats are left for this ticket type."
+msgstr[0] ""
+msgstr[1] ""
+
+#: api/class-tickets.php:963
+msgid "The attendee could not be added."
+msgstr ""
+
+#: api/class-tickets.php:1176
 msgid "Tickets are not enabled."
 msgstr ""
 
-#: api/class-tickets.php:1108
-#: api/class-tickets.php:1120
+#: api/class-tickets.php:1214
+#: api/class-tickets.php:1226
 #: tickets/index.js:726
 msgid "This event has ended and is no longer accepting ticket purchases."
 msgstr ""
 
-#: api/class-tickets.php:1130
+#: api/class-tickets.php:1236
 msgid "Too many requests. Please try again later."
 msgstr ""
 
-#: api/class-tickets.php:1143
+#: api/class-tickets.php:1249
 #: tickets/index.js:994
 msgid "Please agree to the terms & conditions to continue."
 msgstr ""
 
-#: api/class-tickets.php:1151
+#: api/class-tickets.php:1257
 #: tickets/index.js:1000
 msgid "Please agree to all required terms to continue."
 msgstr ""
 
-#: api/class-tickets.php:1197
+#: api/class-tickets.php:1303
 msgid "A valid email address is required."
 msgstr ""
 
-#: api/class-tickets.php:1213
-#: api/class-tickets.php:1241
+#: api/class-tickets.php:1319
+#: api/class-tickets.php:1347
 msgid "Invalid ticket selection."
 msgstr ""
 
-#: api/class-tickets.php:1236
+#: api/class-tickets.php:1342
 msgid "Select at least one ticket."
 msgstr ""
 
-#: api/class-tickets.php:1255
+#: api/class-tickets.php:1361
 msgid "Unable to validate tickets."
 msgstr ""
 
-#: api/class-tickets.php:1276
+#: api/class-tickets.php:1382
 msgid "One or more selected tickets are unavailable."
 msgstr ""
 
-#: api/class-tickets.php:1283
+#: api/class-tickets.php:1389
 msgid "One or more selected tickets are not on sale yet."
 msgstr ""
 
-#: api/class-tickets.php:1287
+#: api/class-tickets.php:1393
 msgid "One or more selected tickets are no longer on sale."
 msgstr ""
 
-#: api/class-tickets.php:1292
+#: api/class-tickets.php:1398
 msgid "Selected quantity exceeds ticket limits."
 msgstr ""
 
-#: api/class-tickets.php:1302
-#: api/class-tickets.php:2375
+#: api/class-tickets.php:1408
+#: api/class-tickets.php:2481
 msgid "Not enough tickets remaining for one or more selections."
 msgstr ""
 
-#: api/class-tickets.php:1326
+#: api/class-tickets.php:1432
 msgid "Invalid checkout total."
 msgstr ""
 
-#: api/class-tickets.php:1335
+#: api/class-tickets.php:1441
 msgid "Not enough tickets remaining for this event."
 msgstr ""
 
-#: api/class-tickets.php:1402
+#: api/class-tickets.php:1508
 msgid "WooCommerce must be installed and activated to process ticket payments."
 msgstr ""
 
-#: api/class-tickets.php:1456
-#: api/class-tickets.php:1481
-#: api/class-tickets.php:1510
-#: api/class-tickets.php:1679
+#: api/class-tickets.php:1562
+#: api/class-tickets.php:1587
+#: api/class-tickets.php:1616
+#: api/class-tickets.php:1785
 msgid "Missing order ID."
 msgstr ""
 
-#: api/class-tickets.php:1640
+#: api/class-tickets.php:1746
 msgid "Order archived via EventKoi."
 msgstr ""
 
-#: api/class-tickets.php:1660
+#: api/class-tickets.php:1766
 msgid "Order unarchived via EventKoi."
 msgstr ""
 
-#: api/class-tickets.php:1791
+#: api/class-tickets.php:1897
 #: core/class-ticket-emails.php:163
 msgid "Missing checkout session ID."
 msgstr ""
 
-#: api/class-tickets.php:1884
+#: api/class-tickets.php:1990
 #: admin/events/edit/tickets/manage-tickets/index.js:488
 msgid "Ticket name is required."
 msgstr ""
 
-#: api/class-tickets.php:1915
+#: api/class-tickets.php:2021
 msgid "Failed to create ticket."
 msgstr ""
 
-#: api/class-tickets.php:1952
-#: api/class-tickets.php:2083
+#: api/class-tickets.php:2058
+#: api/class-tickets.php:2189
 msgid "Invalid ticket ID."
 msgstr ""
 
-#: api/class-tickets.php:2021
+#: api/class-tickets.php:2127
 msgid "No data to update."
 msgstr ""
 
-#: api/class-tickets.php:2037
+#: api/class-tickets.php:2143
 msgid "Failed to update ticket."
 msgstr ""
 
-#: api/class-tickets.php:2096
+#: api/class-tickets.php:2202
 msgid "Failed to delete ticket."
 msgstr ""
 
-#: api/class-tickets.php:2104
+#: api/class-tickets.php:2210
 msgid "Ticket deleted successfully."
 msgstr ""
 
@@ -966,7 +991,7 @@ msgid "Calendar duplicated."
 msgstr ""
 
 #: core/class-calendars.php:41
-#: admin/events/edit/attendees/index.js:2128
+#: admin/events/edit/attendees/index.js:2327
 msgid "All"
 msgstr ""
 
@@ -1805,9 +1830,9 @@ msgid "there"
 msgstr ""
 
 #: core/class-rsvps.php:1098
-#: admin/events/edit/attendees/index.js:187
-#: admin/events/edit/attendees/index.js:1545
-#: admin/events/edit/attendees/index.js:2116
+#: admin/events/edit/attendees/index.js:188
+#: admin/events/edit/attendees/index.js:1739
+#: admin/events/edit/attendees/index.js:2315
 #: checkin/index.js:79
 #: checkin/index.js:86
 #: rsvp/index.js:110
@@ -2079,7 +2104,7 @@ msgid "Refund confirmation sent."
 msgstr ""
 
 #: core/class-ticket-emails.php:810
-#: admin/events/edit/attendees/index.js:427
+#: admin/events/edit/attendees/index.js:621
 #: components/order/order-header.js:67
 #: components/order/OrderActivity.js:67
 msgid "Ticket confirmation sent."
@@ -2736,7 +2761,7 @@ msgid "Copy shortcode"
 msgstr ""
 
 #: admin/calendars/overview/index.js:139
-#: admin/events/edit/attendees/index.js:681
+#: admin/events/edit/attendees/index.js:875
 #: components/calendar/calendar-feed.js:52
 #: components/calendar/calendar-link.js:44
 #: components/calendar/calendar-shortcode.js:44
@@ -2949,7 +2974,7 @@ msgid "Next: %s"
 msgstr ""
 
 #. translators: %d: number of RSVPs
-#: admin/events/edit/attendees/index.js:151
+#: admin/events/edit/attendees/index.js:152
 #, js-format
 msgid "Deleted %d RSVP."
 msgid_plural "Deleted %d RSVPs."
@@ -2957,84 +2982,84 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of RSVPs
-#: admin/events/edit/attendees/index.js:156
+#: admin/events/edit/attendees/index.js:157
 #, js-format
 msgid "Updated %d RSVP."
 msgid_plural "Updated %d RSVPs."
 msgstr[0] ""
 msgstr[1] ""
 
-#: admin/events/edit/attendees/index.js:163
+#: admin/events/edit/attendees/index.js:164
 #: components/bulk-actions.js:107
 msgid "Bulk action failed."
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:176
+#: admin/events/edit/attendees/index.js:177
 #: admin/settings/fields/index.js:44
 #: components/bulk-actions.js:122
 #: components/bulk-actions.js:56
 msgid "Bulk actions"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:182
+#: admin/events/edit/attendees/index.js:183
 msgid "Set status"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:190
-#: admin/events/edit/attendees/index.js:1552
-#: admin/events/edit/attendees/index.js:2119
+#: admin/events/edit/attendees/index.js:191
+#: admin/events/edit/attendees/index.js:1746
+#: admin/events/edit/attendees/index.js:2318
 #: checkin/index.js:80
 #: checkin/index.js:87
 #: rsvp/index.js:111
 msgid "Maybe"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:195
-#: admin/events/edit/attendees/index.js:1559
-#: admin/events/edit/attendees/index.js:2122
+#: admin/events/edit/attendees/index.js:196
+#: admin/events/edit/attendees/index.js:1753
+#: admin/events/edit/attendees/index.js:2321
 #: checkin/index.js:81
 #: checkin/index.js:88
 #: rsvp/index.js:112
 msgid "Not going"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:200
-#: admin/events/edit/attendees/index.js:1566
-#: admin/events/edit/attendees/index.js:2125
+#: admin/events/edit/attendees/index.js:201
+#: admin/events/edit/attendees/index.js:1760
+#: admin/events/edit/attendees/index.js:2324
 #: checkin/index.js:82
 msgid "Cancelled"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:207
+#: admin/events/edit/attendees/index.js:208
 msgid "Set check-in status"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:214
-#: admin/events/edit/attendees/index.js:1411
-#: admin/events/edit/attendees/index.js:1468
-#: admin/events/edit/attendees/index.js:1712
-#: admin/events/edit/attendees/index.js:1752
+#: admin/events/edit/attendees/index.js:215
+#: admin/events/edit/attendees/index.js:1605
+#: admin/events/edit/attendees/index.js:1662
+#: admin/events/edit/attendees/index.js:1906
+#: admin/events/edit/attendees/index.js:1946
 msgid "Check in"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:219
-#: admin/events/edit/attendees/index.js:1408
-#: admin/events/edit/attendees/index.js:1476
-#: admin/events/edit/attendees/index.js:1704
-#: admin/events/edit/attendees/index.js:1711
-#: admin/events/edit/attendees/index.js:1758
+#: admin/events/edit/attendees/index.js:220
+#: admin/events/edit/attendees/index.js:1602
+#: admin/events/edit/attendees/index.js:1670
+#: admin/events/edit/attendees/index.js:1898
+#: admin/events/edit/attendees/index.js:1905
+#: admin/events/edit/attendees/index.js:1952
 msgid "Checked in"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:222
-#: admin/events/edit/attendees/index.js:1410
-#: admin/events/edit/attendees/index.js:1482
+#: admin/events/edit/attendees/index.js:223
+#: admin/events/edit/attendees/index.js:1604
+#: admin/events/edit/attendees/index.js:1676
 msgid "Denied"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:231
-#: admin/events/edit/attendees/index.js:246
-#: admin/events/edit/attendees/index.js:385
+#: admin/events/edit/attendees/index.js:232
+#: admin/events/edit/attendees/index.js:247
+#: admin/events/edit/attendees/index.js:386
 #: components/bulk-actions.js:183
 #: components/event/event-image.js:350
 #: components/bulk-actions.js:97
@@ -3042,95 +3067,167 @@ msgstr ""
 msgid "Delete"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:240
+#: admin/events/edit/attendees/index.js:241
 msgid "Delete RSVPs?"
 msgstr ""
 
 #. translators: %d: number of selected RSVPs
-#: admin/events/edit/attendees/index.js:243
+#: admin/events/edit/attendees/index.js:244
 #, js-format
 msgid "This will permanently delete %d RSVP."
 msgid_plural "This will permanently delete %d RSVPs."
 msgstr[0] ""
 msgstr[1] ""
 
-#: admin/events/edit/attendees/index.js:277
+#: admin/events/edit/attendees/index.js:278
 msgid "Sending confirmation email..."
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:311
+#: admin/events/edit/attendees/index.js:312
 msgid "No email sent."
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:318
-#: admin/events/edit/attendees/index.js:1186
-#: admin/events/edit/attendees/index.js:1221
-#: admin/events/edit/attendees/index.js:1267
+#: admin/events/edit/attendees/index.js:319
+#: admin/events/edit/attendees/index.js:1380
+#: admin/events/edit/attendees/index.js:1415
+#: admin/events/edit/attendees/index.js:1461
 msgid "No RSVP updated."
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:325
+#: admin/events/edit/attendees/index.js:326
 msgid "RSVP deleted."
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:327
+#: admin/events/edit/attendees/index.js:328
 msgid "Confirmation email sent."
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:328
-#: admin/events/edit/attendees/index.js:1190
-#: admin/events/edit/attendees/index.js:1237
-#: admin/events/edit/attendees/index.js:1277
+#: admin/events/edit/attendees/index.js:329
+#: admin/events/edit/attendees/index.js:1384
+#: admin/events/edit/attendees/index.js:1431
+#: admin/events/edit/attendees/index.js:1471
 msgid "RSVP updated."
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:344
-#: admin/events/edit/attendees/index.js:351
+#: admin/events/edit/attendees/index.js:345
+#: admin/events/edit/attendees/index.js:352
 msgid "Action failed."
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:364
+#: admin/events/edit/attendees/index.js:365
 msgid "RSVP actions"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:374
-#: admin/events/edit/attendees/index.js:499
+#: admin/events/edit/attendees/index.js:375
+#: admin/events/edit/attendees/index.js:693
 msgid "Resend confirmation"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:383
+#: admin/events/edit/attendees/index.js:384
 msgid "Delete RSVP?"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:384
+#: admin/events/edit/attendees/index.js:385
 msgid "This will permanently delete this RSVP."
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:408
+#: admin/events/edit/attendees/index.js:461
+msgid "Attendee added."
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:468
+msgid "Failed to add attendee."
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:486
+#: admin/events/edit/attendees/index.js:491
+#: admin/events/edit/attendees/index.js:579
+msgid "Add attendee"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:496
+msgid "Ticket type"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:507
+msgid "Loading..."
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:508
+msgid "Select a ticket"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:523
+#: admin/events/edit/attendees/index.js:1574
+#: admin/events/edit/attendees/index.js:1879
+#: components/order/CustomerInfo.js:21
+#: checkin/index.js:477
+#: rsvp/index.js:463
+msgid "Name"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:528
+#: admin/settings/emails/index.js:60
+#: admin/settings/emails/index.js:172
+msgid "Attendee name"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:533
+msgid "Email (optional)"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:544
+#: admin/tickets/orders/refund/index.js:360
+#: components/order/OrderSummary.js:161
+msgid "Quantity"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:556
+msgid "Added as a free, completed order with its own check-in code. No email is sent automatically."
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:567
+#: admin/events/overview/index.js:909
+#: admin/events/overview/index.js:992
+#: admin/settings/import/index.js:337
+#: components/confirm-dialog.js:77
+#: components/event/event-image.js:308
+#: components/ui/rich-text-editor.js:668
+#: components/url-import-dialog.js:134
+#: checkin/index.js:590
+#: rsvp/index.js:639
+msgid "Cancel"
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:576
+msgid "Adding..."
+msgstr ""
+
+#: admin/events/edit/attendees/index.js:602
 #: components/order/order-header.js:48
 msgid "Sending ticket confirmation..."
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:438
+#: admin/events/edit/attendees/index.js:632
 #: components/order/order-header.js:77
 msgid "Failed to resend confirmation."
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:460
+#: admin/events/edit/attendees/index.js:654
 #: components/order/order-header.js:114
 msgid "Order archived."
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:473
+#: admin/events/edit/attendees/index.js:667
 #: components/order/order-header.js:124
 msgid "Failed to archive order."
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:489
+#: admin/events/edit/attendees/index.js:683
 msgid "Attendee actions"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:506
+#: admin/events/edit/attendees/index.js:700
 #: components/bulk-actions.js:137
 #: components/bulk-actions.js:233
 #: components/order/order-header.js:157
@@ -3138,84 +3235,84 @@ msgstr ""
 msgid "Archive"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:570
-#: admin/events/edit/attendees/index.js:740
+#: admin/events/edit/attendees/index.js:764
+#: admin/events/edit/attendees/index.js:934
 #: checkin/index.js:705
 #: checkin/index.js:725
 msgid "Checked-in count"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:591
+#: admin/events/edit/attendees/index.js:785
 msgid "Copy code"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:631
-#: admin/events/edit/attendees/index.js:1770
+#: admin/events/edit/attendees/index.js:825
+#: admin/events/edit/attendees/index.js:1964
 msgid "Check-in codes"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:634
+#: admin/events/edit/attendees/index.js:828
 msgid "checked in"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:648
+#: admin/events/edit/attendees/index.js:842
 msgid "Group check-in"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:658
+#: admin/events/edit/attendees/index.js:852
 msgid "Copy group code"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:673
+#: admin/events/edit/attendees/index.js:867
 #, js-format
 msgid "%d individual code"
 msgid_plural "%d individual codes"
 msgstr[0] ""
 msgstr[1] ""
 
-#: admin/events/edit/attendees/index.js:681
+#: admin/events/edit/attendees/index.js:875
 msgid "Copy all"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:951
+#: admin/events/edit/attendees/index.js:1145
 msgid "RSVP enabled."
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:955
+#: admin/events/edit/attendees/index.js:1149
 msgid "Failed to enable RSVP."
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:1030
+#: admin/events/edit/attendees/index.js:1224
 msgid "Missing event data."
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:1035
+#: admin/events/edit/attendees/index.js:1229
 msgid "Select an instance first."
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:1090
-#: admin/events/edit/attendees/index.js:1159
+#: admin/events/edit/attendees/index.js:1284
+#: admin/events/edit/attendees/index.js:1353
 msgid "Failed to export CSV."
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:1194
-#: admin/events/edit/attendees/index.js:1240
-#: admin/events/edit/attendees/index.js:1280
+#: admin/events/edit/attendees/index.js:1388
+#: admin/events/edit/attendees/index.js:1434
+#: admin/events/edit/attendees/index.js:1474
 msgid "Failed to update RSVP."
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:1308
-#: admin/events/edit/attendees/index.js:1339
+#: admin/events/edit/attendees/index.js:1502
+#: admin/events/edit/attendees/index.js:1533
 msgid "Check-in updated."
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:1311
-#: admin/events/edit/attendees/index.js:1342
+#: admin/events/edit/attendees/index.js:1505
+#: admin/events/edit/attendees/index.js:1536
 msgid "Failed to update check-in."
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:1362
-#: admin/events/edit/attendees/index.js:1667
+#: admin/events/edit/attendees/index.js:1556
+#: admin/events/edit/attendees/index.js:1861
 #: admin/events/overview/index.js:465
 #: components/event/instances-table.js:196
 #: components/filters.js:82
@@ -3225,8 +3322,8 @@ msgstr ""
 msgid "Select all"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:1371
-#: admin/events/edit/attendees/index.js:1676
+#: admin/events/edit/attendees/index.js:1565
+#: admin/events/edit/attendees/index.js:1870
 #: admin/events/overview/index.js:474
 #: components/event/instances-table.js:205
 #: lib/order-table-columns.js:90
@@ -3234,30 +3331,22 @@ msgstr ""
 msgid "Select row"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:1380
-#: admin/events/edit/attendees/index.js:1685
-#: components/order/CustomerInfo.js:21
-#: checkin/index.js:477
-#: rsvp/index.js:463
-msgid "Name"
-msgstr ""
-
-#: admin/events/edit/attendees/index.js:1399
+#: admin/events/edit/attendees/index.js:1593
 msgid "Checked-in"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:1455
-#: admin/events/edit/attendees/index.js:1741
+#: admin/events/edit/attendees/index.js:1649
+#: admin/events/edit/attendees/index.js:1935
 msgid "Check-in actions"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:1495
+#: admin/events/edit/attendees/index.js:1689
 #: admin/settings/emails/index.js:70
 #: checkin/index.js:299
 msgid "Check-in code"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:1508
+#: admin/events/edit/attendees/index.js:1702
 #: admin/events/overview/index.js:550
 #: components/event/instances-table.js:269
 #: components/filters.js:67
@@ -3266,17 +3355,17 @@ msgstr ""
 msgid "Status"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:1589
+#: admin/events/edit/attendees/index.js:1783
 #: checkin/index.js:524
 #: rsvp/index.js:575
 msgid "Guests"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:1599
+#: admin/events/edit/attendees/index.js:1793
 msgid "RSVP date"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:1808
+#: admin/events/edit/attendees/index.js:2002
 #: admin/settings/emails/index.js:103
 #: admin/settings/emails/index.js:143
 #: admin/settings/emails/index.js:204
@@ -3285,90 +3374,90 @@ msgstr ""
 msgid "Order ID"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:1847
+#: admin/events/edit/attendees/index.js:2041
 msgid "Order Status"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:1853
+#: admin/events/edit/attendees/index.js:2047
 #: lib/order-table-columns.js:221
 #: lib/order-table.js:218
 msgid "Ticket quantity"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:1863
+#: admin/events/edit/attendees/index.js:2057
 #: lib/order-table-columns.js:230
 #: lib/order-table.js:228
 msgid "Order date"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:1916
+#: admin/events/edit/attendees/index.js:2110
 msgid "RSVP is turned off"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:1919
+#: admin/events/edit/attendees/index.js:2113
 msgid "Enable RSVP for this event to start collecting attendees."
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:1930
+#: admin/events/edit/attendees/index.js:2124
 msgid "Enabling..."
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:1931
+#: admin/events/edit/attendees/index.js:2125
 msgid "Enable RSVP"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:1945
-#: admin/events/edit/attendees/index.js:2010
+#: admin/events/edit/attendees/index.js:2139
+#: admin/events/edit/attendees/index.js:2209
 #: admin/tickets/attendees/index.js:8
 #: components/event/event-tabs.js:35
 #: components/event/event-tabs.js:42
 msgid "Attendees"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:1955
+#: admin/events/edit/attendees/index.js:2149
 msgid "Checked-in/Total tickets sold"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:1973
+#: admin/events/edit/attendees/index.js:2167
 msgid "No attendees yet."
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:1992
-#: admin/events/edit/attendees/index.js:2110
+#: admin/events/edit/attendees/index.js:2191
+#: admin/events/edit/attendees/index.js:2309
 #: admin/events/edit/tickets/sales-history/index.js:388
 #: admin/tickets/orders/index.js:244
 msgid "Exporting..."
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:1993
-#: admin/events/edit/attendees/index.js:2111
+#: admin/events/edit/attendees/index.js:2192
+#: admin/events/edit/attendees/index.js:2310
 #: admin/events/edit/tickets/sales-history/index.js:389
 #: admin/tickets/orders/index.js:245
 msgid "Export"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:2017
+#: admin/events/edit/attendees/index.js:2216
 msgid "Select instance"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:2022
+#: admin/events/edit/attendees/index.js:2221
 #: components/filters.js:19
 msgid "Upcoming"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:2037
+#: admin/events/edit/attendees/index.js:2236
 msgid "Past instances"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:2060
+#: admin/events/edit/attendees/index.js:2259
 msgid "RSVP \"Going\""
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:2073
+#: admin/events/edit/attendees/index.js:2272
 msgid "Check-ins"
 msgstr ""
 
-#: admin/events/edit/attendees/index.js:2090
+#: admin/events/edit/attendees/index.js:2289
 msgid "No RSVPs are found."
 msgstr ""
 
@@ -3816,18 +3905,6 @@ msgid_plural "This will permanently delete %d events in the trash. This action c
 msgstr[0] ""
 msgstr[1] ""
 
-#: admin/events/overview/index.js:909
-#: admin/events/overview/index.js:992
-#: admin/settings/import/index.js:337
-#: components/confirm-dialog.js:77
-#: components/event/event-image.js:308
-#: components/ui/rich-text-editor.js:668
-#: components/url-import-dialog.js:134
-#: checkin/index.js:590
-#: rsvp/index.js:639
-msgid "Cancel"
-msgstr ""
-
 #: admin/events/overview/index.js:921
 msgid "Emptying…"
 msgstr ""
@@ -3933,11 +4010,6 @@ msgstr ""
 
 #: admin/settings/emails/index.js:47
 msgid "Your RSVP for [event_name]"
-msgstr ""
-
-#: admin/settings/emails/index.js:60
-#: admin/settings/emails/index.js:172
-msgid "Attendee name"
 msgstr ""
 
 #: admin/settings/emails/index.js:61
@@ -4647,11 +4719,6 @@ msgstr ""
 
 #: admin/tickets/orders/refund/index.js:352
 msgid "Select order to refund"
-msgstr ""
-
-#: admin/tickets/orders/refund/index.js:360
-#: components/order/OrderSummary.js:161
-msgid "Quantity"
 msgstr ""
 
 #: admin/tickets/orders/refund/index.js:361

@@ -54,6 +54,7 @@ import {
   Copy,
   EllipsisVertical,
   Loader2,
+  Plus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -389,6 +390,199 @@ function RowRsvpActions({
         }}
       />
     </>
+  );
+}
+
+function AddAttendeeDialog({ event, instanceTs, onAdded }) {
+  const [open, setOpen] = useState(false);
+  const [tickets, setTickets] = useState([]);
+  const [isLoadingTickets, setIsLoadingTickets] = useState(false);
+  const [ticketId, setTicketId] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [quantity, setQuantity] = useState("1");
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    if (!open || !event?.id) return undefined;
+    let cancelled = false;
+    (async () => {
+      setIsLoadingTickets(true);
+      try {
+        const response = await apiRequest({
+          path: `${eventkoi_params.api}/events/${event.id}/tickets`,
+          method: "GET",
+          headers: { "EVENTKOI-API-KEY": eventkoi_params.api_key },
+        });
+        if (cancelled) return;
+        const list = Array.isArray(response?.tickets) ? response.tickets : [];
+        const active = list.filter(
+          (ticket) => (ticket.status || "active") === "active"
+        );
+        setTickets(active);
+        if (active.length === 1) {
+          setTicketId(String(active[0].id));
+        }
+      } catch (error) {
+        if (!cancelled) setTickets([]);
+      } finally {
+        if (!cancelled) setIsLoadingTickets(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, event?.id]);
+
+  const resetForm = () => {
+    setTicketId("");
+    setName("");
+    setEmail("");
+    setQuantity("1");
+  };
+
+  const handleSubmit = async () => {
+    if (!ticketId || !name.trim() || isSaving) return;
+    setIsSaving(true);
+    try {
+      await apiRequest({
+        path: `${eventkoi_params.api}/tickets/orders/add-attendee`,
+        method: "POST",
+        data: {
+          event_id: event.id,
+          ticket_id: Number(ticketId),
+          name: name.trim(),
+          email: email.trim(),
+          quantity: Math.max(1, parseInt(quantity, 10) || 1),
+          ...(instanceTs ? { instance_ts: Number(instanceTs) } : {}),
+        },
+        headers: { "EVENTKOI-API-KEY": eventkoi_params.api_key },
+      });
+      showToast({ message: __("Attendee added.", "eventkoi-lite") });
+      setOpen(false);
+      resetForm();
+      onAdded?.();
+    } catch (error) {
+      console.error("Add attendee failed:", error);
+      showToastError(
+        error?.message || __("Failed to add attendee.", "eventkoi-lite")
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+        if (!next) resetForm();
+      }}
+    >
+      <DialogTrigger asChild>
+        <Button variant="outline">
+          <Plus className="mr-2 h-4 w-4" />
+          {__("Add attendee", "eventkoi-lite")}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[400px]">
+        <DialogHeader>
+          <DialogTitle>{__("Add attendee", "eventkoi-lite")}</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-4">
+          <div className="grid gap-1.5">
+            <span className="text-sm font-medium">
+              {__("Ticket type", "eventkoi-lite")}
+            </span>
+            <Select
+              value={ticketId}
+              onValueChange={setTicketId}
+              disabled={isLoadingTickets}
+            >
+              <SelectTrigger>
+                <SelectValue
+                  placeholder={
+                    isLoadingTickets
+                      ? __("Loading...", "eventkoi-lite")
+                      : __("Select a ticket", "eventkoi-lite")
+                  }
+                />
+              </SelectTrigger>
+              <SelectContent>
+                {tickets.map((ticket) => (
+                  <SelectItem key={ticket.id} value={String(ticket.id)}>
+                    {ticket.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5">
+            <span className="text-sm font-medium">
+              {__("Name", "eventkoi-lite")}
+            </span>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={__("Attendee name", "eventkoi-lite")}
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <span className="text-sm font-medium">
+              {__("Email (optional)", "eventkoi-lite")}
+            </span>
+            <Input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@example.com"
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <span className="text-sm font-medium">
+              {__("Quantity", "eventkoi-lite")}
+            </span>
+            <Input
+              type="number"
+              min={1}
+              max={100}
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              className="w-24"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {__(
+              "Added as a free, completed order with its own check-in code. No email is sent automatically.",
+              "eventkoi-lite"
+            )}
+          </p>
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setOpen(false)}
+              disabled={isSaving}
+            >
+              {__("Cancel", "eventkoi-lite")}
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={isSaving || !ticketId || !name.trim()}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {__("Adding...", "eventkoi-lite")}
+                </>
+              ) : (
+                __("Add attendee", "eventkoi-lite")
+              )}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -1982,6 +2176,11 @@ export function EventEditAttendees() {
           customTopRight={(table) => (
             <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
               <SearchBox table={table} />
+              <AddAttendeeDialog
+                event={event}
+                instanceTs={instanceTs || null}
+                onAdded={fetchResults}
+              />
               <Button
                 variant="outline"
                 disabled={isExporting}

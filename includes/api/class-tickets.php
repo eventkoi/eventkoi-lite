@@ -240,6 +240,16 @@ class Tickets {
 				'permission_callback' => REST::cap( 'eventkoi_orders_view' ),
 			)
 		);
+
+		register_rest_route(
+			'eventkoi/v1',
+			'/tickets/orders/add-attendee',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'add_manual_attendee' ),
+				'permission_callback' => REST::cap( 'eventkoi_orders_manage' ),
+			)
+		);
 	}
 
 	/**
@@ -273,7 +283,7 @@ class Tickets {
 		$currency = function_exists( 'get_woocommerce_currency' ) ? strtoupper( get_woocommerce_currency() ) : '';
 
 		$parts   = array();
-		$parts[] = "order_id LIKE 'wc\\_%'";
+		$parts[] = "( order_id LIKE 'wc\\_%' OR order_id LIKE 'manual\\_%' )";
 		$parts[] = "payment_status != 'hold'";
 
 		if ( ! empty( $args['only_archived'] ) ) {
@@ -502,7 +512,7 @@ class Tickets {
 					'amount_total'   => 0,
 					'currency'       => strtolower( (string) ( $row->currency ?? 'usd' ) ),
 					'created_at'     => (string) ( $row->created_at ?? '' ),
-					'gateway'        => 'woocommerce',
+					'gateway'        => 0 === strpos( $base_id, 'manual_' ) ? 'manual' : 'woocommerce',
 					'items'          => array(),
 				);
 			}
@@ -687,7 +697,7 @@ class Tickets {
 						'amount_total'          => 0,
 						'currency'              => strtolower( (string) ( $row->currency ?? 'usd' ) ),
 						'created_at'            => (string) ( $row->created_at ?? '' ),
-						'gateway'               => 'woocommerce',
+						'gateway'               => 0 === strpos( $base_id, 'manual_' ) ? 'manual' : 'woocommerce',
 						'items'                 => array(),
 						'_completed_count'      => 0,
 						'_refunded_count'       => 0,
@@ -865,6 +875,102 @@ class Tickets {
 		}
 
 		return $payload;
+	}
+
+	/**
+	 * Manually add an attendee: create a free, complete order for a ticket type.
+	 *
+	 * Lets an admin put someone on the attendee list without checkout (ticket
+	 * transfers, competition winners). Availability is validated through the
+	 * same logic the storefront uses, so a manual attendee can never oversell.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function add_manual_attendee( WP_REST_Request $request ) {
+		$event_id    = absint( $request->get_param( 'event_id' ) );
+		$ticket_id   = absint( $request->get_param( 'ticket_id' ) );
+		$name        = sanitize_text_field( (string) $request->get_param( 'name' ) );
+		$email       = sanitize_email( (string) $request->get_param( 'email' ) );
+		$quantity    = absint( $request->get_param( 'quantity' ) );
+		$quantity    = max( 1, min( $quantity ? $quantity : 1, 100 ) );
+		$instance_ts = absint( $request->get_param( 'instance_ts' ) );
+
+		if ( '' === $name ) {
+			return new WP_Error( 'missing_name', __( 'An attendee name is required.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
+		$raw_email = trim( (string) $request->get_param( 'email' ) );
+		if ( '' !== $raw_email && '' === $email ) {
+			return new WP_Error( 'invalid_email', __( 'The email address is not valid.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
+		$event_post = get_post( $event_id );
+		if ( ! $event_post || 'eventkoi_event' !== $event_post->post_type ) {
+			return new WP_Error( 'invalid_event', __( 'Invalid event.', 'eventkoi-lite' ), array( 'status' => 404 ) );
+		}
+
+		// Validate the ticket and its availability through the storefront view,
+		// so remaining counts, holds, and the per-event cap all apply here too.
+		$public_request = new WP_REST_Request( 'GET', '/eventkoi/v1/events/' . $event_id . '/tickets/public' );
+		$public_request->set_param( 'event_id', $event_id );
+		if ( $instance_ts > 0 ) {
+			$public_request->set_param( 'instance_ts', $instance_ts );
+		}
+
+		$public = self::get_public_tickets( $public_request );
+		if ( is_wp_error( $public ) ) {
+			return $public;
+		}
+
+		$payload = $public->get_data();
+		$ticket  = null;
+		foreach ( (array) ( $payload['tickets'] ?? array() ) as $entry ) {
+			if ( absint( $entry['id'] ?? 0 ) === $ticket_id ) {
+				$ticket = $entry;
+				break;
+			}
+		}
+
+		if ( null === $ticket ) {
+			return new WP_Error( 'invalid_ticket', __( 'This ticket type does not belong to the selected event.', 'eventkoi-lite' ), array( 'status' => 404 ) );
+		}
+
+		$remaining = $ticket['remaining'] ?? null;
+		if ( null !== $remaining && $quantity > (int) $remaining ) {
+			return new WP_Error(
+				'insufficient_capacity',
+				sprintf(
+					/* translators: %d: number of seats left. */
+					_n( 'Only %d seat is left for this ticket type.', 'Only %d seats are left for this ticket type.', (int) $remaining, 'eventkoi-lite' ),
+					(int) $remaining
+				),
+				array( 'status' => 400 )
+			);
+		}
+
+		$result = \EventKoi\Core\Ticket_Order_Sync::create_manual_order(
+			$event_id,
+			$ticket_id,
+			$name,
+			$email,
+			$quantity,
+			self::get_global_currency(),
+			$instance_ts
+		);
+
+		if ( empty( $result['rows'] ) ) {
+			return new WP_Error( 'insert_failed', __( 'The attendee could not be added.', 'eventkoi-lite' ), array( 'status' => 500 ) );
+		}
+
+		return new WP_REST_Response(
+			array(
+				'success'  => true,
+				'order_id' => (string) $result['order_id'],
+				'quantity' => (int) $result['rows'],
+			),
+			200
+		);
 	}
 
 	/**

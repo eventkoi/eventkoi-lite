@@ -402,6 +402,67 @@ class Ticket_Order_Sync {
 	}
 
 	/**
+	 * Create a manual (complimentary) order for an attendee added by an admin.
+	 *
+	 * Mirrors the checkout row model: one row per seat, each with its own
+	 * check-in token, so QR check-in, attendee lists, and availability counts
+	 * treat the attendee exactly like a paying customer. Rows are free
+	 * (zero amounts) and complete immediately.
+	 *
+	 * @param int    $event_id       EventKoi event post ID.
+	 * @param int    $ticket_id      Ticket row ID.
+	 * @param string $customer_name  Attendee name.
+	 * @param string $customer_email Attendee email (may be empty).
+	 * @param int    $quantity       Seats to add.
+	 * @param string $currency       Three-letter ISO currency code.
+	 * @param int    $instance_ts    Selected-date instance timestamp, 0 otherwise.
+	 * @return array order_id (base ID) and rows (seats created).
+	 */
+	public static function create_manual_order( $event_id, $ticket_id, $customer_name, $customer_email, $quantity, $currency, $instance_ts = 0 ) {
+		global $wpdb;
+
+		$table     = $wpdb->prefix . 'eventkoi_ticket_orders';
+		$event_id  = absint( $event_id );
+		$ticket_id = absint( $ticket_id );
+		$quantity  = max( 1, absint( $quantity ) );
+		$base_id   = 'manual_' . strtolower( substr( str_replace( array( '.', ',' ), '', uniqid( '', true ) ), -12 ) );
+		$created   = gmdate( 'Y-m-d H:i:s' );
+		$rows      = 0;
+
+		for ( $seat = 1; $seat <= $quantity; $seat++ ) {
+			$seat_order_id = $base_id . ':' . $ticket_id . ( 1 === $seat ? '' : ':seat_' . $seat );
+
+			$rows += self::upsert_row(
+				$table,
+				array(
+					'event_id'       => $event_id,
+					'instance_ts'    => absint( $instance_ts ),
+					'ticket_id'      => $ticket_id,
+					'order_id'       => $seat_order_id,
+					'customer_name'  => sanitize_text_field( $customer_name ),
+					'customer_email' => sanitize_email( $customer_email ),
+					'quantity'       => 1,
+					'unit_price'     => 0,
+					'total_amount'   => 0,
+					'currency'       => strtoupper( sanitize_text_field( $currency ) ),
+					'payment_status' => 'complete',
+					'checkin_token'  => self::generate_checkin_token(),
+					'created_at'     => $created,
+				)
+			);
+		}
+
+		if ( $rows > 0 ) {
+			self::sync_quantity_sold( $event_id, array( array( 'ticket_id' => $ticket_id ) ) );
+		}
+
+		return array(
+			'order_id' => $base_id,
+			'rows'     => $rows,
+		);
+	}
+
+	/**
 	 * Update quantity_sold on local tickets table from order items.
 	 *
 	 * @param int   $event_id Event ID.
