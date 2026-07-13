@@ -176,8 +176,6 @@ export function CalendarGridMode({
   startday,
   initialDate,
 }) {
-  // Determine whether locale uses AM/PM
-  const usesMeridiem = /^en/i.test(localeToUse);
   const resolvedLocalTz =
     typeof window !== "undefined"
       ? Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -440,10 +438,10 @@ export function CalendarGridMode({
           hour: "numeric",
           minute: "2-digit",
           hour12: true,
-          ...(usesMeridiem && {
-            omitZeroMinute: true,
-            meridiem: "short", // only for English-style locales
-          }),
+          // Keep the am/pm suffix in every locale: without it, non-English
+          // sites rendered a bare hour ("10"), which reads as a count.
+          omitZeroMinute: true,
+          meridiem: "short",
         };
 
   const formatSlotLabel = (date) => {
@@ -462,13 +460,28 @@ export function CalendarGridMode({
     });
     const withoutZeroMinutes = formatted.replace(/:00\b/, "");
 
-    if (!usesMeridiem) {
+    // Normalize or restore the am/pm suffix for every locale so a bare hour
+    // is never shown (a French "10" is indistinguishable from a count).
+    if (/([ap])\.?m?\.?$/i.test(withoutZeroMinutes)) {
+      return withoutZeroMinutes.replace(/\s?([ap])\.?m?\.?$/i, (match, part) => {
+        return ` ${part.toUpperCase()}M`;
+      });
+    }
+
+    const numeric = withoutZeroMinutes.match(/\d{1,2}/);
+    if (!numeric) {
       return withoutZeroMinutes;
     }
 
-    return withoutZeroMinutes.replace(/\s?([ap])\.?m?$/i, (match, part) => {
-      return ` ${part.toUpperCase()}M`;
-    });
+    const hour24 = parseInt(
+      formatInCalendarTz(date, { hour: "numeric", hour12: false }),
+      10
+    );
+    if (Number.isNaN(hour24)) {
+      return withoutZeroMinutes;
+    }
+
+    return `${withoutZeroMinutes} ${hour24 < 12 ? "AM" : "PM"}`;
   };
 
   const normalizeTimeValue = (value) => {
