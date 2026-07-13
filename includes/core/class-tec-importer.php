@@ -347,12 +347,14 @@ class TEC_Importer
         $show_map  = '1' === get_post_meta($tec_id, '_EventShowMap', true);
         $locations = self::build_locations($tec_id, $show_map);
 
-        // TEC's _EventURL is the "Event Website" link. Promote it to a structured virtual
-        // location so it lands in EventKoi's multi-location UI and JSON-LD instead of being
-        // stuffed into the description.
-        $event_url = (string) get_post_meta($tec_id, '_EventURL', true);
-        if ('' !== $event_url ) {
-            $locations[] = self::build_virtual_location($event_url);
+        // TEC's _EventURL is the generic "Event Website" link, usually a more-info page
+        // rather than a meeting link, so it must not flip the event to online/mixed.
+        // It's preserved in the description tail below. Only a Virtual Events meeting
+        // URL becomes a structured virtual location.
+        $event_url   = (string) get_post_meta($tec_id, '_EventURL', true);
+        $virtual_url = self::get_tec_virtual_url($tec_id);
+        if ('' !== $virtual_url ) {
+            $locations[] = self::build_virtual_location($virtual_url);
         }
 
         $event_type = ! empty($locations) ? self::infer_type_from_locations($locations) : 'inperson';
@@ -372,7 +374,7 @@ class TEC_Importer
             'post_type'   => 'eventkoi_event',
             'post_status' => $status,
             'post_title'  => $title,
-            'post_name'   => sanitize_title_with_dashes($title, '', 'save'),
+            'post_name'   => '' !== $post->post_name ? $post->post_name : sanitize_title_with_dashes($title, '', 'save'),
             'post_author' => get_current_user_id(),
             ),
             true
@@ -411,6 +413,11 @@ class TEC_Importer
             $tail[] = '<p>' . implode('<br>', $lines) . '</p>';
         }
 
+        // TEC's Event Website link, preserved in the description.
+        if ('' !== $event_url ) {
+            $tail[] = '<p><strong>' . esc_html__('Event website', 'eventkoi-lite') . ':</strong> <a href="' . esc_url($event_url) . '">' . esc_html($event_url) . '</a></p>';
+        }
+
         // Surface cost only when we couldn't map it to a real ticket (free / non-numeric).
         if (! $ticket_id && '' !== (string) $cost_raw ) {
             $cost_display = self::format_cost_display($cost_raw, $currency_symbol, $currency_pos);
@@ -444,7 +451,7 @@ class TEC_Importer
         update_post_meta($new_post_id, 'recurrence_rules', $recurrence_rules);
         update_post_meta($new_post_id, 'attendance_mode', $attendance_mode);
         update_post_meta($new_post_id, 'tickets_enabled', (bool) $ticket_id);
-        update_post_meta($new_post_id, 'timezone_display', false);
+        update_post_meta($new_post_id, 'timezone_display', self::tec_shows_timezone());
 
         if (! empty($end_iso) ) {
             update_post_meta($new_post_id, 'end_date', $end_iso);
@@ -685,6 +692,55 @@ class TEC_Importer
     }
 
     /**
+     * The currency actually charged at checkout.
+     *
+     * Mirrors Schema::get_global_currency(): the WooCommerce store currency when
+     * WooCommerce checkout is active, else the EventKoi Settings currency.
+     *
+     * @return string Three-letter ISO code.
+     */
+    private static function get_checkout_currency()
+    {
+        if (class_exists(WooCommerce_Checkout::class) && WooCommerce_Checkout::is_active() && function_exists('get_woocommerce_currency') ) {
+            return strtoupper(get_woocommerce_currency());
+        }
+
+        $settings = Settings::get();
+        $currency = strtoupper(sanitize_text_field((string) ( $settings['currency'] ?? 'USD' )));
+
+        return preg_match('/^[A-Z]{3}$/', $currency) ? $currency : 'USD';
+    }
+
+    /**
+     * Whether imported events should display their timezone, copied from TEC's
+     * "Show time zone" display setting so the import mirrors the source site.
+     *
+     * @return bool
+     */
+    private static function tec_shows_timezone()
+    {
+        return function_exists('tribe_get_option') && (bool) tribe_get_option('tribe_events_timezones_show_zone', false);
+    }
+
+    /**
+     * Read the Virtual Events meeting URL for a TEC event.
+     *
+     * Set by TEC's Virtual Events feature when the organizer marks the event
+     * virtual or hybrid. Distinct from _EventURL, the generic website link.
+     *
+     * @param  int $tec_id TEC event post ID.
+     * @return string Meeting URL, or '' when the event is not virtual.
+     */
+    private static function get_tec_virtual_url( $tec_id )
+    {
+        if (! get_post_meta($tec_id, '_tribe_events_is_virtual', true) ) {
+            return '';
+        }
+
+        return esc_url_raw((string) get_post_meta($tec_id, '_tribe_events_virtual_url', true));
+    }
+
+    /**
      * Create a single EventKoi ticket from TEC's free-text cost field, when the cost
      * is a positive numeric value and the tickets feature is enabled.
      *
@@ -711,6 +767,16 @@ class TEC_Importer
             return false;
         }
 
+        // Checkout always charges the store currency, never the per-ticket value. When
+        // TEC declares a different currency, a ticket would display one currency and
+        // silently charge another, so fall back to the cost text (which keeps the
+        // original symbol) instead of creating a mispriced ticket.
+        $checkout_currency = self::get_checkout_currency();
+        $has_tec_currency  = '' !== (string) $currency_code || '' !== trim((string) $currency_symbol);
+        if ($has_tec_currency && self::infer_currency_code($currency_code, $currency_symbol) !== $checkout_currency ) {
+            return false;
+        }
+
         global $wpdb;
         $table = $wpdb->prefix . 'eventkoi_tickets';
      // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
@@ -721,7 +787,7 @@ class TEC_Importer
             'name'        => __('General admission', 'eventkoi-lite'),
             'description' => '',
             'price'       => $price,
-            'currency'    => self::infer_currency_code($currency_code, $currency_symbol),
+            'currency'    => $checkout_currency,
             'status'      => 'active',
             'sort_order'  => 0,
             ),
