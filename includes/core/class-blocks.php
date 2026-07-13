@@ -686,11 +686,16 @@ JS;
 			$style_attr
 		);
 
-		// Wrap in link if event URL present.
+		// Wrap in link if event URL present. Like the title, selected-day rows
+		// link to the parent event, not one highlighted date.
 		if ( ! empty( $event['url'] ) ) {
+			$image_url = (string) $event['url'];
+			if ( 'selected' === ( $event['standard_type'] ?? '' ) ) {
+				$image_url = remove_query_arg( 'event_day', $image_url );
+			}
 			$img_html = sprintf(
 				'<a href="%1$s" class="ek-event-image-link" rel="bookmark">%2$s</a>',
-				esc_url( $event['url'] ),
+				esc_url( $image_url ),
 				$img_html
 			);
 		}
@@ -1776,7 +1781,7 @@ JS;
 			'image'    => ! empty( $event['thumbnail'] )
 				? sprintf(
 					'<a href="%1$s" class="ek-event-image-link" rel="bookmark"><img src="%2$s" alt="%3$s" class="rounded-xl w-full h-auto object-cover ek-event-image-default" loading="lazy" decoding="async" /></a>',
-					esc_url( $event['url'] ?? '' ),
+					esc_url( $title_url ),
 					esc_url( $event['thumbnail'] ),
 					esc_attr( $event['title'] ?? '' )
 				)
