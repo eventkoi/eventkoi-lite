@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.3.23.2
+Stable tag: 1.3.24.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,12 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.24.0 – Add attendees manually and import Event Tickets – 2026-07-13 =
+* New: Add an attendee by hand from the event's Attendees tab. Creates a free, completed order with its own check-in code, for ticket transfers or competition winners, and it can never oversell your capacity.
+* New: The Events Calendar importer now brings over Event Tickets ticket types (RSVP and Tickets Commerce) with their prices, capacity, sold seats, and sale windows. Attendee records and WooCommerce tickets are counted and reported, not imported.
+* Fix: Calendar times in 12-hour mode now always show the am/pm suffix in every language, so a bare hour can no longer be mistaken for a count.
+* Fix: Event images in the Query Loop now link to the event page itself for multi-day events, matching the title link, instead of one highlighted date.
 
 = 1.3.23.2 – Theme compatibility and importer fixes – 2026-07-13 =
 * Fix: RSVP status buttons and other controls no longer lose their text or get repainted by page-builder button styles (like the Elementor global kit).
