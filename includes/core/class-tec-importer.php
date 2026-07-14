@@ -92,7 +92,10 @@ class TEC_Importer
 
         $already_imported = self::get_imported_source_ids();
         $total_events     = self::count_posts('tribe_events');
-        $events_count     = $total_events - count($already_imported);
+        // Count the actual unimported TEC posts instead of subtracting marker
+        // counts from the total: stale markers (deleted TEC events, re-imports)
+        // would otherwise drive the count to zero and block real imports.
+        $events_count = self::count_unimported_events($already_imported);
         $venues_count     = self::count_posts('tribe_venue');
         $organizers_count = self::count_posts('tribe_organizer');
         $categories       = get_terms(
@@ -1464,12 +1467,41 @@ class TEC_Importer
     {
         global $wpdb;
 
+        // Distinct, and only from live EventKoi copies: a trashed copy does not
+        // block re-import in import_single_event, so it must not count here either.
      // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
         $ids = $wpdb->get_col(
-            "SELECT meta_value FROM {$wpdb->postmeta}
-			 WHERE meta_key = '_tec_import_source_id'"
+            "SELECT DISTINCT pm.meta_value FROM {$wpdb->postmeta} pm
+			 INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+			 WHERE pm.meta_key = '_tec_import_source_id'
+			 AND p.post_status != 'trash'"
         );
 
         return array_map('intval', $ids);
+    }
+
+    /**
+     * Count TEC events that have not been imported yet.
+     *
+     * @param array $imported_ids TEC post IDs already imported.
+     * @return int
+     */
+    private static function count_unimported_events($imported_ids)
+    {
+        global $wpdb;
+
+        $sql = "SELECT COUNT(*) FROM {$wpdb->posts}
+			 WHERE post_type = 'tribe_events'
+			 AND post_status IN ('publish','draft','pending','future','private')";
+
+        $imported_ids = array_values(array_filter(array_map('absint', (array) $imported_ids)));
+        if (! empty($imported_ids)) {
+            $placeholders = implode(',', array_fill(0, count($imported_ids), '%d'));
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared
+            $sql = $wpdb->prepare($sql . " AND ID NOT IN ($placeholders)", $imported_ids);
+        }
+
+     // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+        return (int) $wpdb->get_var($sql);
     }
 }
