@@ -71,14 +71,34 @@ export function SettingsImport() {
       setTecState((s) => ({ ...s, importing: false, result: response }));
       if (response?.imported > 0) {
         showToast({
-          message: `${response.imported} event${response.imported !== 1 ? "s" : ""} imported.`,
+          message: sprintf(
+            /* translators: %d: number of imported events */
+            _n(
+              "%d event imported.",
+              "%d events imported.",
+              response.imported,
+              "eventkoi-lite"
+            ),
+            response.imported
+          ),
         });
       }
       if (response?.errors > 0) {
-        showToastError(`${response.errors} event(s) failed.`);
+        showToastError(
+          sprintf(
+            /* translators: %d: number of failed events */
+            _n(
+              "%d event failed.",
+              "%d events failed.",
+              response.errors,
+              "eventkoi-lite"
+            ),
+            response.errors
+          )
+        );
       }
     } catch (err) {
-      showToastError(err?.message ?? "Import failed.");
+      showToastError(err?.message ?? __("Import failed.", "eventkoi-lite"));
       setTecState((s) => ({ ...s, importing: false }));
     }
   };
@@ -149,11 +169,31 @@ export function SettingsImport() {
       setIcsState((s) => ({ ...s, importing: false, result: response, parsed: null }));
       if (response?.imported > 0) {
         showToast({
-          message: `${response.imported} event${response.imported !== 1 ? "s" : ""} imported.`,
+          message: sprintf(
+            /* translators: %d: number of imported events */
+            _n(
+              "%d event imported.",
+              "%d events imported.",
+              response.imported,
+              "eventkoi-lite"
+            ),
+            response.imported
+          ),
         });
       }
       if (response?.errors > 0) {
-        showToastError(`${response.errors} event(s) failed.`);
+        showToastError(
+          sprintf(
+            /* translators: %d: number of failed events */
+            _n(
+              "%d event failed.",
+              "%d events failed.",
+              response.errors,
+              "eventkoi-lite"
+            ),
+            response.errors
+          )
+        );
       }
     } catch {
       showToastError(__("Import failed.", "eventkoi-lite"));
