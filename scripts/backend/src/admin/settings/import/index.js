@@ -83,6 +83,9 @@ export function SettingsImport() {
           ),
         });
       }
+      if (!response?.imported && response?.skipped > 0 && response?.notice) {
+        showToast({ message: response.notice });
+      }
       if (response?.errors > 0) {
         showToastError(
           sprintf(
@@ -368,7 +371,7 @@ function IntegrationCard({
                     </li>
                   </ul>
                   <p className="text-xs text-muted-foreground/70 mt-3">
-                    {__("Previously imported events will be skipped.", "eventkoi-lite")}
+                    {__("Previously imported events are skipped, not updated. Delete an event\u2019s EventKoi copy to re-import it.", "eventkoi-lite")}
                   </p>
                 </DialogHeader>
                 <DialogFooter className="mt-2">

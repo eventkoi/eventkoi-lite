@@ -7,7 +7,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-14T02:07:45+00:00\n"
+"POT-Creation-Date: 2026-07-14T11:04:08+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -1479,7 +1479,7 @@ msgid "Parsed data has expired. Please upload the file again."
 msgstr ""
 
 #: core/class-ics-importer.php:227
-#: core/class-tec-importer.php:337
+#: core/class-tec-importer.php:346
 msgid "Event has no start date."
 msgstr ""
 
@@ -1687,8 +1687,8 @@ msgid "View event"
 msgstr ""
 
 #: core/class-post-types.php:125
-#: admin/settings/import/index.js:411
-#: admin/settings/import/index.js:526
+#: admin/settings/import/index.js:414
+#: admin/settings/import/index.js:529
 msgid "View events"
 msgstr ""
 
@@ -1703,7 +1703,7 @@ msgid "Search events"
 msgstr ""
 
 #: core/class-post-types.php:127
-#: admin/settings/import/index.js:331
+#: admin/settings/import/index.js:334
 msgid "No events found"
 msgstr ""
 
@@ -1898,23 +1898,27 @@ msgid "No events were found."
 msgstr ""
 
 #: core/class-tec-importer.php:88
-#: core/class-tec-importer.php:148
+#: core/class-tec-importer.php:151
 msgid "The Events Calendar plugin is not active."
 msgstr ""
 
-#: core/class-tec-importer.php:275
+#: core/class-tec-importer.php:219
+msgid "Already-imported events are skipped and never updated. To re-import one after changing it in The Events Calendar, delete its EventKoi copy first."
+msgstr ""
+
+#: core/class-tec-importer.php:284
 msgid "No default calendar is set."
 msgstr ""
 
-#: core/class-tec-importer.php:324
+#: core/class-tec-importer.php:333
 msgid "TEC event not found."
 msgstr ""
 
-#: core/class-tec-importer.php:421
+#: core/class-tec-importer.php:430
 msgid "Organizer"
 msgstr ""
 
-#: core/class-tec-importer.php:423
+#: core/class-tec-importer.php:432
 #: components/calendar/EventPopover.js:752
 #: components/order/CustomerInfo.js:29
 #: checkin/index.js:489
@@ -1924,29 +1928,29 @@ msgstr ""
 msgid "Email"
 msgstr ""
 
-#: core/class-tec-importer.php:426
+#: core/class-tec-importer.php:435
 msgid "Phone"
 msgstr ""
 
-#: core/class-tec-importer.php:429
+#: core/class-tec-importer.php:438
 msgid "Website"
 msgstr ""
 
-#: core/class-tec-importer.php:436
-#: core/class-tec-importer.php:1438
+#: core/class-tec-importer.php:445
+#: core/class-tec-importer.php:1447
 msgid "Event website"
 msgstr ""
 
-#: core/class-tec-importer.php:442
+#: core/class-tec-importer.php:451
 msgid "Cost"
 msgstr ""
 
-#: core/class-tec-importer.php:826
+#: core/class-tec-importer.php:835
 msgid "General admission"
 msgstr ""
 
 #. translators: %d: number of WooCommerce tickets.
-#: core/class-tec-importer.php:873
+#: core/class-tec-importer.php:882
 #, php-format
 msgid "%d WooCommerce ticket (Event Tickets Plus) was not imported."
 msgid_plural "%d WooCommerce tickets (Event Tickets Plus) were not imported."
@@ -1954,7 +1958,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of attendees.
-#: core/class-tec-importer.php:888
+#: core/class-tec-importer.php:897
 #, php-format
 msgid "%d attendee record was not imported."
 msgid_plural "%d attendee records were not imported."
@@ -1962,7 +1966,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of paid tickets.
-#: core/class-tec-importer.php:933
+#: core/class-tec-importer.php:942
 #, php-format
 msgid "%d paid ticket was skipped because its currency differs from the store currency."
 msgid_plural "%d paid tickets were skipped because their currency differs from the store currency."
@@ -1970,7 +1974,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of previously sold tickets.
-#: core/class-tec-importer.php:941
+#: core/class-tec-importer.php:950
 #, php-format
 msgid "%d previously sold ticket was deducted from the imported capacity."
 msgid_plural "%d previously sold tickets were deducted from the imported capacity."
@@ -3189,7 +3193,7 @@ msgstr ""
 #: admin/events/edit/attendees/index.js:567
 #: admin/events/overview/index.js:909
 #: admin/events/overview/index.js:992
-#: admin/settings/import/index.js:377
+#: admin/settings/import/index.js:380
 #: components/confirm-dialog.js:77
 #: components/event/event-image.js:308
 #: components/ui/rich-text-editor.js:668
@@ -3820,8 +3824,8 @@ msgstr ""
 
 #: admin/events/overview/index.js:205
 #: admin/events/overview/index.js:273
-#: admin/settings/import/index.js:101
-#: admin/settings/import/index.js:199
+#: admin/settings/import/index.js:104
+#: admin/settings/import/index.js:202
 msgid "Import failed."
 msgstr ""
 
@@ -3837,12 +3841,12 @@ msgid "Failed to empty trash."
 msgstr ""
 
 #: admin/events/overview/index.js:252
-#: admin/settings/import/index.js:153
+#: admin/settings/import/index.js:156
 msgid "All events already imported."
 msgstr ""
 
 #: admin/events/overview/index.js:253
-#: admin/settings/import/index.js:154
+#: admin/settings/import/index.js:157
 msgid "No events found in file."
 msgstr ""
 
@@ -3917,16 +3921,16 @@ msgstr ""
 
 #: admin/events/overview/index.js:941
 #: admin/events/overview/index.js:996
-#: admin/settings/import/index.js:346
-#: admin/settings/import/index.js:382
-#: admin/settings/import/index.js:560
+#: admin/settings/import/index.js:349
+#: admin/settings/import/index.js:385
+#: admin/settings/import/index.js:563
 #: components/settings/settings-tabs.js:36
 #: components/url-import-dialog.js:146
 msgid "Import"
 msgstr ""
 
 #: admin/events/overview/index.js:946
-#: admin/settings/import/index.js:547
+#: admin/settings/import/index.js:550
 #: components/url-import-dialog.js:79
 msgid "Import from URL"
 msgstr ""
@@ -3943,22 +3947,21 @@ msgstr ""
 
 #: admin/events/overview/index.js:953
 #: admin/events/overview/index.js:969
-#: admin/settings/import/index.js:354
+#: admin/settings/import/index.js:357
 msgid "Import from The Events Calendar"
 msgstr ""
 
 #: admin/events/overview/index.js:973
-#: admin/settings/import/index.js:358
+#: admin/settings/import/index.js:361
 msgid "This will import the following into EventKoi:"
 msgstr ""
 
 #: admin/events/overview/index.js:982
-#: admin/settings/import/index.js:367
+#: admin/settings/import/index.js:370
 msgid "Venues, categories & featured images"
 msgstr ""
 
 #: admin/events/overview/index.js:986
-#: admin/settings/import/index.js:371
 msgid "Previously imported events will be skipped."
 msgstr ""
 
@@ -4310,7 +4313,7 @@ msgstr ""
 
 #. translators: %d: number of imported events
 #: admin/settings/import/index.js:76
-#: admin/settings/import/index.js:174
+#: admin/settings/import/index.js:177
 #, js-format
 msgid "%d event imported."
 msgid_plural "%d events imported."
@@ -4318,110 +4321,114 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of failed events
-#: admin/settings/import/index.js:90
-#: admin/settings/import/index.js:188
+#: admin/settings/import/index.js:93
+#: admin/settings/import/index.js:191
 #, js-format
 msgid "%d event failed."
 msgid_plural "%d events failed."
 msgstr[0] ""
 msgstr[1] ""
 
-#: admin/settings/import/index.js:123
+#: admin/settings/import/index.js:126
 #, js-format
 msgid "%d event moved to the default calendar."
 msgid_plural "%d events moved to the default calendar."
 msgstr[0] ""
 msgstr[1] ""
 
-#: admin/settings/import/index.js:213
+#: admin/settings/import/index.js:216
 msgid "Import events"
 msgstr ""
 
-#: admin/settings/import/index.js:215
+#: admin/settings/import/index.js:218
 msgid "Import events from other calendar plugins or ICS files."
 msgstr ""
 
-#: admin/settings/import/index.js:221
+#: admin/settings/import/index.js:224
 msgid "Import events, venues, organizers, and categories from TEC."
 msgstr ""
 
-#: admin/settings/import/index.js:293
+#: admin/settings/import/index.js:296
 msgid "Could not move events."
 msgstr ""
 
-#: admin/settings/import/index.js:317
+#: admin/settings/import/index.js:320
 msgid "Detecting..."
 msgstr ""
 
-#: admin/settings/import/index.js:323
+#: admin/settings/import/index.js:326
 msgid "Activate the plugin to import"
 msgstr ""
 
-#: admin/settings/import/index.js:330
+#: admin/settings/import/index.js:333
 msgid "All events already imported"
 msgstr ""
 
-#: admin/settings/import/index.js:339
+#: admin/settings/import/index.js:342
 #, js-format
 msgid "%d event available"
 msgid_plural "%d events available"
 msgstr[0] ""
 msgstr[1] ""
 
-#: admin/settings/import/index.js:393
-#: admin/settings/import/index.js:508
+#: admin/settings/import/index.js:374
+msgid "Previously imported events are skipped, not updated. Delete an event’s EventKoi copy to re-import it."
+msgstr ""
+
+#: admin/settings/import/index.js:396
+#: admin/settings/import/index.js:511
 msgid "Importing events..."
 msgstr ""
 
-#: admin/settings/import/index.js:401
-#: admin/settings/import/index.js:516
+#: admin/settings/import/index.js:404
+#: admin/settings/import/index.js:519
 #, js-format
 msgid "%d event imported"
 msgid_plural "%d events imported"
 msgstr[0] ""
 msgstr[1] ""
 
-#: admin/settings/import/index.js:421
+#: admin/settings/import/index.js:424
 msgid "This import includes events across multiple calendars, but EventKoi Lite only displays the default calendar. You can move everything into the default calendar now, or upgrade to Pro to keep them separated."
 msgstr ""
 
-#: admin/settings/import/index.js:434
+#: admin/settings/import/index.js:437
 msgid "Move all events into default calendar"
 msgstr ""
 
 #. translators: %d: number of recurring events flattened.
-#: admin/settings/import/index.js:444
+#: admin/settings/import/index.js:447
 #, js-format
 msgid "This import includes %d recurring event. EventKoi Lite doesn't support recurring events, so only its first occurrence was imported as a standard event."
 msgid_plural "This import includes %d recurring events. EventKoi Lite doesn't support recurring events, so only the first occurrence of each was imported as a standard event."
 msgstr[0] ""
 msgstr[1] ""
 
-#: admin/settings/import/index.js:459
+#: admin/settings/import/index.js:462
 msgid "Upgrade to Pro to import recurring events"
 msgstr ""
 
-#: admin/settings/import/index.js:485
+#: admin/settings/import/index.js:488
 msgid "ICS / iCal File"
 msgstr ""
 
-#: admin/settings/import/index.js:488
+#: admin/settings/import/index.js:491
 msgid "Import from Google Calendar, Apple Calendar, Outlook, or any .ics file."
 msgstr ""
 
-#: admin/settings/import/index.js:497
+#: admin/settings/import/index.js:500
 msgid "Select a .ics file to import"
 msgstr ""
 
-#: admin/settings/import/index.js:500
+#: admin/settings/import/index.js:503
 msgid "Upload"
 msgstr ""
 
-#: admin/settings/import/index.js:550
+#: admin/settings/import/index.js:553
 msgid "Paste a link to any event page to import it."
 msgstr ""
 
-#: admin/settings/import/index.js:557
+#: admin/settings/import/index.js:560
 msgid "Supports structured data & OG tags"
 msgstr ""
 

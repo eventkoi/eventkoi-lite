@@ -214,10 +214,16 @@ class TEC_Importer
             }
         }
 
+        $notice = '';
+        if ($skipped > 0) {
+            $notice = __('Already-imported events are skipped and never updated. To re-import one after changing it in The Events Calendar, delete its EventKoi copy first.', 'eventkoi-lite');
+        }
+
         return rest_ensure_response(
             array(
             'imported'          => $imported,
             'skipped'           => $skipped,
+            'notice'            => $notice,
             'errors'            => $errors,
             'results'           => $results,
             'non_default_count'   => count($non_default_ids),
