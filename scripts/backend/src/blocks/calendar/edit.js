@@ -390,7 +390,6 @@ export default function Edit({
       meridiem: "short",
     }),
   };
-  const usesMeridiem = /^en/i.test(localeToUse);
   const resolvedLocalTz =
     typeof window !== "undefined"
       ? Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -579,13 +578,28 @@ export default function Edit({
     });
     const withoutZeroMinutes = formatted.replace(/:00\b/, "");
 
-    if (!usesMeridiem) {
+    // Normalize or restore the am/pm suffix for every locale so a bare hour
+    // is never shown (a French "10" is indistinguishable from a count).
+    if (/([ap])\.?m?\.?$/i.test(withoutZeroMinutes)) {
+      return withoutZeroMinutes.replace(/\s?([ap])\.?m?\.?$/i, (match, part) => {
+        return ` ${part.toUpperCase()}M`;
+      });
+    }
+
+    const numeric = withoutZeroMinutes.match(/\d{1,2}/);
+    if (!numeric) {
       return withoutZeroMinutes;
     }
 
-    return withoutZeroMinutes.replace(/\s?([ap])\.?m?$/i, (match, part) => {
-      return ` ${part.toUpperCase()}M`;
-    });
+    const hour24 = parseInt(
+      formatInCalendarTz(date, { hour: "numeric", hour12: false }),
+      10
+    );
+    if (Number.isNaN(hour24)) {
+      return withoutZeroMinutes;
+    }
+
+    return `${withoutZeroMinutes} ${hour24 < 12 ? "AM" : "PM"}`;
   };
 
   const globalDayStart = eventkoi_params?.day_start_time || "00:00";
