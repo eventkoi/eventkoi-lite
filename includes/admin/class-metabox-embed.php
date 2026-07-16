@@ -206,12 +206,16 @@ class Metabox_Embed {
 			}
 			html, body.wp-admin { background: transparent !important; }
 			#wpcontent, #wpbody, #wpbody-content { margin: 0 !important; padding: 0 !important; }
-			#wpbody-content .wrap { margin: 0 !important; }
-			#poststuff { padding: 8px !important; min-width: 0 !important; }
+			#wpbody-content .wrap { margin: 0 !important; padding: 0 !important; }
+			#poststuff { padding: 0 !important; margin: 0 !important; min-width: 0 !important; }
 			#poststuff #post-body.columns-2 { margin-right: 0 !important; }
 			#post-body.columns-2 #postbox-container-1 { float: none; width: 100% !important; margin: 0 0 12px; }
 			#post-body.columns-2 #postbox-container-2 { width: 100% !important; }
 			.postbox { margin-bottom: 12px; }
+			#postbox-container-1 > .meta-box-sortables:empty,
+			#postbox-container-2 > .meta-box-sortables:empty { display: none !important; }
+			#poststuff .postbox:last-child,
+			.meta-box-sortables > .postbox:last-child { margin-bottom: 0 !important; }
 			/* Keep the Publish box compact: only the update action is needed. */
 			#submitdiv #minor-publishing,
 			#submitdiv #delete-action { display: none !important; }

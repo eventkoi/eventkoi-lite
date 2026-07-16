@@ -5,14 +5,12 @@ import { EventDate } from "@/components/event/event-date";
 import { EventDescription } from "@/components/event/event-description";
 import { EventImage } from "@/components/event/event-image";
 import { EventLocation } from "@/components/event/event-location";
-import { EventMetaboxEmbed } from "@/components/event/event-metabox-embed";
 import { EventName } from "@/components/event/event-name";
 import { EventSlug } from "@/components/event/event-slug";
 import { EventTemplate } from "@/components/event/event-template";
 import { AttendanceModeSelector } from "@/components/event/attendance-mode-selector";
 import { Heading } from "@/components/heading";
 import { ProLaunch } from "@/components/dashboard/pro-launch";
-import { SeoPluginEditorLink } from "@/components/seo-plugin-editor-link";
 import { ShortcodeBox } from "@/components/ShortcodeBox";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -119,17 +117,6 @@ export function EventEditMain() {
 
       {/* Third-party taxonomies (only renders when the site registered any) */}
       <EventTaxonomiesBox />
-
-      {/* Third-party custom-field metaboxes (ACF, Pods, ...) via embedded editor */}
-      <EventMetaboxEmbed />
-
-      {/* SEO plugins that only render in the block editor get a direct link. */}
-      {event?.id && event?.has_seo_plugin && (
-        <Box container className="gap-4">
-          <Heading level={3}>{__("SEO", "eventkoi-lite")}</Heading>
-          <SeoPluginEditorLink url={event?.native_edit_url} />
-        </Box>
-      )}
     </div>
   );
 }
