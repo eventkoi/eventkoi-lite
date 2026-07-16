@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.3.24.0
+Stable tag: 1.3.25.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,16 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.25.0 – Free tickets and clearer ticket settings – 2026-07-16 =
+* New: Sell free tickets. Set a ticket price to 0 and buyers check out without a payment step; their tickets are emailed as usual and the order is marked Free in Ticket sales.
+* New: Ticket types that are not on sale yet now show their sales start date in the ticket selection modal, so buyers can see when an early-bird or later tier opens.
+* New: Choose which unavailable ticket types stay visible with separate Display sold out, Display upcoming, and Display ended controls, replacing the single Show unavailable tickets toggle.
+* New: Developer filters eventkoi_events_query_args and eventkoi_query_loop_query_vars let you add custom taxonomy or query constraints to event listings.
+* Improve: The tickets settings tab is grouped into clearer sections: Display options, Terms and conditions, and Create tickets.
+* Improve: The admin ticket-sale email now records the terms and conditions text even when the acceptance checkbox is optional.
+* Improve: The event editor preview keeps the am/pm suffix in every language.
+* Improve: The Events Calendar importer counts pending events correctly and shows a clearer notice when already-imported events are skipped, and import notices are fully translatable.
 
 = 1.3.24.0 – Add attendees manually and import Event Tickets – 2026-07-13 =
 * New: Add an attendee by hand from the event's Attendees tab. Creates a free, completed order with its own check-in code, for ticket transfers or competition winners, and it can never oversell your capacity.
