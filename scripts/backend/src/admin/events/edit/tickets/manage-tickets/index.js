@@ -35,6 +35,19 @@ import { Link } from "react-router-dom";
 
 const DEFAULT_CURRENCY = "USD";
 
+// Split visibility toggles fall back to the legacy catch-all value for
+// events saved before "Show unavailable tickets" became three switches.
+function readShowFlag(event, key) {
+  const value = event?.[key];
+  if (value === undefined || value === null || value === "") {
+    const legacy = event?.tickets_show_unavailable;
+    return legacy === undefined || legacy === null || legacy === ""
+      ? false
+      : !!legacy;
+  }
+  return !!value;
+}
+
 function SettingToggle({ id, label, description, checked, onCheckedChange }) {
   return (
     <div className="flex items-start gap-4 max-w-[500px]">
@@ -81,6 +94,9 @@ export function EventEditManageTickets() {
     auto_create_account: false,
     show_remaining: true,
     show_unavailable: false,
+    show_sold_out: false,
+    show_upcoming: false,
+    show_ended: false,
     event_capacity: "",
     terms_conditions: "",
     terms_conditions_required: false,
@@ -116,6 +132,9 @@ export function EventEditManageTickets() {
           event.tickets_show_unavailable === ""
             ? false
             : !!event.tickets_show_unavailable,
+        show_sold_out: readShowFlag(event, "tickets_show_sold_out"),
+        show_upcoming: readShowFlag(event, "tickets_show_upcoming"),
+        show_ended: readShowFlag(event, "tickets_show_ended"),
         event_capacity:
           event.tickets_event_capacity > 0
             ? String(event.tickets_event_capacity)
@@ -294,9 +313,12 @@ export function EventEditManageTickets() {
       tickets_auto_create_account: newSettings.auto_create_account,
       tickets_show_remaining: newSettings.show_remaining,
       tickets_show_unavailable:
-        newSettings.show_unavailable === undefined
-          ? false
-          : !!newSettings.show_unavailable,
+        !!newSettings.show_sold_out ||
+        !!newSettings.show_upcoming ||
+        !!newSettings.show_ended,
+      tickets_show_sold_out: !!newSettings.show_sold_out,
+      tickets_show_upcoming: !!newSettings.show_upcoming,
+      tickets_show_ended: !!newSettings.show_ended,
       tickets_terms_conditions: newSettings.terms_conditions,
       tickets_terms_conditions_required: newSettings.terms_conditions_required,
       tickets_agreements: Array.isArray(newSettings.agreements)

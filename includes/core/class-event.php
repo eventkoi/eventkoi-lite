@@ -99,6 +99,11 @@ class Event {
 		'tickets_terms_conditions_required',
 		'tickets_agreements',
 		'tickets_event_capacity',
+		'tickets_show_remaining',
+		'tickets_show_unavailable',
+		'tickets_show_sold_out',
+		'tickets_show_upcoming',
+		'tickets_show_ended',
 	);
 
 	/**
@@ -587,6 +592,11 @@ class Event {
 		$tickets_auto_create_account = array_key_exists( 'tickets_auto_create_account', $meta ) ? self::normalize_boolean_meta( $meta['tickets_auto_create_account'] ) : false;
 		$tickets_show_remaining      = array_key_exists( 'tickets_show_remaining', $meta ) ? self::normalize_boolean_meta( $meta['tickets_show_remaining'] ) : true;
 		$tickets_show_unavailable    = array_key_exists( 'tickets_show_unavailable', $meta ) ? self::normalize_boolean_meta( $meta['tickets_show_unavailable'] ) : false;
+		// The split visibility toggles inherit the legacy catch-all value when
+		// absent, so events saved before the split keep their behavior.
+		$tickets_show_sold_out       = array_key_exists( 'tickets_show_sold_out', $meta ) ? self::normalize_boolean_meta( $meta['tickets_show_sold_out'] ) : $tickets_show_unavailable;
+		$tickets_show_upcoming       = array_key_exists( 'tickets_show_upcoming', $meta ) ? self::normalize_boolean_meta( $meta['tickets_show_upcoming'] ) : $tickets_show_unavailable;
+		$tickets_show_ended          = array_key_exists( 'tickets_show_ended', $meta ) ? self::normalize_boolean_meta( $meta['tickets_show_ended'] ) : $tickets_show_unavailable;
 		$tickets_terms_conditions    = isset( $meta['tickets_terms_conditions'] ) ? wp_kses_post( $meta['tickets_terms_conditions'] ) : '';
 		$tickets_terms_required      = array_key_exists( 'tickets_terms_conditions_required', $meta ) ? self::normalize_boolean_meta( $meta['tickets_terms_conditions_required'] ) : false;
 		$tickets_agreements          = self::sanitize_tickets_agreements( $meta['tickets_agreements'] ?? array() );
@@ -599,6 +609,9 @@ class Event {
 		update_post_meta( self::$event_id, 'tickets_auto_create_account', $tickets_auto_create_account ? 1 : 0 );
 		update_post_meta( self::$event_id, 'tickets_show_remaining', $tickets_show_remaining ? 1 : 0 );
 		update_post_meta( self::$event_id, 'tickets_show_unavailable', $tickets_show_unavailable ? 1 : 0 );
+		update_post_meta( self::$event_id, 'tickets_show_sold_out', $tickets_show_sold_out ? 1 : 0 );
+		update_post_meta( self::$event_id, 'tickets_show_upcoming', $tickets_show_upcoming ? 1 : 0 );
+		update_post_meta( self::$event_id, 'tickets_show_ended', $tickets_show_ended ? 1 : 0 );
 		update_post_meta( self::$event_id, 'tickets_terms_conditions', $tickets_terms_conditions );
 		update_post_meta( self::$event_id, 'tickets_terms_conditions_required', $tickets_terms_required ? 1 : 0 );
 		update_post_meta( self::$event_id, 'tickets_agreements', $tickets_agreements );
@@ -2647,6 +2660,50 @@ class Event {
 		}
 
 		return self::normalize_boolean_meta( $value );
+	}
+
+	/**
+	 * Read one of the split unavailable-ticket visibility toggles.
+	 *
+	 * Falls back to the legacy catch-all tickets_show_unavailable value for
+	 * events saved before the toggle was split.
+	 *
+	 * @param string $meta_key Meta key of the split toggle.
+	 * @return bool
+	 */
+	private static function get_tickets_show_flag( $meta_key ) {
+		if ( metadata_exists( 'post', self::$event_id, $meta_key ) ) {
+			return self::normalize_boolean_meta( get_post_meta( self::$event_id, $meta_key, true ) );
+		}
+
+		return self::get_tickets_show_unavailable();
+	}
+
+	/**
+	 * Whether sold out ticket types stay visible on the event page.
+	 *
+	 * @return bool
+	 */
+	public static function get_tickets_show_sold_out() {
+		return self::get_tickets_show_flag( 'tickets_show_sold_out' );
+	}
+
+	/**
+	 * Whether not-yet-on-sale ticket types stay visible on the event page.
+	 *
+	 * @return bool
+	 */
+	public static function get_tickets_show_upcoming() {
+		return self::get_tickets_show_flag( 'tickets_show_upcoming' );
+	}
+
+	/**
+	 * Whether ended ticket types stay visible on the event page.
+	 *
+	 * @return bool
+	 */
+	public static function get_tickets_show_ended() {
+		return self::get_tickets_show_flag( 'tickets_show_ended' );
 	}
 
 	/**

@@ -7,7 +7,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-16T07:57:00+00:00\n"
+"POT-Creation-Date: 2026-07-16T08:41:15+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -118,9 +118,9 @@ msgstr ""
 #: api/class-event.php:147
 #: api/class-tickets.php:326
 #: api/class-tickets.php:796
-#: api/class-tickets.php:1216
-#: api/class-tickets.php:1416
-#: api/class-tickets.php:2228
+#: api/class-tickets.php:1217
+#: api/class-tickets.php:1420
+#: api/class-tickets.php:2232
 #: core/class-ical.php:213
 #: core/core-functions.php:104
 msgid "Invalid event ID."
@@ -189,7 +189,7 @@ msgid "Invalid order ID."
 msgstr ""
 
 #: api/class-order.php:67
-#: api/class-tickets.php:2059
+#: api/class-tickets.php:2063
 #: core/class-ticket-emails.php:862
 msgid "Order not found."
 msgstr ""
@@ -219,9 +219,9 @@ msgstr ""
 #: api/class-rsvps.php:291
 #: api/class-rsvps.php:480
 #: api/class-rsvps.php:643
-#: api/class-tickets.php:1125
-#: api/class-tickets.php:1221
-#: api/class-tickets.php:1421
+#: api/class-tickets.php:1126
+#: api/class-tickets.php:1222
+#: api/class-tickets.php:1425
 #: core/class-rsvps.php:189
 msgid "Invalid event."
 msgstr ""
@@ -298,12 +298,12 @@ msgstr ""
 
 #: api/class-tickets.php:346
 #: api/class-tickets.php:810
-#: api/class-tickets.php:1254
+#: api/class-tickets.php:1255
 msgid "Database error occurred."
 msgstr ""
 
 #: api/class-tickets.php:927
-#: api/class-tickets.php:1647
+#: api/class-tickets.php:1651
 msgid "Invalid checkout total."
 msgstr ""
 
@@ -317,147 +317,147 @@ msgstr ""
 msgid "Accepted at %1$s. Terms: %2$s"
 msgstr ""
 
-#: api/class-tickets.php:1115
+#: api/class-tickets.php:1116
 msgid "An attendee name is required."
 msgstr ""
 
-#: api/class-tickets.php:1120
+#: api/class-tickets.php:1121
 msgid "The email address is not valid."
 msgstr ""
 
-#: api/class-tickets.php:1151
+#: api/class-tickets.php:1152
 msgid "This ticket type does not belong to the selected event."
 msgstr ""
 
 #. translators: %d: number of seats left.
-#: api/class-tickets.php:1160
+#: api/class-tickets.php:1161
 #, php-format
 msgid "Only %d seat is left for this ticket type."
 msgid_plural "Only %d seats are left for this ticket type."
 msgstr[0] ""
 msgstr[1] ""
 
-#: api/class-tickets.php:1178
+#: api/class-tickets.php:1179
 msgid "The attendee could not be added."
 msgstr ""
 
-#: api/class-tickets.php:1391
+#: api/class-tickets.php:1395
 msgid "Tickets are not enabled."
 msgstr ""
 
-#: api/class-tickets.php:1429
-#: api/class-tickets.php:1441
-#: tickets/index.js:726
+#: api/class-tickets.php:1433
+#: api/class-tickets.php:1445
+#: tickets/index.js:757
 msgid "This event has ended and is no longer accepting ticket purchases."
 msgstr ""
 
-#: api/class-tickets.php:1451
+#: api/class-tickets.php:1455
 msgid "Too many requests. Please try again later."
 msgstr ""
 
-#: api/class-tickets.php:1464
-#: tickets/index.js:994
+#: api/class-tickets.php:1468
+#: tickets/index.js:1025
 msgid "Please agree to the terms & conditions to continue."
 msgstr ""
 
-#: api/class-tickets.php:1472
-#: tickets/index.js:1000
+#: api/class-tickets.php:1476
+#: tickets/index.js:1031
 msgid "Please agree to all required terms to continue."
 msgstr ""
 
-#: api/class-tickets.php:1518
+#: api/class-tickets.php:1522
 msgid "A valid email address is required."
 msgstr ""
 
-#: api/class-tickets.php:1534
-#: api/class-tickets.php:1562
+#: api/class-tickets.php:1538
+#: api/class-tickets.php:1566
 msgid "Invalid ticket selection."
 msgstr ""
 
-#: api/class-tickets.php:1557
+#: api/class-tickets.php:1561
 msgid "Select at least one ticket."
 msgstr ""
 
-#: api/class-tickets.php:1576
+#: api/class-tickets.php:1580
 msgid "Unable to validate tickets."
 msgstr ""
 
-#: api/class-tickets.php:1597
+#: api/class-tickets.php:1601
 msgid "One or more selected tickets are unavailable."
 msgstr ""
 
-#: api/class-tickets.php:1604
+#: api/class-tickets.php:1608
 msgid "One or more selected tickets are not on sale yet."
 msgstr ""
 
-#: api/class-tickets.php:1608
+#: api/class-tickets.php:1612
 msgid "One or more selected tickets are no longer on sale."
 msgstr ""
 
-#: api/class-tickets.php:1613
+#: api/class-tickets.php:1617
 msgid "Selected quantity exceeds ticket limits."
 msgstr ""
 
-#: api/class-tickets.php:1623
-#: api/class-tickets.php:2736
+#: api/class-tickets.php:1627
+#: api/class-tickets.php:2745
 msgid "Not enough tickets remaining for one or more selections."
 msgstr ""
 
-#: api/class-tickets.php:1656
+#: api/class-tickets.php:1660
 msgid "Not enough tickets remaining for this event."
 msgstr ""
 
-#: api/class-tickets.php:1763
+#: api/class-tickets.php:1767
 msgid "WooCommerce must be installed and activated to process ticket payments."
 msgstr ""
 
-#: api/class-tickets.php:1817
-#: api/class-tickets.php:1842
-#: api/class-tickets.php:1871
-#: api/class-tickets.php:2040
+#: api/class-tickets.php:1821
+#: api/class-tickets.php:1846
+#: api/class-tickets.php:1875
+#: api/class-tickets.php:2044
 msgid "Missing order ID."
 msgstr ""
 
-#: api/class-tickets.php:2001
+#: api/class-tickets.php:2005
 msgid "Order archived via EventKoi."
 msgstr ""
 
-#: api/class-tickets.php:2021
+#: api/class-tickets.php:2025
 msgid "Order unarchived via EventKoi."
 msgstr ""
 
-#: api/class-tickets.php:2152
+#: api/class-tickets.php:2156
 #: core/class-ticket-emails.php:163
 msgid "Missing checkout session ID."
 msgstr ""
 
-#: api/class-tickets.php:2245
-#: admin/events/edit/tickets/manage-tickets/index.js:488
+#: api/class-tickets.php:2249
+#: admin/events/edit/tickets/manage-tickets/index.js:510
 msgid "Ticket name is required."
 msgstr ""
 
-#: api/class-tickets.php:2276
+#: api/class-tickets.php:2280
 msgid "Failed to create ticket."
 msgstr ""
 
-#: api/class-tickets.php:2313
-#: api/class-tickets.php:2444
+#: api/class-tickets.php:2317
+#: api/class-tickets.php:2448
 msgid "Invalid ticket ID."
 msgstr ""
 
-#: api/class-tickets.php:2382
+#: api/class-tickets.php:2386
 msgid "No data to update."
 msgstr ""
 
-#: api/class-tickets.php:2398
+#: api/class-tickets.php:2402
 msgid "Failed to update ticket."
 msgstr ""
 
-#: api/class-tickets.php:2457
+#: api/class-tickets.php:2461
 msgid "Failed to delete ticket."
 msgstr ""
 
-#: api/class-tickets.php:2465
+#: api/class-tickets.php:2469
 msgid "Ticket deleted successfully."
 msgstr ""
 
@@ -1012,114 +1012,114 @@ msgid_plural "Calendars removed permanently."
 msgstr[0] ""
 msgstr[1] ""
 
-#: core/class-event.php:390
-#: core/class-event.php:3654
+#: core/class-event.php:395
+#: core/class-event.php:3711
 msgid "Attend online"
 msgstr ""
 
-#: core/class-event.php:446
+#: core/class-event.php:451
 msgid "Event created."
 msgstr ""
 
-#: core/class-event.php:471
+#: core/class-event.php:476
 msgid "Event updated."
 msgstr ""
 
-#: core/class-event.php:1169
+#: core/class-event.php:1182
 #: components/ui/rich-text-editor.js:147
 msgid "YouTube video"
 msgstr ""
 
-#: core/class-event.php:1718
-#: core/class-event.php:1961
+#: core/class-event.php:1731
+#: core/class-event.php:1974
 #: components/event/event-date-tbc-setting.js:37
 msgid "Date and time to be confirmed"
 msgstr ""
 
 #. translators: %d is the number of extra recurrence rules.
-#: core/class-event.php:1753
+#: core/class-event.php:1766
 #, php-format
 msgid "%d more rule"
 msgid_plural "%d more rules"
 msgstr[0] ""
 msgstr[1] ""
 
-#: core/class-event.php:3257
+#: core/class-event.php:3314
 #: core/class-events.php:651
 msgid "Event restored successfully."
 msgid_plural "Events restored successfully."
 msgstr[0] ""
 msgstr[1] ""
 
-#: core/class-event.php:3273
+#: core/class-event.php:3330
 msgid "Event moved to Trash."
 msgstr ""
 
 #. translators: %s event title
-#: core/class-event.php:3287
+#: core/class-event.php:3344
 #, php-format
 msgid "[Duplicate]: %s"
 msgstr ""
 
-#: core/class-event.php:3309
+#: core/class-event.php:3366
 msgid "Event duplicated."
 msgstr ""
 
-#: core/class-event.php:3409
+#: core/class-event.php:3466
 #: core/class-schema.php:433
 msgid "Untitled event"
 msgstr ""
 
-#: core/class-event.php:3428
+#: core/class-event.php:3485
 msgid "No event details."
 msgstr ""
 
-#: core/class-event.php:3590
-#: core/class-event.php:3676
+#: core/class-event.php:3647
+#: core/class-event.php:3733
 msgid "No location available."
 msgstr ""
 
 #. translators: %s: formatted starting price.
-#: core/class-event.php:3852
+#: core/class-event.php:3909
 #, php-format
 msgid "From %s"
 msgstr ""
 
-#: core/class-event.php:3905
+#: core/class-event.php:3962
 #: core/class-ticket-emails.php:347
-#: admin/events/edit/tickets/manage-tickets/index.js:675
+#: admin/events/edit/tickets/manage-tickets/index.js:697
 #: admin/tickets/overview/index.js:8
 #: components/event/event-tabs.js:66
-#: tickets/index.js:1196
+#: tickets/index.js:1227
 msgid "Tickets"
 msgstr ""
 
-#: core/class-event.php:3919
-#: tickets/index.js:1253
+#: core/class-event.php:3976
+#: tickets/index.js:1284
 msgid "Get tickets"
 msgstr ""
 
-#: core/class-event.php:4218
-#: core/class-event.php:4488
+#: core/class-event.php:4275
+#: core/class-event.php:4545
 msgid "Date and time to be confirmed."
 msgstr ""
 
-#: core/class-event.php:4915
-#: tickets/index.js:406
-#: tickets/index.js:1248
+#: core/class-event.php:4972
+#: tickets/index.js:418
+#: tickets/index.js:1279
 msgid "Sold out"
 msgstr ""
 
-#: core/class-event.php:4944
+#: core/class-event.php:5001
 msgid "Low stock"
 msgstr ""
 
-#: core/class-event.php:5328
+#: core/class-event.php:5385
 #: blocks/event-data/event-data-controls.js:173
 msgid "RSVP full"
 msgstr ""
 
-#: core/class-event.php:5351
+#: core/class-event.php:5408
 #: core/divi-modules/class-et-builder-module-eventkoicalendar.php:65
 #: core/elementor-widgets/class-widget-calendar.php:318
 #: helpers/instance.php:164
@@ -1129,7 +1129,7 @@ msgstr ""
 msgid "Sunday"
 msgstr ""
 
-#: core/class-event.php:5352
+#: core/class-event.php:5409
 #: core/divi-modules/class-et-builder-module-eventkoicalendar.php:66
 #: core/elementor-widgets/class-widget-calendar.php:312
 #: helpers/instance.php:158
@@ -1139,7 +1139,7 @@ msgstr ""
 msgid "Monday"
 msgstr ""
 
-#: core/class-event.php:5353
+#: core/class-event.php:5410
 #: core/divi-modules/class-et-builder-module-eventkoicalendar.php:67
 #: core/elementor-widgets/class-widget-calendar.php:313
 #: helpers/instance.php:159
@@ -1149,7 +1149,7 @@ msgstr ""
 msgid "Tuesday"
 msgstr ""
 
-#: core/class-event.php:5354
+#: core/class-event.php:5411
 #: core/divi-modules/class-et-builder-module-eventkoicalendar.php:68
 #: core/elementor-widgets/class-widget-calendar.php:314
 #: helpers/instance.php:160
@@ -1159,7 +1159,7 @@ msgstr ""
 msgid "Wednesday"
 msgstr ""
 
-#: core/class-event.php:5355
+#: core/class-event.php:5412
 #: core/divi-modules/class-et-builder-module-eventkoicalendar.php:69
 #: core/elementor-widgets/class-widget-calendar.php:315
 #: helpers/instance.php:161
@@ -1169,7 +1169,7 @@ msgstr ""
 msgid "Thursday"
 msgstr ""
 
-#: core/class-event.php:5356
+#: core/class-event.php:5413
 #: core/divi-modules/class-et-builder-module-eventkoicalendar.php:70
 #: core/elementor-widgets/class-widget-calendar.php:316
 #: helpers/instance.php:162
@@ -1179,7 +1179,7 @@ msgstr ""
 msgid "Friday"
 msgstr ""
 
-#: core/class-event.php:5357
+#: core/class-event.php:5414
 #: core/divi-modules/class-et-builder-module-eventkoicalendar.php:71
 #: core/elementor-widgets/class-widget-calendar.php:317
 #: helpers/instance.php:163
@@ -1189,82 +1189,82 @@ msgstr ""
 msgid "Saturday"
 msgstr ""
 
-#: core/class-event.php:5361
+#: core/class-event.php:5418
 #: components/event/event-date-recurring.js:63
 msgid "first"
 msgstr ""
 
-#: core/class-event.php:5362
+#: core/class-event.php:5419
 #: components/event/event-date-recurring.js:64
 msgid "second"
 msgstr ""
 
-#: core/class-event.php:5363
+#: core/class-event.php:5420
 #: components/event/event-date-recurring.js:65
 msgid "third"
 msgstr ""
 
-#: core/class-event.php:5364
+#: core/class-event.php:5421
 #: components/event/event-date-recurring.js:66
 msgid "fourth"
 msgstr ""
 
-#: core/class-event.php:5365
+#: core/class-event.php:5422
 #: components/event/event-date-recurring.js:67
 msgid "fifth"
 msgstr ""
 
-#: core/class-event.php:5377
+#: core/class-event.php:5434
 msgid "days"
 msgstr ""
 
-#: core/class-event.php:5378
+#: core/class-event.php:5435
 msgid "weeks"
 msgstr ""
 
-#: core/class-event.php:5379
+#: core/class-event.php:5436
 msgid "months"
 msgstr ""
 
-#: core/class-event.php:5380
+#: core/class-event.php:5437
 msgid "years"
 msgstr ""
 
 #. translators: %1$d: interval number (e.g., 2). %2$s: period plural (e.g., "months").
-#: core/class-event.php:5384
+#: core/class-event.php:5441
 #, php-format
 msgid "Every %1$d %2$s"
 msgstr ""
 
-#: core/class-event.php:5386
+#: core/class-event.php:5443
 msgid "Daily"
 msgstr ""
 
-#: core/class-event.php:5388
+#: core/class-event.php:5445
 msgid "Weekly"
 msgstr ""
 
-#: core/class-event.php:5390
+#: core/class-event.php:5447
 msgid "Monthly"
 msgstr ""
 
-#: core/class-event.php:5392
+#: core/class-event.php:5449
 msgid "Yearly"
 msgstr ""
 
 #. translators: 1: ordinal week in the month, 2: weekday name.
-#: core/class-event.php:5409
+#: core/class-event.php:5466
 #, php-format
 msgid ", on the %1$s %2$s"
 msgstr ""
 
 #. translators: %d: day number in the month.
-#: core/class-event.php:5425
+#: core/class-event.php:5482
 #, php-format
 msgid ", on day %d"
 msgstr ""
 
-#: core/class-event.php:5434
+#: core/class-event.php:5491
 #: core/elementor-widgets/class-widget-calendar.php:290
 #: helpers/instance.php:134
 #: blocks/calendar/controls.js:129
@@ -1273,7 +1273,7 @@ msgstr ""
 msgid "January"
 msgstr ""
 
-#: core/class-event.php:5435
+#: core/class-event.php:5492
 #: core/elementor-widgets/class-widget-calendar.php:291
 #: helpers/instance.php:135
 #: blocks/calendar/controls.js:130
@@ -1282,7 +1282,7 @@ msgstr ""
 msgid "February"
 msgstr ""
 
-#: core/class-event.php:5436
+#: core/class-event.php:5493
 #: core/elementor-widgets/class-widget-calendar.php:292
 #: helpers/instance.php:136
 #: blocks/calendar/controls.js:131
@@ -1291,7 +1291,7 @@ msgstr ""
 msgid "March"
 msgstr ""
 
-#: core/class-event.php:5437
+#: core/class-event.php:5494
 #: core/elementor-widgets/class-widget-calendar.php:293
 #: helpers/instance.php:137
 #: blocks/calendar/controls.js:132
@@ -1300,7 +1300,7 @@ msgstr ""
 msgid "April"
 msgstr ""
 
-#: core/class-event.php:5438
+#: core/class-event.php:5495
 #: core/elementor-widgets/class-widget-calendar.php:294
 #: helpers/instance.php:138
 #: blocks/calendar/controls.js:133
@@ -1309,7 +1309,7 @@ msgstr ""
 msgid "May"
 msgstr ""
 
-#: core/class-event.php:5439
+#: core/class-event.php:5496
 #: core/elementor-widgets/class-widget-calendar.php:295
 #: helpers/instance.php:139
 #: blocks/calendar/controls.js:134
@@ -1318,7 +1318,7 @@ msgstr ""
 msgid "June"
 msgstr ""
 
-#: core/class-event.php:5440
+#: core/class-event.php:5497
 #: core/elementor-widgets/class-widget-calendar.php:296
 #: helpers/instance.php:140
 #: blocks/calendar/controls.js:135
@@ -1327,7 +1327,7 @@ msgstr ""
 msgid "July"
 msgstr ""
 
-#: core/class-event.php:5441
+#: core/class-event.php:5498
 #: core/elementor-widgets/class-widget-calendar.php:297
 #: helpers/instance.php:141
 #: blocks/calendar/controls.js:136
@@ -1336,7 +1336,7 @@ msgstr ""
 msgid "August"
 msgstr ""
 
-#: core/class-event.php:5442
+#: core/class-event.php:5499
 #: core/elementor-widgets/class-widget-calendar.php:298
 #: helpers/instance.php:142
 #: blocks/calendar/controls.js:137
@@ -1345,7 +1345,7 @@ msgstr ""
 msgid "September"
 msgstr ""
 
-#: core/class-event.php:5443
+#: core/class-event.php:5500
 #: core/elementor-widgets/class-widget-calendar.php:299
 #: helpers/instance.php:143
 #: blocks/calendar/controls.js:138
@@ -1354,7 +1354,7 @@ msgstr ""
 msgid "October"
 msgstr ""
 
-#: core/class-event.php:5444
+#: core/class-event.php:5501
 #: core/elementor-widgets/class-widget-calendar.php:300
 #: helpers/instance.php:144
 #: blocks/calendar/controls.js:139
@@ -1363,7 +1363,7 @@ msgstr ""
 msgid "November"
 msgstr ""
 
-#: core/class-event.php:5445
+#: core/class-event.php:5502
 #: core/elementor-widgets/class-widget-calendar.php:301
 #: helpers/instance.php:145
 #: blocks/calendar/controls.js:140
@@ -1373,25 +1373,25 @@ msgid "December"
 msgstr ""
 
 #. translators: %s: comma-separated month names.
-#: core/class-event.php:5459
+#: core/class-event.php:5516
 #, php-format
 msgid ", in %s"
 msgstr ""
 
 #. translators: %s: comma-separated weekday names.
-#: core/class-event.php:5490
+#: core/class-event.php:5547
 #, php-format
 msgid ", on %s"
 msgstr ""
 
-#: core/class-event.php:5582
-#: core/class-event.php:5614
+#: core/class-event.php:5639
+#: core/class-event.php:5671
 msgid ", forever"
 msgstr ""
 
 #. translators: %d: total completed events.
-#: core/class-event.php:5587
-#: core/class-event.php:5602
+#: core/class-event.php:5644
+#: core/class-event.php:5659
 #, php-format
 msgid ", all %d event completed"
 msgid_plural ", all %d events completed"
@@ -1399,8 +1399,8 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: remaining events, 2: total events.
-#: core/class-event.php:5593
-#: core/class-event.php:5608
+#: core/class-event.php:5650
+#: core/class-event.php:5665
 #, php-format
 msgid ", %1$d of %2$d event left"
 msgid_plural ", %1$d of %2$d events left"
@@ -1510,7 +1510,7 @@ msgstr ""
 #. translators: %s: field label
 #: core/class-orders.php:115
 #: core/class-rsvps.php:126
-#: tickets/index.js:1802
+#: tickets/index.js:1833
 #, php-format,js-format
 msgid "%s is required."
 msgstr ""
@@ -2919,7 +2919,7 @@ msgstr ""
 #: admin/events/edit/index.js:759
 #: admin/events/overview/index.js:878
 #: components/event/event-nav-back.js:64
-#: tickets/index.js:1928
+#: tickets/index.js:1959
 msgid "Back"
 msgstr ""
 
@@ -3583,205 +3583,205 @@ msgstr ""
 msgid "Optional extra information about prices, shown under the price. Use the toolbar for lists and formatting."
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:193
+#: admin/events/edit/tickets/manage-tickets/index.js:212
 msgid "Failed to load tickets."
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:501
-#: admin/events/edit/tickets/manage-tickets/index.js:1160
+#: admin/events/edit/tickets/manage-tickets/index.js:523
+#: admin/events/edit/tickets/manage-tickets/index.js:1182
 msgid "Ticket sales end date cannot be before the start date."
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:640
+#: admin/events/edit/tickets/manage-tickets/index.js:662
 msgid "Failed to save tickets."
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:679
+#: admin/events/edit/tickets/manage-tickets/index.js:701
 msgid "Save the event first before adding tickets."
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:689
+#: admin/events/edit/tickets/manage-tickets/index.js:711
 #: components/event/event-rsvp.js:350
 msgid "Auto-create attendee account"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:690
+#: admin/events/edit/tickets/manage-tickets/index.js:712
 msgid "Create a WordPress user when someone purchases a ticket."
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:700
+#: admin/events/edit/tickets/manage-tickets/index.js:722
 msgid "Show remaining tickets"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:701
+#: admin/events/edit/tickets/manage-tickets/index.js:723
 msgid "Display the number of available tickets on the event page."
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:711
+#: admin/events/edit/tickets/manage-tickets/index.js:733
 msgid "Total ticket quantity per event"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:718
+#: admin/events/edit/tickets/manage-tickets/index.js:740
 #: components/event/event-rsvp.js:234
 msgid "Unlimited"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:724
+#: admin/events/edit/tickets/manage-tickets/index.js:746
 msgid "Caps the combined tickets sold across all ticket types, for venues with a maximum capacity. Leave empty for unlimited."
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:733
+#: admin/events/edit/tickets/manage-tickets/index.js:755
 msgid "Terms & conditions"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:737
+#: admin/events/edit/tickets/manage-tickets/index.js:759
 msgid "Add ticket terms and conditions here."
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:750
+#: admin/events/edit/tickets/manage-tickets/index.js:772
 msgid "Require agreement to terms"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:751
+#: admin/events/edit/tickets/manage-tickets/index.js:773
 msgid "Show the terms as a checkbox the buyer must tick before checkout."
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:764
+#: admin/events/edit/tickets/manage-tickets/index.js:786
 msgid "Agreement checkboxes"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:767
+#: admin/events/edit/tickets/manage-tickets/index.js:789
 msgid "Separate consents shown as individual checkboxes at checkout, for example a privacy statement or refund policy. Required ones must be ticked before the buyer can continue."
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:778
+#: admin/events/edit/tickets/manage-tickets/index.js:800
 msgid "Agreement text"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:779
+#: admin/events/edit/tickets/manage-tickets/index.js:801
 msgid "e.g. I have read and accept the privacy statement."
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:796
+#: admin/events/edit/tickets/manage-tickets/index.js:818
 msgid "Require this agreement"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:798
+#: admin/events/edit/tickets/manage-tickets/index.js:820
 msgid "Required"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:805
+#: admin/events/edit/tickets/manage-tickets/index.js:827
 msgid "Remove agreement"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:819
+#: admin/events/edit/tickets/manage-tickets/index.js:841
 msgid "Add agreement"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:826
+#: admin/events/edit/tickets/manage-tickets/index.js:848
 msgid "Loading tickets…"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:864
+#: admin/events/edit/tickets/manage-tickets/index.js:886
 msgid "Reorder ticket"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:865
+#: admin/events/edit/tickets/manage-tickets/index.js:887
 msgid "Drag to reorder"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:873
+#: admin/events/edit/tickets/manage-tickets/index.js:895
 msgid "Ticket name"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:874
+#: admin/events/edit/tickets/manage-tickets/index.js:896
 msgid "Enter ticket name"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:885
+#: admin/events/edit/tickets/manage-tickets/index.js:907
 msgid "Toggle ticket active"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:895
+#: admin/events/edit/tickets/manage-tickets/index.js:917
 msgid "Active"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:904
+#: admin/events/edit/tickets/manage-tickets/index.js:926
 msgid "Collapse ticket"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:904
+#: admin/events/edit/tickets/manage-tickets/index.js:926
 msgid "Expand ticket"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:917
+#: admin/events/edit/tickets/manage-tickets/index.js:939
 msgid "Delete ticket"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:929
+#: admin/events/edit/tickets/manage-tickets/index.js:951
 #: admin/tickets/orders/refund/index.js:359
 #: components/order/OrderSummary.js:160
 msgid "Price"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:957
-#: admin/events/edit/tickets/manage-tickets/index.js:964
+#: admin/events/edit/tickets/manage-tickets/index.js:979
+#: admin/events/edit/tickets/manage-tickets/index.js:986
 msgid "Change currency"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:971
+#: admin/events/edit/tickets/manage-tickets/index.js:993
 msgid "Quantity available"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:988
+#: admin/events/edit/tickets/manage-tickets/index.js:1010
 msgid "Max per order"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:1010
+#: admin/events/edit/tickets/manage-tickets/index.js:1032
 msgid "Ticket sales start"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:1022
-#: admin/events/edit/tickets/manage-tickets/index.js:1099
+#: admin/events/edit/tickets/manage-tickets/index.js:1044
+#: admin/events/edit/tickets/manage-tickets/index.js:1121
 #: components/event/event-rsvp.js:77
 #: components/event/event-rsvp.js:144
 msgid "Clear"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:1088
+#: admin/events/edit/tickets/manage-tickets/index.js:1110
 msgid "Ticket sales end"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:1170
+#: admin/events/edit/tickets/manage-tickets/index.js:1192
 #: blocks/list/controls.js:120
 msgid "Description"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:1183
+#: admin/events/edit/tickets/manage-tickets/index.js:1205
 msgid "Give a short description of the ticket to attendees."
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:1192
+#: admin/events/edit/tickets/manage-tickets/index.js:1214
 msgid "Additional terms & conditions"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:1205
+#: admin/events/edit/tickets/manage-tickets/index.js:1227
 msgid "Add additional terms & conditions that only apply to this ticket."
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:1225
+#: admin/events/edit/tickets/manage-tickets/index.js:1247
 msgid "Add ticket"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:1237
+#: admin/events/edit/tickets/manage-tickets/index.js:1259
 msgid "Delete this ticket?"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:1238
+#: admin/events/edit/tickets/manage-tickets/index.js:1260
 msgid "This ticket will be removed from the event when you click Save. You can undo by leaving the page without saving."
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:1242
+#: admin/events/edit/tickets/manage-tickets/index.js:1264
 #: components/event/event-image.js:393
 msgid "Remove"
 msgstr ""
@@ -6514,7 +6514,7 @@ msgid "Add note"
 msgstr ""
 
 #: components/order/OrderSummary.js:156
-#: tickets/index.js:1935
+#: tickets/index.js:1966
 msgid "Order summary"
 msgstr ""
 
@@ -6523,8 +6523,8 @@ msgid "Amount"
 msgstr ""
 
 #: components/order/OrderSummary.js:199
-#: tickets/index.js:1496
-#: tickets/index.js:1974
+#: tickets/index.js:1527
+#: tickets/index.js:2005
 msgid "Total"
 msgstr ""
 
@@ -7490,7 +7490,7 @@ msgid "RSVP not yet open"
 msgstr ""
 
 #: rsvp/index.js:531
-#: tickets/index.js:1779
+#: tickets/index.js:1810
 msgid "Select..."
 msgstr ""
 
@@ -7498,150 +7498,150 @@ msgstr ""
 msgid "This event is fully booked."
 msgstr ""
 
-#: tickets/index.js:483
+#: tickets/index.js:495
 msgid "Unable to load tickets."
 msgstr ""
 
-#: tickets/index.js:985
+#: tickets/index.js:1016
 msgid "Please complete all required fields."
 msgstr ""
 
-#: tickets/index.js:989
-#: tickets/index.js:1695
+#: tickets/index.js:1020
+#: tickets/index.js:1726
 msgid "Please enter a valid email address."
 msgstr ""
 
-#: tickets/index.js:1040
+#: tickets/index.js:1071
 msgid "One or more selected tickets are no longer available."
 msgstr ""
 
-#: tickets/index.js:1051
+#: tickets/index.js:1082
 #, js-format
 msgid "“%s” is no longer available."
 msgstr ""
 
-#: tickets/index.js:1052
-#: tickets/index.js:1065
+#: tickets/index.js:1083
+#: tickets/index.js:1096
 msgid "Selected ticket"
 msgstr ""
 
-#: tickets/index.js:1063
+#: tickets/index.js:1094
 #, js-format
 msgid "Only %d left for “%s”."
 msgid_plural "Only %d left for “%s”."
 msgstr[0] ""
 msgstr[1] ""
 
-#: tickets/index.js:1115
+#: tickets/index.js:1146
 msgid "Checkout URL is missing."
 msgstr ""
 
-#: tickets/index.js:1122
+#: tickets/index.js:1153
 msgid "Unable to set up checkout."
 msgstr ""
 
-#: tickets/index.js:1138
+#: tickets/index.js:1169
 msgid "Payment successful"
 msgstr ""
 
-#: tickets/index.js:1141
+#: tickets/index.js:1172
 msgid "Your order is confirmed and your tickets will be sent by email."
 msgstr ""
 
-#: tickets/index.js:1155
+#: tickets/index.js:1186
 msgid "Dismiss success message"
 msgstr ""
 
-#: tickets/index.js:1169
+#: tickets/index.js:1200
 msgid "Order received"
 msgstr ""
 
-#: tickets/index.js:1172
+#: tickets/index.js:1203
 msgid "Your tickets will be sent by email once payment is confirmed."
 msgstr ""
 
-#: tickets/index.js:1186
+#: tickets/index.js:1217
 msgid "Dismiss message"
 msgstr ""
 
-#: tickets/index.js:1205
-#: tickets/index.js:1352
+#: tickets/index.js:1236
+#: tickets/index.js:1383
 #, js-format
 msgid "Ticket sales ended on %s."
 msgstr ""
 
-#: tickets/index.js:1210
-#: tickets/index.js:1334
+#: tickets/index.js:1241
+#: tickets/index.js:1365
 #, js-format
 msgid "Ticket sales starts on %1$s and ends on %2$s."
 msgstr ""
 
-#: tickets/index.js:1217
+#: tickets/index.js:1248
 #, js-format
 msgid "Ticket sales end on %s."
 msgstr ""
 
 #. translators: %s: number of tickets still available.
-#: tickets/index.js:1225
+#: tickets/index.js:1256
 #, js-format
 msgid "%s ticket left"
 msgid_plural "%s tickets left"
 msgstr[0] ""
 msgstr[1] ""
 
-#: tickets/index.js:1252
+#: tickets/index.js:1283
 msgid "Not on sale"
 msgstr ""
 
-#: tickets/index.js:1262
+#: tickets/index.js:1293
 msgid "Ticket checkout"
 msgstr ""
 
-#: tickets/index.js:1264
+#: tickets/index.js:1295
 msgid "Select tickets and complete billing information to continue to payment."
 msgstr ""
 
-#: tickets/index.js:1274
+#: tickets/index.js:1305
 msgid "Buy tickets"
 msgstr ""
 
-#: tickets/index.js:1345
+#: tickets/index.js:1376
 #, js-format
 msgid "Ticket sales starts on %s."
 msgstr ""
 
-#: tickets/index.js:1362
+#: tickets/index.js:1393
 #, js-format
 msgid "Ticket sales started on %1$s and ends on %2$s."
 msgstr ""
 
-#: tickets/index.js:1373
+#: tickets/index.js:1404
 #, js-format
 msgid "Ticket sales ends on %s."
 msgstr ""
 
-#: tickets/index.js:1394
+#: tickets/index.js:1425
 #, js-format
 msgid "Decrease quantity for %s"
 msgstr ""
 
-#: tickets/index.js:1395
-#: tickets/index.js:1412
-#: tickets/index.js:1429
+#: tickets/index.js:1426
+#: tickets/index.js:1443
+#: tickets/index.js:1460
 msgid "ticket"
 msgstr ""
 
-#: tickets/index.js:1411
+#: tickets/index.js:1442
 #, js-format
 msgid "Quantity for %s"
 msgstr ""
 
-#: tickets/index.js:1428
+#: tickets/index.js:1459
 #, js-format
 msgid "Increase quantity for %s"
 msgstr ""
 
-#: tickets/index.js:1443
+#: tickets/index.js:1474
 #, js-format
 msgid "%d ticket left."
 msgid_plural "%d tickets left."
@@ -7649,72 +7649,72 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of tickets left for the whole event.
-#: tickets/index.js:1461
+#: tickets/index.js:1492
 #, js-format
 msgid "%d ticket left for this event"
 msgid_plural "%d tickets left for this event"
 msgstr[0] ""
 msgstr[1] ""
 
-#: tickets/index.js:1469
+#: tickets/index.js:1500
 msgid "This event is sold out."
 msgstr ""
 
-#: tickets/index.js:1516
+#: tickets/index.js:1547
 msgid "Clear all"
 msgstr ""
 
-#: tickets/index.js:1533
-#: tickets/index.js:1556
-#: tickets/index.js:1915
+#: tickets/index.js:1564
+#: tickets/index.js:1587
+#: tickets/index.js:1946
 msgid "Checkout"
 msgstr ""
 
-#: tickets/index.js:1539
+#: tickets/index.js:1570
 #, js-format
 msgid "Ticket sales start on %s."
 msgstr ""
 
-#: tickets/index.js:1545
+#: tickets/index.js:1576
 msgid "Ticket sales have ended."
 msgstr ""
 
-#: tickets/index.js:1559
+#: tickets/index.js:1590
 msgid "Checkout billing step"
 msgstr ""
 
-#: tickets/index.js:1576
+#: tickets/index.js:1607
 msgid "Billing information"
 msgstr ""
 
-#: tickets/index.js:1584
+#: tickets/index.js:1615
 msgid "First name"
 msgstr ""
 
-#: tickets/index.js:1614
+#: tickets/index.js:1645
 msgid "First name is required."
 msgstr ""
 
-#: tickets/index.js:1623
+#: tickets/index.js:1654
 msgid "Last name"
 msgstr ""
 
-#: tickets/index.js:1652
+#: tickets/index.js:1683
 msgid "Last name is required."
 msgstr ""
 
-#: tickets/index.js:1663
+#: tickets/index.js:1694
 msgid "Email address"
 msgstr ""
 
-#: tickets/index.js:1705
+#: tickets/index.js:1736
 msgid "We will send your tickets to this email address."
 msgstr ""
 
-#: tickets/index.js:1849
+#: tickets/index.js:1880
 msgid "I have read and agree to the terms & conditions."
 msgstr ""
 
-#: tickets/index.js:1912
+#: tickets/index.js:1943
 msgid "Setting up payment"
 msgstr ""

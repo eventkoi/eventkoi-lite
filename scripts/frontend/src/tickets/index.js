@@ -371,6 +371,18 @@ const formatPrice = (value, currency = "USD") => {
   }
 };
 
+function isSettingEnabled(value, defaultValue = false) {
+  if (value === true || value === 1 || value === "1" || value === "true") {
+    return true;
+  }
+
+  if (value === false || value === 0 || value === "0" || value === "false") {
+    return false;
+  }
+
+  return defaultValue;
+}
+
 function getTicketLimits(ticket) {
   const remainingCount =
     ticket?.remaining !== null && Number.isFinite(Number(ticket?.remaining))
@@ -521,13 +533,32 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
   const allRequiredAgreementsAccepted = eventAgreements.every(
     (item) => item.required === false || !!agreementsAccepted[item.id],
   );
-  const showUnavailableTickets = true;
+  // Split visibility flags; each falls back to the legacy catch-all value
+  // for events saved before the toggle became three switches.
+  const legacyShowUnavailable = data?.tickets_show_unavailable;
+  const showSoldOutTickets = isSettingEnabled(
+    data?.tickets_show_sold_out ?? legacyShowUnavailable,
+    false,
+  );
+  const showUpcomingTickets = isSettingEnabled(
+    data?.tickets_show_upcoming ?? legacyShowUnavailable,
+    false,
+  );
+  const showEndedTickets = isSettingEnabled(
+    data?.tickets_show_ended ?? legacyShowUnavailable,
+    false,
+  );
   const visibleTickets = useMemo(
     () =>
-      showUnavailableTickets
-        ? tickets
-        : tickets.filter((ticket) => !getTicketLimits(ticket).unavailable),
-    [tickets, showUnavailableTickets],
+      tickets.filter((ticket) => {
+        const { soldOut, saleNotStarted, saleEnded, unavailable } =
+          getTicketLimits(ticket);
+        if (!unavailable) return true;
+        if (soldOut) return showSoldOutTickets;
+        if (saleNotStarted) return showUpcomingTickets;
+        return showEndedTickets;
+      }),
+    [tickets, showSoldOutTickets, showUpcomingTickets, showEndedTickets],
   );
   const soldOutTickets = useMemo(
     () => tickets.filter((ticket) => getTicketLimits(ticket).soldOut),
