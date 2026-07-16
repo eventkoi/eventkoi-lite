@@ -694,7 +694,7 @@ export function EventEditManageTickets() {
   return (
     <div className="flex flex-col w-full gap-8">
       <Box container>
-        <Heading level={3}>{__("Tickets", "eventkoi-lite")}</Heading>
+        <Heading level={3}>{__("Display options", "eventkoi-lite")}</Heading>
 
         {!event?.id && (
           <p className="text-sm text-muted-foreground">
@@ -750,7 +750,14 @@ export function EventEditManageTickets() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-2 max-w-[500px] pt-4">
+        </div>
+      </Box>
+
+      <Box container>
+        <Heading level={3}>{__("Terms and conditions", "eventkoi-lite")}</Heading>
+
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-2 max-w-[500px]">
             <Label className="font-medium" htmlFor="tickets-terms-conditions">
               {__("Terms & conditions", "eventkoi-lite")}
             </Label>
@@ -842,7 +849,14 @@ export function EventEditManageTickets() {
             </Button>
           </div>
 
-          <div className="flex flex-col gap-4 mt-2">
+        </div>
+      </Box>
+
+      <Box container>
+        <Heading level={3}>{__("Create tickets", "eventkoi-lite")}</Heading>
+
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-4">
             {loadingTickets && (
               <div className="text-sm text-muted-foreground">
                 {__("Loading tickets…", "eventkoi-lite")}

@@ -7,7 +7,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-16T08:41:15+00:00\n"
+"POT-Creation-Date: 2026-07-16T08:46:31+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -1087,7 +1087,6 @@ msgstr ""
 
 #: core/class-event.php:3962
 #: core/class-ticket-emails.php:347
-#: admin/events/edit/tickets/manage-tickets/index.js:697
 #: admin/tickets/overview/index.js:8
 #: components/event/event-tabs.js:66
 #: tickets/index.js:1227
@@ -3588,12 +3587,18 @@ msgid "Failed to load tickets."
 msgstr ""
 
 #: admin/events/edit/tickets/manage-tickets/index.js:523
-#: admin/events/edit/tickets/manage-tickets/index.js:1182
+#: admin/events/edit/tickets/manage-tickets/index.js:1196
 msgid "Ticket sales end date cannot be before the start date."
 msgstr ""
 
 #: admin/events/edit/tickets/manage-tickets/index.js:662
 msgid "Failed to save tickets."
+msgstr ""
+
+#: admin/events/edit/tickets/manage-tickets/index.js:697
+#: blocks/calendar/controls.js:78
+#: blocks/list/controls.js:74
+msgid "Display options"
 msgstr ""
 
 #: admin/events/edit/tickets/manage-tickets/index.js:701
@@ -3630,158 +3635,166 @@ msgstr ""
 msgid "Caps the combined tickets sold across all ticket types, for venues with a maximum capacity. Leave empty for unlimited."
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:755
+#: admin/events/edit/tickets/manage-tickets/index.js:757
+msgid "Terms and conditions"
+msgstr ""
+
+#: admin/events/edit/tickets/manage-tickets/index.js:762
 msgid "Terms & conditions"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:759
+#: admin/events/edit/tickets/manage-tickets/index.js:766
 msgid "Add ticket terms and conditions here."
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:772
+#: admin/events/edit/tickets/manage-tickets/index.js:779
 msgid "Require agreement to terms"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:773
+#: admin/events/edit/tickets/manage-tickets/index.js:780
 msgid "Show the terms as a checkbox the buyer must tick before checkout."
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:786
+#: admin/events/edit/tickets/manage-tickets/index.js:793
 msgid "Agreement checkboxes"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:789
+#: admin/events/edit/tickets/manage-tickets/index.js:796
 msgid "Separate consents shown as individual checkboxes at checkout, for example a privacy statement or refund policy. Required ones must be ticked before the buyer can continue."
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:800
+#: admin/events/edit/tickets/manage-tickets/index.js:807
 msgid "Agreement text"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:801
+#: admin/events/edit/tickets/manage-tickets/index.js:808
 msgid "e.g. I have read and accept the privacy statement."
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:818
+#: admin/events/edit/tickets/manage-tickets/index.js:825
 msgid "Require this agreement"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:820
+#: admin/events/edit/tickets/manage-tickets/index.js:827
 msgid "Required"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:827
+#: admin/events/edit/tickets/manage-tickets/index.js:834
 msgid "Remove agreement"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:841
+#: admin/events/edit/tickets/manage-tickets/index.js:848
 msgid "Add agreement"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:848
+#: admin/events/edit/tickets/manage-tickets/index.js:856
+msgid "Create tickets"
+msgstr ""
+
+#: admin/events/edit/tickets/manage-tickets/index.js:862
 msgid "Loading tickets…"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:886
+#: admin/events/edit/tickets/manage-tickets/index.js:900
 msgid "Reorder ticket"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:887
+#: admin/events/edit/tickets/manage-tickets/index.js:901
 msgid "Drag to reorder"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:895
+#: admin/events/edit/tickets/manage-tickets/index.js:909
 msgid "Ticket name"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:896
+#: admin/events/edit/tickets/manage-tickets/index.js:910
 msgid "Enter ticket name"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:907
+#: admin/events/edit/tickets/manage-tickets/index.js:921
 msgid "Toggle ticket active"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:917
+#: admin/events/edit/tickets/manage-tickets/index.js:931
 msgid "Active"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:926
+#: admin/events/edit/tickets/manage-tickets/index.js:940
 msgid "Collapse ticket"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:926
+#: admin/events/edit/tickets/manage-tickets/index.js:940
 msgid "Expand ticket"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:939
+#: admin/events/edit/tickets/manage-tickets/index.js:953
 msgid "Delete ticket"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:951
+#: admin/events/edit/tickets/manage-tickets/index.js:965
 #: admin/tickets/orders/refund/index.js:359
 #: components/order/OrderSummary.js:160
 msgid "Price"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:979
-#: admin/events/edit/tickets/manage-tickets/index.js:986
+#: admin/events/edit/tickets/manage-tickets/index.js:993
+#: admin/events/edit/tickets/manage-tickets/index.js:1000
 msgid "Change currency"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:993
+#: admin/events/edit/tickets/manage-tickets/index.js:1007
 msgid "Quantity available"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:1010
+#: admin/events/edit/tickets/manage-tickets/index.js:1024
 msgid "Max per order"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:1032
+#: admin/events/edit/tickets/manage-tickets/index.js:1046
 msgid "Ticket sales start"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:1044
-#: admin/events/edit/tickets/manage-tickets/index.js:1121
+#: admin/events/edit/tickets/manage-tickets/index.js:1058
+#: admin/events/edit/tickets/manage-tickets/index.js:1135
 #: components/event/event-rsvp.js:77
 #: components/event/event-rsvp.js:144
 msgid "Clear"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:1110
+#: admin/events/edit/tickets/manage-tickets/index.js:1124
 msgid "Ticket sales end"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:1192
+#: admin/events/edit/tickets/manage-tickets/index.js:1206
 #: blocks/list/controls.js:120
 msgid "Description"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:1205
+#: admin/events/edit/tickets/manage-tickets/index.js:1219
 msgid "Give a short description of the ticket to attendees."
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:1214
+#: admin/events/edit/tickets/manage-tickets/index.js:1228
 msgid "Additional terms & conditions"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:1227
+#: admin/events/edit/tickets/manage-tickets/index.js:1241
 msgid "Add additional terms & conditions that only apply to this ticket."
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:1247
+#: admin/events/edit/tickets/manage-tickets/index.js:1261
 msgid "Add ticket"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:1259
+#: admin/events/edit/tickets/manage-tickets/index.js:1273
 msgid "Delete this ticket?"
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:1260
+#: admin/events/edit/tickets/manage-tickets/index.js:1274
 msgid "This ticket will be removed from the event when you click Save. You can undo by leaving the page without saving."
 msgstr ""
 
-#: admin/events/edit/tickets/manage-tickets/index.js:1264
+#: admin/events/edit/tickets/manage-tickets/index.js:1278
 #: components/event/event-image.js:393
 msgid "Remove"
 msgstr ""
@@ -4872,11 +4885,6 @@ msgstr ""
 #: blocks/calendar/controls.js:38
 #: blocks/list/controls.js:37
 msgid "Accent"
-msgstr ""
-
-#: blocks/calendar/controls.js:78
-#: blocks/list/controls.js:74
-msgid "Display options"
 msgstr ""
 
 #: blocks/calendar/controls.js:80
