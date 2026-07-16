@@ -720,6 +720,19 @@ class Calendar {
 			}
 		}
 
+		/**
+		 * Filter the WP_Query arguments used to fetch events.
+		 *
+		 * Lets developers inject custom constraints (for example a tax_query on
+		 * their own taxonomy) into every event listing driven by get_events,
+		 * including the Query Loop block render.
+		 *
+		 * @param array $query_args WP_Query arguments about to run.
+		 * @param array $args       The get_events args (per_page, orderby, dates, ...).
+		 * @param array $ids        Calendar term IDs the listing is scoped to.
+		 */
+		$query_args = apply_filters( 'eventkoi_events_query_args', $query_args, $args, (array) $ids );
+
 		$events = get_posts( $query_args );
 
 		foreach ( $events as $item ) {
