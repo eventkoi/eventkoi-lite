@@ -11,6 +11,7 @@ import {
   InputGroupText,
 } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useEventEditContext } from "@/hooks/EventEditContext";
@@ -757,7 +758,7 @@ export function EventEditManageTickets() {
         <Heading level={3}>{__("Terms and conditions", "eventkoi-lite")}</Heading>
 
         <div className="flex flex-col gap-6">
-          <div className="flex flex-col gap-2 max-w-[500px]">
+          <div className="flex flex-col gap-2">
             <Label className="font-medium" htmlFor="tickets-terms-conditions">
               {__("Terms & conditions", "eventkoi-lite")}
             </Label>
@@ -788,7 +789,9 @@ export function EventEditManageTickets() {
             />
           )}
 
-          <div className="flex flex-col gap-2 max-w-[500px] pt-4">
+          <Separator />
+
+          <div className="flex flex-col gap-2">
             <Label className="font-medium">
               {__("Agreement checkboxes", "eventkoi-lite")}
             </Label>
