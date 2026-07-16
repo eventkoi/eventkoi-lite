@@ -729,6 +729,41 @@ export function EventEditManageTickets() {
             onCheckedChange={() => handleToggle("show_remaining")}
           />
 
+          <div className="flex flex-col gap-4">
+            <div className="grid gap-1">
+              <Label className="font-medium">
+                {__("Show unavailable tickets", "eventkoi-lite")}
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                {__(
+                  "Choose which unavailable ticket types stay visible on the event page.",
+                  "eventkoi-lite",
+                )}
+              </p>
+            </div>
+
+            <SettingToggle
+              id="tickets_show_sold_out"
+              label={__("Display sold out tickets", "eventkoi-lite")}
+              checked={ticketSettings.show_sold_out}
+              onCheckedChange={() => handleToggle("show_sold_out")}
+            />
+
+            <SettingToggle
+              id="tickets_show_upcoming"
+              label={__("Display upcoming tickets", "eventkoi-lite")}
+              checked={ticketSettings.show_upcoming}
+              onCheckedChange={() => handleToggle("show_upcoming")}
+            />
+
+            <SettingToggle
+              id="tickets_show_ended"
+              label={__("Display ended tickets", "eventkoi-lite")}
+              checked={ticketSettings.show_ended}
+              onCheckedChange={() => handleToggle("show_ended")}
+            />
+          </div>
+
           <div className="flex flex-col gap-2 max-w-[500px] pt-4">
             <Label className="font-medium" htmlFor="tickets-event-capacity">
               {__("Total ticket quantity per event", "eventkoi-lite")}
