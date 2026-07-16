@@ -136,6 +136,7 @@ class Init {
 			\EventKoi\Admin\Menus::class,
 			\EventKoi\Admin\Redirects::class,
 			\EventKoi\Admin\Scripts::class,
+			\EventKoi\Admin\Metabox_Embed::class,
 		);
 	}
 

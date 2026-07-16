@@ -178,7 +178,9 @@ class Event {
 
 		$native_edit_url = self::get_native_edit_url();
 		if ( '' !== $native_edit_url ) {
-			$meta['native_edit_url'] = $native_edit_url;
+			$meta['native_edit_url']   = $native_edit_url;
+			$meta['has_plugin_fields'] = self::has_embeddable_plugin_fields();
+			$meta['has_seo_plugin']    = class_exists( '\EventKoi\Admin\Scripts' ) && \EventKoi\Admin\Scripts::has_seo_plugin();
 		}
 
 		$meta['custom_taxonomies'] = self::get_custom_taxonomies();
@@ -1349,6 +1351,25 @@ class Event {
 		$url = eventkoi_append_frontend_timezone_arg( $url );
 
 		return apply_filters( 'eventkoi_get_event_url', $url, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Whether a plugin that registers editor metaboxes is active.
+	 *
+	 * Gates the embedded "Other plugin fields" panel so it only appears when a
+	 * custom-field plugin with a real classic metabox is active (ACF, Pods,
+	 * Meta Box). SEO plugins are handled separately via the edit-in-WordPress
+	 * link, since modern Rank Math / Yoast render only in the block editor.
+	 *
+	 * @return bool
+	 */
+	public static function has_embeddable_plugin_fields() {
+		$active = class_exists( 'ACF' )
+			|| function_exists( 'acf' )
+			|| defined( 'PODS_VERSION' )
+			|| defined( 'RWMB_VER' );
+
+		return (bool) apply_filters( 'eventkoi_has_plugin_fields', $active, self::$event_id );
 	}
 
 	/**
