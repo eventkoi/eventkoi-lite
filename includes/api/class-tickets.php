@@ -1078,6 +1078,7 @@ class Tickets {
 				'display_id'          => $order_id,
 				'master_checkin_code' => $master_checkin_code,
 				'event_instance_ts'   => $instance_ts,
+				'terms_consent'       => $terms_consent,
 			)
 		);
 
@@ -2643,11 +2644,16 @@ class Tickets {
 	 * @return array|null
 	 */
 	private static function build_terms_consent( $event, $request, $agreements, $accepted_agreements ) {
-		$terms_text = (
+		// The terms are always displayed at checkout, so document them whenever
+		// they exist; the required toggle only gates them when the buyer never
+		// ticked the acceptance box it demands.
+		$terms_text = (string) $event::get_tickets_terms_conditions();
+		if (
 			$event::get_tickets_terms_conditions_required()
-			&& rest_sanitize_boolean( $request->get_param( 'terms_accepted' ) )
-			&& '' !== trim( (string) $event::get_tickets_terms_conditions() )
-		) ? (string) $event::get_tickets_terms_conditions() : '';
+			&& ! rest_sanitize_boolean( $request->get_param( 'terms_accepted' ) )
+		) {
+			$terms_text = '';
+		}
 
 		$accepted_texts = array();
 		foreach ( $agreements as $agreement ) {
