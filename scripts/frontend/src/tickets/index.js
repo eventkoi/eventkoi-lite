@@ -1339,6 +1339,13 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                                       ticketSaleEnd,
                                     )}
                                   </div>
+                                ) : saleNotStarted && ticketSaleStart ? (
+                                  <div className="mt-2 text-xs font-semibold text-muted-foreground">
+                                    {sprintf(
+                                      __("Ticket sales starts on %s.", "eventkoi-lite"),
+                                      ticketSaleStart,
+                                    )}
+                                  </div>
                                 ) : saleEnded && ticketSaleEnd ? (
                                   <div className="mt-2 text-xs font-semibold text-muted-foreground">
                                     {sprintf(

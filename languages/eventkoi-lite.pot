@@ -7,7 +7,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-16T07:25:44+00:00\n"
+"POT-Creation-Date: 2026-07-16T07:57:00+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -938,7 +938,7 @@ msgstr ""
 msgid "Share this event"
 msgstr ""
 
-#: core/class-blocks.php:1037
+#: core/class-blocks.php:1049
 #: blocks/event-query-loop/index.js:83
 #: components/calendar/search-box.js:226
 #: components/calendar/search-box.js:331
@@ -946,14 +946,14 @@ msgstr ""
 msgid "No events found."
 msgstr ""
 
-#: core/class-blocks.php:1331
+#: core/class-blocks.php:1343
 #: blocks/event-query-loop/index.js:75
 #: components/calendar/nav-controls.js:13
 #: components/ui/pagination.jsx:59
 msgid "Previous"
 msgstr ""
 
-#: core/class-blocks.php:1335
+#: core/class-blocks.php:1347
 #: admin/calendars/overview/index.js:779
 #: admin/events/edit/index.js:772
 #: admin/events/edit/index.js:784
@@ -967,15 +967,15 @@ msgstr ""
 msgid "Next"
 msgstr ""
 
-#: core/class-blocks.php:1347
+#: core/class-blocks.php:1359
 msgid "Pagination"
 msgstr ""
 
-#: core/class-blocks.php:2069
+#: core/class-blocks.php:2081
 msgid "No calendar is available to display."
 msgstr ""
 
-#: core/class-blocks.php:2073
+#: core/class-blocks.php:2085
 msgid "Create a calendar"
 msgstr ""
 
@@ -1510,7 +1510,7 @@ msgstr ""
 #. translators: %s: field label
 #: core/class-orders.php:115
 #: core/class-rsvps.php:126
-#: tickets/index.js:1795
+#: tickets/index.js:1802
 #, php-format,js-format
 msgid "%s is required."
 msgstr ""
@@ -2919,7 +2919,7 @@ msgstr ""
 #: admin/events/edit/index.js:759
 #: admin/events/overview/index.js:878
 #: components/event/event-nav-back.js:64
-#: tickets/index.js:1921
+#: tickets/index.js:1928
 msgid "Back"
 msgstr ""
 
@@ -6514,7 +6514,7 @@ msgid "Add note"
 msgstr ""
 
 #: components/order/OrderSummary.js:156
-#: tickets/index.js:1928
+#: tickets/index.js:1935
 msgid "Order summary"
 msgstr ""
 
@@ -6523,8 +6523,8 @@ msgid "Amount"
 msgstr ""
 
 #: components/order/OrderSummary.js:199
-#: tickets/index.js:1489
-#: tickets/index.js:1967
+#: tickets/index.js:1496
+#: tickets/index.js:1974
 msgid "Total"
 msgstr ""
 
@@ -7490,7 +7490,7 @@ msgid "RSVP not yet open"
 msgstr ""
 
 #: rsvp/index.js:531
-#: tickets/index.js:1772
+#: tickets/index.js:1779
 msgid "Select..."
 msgstr ""
 
@@ -7507,7 +7507,7 @@ msgid "Please complete all required fields."
 msgstr ""
 
 #: tickets/index.js:989
-#: tickets/index.js:1688
+#: tickets/index.js:1695
 msgid "Please enter a valid email address."
 msgstr ""
 
@@ -7565,7 +7565,7 @@ msgid "Dismiss message"
 msgstr ""
 
 #: tickets/index.js:1205
-#: tickets/index.js:1345
+#: tickets/index.js:1352
 #, js-format
 msgid "Ticket sales ended on %s."
 msgstr ""
@@ -7605,38 +7605,43 @@ msgstr ""
 msgid "Buy tickets"
 msgstr ""
 
-#: tickets/index.js:1355
+#: tickets/index.js:1345
+#, js-format
+msgid "Ticket sales starts on %s."
+msgstr ""
+
+#: tickets/index.js:1362
 #, js-format
 msgid "Ticket sales started on %1$s and ends on %2$s."
 msgstr ""
 
-#: tickets/index.js:1366
+#: tickets/index.js:1373
 #, js-format
 msgid "Ticket sales ends on %s."
 msgstr ""
 
-#: tickets/index.js:1387
+#: tickets/index.js:1394
 #, js-format
 msgid "Decrease quantity for %s"
 msgstr ""
 
-#: tickets/index.js:1388
-#: tickets/index.js:1405
-#: tickets/index.js:1422
+#: tickets/index.js:1395
+#: tickets/index.js:1412
+#: tickets/index.js:1429
 msgid "ticket"
 msgstr ""
 
-#: tickets/index.js:1404
+#: tickets/index.js:1411
 #, js-format
 msgid "Quantity for %s"
 msgstr ""
 
-#: tickets/index.js:1421
+#: tickets/index.js:1428
 #, js-format
 msgid "Increase quantity for %s"
 msgstr ""
 
-#: tickets/index.js:1436
+#: tickets/index.js:1443
 #, js-format
 msgid "%d ticket left."
 msgid_plural "%d tickets left."
@@ -7644,72 +7649,72 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of tickets left for the whole event.
-#: tickets/index.js:1454
+#: tickets/index.js:1461
 #, js-format
 msgid "%d ticket left for this event"
 msgid_plural "%d tickets left for this event"
 msgstr[0] ""
 msgstr[1] ""
 
-#: tickets/index.js:1462
+#: tickets/index.js:1469
 msgid "This event is sold out."
 msgstr ""
 
-#: tickets/index.js:1509
+#: tickets/index.js:1516
 msgid "Clear all"
 msgstr ""
 
-#: tickets/index.js:1526
-#: tickets/index.js:1549
-#: tickets/index.js:1908
+#: tickets/index.js:1533
+#: tickets/index.js:1556
+#: tickets/index.js:1915
 msgid "Checkout"
 msgstr ""
 
-#: tickets/index.js:1532
+#: tickets/index.js:1539
 #, js-format
 msgid "Ticket sales start on %s."
 msgstr ""
 
-#: tickets/index.js:1538
+#: tickets/index.js:1545
 msgid "Ticket sales have ended."
 msgstr ""
 
-#: tickets/index.js:1552
+#: tickets/index.js:1559
 msgid "Checkout billing step"
 msgstr ""
 
-#: tickets/index.js:1569
+#: tickets/index.js:1576
 msgid "Billing information"
 msgstr ""
 
-#: tickets/index.js:1577
+#: tickets/index.js:1584
 msgid "First name"
 msgstr ""
 
-#: tickets/index.js:1607
+#: tickets/index.js:1614
 msgid "First name is required."
 msgstr ""
 
-#: tickets/index.js:1616
+#: tickets/index.js:1623
 msgid "Last name"
 msgstr ""
 
-#: tickets/index.js:1645
+#: tickets/index.js:1652
 msgid "Last name is required."
 msgstr ""
 
-#: tickets/index.js:1656
+#: tickets/index.js:1663
 msgid "Email address"
 msgstr ""
 
-#: tickets/index.js:1698
+#: tickets/index.js:1705
 msgid "We will send your tickets to this email address."
 msgstr ""
 
-#: tickets/index.js:1842
+#: tickets/index.js:1849
 msgid "I have read and agree to the terms & conditions."
 msgstr ""
 
-#: tickets/index.js:1905
+#: tickets/index.js:1912
 msgid "Setting up payment"
 msgstr ""
