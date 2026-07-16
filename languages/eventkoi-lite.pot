@@ -7,7 +7,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-14T11:04:08+00:00\n"
+"POT-Creation-Date: 2026-07-16T07:25:44+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -118,9 +118,9 @@ msgstr ""
 #: api/class-event.php:147
 #: api/class-tickets.php:326
 #: api/class-tickets.php:796
-#: api/class-tickets.php:1001
-#: api/class-tickets.php:1201
-#: api/class-tickets.php:1973
+#: api/class-tickets.php:1216
+#: api/class-tickets.php:1416
+#: api/class-tickets.php:2228
 #: core/class-ical.php:213
 #: core/core-functions.php:104
 msgid "Invalid event ID."
@@ -189,8 +189,8 @@ msgid "Invalid order ID."
 msgstr ""
 
 #: api/class-order.php:67
-#: api/class-tickets.php:1804
-#: core/class-ticket-emails.php:853
+#: api/class-tickets.php:2059
+#: core/class-ticket-emails.php:862
 msgid "Order not found."
 msgstr ""
 
@@ -219,9 +219,9 @@ msgstr ""
 #: api/class-rsvps.php:291
 #: api/class-rsvps.php:480
 #: api/class-rsvps.php:643
-#: api/class-tickets.php:910
-#: api/class-tickets.php:1006
-#: api/class-tickets.php:1206
+#: api/class-tickets.php:1125
+#: api/class-tickets.php:1221
+#: api/class-tickets.php:1421
 #: core/class-rsvps.php:189
 msgid "Invalid event."
 msgstr ""
@@ -267,7 +267,7 @@ msgstr ""
 #: core/class-post-types.php:116
 #: core/class-rsvps.php:1400
 #: core/class-template.php:150
-#: core/class-ticket-emails.php:898
+#: core/class-ticket-emails.php:907
 #: core/class-woocommerce-checkout.php:501
 #: core/divi-modules/class-et-builder-module-eventkoievent.php:29
 #: core/divi-modules/class-et-builder-module-eventkoievent.php:44
@@ -298,155 +298,166 @@ msgstr ""
 
 #: api/class-tickets.php:346
 #: api/class-tickets.php:810
-#: api/class-tickets.php:1039
+#: api/class-tickets.php:1254
 msgid "Database error occurred."
 msgstr ""
 
-#: api/class-tickets.php:900
+#: api/class-tickets.php:927
+#: api/class-tickets.php:1647
+msgid "Invalid checkout total."
+msgstr ""
+
+#: api/class-tickets.php:967
+msgid "The order could not be created."
+msgstr ""
+
+#. translators: 1: acceptance date/time, 2: the terms text the customer accepted.
+#: api/class-tickets.php:987
+#, php-format
+msgid "Accepted at %1$s. Terms: %2$s"
+msgstr ""
+
+#: api/class-tickets.php:1115
 msgid "An attendee name is required."
 msgstr ""
 
-#: api/class-tickets.php:905
+#: api/class-tickets.php:1120
 msgid "The email address is not valid."
 msgstr ""
 
-#: api/class-tickets.php:936
+#: api/class-tickets.php:1151
 msgid "This ticket type does not belong to the selected event."
 msgstr ""
 
 #. translators: %d: number of seats left.
-#: api/class-tickets.php:945
+#: api/class-tickets.php:1160
 #, php-format
 msgid "Only %d seat is left for this ticket type."
 msgid_plural "Only %d seats are left for this ticket type."
 msgstr[0] ""
 msgstr[1] ""
 
-#: api/class-tickets.php:963
+#: api/class-tickets.php:1178
 msgid "The attendee could not be added."
 msgstr ""
 
-#: api/class-tickets.php:1176
+#: api/class-tickets.php:1391
 msgid "Tickets are not enabled."
 msgstr ""
 
-#: api/class-tickets.php:1214
-#: api/class-tickets.php:1226
+#: api/class-tickets.php:1429
+#: api/class-tickets.php:1441
 #: tickets/index.js:726
 msgid "This event has ended and is no longer accepting ticket purchases."
 msgstr ""
 
-#: api/class-tickets.php:1236
+#: api/class-tickets.php:1451
 msgid "Too many requests. Please try again later."
 msgstr ""
 
-#: api/class-tickets.php:1249
+#: api/class-tickets.php:1464
 #: tickets/index.js:994
 msgid "Please agree to the terms & conditions to continue."
 msgstr ""
 
-#: api/class-tickets.php:1257
+#: api/class-tickets.php:1472
 #: tickets/index.js:1000
 msgid "Please agree to all required terms to continue."
 msgstr ""
 
-#: api/class-tickets.php:1303
+#: api/class-tickets.php:1518
 msgid "A valid email address is required."
 msgstr ""
 
-#: api/class-tickets.php:1319
-#: api/class-tickets.php:1347
+#: api/class-tickets.php:1534
+#: api/class-tickets.php:1562
 msgid "Invalid ticket selection."
 msgstr ""
 
-#: api/class-tickets.php:1342
+#: api/class-tickets.php:1557
 msgid "Select at least one ticket."
 msgstr ""
 
-#: api/class-tickets.php:1361
+#: api/class-tickets.php:1576
 msgid "Unable to validate tickets."
 msgstr ""
 
-#: api/class-tickets.php:1382
+#: api/class-tickets.php:1597
 msgid "One or more selected tickets are unavailable."
 msgstr ""
 
-#: api/class-tickets.php:1389
+#: api/class-tickets.php:1604
 msgid "One or more selected tickets are not on sale yet."
 msgstr ""
 
-#: api/class-tickets.php:1393
+#: api/class-tickets.php:1608
 msgid "One or more selected tickets are no longer on sale."
 msgstr ""
 
-#: api/class-tickets.php:1398
+#: api/class-tickets.php:1613
 msgid "Selected quantity exceeds ticket limits."
 msgstr ""
 
-#: api/class-tickets.php:1408
-#: api/class-tickets.php:2481
+#: api/class-tickets.php:1623
+#: api/class-tickets.php:2736
 msgid "Not enough tickets remaining for one or more selections."
 msgstr ""
 
-#: api/class-tickets.php:1432
-msgid "Invalid checkout total."
-msgstr ""
-
-#: api/class-tickets.php:1441
+#: api/class-tickets.php:1656
 msgid "Not enough tickets remaining for this event."
 msgstr ""
 
-#: api/class-tickets.php:1508
+#: api/class-tickets.php:1763
 msgid "WooCommerce must be installed and activated to process ticket payments."
 msgstr ""
 
-#: api/class-tickets.php:1562
-#: api/class-tickets.php:1587
-#: api/class-tickets.php:1616
-#: api/class-tickets.php:1785
+#: api/class-tickets.php:1817
+#: api/class-tickets.php:1842
+#: api/class-tickets.php:1871
+#: api/class-tickets.php:2040
 msgid "Missing order ID."
 msgstr ""
 
-#: api/class-tickets.php:1746
+#: api/class-tickets.php:2001
 msgid "Order archived via EventKoi."
 msgstr ""
 
-#: api/class-tickets.php:1766
+#: api/class-tickets.php:2021
 msgid "Order unarchived via EventKoi."
 msgstr ""
 
-#: api/class-tickets.php:1897
+#: api/class-tickets.php:2152
 #: core/class-ticket-emails.php:163
 msgid "Missing checkout session ID."
 msgstr ""
 
-#: api/class-tickets.php:1990
+#: api/class-tickets.php:2245
 #: admin/events/edit/tickets/manage-tickets/index.js:488
 msgid "Ticket name is required."
 msgstr ""
 
-#: api/class-tickets.php:2021
+#: api/class-tickets.php:2276
 msgid "Failed to create ticket."
 msgstr ""
 
-#: api/class-tickets.php:2058
-#: api/class-tickets.php:2189
+#: api/class-tickets.php:2313
+#: api/class-tickets.php:2444
 msgid "Invalid ticket ID."
 msgstr ""
 
-#: api/class-tickets.php:2127
+#: api/class-tickets.php:2382
 msgid "No data to update."
 msgstr ""
 
-#: api/class-tickets.php:2143
+#: api/class-tickets.php:2398
 msgid "Failed to update ticket."
 msgstr ""
 
-#: api/class-tickets.php:2202
+#: api/class-tickets.php:2457
 msgid "Failed to delete ticket."
 msgstr ""
 
-#: api/class-tickets.php:2210
+#: api/class-tickets.php:2465
 msgid "Ticket deleted successfully."
 msgstr ""
 
@@ -1883,13 +1894,13 @@ msgstr ""
 
 #: core/class-rsvps.php:1514
 #: core/class-ticket-emails.php:488
-#: core/class-ticket-emails.php:1289
+#: core/class-ticket-emails.php:1298
 msgid "Event:"
 msgstr ""
 
 #: core/class-rsvps.php:1515
 #: core/class-ticket-emails.php:489
-#: core/class-ticket-emails.php:1290
+#: core/class-ticket-emails.php:1299
 msgid "Date:"
 msgstr ""
 
@@ -2107,53 +2118,53 @@ msgstr ""
 msgid "Refund confirmation sent."
 msgstr ""
 
-#: core/class-ticket-emails.php:810
+#: core/class-ticket-emails.php:819
 #: admin/events/edit/attendees/index.js:621
 #: components/order/order-header.js:67
 #: components/order/OrderActivity.js:67
 msgid "Ticket confirmation sent."
 msgstr ""
 
-#: core/class-ticket-emails.php:824
+#: core/class-ticket-emails.php:833
 msgid "Completed order was not found for this checkout session."
 msgstr ""
 
-#: core/class-ticket-emails.php:1242
+#: core/class-ticket-emails.php:1251
 msgid "Terms and conditions:"
 msgstr ""
 
 #. translators: %s: date/time the customer accepted the terms.
-#: core/class-ticket-emails.php:1245
+#: core/class-ticket-emails.php:1254
 #, php-format
 msgid "Accepted by the customer at checkout on %s."
 msgstr ""
 
-#: core/class-ticket-emails.php:1261
+#: core/class-ticket-emails.php:1270
 msgid "Agreements accepted:"
 msgstr ""
 
-#: core/class-ticket-emails.php:1280
+#: core/class-ticket-emails.php:1289
 #: admin/settings/emails/index.js:188
 msgid "New ticket sale: [event_name]"
 msgstr ""
 
-#: core/class-ticket-emails.php:1284
+#: core/class-ticket-emails.php:1293
 msgid "A new ticket order has been placed."
 msgstr ""
 
-#: core/class-ticket-emails.php:1285
+#: core/class-ticket-emails.php:1294
 msgid "Customer:"
 msgstr ""
 
-#: core/class-ticket-emails.php:1286
+#: core/class-ticket-emails.php:1295
 msgid "Order:"
 msgstr ""
 
-#: core/class-ticket-emails.php:1287
+#: core/class-ticket-emails.php:1296
 msgid "Tickets:"
 msgstr ""
 
-#: core/class-ticket-emails.php:1288
+#: core/class-ticket-emails.php:1297
 msgid "Total:"
 msgstr ""
 

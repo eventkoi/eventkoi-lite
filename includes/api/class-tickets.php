@@ -512,7 +512,7 @@ class Tickets {
 					'amount_total'   => 0,
 					'currency'       => strtolower( (string) ( $row->currency ?? 'usd' ) ),
 					'created_at'     => (string) ( $row->created_at ?? '' ),
-					'gateway'        => 0 === strpos( $base_id, 'manual_' ) ? 'manual' : 'woocommerce',
+					'gateway'        => self::detect_local_order_gateway( $base_id ),
 					'items'          => array(),
 				);
 			}
@@ -697,7 +697,7 @@ class Tickets {
 						'amount_total'          => 0,
 						'currency'              => strtolower( (string) ( $row->currency ?? 'usd' ) ),
 						'created_at'            => (string) ( $row->created_at ?? '' ),
-						'gateway'               => 0 === strpos( $base_id, 'manual_' ) ? 'manual' : 'woocommerce',
+						'gateway'               => self::detect_local_order_gateway( $base_id ),
 						'items'                 => array(),
 						'_completed_count'      => 0,
 						'_refunded_count'       => 0,
@@ -875,6 +875,221 @@ class Tickets {
 		}
 
 		return $payload;
+	}
+
+	/**
+	 * Resolve the gateway label for a grouped local order base ID.
+	 *
+	 * WooCommerce orders use a wc_ prefix and manual attendees a manual_
+	 * prefix; free checkout stores seats under the numeric local order ID.
+	 *
+	 * @param string $base_id Base order ID from the ticket_orders composite key.
+	 * @return string
+	 */
+	private static function detect_local_order_gateway( $base_id ) {
+		$base_id = (string) $base_id;
+
+		if ( 0 === strpos( $base_id, 'manual_' ) ) {
+			return 'manual';
+		}
+
+		if ( 0 === strpos( $base_id, 'free_' ) || ctype_digit( $base_id ) ) {
+			return 'free';
+		}
+
+		return 'woocommerce';
+	}
+
+	/**
+	 * Complete a free (zero-total) checkout without a payment gateway.
+	 *
+	 * Creates the order record, per-seat ticket rows with check-in codes,
+	 * terms/checkout-field notes, and the buyer + admin confirmation emails,
+	 * so free tickets work without WooCommerce. Inventory holds created by
+	 * the checkout endpoint are released once the seats are recorded.
+	 *
+	 * @param array $args Order args: event_id, instance_ts, email, customer_name, currency, items, hold_id, metadata, checkout_fields, terms_consent.
+	 * @return array|WP_Error Array with order_id and checkout_id on success.
+	 */
+	private static function complete_free_order( $args ) {
+		$event_id        = absint( $args['event_id'] ?? 0 );
+		$instance_ts     = absint( $args['instance_ts'] ?? 0 );
+		$customer_email  = sanitize_email( (string) ( $args['email'] ?? '' ) );
+		$customer_name   = sanitize_text_field( (string) ( $args['customer_name'] ?? '' ) );
+		$currency        = strtoupper( sanitize_text_field( (string) ( $args['currency'] ?? 'USD' ) ) );
+		$items           = isset( $args['items'] ) && is_array( $args['items'] ) ? $args['items'] : array();
+		$hold_id         = sanitize_text_field( (string) ( $args['hold_id'] ?? '' ) );
+		$metadata        = isset( $args['metadata'] ) && is_array( $args['metadata'] ) ? $args['metadata'] : array();
+		$checkout_fields = isset( $args['checkout_fields'] ) && is_array( $args['checkout_fields'] ) ? $args['checkout_fields'] : array();
+		$terms_consent   = isset( $args['terms_consent'] ) && is_array( $args['terms_consent'] ) ? $args['terms_consent'] : null;
+
+		if ( ! $event_id || empty( $items ) ) {
+			return new WP_Error( 'invalid_free_order', __( 'Invalid checkout total.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
+		$checkout_id    = 'free_' . str_replace( '-', '', wp_generate_uuid4() );
+		$now            = time();
+		$total_quantity = 0;
+		$primary_ticket = 0;
+
+		foreach ( $items as $item ) {
+			$total_quantity += max( 1, absint( $item['quantity'] ?? 1 ) );
+			if ( 0 === $primary_ticket ) {
+				$primary_ticket = absint( $item['ticket_id'] ?? 0 );
+			}
+		}
+
+		\EKLIB\StellarWP\DB\DB::table( 'eventkoi_orders' )->upsert(
+			array(
+				'checkout_id'    => $checkout_id,
+				'ticket_id'      => $primary_ticket,
+				'quantity'       => $total_quantity,
+				'subtotal'       => 0,
+				'total'          => 0,
+				'item_price'     => 0,
+				'currency'       => strtolower( $currency ),
+				'payment_status' => 'complete',
+				'status'         => 'complete',
+				'created'        => $now,
+				'expires'        => $now,
+				'last_updated'   => $now,
+				'live'           => eventkoi_live_mode_enabled() ? 1 : 0,
+				'billing_name'   => $customer_name,
+				'billing_email'  => $customer_email,
+				'gateway'        => 'free',
+			),
+			array( 'checkout_id' )
+		);
+
+		$order_row = \EKLIB\StellarWP\DB\DB::table( 'eventkoi_orders' )->where( 'checkout_id', $checkout_id )->get();
+
+		if ( ! $order_row || empty( $order_row->id ) ) {
+			return new WP_Error( 'free_order_failed', __( 'The order could not be created.', 'eventkoi-lite' ), array( 'status' => 500 ) );
+		}
+
+		$order_id = absint( $order_row->id );
+		$orders   = new \EventKoi\Core\Orders();
+
+		// Terms consent snapshot + custom checkout field values as order notes.
+		if ( $terms_consent ) {
+			$consent_parts = array();
+			if ( '' !== trim( (string) ( $terms_consent['terms_text'] ?? '' ) ) ) {
+				$consent_parts[] = wp_strip_all_tags( (string) $terms_consent['terms_text'] );
+			}
+			foreach ( (array) ( $terms_consent['agreements'] ?? array() ) as $agreement_text ) {
+				$consent_parts[] = wp_strip_all_tags( (string) $agreement_text );
+			}
+			$orders->add_note(
+				$order_id,
+				'terms_consent',
+				sprintf(
+					/* translators: 1: acceptance date/time, 2: the terms text the customer accepted. */
+					__( 'Accepted at %1$s. Terms: %2$s', 'eventkoi-lite' ),
+					wp_date( 'Y-m-d H:i:s T', (int) ( $terms_consent['accepted_at'] ?? $now ) ),
+					implode( ' | ', $consent_parts )
+				),
+				'user'
+			);
+		}
+
+		if ( $checkout_fields ) {
+			$definitions = array();
+			foreach ( \EventKoi\Core\Orders::get_checkout_fields( $event_id ) as $field ) {
+				$definitions[ $field['key'] ] = $field;
+			}
+			foreach ( $checkout_fields as $key => $value ) {
+				$label = $definitions[ $key ]['label'] ?? $key;
+				$orders->add_note( $order_id, 'checkout_field', $label . ': ' . $value, 'user' );
+			}
+		}
+
+		// Per-seat check-in codes, same alphabet and length as the paid flow.
+		$code_alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+		$generate_code = static function () use ( $code_alphabet ) {
+			$code  = '';
+			$bytes = random_bytes( 12 );
+			for ( $i = 0; $i < 12; $i++ ) {
+				$code .= $code_alphabet[ ord( $bytes[ $i ] ) % strlen( $code_alphabet ) ];
+			}
+			return $code;
+		};
+
+		$master_checkin_code = $generate_code();
+		$order_items         = array();
+		$total_seats         = 0;
+		$last_seat_code      = '';
+
+		foreach ( $items as $item ) {
+			$quantity     = max( 1, absint( $item['quantity'] ?? 1 ) );
+			$ticket_codes = array();
+			for ( $i = 0; $i < $quantity; $i++ ) {
+				$ticket_codes[] = $generate_code();
+			}
+
+			$total_seats   += $quantity;
+			$last_seat_code = end( $ticket_codes );
+
+			$order_items[] = array(
+				'ticket_id'    => absint( $item['ticket_id'] ?? 0 ),
+				'ticket_name'  => sanitize_text_field( (string) ( $item['name'] ?? '' ) ),
+				'name'         => sanitize_text_field( (string) ( $item['name'] ?? '' ) ),
+				'description'  => sanitize_text_field( (string) ( $item['description'] ?? '' ) ),
+				'quantity'     => $quantity,
+				'price'        => 0,
+				'unit_amount'  => 0,
+				'ticket_codes' => $ticket_codes,
+				'codes'        => $ticket_codes,
+			);
+		}
+
+		// Single-seat orders: collapse master code into the per-seat code so the
+		// emailed QR and the admin attendees row show the same value.
+		if ( 1 === $total_seats && '' !== $last_seat_code ) {
+			$master_checkin_code = $last_seat_code;
+		}
+
+		$local_order = array(
+			'order_id'       => (string) $order_id,
+			'customer_name'  => $customer_name,
+			'customer_email' => $customer_email,
+			'status'         => 'completed',
+			'payment_status' => 'complete',
+			'event_id'       => $event_id,
+			'instance_ts'    => $instance_ts,
+			'currency'       => $currency,
+			'items'          => $order_items,
+			'metadata'       => $metadata,
+		);
+
+		\EventKoi\Core\Ticket_Order_Sync::sync_order_to_local( $local_order );
+
+		// The seats are recorded as sold, so the checkout hold can go.
+		if ( '' !== $hold_id ) {
+			self::release_inventory_holds( $hold_id );
+		}
+
+		$orders->add_note( $order_id, 'order_completed' );
+		$orders->add_note( $order_id, 'master_checkin_code', $master_checkin_code );
+
+		$email_order = array_merge(
+			$local_order,
+			array(
+				'id'                  => $checkout_id,
+				'display_id'          => $order_id,
+				'master_checkin_code' => $master_checkin_code,
+				'event_instance_ts'   => $instance_ts,
+			)
+		);
+
+		\EventKoi\Core\Ticket_Emails::send_for_order_public( $email_order );
+		\EventKoi\Core\Ticket_Emails::send_admin_sale_notification( $email_order );
+
+		self::invalidate_order_caches( $event_id );
+
+		return array(
+			'order_id'    => $order_id,
+			'checkout_id' => $checkout_id,
+		);
 	}
 
 	/**
@@ -1498,6 +1713,46 @@ class Tickets {
 		$hold_result = self::create_inventory_holds( $hold_id, $event_id, $sanitized_items, $tickets_by_id, $currency, $email, $customer_name );
 		if ( is_wp_error( $hold_result ) ) {
 			return $hold_result;
+		}
+
+		// Free orders: there is nothing to charge, so skip the payment gateway
+		// entirely and complete the order right away (order record, per-seat
+		// tickets, confirmation emails). Free tickets work without WooCommerce.
+		if ( 0 === $total_cents ) {
+			$free_order = self::complete_free_order(
+				array(
+					'event_id'        => $event_id,
+					'instance_ts'     => $instance_ts,
+					'email'           => $email,
+					'customer_name'   => $customer_name,
+					'currency'        => $currency,
+					'items'           => $edge_items,
+					'hold_id'         => $hold_id,
+					'metadata'        => $metadata,
+					'checkout_fields' => $checkout_fields,
+					'terms_consent'   => self::build_terms_consent( $event, $request, $agreements, $accepted_agreements ),
+				)
+			);
+
+			if ( is_wp_error( $free_order ) ) {
+				self::release_inventory_holds( $hold_id );
+				return $free_order;
+			}
+
+			return new WP_REST_Response(
+				array(
+					'success'     => true,
+					'free_order'  => true,
+					'hosted_url'  => $return_url ? $return_url : get_permalink( $event_id ),
+					'checkout_id' => $free_order['checkout_id'],
+					'order_id'    => $free_order['order_id'],
+					'event_id'    => $event_id,
+					'instance_ts' => $instance_ts,
+					'total_cents' => 0,
+					'currency'    => strtolower( $currency ? $currency : 'usd' ),
+				),
+				200
+			);
 		}
 
 		// Lite requires WooCommerce for checkout.

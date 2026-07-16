@@ -801,13 +801,22 @@ class Ticket_Emails {
 	 * @return void
 	 */
 	private static function add_confirmation_note( $order_id ) {
-		$wc_id = 0;
-		if ( preg_match( '/^wc_(\d+)/', (string) $order_id, $m ) ) {
-			$wc_id = (int) $m[1];
+		$order_id = (string) $order_id;
+		$local_id = 0;
+
+		if ( preg_match( '/^wc_(\d+)/', $order_id, $m ) ) {
+			$local_id = (int) $m[1];
+		} elseif ( ctype_digit( $order_id ) ) {
+			$local_id = (int) $order_id;
+		} elseif ( 0 === strpos( $order_id, 'free_' ) ) {
+			// Free checkout passes its checkout_id; resolve the local order row.
+			$row      = \EKLIB\StellarWP\DB\DB::table( 'eventkoi_orders' )->where( 'checkout_id', $order_id )->get();
+			$local_id = ( $row && ! empty( $row->id ) ) ? (int) $row->id : 0;
 		}
-		if ( $wc_id > 0 ) {
+
+		if ( $local_id > 0 ) {
 			$orders = new \EventKoi\Core\Orders();
-			$orders->add_note( $wc_id, 'ticket_confirmation_sent', __( 'Ticket confirmation sent.', 'eventkoi-lite' ), 'system' );
+			$orders->add_note( $local_id, 'ticket_confirmation_sent', __( 'Ticket confirmation sent.', 'eventkoi-lite' ), 'system' );
 		}
 	}
 
