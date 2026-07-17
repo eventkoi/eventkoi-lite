@@ -105,6 +105,12 @@ export function useCalendarData({
   // Use calendars if present, otherwise id
   const effectiveId = calendars || id;
   const shouldApplyListSorting = display === "list";
+  // A List with no explicit sort configured should lead with upcoming events
+  // (today onward, ascending), not dump the whole history oldest-first. Sites
+  // that deliberately set an order (e.g. a past-events list) keep their choice.
+  const effectiveOrderby = shouldApplyListSorting
+    ? orderby || "upcoming"
+    : orderby;
   const listPerPage = Math.max(1, Number.parseInt(perPage, 10) || 10);
   const parsedMaxResults = Number.parseInt(maxResults, 10);
   const listMaxResults =
@@ -141,7 +147,7 @@ export function useCalendarData({
         display,
         initial: "true",
       });
-      if (shouldApplyListSorting && orderby) params.set("orderby", orderby);
+      if (shouldApplyListSorting && effectiveOrderby) params.set("orderby", effectiveOrderby);
       if (shouldApplyListSorting && order) params.set("order", order);
 
       const response = await publicApi({
@@ -245,7 +251,7 @@ export function useCalendarData({
       setLoading(true);
 
       const params = new URLSearchParams({ id: effectiveId, display });
-      if (shouldApplyListSorting && orderby) params.set("orderby", orderby);
+      if (shouldApplyListSorting && effectiveOrderby) params.set("orderby", effectiveOrderby);
       if (shouldApplyListSorting && order) params.set("order", order);
       if (requestRange.start) params.set("start", requestRange.start.toISOString());
       if (requestRange.end) params.set("end", requestRange.end.toISOString());
@@ -321,7 +327,7 @@ export function useCalendarData({
       }
       const run = (async () => {
         const p = new URLSearchParams({ id: effectiveId, display });
-        if (shouldApplyListSorting && orderby) p.set("orderby", orderby);
+        if (shouldApplyListSorting && effectiveOrderby) p.set("orderby", effectiveOrderby);
         if (shouldApplyListSorting && order) p.set("order", order);
         p.set("start", requestRange.start.toISOString());
         p.set("end", requestRange.end.toISOString());
@@ -367,7 +373,7 @@ export function useCalendarData({
       }
 
       const params = new URLSearchParams({ id: effectiveId, display });
-      if (shouldApplyListSorting && orderby) params.set("orderby", orderby);
+      if (shouldApplyListSorting && effectiveOrderby) params.set("orderby", effectiveOrderby);
       if (shouldApplyListSorting && order) params.set("order", order);
       if (display === "list") {
         const firstPageSize =
@@ -468,7 +474,7 @@ export function useCalendarData({
         page: String(nextPage),
         per_page: String(nextPageSize),
       });
-      if (shouldApplyListSorting && orderby) params.set("orderby", orderby);
+      if (shouldApplyListSorting && effectiveOrderby) params.set("orderby", effectiveOrderby);
       if (shouldApplyListSorting && order) params.set("order", order);
       if (listMaxResults > 0) params.set("max_results", String(listMaxResults));
       if (dateStart) params.set("date_start", dateStart);

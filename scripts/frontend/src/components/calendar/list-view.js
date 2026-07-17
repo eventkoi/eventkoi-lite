@@ -150,6 +150,16 @@ export function ListView({
                 "UTC"
             );
 
+        // Fall back to the server-rendered date string for any event whose
+        // timeline can't be computed on the client (e.g. imported multi-day or
+        // all-day events), so the date column is never blank.
+        const computedTimeline = buildTimeline(event, wpTz, timeFormat);
+        const serverTimeline =
+          (typeof event?.timeline === "string" && event.timeline.trim()) ||
+          (typeof event?.datetime === "string" && event.datetime.trim()) ||
+          "";
+        const timeline = computedTimeline || serverTimeline;
+
         const loc = getPrimaryLocation(event);
         const isVirtual = getLocationType(loc) === "online";
         const isPhysical = getLocationType(loc) === "inperson";
@@ -261,13 +271,9 @@ export function ListView({
                 className="flex md:hidden text-muted-foreground whitespace-pre-line"
                 role="group"
                 aria-hidden="true"
-                aria-label={`Event time: ${buildTimeline(
-                  event,
-                  wpTz,
-                  timeFormat
-                )}`}
+                aria-label={`Event time: ${timeline}`}
               >
-                {buildTimeline(event, wpTz, timeFormat)}
+                {timeline}
               </div>
 
               {event.calendar_name && (
@@ -302,13 +308,9 @@ export function ListView({
             <div
               className="hidden md:block ml-auto text-[14px] text-muted-foreground min-w-[200px] text-right whitespace-pre-line"
               role="group"
-              aria-label={`Event time: ${buildTimeline(
-                event,
-                wpTz,
-                timeFormat
-              )}`}
+              aria-label={`Event time: ${timeline}`}
             >
-              {buildTimeline(event, wpTz, timeFormat)}
+              {timeline}
             </div>
           </li>
         );
