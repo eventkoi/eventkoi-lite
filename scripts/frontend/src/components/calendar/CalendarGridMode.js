@@ -290,16 +290,24 @@ export function CalendarGridMode({
     return calendarTimeZone ? dt.setZone(calendarTimeZone) : dt;
   };
   // Google-style compact time formatter for week-view tile labels.
-  // 12h: "9 – 11am", "1:30 – 3pm", "11am – 2pm". 24h: "9 – 11", "13:30 – 15".
+  // 12h: "9 – 11am", "1:30 – 3pm", "11am – 2pm" (drops :00, drops first
+  // period when both endpoints share one). 24h must never emit a bare hour:
+  // "15" has nothing marking it as a time, so on French sites it read as a
+  // count of events instead of 3pm. French gets its own convention ("15h",
+  // "18h30"); other 24h locales keep the minutes ("15:00", "18:30").
+  const isFrenchLocale = /^fr/i.test(localeToUse);
   const formatCompactTime = (dt) => {
     if (!dt) return "";
     const m = dt.minute;
-    const mPart = m === 0 ? "" : `:${String(m).padStart(2, "0")}`;
+    const mm = String(m).padStart(2, "0");
     if (timeFormat === "24") {
-      return `${dt.hour}${mPart}`;
+      if (isFrenchLocale) {
+        return `${dt.hour}h${m === 0 ? "" : mm}`;
+      }
+      return `${dt.hour}:${mm}`;
     }
     const h12 = ((dt.hour + 11) % 12) + 1;
-    return `${h12}${mPart}`;
+    return `${h12}${m === 0 ? "" : `:${mm}`}`;
   };
   const formatCompactRange = (start, end) => {
     const sStr = formatCompactTime(start);
