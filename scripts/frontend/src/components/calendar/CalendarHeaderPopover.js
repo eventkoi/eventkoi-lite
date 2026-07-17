@@ -96,7 +96,7 @@ export function CalendarHeaderPopover({
         side="bottom"
         align="start"
         sideOffset={20}
-        className="!z-[2147483647] w-[240px] rounded !border !bg-white !opacity-100 shadow-[0_0_4px_#bbb] text-sm overflow-hidden"
+        className="w-[240px] rounded !border !bg-white !opacity-100 shadow-[0_0_4px_#bbb] text-sm overflow-hidden"
         aria-label={__("Month and year selection", "eventkoi-lite")}
       >
         {/* Year header */}
