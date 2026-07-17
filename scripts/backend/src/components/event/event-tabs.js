@@ -68,9 +68,6 @@ export function EventTabs() {
         }]
       : [] // No attendance tabs when mode is 'none'
     ),
-    ...(event?.has_plugin_fields || event?.has_seo_plugin
-      ? [{ name: "more", title: __("More settings", "eventkoi-lite") }]
-      : []),
   ];
 
   const items = tabs.map( ( tab ) => ({

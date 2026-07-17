@@ -194,6 +194,13 @@ class Post_Types {
 			return $link;
 		}
 
+		// Saves submitted from the embedded metabox panel must redirect back to
+		// the native embed screen, not the React editor. The POST marker is the
+		// only signal, since the save request carries no GET flags.
+		if ( ! empty( $_POST['_ek_embed'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Read-only link routing flag; core verified the edit nonce.
+			return $link;
+		}
+
 		$event = new \EventKoi\Core\Event( $post_id );
 
 		if ( $event::get_id() ) {

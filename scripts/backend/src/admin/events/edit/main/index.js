@@ -5,6 +5,7 @@ import { EventDate } from "@/components/event/event-date";
 import { EventDescription } from "@/components/event/event-description";
 import { EventImage } from "@/components/event/event-image";
 import { EventLocation } from "@/components/event/event-location";
+import { EventMetaboxEmbed } from "@/components/event/event-metabox-embed";
 import { EventName } from "@/components/event/event-name";
 import { EventSlug } from "@/components/event/event-slug";
 import { EventTemplate } from "@/components/event/event-template";
@@ -117,6 +118,9 @@ export function EventEditMain() {
 
       {/* Third-party taxonomies (only renders when the site registered any) */}
       <EventTaxonomiesBox />
+
+      {/* Metaboxes other plugins add (ACF, Pods, Yoast, ...) in one panel */}
+      <EventMetaboxEmbed />
     </div>
   );
 }

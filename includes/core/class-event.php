@@ -1357,9 +1357,10 @@ class Event {
 	 * Whether a plugin that registers editor metaboxes is active.
 	 *
 	 * Gates the embedded "Other plugin fields" panel so it only appears when a
-	 * custom-field plugin with a real classic metabox is active (ACF, Pods,
-	 * Meta Box). SEO plugins are handled separately via the edit-in-WordPress
-	 * link, since modern Rank Math / Yoast render only in the block editor.
+	 * plugin with a real classic metabox is active: custom-field plugins (ACF,
+	 * Pods, Meta Box) plus Yoast, whose classic metabox still ships.
+	 * Gutenberg-only sidebars (Rank Math) cannot appear here; that is a known,
+	 * accepted limitation.
 	 *
 	 * @return bool
 	 */
@@ -1367,7 +1368,8 @@ class Event {
 		$active = class_exists( 'ACF' )
 			|| function_exists( 'acf' )
 			|| defined( 'PODS_VERSION' )
-			|| defined( 'RWMB_VER' );
+			|| defined( 'RWMB_VER' )
+			|| defined( 'WPSEO_VERSION' );
 
 		return (bool) apply_filters( 'eventkoi_has_plugin_fields', $active, self::$event_id );
 	}

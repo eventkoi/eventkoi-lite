@@ -17,7 +17,6 @@ import { Home } from "@/admin/home";
 import { Events } from "@/admin/events";
 import { EventEdit } from "@/admin/events/edit";
 import { EventEditInstances } from "@/admin/events/edit/instances";
-import { EventEditIntegrations } from "@/admin/events/edit/integrations";
 import { EditInstance } from "@/admin/events/edit/instances/edit-instance";
 import { EventEditMain } from "@/admin/events/edit/main";
 import { EventEditRsvp } from "@/admin/events/edit/rsvp";
@@ -167,7 +166,6 @@ function AdminLayout() {
         </Route>
         <Route path="events/:id" element={<EventEdit />}>
           <Route path="main" element={<EventEditMain />} />
-          <Route path="more" element={<EventEditIntegrations />} />
           <Route path="rsvp" element={<EventEditRsvp />} />
           <Route path="price-from" element={<EventEditPriceFrom />} />
           <Route path="instances" element={<EventEditInstances />} />

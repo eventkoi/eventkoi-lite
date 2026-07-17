@@ -205,21 +205,49 @@ class Metabox_Embed {
 				display: none !important;
 			}
 			html, body.wp-admin { background: transparent !important; }
+			body { margin: 0 !important; padding: 0 !important; }
 			#wpcontent, #wpbody, #wpbody-content { margin: 0 !important; padding: 0 !important; }
 			#wpbody-content .wrap { margin: 0 !important; padding: 0 !important; }
 			#poststuff { padding: 0 !important; margin: 0 !important; min-width: 0 !important; }
-			#poststuff #post-body.columns-2 { margin-right: 0 !important; }
-			#post-body.columns-2 #postbox-container-1 { float: none; width: 100% !important; margin: 0 0 12px; }
-			#post-body.columns-2 #postbox-container-2 { width: 100% !important; }
-			.postbox { margin-bottom: 12px; }
-			#postbox-container-1 > .meta-box-sortables:empty,
-			#postbox-container-2 > .meta-box-sortables:empty { display: none !important; }
-			#poststuff .postbox:last-child,
-			.meta-box-sortables > .postbox:last-child { margin-bottom: 0 !important; }
-			/* Keep the Publish box compact: only the update action is needed. */
+			#poststuff:after, #post-body:after { display: none !important; }
+
+			/* Stack into one column: plugin fields first, update action last. */
+			#post-body.columns-2 { display: flex !important; flex-direction: column !important; margin: 0 !important; }
+			#post-body.columns-2 #postbox-container-1 { order: 2; float: none; width: 100% !important; margin: 0 !important; }
+			#post-body.columns-2 #postbox-container-2 { order: 1; width: 100% !important; margin: 0 !important; }
+			/* Collapse the empty sortable areas so they add no blank space. */
+			.meta-box-sortables { min-height: 0 !important; }
+			.meta-box-sortables:empty { display: none !important; }
+
+			/* Keep each plugin's metabox as its own titled, collapsible card so it stays clear which fields belong to which plugin. Only the reorder arrows go. */
+			.postbox { margin: 0 0 16px !important; }
+			#postbox-container-2 .meta-box-sortables > .postbox:last-child,
+			#postbox-container-1 .meta-box-sortables > .postbox:last-child { margin-bottom: 0 !important; }
+			.postbox .handle-order-higher, .postbox .handle-order-lower { display: none !important; }
+
+			/* Publish box becomes a single, plain Update button at the bottom. */
+			#submitdiv { border: none !important; box-shadow: none !important; background: transparent !important; margin: 4px 0 0 !important; }
+			#submitdiv > .postbox-header,
 			#submitdiv #minor-publishing,
-			#submitdiv #delete-action { display: none !important; }
-			#submitdiv #major-publishing-actions { border-top: none; padding: 10px; }
+			#submitdiv #delete-action,
+			#submitdiv .misc-pub-section { display: none !important; }
+			#submitdiv .inside { margin: 0 !important; padding: 0 !important; border: none !important; }
+			#submitdiv #major-publishing-actions {
+				border-top: none !important;
+				padding: 0 !important;
+				margin: 0 !important;
+				display: flex !important;
+				justify-content: flex-start !important;
+			}
+			#submitdiv #publishing-action { float: none !important; padding: 0 !important; }
+			#submitdiv #publishing-action .spinner { display: none !important; }
+			#submitdiv .button-primary {
+				height: auto !important;
+				padding: 8px 22px !important;
+				font-size: 13px !important;
+				line-height: 1.4 !important;
+				border-radius: 6px !important;
+			}
 		</style>
 		<?php
 	}
