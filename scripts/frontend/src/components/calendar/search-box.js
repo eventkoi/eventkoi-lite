@@ -106,7 +106,7 @@ function getAllDayDisplayEnd(start, rawEnd, realEnd, options = {}) {
 }
 
 function formatSearchDate(event, timezone, timeFormat) {
-  const params = typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
+  const params = typeof eventkoi_params !== "undefined" ? window.eventkoi_params : {};
   const locale = (params.locale || "en").replace("_", "-");
   const dateFormat = wpToLuxonFormat(params.date_format || "F j, Y");
   const timePreference = timeFormat || params.time_format || "12";

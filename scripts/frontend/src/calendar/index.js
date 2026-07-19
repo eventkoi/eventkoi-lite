@@ -16,6 +16,7 @@ import { CalendarListMode } from "@/components/calendar/CalendarListMode";
 import { useCalendarData } from "@/components/calendar/useCalendarData";
 import { useEventPopover } from "@/components/calendar/useEventPopover";
 import publicApi from "@/lib/public-api";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 /**
  * Main EventKoi Calendar component.
@@ -63,6 +64,8 @@ export function Calendar(props) {
     setCurrentDate,
     initialDate,
     loading,
+    loadError,
+    retry,
     listTotal,
     listHasMore,
     listLoadingMore,
@@ -98,18 +101,18 @@ export function Calendar(props) {
       }
     }
 
-    if (eventkoi_params?.auto_detect_timezone) {
+    if (window.eventkoi_params?.auto_detect_timezone) {
       return "local";
     }
 
     return safeNormalizeTimeZone(
-      eventkoi_params?.timezone_override || eventkoi_params?.timezone || "UTC"
+      window.eventkoi_params?.timezone_override || window.eventkoi_params?.timezone || "UTC"
     );
   };
 
   const [timezone, setTimezone] = useState(() => getInitialTimezone());
   const [timeFormat, setTimeFormat] = useState(
-    eventkoi_params?.time_format === "24" ? "24" : "12"
+    window.eventkoi_params?.time_format === "24" ? "24" : "12"
   );
 
   /**
@@ -274,6 +277,13 @@ export function Calendar(props) {
           loadingMore={listLoadingMore}
           onLoadMore={loadMoreListEvents}
         />
+      ) : loadError && events.length === 0 ? (
+        <div className="ek-calendar-error">
+          <p>{__("The calendar could not be loaded.", "eventkoi-lite")}</p>
+          <button type="button" onClick={retry}>
+            {__("Try again", "eventkoi-lite")}
+          </button>
+        </div>
       ) : (
         <CalendarGridMode
           calendarRef={calendarRef}
@@ -318,30 +328,32 @@ export function mountEventKoiCalendars(rootElement = document) {
 
     const root = createRoot(el);
     root.render(
-      <Calendar
-        id={el.getAttribute("data-calendar-id")}
-        calendars={el.getAttribute("data-calendars")}
-        display={el.getAttribute("data-display")}
-        startday={el.getAttribute("data-startday")}
-        timeframe={el.getAttribute("data-timeframe")}
-        color={el.getAttribute("data-color")}
-        showImage={el.getAttribute("data-show-image")}
-        showLocation={el.getAttribute("data-show-location")}
-        showDescription={el.getAttribute("data-show-description")}
-        borderStyle={el.getAttribute("data-border-style")}
-        borderSize={el.getAttribute("data-border-size")}
-        context={el.getAttribute("data-context")}
-        defaultMonth={el.getAttribute("data-default-month")}
-        defaultYear={el.getAttribute("data-default-year")}
-        orderby={el.getAttribute("data-orderby")}
-        order={el.getAttribute("data-order")}
-        perPage={el.getAttribute("data-per-page")}
-        maxResults={el.getAttribute("data-max-results")}
-        dateStart={el.getAttribute("data-date-start")}
-        dateEnd={el.getAttribute("data-date-end")}
-        feedUrl={el.getAttribute("data-feed-url")}
-        feedWebcal={el.getAttribute("data-feed-webcal")}
-      />
+      <ErrorBoundary>
+        <Calendar
+          id={el.getAttribute("data-calendar-id")}
+          calendars={el.getAttribute("data-calendars")}
+          display={el.getAttribute("data-display")}
+          startday={el.getAttribute("data-startday")}
+          timeframe={el.getAttribute("data-timeframe")}
+          color={el.getAttribute("data-color")}
+          showImage={el.getAttribute("data-show-image")}
+          showLocation={el.getAttribute("data-show-location")}
+          showDescription={el.getAttribute("data-show-description")}
+          borderStyle={el.getAttribute("data-border-style")}
+          borderSize={el.getAttribute("data-border-size")}
+          context={el.getAttribute("data-context")}
+          defaultMonth={el.getAttribute("data-default-month")}
+          defaultYear={el.getAttribute("data-default-year")}
+          orderby={el.getAttribute("data-orderby")}
+          order={el.getAttribute("data-order")}
+          perPage={el.getAttribute("data-per-page")}
+          maxResults={el.getAttribute("data-max-results")}
+          dateStart={el.getAttribute("data-date-start")}
+          dateEnd={el.getAttribute("data-date-end")}
+          feedUrl={el.getAttribute("data-feed-url")}
+          feedWebcal={el.getAttribute("data-feed-webcal")}
+        />
+      </ErrorBoundary>
     );
 
     // Mark as mounted.

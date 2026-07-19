@@ -90,7 +90,7 @@ export function buildTimeline(event, wpTz, timeFormat = "12") {
     return event.tbc_note || "Date and time to be confirmed";
   }
 
-  const params = typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
+  const params = typeof eventkoi_params !== "undefined" ? window.eventkoi_params : {};
   const normalizeZone = (zone, fallback = "UTC") => {
     const normalized = normalizeTimeZone(zone || fallback);
     return DateTime.now().setZone(normalized).isValid ? normalized : fallback;
@@ -524,7 +524,7 @@ export function formatTimeCompact(
   const tz = normalizeTimeZone(timeZone);
   const use24h =
     typeof eventkoi_params !== "undefined" &&
-    eventkoi_params?.time_format === "24";
+    window.eventkoi_params?.time_format === "24";
 
   if (use24h) {
     return date.toLocaleTimeString(locale || undefined, {

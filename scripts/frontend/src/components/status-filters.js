@@ -8,11 +8,11 @@ export function StatusFilters({ statusFilters, base, data }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const queryStatus = searchParams.get("status");
 
-  const [counts, setCounts] = useState(eventkoi_params.counts[base]);
+  const [counts, setCounts] = useState(window.eventkoi_params.counts[base]);
 
   useEffect(() => {
     apiRequest({
-      path: `${eventkoi_params.api}/get_event_counts`,
+      path: `${window.eventkoi_params.api}/get_event_counts`,
       method: "get",
     })
       .then((response) => {

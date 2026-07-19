@@ -22,10 +22,10 @@ import { MoveRight } from "lucide-react";
 
 import { __, sprintf } from "@wordpress/i18n";
 
-const is24h = eventkoi_params?.time_format === "24";
+const is24h = window.eventkoi_params?.time_format === "24";
 
 export function EventDate({ event, setEvent }) {
-  const { date_now, time_now } = eventkoi_params;
+  const { date_now, time_now } = window.eventkoi_params;
 
   let startDate = event.start_date ? new Date(event.start_date) : undefined;
   let endDate = event.end_date ? new Date(event.end_date) : undefined;

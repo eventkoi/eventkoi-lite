@@ -40,7 +40,7 @@ export function getTimezoneList() {
 export function groupTimezones() {
   // Figure out site default based on your priority
   const siteDefaultValue =
-    eventkoi_params?.timezone_override || eventkoi_params?.timezone || "UTC";
+    window.eventkoi_params?.timezone_override || window.eventkoi_params?.timezone || "UTC";
 
   const siteDefault = {
     value: siteDefaultValue,

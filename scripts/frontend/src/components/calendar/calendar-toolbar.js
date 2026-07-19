@@ -57,7 +57,7 @@ export function CalendarToolbar({
       ? currentDate
       : calendarApi?.getDate?.() || new Date();
   const searchScopeMonth = new Intl.DateTimeFormat(
-    (eventkoi_params?.locale || "en").replace("_", "-"),
+    (window.eventkoi_params?.locale || "en").replace("_", "-"),
     {
       month: "long",
       year: "numeric",

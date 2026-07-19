@@ -44,6 +44,7 @@ import {
 import { buildTimeline, formatTimezoneLabel } from "@/lib/date-utils";
 import { resolvePublicRestUrl } from "@/lib/public-api";
 import { cn } from "@/lib/utils";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 function isTruthy(value) {
   return value === true || value === 1 || value === "1" || value === "true";
@@ -55,7 +56,7 @@ function formatFixedOffsetLabel(timezone) {
     return raw;
   }
 
-  return formatTimezoneLabel(raw, eventkoi_params?.time_format || "12", false);
+  return formatTimezoneLabel(raw, window.eventkoi_params?.time_format || "12", false);
 }
 
 function CheckinWidget({ mountEl }) {
@@ -99,7 +100,7 @@ function CheckinWidget({ mountEl }) {
         resolvePublicRestUrl(`/rsvp/checkin?${params.toString()}`),
         {
           headers: {
-            "X-WP-Nonce": eventkoi_params?.nonce || "",
+            "X-WP-Nonce": window.eventkoi_params?.nonce || "",
           },
         },
       );
@@ -152,10 +153,10 @@ function CheckinWidget({ mountEl }) {
   };
 
   const eventTitle = decodeEntities(data?.event?.title || "");
-  const autoDetectTimezone = isTruthy(eventkoi_params?.auto_detect_timezone);
+  const autoDetectTimezone = isTruthy(window.eventkoi_params?.auto_detect_timezone);
   const siteTimezone =
-    eventkoi_params?.timezone_string?.trim() ||
-    eventkoi_params?.timezone ||
+    window.eventkoi_params?.timezone_string?.trim() ||
+    window.eventkoi_params?.timezone ||
     "UTC";
   const timezonePref = autoDetectTimezone
     ? "local"
@@ -184,7 +185,7 @@ function CheckinWidget({ mountEl }) {
               data?.event?.all_day_end_exclusive_date,
           },
           timezonePref,
-          eventkoi_params?.time_format || "12",
+          window.eventkoi_params?.time_format || "12",
         ) || ""
       : data?.event?.datetime_utc || "";
   const location = data?.event?.location || "";
@@ -264,7 +265,7 @@ function CheckinWidget({ mountEl }) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-WP-Nonce": eventkoi_params?.nonce || "",
+          "X-WP-Nonce": window.eventkoi_params?.nonce || "",
         },
         body: JSON.stringify({
           event_id: eventId,
@@ -753,7 +754,11 @@ function mountCheckinWidgets() {
   document.querySelectorAll(".eventkoi-checkin").forEach((el) => {
     if (el.dataset.eventkoiMounted) return;
     const root = createRoot(el);
-    root.render(<CheckinWidget mountEl={el} />);
+    root.render(
+      <ErrorBoundary>
+        <CheckinWidget mountEl={el} />
+      </ErrorBoundary>
+    );
     el.dataset.eventkoiMounted = "true";
   });
 
@@ -766,7 +771,11 @@ function mountCheckinWidgets() {
       payload = {};
     }
     const root = createRoot(qrOverlayEl);
-    root.render(<QrCheckinOverlay payload={payload} />);
+    root.render(
+      <ErrorBoundary>
+        <QrCheckinOverlay payload={payload} />
+      </ErrorBoundary>
+    );
     qrOverlayEl.dataset.eventkoiMounted = "true";
   }
 }

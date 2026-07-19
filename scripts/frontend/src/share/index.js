@@ -27,9 +27,10 @@ import {
 
 import { ShareLink } from "@/components/share-link";
 import { CheckCheck, Copy } from "lucide-react";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 export function ShareButton({ base, html }) {
-  const { event } = eventkoi_params;
+  const { event } = window.eventkoi_params;
 
   const [copying, setCopying] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -167,5 +168,9 @@ const elements = document.querySelectorAll("a[href='#event-share']");
 
 Array.from(elements).forEach((el) => {
   const root = createRoot(el);
-  root.render(<ShareButton base={el} html={el.outerHTML} />);
+  root.render(
+    <ErrorBoundary>
+      <ShareButton base={el} html={el.outerHTML} />
+    </ErrorBoundary>
+  );
 });

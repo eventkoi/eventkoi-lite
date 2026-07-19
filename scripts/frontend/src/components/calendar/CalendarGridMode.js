@@ -52,7 +52,7 @@ const getDisplayTimezoneForUrl = (timezone, calendarTimeZone) => {
     );
   }
 
-  return calendarTimeZone || timezone || eventkoi_params?.timezone || "UTC";
+  return calendarTimeZone || timezone || window.eventkoi_params?.timezone || "UTC";
 };
 
 const getEventUrlWithTimezone = (url, timezone, calendarTimeZone) => {
@@ -200,7 +200,7 @@ export function CalendarGridMode({
   };
   const resolvedWpTimeFormat =
     (typeof eventkoi_params !== "undefined" &&
-      eventkoi_params?.time_format_string) ||
+      window.eventkoi_params?.time_format_string) ||
     (timeFormat === "24" ? "H:i" : "g:i a");
   const formatWpTime = (dt) => {
     if (!dt?.isValid) {
@@ -503,7 +503,7 @@ export function CalendarGridMode({
     return null;
   };
 
-  const globalDayStart = eventkoi_params?.day_start_time || "00:00";
+  const globalDayStart = window.eventkoi_params?.day_start_time || "00:00";
   const dayStartTime = calendar?.day_start_time || globalDayStart;
   const scrollTime = normalizeTimeValue(dayStartTime) || "07:00:00";
   const slotMinTime = "00:00:00";

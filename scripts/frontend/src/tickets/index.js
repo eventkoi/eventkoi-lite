@@ -31,9 +31,10 @@ import {
   wpToLuxonFormat,
 } from "@/lib/date-utils";
 import publicApi, { resolvePublicRestUrl } from "@/lib/public-api";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 function getSiteTimezone() {
-  const params = typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
+  const params = typeof eventkoi_params !== "undefined" ? window.eventkoi_params : {};
   const normalized = normalizeTimeZone(
     params?.timezone_string ||
       params?.timezone_override ||
@@ -45,7 +46,7 @@ function getSiteTimezone() {
 }
 
 function getEventDisplayTimezone(event = {}) {
-  const params = typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
+  const params = typeof eventkoi_params !== "undefined" ? window.eventkoi_params : {};
 
   if (
     params?.auto_detect_timezone === true ||
@@ -84,7 +85,7 @@ function parseUtcDateTime(value) {
 }
 
 function formatTicketSaleDateTime(value) {
-  const params = typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
+  const params = typeof eventkoi_params !== "undefined" ? window.eventkoi_params : {};
   const locale = (params.locale || "en").replace("_", "-");
   const timePreference = params.time_format || "12";
   const wpDateFormat = params.date_format || "F j, Y";
@@ -200,7 +201,7 @@ function formatEventDateLine(event = {}, instanceTs = 0) {
     buildTimeline(
       displayEvent,
       getEventDisplayTimezone(event),
-      eventkoi_params?.time_format || "12",
+      window.eventkoi_params?.time_format || "12",
     ) || ""
   );
 }
@@ -461,14 +462,14 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
   const checkoutSuccessFromUrl = readCheckoutSuccessFromUrl();
   const checkoutSuccessValue = checkoutSuccessSessionId || checkoutSuccessFromUrl;
   const [quantities, setQuantities] = useState({});
-  const checkoutCustomFields = Array.isArray(eventkoi_params?.checkout_fields)
-    ? eventkoi_params.checkout_fields
+  const checkoutCustomFields = Array.isArray(window.eventkoi_params?.checkout_fields)
+    ? window.eventkoi_params.checkout_fields
     : [];
   const [checkoutFieldValues, setCheckoutFieldValues] = useState({});
   const [billing, setBilling] = useState(() => ({
-    first_name: String(eventkoi_params?.rsvp_user?.first_name || "").trim(),
-    last_name: String(eventkoi_params?.rsvp_user?.last_name || "").trim(),
-    email: String(eventkoi_params?.rsvp_user?.email || "").trim(),
+    first_name: String(window.eventkoi_params?.rsvp_user?.first_name || "").trim(),
+    last_name: String(window.eventkoi_params?.rsvp_user?.last_name || "").trim(),
+    email: String(window.eventkoi_params?.rsvp_user?.email || "").trim(),
   }));
 
   useEffect(() => {
@@ -676,10 +677,10 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
   const eventInstanceTitle = decodeEntities(
     data?.event_instance_title ||
       data?.instance_title ||
-      eventkoi_params?.event?.instance_title ||
+      window.eventkoi_params?.event?.instance_title ||
       "",
   );
-  const eventMeta = data?.event || eventkoi_params?.event || {};
+  const eventMeta = data?.event || window.eventkoi_params?.event || {};
   const footerEventTitle = decodeEntities(eventMeta?.title || eventTitle || "");
   const checkoutEventTitle = footerEventTitle || eventTitle || eventInstanceTitle;
   const checkoutEventInstanceTitle = eventInstanceTitle || checkoutEventTitle;
@@ -1114,12 +1115,12 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
           checkout_attempt_id: checkoutAttemptId,
           return_url: returnUrl.toString(),
           checkout_note: checkoutNote,
-          wp_user_id: Number(eventkoi_params?.rsvp_user?.id) || 0,
+          wp_user_id: Number(window.eventkoi_params?.rsvp_user?.id) || 0,
           wp_user_label:
             String(
-              eventkoi_params?.rsvp_user?.username ||
-                eventkoi_params?.rsvp_user?.user_login ||
-                eventkoi_params?.rsvp_user?.name ||
+              window.eventkoi_params?.rsvp_user?.username ||
+                window.eventkoi_params?.rsvp_user?.user_login ||
+                window.eventkoi_params?.rsvp_user?.name ||
                 ""
             ).trim() || "",
           first_name: String(billing.first_name || "").trim(),
@@ -2029,7 +2030,9 @@ function mountTicketsWidgets() {
     const instanceTs = getInstanceTsFromDom(el);
     const root = createRoot(el);
     root.render(
-      <TicketsWidget eventId={eventId} instanceTs={instanceTs} mountEl={el} />,
+      <ErrorBoundary>
+        <TicketsWidget eventId={eventId} instanceTs={instanceTs} mountEl={el} />
+      </ErrorBoundary>,
     );
     el.dataset.eventkoiMounted = "true";
   });

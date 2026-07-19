@@ -44,11 +44,11 @@ import { __ } from "@wordpress/i18n";
 
 function formatTime(iso, tz = "utc", locale, timeFormatPref) {
   const effectiveLocale =
-    locale || eventkoi_params?.locale?.replace("_", "-") || "en";
+    locale || window.eventkoi_params?.locale?.replace("_", "-") || "en";
 
-  const pref = timeFormatPref || eventkoi_params?.time_format || "12";
+  const pref = timeFormatPref || window.eventkoi_params?.time_format || "12";
   const wpTimeFormatRaw =
-    eventkoi_params?.time_format_string || (pref === "24" ? "H:i" : "g:i a");
+    window.eventkoi_params?.time_format_string || (pref === "24" ? "H:i" : "g:i a");
   const luxonTimeFormat = wpToLuxonFormat(wpTimeFormatRaw);
 
   const dt = DateTime.fromISO(iso, {
@@ -72,8 +72,8 @@ function formatTime(iso, tz = "utc", locale, timeFormatPref) {
 
 function formatDate(iso, tz = "utc", locale) {
   const effectiveLocale =
-    locale || eventkoi_params?.locale?.replace("_", "-") || "en";
-  const dateFormat = wpToLuxonFormat(eventkoi_params?.date_format || "F j, Y");
+    locale || window.eventkoi_params?.locale?.replace("_", "-") || "en";
+  const dateFormat = wpToLuxonFormat(window.eventkoi_params?.date_format || "F j, Y");
 
   const dt = DateTime.fromISO(iso, {
     zone: tz === "utc" ? "UTC" : normalizeTimeZone(tz),
@@ -84,8 +84,8 @@ function formatDate(iso, tz = "utc", locale) {
 
 function formatDateTime(dt, locale) {
   const effectiveLocale =
-    locale || eventkoi_params?.locale?.replace("_", "-") || "en";
-  const dateFormat = wpToLuxonFormat(eventkoi_params?.date_format || "F j, Y");
+    locale || window.eventkoi_params?.locale?.replace("_", "-") || "en";
+  const dateFormat = wpToLuxonFormat(window.eventkoi_params?.date_format || "F j, Y");
 
   return dt?.isValid ? dt.setLocale(effectiveLocale).toFormat(dateFormat) : "";
 }
@@ -116,7 +116,7 @@ function parsePopoverDate(iso, tz = "utc", locale) {
   }
 
   const effectiveLocale =
-    locale || eventkoi_params?.locale?.replace("_", "-") || "en";
+    locale || window.eventkoi_params?.locale?.replace("_", "-") || "en";
   const dt = DateTime.fromISO(iso, {
     zone: tz === "utc" ? "UTC" : normalizeTimeZone(tz),
   }).setLocale(effectiveLocale);
@@ -280,11 +280,11 @@ const formatOutlookCalendarDates = (event, timezone = "UTC") => {
 const openWindow = (url) => window.open(url, "_blank", "noopener,noreferrer");
 
 const getCalendarExportTimezone = (timezone) => {
-  return normalizeTimeZone(timezone || eventkoi_params?.timezone || "UTC");
+  return normalizeTimeZone(timezone || window.eventkoi_params?.timezone || "UTC");
 };
 
 const getEventIcalUrl = (event, timezone = "UTC") => {
-  const source = event?.url || eventkoi_params?.ical || "";
+  const source = event?.url || window.eventkoi_params?.ical || "";
 
   if (!source) {
     return "";
@@ -314,7 +314,7 @@ const getEventIcalUrl = (event, timezone = "UTC") => {
 
     return url.toString().replace(/^https?:/i, "webcal:");
   } catch {
-    return eventkoi_params?.ical || "";
+    return window.eventkoi_params?.ical || "";
   }
 };
 
@@ -351,8 +351,8 @@ export function EventPopover({
 
   const formattedDate = (() => {
     const tz = normalizeTimeZone(timezone);
-    const locale = eventkoi_params?.locale?.replace("_", "-") || "en";
-    const timeFormat = eventkoi_params?.time_format || "12";
+    const locale = window.eventkoi_params?.locale?.replace("_", "-") || "en";
+    const timeFormat = window.eventkoi_params?.time_format || "12";
 
     const isContinuous =
       event.date_type === "standard" && event.standard_type === "continuous";

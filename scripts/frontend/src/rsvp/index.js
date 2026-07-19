@@ -24,6 +24,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { resolvePublicRestUrl } from "@/lib/public-api";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 function getInstanceTsFromDom(el) {
   const attr = el.getAttribute("data-instance-ts");
@@ -43,15 +44,15 @@ function getInstanceTsFromDom(el) {
 }
 
 function RsvpWidget({ eventId, instanceTs, mountEl }) {
-  const prefillName = eventkoi_params?.rsvp_user?.name || "";
-  const prefillEmail = eventkoi_params?.rsvp_user?.email || "";
-  const customFields = Array.isArray(eventkoi_params?.rsvp_fields)
-    ? eventkoi_params.rsvp_fields
+  const prefillName = window.eventkoi_params?.rsvp_user?.name || "";
+  const prefillEmail = window.eventkoi_params?.rsvp_user?.email || "";
+  const customFields = Array.isArray(window.eventkoi_params?.rsvp_fields)
+    ? window.eventkoi_params.rsvp_fields
     : [];
-  const showNameField = eventkoi_params?.rsvp_show_name !== false;
+  const showNameField = window.eventkoi_params?.rsvp_show_name !== false;
   const [fieldValues, setFieldValues] = useState(() => {
     const initial = {};
-    const user = eventkoi_params?.rsvp_user || {};
+    const user = window.eventkoi_params?.rsvp_user || {};
     customFields.forEach((field) => {
       initial[field.key] =
         field.key === "first_name" || field.key === "last_name"
@@ -88,7 +89,7 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
         resolvePublicRestUrl(`/rsvp/summary?${params.toString()}`),
         {
         headers: {
-          "X-WP-Nonce": eventkoi_params?.nonce || "",
+          "X-WP-Nonce": window.eventkoi_params?.nonce || "",
         },
         }
       );
@@ -241,7 +242,7 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-WP-Nonce": eventkoi_params?.nonce || "",
+          "X-WP-Nonce": window.eventkoi_params?.nonce || "",
         },
         body: JSON.stringify(payload),
       });
@@ -670,6 +671,8 @@ document.querySelectorAll(".eventkoi-rsvp").forEach((el) => {
   const instanceTs = getInstanceTsFromDom(el);
   const root = createRoot(el);
   root.render(
-    <RsvpWidget eventId={eventId} instanceTs={instanceTs} mountEl={el} />
+    <ErrorBoundary>
+      <RsvpWidget eventId={eventId} instanceTs={instanceTs} mountEl={el} />
+    </ErrorBoundary>
   );
 });

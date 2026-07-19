@@ -109,7 +109,7 @@ export function ListView({
   if (events.length === 0) {
     return (
       <div role="status" aria-live="polite" className="eventkoi-no-events py-8">
-        {eventkoi_params.no_events}
+        {window.eventkoi_params.no_events}
       </div>
     );
   }

@@ -90,6 +90,7 @@ export function useCalendarData({
   const [currentDate, setCurrentDate] = useState(null);
   const [initialDate, setInitialDate] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [listTotal, setListTotal] = useState(0);
   const [listPage, setListPage] = useState(1);
   const [listHasMore, setListHasMore] = useState(false);
@@ -119,7 +120,7 @@ export function useCalendarData({
       : 0;
   const getRequestTimezone = () => {
     if (typeof window === "undefined") {
-      return eventkoi_params?.timezone || "UTC";
+      return window.eventkoi_params?.timezone || "UTC";
     }
 
     const params = new URLSearchParams(window.location.search);
@@ -131,16 +132,17 @@ export function useCalendarData({
         : requested;
     }
 
-    if (eventkoi_params?.auto_detect_timezone) {
+    if (window.eventkoi_params?.auto_detect_timezone) {
       return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
     }
 
     return (
-      eventkoi_params?.timezone_override || eventkoi_params?.timezone || "UTC"
+      window.eventkoi_params?.timezone_override || window.eventkoi_params?.timezone || "UTC"
     );
   };
 
   const getInitialCalendar = async () => {
+    setLoadError(false);
     try {
       const params = new URLSearchParams({
         id: effectiveId,
@@ -182,6 +184,7 @@ export function useCalendarData({
       setInitialDate(date);
     } catch (err) {
       console.error("Failed to load initial calendar", err);
+      setLoadError(true);
     }
   };
 
@@ -285,6 +288,7 @@ export function useCalendarData({
       }
     } catch (err) {
       console.error("Failed to load events for view", err);
+      setLoadError(true);
     } finally {
       if (requestId === viewRequestIdRef.current) {
         setLoading(false);
@@ -428,6 +432,7 @@ export function useCalendarData({
       setListHasMore(firstPageEvents.length < total);
     } catch (err) {
       console.error("Failed to load all events", err);
+      setLoadError(true);
     } finally {
       if (display === "list") {
         setLoading(false);
@@ -557,6 +562,17 @@ export function useCalendarData({
     return () => clearTimeout(handle);
   }, [searchTerm]);
 
+  // Retries whichever fetch feeds the current display mode, so a failed
+  // load can recover without a full page reload.
+  const retry = () => {
+    if (display === "list") {
+      loadAllEvents();
+      return;
+    }
+
+    getInitialCalendar();
+  };
+
   return {
     calendar,
     events,
@@ -567,6 +583,8 @@ export function useCalendarData({
     setCurrentDate,
     initialDate,
     loading,
+    loadError,
+    retry,
     listTotal,
     listHasMore,
     listLoadingMore,

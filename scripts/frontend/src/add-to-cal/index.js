@@ -8,6 +8,7 @@ import { normalizeTimeZone } from "@/lib/date-utils";
 import { DateTime } from "luxon";
 import { useEffect } from "react";
 import { createRoot } from "react-dom/client";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 function isTruthy(value) {
   return value === true || value === 1 || value === "1" || value === "true";
@@ -243,11 +244,11 @@ function getActiveInstance(event, mountEl = null) {
 }
 
 function getEventTimezone(event) {
-  return normalizeTimeZone(event?.timezone || eventkoi_params?.timezone || "UTC");
+  return normalizeTimeZone(event?.timezone || window.eventkoi_params?.timezone || "UTC");
 }
 
 function isAutoDetectTimezoneEnabled() {
-  const value = eventkoi_params?.auto_detect_timezone;
+  const value = window.eventkoi_params?.auto_detect_timezone;
   return value === true || value === 1 || value === "1" || value === "true";
 }
 
@@ -275,7 +276,7 @@ function getDisplayTimezone(event) {
 }
 
 function getIcalUrl(event) {
-  const source = eventkoi_params?.ical || "";
+  const source = window.eventkoi_params?.ical || "";
 
   if (!source) {
     return "";
@@ -481,7 +482,7 @@ function getEventLocationLine(event = {}) {
 }
 
 export function AddToCal({ base, html }) {
-  const { event } = eventkoi_params;
+  const { event } = window.eventkoi_params;
 
   useEffect(() => {
     if (base) {
@@ -576,5 +577,9 @@ export function AddToCal({ base, html }) {
 // Mount component for each matching element.
 document.querySelectorAll("a[href='#add-to-cal']").forEach((el) => {
   const root = createRoot(el);
-  root.render(<AddToCal base={el} html={el.outerHTML} />);
+  root.render(
+    <ErrorBoundary>
+      <AddToCal base={el} html={el.outerHTML} />
+    </ErrorBoundary>
+  );
 });

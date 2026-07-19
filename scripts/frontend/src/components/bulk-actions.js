@@ -31,14 +31,14 @@ export function BulkActions({ table, base, fetchResults, addTo, queryStatus }) {
       base: base,
     };
 
-    const apiURL = `${eventkoi_params.api}/${action}_${base}`;
+    const apiURL = `${window.eventkoi_params.api}/${action}_${base}`;
 
     await apiRequest({
       path: apiURL,
       method: "post",
       data: data,
       headers: {
-        "EVENTKOI-API-KEY": eventkoi_params.api_key,
+        "EVENTKOI-API-KEY": window.eventkoi_params.api_key,
       },
     })
       .then((response) => {

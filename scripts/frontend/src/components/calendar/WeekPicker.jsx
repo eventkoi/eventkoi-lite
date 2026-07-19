@@ -35,7 +35,7 @@ const weekPickerFormatters = {
 };
 
 export function WeekPicker({ calendarApi, currentDate, setCurrentDate }) {
-  const { startday } = eventkoi_params;
+  const { startday } = window.eventkoi_params;
   const weekStartsOn = getWeekStartDayByName(dayLabels, startday);
 
   const [selectedDate, setSelectedDate] = useState(
