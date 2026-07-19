@@ -303,7 +303,7 @@ class WooCommerce_Checkout {
 			'terms_consent'       => is_array( $args['terms_consent'] ?? null ) ? $args['terms_consent'] : null,
 		);
 
-		set_transient( 'eventkoi_cart_' . $token, $checkout_data, HOUR_IN_SECONDS );
+		set_transient( 'eventkoi_cart_' . $token, $checkout_data, \EventKoi\API\Tickets::HOLD_DURATION );
 
 		// Return tokenized checkout URL — cart will be populated on page load.
 		$checkout_url = add_query_arg( 'ek_cart', $token, wc_get_checkout_url() );

@@ -2619,11 +2619,15 @@ class Tickets {
 	}
 
 	/**
-	 * Hold duration in seconds (30 minutes).
+	 * Hold duration in seconds (35 minutes).
+	 *
+	 * Stripe Checkout sessions are created with expires_at at this horizon and
+	 * Stripe enforces a 30-minute minimum, so this must stay >= 2100 to keep a
+	 * skew margin above that floor.
 	 *
 	 * @var int
 	 */
-	const HOLD_DURATION = 1800;
+	const HOLD_DURATION = 2100;
 
 	/**
 	 * Create inventory hold rows for a checkout attempt.
