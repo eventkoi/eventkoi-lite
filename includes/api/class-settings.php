@@ -139,10 +139,10 @@ class Settings {
 			}
 		}
 
-		// The private REST api_key is only needed by settings screens that
-		// sign requests with it (see SettingsGoogleMaps). Keep it out of the
-		// response for any viewer who isn't a site administrator.
-		if ( ! current_user_can( 'manage_options' ) ) {
+		// The private REST api_key signs write requests, so reading it requires
+		// the same capability that governs writing it. Holding an unrelated
+		// EventKoi capability must not hand out the site-wide signing secret.
+		if ( ! current_user_can( \EventKoi\Core\Permissions::cap_for_settings_key( 'api_key' ) ) ) {
 			unset( $settings['api_key'] );
 		}
 
