@@ -14,6 +14,12 @@ export default class ErrorBoundary extends Component {
     if (window.console?.error) {
       console.error("EventKoi block failed to render", error);
     }
+
+    // Lets a mount undo setup it did before rendering, such as re-showing a
+    // server-rendered field it had hidden in favour of the editor.
+    if (typeof this.props.onError === "function") {
+      this.props.onError(error);
+    }
   }
 
   render() {
