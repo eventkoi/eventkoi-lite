@@ -139,6 +139,13 @@ class Settings {
 			}
 		}
 
+		// The private REST api_key is only needed by settings screens that
+		// sign requests with it (see SettingsGoogleMaps). Keep it out of the
+		// response for any viewer who isn't a site administrator.
+		if ( ! current_user_can( 'manage_options' ) ) {
+			unset( $settings['api_key'] );
+		}
+
 		return rest_ensure_response( $settings );
 	}
 

@@ -480,6 +480,13 @@ class Rsvps {
 			return new WP_Error( 'eventkoi_rsvp_invalid_event', __( 'Invalid event.', 'eventkoi-lite' ), array( 'status' => 404 ) );
 		}
 
+		if (
+			( 'publish' !== $event_post->post_status || post_password_required( $event_post ) )
+			&& ! current_user_can( 'edit_post', $event_id )
+		) {
+			return new WP_Error( 'eventkoi_rsvp_invalid_event', __( 'Invalid event.', 'eventkoi-lite' ), array( 'status' => 404 ) );
+		}
+
 		new Event( $event_id );
 		$date_type           = Event::get_date_type();
 		$standard_type       = Event::get_standard_type();

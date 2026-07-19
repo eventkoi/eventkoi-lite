@@ -213,6 +213,13 @@ class ICal {
 			wp_die( esc_html__( 'Invalid event ID.', 'eventkoi-lite' ), 400 );
 		}
 
+		if (
+			( 'publish' !== get_post_status( $event_id ) || post_password_required( $event_id ) )
+			&& ! current_user_can( 'edit_post', $event_id )
+		) {
+			wp_die( esc_html__( 'Invalid event ID.', 'eventkoi-lite' ), 404 );
+		}
+
 		$event    = new Event( $event_id );
 		$timezone = $this->get_download_timezone( $event );
 
