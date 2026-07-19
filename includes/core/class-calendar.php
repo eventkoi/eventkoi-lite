@@ -793,18 +793,23 @@ class Calendar {
 						$cal_uses_24h    = ! empty( $cal_settings['time_format'] ) && '24' === $cal_settings['time_format'];
 						$full_fmt        = $cal_uses_24h ? 'H:i' : 'g:ia';
 						$round_fmt       = $cal_uses_24h ? 'H' : 'ga';
-						$start_time_full = gmdate( $full_fmt, $start_dt_utc->getTimestamp() );
-						$end_time_full   = gmdate( $full_fmt, $end_dt_utc->getTimestamp() );
+						// Labels are wall-clock text, so they follow the site
+						// timezone like every other rendered date. The minute
+						// check has to run in that same zone: half-hour offset
+						// zones (Kolkata, Kathmandu) turn a round UTC hour into
+						// a :30 or :45 local time.
+						$start_time_full = wp_date( $full_fmt, $start_dt_utc->getTimestamp() );
+						$end_time_full   = wp_date( $full_fmt, $end_dt_utc->getTimestamp() );
 
-						$start_minutes = gmdate( 'i', $start_dt_utc->getTimestamp() );
-						$end_minutes   = gmdate( 'i', $end_dt_utc->getTimestamp() );
+						$start_minutes = wp_date( 'i', $start_dt_utc->getTimestamp() );
+						$end_minutes   = wp_date( 'i', $end_dt_utc->getTimestamp() );
 
 						$start_time = ( '00' === $start_minutes )
-							? gmdate( $round_fmt, $start_dt_utc->getTimestamp() )
+							? wp_date( $round_fmt, $start_dt_utc->getTimestamp() )
 							: $start_time_full;
 
 						$end_time = ( '00' === $end_minutes )
-							? gmdate( $round_fmt, $end_dt_utc->getTimestamp() )
+							? wp_date( $round_fmt, $end_dt_utc->getTimestamp() )
 							: $end_time_full;
 
 					$record = array(

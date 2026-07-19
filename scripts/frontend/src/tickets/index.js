@@ -149,8 +149,13 @@ function getActiveInstance(event = {}, instanceTs = 0) {
       const start = new Date(Number(instanceTs) * 1000);
       const startBase = new Date(rule.start_date);
       const endBase = new Date(rule.end_date || rule.start_date);
-      const duration = endBase.getTime() - startBase.getTime();
-      const end = new Date(start.getTime() + Math.max(duration, 0));
+      const rawDuration = endBase.getTime() - startBase.getTime();
+      // A malformed rule date yields NaN here, which would make the derived
+      // end date invalid and throw when serialized below.
+      const duration = Number.isFinite(rawDuration)
+        ? Math.max(rawDuration, 0)
+        : 0;
+      const end = new Date(start.getTime() + duration);
       return {
         start_date: start.toISOString(),
         end_date: end.toISOString(),
