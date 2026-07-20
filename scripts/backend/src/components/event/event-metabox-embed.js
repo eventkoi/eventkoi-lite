@@ -12,6 +12,7 @@ export function EventMetaboxEmbed() {
   const { event } = useEventEditContext();
   const iframeRef = useRef(null);
   const [height, setHeight] = useState(320);
+  const [boxCount, setBoxCount] = useState(null);
 
   const baseUrl = event?.native_edit_url || "";
   const hasFields = event?.has_plugin_fields === true;
@@ -28,6 +29,9 @@ export function EventMetaboxEmbed() {
         if (next) {
           setHeight((prev) => (Math.abs(prev - next) > 2 ? next : prev));
         }
+        if (typeof data.boxes === "number") {
+          setBoxCount(data.boxes);
+        }
       }
     };
 
@@ -41,8 +45,12 @@ export function EventMetaboxEmbed() {
 
   const src = baseUrl + (baseUrl.includes("?") ? "&" : "?") + "ek_embed=1";
 
+  // The iframe mounts hidden; the embed page reports how many third-party
+  // metaboxes rendered, and the panel only appears when there is at least one.
+  const revealed = boxCount !== null && boxCount > 0;
+
   return (
-    <Box container className="gap-4">
+    <Box container className={revealed ? "gap-4" : "hidden"}>
       <div className="grid gap-1">
         <Heading level={3}>{__("WordPress plugin metaboxes", "eventkoi-lite")}</Heading>
         <p className="text-sm text-muted-foreground">

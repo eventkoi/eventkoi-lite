@@ -263,17 +263,27 @@ class Metabox_Embed {
 		?>
 		<script id="eventkoi-metabox-embed-js">
 		( function () {
-			var lastHeight = 0;
+			// Starts negative so the first report always fires, even while the
+			// parent keeps the iframe hidden (height 0) awaiting the box count.
+			var lastHeight = -100;
 			function measure() {
 				var b = document.body, e = document.documentElement;
 				return Math.max( b.scrollHeight, b.offsetHeight, e.scrollHeight, e.offsetHeight );
+			}
+			function countBoxes() {
+				var boxes = document.querySelectorAll( '#poststuff .postbox' );
+				var n = 0;
+				for ( var i = 0; i < boxes.length; i++ ) {
+					if ( 'submitdiv' !== boxes[ i ].id ) { n++; }
+				}
+				return n;
 			}
 			function report() {
 				var h = measure();
 				if ( Math.abs( h - lastHeight ) < 2 ) { return; }
 				lastHeight = h;
 				try {
-					window.parent.postMessage( { eventkoiMetaboxEmbed: true, type: 'height', height: h }, '<?php echo $origin; // phpcs:ignore ?>' );
+					window.parent.postMessage( { eventkoiMetaboxEmbed: true, type: 'height', height: h, boxes: countBoxes() }, '<?php echo $origin; // phpcs:ignore ?>' );
 				} catch ( err ) {}
 			}
 			window.addEventListener( 'load', report );

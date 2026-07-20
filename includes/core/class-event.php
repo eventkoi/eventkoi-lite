@@ -1356,20 +1356,30 @@ class Event {
 	/**
 	 * Whether a plugin that registers editor metaboxes is active.
 	 *
-	 * Gates the embedded "Other plugin fields" panel so it only appears when a
-	 * plugin with a real classic metabox is active: custom-field plugins (ACF,
-	 * Pods, Meta Box) plus Yoast, whose classic metabox still ships.
-	 * Gutenberg-only sidebars (Rank Math) cannot appear here; that is a known,
-	 * accepted limitation.
+	 * Gates the embedded "Other plugin fields" panel. Filterable so sites can
+	 * force it on or off.
 	 *
 	 * @return bool
 	 */
 	public static function has_embeddable_plugin_fields() {
-		$active = class_exists( 'ACF' )
-			|| function_exists( 'acf' )
-			|| defined( 'PODS_VERSION' )
-			|| defined( 'RWMB_VER' )
-			|| defined( 'WPSEO_VERSION' );
+		// Any plugin besides EventKoi may register a classic metabox, so the
+		// gate only rules out sites with no other plugins at all. The embedded
+		// screen reports how many third-party boxes actually rendered and the
+		// panel stays hidden when there are none. Gutenberg-only sidebars
+		// (Rank Math) cannot appear here; that is a known, accepted limitation.
+		$plugins = (array) get_option( 'active_plugins', array() );
+
+		if ( is_multisite() ) {
+			$plugins = array_merge( $plugins, array_keys( (array) get_site_option( 'active_sitewide_plugins', array() ) ) );
+		}
+
+		$active = false;
+		foreach ( $plugins as $plugin_file ) {
+			if ( 0 !== strpos( (string) $plugin_file, 'eventkoi' ) ) {
+				$active = true;
+				break;
+			}
+		}
 
 		return (bool) apply_filters( 'eventkoi_has_plugin_fields', $active, self::$event_id );
 	}
