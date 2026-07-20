@@ -280,7 +280,11 @@ export function Calendar(props) {
       ) : loadError && events.length === 0 ? (
         <div className="ek-calendar-error">
           <p>{__("The calendar could not be loaded.", "eventkoi-lite")}</p>
-          <button type="button" onClick={retry}>
+          <button
+            type="button"
+            className="ek-calendar-error__retry"
+            onClick={retry}
+          >
             {__("Try again", "eventkoi-lite")}
           </button>
         </div>

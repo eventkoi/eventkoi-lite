@@ -447,32 +447,46 @@
   }
 }
 
-.ek-calendar-error {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 48px 16px;
-  text-align: center;
+// Scoped under `.eventkoi-front` for the same reason as the utilities in
+// global.scss: themes ship button resets that strip borders and backgrounds,
+// and at equal specificity they win on source order, leaving the retry
+// control looking like plain text. The longhand border properties keep a
+// theme shorthand from zeroing the width.
+.eventkoi-front {
+  .ek-calendar-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 48px 16px;
+    text-align: center;
 
-  p {
-    margin: 0;
-    color: #6b7280;
-    font-size: 14px;
-  }
+    p {
+      margin: 0;
+      color: #6b7280;
+      font-size: 14px;
+    }
 
-  button {
-    padding: 8px 16px;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    background: transparent;
-    color: inherit;
-    font-size: 14px;
-    cursor: pointer;
+    // Tailwind's scoped preflight zeroes button borders and padding at
+    // `.eventkoi-front :is(button,...):not(...):not(...)`, which is 0,3,1.
+    // This selector is 0,4,1 so the retry control keeps looking like a
+    // button instead of plain text.
+    button.ek-calendar-error__retry:not(.wp-element-button) {
+      padding: 8px 16px;
+      border-width: 1px;
+      border-style: solid;
+      border-color: #d1d5db;
+      border-radius: 6px;
+      background: transparent;
+      color: inherit;
+      font-size: 14px;
+      line-height: 1.4;
+      cursor: pointer;
 
-    &:hover {
-      background: #f3f4f6;
+      &:hover {
+        background: #f3f4f6;
+      }
     }
   }
 }
