@@ -225,29 +225,29 @@ class Metabox_Embed {
 			#postbox-container-1 .meta-box-sortables > .postbox:last-child { margin-bottom: 0 !important; }
 			.postbox .handle-order-higher, .postbox .handle-order-lower { display: none !important; }
 
-			/* Publish box becomes a single, plain Update button at the bottom. */
-			#submitdiv { border: none !important; box-shadow: none !important; background: transparent !important; margin: 4px 0 0 !important; }
-			#submitdiv > .postbox-header,
-			#submitdiv #minor-publishing,
-			#submitdiv #delete-action,
-			#submitdiv .misc-pub-section { display: none !important; }
-			#submitdiv .inside { margin: 0 !important; padding: 0 !important; border: none !important; }
-			#submitdiv #major-publishing-actions {
-				border-top: none !important;
-				padding: 0 !important;
-				margin: 0 !important;
-				display: flex !important;
-				justify-content: flex-start !important;
+			/* Clean white cards with a hairline border instead of WP's gray chrome. */
+			.postbox {
+				background: #fff !important;
+				border: 1px solid #e4e4e7 !important;
+				border-radius: 8px !important;
+				box-shadow: none !important;
 			}
-			#submitdiv #publishing-action { float: none !important; padding: 0 !important; }
-			#submitdiv #publishing-action .spinner { display: none !important; }
-			#submitdiv .button-primary {
-				height: auto !important;
-				padding: 8px 22px !important;
+			.postbox .postbox-header {
+				background: transparent !important;
+				border-bottom: 1px solid #e4e4e7 !important;
+			}
+			.postbox.closed .postbox-header { border-bottom: 0 !important; }
+			.postbox .postbox-header .hndle,
+			.postbox .postbox-header h2 {
 				font-size: 13px !important;
-				line-height: 1.4 !important;
-				border-radius: 6px !important;
+				font-weight: 600 !important;
+				color: #18181b !important;
 			}
+			.postbox .handle-actions .handlediv { color: #71717a !important; }
+
+			/* The Publish box stays in the DOM so the form can still be submitted,
+				but the parent panel provides the Update buttons. */
+			#submitdiv { display: none !important; }
 		</style>
 		<?php
 	}
@@ -267,6 +267,14 @@ class Metabox_Embed {
 			// parent keeps the iframe hidden (height 0) awaiting the box count.
 			var lastHeight = -100;
 			function measure() {
+				// The document can never be shorter than the iframe viewport, so
+				// measuring it ratchets: collapsing a metabox would leave dead
+				// space. Measure the content wrapper instead.
+				var el = document.getElementById( 'poststuff' );
+				if ( el ) {
+					var r = el.getBoundingClientRect();
+					return Math.ceil( r.height + Math.max( 0, r.top + ( window.pageYOffset || 0 ) ) );
+				}
 				var b = document.body, e = document.documentElement;
 				return Math.max( b.scrollHeight, b.offsetHeight, e.scrollHeight, e.offsetHeight );
 			}
@@ -291,8 +299,22 @@ class Metabox_Embed {
 			// ACF and SEO panels expand, add rows, and toggle, so keep syncing.
 			setInterval( report, 700 );
 			if ( window.ResizeObserver ) {
-				try { new ResizeObserver( report ).observe( document.body ); } catch ( err ) {}
+				try {
+					var ro = new ResizeObserver( report );
+					ro.observe( document.body );
+					var ps = document.getElementById( 'poststuff' );
+					if ( ps ) { ro.observe( ps ); }
+				} catch ( err ) {}
 			}
+			// The parent panel owns the Update buttons; it asks for the save.
+			window.addEventListener( 'message', function ( e ) {
+				if ( e.origin !== window.location.origin ) { return; }
+				var d = e.data;
+				if ( d && d.eventkoiMetaboxEmbed && 'submit' === d.type ) {
+					var btn = document.getElementById( 'publish' ) || document.getElementById( 'save-post' );
+					if ( btn ) { btn.click(); }
+				}
+			} );
 		} )();
 		</script>
 		<?php

@@ -1,13 +1,15 @@
 import { Box } from "@/components/box";
 import { Heading } from "@/components/heading";
+import { Button } from "@/components/ui/button";
 import { useEventEditContext } from "@/hooks/EventEditContext";
 import { __ } from "@wordpress/i18n";
 import { useEffect, useRef, useState } from "react";
 
 // Renders the real WordPress editor for this event, stripped down to only the
 // fields other plugins add (ACF, Pods, Meta Box, Rank Math, ...), flattened
-// into one panel. It is the genuine post.php form, so its own Update button
-// saves those fields without touching the event or blanking anything.
+// into one panel. It is the genuine post.php form; the Update buttons here
+// submit that form, so it saves those fields without touching the event or
+// blanking anything.
 export function EventMetaboxEmbed() {
   const { event } = useEventEditContext();
   const iframeRef = useRef(null);
@@ -49,16 +51,28 @@ export function EventMetaboxEmbed() {
   // metaboxes rendered, and the panel only appears when there is at least one.
   const revealed = boxCount !== null && boxCount > 0;
 
+  const submitEmbed = () => {
+    iframeRef.current?.contentWindow?.postMessage(
+      { eventkoiMetaboxEmbed: true, type: "submit" },
+      window.location.origin
+    );
+  };
+
   return (
     <Box container className={revealed ? "gap-4" : "hidden"}>
-      <div className="grid gap-1">
-        <Heading level={3}>{__("WordPress plugin metaboxes", "eventkoi-lite")}</Heading>
-        <p className="text-sm text-muted-foreground">
-          {__(
-            "These metaboxes are added by other plugins on this site. Use the Update button in this panel to save them; it saves separately from the event.",
-            "eventkoi"
-          )}
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="grid gap-1">
+          <Heading level={3}>{__("WordPress plugin metaboxes", "eventkoi-lite")}</Heading>
+          <p className="text-sm text-muted-foreground">
+            {__(
+              "These metaboxes are added by other plugins on this site. Update saves them separately from the event.",
+              "eventkoi-lite"
+            )}
+          </p>
+        </div>
+        <Button type="button" className="shrink-0" onClick={submitEmbed}>
+          {__("Update", "eventkoi-lite")}
+        </Button>
       </div>
       <iframe
         ref={iframeRef}
@@ -67,6 +81,11 @@ export function EventMetaboxEmbed() {
         className="w-full"
         style={{ height: `${height}px`, border: "0" }}
       />
+      <div className="flex justify-end">
+        <Button type="button" onClick={submitEmbed}>
+          {__("Update", "eventkoi-lite")}
+        </Button>
+      </div>
     </Box>
   );
 }
