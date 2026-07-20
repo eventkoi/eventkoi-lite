@@ -87,6 +87,37 @@ export function EventMetaboxEmbed() {
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [dirty]);
 
+  // Moving to another tab unmounts the panel, taking the embedded form with
+  // it, and that never reaches beforeunload. Catch the click before the
+  // router acts on it.
+  useEffect(() => {
+    if (!dirty) return undefined;
+
+    const onLinkCapture = (e) => {
+      const link = e.target?.closest?.("a[href]");
+      if (!link) return;
+
+      const href = link.getAttribute("href") || "";
+      const hashAt = href.indexOf("#/");
+      if (hashAt < 0) return;
+      if (href.slice(hashAt) === window.location.hash) return;
+
+      const leave = window.confirm(
+        __(
+          "The plugin fields have unsaved changes. Leave this tab and lose them?",
+          "eventkoi-lite"
+        )
+      );
+      if (!leave) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    document.addEventListener("click", onLinkCapture, true);
+    return () => document.removeEventListener("click", onLinkCapture, true);
+  }, [dirty]);
+
   if (!baseUrl || !event?.id || !hasFields) {
     return null;
   }
