@@ -121,6 +121,9 @@ class Metabox_Embed {
 			array(
 				'eventkoi_native' => '1',
 				self::FLAG        => '1',
+				// Core's own message arg does not survive the event redirect, so
+				// the panel is told a save landed with a marker we control.
+				'ek_saved'        => '1',
 			),
 			$location
 		);
@@ -286,13 +289,17 @@ class Metabox_Embed {
 				}
 				return n;
 			}
+			function post( msg ) {
+				msg.eventkoiMetaboxEmbed = true;
+				try {
+					window.parent.postMessage( msg, '<?php echo $origin; // phpcs:ignore ?>' );
+				} catch ( err ) {}
+			}
 			function report() {
 				var h = measure();
 				if ( Math.abs( h - lastHeight ) < 2 ) { return; }
 				lastHeight = h;
-				try {
-					window.parent.postMessage( { eventkoiMetaboxEmbed: true, type: 'height', height: h, boxes: countBoxes() }, '<?php echo $origin; // phpcs:ignore ?>' );
-				} catch ( err ) {}
+				post( { type: 'height', height: h, boxes: countBoxes() } );
 			}
 			window.addEventListener( 'load', report );
 			document.addEventListener( 'DOMContentLoaded', report );
@@ -306,14 +313,50 @@ class Metabox_Embed {
 					if ( ps ) { ro.observe( ps ); }
 				} catch ( err ) {}
 			}
+			// Editing anything here marks the panel unsaved, so the parent can
+			// badge it and warn before the page is left.
+			var dirty = false;
+			function markDirty() {
+				if ( dirty ) { return; }
+				dirty = true;
+				post( { type: 'dirty' } );
+			}
+			document.addEventListener( 'input', markDirty, true );
+			document.addEventListener( 'change', markDirty, true );
+
+			// A save leaves this document, so an unload is the signal that the
+			// submit actually went through rather than failing validation.
+			var navigating = false;
+			window.addEventListener( 'beforeunload', function () { navigating = true; } );
+
+			// The post-save redirect stamps ek_saved so the panel can confirm.
+			function reportLoaded() {
+				post( { type: 'loaded', saved: /[?&]ek_saved=1/.test( window.location.search ) } );
+			}
+			if ( 'loading' === document.readyState ) {
+				document.addEventListener( 'DOMContentLoaded', reportLoaded );
+			} else {
+				reportLoaded();
+			}
+
 			// The parent panel owns the Update buttons; it asks for the save.
 			window.addEventListener( 'message', function ( e ) {
 				if ( e.origin !== window.location.origin ) { return; }
 				var d = e.data;
-				if ( d && d.eventkoiMetaboxEmbed && 'submit' === d.type ) {
-					var btn = document.getElementById( 'publish' ) || document.getElementById( 'save-post' );
-					if ( btn ) { btn.click(); }
+				if ( ! d || ! d.eventkoiMetaboxEmbed || 'submit' !== d.type ) { return; }
+
+				var btn = document.getElementById( 'publish' ) || document.getElementById( 'save-post' );
+				if ( ! btn ) {
+					post( { type: 'blocked' } );
+					return;
 				}
+				btn.click();
+				// Plugins such as ACF validate over AJAX before submitting, and
+				// stop on failure. No unload by now means the save never left.
+				setTimeout( function () {
+					if ( navigating ) { return; }
+					post( { type: 'blocked', validation: !! document.querySelector( '.acf-error, .acf-notice.-error, .form-invalid' ) } );
+				}, 4000 );
 			} );
 		} )();
 		</script>
