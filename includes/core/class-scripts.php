@@ -164,6 +164,8 @@ class Scripts {
 			'rsvp_fields'          => Rsvps::get_custom_fields( (int) $event_id ),
 			'checkout_fields'      => Orders::get_checkout_fields( (int) $event_id ),
 			'rsvp_show_name'       => (bool) apply_filters( 'eventkoi_rsvp_show_name_field', true, (int) $event_id ),
+			// Filter-only behavior, no UI. Defaults off.
+			'mobile_list_default'  => (bool) apply_filters( 'eventkoi_calendar_mobile_list_default', false ),
 		);
 
 		wp_localize_script(

@@ -43,9 +43,14 @@ export function Calendar(props) {
 
   // Active display is stateful so the view toggle can switch between the
   // calendar grid and the list in place. Initialised from the block's
-  // `display` attribute (which also acts as the default view).
+  // `display` attribute (which also acts as the default view). Sites can opt
+  // phones into starting on the list via the
+  // eventkoi_calendar_mobile_list_default filter (no UI).
+  const mobileListDefault =
+    !!window.eventkoi_params?.mobile_list_default &&
+    window.matchMedia?.("(max-width: 767px)")?.matches;
   const [activeDisplay, setActiveDisplay] = useState(
-    display === "list" ? "list" : "calendar"
+    display === "list" || mobileListDefault ? "list" : "calendar"
   );
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState([]);
