@@ -1,3 +1,4 @@
+import { __, sprintf } from "@wordpress/i18n";
 import { DateTime } from "luxon";
 
 /**
@@ -342,13 +343,19 @@ export function buildTimeline(event, wpTz, timeFormat = "12") {
 }
 
 export function formatTimezoneLabel(tz, timeFormat = "24", withFormat = true) {
-  if (!tz) return timeFormat === "12" ? "UTC, AM/PM" : "UTC, 24hr";
+  const formatLabel =
+    timeFormat === "custom"
+      ? __("custom time", "eventkoi-lite")
+      : timeFormat === "12"
+      ? __("AM/PM", "eventkoi-lite")
+      : __("24hr", "eventkoi-lite");
+  /* translators: %s: time format label, for example 24hr. */
+  if (!tz) return sprintf(__("UTC, %s", "eventkoi-lite"), formatLabel);
 
   const appendSuffix = (label) =>
+    /* translators: %1$s: timezone label. %2$s: time format label. */
     withFormat
-      ? timeFormat === "12"
-        ? `${label}, AM/PM`
-        : `${label}, 24hr`
+      ? sprintf(__("%1$s, %2$s", "eventkoi-lite"), label, formatLabel)
       : label;
 
   // Handle ISO-style offset like +02:00 or -0530
