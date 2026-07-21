@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from "react";
 
 // Renders the real WordPress editor for this event, stripped down to only the
 // fields other plugins add (ACF, Pods, Meta Box, Rank Math, ...), flattened
-// into one panel. It is the genuine post.php form; the Update buttons here
+// into one panel. It is the genuine post.php form; the Save buttons here
 // submit that form, so it saves those fields without touching the event or
 // blanking anything.
 export function EventMetaboxEmbed() {
@@ -53,7 +53,6 @@ export function EventMetaboxEmbed() {
           setDirty(false);
           showToast({
             message: __("Plugin fields updated.", "eventkoi-lite"),
-            variant: "success",
           });
         }
         return;
@@ -74,7 +73,7 @@ export function EventMetaboxEmbed() {
   }, [baseUrl]);
 
   // Leaving with edits still in the panel would drop them: they live in the
-  // embedded form until its own Update runs.
+  // embedded form until its own Save runs.
   useEffect(() => {
     if (!dirty) return undefined;
 
@@ -137,7 +136,7 @@ export function EventMetaboxEmbed() {
     );
   };
 
-  const updateLabel = saving ? __("Saving…", "eventkoi-lite") : __("Update", "eventkoi-lite");
+  const saveLabel = saving ? __("Saving…", "eventkoi-lite") : __("Save", "eventkoi-lite");
 
   return (
     <Box
@@ -162,7 +161,7 @@ export function EventMetaboxEmbed() {
           </div>
           <p className="text-sm text-muted-foreground">
             {__(
-              "These fields are added by other plugins on this site. Update saves them separately from the event.",
+              "Changes made here must be saved separately, using the Save button on the right.",
               "eventkoi-lite"
             )}
           </p>
@@ -173,7 +172,7 @@ export function EventMetaboxEmbed() {
           disabled={saving}
           onClick={submitEmbed}
         >
-          {updateLabel}
+          {saveLabel}
         </Button>
       </div>
       <iframe
@@ -185,7 +184,7 @@ export function EventMetaboxEmbed() {
       />
       <div className="flex justify-end">
         <Button type="button" disabled={saving} onClick={submitEmbed}>
-          {updateLabel}
+          {saveLabel}
         </Button>
       </div>
     </Box>

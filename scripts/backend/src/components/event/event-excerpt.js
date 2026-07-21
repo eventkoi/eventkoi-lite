@@ -14,7 +14,7 @@ export function EventExcerpt() {
         id="event-excerpt"
         rows={3}
         value={event?.excerpt || ""}
-        className="max-w-[422px]"
+        className="w-full"
         onChange={(e) => {
           setEvent((prevState) => ({
             ...prevState,
@@ -22,12 +22,6 @@ export function EventExcerpt() {
           }));
         }}
       />
-      <div className="text-muted-foreground">
-        {__(
-          "A short summary of this event, used by themes and blocks that show an excerpt.",
-          "eventkoi-lite"
-        )}
-      </div>
     </Panel>
   );
 }

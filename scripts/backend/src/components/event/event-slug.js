@@ -35,7 +35,7 @@ export function EventSlug() {
         id="event-slug"
         value={slugPath}
         placeholder={__("Address", "eventkoi-lite")}
-        className="max-w-[422px]"
+        className="w-full"
         onChange={(e) => {
           setEvent((prevState) => ({
             ...prevState,
@@ -43,12 +43,10 @@ export function EventSlug() {
           }));
         }}
       />
-      <div className="text-muted-foreground">
-        {__("Define the URL of your event", "eventkoi-lite")}
-        <br />
+      <div className="text-muted-foreground truncate" title={exampleUrl}>
         {sprintf(
           /* translators: %s: example event URL. */
-          __("(e.g. %s)", "eventkoi-lite"),
+          __("Define the URL of your event (e.g. %s)", "eventkoi-lite"),
           exampleUrl
         )}
       </div>

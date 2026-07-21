@@ -45,8 +45,10 @@ export function EventEditMain() {
             />
           </div>
         </div>
-        <EventSlug />
-        <EventExcerpt />
+        <div className="flex flex-col sm:flex-row sm:items-start sm:gap-6 [&>*]:flex-1 [&>*]:min-w-0">
+          <EventSlug />
+          <EventExcerpt />
+        </div>
       </Box>
 
       {/* Event Date */}
