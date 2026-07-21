@@ -5,6 +5,7 @@ import { EventDate } from "@/components/event/event-date";
 import { EventDescription } from "@/components/event/event-description";
 import { EventImage } from "@/components/event/event-image";
 import { EventLocation } from "@/components/event/event-location";
+import { EventExcerpt } from "@/components/event/event-excerpt";
 import { EventMetaboxEmbed } from "@/components/event/event-metabox-embed";
 import { EventName } from "@/components/event/event-name";
 import { EventSlug } from "@/components/event/event-slug";
@@ -45,6 +46,7 @@ export function EventEditMain() {
           </div>
         </div>
         <EventSlug />
+        <EventExcerpt />
       </Box>
 
       {/* Event Date */}

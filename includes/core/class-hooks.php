@@ -101,6 +101,13 @@ class Hooks {
 			return $excerpt;
 		}
 
+		// An excerpt written by hand outranks the one derived from the
+		// description, otherwise the event's own Excerpt field never shows.
+		$entered = get_post_field( 'post_excerpt', $post );
+		if ( ! empty( $entered ) ) {
+			return $entered;
+		}
+
 		try {
 			$event = new \EventKoi\Core\Event( $post );
 			return $event::get_summary();

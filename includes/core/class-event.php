@@ -36,6 +36,7 @@ class Event {
 	private static $meta_keys = array(
 		'title',
 		'slug',
+		'excerpt',
 		'description',
 		'summary',
 		'image',
@@ -427,9 +428,10 @@ class Event {
 
 		$meta = apply_filters( 'eventkoi_pre_update_event_meta', $meta, $meta['id'] );
 
-		$id    = $meta['id'];
-		$title = $meta['title'];
-		$slug  = ! empty( $meta['slug'] ) ? sanitize_title( $meta['slug'] ) : '';
+		$id      = $meta['id'];
+		$title   = $meta['title'];
+		$slug    = ! empty( $meta['slug'] ) ? sanitize_title( $meta['slug'] ) : '';
+		$excerpt = isset( $meta['excerpt'] ) ? sanitize_textarea_field( $meta['excerpt'] ) : null;
 
 		if ( 0 === $id ) {
 			$args = array(
@@ -439,6 +441,10 @@ class Event {
 				'post_name'   => $slug ? $slug : sanitize_title( $title ),
 				'post_author' => get_current_user_id(),
 			);
+
+			if ( null !== $excerpt ) {
+				$args['post_excerpt'] = $excerpt;
+			}
 
 			$last_id        = wp_insert_post( $args );
 			$event          = get_post( $last_id );
@@ -465,6 +471,12 @@ class Event {
 		// Empty slug regenerates from the title, so clearing the field restores
 		// the default instead of silently keeping the old post_name.
 		$args['post_name'] = '' !== $slug ? $slug : sanitize_title( $title );
+
+		// Only written when the payload carries it, so saves from screens that
+		// never load the field cannot blank an existing excerpt.
+		if ( null !== $excerpt ) {
+			$args['post_excerpt'] = $excerpt;
+		}
 
 		$last_id        = wp_update_post( $args );
 		$event          = get_post( $last_id );
@@ -686,6 +698,17 @@ class Event {
 		$id = self::$event_id;
 
 		return apply_filters( 'eventkoi_get_event_id', $id, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Get event excerpt.
+	 *
+	 * @return string
+	 */
+	public static function get_excerpt() {
+		$excerpt = ! empty( self::$event->post_excerpt ) ? self::$event->post_excerpt : '';
+
+		return apply_filters( 'eventkoi_get_event_excerpt', $excerpt, self::$event_id, self::$event );
 	}
 
 	/**
