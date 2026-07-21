@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { __, _n, sprintf } from "@wordpress/i18n";
 import apiRequest from "@wordpress/api-fetch";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Heading } from "@/components/heading";
 import { Button } from "@/components/ui/button";
 import {
@@ -234,6 +234,7 @@ export function SettingsImport() {
           count={tec?.events_count || 0}
           totalCount={tec?.total_events || 0}
           result={tecResult}
+          data={tec}
           onImport={importTEC}
           onMoveToDefault={moveTecToDefault}
           onViewEvents={() => navigate("/events")}
@@ -269,6 +270,7 @@ export function SettingsImport() {
 }
 
 function IntegrationCard({
+  data,
   name,
   description,
   icon,
@@ -373,6 +375,26 @@ function IntegrationCard({
                   <p className="text-xs text-muted-foreground/70 mt-3">
                     {__("Previously imported events are skipped, not updated. Delete an event\u2019s EventKoi copy to re-import it.", "eventkoi-lite")}
                   </p>
+                  {data?.currency_mismatch && (
+                    <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+                      <p className="font-medium">
+                        {sprintf(
+                          /* translators: 1: TEC currency code, 2: EventKoi currency code. */
+                          __("Currency mismatch: Event Tickets charges %1$s, but your checkout currency is %2$s.", "eventkoi-lite"),
+                          data.currency_mismatch.tec,
+                          data.currency_mismatch.eventkoi
+                        )}
+                      </p>
+                      <p className="mt-1.5">
+                        {__("To keep ticket prices, change your currency first in", "eventkoi-lite")}{" "}
+                        <Link to="/settings/payments" className="underline font-medium">
+                          {__("Settings \u2192 Payments", "eventkoi-lite")}
+                        </Link>
+                        {". "}
+                        {__("If you import as is, paid ticket types are added without pricing.", "eventkoi-lite")}
+                      </p>
+                    </div>
+                  )}
                 </DialogHeader>
                 <DialogFooter className="mt-2">
                   <DialogClose asChild>

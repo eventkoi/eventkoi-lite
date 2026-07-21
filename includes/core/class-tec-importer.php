@@ -131,6 +131,7 @@ class TEC_Importer
             'categories'       => $categories_list,
             'preview'          => $preview_events,
             'has_recurring'    => self::has_recurring_events(),
+            'currency_mismatch' => self::currency_mismatch(),
             )
         );
     }
@@ -915,16 +916,19 @@ class TEC_Importer
         // under a mislabeled price (same rule as the cost-derived ticket).
         $checkout_currency = self::get_checkout_currency();
         $currency_ok       = self::et_currency_code() === $checkout_currency;
-        $skipped_paid      = 0;
+        $unpriced_paid     = 0;
         $sold_total        = 0;
         $sort_order        = 0;
 
         foreach ( array_merge($paid_tickets, $rsvp_tickets) as $et_ticket ) {
             $price = (float) get_post_meta($et_ticket->ID, '_price', true);
 
+            // The type still imports so its name and capacity survive; only the
+            // price is dropped, since charging it in another currency would be a
+            // mislabeled amount.
             if ($price > 0 && ! $currency_ok ) {
-                ++$skipped_paid;
-                continue;
+                $price = 0;
+                ++$unpriced_paid;
             }
 
             $sold = max(0, (int) get_post_meta($et_ticket->ID, 'total_sales', true));
@@ -936,11 +940,13 @@ class TEC_Importer
             }
         }
 
-        if ($skipped_paid > 0 ) {
+        if ($unpriced_paid > 0 ) {
             $summary['skipped'][] = sprintf(
-                /* translators: %d: number of paid tickets. */
-                _n('%d paid ticket was skipped because its currency differs from the store currency.', '%d paid tickets were skipped because their currency differs from the store currency.', $skipped_paid, 'eventkoi-lite'),
-                $skipped_paid
+                /* translators: 1: number of paid tickets, 2: TEC currency code, 3: checkout currency code. */
+                _n('%1$d paid ticket was imported without pricing because Event Tickets charges %2$s while your checkout currency is %3$s.', '%1$d paid tickets were imported without pricing because Event Tickets charges %2$s while your checkout currency is %3$s.', $unpriced_paid, 'eventkoi-lite'),
+                $unpriced_paid,
+                self::et_currency_code(),
+                $checkout_currency
             );
         }
 
@@ -1028,6 +1034,27 @@ class TEC_Importer
      *
      * @return string Three-letter ISO code.
      */
+    /**
+     * Currency details when Event Tickets charges a different currency than
+     * the EventKoi checkout, null when they match or tickets are absent.
+     *
+     * @return array|null
+     */
+    private static function currency_mismatch()
+    {
+        if (! function_exists('tribe_get_option') ) {
+            return null;
+        }
+
+        $tec      = self::et_currency_code();
+        $checkout = self::get_checkout_currency();
+
+        return $tec === $checkout ? null : array(
+            'tec'      => $tec,
+            'eventkoi' => $checkout,
+        );
+    }
+
     private static function et_currency_code()
     {
         $code = function_exists('tribe_get_option') ? (string) tribe_get_option('tickets-commerce-currency-code', 'USD') : 'USD';
