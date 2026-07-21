@@ -5,6 +5,7 @@ import { X } from "lucide-react";
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
+import { __ } from "@wordpress/i18n";
 
 const Dialog = DialogPrimitive.Root;
 
@@ -55,7 +56,7 @@ const DialogContent = React.forwardRef(
           )}
         >
           <X className="h-5 w-5" />
-          <span className="sr-only">Close</span>
+          <span className="sr-only">{__("Close", "eventkoi-lite")}</span>
         </DialogPrimitive.Close>
       </DialogPrimitive.Content>
     </DialogPortal>
