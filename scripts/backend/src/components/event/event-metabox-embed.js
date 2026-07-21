@@ -132,33 +132,25 @@ export function EventMetaboxEmbed() {
     return () => document.removeEventListener("click", onLinkCapture, true);
   }, [dirty]);
 
-  // A brand new event has no post to embed yet, so say how to get the panel
-  // rather than rendering nothing and looking broken.
-  if (!event?.id) {
-    return (
-      <Box container className="gap-2">
-        <Heading level={3}>
-          {__("Fields from other plugins", "eventkoi-lite")}
-        </Heading>
-        <p className="text-sm text-muted-foreground">
-          {__(
-            "Save this event as draft to display metaboxes from other plugins.",
-            "eventkoi-lite"
-          )}
-        </p>
-      </Box>
-    );
-  }
+  const src = baseUrl
+    ? baseUrl + (baseUrl.includes("?") ? "&" : "?") + "ek_embed=1"
+    : "";
 
-  if (!baseUrl || !hasFields) {
+  // The embed reports how many third-party boxes it rendered. Nothing to show
+  // on sites where no plugin adds any, so the panel takes itself away.
+  if (boxCount === 0) {
     return null;
   }
 
-  const src = baseUrl + (baseUrl.includes("?") ? "&" : "?") + "ek_embed=1";
-
-  // The iframe mounts hidden; the embed page reports how many third-party
-  // metaboxes rendered, and the panel only appears when there is at least one.
-  const revealed = boxCount !== null && boxCount > 0;
+  // Until that count arrives the container still renders, with a line saying
+  // what is happening, so the area never sits blank or looks broken.
+  const ready = !!src && hasFields && boxCount > 0;
+  const waitingText = src
+    ? __("Loading fields from other plugins…", "eventkoi-lite")
+    : __(
+        "Save this event as draft to display metaboxes from other plugins.",
+        "eventkoi-lite"
+      );
 
   const submitEmbed = () => {
     if (saving) return;
@@ -172,14 +164,7 @@ export function EventMetaboxEmbed() {
   const saveLabel = saving ? __("Saving…", "eventkoi-lite") : __("Save", "eventkoi-lite");
 
   return (
-    <Box
-      container
-      className={
-        revealed
-          ? "gap-4 opacity-100 transition-opacity duration-200"
-          : "hidden opacity-0"
-      }
-    >
+    <Box container className="gap-4">
       <div className="flex items-start justify-between gap-4">
         <div className="grid gap-1">
           <div className="flex items-center gap-2">
@@ -193,33 +178,49 @@ export function EventMetaboxEmbed() {
             )}
           </div>
           <p className="text-sm text-muted-foreground">
-            {__(
-              "Changes made here must be saved separately, using the Save button on the right.",
-              "eventkoi-lite"
-            )}
+            {ready
+              ? __(
+                  "Changes made here must be saved separately, using the Save button on the right.",
+                  "eventkoi-lite"
+                )
+              : waitingText}
           </p>
         </div>
-        <Button
-          type="button"
-          className="shrink-0"
-          disabled={saving}
-          onClick={submitEmbed}
-        >
-          {saveLabel}
-        </Button>
+        {ready && (
+          <Button
+            type="button"
+            className="shrink-0"
+            disabled={saving}
+            onClick={submitEmbed}
+          >
+            {saveLabel}
+          </Button>
+        )}
       </div>
-      <iframe
-        ref={iframeRef}
-        title={__("Fields from other plugins", "eventkoi-lite")}
-        src={src}
-        className="w-full"
-        style={{ height: `${height}px`, border: "0" }}
-      />
-      <div className="flex justify-end">
-        <Button type="button" disabled={saving} onClick={submitEmbed}>
-          {saveLabel}
-        </Button>
-      </div>
+
+      {/* Mounted as soon as there is a post to embed, hidden until it reports
+          its boxes, so the count arrives without the frame flashing in. */}
+      {!!src && (
+        <iframe
+          ref={iframeRef}
+          title={__("Fields from other plugins", "eventkoi-lite")}
+          src={src}
+          className="w-full"
+          style={{
+            height: ready ? `${height}px` : 0,
+            border: "0",
+            visibility: ready ? "visible" : "hidden",
+          }}
+        />
+      )}
+
+      {ready && (
+        <div className="flex justify-end">
+          <Button type="button" disabled={saving} onClick={submitEmbed}>
+            {saveLabel}
+          </Button>
+        </div>
+      )}
     </Box>
   );
 }

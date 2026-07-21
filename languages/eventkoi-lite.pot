@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-21T06:05:59+00:00\n"
+"POT-Creation-Date: 2026-07-21T06:13:00+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -3482,7 +3482,7 @@ msgid "The plugin fields have unsaved changes. Leave this tab and lose them?"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-msgid "Fields from other plugins"
+msgid "Loading fields from other plugins…"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
@@ -3491,6 +3491,10 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 msgid "Saving…"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Fields from other plugins"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
