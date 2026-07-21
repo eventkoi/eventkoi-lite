@@ -3,7 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useEventEditContext } from "@/hooks/EventEditContext";
 import { foldAccents } from "@/lib/slug";
-import { __, sprintf } from "@wordpress/i18n";
+import { __ } from "@wordpress/i18n";
 
 const cleanSlug = (value) =>
   foldAccents(value)
@@ -43,12 +43,8 @@ export function EventSlug() {
           }));
         }}
       />
-      <div className="text-muted-foreground truncate" title={exampleUrl}>
-        {sprintf(
-          /* translators: %s: example event URL. */
-          __("Define the URL of your event (e.g. %s)", "eventkoi-lite"),
-          exampleUrl
-        )}
+      <div className="text-muted-foreground break-words">
+        {exampleUrl}
       </div>
     </Panel>
   );
