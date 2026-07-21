@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.3.25.0
+Stable tag: 1.3.26.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,19 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.26.0 – Plugin fields in the event editor – 2026-07-21 =
+* New: Fields added by other plugins, such as ACF, Pods and Meta Box, now appear in a panel on the event editor, so you no longer have to open the WordPress editor to fill them in. The panel saves separately with its own Save button, warns you before you leave with unsaved changes, and hides itself on sites where no plugin adds any fields.
+* New: Events have an Excerpt field, shown beside the slug, for the short summary themes and blocks display in listings.
+* Fix: Translations of the admin and calendar interface were never loaded, so every language showed English text regardless of how much had been translated. Translated strings now apply.
+* Fix: Times in 24-hour mode keep their minutes, and French sites show the 15h style instead of a bare number that read as a count of events.
+* Fix: The month dropdown and Subscribe menu no longer sit behind page-builder layouts.
+* Fix: Draft and password-protected event details are no longer exposed through the public tickets, RSVP and iCal endpoints.
+* Fix: Calendar labels and ticket durations follow the site timezone.
+* Fix: Custom fields on event pages follow the order set in settings, including across groups.
+* Fix: The calendar list view defaults to upcoming events and never shows a blank date column.
+* Fix: The calendar shows a retry option instead of failing silently when it cannot load.
+
 
 = 1.3.25.0 – Free tickets and clearer ticket settings – 2026-07-16 =
 * New: Sell free tickets. Set a ticket price to 0 and buyers check out without a payment step; their tickets are emailed as usual and the order is marked Free in Ticket sales.
