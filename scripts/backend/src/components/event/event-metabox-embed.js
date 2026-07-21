@@ -19,8 +19,23 @@ export function EventMetaboxEmbed() {
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const baseUrl = event?.native_edit_url || "";
-  const hasFields = event?.has_plugin_fields === true;
+  // Saving a new event fires a follow-up request that answers without the
+  // embed URL, and using that answer directly would tear the panel back down
+  // straight after it appeared. Keep the last good values for the open event.
+  const latch = useRef({ id: null, url: "", fields: false });
+  const eventId = event?.id || null;
+  if (latch.current.id !== eventId) {
+    latch.current = { id: eventId, url: "", fields: false };
+  }
+  if (event?.native_edit_url) {
+    latch.current.url = event.native_edit_url;
+  }
+  if (event?.has_plugin_fields === true) {
+    latch.current.fields = true;
+  }
+
+  const baseUrl = event?.native_edit_url || latch.current.url;
+  const hasFields = event?.has_plugin_fields === true || latch.current.fields;
 
   useEffect(() => {
     if (!baseUrl) return undefined;
@@ -117,7 +132,25 @@ export function EventMetaboxEmbed() {
     return () => document.removeEventListener("click", onLinkCapture, true);
   }, [dirty]);
 
-  if (!baseUrl || !event?.id || !hasFields) {
+  // A brand new event has no post to embed yet, so say how to get the panel
+  // rather than rendering nothing and looking broken.
+  if (!event?.id) {
+    return (
+      <Box container className="gap-2">
+        <Heading level={3}>
+          {__("Fields from other plugins", "eventkoi-lite")}
+        </Heading>
+        <p className="text-sm text-muted-foreground">
+          {__(
+            "Save this event as draft to display metaboxes from other plugins.",
+            "eventkoi-lite"
+          )}
+        </p>
+      </Box>
+    );
+  }
+
+  if (!baseUrl || !hasFields) {
     return null;
   }
 

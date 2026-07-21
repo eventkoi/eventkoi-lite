@@ -34,7 +34,7 @@ export function EventSlug() {
         type="text"
         id="event-slug"
         value={slugPath}
-        placeholder={__("Address", "eventkoi-lite")}
+        placeholder={__("event-name", "eventkoi-lite")}
         className="w-full"
         onChange={(e) => {
           setEvent((prevState) => ({

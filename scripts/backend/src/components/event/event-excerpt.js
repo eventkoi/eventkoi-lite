@@ -14,6 +14,7 @@ export function EventExcerpt() {
         id="event-excerpt"
         rows={3}
         value={event?.excerpt || ""}
+        placeholder={__("A short summary of this event", "eventkoi-lite")}
         className="w-full"
         onChange={(e) => {
           setEvent((prevState) => ({
