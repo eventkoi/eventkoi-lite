@@ -80,3 +80,49 @@
     box-shadow: none !important;
   }
 }
+
+/* Page builders load their own utility CSS after ours (Beaver Builder's theme
+   ships Bootstrap with `.hidden { display: none !important }`), which outranks
+   the responsive display utilities by source order and hides list-view dates.
+   Re-declare the display utilities the frontend uses under the .eventkoi-front
+   scope so they win on specificity regardless of stylesheet order. */
+.eventkoi-front .hidden {
+  display: none !important;
+}
+
+@media (min-width: 640px) {
+  .eventkoi-front .sm\:flex {
+    display: flex !important;
+  }
+  .eventkoi-front .sm\:grid {
+    display: grid !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .eventkoi-front .md\:block {
+    display: block !important;
+  }
+  .eventkoi-front .md\:flex {
+    display: flex !important;
+  }
+  .eventkoi-front .md\:grid {
+    display: grid !important;
+  }
+  .eventkoi-front .md\:hidden {
+    display: none !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .eventkoi-front .lg\:flex {
+    display: flex !important;
+  }
+}
+
+/* Beaver Builder paints every element inside a button with its global button
+   text color, which turns icon strokes white on our white toolbar buttons.
+   Icons draw with currentColor, so pin them to the button's own text color. */
+.eventkoi-front button svg.lucide {
+  color: inherit !important;
+}
