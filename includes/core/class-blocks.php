@@ -1046,7 +1046,13 @@ JS;
 		$total_pages  = $per_page > 0 ? (int) ceil( $total_events / $per_page ) : 1;
 
 		if ( empty( $events ) ) {
-			return '<p class="ek-no-events">' . esc_html__( 'No events found.', 'eventkoi-lite' ) . '</p>';
+			$empty_markup = self::render_eventkoi_no_results( $block );
+
+			if ( '' === $empty_markup ) {
+				$empty_markup = '<p class="ek-no-events">' . esc_html__( 'No events found.', 'eventkoi-lite' ) . '</p>';
+			}
+
+			return $empty_markup;
 		}
 
 		$wrapper_class     = ! empty( $attrs['className'] ) ? $attrs['className'] : 'eventkoi-query-loop';
@@ -1083,6 +1089,14 @@ JS;
 					if ( $total_pages > 1 ) {
 						$rendered .= self::render_eventkoi_pagination( $inner, $paged, $total_pages );
 					}
+					continue;
+				}
+
+				if ( 'core/query-no-results' === $name ) {
+					// Rendered standalone, core's no-results block runs its own
+					// context-free query against blog posts, so on sites with no
+					// published posts it prints even while events are listed.
+					// The empty case is handled above; never render it here.
 					continue;
 				}
 
@@ -1274,6 +1288,35 @@ JS;
 		}
 
 		return $pairs;
+	}
+
+	/**
+	 * Render the saved no-results content from a query loop block.
+	 *
+	 * Core's no-results block runs its own query when rendered standalone, so
+	 * its inner content is rendered directly against this loop's result instead.
+	 *
+	 * @param array $block Parsed query block.
+	 * @return string Markup, or an empty string when no usable content is saved.
+	 */
+	protected static function render_eventkoi_no_results( $block ) {
+		foreach ( $block['innerBlocks'] ?? array() as $inner ) {
+			if ( 'core/query-no-results' !== ( $inner['blockName'] ?? '' ) ) {
+				continue;
+			}
+
+			$content = '';
+
+			foreach ( $inner['innerBlocks'] ?? array() as $child ) {
+				$content .= render_block( $child );
+			}
+
+			if ( '' !== trim( wp_strip_all_tags( $content ) ) ) {
+				return '<div class="wp-block-query-no-results">' . $content . '</div>';
+			}
+		}
+
+		return '';
 	}
 
 	/**
