@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.3.26.0
+Stable tag: 1.3.27.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,11 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.27.0 – List view and page builder fixes – 2026-07-23 =
+* Fix: In the calendar List view, the date and time of each event could disappear on desktop when a page builder theme (such as Beaver Builder) loaded its own styles after ours. Each row now shows its date reliably, and toolbar icons no longer turn white on those themes.
+* Fix: The Event Query Loop no longer shows the No results message next to actual results on sites with no published blog posts. When there really are no events, your customized No results content is displayed instead of a generic message.
+* Improved: When importing from The Events Calendar, a warning now explains when the ticket currency does not match your checkout currency, and paid ticket types are imported without pricing instead of being skipped silently.
 
 = 1.3.26.0 – Plugin fields in the event editor – 2026-07-21 =
 * New: Fields added by other plugins, such as ACF, Pods and Meta Box, now appear in a panel on the event editor, so you no longer have to open the WordPress editor to fill them in. The panel saves separately with its own Save button, warns you before you leave with unsaved changes, and hides itself on sites where no plugin adds any fields.
