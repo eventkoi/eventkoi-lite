@@ -860,13 +860,18 @@ class Template {
 			return $content;
 		}
 
+		$shortcode_placeholders = array();
+		$content                = self::protect_eventkoi_shortcodes_for_builder_tokens( $content, $shortcode_placeholders );
+
 		$class_attribute_placeholders = array();
 		$content = self::protect_class_attributes_for_builder_tokens( $content, $class_attribute_placeholders );
 
 		// In Beaver editor context, render readable placeholders instead of
 		// binding to whichever preview event/layout happens to be active.
 		if ( self::is_beaver_builder_editor_request() ) {
-			return self::replace_builder_tokens_with_labels( $content );
+			$content = self::replace_builder_tokens_with_labels( $content );
+
+			return self::restore_protected_builder_placeholders( $content, $shortcode_placeholders );
 		}
 
 		// Beaver URL fields may auto-prefix token values as http://event_image_url.
@@ -924,7 +929,9 @@ class Template {
 			$content
 		);
 
-		return self::restore_protected_builder_placeholders( $content, $class_attribute_placeholders );
+		$content = self::restore_protected_builder_placeholders( $content, $class_attribute_placeholders );
+
+		return self::restore_protected_builder_placeholders( $content, $shortcode_placeholders );
 	}
 
 	/**
@@ -935,6 +942,9 @@ class Template {
 	 * @return string
 	 */
 	private static function replace_builder_tokens_with_labels( $content ) {
+		$shortcode_placeholders = array();
+		$content                = self::protect_eventkoi_shortcodes_for_builder_tokens( $content, $shortcode_placeholders );
+
 		$class_attribute_placeholders = array();
 		$content = self::protect_class_attributes_for_builder_tokens( $content, $class_attribute_placeholders );
 
@@ -948,7 +958,36 @@ class Template {
 			$content
 		);
 
-		return self::restore_protected_builder_placeholders( $content, $class_attribute_placeholders );
+		$content = self::restore_protected_builder_placeholders( $content, $class_attribute_placeholders );
+
+		return self::restore_protected_builder_placeholders( $content, $shortcode_placeholders );
+	}
+
+	/**
+	 * Protect EventKoi shortcodes from plain-token replacement.
+	 *
+	 * Builder modules can carry `[eventkoi data=event_field_x]` for a later
+	 * do_shortcode pass. Rewriting the key inside the unresolved shortcode
+	 * would make it resolve a bogus key and output nothing.
+	 *
+	 * @param string $content HTML content.
+	 * @param array  $placeholder_map Placeholder map passed by reference.
+	 *
+	 * @return string
+	 */
+	private static function protect_eventkoi_shortcodes_for_builder_tokens( $content, &$placeholder_map ) {
+		$placeholder_map = array();
+
+		return preg_replace_callback(
+			'/\[\/?eventkoi(?:_[a-z0-9_]+)?\b[^\[\]]*\]/i',
+			static function ( $matches ) use ( &$placeholder_map ) {
+				$key                     = '__EK_SHORTCODE_PLACEHOLDER_' . count( $placeholder_map ) . '__';
+				$placeholder_map[ $key ] = $matches[0];
+
+				return $key;
+			},
+			$content
+		);
 	}
 
 	/**
