@@ -123,8 +123,10 @@
 /* Beaver Builder paints every element inside a button with its global button
    text color, which turns icon strokes white on our white toolbar buttons.
    Icons draw with currentColor, so pin them to the button's own text color. */
-.eventkoi-front button svg.lucide {
+.eventkoi-front button svg.lucide,
+.eventkoi-front button svg.lucide * {
   color: inherit !important;
+  stroke: currentColor !important;
 }
 
 /* List row date/time. Own class names, so page-builder utility CSS
