@@ -268,7 +268,7 @@ export function ListView({
 
             <div className="ek-meta flex flex-col gap-2 grow min-w-0">
               <div
-                className="flex md:hidden text-muted-foreground whitespace-pre-line"
+                className="ek-date-sm text-muted-foreground whitespace-pre-line"
                 role="group"
                 aria-hidden="true"
                 aria-label={`Event time: ${timeline}`}
@@ -306,7 +306,7 @@ export function ListView({
             </div>
 
             <div
-              className="hidden md:block ml-auto text-[14px] text-muted-foreground min-w-[200px] text-right whitespace-pre-line"
+              className="ek-date-md ml-auto text-[14px] text-muted-foreground min-w-[200px] text-right whitespace-pre-line"
               role="group"
               aria-label={`Event time: ${timeline}`}
             >

@@ -126,3 +126,23 @@
 .eventkoi-front button svg.lucide {
   color: inherit !important;
 }
+
+/* List row date/time. Own class names, so page-builder utility CSS
+   (Bootstrap's .hidden and friends) can never toggle these off. */
+.eventkoi-front .ek-date-sm {
+  display: flex;
+}
+
+.eventkoi-front .ek-date-md {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .eventkoi-front .ek-date-sm {
+    display: none;
+  }
+
+  .eventkoi-front .ek-date-md {
+    display: block;
+  }
+}
