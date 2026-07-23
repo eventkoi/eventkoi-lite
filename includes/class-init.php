@@ -100,6 +100,7 @@ class Init {
 			\EventKoi\Core\Post_Types::class,
 			\EventKoi\Core\Template::class,
 			\EventKoi\Core\Schema::class,
+			\EventKoi\Core\SEO_Compat::class,
 			\EventKoi\Core\Blocks::class,
 			\EventKoi\Core\Scripts::class,
 			\EventKoi\Core\Shortcodes::class,
