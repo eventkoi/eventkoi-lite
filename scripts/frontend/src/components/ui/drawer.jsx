@@ -3,6 +3,7 @@
 import * as React from "react"
 import { Drawer as DrawerPrimitive } from "vaul"
 
+import { getEventkoiPortalContainer } from "@/lib/portal"
 import { cn } from "@/lib/utils"
 
 const Drawer = ({
@@ -15,7 +16,9 @@ Drawer.displayName = "Drawer"
 
 const DrawerTrigger = DrawerPrimitive.Trigger
 
-const DrawerPortal = DrawerPrimitive.Portal
+const DrawerPortal = (props) => (
+  <DrawerPrimitive.Portal container={getEventkoiPortalContainer()} {...props} />
+)
 
 const DrawerClose = DrawerPrimitive.Close
 

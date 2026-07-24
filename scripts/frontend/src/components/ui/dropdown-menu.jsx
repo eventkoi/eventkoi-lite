@@ -4,6 +4,7 @@ import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
 import { Check, ChevronRight, Circle } from "lucide-react";
 import * as React from "react";
 
+import { getEventkoiPortalContainer } from "@/lib/portal";
 import { cn } from "@/lib/utils";
 
 const DropdownMenu = DropdownMenuPrimitive.Root;
@@ -12,7 +13,9 @@ const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
 
 const DropdownMenuGroup = DropdownMenuPrimitive.Group;
 
-const DropdownMenuPortal = DropdownMenuPrimitive.Portal;
+const DropdownMenuPortal = (props) => (
+  <DropdownMenuPrimitive.Portal container={getEventkoiPortalContainer()} {...props} />
+);
 
 const DropdownMenuSub = DropdownMenuPrimitive.Sub;
 
@@ -54,7 +57,7 @@ DropdownMenuSubContent.displayName =
 
 const DropdownMenuContent = React.forwardRef(
   ({ className, sideOffset = 4, ...props }, ref) => (
-    <DropdownMenuPrimitive.Portal>
+    <DropdownMenuPrimitive.Portal container={getEventkoiPortalContainer()}>
       <DropdownMenuPrimitive.Content
         ref={ref}
         sideOffset={sideOffset}

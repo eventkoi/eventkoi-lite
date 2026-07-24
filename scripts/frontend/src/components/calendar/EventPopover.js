@@ -1,5 +1,6 @@
 "use client";
 
+import { getEventkoiPortalContainer } from "@/lib/portal";
 import { ShareLink } from "@/components/share-link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -822,6 +823,6 @@ export function EventPopover({
         </DialogContent>
       </Dialog>
     </>,
-    calendarContainer || document.body
+    calendarContainer || getEventkoiPortalContainer() || document.body
   );
 }

@@ -4,6 +4,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { X } from "lucide-react";
 import * as React from "react";
 
+import { getEventkoiPortalContainer } from "@/lib/portal";
 import { cn } from "@/lib/utils";
 import { __ } from "@wordpress/i18n";
 
@@ -17,7 +18,9 @@ const dialogSheetClass =
 
 const DialogTrigger = DialogPrimitive.Trigger;
 
-const DialogPortal = DialogPrimitive.Portal;
+const DialogPortal = (props) => (
+  <DialogPrimitive.Portal container={getEventkoiPortalContainer()} {...props} />
+);
 
 const DialogClose = DialogPrimitive.Close;
 

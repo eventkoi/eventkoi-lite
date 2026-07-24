@@ -4,6 +4,7 @@ import * as SelectPrimitive from "@radix-ui/react-select";
 import { Check, ChevronDown, ChevronUp, ChevronsUpDown } from "lucide-react";
 import * as React from "react";
 
+import { getEventkoiPortalContainer } from "@/lib/portal";
 import { cn } from "@/lib/utils";
 
 const Select = SelectPrimitive.Root;
@@ -70,7 +71,7 @@ SelectScrollDownButton.displayName =
 
 const SelectContent = React.forwardRef(
   ({ className, children, position = "popper", ...props }, ref) => (
-    <SelectPrimitive.Portal>
+    <SelectPrimitive.Portal container={getEventkoiPortalContainer()}>
       <SelectPrimitive.Content
         ref={ref}
         className={cn(

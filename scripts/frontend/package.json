@@ -6,8 +6,8 @@
   "license": "GPL-2.0-or-later",
   "main": "build/index.js",
   "scripts": {
-    "dev": "concurrently \"vite\" \"tailwindcss -i ./src/tailwind.css -o ./build/tailwind.css --watch\"",
-    "build": "rm -f build/.vite-hot && vite build && BROWSERSLIST_IGNORE_OLD_DATA=1 tailwindcss -i ./src/tailwind.css -o ./build/tailwind.css --minify"
+    "dev": "concurrently \"vite\" \"tailwindcss -i ./src/tailwind.css -o ./build/tailwind.css --postcss ./postcss.tailwind.cjs --watch\"",
+    "build": "rm -f build/.vite-hot && vite build && BROWSERSLIST_IGNORE_OLD_DATA=1 tailwindcss -i ./src/tailwind.css -o ./build/tailwind.css --postcss ./postcss.tailwind.cjs --minify"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",

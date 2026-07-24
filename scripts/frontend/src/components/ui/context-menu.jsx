@@ -4,6 +4,7 @@ import * as React from "react"
 import * as ContextMenuPrimitive from "@radix-ui/react-context-menu"
 import { Check, ChevronRight, Circle } from "lucide-react"
 
+import { getEventkoiPortalContainer } from "@/lib/portal"
 import { cn } from "@/lib/utils"
 
 const ContextMenu = ContextMenuPrimitive.Root
@@ -12,7 +13,9 @@ const ContextMenuTrigger = ContextMenuPrimitive.Trigger
 
 const ContextMenuGroup = ContextMenuPrimitive.Group
 
-const ContextMenuPortal = ContextMenuPrimitive.Portal
+const ContextMenuPortal = (props) => (
+  <ContextMenuPrimitive.Portal container={getEventkoiPortalContainer()} {...props} />
+)
 
 const ContextMenuSub = ContextMenuPrimitive.Sub
 
@@ -45,7 +48,7 @@ const ContextMenuSubContent = React.forwardRef(({ className, ...props }, ref) =>
 ContextMenuSubContent.displayName = ContextMenuPrimitive.SubContent.displayName
 
 const ContextMenuContent = React.forwardRef(({ className, ...props }, ref) => (
-  <ContextMenuPrimitive.Portal>
+  <ContextMenuPrimitive.Portal container={getEventkoiPortalContainer()}>
     <ContextMenuPrimitive.Content
       ref={ref}
       className={cn(
