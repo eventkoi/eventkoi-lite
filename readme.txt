@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.3.27.0
+Stable tag: 1.3.28.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,11 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.28.0 – Theme compatibility fixes – 2026-07-24 =
+* Fix: The plugin loaded style utilities globally, which could restyle theme elements that share common class names. On some themes (such as Total), buttons collapsed into thin slivers. All plugin styles are now scoped to EventKoi containers and can no longer affect the rest of your site.
+* Fix: EventKoi shortcodes placed inside Beaver Builder modules were rewritten before they could render, so values such as custom fields showed nothing. Shortcodes now render their values correctly in Beaver Builder and Beaver Themer layouts.
+* Fix: Rank Math served a stale sitemap after events were created, updated or deleted, because its cache was only refreshed for changes made in wp-admin. The sitemap now updates immediately after every event change.
 
 = 1.3.27.0 – List view and page builder fixes – 2026-07-23 =
 * Fix: In the calendar List view, the date and time of each event could disappear on desktop when a page builder theme (such as Beaver Builder) loaded its own styles after ours. Each row now shows its date reliably, and toolbar icons no longer turn white on those themes.
