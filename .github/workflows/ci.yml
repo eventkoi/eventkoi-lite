@@ -73,3 +73,39 @@ jobs:
           echo "$HOME/.composer/vendor/bin" >> "$GITHUB_PATH"
       - name: Run phpcs
         run: phpcs -q --report=full
+
+  phpstan:
+    name: PHPStan (advisory)
+    runs-on: ubuntu-latest
+    # Level 5 with every pre-existing finding baselined, so this only reports
+    # newly written code. Drop continue-on-error to make it blocking.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          tools: composer
+          coverage: none
+      - name: Install PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-scripts
+      - name: Run PHPStan
+        run: composer run test:phpstan
+
+  eslint:
+    name: ESLint (advisory)
+    runs-on: ubuntu-latest
+    # Reports real findings across both bundles but does not block yet; make it
+    # blocking once the outstanding errors are cleared.
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: |
+          npm install --prefix scripts/frontend
+          npm install --prefix scripts/backend
+      - name: Run ESLint
+        run: npm run lint

@@ -1,0 +1,1771 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Parameter \#7 \$position of function add_menu_page expects float\|int\|null, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: includes/admin/class-menus.php
+
+		-
+			message: '#^Call to function method_exists\(\) with WP_Screen and ''is_block_editor'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: includes/admin/class-scripts.php
+
+		-
+			message: '#^Cannot access property \$rendered on string\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: includes/admin/class-scripts.php
+
+		-
+			message: '#^Parameter \#3 \$deps of function wp_register_style expects array\<string\>, null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: includes/admin/class-scripts.php
+
+		-
+			message: '#^Property WP_Block_Template\:\:\$title \(string\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: includes/admin/class-scripts.php
+
+		-
+			message: '#^Property WP_Screen\:\:\$base \(string\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: includes/admin/class-scripts.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/api/class-calendar.php
+
+		-
+			message: '#^Method EventKoi\\API\\Calendar\:\:delete_calendar\(\) should return WP_REST_Response but returns WP_Error\.$#'
+			identifier: return.type
+			count: 1
+			path: includes/api/class-calendar.php
+
+		-
+			message: '#^Method EventKoi\\API\\Calendar\:\:duplicate_calendar\(\) should return WP_REST_Response but returns WP_Error\.$#'
+			identifier: return.type
+			count: 1
+			path: includes/api/class-calendar.php
+
+		-
+			message: '#^Method EventKoi\\API\\Calendar\:\:get_calendar_events\(\) should return WP_REST_Response but returns WP_Error\.$#'
+			identifier: return.type
+			count: 1
+			path: includes/api/class-calendar.php
+
+		-
+			message: '#^Method EventKoi\\API\\Calendar\:\:update_calendar\(\) should return WP_REST_Response but returns WP_Error\.$#'
+			identifier: return.type
+			count: 1
+			path: includes/api/class-calendar.php
+
+		-
+			message: '#^Variable \$calendar_timezone might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: includes/api/class-calendar.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/api/class-event.php
+
+		-
+			message: '#^Method EventKoi\\API\\Event\:\:delete_event\(\) should return WP_REST_Response but returns WP_Error\.$#'
+			identifier: return.type
+			count: 2
+			path: includes/api/class-event.php
+
+		-
+			message: '#^Method EventKoi\\API\\Event\:\:duplicate_event\(\) should return WP_REST_Response but returns WP_Error\.$#'
+			identifier: return.type
+			count: 2
+			path: includes/api/class-event.php
+
+		-
+			message: '#^Method EventKoi\\API\\Event\:\:restore_event\(\) should return WP_REST_Response but returns WP_Error\.$#'
+			identifier: return.type
+			count: 2
+			path: includes/api/class-event.php
+
+		-
+			message: '#^Static method EventKoi\\API\\Event\:\:user_can_read_event\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: includes/api/class-event.php
+
+		-
+			message: '#^Static method EventKoi\\Core\\Events\:\:get_counts\(\) invoked with 1 parameter, 0 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: includes/api/class-events.php
+
+		-
+			message: '#^Caught class EventKoi\\API\\Exception not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/api/class-orders.php
+
+		-
+			message: '#^Instanceof between WP_REST_Request and WP_REST_Request will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: includes/api/class-orders.php
+
+		-
+			message: '#^Method EventKoi\\API\\Orders\:\:add_order_note\(\) has invalid return type EventKoi\\API\\WP_Error\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/api/class-orders.php
+
+		-
+			message: '#^Method EventKoi\\API\\Orders\:\:add_order_note\(\) should return EventKoi\\API\\WP_Error\|WP_REST_Response but returns WP_Error\.$#'
+			identifier: return.type
+			count: 3
+			path: includes/api/class-orders.php
+
+		-
+			message: '#^Method EventKoi\\API\\Orders\:\:get_orders\(\) has invalid return type EventKoi\\API\\WP_Error\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/api/class-orders.php
+
+		-
+			message: '#^Method EventKoi\\API\\Orders\:\:get_orders\(\) has invalid return type EventKoi\\API\\WP_REST_Response\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/api/class-orders.php
+
+		-
+			message: '#^Method EventKoi\\API\\Orders\:\:get_orders\(\) should return EventKoi\\API\\WP_Error\|EventKoi\\API\\WP_REST_Response but returns WP_Error\.$#'
+			identifier: return.type
+			count: 2
+			path: includes/api/class-orders.php
+
+		-
+			message: '#^Method EventKoi\\API\\Orders\:\:get_orders\(\) should return EventKoi\\API\\WP_Error\|EventKoi\\API\\WP_REST_Response but returns WP_Error\|WP_REST_Response\.$#'
+			identifier: return.type
+			count: 1
+			path: includes/api/class-orders.php
+
+		-
+			message: '#^Parameter \$request of method EventKoi\\API\\Orders\:\:get_orders\(\) has invalid type EventKoi\\API\\WP_REST_Request\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/api/class-orders.php
+
+		-
+			message: '#^Instanceof between WP_REST_Request and WP_REST_Request will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 2
+			path: includes/api/class-rest.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 3
+			path: includes/api/class-rsvps.php
+
+		-
+			message: '#^Call to function is_array\(\) with non\-empty\-array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: includes/api/class-rsvps.php
+
+		-
+			message: '#^Call to function method_exists\(\) with ''EventKoi\\\\Core\\\\Event'' and ''get_event_days'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/api/class-rsvps.php
+
+		-
+			message: '#^Call to function method_exists\(\) with ''EventKoi\\\\Core\\\\Rsvps'' and ''get_summary_for…'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: includes/api/class-rsvps.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/api/class-settings.php
+
+		-
+			message: '#^Instanceof between WP_REST_Request and WP_REST_Request will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: includes/api/class-stats.php
+
+		-
+			message: '#^Call to EventKoi\\API\\Tickets\:\:invalidate_order_caches\(\) on a separate line has no effect\.$#'
+			identifier: staticMethod.resultUnused
+			count: 2
+			path: includes/api/class-tickets.php
+
+		-
+			message: '#^Comparison operation "\<\=" between int\<1, max\> and 0 is always false\.$#'
+			identifier: smallerOrEqual.alwaysFalse
+			count: 1
+			path: includes/api/class-tickets.php
+
+		-
+			message: '#^Comparison operation "\>" between int\<1, max\> and 0 is always true\.$#'
+			identifier: greater.alwaysTrue
+			count: 2
+			path: includes/api/class-tickets.php
+
+		-
+			message: '#^Function get_woocommerce_currency not found\.$#'
+			identifier: function.notFound
+			count: 1
+			path: includes/api/class-tickets.php
+
+		-
+			message: '#^Instanceof between WP_User and WP_User will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: includes/api/class-tickets.php
+
+		-
+			message: '#^Offset ''_archived_count'' on array\{id\: string, event_id\: int, order_id\: string, customer_name\: string, customer_email\: string, avatar_url\: string, payment_status\: string, is_archived\: false, \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: includes/api/class-tickets.php
+
+		-
+			message: '#^Offset ''_archived_count'' on array\{id\: string, order_id\: string, event_ids\: list\<int\<min, \-1\>\|int\<1, max\>\>, event_names\: array\{\}, customer_name\: string, customer_email\: string, payment_status\: ''pending'', status\: ''pending'', \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: includes/api/class-tickets.php
+
+		-
+			message: '#^Offset ''_completed_count'' on array\{id\: string, order_id\: string, event_ids\: list\<int\<min, \-1\>\|int\<1, max\>\>, event_names\: array\{\}, customer_name\: string, customer_email\: string, payment_status\: ''pending'', status\: ''pending'', \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: includes/api/class-tickets.php
+
+		-
+			message: '#^Offset ''_partial_refund…'' on array\{id\: string, order_id\: string, event_ids\: list\<int\<min, \-1\>\|int\<1, max\>\>, event_names\: array\{\}, customer_name\: string, customer_email\: string, payment_status\: ''pending'', status\: ''pending'', \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: includes/api/class-tickets.php
+
+		-
+			message: '#^Offset ''_refunded_count'' on array\{id\: string, order_id\: string, event_ids\: list\<int\<min, \-1\>\|int\<1, max\>\>, event_names\: array\{\}, customer_name\: string, customer_email\: string, payment_status\: ''pending'', status\: ''pending'', \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: includes/api/class-tickets.php
+
+		-
+			message: '#^Offset ''_total_count'' on array\{id\: string, event_id\: int, order_id\: string, customer_name\: string, customer_email\: string, avatar_url\: string, payment_status\: string, is_archived\: false, \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: includes/api/class-tickets.php
+
+		-
+			message: '#^Offset ''_total_count'' on array\{id\: string, order_id\: string, event_ids\: list\<int\<min, \-1\>\|int\<1, max\>\>, event_names\: array\{\}, customer_name\: string, customer_email\: string, payment_status\: ''pending'', status\: ''pending'', \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: includes/api/class-tickets.php
+
+		-
+			message: '#^Offset ''created_at'' on array\{id\: string, event_id\: int, order_id\: string, customer_name\: string, customer_email\: string, avatar_url\: string, payment_status\: string, is_archived\: bool, \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: includes/api/class-tickets.php
+
+		-
+			message: '#^Offset 1 on array\{non\-falsy\-string, non\-falsy\-string&numeric\-string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: includes/api/class-tickets.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between '''' and literal\-string&non\-falsy\-string&uppercase\-string will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: includes/api/class-tickets.php
+
+		-
+			message: '#^Variable \$email in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: includes/api/class-tickets.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/api/class-uploads.php
+
+		-
+			message: '#^Instanceof between WP_REST_Request and WP_REST_Request will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: includes/api/class-uploads.php
+
+		-
+			message: '#^Class EventKoi\\CLI\\Commands referenced with incorrect case\: EventKoi\\Cli\\Commands\.$#'
+			identifier: class.nameCase
+			count: 1
+			path: includes/class-init.php
+
+		-
+			message: '#^Call to an undefined static method EventKoi\\Core\\Event\:\:get_first_start_end_datetime\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: includes/cli/class-commands.php
+
+		-
+			message: '#^Call to static method add_command\(\) on an unknown class WP_CLI\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/cli/class-commands.php
+
+		-
+			message: '#^Call to static method error\(\) on an unknown class WP_CLI\.$#'
+			identifier: class.notFound
+			count: 3
+			path: includes/cli/class-commands.php
+
+		-
+			message: '#^Call to static method line\(\) on an unknown class WP_CLI\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/cli/class-commands.php
+
+		-
+			message: '#^Function WP_CLI\\Utils\\format_items not found\.$#'
+			identifier: function.notFound
+			count: 1
+			path: includes/cli/class-commands.php
+
+		-
+			message: '#^Call to an undefined static method FLBuilderModule\:\:__construct\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: includes/core/beaver-modules/eventkoi-calendar/class-module-calendar.php
+
+		-
+			message: '#^Call to static method rule\(\) on an unknown class FLBuilderCSS\.$#'
+			identifier: class.notFound
+			count: 4
+			path: includes/core/beaver-modules/eventkoi-calendar/includes/frontend.css.php
+
+		-
+			message: '#^Call to static method typography_field_rule\(\) on an unknown class FLBuilderCSS\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/beaver-modules/eventkoi-calendar/includes/frontend.css.php
+
+		-
+			message: '#^Call to an undefined static method FLBuilderModule\:\:__construct\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 1
+			path: includes/core/beaver-modules/eventkoi-event/class-module-event.php
+
+		-
+			message: '#^Call to static method rule\(\) on an unknown class FLBuilderCSS\.$#'
+			identifier: class.notFound
+			count: 3
+			path: includes/core/beaver-modules/eventkoi-event/includes/frontend.css.php
+
+		-
+			message: '#^Call to static method typography_field_rule\(\) on an unknown class FLBuilderCSS\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/beaver-modules/eventkoi-event/includes/frontend.css.php
+
+		-
+			message: '#^Call to function is_wp_error\(\) with array\<int, WP_Post\> will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: includes/core/class-beaver-modules.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/core/class-bindings.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/core/class-blocks.php
+
+		-
+			message: '#^Call to function is_array\(\) with mixed will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 2
+			path: includes/core/class-blocks.php
+
+		-
+			message: '#^Call to function is_array\(\) with non\-empty\-array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 3
+			path: includes/core/class-blocks.php
+
+		-
+			message: '#^Call to function is_array\(\) with non\-empty\-array\<mixed\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/core/class-blocks.php
+
+		-
+			message: '#^Call to function is_array\(\) with non\-empty\-list\<string\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/core/class-blocks.php
+
+		-
+			message: '#^Call to function is_object\(\) with array will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 3
+			path: includes/core/class-blocks.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/core/class-blocks.php
+
+		-
+			message: '#^Call to function is_wp_error\(\) with non\-empty\-array will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: includes/core/class-blocks.php
+
+		-
+			message: '#^Callback expects 1 parameter, \$accepted_args is set to 2\.$#'
+			identifier: arguments.count
+			count: 1
+			path: includes/core/class-blocks.php
+
+		-
+			message: '#^Left side of && is always false\.$#'
+			identifier: booleanAnd.leftAlwaysFalse
+			count: 1
+			path: includes/core/class-blocks.php
+
+		-
+			message: '#^Negated boolean expression is always false\.$#'
+			identifier: booleanNot.alwaysFalse
+			count: 1
+			path: includes/core/class-blocks.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 2
+			path: includes/core/class-blocks.php
+
+		-
+			message: '#^Parameter \#2 \$args of function register_block_type expects array\{api_version\?\: string, title\?\: string, category\?\: string\|null, parent\?\: array\<string\>\|null, ancestor\?\: array\<string\>\|null, allowed_blocks\?\: array\<string\>\|null, icon\?\: string\|null, description\?\: string, \.\.\.\}, array\{api_version\: 2, attributes\: array\{field\: array\{type\: ''string'', default\: ''title''\}, tagName\: array\{type\: ''string'', default\: ''div''\}, textAlign\: array\{type\: ''string''\}, className\: array\{type\: ''string''\}, textColor\: array\{type\: ''string''\}, backgroundColor\: array\{type\: ''string''\}, gradient\: array\{type\: ''string''\}, customTextColor\: array\{type\: ''string''\}, \.\.\.\}, supports\: array\{color\: array\{text\: true, background\: true, link\: true\}, typography\: array\{fontSize\: true, lineHeight\: true, textColumns\: true, textIndent\: true, __experimentalFontFamily\: true, __experimentalTextDecoration\: true, __experimentalFontStyle\: true, __experimentalFontWeight\: true, \.\.\.\}, spacing\: array\{margin\: true, padding\: true\}, align\: array\{''left'', ''center'', ''right''\}\}\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: includes/core/class-blocks.php
+
+		-
+			message: '#^Result of && is always false\.$#'
+			identifier: booleanAnd.alwaysFalse
+			count: 4
+			path: includes/core/class-blocks.php
+
+		-
+			message: '#^Right side of && is always false\.$#'
+			identifier: booleanAnd.rightAlwaysFalse
+			count: 1
+			path: includes/core/class-blocks.php
+
+		-
+			message: '#^Right side of && is always true\.$#'
+			identifier: booleanAnd.rightAlwaysTrue
+			count: 1
+			path: includes/core/class-blocks.php
+
+		-
+			message: '#^Static property WP_Block_Supports\:\:\$block_to_render \(array\) on left side of \?\? is not nullable\.$#'
+			identifier: nullCoalesce.property
+			count: 1
+			path: includes/core/class-blocks.php
+
+		-
+			message: '#^Ternary operator condition is always false\.$#'
+			identifier: ternary.alwaysFalse
+			count: 2
+			path: includes/core/class-blocks.php
+
+		-
+			message: '#^Variable \$end_iso in empty\(\) always exists and is always falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: includes/core/class-blocks.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: includes/core/class-calendar.php
+
+		-
+			message: '#^Call to function is_array\(\) with non\-empty\-array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/core/class-calendar.php
+
+		-
+			message: '#^PHPDoc tag @param has invalid value \(\{object, number\} \$calendar A calendar object or calendar ID\.\)\: Unexpected token "\{", expected type at offset 34 on line 4$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: includes/core/class-calendar.php
+
+		-
+			message: '#^PHPDoc tag @var has invalid value \(\$calendar\.\)\: Unexpected token "\$calendar", expected type at offset 38 on line 4$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: includes/core/class-calendar.php
+
+		-
+			message: '#^PHPDoc tag @var has invalid value \(\$calendar_id\.\)\: Unexpected token "\$calendar_id", expected type at offset 34 on line 4$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: includes/core/class-calendar.php
+
+		-
+			message: '#^Property WP_Term\:\:\$term_id \(int\) in isset\(\) is not nullable\.$#'
+			identifier: isset.property
+			count: 1
+			path: includes/core/class-calendar.php
+
+		-
+			message: '#^Variable \$args on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: includes/core/class-calendar.php
+
+		-
+			message: '#^Call to new ET_Builder_Module_EventkoiCalendar\(\) on a separate line has no effect\.$#'
+			identifier: new.resultUnused
+			count: 1
+			path: includes/core/class-divi-modules.php
+
+		-
+			message: '#^Call to new ET_Builder_Module_EventkoiEvent\(\) on a separate line has no effect\.$#'
+			identifier: new.resultUnused
+			count: 1
+			path: includes/core/class-divi-modules.php
+
+		-
+			message: '#^Call to method add_category\(\) on an unknown class Elementor\\Elements_Manager\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/class-elementor-widgets.php
+
+		-
+			message: '#^Call to method register\(\) on an unknown class Elementor\\Widgets_Manager\.$#'
+			identifier: class.notFound
+			count: 2
+			path: includes/core/class-elementor-widgets.php
+
+		-
+			message: '#^Parameter \$elements_manager of method EventKoi\\Core\\Elementor_Widgets\:\:register_category\(\) has invalid type Elementor\\Elements_Manager\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/class-elementor-widgets.php
+
+		-
+			message: '#^Parameter \$widgets_manager of method EventKoi\\Core\\Elementor_Widgets\:\:register_widget\(\) has invalid type Elementor\\Widgets_Manager\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/class-elementor-widgets.php
+
+		-
+			message: '#^Call to an undefined static method EventKoi\\Core\\Event\:\:get_all_day_occurrence_range\(\)\.$#'
+			identifier: staticMethod.notFound
+			count: 3
+			path: includes/core/class-event.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 6
+			path: includes/core/class-event.php
+
+		-
+			message: '#^Call to function is_array\(\) with non\-empty\-array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 7
+			path: includes/core/class-event.php
+
+		-
+			message: '#^Call to function is_object\(\) with object will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/core/class-event.php
+
+		-
+			message: '#^Instanceof between DateTimeImmutable and DateTimeInterface will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 2
+			path: includes/core/class-event.php
+
+		-
+			message: '#^Negated boolean expression is always false\.$#'
+			identifier: booleanNot.alwaysFalse
+			count: 1
+			path: includes/core/class-event.php
+
+		-
+			message: '#^Offset ''is_infinite'' on array\{start\: DateTimeImmutable\|null, end\: DateTimeImmutable\|null\} in empty\(\) does not exist\.$#'
+			identifier: empty.offset
+			count: 1
+			path: includes/core/class-event.php
+
+		-
+			message: '#^Offset 0 on non\-empty\-list\<string\> in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: includes/core/class-event.php
+
+		-
+			message: '#^PHPDoc tag @param has invalid value \(\{object, number\} \$event An event object or event ID\.\)\: Unexpected token "\{", expected type at offset 34 on line 4$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: includes/core/class-event.php
+
+		-
+			message: '#^PHPDoc tag @var has invalid value \(\$event\.\)\: Unexpected token "\$event", expected type at offset 35 on line 4$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: includes/core/class-event.php
+
+		-
+			message: '#^PHPDoc tag @var has invalid value \(\$event_id\.\)\: Unexpected token "\$event_id", expected type at offset 31 on line 4$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: includes/core/class-event.php
+
+		-
+			message: '#^Parameter \#2 \$subject of function preg_match expects string, int given\.$#'
+			identifier: argument.type
+			count: 2
+			path: includes/core/class-event.php
+
+		-
+			message: '#^Right side of && is always true\.$#'
+			identifier: booleanAnd.rightAlwaysTrue
+			count: 1
+			path: includes/core/class-event.php
+
+		-
+			message: '#^Static method EventKoi\\Core\\Event\:\:render_rule_summary_single\(\) invoked with 2 parameters, 1 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: includes/core/class-event.php
+
+		-
+			message: '#^Static method EventKoi\\Core\\Event\:\:rendered_rulesummary\(\) invoked with 1 parameter, 0 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: includes/core/class-event.php
+
+		-
+			message: '#^Static property EventKoi\\Core\\Event\:\:\$suppress_inline_rulesummary is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: includes/core/class-event.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 2
+			path: includes/core/class-event.php
+
+		-
+			message: '#^Right side of && is always true\.$#'
+			identifier: booleanAnd.rightAlwaysTrue
+			count: 1
+			path: includes/core/class-events.php
+
+		-
+			message: '#^Action callback returns int but should not return anything\.$#'
+			identifier: return.void
+			count: 1
+			path: includes/core/class-hooks.php
+
+		-
+			message: '#^Call to function is_wp_error\(\) with WP_Error will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/core/class-hooks.php
+
+		-
+			message: '#^Callback expects 0 parameters, \$accepted_args is set to 2\.$#'
+			identifier: arguments.count
+			count: 4
+			path: includes/core/class-hooks.php
+
+		-
+			message: '#^Callback expects 0 parameters, \$accepted_args is set to 3\.$#'
+			identifier: arguments.count
+			count: 3
+			path: includes/core/class-hooks.php
+
+		-
+			message: '#^Callback expects 1 parameter, \$accepted_args is set to 4\.$#'
+			identifier: arguments.count
+			count: 4
+			path: includes/core/class-hooks.php
+
+		-
+			message: '#^Function gmdate invoked with 3 parameters, 1\-2 required\.$#'
+			identifier: arguments.count
+			count: 1
+			path: includes/core/class-hooks.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: includes/core/class-ical.php
+
+		-
+			message: '#^Call to function is_array\(\) with non\-empty\-array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: includes/core/class-ical.php
+
+		-
+			message: '#^Call to function method_exists\(\) with EventKoi\\Core\\Event and ''get_id'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/core/class-ical.php
+
+		-
+			message: '#^Call to function method_exists\(\) with EventKoi\\Core\\Event and ''get_timezone'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/core/class-ical.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between false and string will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: includes/core/class-ical.php
+
+		-
+			message: '#^Offset ''address1'' on array\{id\: non\-falsy\-string, type\: ''online'', name\: string, address1\: '''', address2\: '''', city\: '''', state\: '''', country\: '''', \.\.\.\}\|array\{id\: non\-falsy\-string, type\: ''physical'', name\: mixed, address1\: mixed, address2\: '''', city\: '''', state\: '''', country\: '''', \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: includes/core/class-ics-importer.php
+
+		-
+			message: '#^Offset ''type'' on array\{id\: non\-falsy\-string, type\: ''online'', name\: string, address1\: '''', address2\: '''', city\: '''', state\: '''', country\: '''', \.\.\.\}\|array\{id\: non\-falsy\-string, type\: ''physical'', name\: mixed, address1\: mixed, address2\: '''', city\: '''', state\: '''', country\: '''', \.\.\.\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: includes/core/class-ics-importer.php
+
+		-
+			message: '#^Right side of && is always false\.$#'
+			identifier: booleanAnd.rightAlwaysFalse
+			count: 1
+			path: includes/core/class-ics-importer.php
+
+		-
+			message: '#^Call to function is_wp_error\(\) with WP_Term will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: includes/core/class-install.php
+
+		-
+			message: '#^Variable \$meta_keys in empty\(\) always exists and is not falsy\.$#'
+			identifier: empty.variable
+			count: 1
+			path: includes/core/class-install.php
+
+		-
+			message: '#^Call to function is_numeric\(\) with int\<min, \-1\>\|int\<1, max\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: includes/core/class-order.php
+
+		-
+			message: '#^Cannot access property \$notes on array\|object\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: includes/core/class-order.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/core/class-orders.php
+
+		-
+			message: '#^Call to function is_scalar\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/core/class-orders.php
+
+		-
+			message: '#^Right side of && is always true\.$#'
+			identifier: booleanAnd.rightAlwaysTrue
+			count: 2
+			path: includes/core/class-permissions.php
+
+		-
+			message: '#^Callback expects 3 parameters, \$accepted_args is set to 4\.$#'
+			identifier: arguments.count
+			count: 1
+			path: includes/core/class-post-types.php
+
+		-
+			message: '#^Access to an undefined property WP\:\:\$is_404\.$#'
+			identifier: property.notFound
+			count: 1
+			path: includes/core/class-pretty-instance-urls.php
+
+		-
+			message: '#^Access to an undefined property WP\:\:\$is_home\.$#'
+			identifier: property.notFound
+			count: 1
+			path: includes/core/class-pretty-instance-urls.php
+
+		-
+			message: '#^Access to an undefined property WP\:\:\$is_page\.$#'
+			identifier: property.notFound
+			count: 1
+			path: includes/core/class-pretty-instance-urls.php
+
+		-
+			message: '#^Access to an undefined property WP\:\:\$is_single\.$#'
+			identifier: property.notFound
+			count: 1
+			path: includes/core/class-pretty-instance-urls.php
+
+		-
+			message: '#^Access to an undefined property WP\:\:\$is_singular\.$#'
+			identifier: property.notFound
+			count: 1
+			path: includes/core/class-pretty-instance-urls.php
+
+		-
+			message: '#^Access to an undefined property WP\:\:\$queried_object\.$#'
+			identifier: property.notFound
+			count: 1
+			path: includes/core/class-pretty-instance-urls.php
+
+		-
+			message: '#^Access to an undefined property WP\:\:\$queried_object_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: includes/core/class-pretty-instance-urls.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: includes/core/class-rsvps.php
+
+		-
+			message: '#^Call to function is_array\(\) with non\-empty\-array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/core/class-rsvps.php
+
+		-
+			message: '#^Call to function is_numeric\(\) with int will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/core/class-rsvps.php
+
+		-
+			message: '#^Cannot access property \$checkin_token on array\|object\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: includes/core/class-rsvps.php
+
+		-
+			message: '#^Cannot access property \$email on array\|object\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: includes/core/class-rsvps.php
+
+		-
+			message: '#^Cannot access property \$id on array\|object\.$#'
+			identifier: property.nonObject
+			count: 2
+			path: includes/core/class-rsvps.php
+
+		-
+			message: '#^Cannot access property \$user_id on array\|object\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: includes/core/class-rsvps.php
+
+		-
+			message: '#^Parameter \#2 \$instance_ts of static method EventKoi\\Core\\Rsvps\:\:get_event_instance_schedule\(\) expects int, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: includes/core/class-rsvps.php
+
+		-
+			message: '#^Parameter \#2 \$instance_ts of static method EventKoi\\Core\\Rsvps\:\:get_event_title\(\) expects int, string given\.$#'
+			identifier: argument.type
+			count: 1
+			path: includes/core/class-rsvps.php
+
+		-
+			message: '#^Parameter \#4 \$instance_ts of static method EventKoi\\Core\\Rsvps\:\:send_admin_rsvp_notification\(\) expects string, int given\.$#'
+			identifier: argument.type
+			count: 1
+			path: includes/core/class-rsvps.php
+
+		-
+			message: '#^Property WP_User\:\:\$ID \(int\) in isset\(\) is not nullable\.$#'
+			identifier: isset.property
+			count: 1
+			path: includes/core/class-rsvps.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between null and int\<0, max\> will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: includes/core/class-rsvps.php
+
+		-
+			message: '#^Ternary operator condition is always true\.$#'
+			identifier: ternary.alwaysTrue
+			count: 1
+			path: includes/core/class-rsvps.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 3
+			path: includes/core/class-schema.php
+
+		-
+			message: '#^Instanceof between DateTimeZone and DateTimeZone will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: includes/core/class-schema.php
+
+		-
+			message: '#^Static call to instance method stdClass\:\:get_recurring_instance_payload\(\)\.$#'
+			identifier: method.staticCall
+			count: 1
+			path: includes/core/class-schema.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between null and mixed will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 3
+			path: includes/core/class-schema.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/core/class-scripts.php
+
+		-
+			message: '#^Call to function is_wp_error\(\) with WP_Post\|WP_Post_Type\|WP_Term\|WP_User will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: includes/core/class-scripts.php
+
+		-
+			message: '#^Left side of && is always true\.$#'
+			identifier: booleanAnd.leftAlwaysTrue
+			count: 1
+			path: includes/core/class-scripts.php
+
+		-
+			message: '#^Call to static method invalidate_storage\(\) on an unknown class RankMath\\Sitemap\\Cache\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/class-seo-compat.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 5
+			path: includes/core/class-shortcodes.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/core/class-shortcodes.php
+
+		-
+			message: '#^Offset ''expand_instances'' on array\{id\: string, display\: string, orderby\: string, order\: string, per_page\: 10\|string, max_results\: 0\|string, date_start\: string, date_end\: string, \.\.\.\} in isset\(\) always exists and is not nullable\.$#'
+			identifier: isset.offset
+			count: 1
+			path: includes/core/class-shortcodes.php
+
+		-
+			message: '#^Offset ''with_name'' on array\{id\: 0\|string, data\: non\-falsy\-string, with_name\: string\|false\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: includes/core/class-shortcodes.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between null and int\<0, max\> will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: includes/core/class-shortcodes.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between null and mixed will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: includes/core/class-shortcodes.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<int, WP_Post\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/core/class-tec-importer.php
+
+		-
+			message: '#^Call to function is_array\(\) with array\<int, int\> will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/core/class-tec-importer.php
+
+		-
+			message: '#^Parameter \#1 \$args of function get_posts expects array\{numberposts\?\: int, category\?\: int\|string, include\?\: array\<int\>, exclude\?\: array\<int\>, suppress_filters\?\: bool, attachment_id\?\: int, author\?\: int\|string, author_name\?\: string, \.\.\.\}\|null, array\{post_type\: ''eventkoi_event'', post_status\: ''any'', meta_key\: ''_tec_import_source…'', meta_value\: int, posts_per_page\: 1, fields\: ''ids''\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: includes/core/class-tec-importer.php
+
+		-
+			message: '#^Parameter \#1 \$args of function get_posts expects array\{numberposts\?\: int, category\?\: int\|string, include\?\: array\<int\>, exclude\?\: array\<int\>, suppress_filters\?\: bool, attachment_id\?\: int, author\?\: int\|string, author_name\?\: string, \.\.\.\}\|null, array\{post_type\: ''tec_tc_attendee''\|''tribe_rsvp_attendees'', post_status\: ''any'', posts_per_page\: \-1, fields\: ''ids'', meta_key\: ''_tec_tickets…''\|''_tribe_rsvp_event'', meta_value\: int\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: includes/core/class-tec-importer.php
+
+		-
+			message: '#^Parameter \#1 \$args of function get_posts expects array\{numberposts\?\: int, category\?\: int\|string, include\?\: array\<int\>, exclude\?\: array\<int\>, suppress_filters\?\: bool, attachment_id\?\: int, author\?\: int\|string, author_name\?\: string, \.\.\.\}\|null, array\{post_type\: string, post_status\: ''any'', posts_per_page\: \-1, orderby\: array\{menu_order\: ''ASC'', ID\: ''ASC''\}, meta_key\: string, meta_value\: int\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: includes/core/class-tec-importer.php
+
+		-
+			message: '#^Static method EventKoi\\Core\\TEC_Importer\:\:convert_recurrence_rules\(\) is unused\.$#'
+			identifier: method.unused
+			count: 1
+			path: includes/core/class-tec-importer.php
+
+		-
+			message: '#^Call to function is_string\(\) with string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: includes/core/class-template.php
+
+		-
+			message: '#^Call to function method_exists\(\) with ''FLBuilderModel'' and ''is_builder_active'' will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: includes/core/class-template.php
+
+		-
+			message: '#^Call to function method_exists\(\) with EventKoi\\Core\\Event and ''get_date_type'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/core/class-template.php
+
+		-
+			message: '#^Instanceof between EventKoi\\Core\\Event and EventKoi\\Core\\Event will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: includes/core/class-template.php
+
+		-
+			message: '#^Instanceof between WP_Query and WP_Query will always evaluate to true\.$#'
+			identifier: instanceof.alwaysTrue
+			count: 1
+			path: includes/core/class-template.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 6
+			path: includes/core/class-ticket-emails.php
+
+		-
+			message: '#^Call to function is_array\(\) with non\-empty\-array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 3
+			path: includes/core/class-ticket-emails.php
+
+		-
+			message: '#^Method EventKoi\\Core\\Ticket_Emails\:\:find_order_id_by_checkout_session\(\) never returns string so it can be removed from the return type\.$#'
+			identifier: return.unusedType
+			count: 1
+			path: includes/core/class-ticket-emails.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 2
+			path: includes/core/class-ticket-order-sync.php
+
+		-
+			message: '#^Call to function is_array\(\) with non\-empty\-array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/core/class-ticket-order-sync.php
+
+		-
+			message: '#^Call to an undefined method DOMNameSpaceNode\|DOMNode\:\:getAttribute\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: includes/core/class-url-importer.php
+
+		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/core/class-url-importer.php
+
+		-
+			message: '#^Call to function is_string\(\) with non\-falsy\-string will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/core/class-url-importer.php
+
+		-
+			message: '#^If condition is always true\.$#'
+			identifier: if.alwaysTrue
+			count: 1
+			path: includes/core/class-url-importer.php
+
+		-
+			message: '#^Offset ''og\:title'' on non\-empty\-array\<mixed\> on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: includes/core/class-url-importer.php
+
+		-
+			message: '#^Call to method add_meta_data\(\) on an unknown class WC_Order_Item_Product\.$#'
+			identifier: class.notFound
+			count: 3
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Call to method add_order_note\(\) on an unknown class WC_Order\.$#'
+			identifier: class.notFound
+			count: 2
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Call to method get_cart\(\) on an unknown class WC_Cart\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Call to method get_id\(\) on an unknown class WC_Product\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Call to method get_id\(\) on an unknown class WC_Product_Simple\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Call to method get_meta\(\) on an unknown class EventKoi\\Core\\WC_Order\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Call to method get_meta\(\) on an unknown class WC_Order\.$#'
+			identifier: class.notFound
+			count: 2
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Call to method save\(\) on an unknown class WC_Order\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Call to method save\(\) on an unknown class WC_Product_Simple\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Call to method set_catalog_visibility\(\) on an unknown class WC_Product_Simple\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Call to method set_name\(\) on an unknown class WC_Order_Item_Product\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Call to method set_name\(\) on an unknown class WC_Product_Simple\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Call to method set_price\(\) on an unknown class WC_Product_Simple\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Call to method set_regular_price\(\) on an unknown class WC_Product_Simple\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Call to method set_sold_individually\(\) on an unknown class WC_Product_Simple\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Call to method set_status\(\) on an unknown class WC_Product_Simple\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Call to method set_virtual\(\) on an unknown class WC_Product_Simple\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Call to method update_meta_data\(\) on an unknown class WC_Order\.$#'
+			identifier: class.notFound
+			count: 10
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Class WC_Order not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Function WC not found\.$#'
+			identifier: function.notFound
+			count: 18
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Function wc_get_checkout_url not found\.$#'
+			identifier: function.notFound
+			count: 1
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Function wc_get_order not found\.$#'
+			identifier: function.notFound
+			count: 7
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Instantiated class WC_Product_Simple not found\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Parameter \$cart of method EventKoi\\Core\\WooCommerce_Checkout\:\:set_cart_item_prices\(\) has invalid type WC_Cart\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Parameter \$item of method EventKoi\\Core\\WooCommerce_Checkout\:\:add_order_item_meta\(\) has invalid type WC_Order_Item_Product\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Parameter \$order of method EventKoi\\Core\\WooCommerce_Checkout\:\:add_order_item_meta\(\) has invalid type WC_Order\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Parameter \$order of method EventKoi\\Core\\WooCommerce_Checkout\:\:attach_order_meta\(\) has invalid type WC_Order\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Parameter \$order of method EventKoi\\Core\\WooCommerce_Checkout\:\:on_order_status_changed\(\) has invalid type WC_Order\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Parameter \$order of method EventKoi\\Core\\WooCommerce_Checkout\:\:suppress_ticket_order_email\(\) has invalid type EventKoi\\Core\\WC_Order\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Parameter \$product of method EventKoi\\Core\\WooCommerce_Checkout\:\:suppress_proxy_product_image\(\) has invalid type WC_Product\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Strict comparison using \!\=\= between ''yes'' and mixed~''yes'' will always evaluate to true\.$#'
+			identifier: notIdentical.alwaysTrue
+			count: 1
+			path: includes/core/class-woocommerce-checkout.php
+
+		-
+			message: '#^Call to function is_wp_error\(\) with WP_Term will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: includes/core/core-functions.php
+
+		-
+			message: '#^Comparison operation "\>" between int\<\-43200, 50400\> and 50400 is always false\.$#'
+			identifier: greater.alwaysFalse
+			count: 1
+			path: includes/core/core-functions.php
+
+		-
+			message: '#^Parameter \#1 \$text of function esc_attr expects string, int\<0, 1000\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: includes/core/core-functions.php
+
+		-
+			message: '#^Parameter \#1 \$text of function esc_attr expects string, int\<0, 100\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: includes/core/core-functions.php
+
+		-
+			message: '#^Access to an undefined property ET_Builder_Module_EventkoiCalendar\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php
+
+		-
+			message: '#^Access to an undefined property ET_Builder_Module_EventkoiCalendar\:\:\$plural\.$#'
+			identifier: property.notFound
+			count: 1
+			path: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php
+
+		-
+			message: '#^Access to an undefined property ET_Builder_Module_EventkoiCalendar\:\:\$props\.$#'
+			identifier: property.notFound
+			count: 2
+			path: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php
+
+		-
+			message: '#^Access to an undefined property ET_Builder_Module_EventkoiCalendar\:\:\$settings_modal_toggles\.$#'
+			identifier: property.notFound
+			count: 1
+			path: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php
+
+		-
+			message: '#^Access to an undefined property ET_Builder_Module_EventkoiCalendar\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php
+
+		-
+			message: '#^Access to an undefined property ET_Builder_Module_EventkoiCalendar\:\:\$vb_support\.$#'
+			identifier: property.notFound
+			count: 1
+			path: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php
+
+		-
+			message: '#^Access to an undefined property ET_Builder_Module_EventkoiEvent\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: includes/core/divi-modules/class-et-builder-module-eventkoievent.php
+
+		-
+			message: '#^Access to an undefined property ET_Builder_Module_EventkoiEvent\:\:\$plural\.$#'
+			identifier: property.notFound
+			count: 1
+			path: includes/core/divi-modules/class-et-builder-module-eventkoievent.php
+
+		-
+			message: '#^Access to an undefined property ET_Builder_Module_EventkoiEvent\:\:\$settings_modal_toggles\.$#'
+			identifier: property.notFound
+			count: 1
+			path: includes/core/divi-modules/class-et-builder-module-eventkoievent.php
+
+		-
+			message: '#^Access to an undefined property ET_Builder_Module_EventkoiEvent\:\:\$slug\.$#'
+			identifier: property.notFound
+			count: 1
+			path: includes/core/divi-modules/class-et-builder-module-eventkoievent.php
+
+		-
+			message: '#^Access to an undefined property ET_Builder_Module_EventkoiEvent\:\:\$vb_support\.$#'
+			identifier: property.notFound
+			count: 1
+			path: includes/core/divi-modules/class-et-builder-module-eventkoievent.php
+
+		-
+			message: '#^Access to constant CHOOSE on an unknown class Elementor\\Controls_Manager\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/elementor-widgets/class-widget-calendar.php
+
+		-
+			message: '#^Access to constant COLOR on an unknown class Elementor\\Controls_Manager\.$#'
+			identifier: class.notFound
+			count: 4
+			path: includes/core/elementor-widgets/class-widget-calendar.php
+
+		-
+			message: '#^Access to constant NUMBER on an unknown class Elementor\\Controls_Manager\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/elementor-widgets/class-widget-calendar.php
+
+		-
+			message: '#^Access to constant SELECT on an unknown class Elementor\\Controls_Manager\.$#'
+			identifier: class.notFound
+			count: 2
+			path: includes/core/elementor-widgets/class-widget-calendar.php
+
+		-
+			message: '#^Access to constant SELECT2 on an unknown class Elementor\\Controls_Manager\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/elementor-widgets/class-widget-calendar.php
+
+		-
+			message: '#^Access to constant TAB_STYLE on an unknown class Elementor\\Controls_Manager\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/elementor-widgets/class-widget-calendar.php
+
+		-
+			message: '#^Call to an undefined method EventKoi\\Core\\Elementor\\Calendar_Widget\:\:add_control\(\)\.$#'
+			identifier: method.notFound
+			count: 9
+			path: includes/core/elementor-widgets/class-widget-calendar.php
+
+		-
+			message: '#^Call to an undefined method EventKoi\\Core\\Elementor\\Calendar_Widget\:\:add_group_control\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: includes/core/elementor-widgets/class-widget-calendar.php
+
+		-
+			message: '#^Call to an undefined method EventKoi\\Core\\Elementor\\Calendar_Widget\:\:end_controls_section\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: includes/core/elementor-widgets/class-widget-calendar.php
+
+		-
+			message: '#^Call to an undefined method EventKoi\\Core\\Elementor\\Calendar_Widget\:\:end_controls_tab\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: includes/core/elementor-widgets/class-widget-calendar.php
+
+		-
+			message: '#^Call to an undefined method EventKoi\\Core\\Elementor\\Calendar_Widget\:\:end_controls_tabs\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: includes/core/elementor-widgets/class-widget-calendar.php
+
+		-
+			message: '#^Call to an undefined method EventKoi\\Core\\Elementor\\Calendar_Widget\:\:get_settings_for_display\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: includes/core/elementor-widgets/class-widget-calendar.php
+
+		-
+			message: '#^Call to an undefined method EventKoi\\Core\\Elementor\\Calendar_Widget\:\:start_controls_section\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: includes/core/elementor-widgets/class-widget-calendar.php
+
+		-
+			message: '#^Call to an undefined method EventKoi\\Core\\Elementor\\Calendar_Widget\:\:start_controls_tab\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: includes/core/elementor-widgets/class-widget-calendar.php
+
+		-
+			message: '#^Call to an undefined method EventKoi\\Core\\Elementor\\Calendar_Widget\:\:start_controls_tabs\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: includes/core/elementor-widgets/class-widget-calendar.php
+
+		-
+			message: '#^Call to function is_array\(\) with non\-empty\-array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/core/elementor-widgets/class-widget-calendar.php
+
+		-
+			message: '#^Call to static method get_type\(\) on an unknown class Elementor\\Group_Control_Typography\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/elementor-widgets/class-widget-calendar.php
+
+		-
+			message: '#^Access to constant CHOOSE on an unknown class Elementor\\Controls_Manager\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/elementor-widgets/class-widget-event.php
+
+		-
+			message: '#^Access to constant COLOR on an unknown class Elementor\\Controls_Manager\.$#'
+			identifier: class.notFound
+			count: 2
+			path: includes/core/elementor-widgets/class-widget-event.php
+
+		-
+			message: '#^Access to constant DIMENSIONS on an unknown class Elementor\\Controls_Manager\.$#'
+			identifier: class.notFound
+			count: 2
+			path: includes/core/elementor-widgets/class-widget-event.php
+
+		-
+			message: '#^Access to constant REPEATER on an unknown class Elementor\\Controls_Manager\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/elementor-widgets/class-widget-event.php
+
+		-
+			message: '#^Access to constant SELECT on an unknown class Elementor\\Controls_Manager\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/elementor-widgets/class-widget-event.php
+
+		-
+			message: '#^Access to constant SELECT2 on an unknown class Elementor\\Controls_Manager\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/elementor-widgets/class-widget-event.php
+
+		-
+			message: '#^Access to constant SWITCHER on an unknown class Elementor\\Controls_Manager\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/elementor-widgets/class-widget-event.php
+
+		-
+			message: '#^Access to constant TAB_STYLE on an unknown class Elementor\\Controls_Manager\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/elementor-widgets/class-widget-event.php
+
+		-
+			message: '#^Call to an undefined method EventKoi\\Core\\Elementor\\Event_Widget\:\:add_control\(\)\.$#'
+			identifier: method.notFound
+			count: 4
+			path: includes/core/elementor-widgets/class-widget-event.php
+
+		-
+			message: '#^Call to an undefined method EventKoi\\Core\\Elementor\\Event_Widget\:\:add_group_control\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: includes/core/elementor-widgets/class-widget-event.php
+
+		-
+			message: '#^Call to an undefined method EventKoi\\Core\\Elementor\\Event_Widget\:\:add_responsive_control\(\)\.$#'
+			identifier: method.notFound
+			count: 3
+			path: includes/core/elementor-widgets/class-widget-event.php
+
+		-
+			message: '#^Call to an undefined method EventKoi\\Core\\Elementor\\Event_Widget\:\:end_controls_section\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: includes/core/elementor-widgets/class-widget-event.php
+
+		-
+			message: '#^Call to an undefined method EventKoi\\Core\\Elementor\\Event_Widget\:\:get_settings_for_display\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: includes/core/elementor-widgets/class-widget-event.php
+
+		-
+			message: '#^Call to an undefined method EventKoi\\Core\\Elementor\\Event_Widget\:\:start_controls_section\(\)\.$#'
+			identifier: method.notFound
+			count: 2
+			path: includes/core/elementor-widgets/class-widget-event.php
+
+		-
+			message: '#^Call to function is_wp_error\(\) with array\<int, WP_Post\> will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: includes/core/elementor-widgets/class-widget-event.php
+
+		-
+			message: '#^Call to static method get_type\(\) on an unknown class Elementor\\Group_Control_Typography\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/elementor-widgets/class-widget-event.php
+
+		-
+			message: '#^Call to function method_exists\(\) with NOOP_Translations\|Translations and ''get_header'' will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 1
+			path: includes/core/i18n.php
+
+		-
+			message: '#^Ternary operator condition is always true\.$#'
+			identifier: ternary.alwaysTrue
+			count: 1
+			path: includes/core/i18n.php
+
+		-
+			message: '#^PHPDoc tag @var has invalid value \(\$base_table_name\)\: Unexpected token "\$base_table_name", expected type at offset 33 on line 4$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: includes/core/tables/class-charges.php
+
+		-
+			message: '#^PHPDoc tag @var has invalid value \(\$group\)\: Unexpected token "\$group", expected type at offset 28 on line 4$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: includes/core/tables/class-charges.php
+
+		-
+			message: '#^PHPDoc tag @var has invalid value \(\$schema_slug\)\: Unexpected token "\$schema_slug", expected type at offset 33 on line 4$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: includes/core/tables/class-charges.php
+
+		-
+			message: '#^PHPDoc tag @var has invalid value \(\$uid_column\)\: Unexpected token "\$uid_column", expected type at offset 33 on line 4$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: includes/core/tables/class-charges.php
+
+		-
+			message: '#^PHPDoc tag @var has invalid value \(\$base_table_name\)\: Unexpected token "\$base_table_name", expected type at offset 33 on line 4$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: includes/core/tables/class-customers.php
+
+		-
+			message: '#^PHPDoc tag @var has invalid value \(\$group\)\: Unexpected token "\$group", expected type at offset 28 on line 4$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: includes/core/tables/class-customers.php
+
+		-
+			message: '#^PHPDoc tag @var has invalid value \(\$schema_slug\)\: Unexpected token "\$schema_slug", expected type at offset 33 on line 4$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: includes/core/tables/class-customers.php
+
+		-
+			message: '#^PHPDoc tag @var has invalid value \(\$uid_column\)\: Unexpected token "\$uid_column", expected type at offset 33 on line 4$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: includes/core/tables/class-customers.php
+
+		-
+			message: '#^PHPDoc tag @var has invalid value \(\$base_table_name\)\: Unexpected token "\$base_table_name", expected type at offset 33 on line 4$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: includes/core/tables/class-orders.php
+
+		-
+			message: '#^PHPDoc tag @var has invalid value \(\$group\)\: Unexpected token "\$group", expected type at offset 28 on line 4$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: includes/core/tables/class-orders.php
+
+		-
+			message: '#^PHPDoc tag @var has invalid value \(\$schema_slug\)\: Unexpected token "\$schema_slug", expected type at offset 33 on line 4$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: includes/core/tables/class-orders.php
+
+		-
+			message: '#^PHPDoc tag @var has invalid value \(\$uid_column\)\: Unexpected token "\$uid_column", expected type at offset 33 on line 4$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: includes/core/tables/class-orders.php
+
+		-
+			message: '#^PHPDoc tag @var has invalid value \(\$base_table_name\)\: Unexpected token "\$base_table_name", expected type at offset 33 on line 4$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: includes/core/tables/class-rsvps.php
+
+		-
+			message: '#^PHPDoc tag @var has invalid value \(\$group\)\: Unexpected token "\$group", expected type at offset 28 on line 4$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: includes/core/tables/class-rsvps.php
+
+		-
+			message: '#^PHPDoc tag @var has invalid value \(\$schema_slug\)\: Unexpected token "\$schema_slug", expected type at offset 33 on line 4$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: includes/core/tables/class-rsvps.php
+
+		-
+			message: '#^PHPDoc tag @var has invalid value \(\$uid_column\)\: Unexpected token "\$uid_column", expected type at offset 33 on line 4$#'
+			identifier: phpDoc.parseError
+			count: 1
+			path: includes/core/tables/class-rsvps.php
+
+		-
+			message: '#^Call to function is_wp_error\(\) with array\<int, WP_Post\> will always evaluate to false\.$#'
+			identifier: function.impossibleType
+			count: 1
+			path: includes/helpers/instance.php
+
+		-
+			message: '#^Cannot access property \$data on array\|object\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: includes/helpers/instance.php
+
+		-
+			message: '#^Parameter \#1 \$text of function esc_attr expects string, null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: templates/single-calendar.php
+
+		-
+			message: '#^Result of function single_term_title \(void\) is used\.$#'
+			identifier: function.void
+			count: 1
+			path: templates/single-calendar.php
+
+		-
+			message: '#^Variable \$post might not be defined\.$#'
+			identifier: variable.undefined
+			count: 1
+			path: templates/single-event-legacy.php
