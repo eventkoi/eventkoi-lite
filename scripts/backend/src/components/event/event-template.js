@@ -40,9 +40,13 @@ export function EventTemplate({
     `/wp_template/${themeSlug}//${template}`
   );
 
-  const templateEditorUrl = isManuallyAssigned
-    ? `${eventkoi_params.site_url}/wp-admin/site-editor.php?p=${encodedTemplatePath}&canvas=edit`
-    : `${eventkoi_params.site_url}/wp-admin/site-editor.php?p=/template&activeView=eventkoi`;
+  // Classic themes have no Site Editor template screens.
+  const isBlockTheme = !!eventkoi_params?.block_theme;
+  const templateEditorUrl = isBlockTheme
+    ? isManuallyAssigned
+      ? `${eventkoi_params.site_url}/wp-admin/site-editor.php?p=${encodedTemplatePath}&canvas=edit`
+      : `${eventkoi_params.site_url}/wp-admin/site-editor.php?p=/template&activeView=eventkoi`
+    : "";
 
   const handleChange = (value) => {
     if (isDisabled) return;
@@ -111,16 +115,18 @@ export function EventTemplate({
           </SelectContent>
         </Select>
 
-        <a
-          href={templateEditorUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm text-primary underline hover:text-primary/80 transition"
-        >
-          {isManuallyAssigned
-            ? __("Edit in Site Editor", "eventkoi-lite")
-            : __("View/edit template", "eventkoi-lite")}
-        </a>
+        {templateEditorUrl && (
+          <a
+            href={templateEditorUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-primary underline hover:text-primary/80 transition"
+          >
+            {isManuallyAssigned
+              ? __("Edit in Site Editor", "eventkoi-lite")
+              : __("View/edit template", "eventkoi-lite")}
+          </a>
+        )}
       </div>
     </Panel>
   );

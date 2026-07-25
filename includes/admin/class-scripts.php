@@ -212,6 +212,7 @@ class Scripts {
 			'general_options_url' => admin_url( 'options-general.php' ),
 			'site_url'            => get_bloginfo( 'url' ),
 			'theme'               => get_stylesheet(),
+			'block_theme'         => (bool) eventkoi_current_theme_support(),
 			'admin_email'         => get_bloginfo( 'admin_email' ),
 			'instance_id'         => get_option( 'eventkoi_site_instance_id' ),
 			'ajax_url'            => admin_url( 'admin-ajax.php' ),

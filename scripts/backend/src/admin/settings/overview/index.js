@@ -312,8 +312,11 @@ export function SettingsOverview() {
     setDefaultTemplate(value);
   };
 
-  const templateEditorUrl =
-    defaultTemplate && defaultTemplate !== "default"
+  // Classic themes have no Site Editor template screens.
+  const isBlockTheme = !!eventkoi_params?.block_theme;
+  const templateEditorUrl = !isBlockTheme
+    ? ""
+    : defaultTemplate && defaultTemplate !== "default"
       ? `${
           eventkoi_params.site_url
         }/wp-admin/site-editor.php?p=${encodeURIComponent(
@@ -635,16 +638,18 @@ export function SettingsOverview() {
               <div className="text-muted-foreground">
                 {__("Applied to every event page unless overridden on the event itself.", "eventkoi-lite")}
               </div>
-              <a
-                href={templateEditorUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-sm text-primary underline hover:text-primary/80 transition"
-              >
-                {defaultTemplate && defaultTemplate !== "default"
-                  ? __("Edit in Site Editor", "eventkoi-lite")
-                  : __("View/edit templates", "eventkoi-lite")}
-              </a>
+              {templateEditorUrl && (
+                <a
+                  href={templateEditorUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-primary underline hover:text-primary/80 transition"
+                >
+                  {defaultTemplate && defaultTemplate !== "default"
+                    ? __("Edit in Site Editor", "eventkoi-lite")
+                    : __("View/edit templates", "eventkoi-lite")}
+                </a>
+              )}
             </div>
             <ProLaunch
               headline="Upgrade to switch default event template"
