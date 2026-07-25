@@ -1,3 +1,4 @@
+import { CalendarHeaderPopover } from "@/components/calendar/CalendarHeaderPopover";
 import { CalendarToolbar } from "@/components/calendar/calendar-toolbar";
 import { EventPopover } from "@/components/calendar/EventPopover";
 import { ListView } from "@/components/calendar/list-view";
@@ -11,6 +12,7 @@ import apiRequest from "@wordpress/api-fetch";
 import { InspectorControls, useBlockProps } from "@wordpress/block-editor";
 import { __, sprintf } from "@wordpress/i18n";
 import { useEffect, useRef, useState } from "react";
+import { createRoot } from "react-dom/client";
 
 import { formatDate } from "@fullcalendar/core";
 import allLocales from "@fullcalendar/core/locales-all";
