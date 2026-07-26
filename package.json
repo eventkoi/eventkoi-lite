@@ -11,6 +11,7 @@
   "devDependencies": {
     "concurrently": "^9.0.1",
     "luxon": "^3.7.2",
-    "vitest": "^4.1.10"
+    "vite": "^6.4.1",
+    "vitest": "^3.2.7"
   }
 }
