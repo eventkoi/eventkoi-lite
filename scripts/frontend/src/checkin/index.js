@@ -197,13 +197,10 @@ function CheckinWidget({ mountEl }) {
   const instanceTs = Number(data?.rsvp?.instance_ts || 0);
   const eventId = Number(data?.event?.id || 0);
   const allowEdit = data?.allow_edit !== false;
-  const rsvpEnabled = data?.attendance_mode === 'rsvp';
-  
-  // Don't render checkin widget if RSVP is not enabled
-  if (data && !rsvpEnabled) {
-    return null;
-  }
-  
+  // Lite's checkin endpoint sends rsvp_enabled; attendance_mode is a Pro-only
+  // field, so reading it here left this permanently false and hid the widget.
+  const rsvpEnabled = data?.rsvp_enabled !== false;
+
   const allowGuests = data?.allow_guests;
   const maxGuests = data?.max_guests || 0;
   const capacity = data?.capacity || 0;
@@ -242,6 +239,13 @@ function CheckinWidget({ mountEl }) {
       typeof data?.rsvp?.guests === "number" ? String(data?.rsvp?.guests) : "",
     );
   }, [data?.rsvp]);
+
+  // Don't render the checkin widget if RSVP is not enabled. This has to stay
+  // below every hook: bailing out earlier drops a useEffect once data arrives
+  // for a non-RSVP event, which changes the hook count between renders.
+  if (data && !rsvpEnabled) {
+    return null;
+  }
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();

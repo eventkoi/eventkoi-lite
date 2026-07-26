@@ -91,6 +91,11 @@ if [ -d scripts ]; then
     --exclude ".aider*" \
     --exclude ".windsurf" \
     --exclude ".codeium" \
+    --exclude "eslint.config.mjs" \
+    --exclude "vitest.config.js" \
+    --exclude "__snapshots__" \
+    --exclude "*.test.js" \
+    --exclude "*.spec.js" \
     scripts "$PLUGIN_SLUG/"
 fi
 
