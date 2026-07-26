@@ -32,8 +32,10 @@ echo "⚛️  Extracting from frontend React (scripts/frontend/src)..."
 wp i18n make-pot scripts/frontend/src "$WORK/frontend.pot" --slug="$SLUG"
 retarget "$WORK/frontend.pot" "scripts/frontend/build/index.js"
 
-echo "🗃️  Extracting from PHP (includes/) and merging..."
-wp i18n make-pot . "$POT" --slug="$SLUG" --include="includes" \
+# templates/ ships user-facing markup too (the calendar archive <title>), so it
+# has to be scanned alongside includes/ or those strings never reach the POT.
+echo "🗃️  Extracting from PHP (includes/, templates/) and merging..."
+wp i18n make-pot . "$POT" --slug="$SLUG" --include="includes,templates" \
 	--merge="$WORK/backend.pot,$WORK/frontend.pot"
 
 echo "✅ Done! POT file created at $POT"
