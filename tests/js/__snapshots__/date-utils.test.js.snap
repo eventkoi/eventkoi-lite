@@ -1,0 +1,263 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`admin bundle (scripts/backend) > buildTimeline 1`] = `
+{
+  "all day event": null,
+  "all day event | Cairo 24h": null,
+  "empty event": null,
+  "empty event | Cairo 24h": null,
+  "multi day event": null,
+  "multi day event | Cairo 24h": null,
+  "single timed event": null,
+  "single timed event | Cairo 24h": null,
+  "tbc event": "To be announced",
+  "tbc event without note": "Date and time to be confirmed",
+  "tbc event without note | Cairo 24h": "Date and time to be confirmed",
+  "tbc event | Cairo 24h": "To be announced",
+}
+`;
+
+exports[`admin bundle (scripts/backend) > formatTimezoneLabel 1`] = `
+{
+  "Africa/Cairo | 12": "Africa/Cairo (UTC+3), AM/PM",
+  "Africa/Cairo | 12 | noFormat": "Africa/Cairo (UTC+3)",
+  "Africa/Cairo | 24": "Africa/Cairo (UTC+3), 24hr",
+  "Africa/Cairo | 24 | noFormat": "Africa/Cairo (UTC+3)",
+  "Africa/Cairo | custom": "Africa/Cairo (UTC+3), 24hr",
+  "Africa/Cairo | custom | noFormat": "Africa/Cairo (UTC+3)",
+  "America/New_York | 12": "America/New_York (UTC-4), AM/PM",
+  "America/New_York | 12 | noFormat": "America/New_York (UTC-4)",
+  "America/New_York | 24": "America/New_York (UTC-4), 24hr",
+  "America/New_York | 24 | noFormat": "America/New_York (UTC-4)",
+  "America/New_York | custom": "America/New_York (UTC-4), 24hr",
+  "America/New_York | custom | noFormat": "America/New_York (UTC-4)",
+  "UTC | 12": "UTC, AM/PM",
+  "UTC | 12 | noFormat": "UTC",
+  "UTC | 24": "UTC, 24hr",
+  "UTC | 24 | noFormat": "UTC",
+  "UTC | custom": "UTC, 24hr",
+  "UTC | custom | noFormat": "UTC",
+}
+`;
+
+exports[`admin bundle (scripts/backend) > formatWpDateTime 1`] = `
+{
+  "(empty)": "",
+  "D, d M Y H:i:s": "Tue, 11 Aug 2026 14:05:00",
+  "F j, Y": "August 11, 2026",
+  "H:i": "14:05",
+  "M j": "Aug 11",
+  "Y-m-d": "2026-08-11",
+  "d/m/Y": "11/08/2026",
+  "g:i a": "2:05 pm",
+  "invalidDateTime": "",
+  "invalidInput": "",
+  "l, F jS, Y": "Tuesday, August 11th, 2026",
+}
+`;
+
+exports[`admin bundle (scripts/backend) > normalizeTimeZone 1`] = `
+{
+  "": "UTC",
+  "+02:00": "Etc/GMT-2",
+  "-05:30": "-05:30",
+  "Africa/Cairo": "Africa/Cairo",
+  "America/New_York": "America/New_York",
+  "Australia/Adelaide": "Australia/Adelaide",
+  "Etc/GMT-2": "Etc/GMT-2",
+  "GMT+2": "GMT+2",
+  "Not/AZone": "Not/AZone",
+  "UTC": "UTC",
+  "UTC+3": "Etc/GMT-3",
+  "null": "UTC",
+  "undefined": "UTC",
+  "utc": "UTC",
+}
+`;
+
+exports[`admin bundle (scripts/backend) > resolveWpTimeFormat 1`] = `"(not exported by this bundle)"`;
+
+exports[`admin bundle (scripts/backend) > safeNormalizeTimeZone 1`] = `
+{
+  "": "UTC",
+  "+02:00": "Etc/GMT-2",
+  "-05:30": "-05:30",
+  "Africa/Cairo": "Africa/Cairo",
+  "America/New_York": "America/New_York",
+  "Australia/Adelaide": "Australia/Adelaide",
+  "Etc/GMT-2": "Etc/GMT-2",
+  "GMT+2": "UTC",
+  "Not/AZone": "UTC",
+  "UTC": "UTC",
+  "UTC+3": "Etc/GMT-3",
+  "null": "UTC",
+  "undefined": "UTC",
+  "utc": "UTC",
+}
+`;
+
+exports[`admin bundle (scripts/backend) > shiftTime 1`] = `
+{
+  "(empty) | 8am | UTC": "",
+  "2026-01-05 | 12am | Australia/Adelaide": "THREW: ReferenceError: formatTimeCompact is not defined",
+  "2026-01-05 | 12pm | UTC": "THREW: ReferenceError: formatTimeCompact is not defined",
+  "2026-08-11 | (empty) | UTC": "",
+  "2026-08-11 | 8:30pm | Africa/Cairo": "THREW: ReferenceError: formatTimeCompact is not defined",
+  "2026-08-11 | 8am | America/New_York": "THREW: ReferenceError: formatTimeCompact is not defined",
+  "2026-08-11 | 8am | false": "8am",
+  "2026-08-11 | 8am | utc": "8am",
+  "2026-08-11 | not-a-time | UTC": "",
+}
+`;
+
+exports[`admin bundle (scripts/backend) > wpToLuxonFormat 1`] = `
+{
+  "(empty)": "",
+  "D, d M Y H:i:s": "ccc, dd LLL yyyy HH:mm:ss",
+  "F j, Y": "LLLL d, yyyy",
+  "H:i": "HH:mm",
+  "M j": "LLL d",
+  "Y-m-d": "yyyy-LL-dd",
+  "d/m/Y": "dd/LL/yyyy",
+  "g:i a": "h:mm a",
+  "l, F jS, Y": "cccc, LLLL dS, yyyy",
+}
+`;
+
+exports[`frontend bundle (scripts/frontend) > buildTimeline 1`] = `
+{
+  "all day event": null,
+  "all day event | Cairo 24h": null,
+  "empty event": null,
+  "empty event | Cairo 24h": null,
+  "multi day event": null,
+  "multi day event | Cairo 24h": null,
+  "single timed event": null,
+  "single timed event | Cairo 24h": null,
+  "tbc event": "To be announced",
+  "tbc event without note": "Date and time to be confirmed",
+  "tbc event without note | Cairo 24h": "Date and time to be confirmed",
+  "tbc event | Cairo 24h": "To be announced",
+}
+`;
+
+exports[`frontend bundle (scripts/frontend) > formatTimezoneLabel 1`] = `
+{
+  "Africa/Cairo | 12": "Africa/Cairo (UTC+3), AM/PM",
+  "Africa/Cairo | 12 | noFormat": "Africa/Cairo (UTC+3)",
+  "Africa/Cairo | 24": "Africa/Cairo (UTC+3), 24hr",
+  "Africa/Cairo | 24 | noFormat": "Africa/Cairo (UTC+3)",
+  "Africa/Cairo | custom": "Africa/Cairo (UTC+3), custom time",
+  "Africa/Cairo | custom | noFormat": "Africa/Cairo (UTC+3)",
+  "America/New_York | 12": "America/New_York (UTC-4), AM/PM",
+  "America/New_York | 12 | noFormat": "America/New_York (UTC-4)",
+  "America/New_York | 24": "America/New_York (UTC-4), 24hr",
+  "America/New_York | 24 | noFormat": "America/New_York (UTC-4)",
+  "America/New_York | custom": "America/New_York (UTC-4), custom time",
+  "America/New_York | custom | noFormat": "America/New_York (UTC-4)",
+  "UTC | 12": "UTC, AM/PM",
+  "UTC | 12 | noFormat": "UTC",
+  "UTC | 24": "UTC, 24hr",
+  "UTC | 24 | noFormat": "UTC",
+  "UTC | custom": "UTC, custom time",
+  "UTC | custom | noFormat": "UTC",
+}
+`;
+
+exports[`frontend bundle (scripts/frontend) > formatWpDateTime 1`] = `"(not exported by this bundle)"`;
+
+exports[`frontend bundle (scripts/frontend) > normalizeTimeZone 1`] = `
+{
+  "": "UTC",
+  "+02:00": "Etc/GMT-2",
+  "-05:30": "-05:30",
+  "Africa/Cairo": "Africa/Cairo",
+  "America/New_York": "America/New_York",
+  "Australia/Adelaide": "Australia/Adelaide",
+  "Etc/GMT-2": "Etc/GMT-2",
+  "GMT+2": "GMT+2",
+  "Not/AZone": "Not/AZone",
+  "UTC": "UTC",
+  "UTC+3": "Etc/GMT-3",
+  "null": "UTC",
+  "undefined": "UTC",
+  "utc": "UTC",
+}
+`;
+
+exports[`frontend bundle (scripts/frontend) > resolveWpTimeFormat 1`] = `"(not exported by this bundle)"`;
+
+exports[`frontend bundle (scripts/frontend) > safeNormalizeTimeZone 1`] = `
+{
+  "": "UTC",
+  "+02:00": "Etc/GMT-2",
+  "-05:30": "-05:30",
+  "Africa/Cairo": "Africa/Cairo",
+  "America/New_York": "America/New_York",
+  "Australia/Adelaide": "Australia/Adelaide",
+  "Etc/GMT-2": "Etc/GMT-2",
+  "GMT+2": "UTC",
+  "Not/AZone": "UTC",
+  "UTC": "UTC",
+  "UTC+3": "Etc/GMT-3",
+  "null": "UTC",
+  "undefined": "UTC",
+  "utc": "UTC",
+}
+`;
+
+exports[`frontend bundle (scripts/frontend) > shiftTime 1`] = `
+{
+  "(empty) | 8am | UTC": "",
+  "2026-01-05 | 12am | Australia/Adelaide": "10:30am",
+  "2026-01-05 | 12pm | UTC": "12pm",
+  "2026-08-11 | (empty) | UTC": "",
+  "2026-08-11 | 8:30pm | Africa/Cairo": "11:30pm",
+  "2026-08-11 | 8am | America/New_York": "4am",
+  "2026-08-11 | 8am | false": "8am",
+  "2026-08-11 | 8am | utc": "8am",
+  "2026-08-11 | not-a-time | UTC": "",
+}
+`;
+
+exports[`frontend bundle (scripts/frontend) > wpToLuxonFormat 1`] = `
+{
+  "(empty)": "",
+  "D, d M Y H:i:s": "ccc, dd LLL yyyy HH:mm:ss",
+  "F j, Y": "LLLL d, yyyy",
+  "H:i": "HH:mm",
+  "M j": "LLL d",
+  "Y-m-d": "yyyy-LL-dd",
+  "d/m/Y": "dd/LL/yyyy",
+  "g:i a": "h:mm a",
+  "l, F jS, Y": "cccc, LLLL dS, yyyy",
+}
+`;
+
+exports[`getInitialCalendarDate (signatures differ per bundle) > admin copy, snake_case calendar row 1`] = `
+{
+  "null": "2026-06-01",
+  "undefined": "2026-06-01",
+  "{"default_month":"","default_year":""}": "2026-06-01",
+  "{"default_month":"March","default_year":2030}": "2030-03-01",
+  "{"default_month":"March"}": "2026-03-01",
+  "{"default_month":"Nonsense","default_year":2030}": "2030-06-01",
+  "{"default_month":"march","default_year":"2030"}": "2030-03-01",
+  "{"default_year":"current"}": "2026-06-01",
+  "{}": "2026-06-01",
+}
+`;
+
+exports[`getInitialCalendarDate (signatures differ per bundle) > frontend copy, camelCase props 1`] = `
+{
+  "{"context":"admin","defaultMonth":"March","defaultYear":2030}": "2026-06-01",
+  "{"context":"block","defaultMonth":"March","defaultYear":2030}": "2030-03-01",
+  "{"context":"block","defaultMonth":"March","timeframe":"week"}": "2026-06-15",
+  "{"context":"block","defaultMonth":"March"}": "2026-03-01",
+  "{"context":"block","defaultMonth":"Nonsense","defaultYear":2030}": "2030-06-01",
+  "{"context":"block","defaultMonth":"march","defaultYear":"2030"}": "2030-03-01",
+  "{"context":"block"}": "2026-06-01",
+  "{"timeframe":"week"}": "2026-06-15",
+  "{}": "2026-06-01",
+}
+`;

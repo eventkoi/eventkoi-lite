@@ -74,6 +74,21 @@ jobs:
       - name: Run phpcs
         run: phpcs -q --report=full
 
+  jstests:
+    name: JS unit tests
+    runs-on: ubuntu-latest
+    # Blocking on purpose. These pin the behaviour of the date/time helpers,
+    # so a change here means date rendering moved and needs a human decision.
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dependencies
+        run: npm install
+      - name: Run tests
+        run: npm run test:js
+
   phpstan:
     name: PHPStan (advisory)
     runs-on: ubuntu-latest
