@@ -37,6 +37,61 @@ class Metabox_Embed {
 		// Registered unconditionally: the save POST does not carry the GET
 		// flags, so it is recognised via a hidden form marker instead.
 		add_filter( 'redirect_post_location', array( $this, 'preserve_embed_redirect' ), 100 );
+		add_filter( 'wp_insert_post_data', array( $this, 'preserve_core_post_fields' ), 999, 2 );
+	}
+
+	/**
+	 * Stop an embedded save from writing the event's own fields.
+	 *
+	 * The embed is a real post.php form, so it posts the core fields alongside
+	 * the plugin metaboxes. Those values are whatever the post held when the
+	 * iframe loaded, which is stale the moment the editor changes anything, and
+	 * the form's publish control would also push a draft live.
+	 *
+	 * Only the metaboxes belong to this form, so every core field is restored
+	 * from the database and the embed can no longer alter the event itself.
+	 *
+	 * @param array $data    Sanitised post data heading for the database.
+	 * @param array $postarr Raw post array, including the ID.
+	 * @return array
+	 */
+	public function preserve_core_post_fields( $data, $postarr ) {
+		// phpcs:ignore WordPress.Security.NonceVerification.Missing -- Core verified the edit nonce before this filter; this only reads a routing marker.
+		if ( empty( $_POST['_ek_embed'] ) ) {
+			return $data;
+		}
+
+		$post_id = absint( $postarr['ID'] ?? 0 );
+		if ( ! $post_id ) {
+			return $data;
+		}
+
+		$existing = get_post( $post_id );
+		if ( ! $existing || 'eventkoi_event' !== $existing->post_type ) {
+			return $data;
+		}
+
+		$preserve = array(
+			'post_title',
+			'post_name',
+			'post_content',
+			'post_excerpt',
+			'post_status',
+			'post_date',
+			'post_date_gmt',
+			'post_parent',
+			'menu_order',
+			'comment_status',
+			'ping_status',
+		);
+
+		foreach ( $preserve as $field ) {
+			if ( isset( $existing->$field ) ) {
+				$data[ $field ] = $existing->$field;
+			}
+		}
+
+		return $data;
 	}
 
 	/**
