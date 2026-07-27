@@ -40,6 +40,10 @@ export function Calendar(props) {
   } = props;
 
   const calendarRef = useRef(null);
+  // Held in state, not read off the ref during render: a ref assignment does
+  // not re-render, so reading it inline left the toolbar with a stale (or
+  // missing) API for the first render after the grid mounted.
+  const [calendarApi, setCalendarApi] = useState(null);
 
   // Active display is stateful so the view toggle can switch between the
   // calendar grid and the list in place. Initialised from the block's
@@ -232,7 +236,7 @@ export function Calendar(props) {
     <div className="relative">
       <CalendarToolbar
         calendar={calendar}
-        calendarApi={calendarRef.current?.getApi()}
+        calendarApi={calendarApi}
         currentDate={currentDate}
         setCurrentDate={setCurrentDate}
         view={view}
@@ -313,6 +317,7 @@ export function Calendar(props) {
           timeFormat={timeFormat}
           startday={startday}
           initialDate={currentDate || initialDate}
+          onApiChange={setCalendarApi}
         />
       )}
     </div>

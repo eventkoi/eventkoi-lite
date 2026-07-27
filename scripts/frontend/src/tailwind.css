@@ -139,7 +139,20 @@
   display: none;
 }
 
-@media (min-width: 768px) {
+/* Below 900px a 220px image column plus a 200px-minimum date column leave the
+   middle column too narrow to hold a title, excerpt and address without every
+   line wrapping. In that band the date stays inline above the title and the
+   image gives back some room. The inline width on the image element is why
+   these need !important. */
+@media (max-width: 899px) {
+  .eventkoi-front .ek-image {
+    width: 160px !important;
+    flex-basis: 160px !important;
+    max-width: 160px !important;
+  }
+}
+
+@media (min-width: 900px) {
   .eventkoi-front .ek-date-sm {
     display: none;
   }

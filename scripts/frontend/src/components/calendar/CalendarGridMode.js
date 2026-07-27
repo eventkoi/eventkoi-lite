@@ -175,6 +175,7 @@ export function CalendarGridMode({
   timeFormat,
   startday,
   initialDate,
+  onApiChange,
 }) {
   const resolvedLocalTz =
     typeof window !== "undefined"
@@ -551,6 +552,33 @@ export function CalendarGridMode({
   const timeGridHeight = useDefaultTimeGrid
     ? "auto"
     : slotsToShow * slotHeightPx;
+
+  // Publish the FullCalendar API upwards once it exists. The toolbar reads it
+  // from a ref, and a ref assignment does not re-render, so without this the
+  // toolbar holds `undefined` for the first render after every (re)mount and
+  // its buttons silently do nothing.
+  useEffect(() => {
+    if (typeof onApiChange !== "function") {
+      return undefined;
+    }
+
+    onApiChange(calendarRef?.current?.getApi?.() || null);
+
+    return () => onApiChange(null);
+  }, [onApiChange, calendarRef, isEmpty]);
+
+  // `initialView` is only read when FullCalendar is constructed, so the React
+  // `view` state is the single source of truth: whenever the two disagree
+  // (a toggle click that landed before the API was published, or a late state
+  // update), push the state onto the calendar.
+  useEffect(() => {
+    const api = calendarRef?.current?.getApi?.();
+    if (!api || !view || api.view?.type === view) {
+      return;
+    }
+
+    api.changeView(view);
+  }, [calendarRef, view, isEmpty]);
 
   useEffect(() => {
     if (previousTimezoneRef.current === displayTimezoneKey) {

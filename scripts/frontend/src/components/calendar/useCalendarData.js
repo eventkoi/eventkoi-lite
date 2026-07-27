@@ -97,6 +97,11 @@ export function useCalendarData({
   const [listLoadingMore, setListLoadingMore] = useState(false);
 
   const lastRangeRef = useRef(null);
+  // The initial-calendar fetch seeds the default view and date. Seeding is a
+  // first-load concern only: a later re-run must never overwrite the view or
+  // date the visitor has picked in the meantime.
+  const initialRequestIdRef = useRef(0);
+  const calendarSeededRef = useRef(false);
   const hasLoadedView = useRef(false);
   const viewRequestIdRef = useRef(0);
   const rangeCacheRef = useRef(new Map());
@@ -143,6 +148,8 @@ export function useCalendarData({
 
   const getInitialCalendar = async () => {
     setLoadError(false);
+    const requestId = initialRequestIdRef.current + 1;
+    initialRequestIdRef.current = requestId;
     try {
       const params = new URLSearchParams({
         id: effectiveId,
@@ -157,7 +164,16 @@ export function useCalendarData({
         method: "get",
       });
 
+      if (requestId !== initialRequestIdRef.current) {
+        return;
+      }
+
       setCalendar(response.calendar);
+
+      if (calendarSeededRef.current) {
+        return;
+      }
+      calendarSeededRef.current = true;
 
       const moduleTimeframe =
         timeframe === "week" || timeframe === "month" ? timeframe : null;
