@@ -29,6 +29,13 @@ export function SettingsAPI() {
       });
 
       if (response?.api_key) {
+        // Every admin request authenticates with the key printed at page load,
+        // so the running page has to adopt the new one. Without this the old
+        // key stays in play and each following request 403s until a reload.
+        if (typeof eventkoi_params === "object" && eventkoi_params) {
+          eventkoi_params.api_key = response.api_key;
+        }
+
         setNewKey(response.api_key);
         showToast({
           message: __("API key regenerated successfully.", "eventkoi-lite"),
