@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.3.28.0
+Stable tag: 1.3.29.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,18 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.29.0 – Calendar views and import fixes – 2026-07-28 =
+* Fix: Multi-day events imported from The Events Calendar lost their final day, so an event running 10–11 November showed only the 10th. Imported events now keep their full date range.
+* Fix: All-day events could show an end date one day later than they actually run in the events list. The list now shows the dates the event really covers.
+* Fix: Switching between Month, Week and List could leave the calendar showing the wrong view, and the toolbar could stay stuck on placeholders. The view you pick is now the view you get.
+* Fix: In the calendar List view, the date column and event details overlapped on tablet and smaller desktop widths. Rows now stay readable at every width.
+* Fix: Saving fields added by another plugin from the event editor panel could overwrite the event title and publish a draft before it was ready. The panel can no longer change anything except its own fields.
+* Fix: Regenerating the API key in Settings left the admin unable to load until the page was refreshed.
+* Fix: The calendar block and the API key panel could fail to load because of an undefined reference.
+* Fix: Links to the Site Editor no longer appear on classic themes, where that editor is unavailable.
+* Fix: The check-in screen could fail to load on events using RSVPs.
+* Improved: Text in the bundled templates can now be translated.
 
 = 1.3.28.0 – Theme compatibility fixes – 2026-07-24 =
 * Fix: The plugin loaded style utilities globally, which could restyle theme elements that share common class names. On some themes (such as Total), buttons collapsed into thin slivers. All plugin styles are now scoped to EventKoi containers and can no longer affect the rest of your site.
