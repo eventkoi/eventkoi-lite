@@ -347,18 +347,43 @@ class TEC_Importer
             return new WP_Error('no_start_date', __('Event has no start date.', 'eventkoi-lite'));
         }
 
+        // All-day events use an inclusive last day. Some sources store the end as
+        // the exclusive midnight of the following day (e.g. Nov 10 -> Nov 11 saved
+        // as "2026-11-11 00:00:00"), which would drop the final date of the range.
+        // Pin the end to the end of its own date so the full span is preserved.
+        if ($all_day && ! empty($end_date) ) {
+            $end_date = substr((string) $end_date, 0, 10) . ' 23:59:59';
+        }
+
         // Convert TEC dates (stored in local timezone) to ISO format.
         $start_iso = self::to_iso_date($start_date, $timezone);
         $end_iso   = ! empty($end_date) ? self::to_iso_date($end_date, $timezone) : '';
 
-        // Build event_days array for standard events.
-        $event_days = array(
-        array(
-        'start_date' => $start_iso,
-        'end_date'   => $end_iso,
-        'all_day'    => $all_day,
-        ),
-        );
+        // Multi-day spans are "continuous" (the range lives in start/end meta with no
+        // per-day rows); single-day events are "selected" with one event_days row. This
+        // mirrors create_event() in the URL importer so the two import paths agree.
+        $is_multi_day  = self::spans_multiple_days($start_date, $end_date);
+        $standard_type = $is_multi_day ? 'continuous' : 'selected';
+
+        $event_days = array();
+        if (! $is_multi_day ) {
+            $event_days[] = array(
+            'start_date' => $start_iso,
+            'end_date'   => '' !== $end_iso ? $end_iso : $start_iso,
+            'all_day'    => $all_day,
+            );
+        } elseif ($all_day ) {
+            // Multi-day all-day events render as a continuous date range. Keep a
+            // single all-day event_days row (carrying the all_day flag) alongside the
+            // continuous type so the editor shows the all-day toggle and the full
+            // start/end span. Forcing "selected" here collapsed the range to a single
+            // day in the editor (the end date disappeared).
+            $event_days[] = array(
+            'start_date' => $start_iso,
+            'end_date'   => '' !== $end_iso ? $end_iso : $start_iso,
+            'all_day'    => true,
+            );
+        }
 
         // Location from venue. Map TEC _EventShowMap into the per-location embed flag.
         $show_map  = '1' === get_post_meta($tec_id, '_EventShowMap', true);
@@ -464,7 +489,7 @@ class TEC_Importer
         update_post_meta($new_post_id, 'event_days', $event_days);
         update_post_meta($new_post_id, 'locations', $locations);
         update_post_meta($new_post_id, 'type', $event_type);
-        update_post_meta($new_post_id, 'standard_type', 'selected');
+        update_post_meta($new_post_id, 'standard_type', $standard_type);
         update_post_meta($new_post_id, 'embed_gmap', $show_map);
 
         // Mirror first virtual URL into legacy top-level meta so EK's get_virtual_url() picks it up.
@@ -1399,6 +1424,37 @@ class TEC_Importer
     {
         $raw = get_post_meta($tec_id, '_EventAllDay', true);
         return in_array($raw, array( 'yes', '1', 1, true ), true);
+    }
+
+    /**
+     * Whether a TEC date range spans more than one calendar day.
+     *
+     * Compares the raw TEC wall-clock dates (both in the source timezone) so the
+     * day boundary is the local one, not UTC. TEC stores an inclusive end
+     * (23:59:59); the midnight guard also tolerates an exclusive end if present.
+     *
+     * @param  string $start_date Raw TEC _EventStartDate.
+     * @param  string $end_date   Raw TEC _EventEndDate.
+     * @return bool
+     */
+    private static function spans_multiple_days( $start_date, $end_date )
+    {
+        if (empty($start_date) || empty($end_date) ) {
+            return false;
+        }
+
+        try {
+            $start = new \DateTime($start_date);
+            $end   = new \DateTime($end_date);
+
+            if ($end > $start && '00:00:00' === $end->format('H:i:s') ) {
+                $end->modify('-1 second');
+            }
+
+            return $start->format('Y-m-d') !== $end->format('Y-m-d');
+        } catch ( \Exception $e ) {
+            return false;
+        }
     }
 
     /**
