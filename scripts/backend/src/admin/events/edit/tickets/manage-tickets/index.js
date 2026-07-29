@@ -1,5 +1,6 @@
 import { Box } from "@/components/box";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { EventDatePackageSetting } from "@/components/event/event-date-package-setting";
 import { Heading } from "@/components/heading";
 import { TimeInput } from "@/components/time-input";
 import { Button } from "@/components/ui/button";
@@ -727,6 +728,12 @@ export function EventEditManageTickets() {
             )}
             checked={ticketSettings.show_remaining}
             onCheckedChange={() => handleToggle("show_remaining")}
+          />
+
+          <EventDatePackageSetting
+            event={event}
+            setEvent={setEvent}
+            context="tickets"
           />
 
           <div className="flex flex-col gap-4">

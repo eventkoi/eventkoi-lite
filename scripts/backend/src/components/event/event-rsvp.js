@@ -1,4 +1,5 @@
 import { __ } from "@wordpress/i18n";
+import { EventDatePackageSetting } from "@/components/event/event-date-package-setting";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -250,6 +251,12 @@ export function EventRsvpSettings({ event, setEvent, className }) {
               )}
             </p>
           </div>
+
+          <EventDatePackageSetting
+            event={event}
+            setEvent={setEvent}
+            context="rsvp"
+          />
 
           <SettingToggle
             id="rsvp_show_count"
