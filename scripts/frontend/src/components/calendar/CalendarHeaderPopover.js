@@ -40,7 +40,13 @@ export function CalendarHeaderPopover({
 }) {
   const [open, setOpen] = useState(false);
 
-  const tz = calendarApi?.view?.calendar?.getOption("timeZone") || "UTC";
+  // In list view there is no FullCalendar instance, so fall back to the site
+  // timezone rather than UTC: currentDate is written by the grid in the site
+  // timezone, and formatting it in UTC shifted the label to the previous month.
+  const tz =
+    calendarApi?.view?.calendar?.getOption("timeZone") ||
+    window.eventkoi_params?.timezone ||
+    "UTC";
 
   // Normalize currentDate safely
   let jsDate =

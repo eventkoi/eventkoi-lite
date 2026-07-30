@@ -7,7 +7,9 @@ export function NavControls({ calendarApi, currentDate, setCurrentDate }) {
     // List view has no FullCalendar instance, so step the month ourselves.
     // Bailing out here is what made these buttons look broken in the list.
     if (!calendarApi) {
-      const base = currentDate instanceof Date ? currentDate : new Date();
+      const parsed =
+        currentDate instanceof Date ? currentDate : new Date(currentDate || Date.now());
+      const base = isNaN(parsed) ? new Date() : parsed;
       const next = new Date(base.getTime());
       next.setDate(1);
       next.setMonth(next.getMonth() + (direction === "prev" ? -1 : 1));
