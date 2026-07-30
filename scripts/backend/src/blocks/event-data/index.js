@@ -9,6 +9,7 @@ import { __ } from "@wordpress/i18n";
 import { attributes } from "./attributes";
 import Edit from "./edit";
 import "./editor.scss";
+import { getEventDataFieldLabel } from "./event-data-fields";
 import { icon } from "./icon";
 import save from "./save";
 
@@ -66,14 +67,8 @@ registerBlockType("eventkoi/event-data", {
   // Dynamic label for List View / breadcrumbs.
   // ---------------------------------------------------------------------
   __experimentalLabel: (attributes) => {
-    const labels = {
-      title: __("Title", "eventkoi-lite"),
-      excerpt: __("Excerpt / Description", "eventkoi-lite"),
-      timeline: __("Date and Time", "eventkoi-lite"),
-      location: __("Location", "eventkoi-lite"),
-      image: __("Image", "eventkoi-lite"),
-    };
-    const label = labels[attributes.field] || __("Unknown", "eventkoi-lite");
+    const label =
+      getEventDataFieldLabel(attributes.field) || __("Unknown", "eventkoi-lite");
     return `Event data: ${label}`;
   },
 
