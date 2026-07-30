@@ -37,6 +37,7 @@ export function CalendarHeaderPopover({
   calendarApi,
   currentDate,
   setCurrentDate,
+  timezone,
 }) {
   const [open, setOpen] = useState(false);
 
@@ -45,12 +46,20 @@ export function CalendarHeaderPopover({
   // timezone, and formatting it in UTC shifted the label to the previous month.
   const tz =
     calendarApi?.view?.calendar?.getOption("timeZone") ||
-    window.eventkoi_params?.timezone ||
-    "UTC";
+    (timezone === "local"
+      ? Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
+      : timezone || window.eventkoi_params?.timezone || "UTC");
 
-  // Normalize currentDate safely
-  let jsDate =
-    currentDate instanceof Date ? currentDate : new Date(currentDate);
+  // Normalize currentDate safely. Date-only strings ("2026-07-01") are
+  // interpreted in the display timezone: new Date() reads them as UTC
+  // midnight, which renders as the previous month west of Greenwich.
+  let jsDate;
+  if (currentDate instanceof Date) {
+    jsDate = currentDate;
+  } else {
+    const parsed = DateTime.fromISO(String(currentDate ?? ""), { zone: tz });
+    jsDate = parsed.isValid ? parsed.toJSDate() : new Date(currentDate);
+  }
   if (isNaN(jsDate)) {
     jsDate = new Date(); // fallback to today
   }

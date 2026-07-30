@@ -1,18 +1,37 @@
 import { Button } from "@/components/ui/button";
 import { __ } from "@wordpress/i18n";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { DateTime } from "luxon";
 
-export function NavControls({ calendarApi, currentDate, setCurrentDate }) {
+// The calendar renders in a display timezone: the site's by default, the
+// visitor's when auto-detect or the timezone picker says so. Date maths for
+// the toolbar has to follow the same zone or months drift at the edges.
+const resolveDisplayZone = (tz) =>
+  tz === "local"
+    ? Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
+    : tz || window.eventkoi_params?.timezone || "UTC";
+
+export function NavControls({ calendarApi, currentDate, setCurrentDate, timezone }) {
   const move = (direction) => {
     // List view has no FullCalendar instance, so step the month ourselves.
     // Bailing out here is what made these buttons look broken in the list.
     if (!calendarApi) {
-      const parsed =
-        currentDate instanceof Date ? currentDate : new Date(currentDate || Date.now());
-      const base = isNaN(parsed) ? new Date() : parsed;
-      const next = new Date(base.getTime());
-      next.setDate(1);
-      next.setMonth(next.getMonth() + (direction === "prev" ? -1 : 1));
+      // Month math runs in the display timezone, matching how the label
+      // formats this date; date-only strings are parsed in that zone as well.
+      // Mixing zones cancelled a click out for visitors west of the site.
+      const zone = resolveDisplayZone(timezone);
+      let base;
+      if (currentDate instanceof Date) {
+        base = DateTime.fromJSDate(currentDate);
+      } else {
+        base = DateTime.fromISO(String(currentDate ?? ""), { zone });
+        if (!base.isValid) base = DateTime.now();
+      }
+      const next = base
+        .setZone(zone)
+        .startOf("month")
+        .plus({ months: direction === "prev" ? -1 : 1 })
+        .toJSDate();
       setCurrentDate?.(next);
       return;
     }

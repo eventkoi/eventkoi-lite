@@ -8,6 +8,7 @@ import { TimezonePicker } from "@/components/timezone-picker";
 import { Skeleton } from "@/components/ui/skeleton";
 import { safeNormalizeTimeZone } from "@/lib/date-utils";
 import { __ } from "@wordpress/i18n";
+import { DateTime } from "luxon";
 
 import { CalendarGridMode } from "@/components/calendar/CalendarGridMode";
 import { CalendarListMode } from "@/components/calendar/CalendarListMode";
@@ -67,21 +68,53 @@ export function Calendar(props) {
   const trimmedSearch = (search || "").trim();
   const isGlobalSearch = trimmedSearch.length > 0;
 
+  /**
+   * Determine initial timezone from URL (?tz=), override, or site default.
+   *
+   * Falls back to UTC if no valid timezone is found.
+   */
+  const getInitialTimezone = () => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const tzParam = params.get("tz");
+      if (tzParam) {
+        return safeNormalizeTimeZone(tzParam);
+      }
+    }
+
+    if (window.eventkoi_params?.auto_detect_timezone) {
+      return "local";
+    }
+
+    return safeNormalizeTimeZone(
+      window.eventkoi_params?.timezone_override || window.eventkoi_params?.timezone || "UTC"
+    );
+  };
+
+  const [timezone, setTimezone] = useState(() => getInitialTimezone());
+  const [timeFormat, setTimeFormat] = useState(
+    window.eventkoi_params?.time_format === "24" ? "24" : "12"
+  );
+
   // While the visitor is browsing months in the list, bound the query to that
   // month. Untouched, the list keeps its default rolling-upcoming behaviour.
   const listMonthRange = useMemo(() => {
     if (activeDisplay !== "list" || !listNavigated || !listMonthAnchor) {
       return {};
     }
-    const d = new Date(listMonthAnchor.getTime());
-    const start = new Date(d.getFullYear(), d.getMonth(), 1);
-    const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-    const iso = (x) =>
-      `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(
-        x.getDate()
-      ).padStart(2, "0")}`;
-    return { dateStart: iso(start), dateEnd: iso(end) };
-  }, [activeDisplay, listNavigated, listMonthAnchor]);
+    // Same zone as the picker label and the nav stepping: the display
+    // timezone (site by default, visitor-local with auto-detect or ?tz=).
+    const zone =
+      timezone === "local"
+        ? Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
+        : timezone || window.eventkoi_params?.timezone || "UTC";
+    const dt = DateTime.fromJSDate(listMonthAnchor).setZone(zone);
+    return {
+      dateStart: dt.startOf("month").toISODate(),
+      dateEnd: dt.endOf("month").toISODate(),
+    };
+  }, [activeDisplay, listNavigated, listMonthAnchor, timezone]);
+
 
   const {
     calendar,
@@ -128,33 +161,6 @@ export function Calendar(props) {
     ignoreNextOutsideClick,
   } = useEventPopover();
 
-  /**
-   * Determine initial timezone from URL (?tz=), override, or site default.
-   *
-   * Falls back to UTC if no valid timezone is found.
-   */
-  const getInitialTimezone = () => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const tzParam = params.get("tz");
-      if (tzParam) {
-        return safeNormalizeTimeZone(tzParam);
-      }
-    }
-
-    if (window.eventkoi_params?.auto_detect_timezone) {
-      return "local";
-    }
-
-    return safeNormalizeTimeZone(
-      window.eventkoi_params?.timezone_override || window.eventkoi_params?.timezone || "UTC"
-    );
-  };
-
-  const [timezone, setTimezone] = useState(() => getInitialTimezone());
-  const [timeFormat, setTimeFormat] = useState(
-    window.eventkoi_params?.time_format === "24" ? "24" : "12"
-  );
 
   /**
    * Keep timezone in sync when navigating via browser back/forward buttons.

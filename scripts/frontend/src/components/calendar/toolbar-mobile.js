@@ -117,6 +117,7 @@ export function ToolbarMobile(props) {
               calendarApi={calendarApi}
               currentDate={currentDate}
               setCurrentDate={setCurrentDate}
+              timezone={timezone}
             />
             {view === "timeGridWeek" || view === "week" ? (
               <WeekPopover
@@ -129,6 +130,7 @@ export function ToolbarMobile(props) {
                 calendarApi={calendarApi}
                 currentDate={currentDate}
                 setCurrentDate={setCurrentDate}
+                timezone={timezone}
               />
             )}
           </div>

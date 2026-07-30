@@ -113,6 +113,7 @@ export function ToolbarDesktop(props) {
               calendarApi={calendarApi}
               currentDate={currentDate}
               setCurrentDate={setCurrentDate}
+              timezone={timezone}
             />
             {view === "timeGridWeek" || view === "week" ? (
               <WeekPopover
@@ -125,6 +126,7 @@ export function ToolbarDesktop(props) {
                 calendarApi={calendarApi}
                 currentDate={currentDate}
                 setCurrentDate={setCurrentDate}
+                timezone={timezone}
               />
             )}
             <TodayButton
@@ -173,6 +175,7 @@ export function ToolbarDesktop(props) {
           calendarApi={calendarApi}
           currentDate={currentDate}
           setCurrentDate={setCurrentDate}
+          timezone={timezone}
         />
         {view === "timeGridWeek" || view === "week" ? (
           <WeekPopover
@@ -185,6 +188,7 @@ export function ToolbarDesktop(props) {
             calendarApi={calendarApi}
             currentDate={currentDate}
             setCurrentDate={setCurrentDate}
+            timezone={timezone}
           />
         )}
         <TodayButton
