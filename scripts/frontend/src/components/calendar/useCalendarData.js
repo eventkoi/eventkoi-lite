@@ -554,6 +554,10 @@ export function useCalendarData({
   useEffect(() => {
     if (display === "list") {
       loadAllEvents();
+      // The list renders with the full toolbar now, which reads its name, feed
+      // and defaults from the calendar meta. Without this the toolbar stayed
+      // on its loading skeletons and no controls appeared.
+      getInitialCalendar();
       return;
     }
 
@@ -563,6 +567,21 @@ export function useCalendarData({
   // Debounced search refetch for list mode. Skips the initial mount (handled by
   // the effect above) and re-runs on every later search change, including
   // clearing the box, which restores the full list.
+  // Month navigation moves the list's date window, so reload when it changes.
+  // Skips the initial mount, which the effect above already handles.
+  const listRangeInitRef = useRef(false);
+  useEffect(() => {
+    if (!listRangeInitRef.current) {
+      listRangeInitRef.current = true;
+      return;
+    }
+    if (display !== "list") {
+      return;
+    }
+    loadAllEvents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateStart, dateEnd]);
+
   const listSearchInitRef = useRef(false);
   useEffect(() => {
     if (!listSearchInitRef.current) {

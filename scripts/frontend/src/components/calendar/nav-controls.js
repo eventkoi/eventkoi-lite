@@ -4,10 +4,16 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export function NavControls({ calendarApi, currentDate, setCurrentDate }) {
   const move = (direction) => {
+    // List view has no FullCalendar instance, so step the month ourselves.
+    // Bailing out here is what made these buttons look broken in the list.
     if (!calendarApi) {
+      const base = currentDate instanceof Date ? currentDate : new Date();
+      const next = new Date(base.getTime());
+      next.setDate(1);
+      next.setMonth(next.getMonth() + (direction === "prev" ? -1 : 1));
+      setCurrentDate?.(next);
       return;
     }
-
     if (direction === "prev") {
       calendarApi.prev();
     } else {

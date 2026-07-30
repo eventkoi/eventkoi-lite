@@ -4,7 +4,12 @@ import { __ } from "@wordpress/i18n";
 
 export function TodayButton({ calendarApi, setCurrentDate, isTodayInRange }) {
   const handleToday = () => {
-    if (!calendarApi) return;
+    // No FullCalendar in list view: move the shared current date instead so
+    // the list can scope itself to the current month.
+    if (!calendarApi) {
+      setCurrentDate?.(new Date());
+      return;
+    }
     calendarApi.today();
     setCurrentDate(calendarApi.getDate());
   };

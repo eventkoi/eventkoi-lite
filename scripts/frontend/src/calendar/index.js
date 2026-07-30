@@ -1,15 +1,13 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 
 import { CalendarToolbar } from "@/components/calendar/calendar-toolbar";
 import { TimezonePicker } from "@/components/timezone-picker";
-import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { safeNormalizeTimeZone } from "@/lib/date-utils";
 import { __ } from "@wordpress/i18n";
-import { Search } from "lucide-react";
 
 import { CalendarGridMode } from "@/components/calendar/CalendarGridMode";
 import { CalendarListMode } from "@/components/calendar/CalendarListMode";
@@ -56,12 +54,34 @@ export function Calendar(props) {
   const [activeDisplay, setActiveDisplay] = useState(
     display === "list" || mobileListDefault ? "list" : "calendar"
   );
+  // The list opens as a rolling upcoming feed. Once the visitor uses the month
+  // navigation it scopes to the month they picked, which is what makes those
+  // controls meaningful in the list (previously they moved a grid that is not
+  // mounted, so nothing happened).
+  const [listNavigated, setListNavigated] = useState(false);
+  const [listMonthAnchor, setListMonthAnchor] = useState(null);
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState([]);
 
   const effectiveId = calendars || id;
   const trimmedSearch = (search || "").trim();
   const isGlobalSearch = trimmedSearch.length > 0;
+
+  // While the visitor is browsing months in the list, bound the query to that
+  // month. Untouched, the list keeps its default rolling-upcoming behaviour.
+  const listMonthRange = useMemo(() => {
+    if (activeDisplay !== "list" || !listNavigated || !listMonthAnchor) {
+      return {};
+    }
+    const d = new Date(listMonthAnchor.getTime());
+    const start = new Date(d.getFullYear(), d.getMonth(), 1);
+    const end = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+    const iso = (x) =>
+      `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(
+        x.getDate()
+      ).padStart(2, "0")}`;
+    return { dateStart: iso(start), dateEnd: iso(end) };
+  }, [activeDisplay, listNavigated, listMonthAnchor]);
 
   const {
     calendar,
@@ -83,10 +103,22 @@ export function Calendar(props) {
     lastRangeRef,
   } = useCalendarData({
     ...props,
+    ...listMonthRange,
     display: activeDisplay,
     searchTerm: trimmedSearch,
     calendarRef,
   });
+
+  // Toolbar date changes double as the list's month selector: in list view a
+  // prev/next/Today/month-picker click scopes the list to that month.
+  const handleToolbarDate = (next) => {
+    const value = next instanceof Date ? next : currentDate;
+    if (activeDisplay === "list") {
+      setListNavigated(true);
+      setListMonthAnchor(value instanceof Date ? value : new Date());
+    }
+    setCurrentDate?.(next);
+  };
 
   const {
     selectedEvent,
@@ -187,50 +219,11 @@ export function Calendar(props) {
 
   const eventColor = props.color || calendar?.color;
 
-  // A standalone list embed (display="list") renders the list with its own
-  // lightweight search box, and NO FullCalendar grid or Month/Week/List toggle.
-  // The heavy calendar toolbar is grid-only (its nav needs a mounted grid), so
-  // list mode gets this self-contained search instead of the calendar chrome.
-  if (display === "list") {
-    return (
-      <div className="relative eventkoi-list-mode">
-        <div className="py-4 max-w-[420px]">
-          <div className="relative">
-            <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-              aria-hidden="true"
-            />
-            <Input
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={__("Search events...", "eventkoi-lite")}
-              aria-label={__("Search events", "eventkoi-lite")}
-              className="pl-9"
-            />
-          </div>
-        </div>
+  // display="list" used to short-circuit into a separate, stripped-down list
+  // with its own search box and no calendar chrome. It now falls through to
+  // the normal render with activeDisplay set to "list", so the setting simply
+  // opens the List tab and keeps the toolbar, view toggle and Subscribe.
 
-        <CalendarListMode
-          events={allEvents}
-          timezone={timezone}
-          setTimezone={setTimezone}
-          timeFormat={timeFormat}
-          setTimeFormat={setTimeFormat}
-          showImage={showImage}
-          showDescription={showDescription}
-          showLocation={showLocation}
-          borderStyle={borderStyle}
-          borderSize={borderSize}
-          loading={loading}
-          total={listTotal}
-          hasMore={listHasMore}
-          loadingMore={listLoadingMore}
-          onLoadMore={loadMoreListEvents}
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="relative">
@@ -238,7 +231,7 @@ export function Calendar(props) {
         calendar={calendar}
         calendarApi={calendarApi}
         currentDate={currentDate}
-        setCurrentDate={setCurrentDate}
+        setCurrentDate={handleToolbarDate}
         view={view}
         setView={setView}
         display={activeDisplay}

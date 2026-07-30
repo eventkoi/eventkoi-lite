@@ -59,7 +59,7 @@ export function CalendarHeaderPopover({
       { zone: tz }
     );
     const jsDate = newDt.toJSDate();
-    calendarApi.gotoDate(jsDate);
+    calendarApi?.gotoDate?.(jsDate);
     setCurrentDate(jsDate);
     setOpen(false);
   };
@@ -67,14 +67,14 @@ export function CalendarHeaderPopover({
   const gotoPrevYear = () => {
     const newDt = dt.minus({ years: 1 }).startOf("month");
     const jsDate = newDt.toJSDate();
-    calendarApi.gotoDate(jsDate);
+    calendarApi?.gotoDate?.(jsDate);
     setCurrentDate(jsDate);
   };
 
   const gotoNextYear = () => {
     const newDt = dt.plus({ years: 1 }).startOf("month");
     const jsDate = newDt.toJSDate();
-    calendarApi.gotoDate(jsDate);
+    calendarApi?.gotoDate?.(jsDate);
     setCurrentDate(jsDate);
   };
 
