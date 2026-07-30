@@ -316,6 +316,7 @@ if ( ! function_exists( 'eventkoi_get_event_data_options' ) ) {
 		return array(
 			'event_title'                 => __( 'Event Title', 'eventkoi-lite' ),
 			'event_details'               => __( 'Event Details', 'eventkoi-lite' ),
+			'event_excerpt'               => __( 'Event Excerpt', 'eventkoi-lite' ),
 			'event_timezone'              => __( 'Event Timezone', 'eventkoi-lite' ),
 			'event_gmap'                  => __( 'Event Google Map', 'eventkoi-lite' ),
 			'event_image'                 => __( 'Event Image', 'eventkoi-lite' ),

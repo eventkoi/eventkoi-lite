@@ -38,6 +38,7 @@ class Bindings
         return array(
         'event_title'                 => __('Event title', 'eventkoi-lite'),
         'event_details'               => __('Event details', 'eventkoi-lite'),
+        'event_excerpt'               => __('Event excerpt', 'eventkoi-lite'),
         'event_timezone'              => __('Event timezone', 'eventkoi-lite'),
         'event_gmap'                  => __('Event Google Map', 'eventkoi-lite'),
         'event_image'                 => __('Event image', 'eventkoi-lite'),

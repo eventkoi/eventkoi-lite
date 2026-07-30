@@ -114,7 +114,11 @@ export function EventDataControls({
           options={[
             { label: __("— Primary —", "eventkoi-lite"), value: "", disabled: true },
             { label: __("Title", "eventkoi-lite"), value: "title" },
-            { label: __("Excerpt / Description", "eventkoi-lite"), value: "excerpt" },
+            // "excerpt" is the historical value for the description field, kept
+            // so existing blocks keep rendering what they always did. The real
+            // post excerpt is a separate field below.
+            { label: __("Description", "eventkoi-lite"), value: "excerpt" },
+            { label: __("Excerpt", "eventkoi-lite"), value: "event_excerpt" },
             { label: __("Date and Time", "eventkoi-lite"), value: "timeline" },
             { label: __("Location", "eventkoi-lite"), value: "location" },
             { label: __("Image", "eventkoi-lite"), value: "image" },

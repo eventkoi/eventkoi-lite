@@ -3545,6 +3545,28 @@ class Event {
 	}
 
 	/**
+	 * Rendered event excerpt.
+	 *
+	 * Deliberately the hand-written post excerpt only, with no fallback to the
+	 * description. The excerpt exists so a short summary can be shown next to,
+	 * or instead of, the full details; falling back would make the two fields
+	 * render the same text and defeat the point of having both.
+	 *
+	 * @return string
+	 */
+	public static function rendered_excerpt() {
+		$excerpt = (string) get_post_field( 'post_excerpt', self::$event_id );
+		$excerpt = trim( $excerpt );
+
+		return apply_filters(
+			'eventkoi_rendered_event_excerpt',
+			'' !== $excerpt ? wp_kses_post( $excerpt ) : '',
+			self::$event_id,
+			self::$event
+		);
+	}
+
+	/**
 	 * Rendered event image as an <img> tag.
 	 *
 	 * @return string HTML img tag or empty string.
