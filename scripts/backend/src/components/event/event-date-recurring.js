@@ -266,8 +266,10 @@ export const EventDateRecurring = memo(function EventDateRecurring({
     const end = new Date(now);
     end.setHours(17, 0, 0, 0);
 
+    // Six months out, not a year: a year meant the picker opened on the next
+    // calendar year when almost every recurring event ends in this one.
     const defaultEnd = new Date();
-    defaultEnd.setFullYear(defaultEnd.getFullYear() + 1);
+    defaultEnd.setMonth(defaultEnd.getMonth() + 6);
 
     const rule = {
       // Stable React-key identifier (stripped server-side before persist).
