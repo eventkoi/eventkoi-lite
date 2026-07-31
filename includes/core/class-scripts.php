@@ -181,10 +181,25 @@ class Scripts {
 		);
 
 		// Enqueue styles.
-		wp_register_style( 'eventkoi-frontend-tw', $build_url . 'tailwind.css', array(), $asset_file['version'] );
-		wp_enqueue_style( 'eventkoi-frontend-tw' );
+		/**
+		 * Filter whether the bundled frontend stylesheets are loaded.
+		 *
+		 * Themes that style the calendar entirely themselves can return false
+		 * here. Dequeuing by handle also works, but these styles are enqueued
+		 * late (priority 999), so a dequeue on the default priority runs first
+		 * and silently does nothing. Markup and behaviour are unaffected; only
+		 * the CSS is skipped.
+		 *
+		 * @param bool $enqueue Whether to load the bundled styles. Default true.
+		 */
+		$enqueue_styles = (bool) apply_filters( 'eventkoi_enqueue_frontend_styles', true );
 
-		if ( ! $is_dev ) {
+		if ( $enqueue_styles ) {
+			wp_register_style( 'eventkoi-frontend-tw', $build_url . 'tailwind.css', array(), $asset_file['version'] );
+			wp_enqueue_style( 'eventkoi-frontend-tw' );
+		}
+
+		if ( ! $is_dev && $enqueue_styles ) {
 			wp_register_style( 'eventkoi-frontend', $build_url . 'index.css', array(), $asset_file['version'] );
 			wp_enqueue_style( 'eventkoi-frontend' );
 		}
