@@ -149,6 +149,33 @@ class Tickets {
 
 		register_rest_route(
 			'eventkoi/v1',
+			'/tickets/attendees/export',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( __CLASS__, 'export_ticket_attendees' ),
+				'permission_callback' => REST::any_cap( 'eventkoi_orders_view', 'eventkoi_attendees_view' ),
+				'args'                => array(
+					'event_id'    => array(
+						'required'          => true,
+						'sanitize_callback' => 'absint',
+						'validate_callback' => function ( $param ) {
+							return is_numeric( $param ) && (int) $param > 0;
+						},
+					),
+					'instance_ts' => array(
+						'required'          => false,
+						'sanitize_callback' => 'absint',
+					),
+					'search'      => array(
+						'required'          => false,
+						'sanitize_callback' => 'sanitize_text_field',
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			'eventkoi/v1',
 			'/tickets/orders',
 			array(
 				'methods'             => 'GET',
@@ -447,6 +474,184 @@ class Tickets {
 		);
 
 		return new WP_REST_Response( $result, 200 );
+	}
+
+	/**
+	 * Export ticket attendees as CSV, including any custom checkout fields.
+	 *
+	 * Rows come from get_ticket_orders() so the file always matches what the
+	 * attendees table shows. Custom checkout fields registered for the event
+	 * via the `eventkoi_checkout_fields` filter are appended as extra columns.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function export_ticket_attendees( WP_REST_Request $request ) {
+		$event_id = absint( $request->get_param( 'event_id' ) );
+
+		$event_post = get_post( $event_id );
+		if ( empty( $event_post ) || 'eventkoi_event' !== $event_post->post_type ) {
+			return new WP_Error(
+				'eventkoi_attendees_invalid_event',
+				__( 'Invalid event.', 'eventkoi-lite' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		$orders = self::get_ticket_orders( $request );
+
+		if ( is_wp_error( $orders ) ) {
+			return $orders;
+		}
+
+		$rows   = (array) $orders->get_data();
+		$search = (string) $request->get_param( 'search' );
+
+		if ( '' !== $search ) {
+			$needle = function_exists( 'mb_strtolower' ) ? mb_strtolower( $search ) : strtolower( $search );
+			$rows   = array_values(
+				array_filter(
+					$rows,
+					static function ( $row ) use ( $needle ) {
+						$haystack = trim( ( $row['customer_name'] ?? '' ) . ' ' . ( $row['customer_email'] ?? '' ) );
+						$haystack = function_exists( 'mb_strtolower' ) ? mb_strtolower( $haystack ) : strtolower( $haystack );
+
+						return false !== strpos( $haystack, $needle );
+					}
+				)
+			);
+		}
+
+		$fields = \EventKoi\Core\Orders::get_checkout_fields( $event_id );
+
+		$headers = array(
+			__( 'Name', 'eventkoi-lite' ),
+			__( 'Email', 'eventkoi-lite' ),
+			__( 'Check-in code', 'eventkoi-lite' ),
+			__( 'Order ID', 'eventkoi-lite' ),
+			__( 'Order status', 'eventkoi-lite' ),
+			__( 'Ticket quantity', 'eventkoi-lite' ),
+			__( 'Order date', 'eventkoi-lite' ),
+		);
+
+		foreach ( $fields as $field ) {
+			$headers[] = $field['label'];
+		}
+
+		$handle = fopen( 'php://temp', 'r+' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- In-memory handle for CSV generation.
+		fputcsv( $handle, $headers, ',', '"', '\\' );
+
+		foreach ( $rows as $row ) {
+			// Group orders share one master code; otherwise list the per-ticket
+			// codes, which is what the attendees table itself displays.
+			$checkin_code = (string) ( $row['master_checkin_code'] ?? '' );
+			if ( '' === $checkin_code && ! empty( $row['checkin_codes'] ) ) {
+				$checkin_code = implode( ', ', array_map( 'strval', (array) $row['checkin_codes'] ) );
+			}
+
+			$line = array(
+				(string) ( $row['customer_name'] ?? '' ),
+				(string) ( $row['customer_email'] ?? '' ),
+				$checkin_code,
+				(string) ( $row['order_id'] ?? '' ),
+				(string) ( $row['payment_status'] ?? '' ),
+				(string) ( $row['quantity'] ?? 0 ),
+				(string) ( $row['created_at'] ?? '' ),
+			);
+
+			if ( $fields ) {
+				$values = self::get_order_checkout_field_values( (string) ( $row['order_id'] ?? '' ) );
+
+				foreach ( $fields as $field ) {
+					$line[] = (string) ( $values[ $field['key'] ] ?? '' );
+				}
+			}
+
+			fputcsv( $handle, array_map( array( __CLASS__, 'escape_csv_formula' ), $line ), ',', '"', '\\' );
+		}
+
+		rewind( $handle );
+		$csv = stream_get_contents( $handle );
+		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Closing the in-memory temp handle after CSV generation.
+
+		$event_name = get_the_title( $event_id );
+		$filename   = sprintf(
+			'%1$s-attendees.csv',
+			$event_name ? sanitize_title( $event_name ) : 'eventkoi-event-' . $event_id
+		);
+
+		$response = new WP_REST_Response( $csv, 200 );
+		$response->header( 'Content-Type', 'text/csv; charset=utf-8' );
+		$response->header( 'Content-Disposition', 'attachment; filename="' . $filename . '"' );
+
+		add_filter(
+			'rest_pre_serve_request',
+			static function ( $served, $result, $request, $_server ) use ( $csv, $filename ) {
+				unset( $result, $_server );
+
+				if ( '/' . EVENTKOI_API . '/tickets/attendees/export' !== $request->get_route() ) {
+					return $served;
+				}
+
+				nocache_headers();
+				header( 'Content-Type: text/csv; charset=utf-8' );
+				header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+				echo $csv; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Raw CSV payload for file download response.
+				return true;
+			},
+			10,
+			4
+		);
+
+		return $response;
+	}
+
+	/**
+	 * Neutralise spreadsheet formulas in a CSV cell.
+	 *
+	 * Attendee names and custom checkout field values are supplied by whoever
+	 * buys a ticket. Excel and LibreOffice execute any cell that opens with
+	 * =, +, -, @ or a control character, so a buyer could otherwise put a
+	 * formula in front of an admin downloading the attendee list. Prefixing a
+	 * single quote makes the cell literal text.
+	 *
+	 * @param string $value Cell value.
+	 * @return string Safe cell value.
+	 */
+	private static function escape_csv_formula( $value ) {
+		$value = (string) $value;
+
+		if ( '' === $value ) {
+			return $value;
+		}
+
+		return false !== strpbrk( $value[0], "=+-@\t\r" ) ? "'" . $value : $value;
+	}
+
+	/**
+	 * Resolve custom checkout field values for a ticket order row.
+	 *
+	 * Lite sells tickets through WooCommerce, so the values live in order meta.
+	 *
+	 * @param string $order_id Base order ID (`wc_123`).
+	 * @return array Values keyed by field key.
+	 */
+	private static function get_order_checkout_field_values( $order_id ) {
+		$order_id = trim( (string) $order_id );
+
+		if ( 0 !== strpos( $order_id, 'wc_' ) || ! function_exists( 'wc_get_order' ) ) {
+			return array();
+		}
+
+		$wc_order = wc_get_order( absint( substr( $order_id, 3 ) ) );
+
+		if ( ! $wc_order ) {
+			return array();
+		}
+
+		$values = $wc_order->get_meta( '_eventkoi_checkout_fields' );
+
+		return is_array( $values ) ? $values : array();
 	}
 
 	/**

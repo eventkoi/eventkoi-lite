@@ -1288,62 +1288,57 @@ export function EventEditAttendees() {
   };
 
   const exportTicketAttendeesCsv = async (table) => {
+    if (!event?.id) {
+      showToastError(__("Missing event data.", "eventkoi-lite"));
+      return;
+    }
+
+    // Built server-side so custom checkout fields registered through the
+    // eventkoi_checkout_fields filter come through as extra columns.
+    const cols = table.getAllColumns();
+    const defaultCol = cols[1]?.id;
+    const searchValue = defaultCol
+      ? table.getColumn(defaultCol)?.getFilterValue() ?? ""
+      : "";
+
+    const params = new URLSearchParams({
+      event_id: String(event.id),
+      instance_ts: String(instanceTs || 0),
+    });
+
+    if (searchValue) {
+      params.set("search", String(searchValue));
+    }
+
     setIsExporting(true);
     try {
-      const rows = table.getFilteredRowModel().rows || [];
-      const csvRows = rows.map((row) => ({
-        name: row.original.customer_name || "",
-        email: row.original.customer_email || "",
-        checkin_code:
-          row.original.checkin_token || row.original.master_checkin_code || "",
-        order_id: row.original.order_id || "",
-        order_status: row.original.payment_status || "",
-        quantity: Number(row.original.quantity || 0) || 0,
-        order_date: row.original.created_at || "",
-      }));
-
-      const headers = [
-        "Name",
-        "Email",
-        "Check-in code",
-        "Order ID",
-        "Order status",
-        "Ticket quantity",
-        "Order date",
-      ];
-
-      const escapeCsv = (value) => {
-        const text = String(value ?? "");
-        if (text.includes(",") || text.includes('"') || text.includes("\n")) {
-          return `"${text.replace(/"/g, '""')}"`;
-        }
-        return text;
-      };
-
-      const lines = [
-        headers.join(","),
-        ...csvRows.map((item) =>
-          [
-            item.name,
-            item.email,
-            item.checkin_code,
-            item.order_id,
-            item.order_status,
-            item.quantity,
-            item.order_date,
-          ]
-            .map(escapeCsv)
-            .join(",")
-        ),
-      ];
-
-      const blob = new Blob([lines.join("\n")], {
-        type: "text/csv;charset=utf-8;",
+      const response = await apiRequest({
+        path: `${eventkoi_params.api}/tickets/attendees/export?${params.toString()}`,
+        method: "GET",
+        parse: false,
+        headers: {
+          "EVENTKOI-API-KEY": eventkoi_params.api_key,
+          "X-WP-Nonce": eventkoi_params.nonce || "",
+        },
       });
+
+      if (!response?.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Export failed.");
+      }
+
+      const csvText = await response.text();
+      const blob = new Blob([csvText], { type: "text/csv;charset=utf-8;" });
+      const contentDisposition =
+        response.headers.get("content-disposition") || "";
+      const match = contentDisposition.match(/filename="([^"]+)"/);
+      const filename =
+        match?.[1] || `eventkoi-ticket-attendees-${event.id}.csv`;
+
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = `eventkoi-ticket-attendees-${event?.id || "event"}.csv`;
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
       link.remove();
