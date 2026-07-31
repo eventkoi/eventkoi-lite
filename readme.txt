@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.3.29.0
+Stable tag: 1.3.30.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,19 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.30.0 – List view merge and attendee export upgrades – 2026-07-31 =
+* New: Setting a calendar to List no longer shows a stripped-down separate list. It now opens the normal calendar on the List tab, keeping the Month and Week toggles, Subscribe button, search and month navigation.
+* New: The standalone List block and the mobile list option use the same unified List tab, so every list entry point looks and behaves identically.
+* New: The attendee CSV export now includes any custom checkout fields registered through the eventkoi_checkout_fields filter, one column per field, and fills the previously empty Check-in code column.
+* New: An Excerpt field is available separately from the description in the Event Data block, block bindings, the [eventkoi] shortcode and template tokens, so list views can show a short summary instead of the full description.
+* New: A new eventkoi_enqueue_frontend_styles filter lets themes disable the bundled frontend stylesheets entirely.
+* Improvement: The back and forward buttons and the month picker now work while viewing the list, scoping it to the chosen month.
+* Improvement: Toolbar month navigation follows the calendar's display timezone, so visitors in other timezones no longer see the month label drift or clicks that appear to do nothing.
+* Improvement: The "single ticket for the whole event" option now lives inside the Tickets and RSVP display options with clearer copy for each context.
+* Improvement: The recurring end-date picker defaults to six months ahead instead of a year, so it opens on the current year.
+* Improvement: Every Event Data field now shows its proper name in the editor List View instead of "Unknown".
+* Fix: Spreadsheet formulas in attendee-supplied text are neutralised in CSV exports.
 
 = 1.3.29.0 – Calendar views and import fixes – 2026-07-28 =
 * Fix: Multi-day events imported from The Events Calendar lost their final day, so an event running 10–11 November showed only the 10th. Imported events now keep their full date range.
