@@ -1,6 +1,7 @@
 import { __ } from "@wordpress/i18n";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { isSinglePackageEligible } from "@/lib/package-event";
 
 /**
  * "Sign up once for the whole event" toggle.
@@ -12,11 +13,8 @@ import { Switch } from "@/components/ui/switch";
  * neither. Rendered as a row so it matches the other Display options settings.
  */
 export function EventDatePackageSetting({ event, setEvent, context = "tickets" }) {
-  const isSelected = event?.standard_type === "selected";
-  const dayCount = Array.isArray(event?.event_days) ? event.event_days.length : 0;
-
-  // Only meaningful for a multi-day selected-dates event.
-  if (!isSelected || dayCount <= 1) {
+  // Only meaningful for a multi-day selected-dates standard event.
+  if (!isSinglePackageEligible(event)) {
     return null;
   }
 
