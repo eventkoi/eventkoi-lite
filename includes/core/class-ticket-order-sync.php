@@ -454,12 +454,62 @@ class Ticket_Order_Sync {
 
 		if ( $rows > 0 ) {
 			self::sync_quantity_sold( $event_id, array( array( 'ticket_id' => $ticket_id ) ) );
+			self::create_manual_order_parent( $base_id, $ticket_id, $quantity, $customer_name, $customer_email, $currency );
 		}
 
 		return array(
 			'order_id' => $base_id,
 			'rows'     => $rows,
 		);
+	}
+
+	/**
+	 * Create the parent eventkoi_orders row for a manual order.
+	 *
+	 * Seat rows alone leave the order without notes support or an orders-list
+	 * entry: the single-order view falls back to the rows-only shape, which
+	 * renders an empty Activity panel with no way to add notes. Mirrors the
+	 * parent row the free-checkout flow writes, keyed on checkout_id so the
+	 * existing base-id lookups resolve it.
+	 *
+	 * @param string $base_id        Manual order base ID (manual_xxx).
+	 * @param int    $ticket_id      Ticket ID.
+	 * @param int    $quantity       Seats created.
+	 * @param string $customer_name  Customer name.
+	 * @param string $customer_email Customer email.
+	 * @param string $currency       Three-letter ISO currency code.
+	 * @return void
+	 */
+	private static function create_manual_order_parent( $base_id, $ticket_id, $quantity, $customer_name, $customer_email, $currency ) {
+		$now = time();
+
+		\EKLIB\StellarWP\DB\DB::table( 'eventkoi_orders' )->upsert(
+			array(
+				'checkout_id'    => (string) $base_id,
+				'ticket_id'      => absint( $ticket_id ),
+				'quantity'       => absint( $quantity ),
+				'subtotal'       => 0,
+				'total'          => 0,
+				'item_price'     => 0,
+				'currency'       => strtolower( sanitize_text_field( $currency ) ),
+				'payment_status' => 'complete',
+				'status'         => 'complete',
+				'created'        => $now,
+				'expires'        => $now,
+				'last_updated'   => $now,
+				'live'           => eventkoi_live_mode_enabled() ? 1 : 0,
+				'billing_name'   => sanitize_text_field( $customer_name ),
+				'billing_email'  => sanitize_email( $customer_email ),
+				'gateway'        => 'manual',
+			),
+			array( 'checkout_id' )
+		);
+
+		$order_row = \EKLIB\StellarWP\DB\DB::table( 'eventkoi_orders' )->where( 'checkout_id', (string) $base_id )->get();
+
+		if ( $order_row && ! empty( $order_row->id ) ) {
+			( new Orders() )->add_note( absint( $order_row->id ), 'order_completed' );
+		}
 	}
 
 	/**
