@@ -311,6 +311,25 @@
       top: 4px;
     }
   }
+  // Sub-hour events (FullCalendar marks them fc-timegrid-event-short) are
+  // one slot tall, so the stacked time/title layout above pushes the title
+  // below the card. Collapse to a single "time title" line, the way Google
+  // Calendar and stock FullCalendar render short events.
+  .fc-timegrid-event-short .fc-event-main {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding-top: 0;
+    padding-bottom: 0;
+    .fc-event-time,
+    .fc-event-title {
+      display: inline-block;
+    }
+    .fc-event-title {
+      position: static;
+      min-width: 0;
+    }
+  }
   // Google-Calendar-style cards for timegrid events. Cascade indent +
   // z-index are set inline by cascadeTimegridColumn().
   // NOTE: NO overflow on this element — any overflow (hidden / clip /
