@@ -125,6 +125,33 @@ class Beaver_Modules {
 									'month' => __( 'Month', 'eventkoi-lite' ),
 									'week'  => __( 'Week', 'eventkoi-lite' ),
 								),
+							'show_month_view'  => array(
+								'type'    => 'select',
+								'label'   => __( 'Show Month view', 'eventkoi-lite' ),
+								'default' => 'yes',
+								'options' => array(
+									'yes' => __( 'Yes', 'eventkoi-lite' ),
+									'no'  => __( 'No', 'eventkoi-lite' ),
+								),
+							),
+							'show_week_view'  => array(
+								'type'    => 'select',
+								'label'   => __( 'Show Week view', 'eventkoi-lite' ),
+								'default' => 'yes',
+								'options' => array(
+									'yes' => __( 'Yes', 'eventkoi-lite' ),
+									'no'  => __( 'No', 'eventkoi-lite' ),
+								),
+							),
+							'show_list_view'  => array(
+								'type'    => 'select',
+								'label'   => __( 'Show List view', 'eventkoi-lite' ),
+								'default' => 'yes',
+								'options' => array(
+									'yes' => __( 'Yes', 'eventkoi-lite' ),
+									'no'  => __( 'No', 'eventkoi-lite' ),
+								),
+							),
 							),
 							'default_month'  => array(
 								'type'    => 'select',

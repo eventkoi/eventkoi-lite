@@ -52,8 +52,30 @@ export function Calendar(props) {
   const mobileListDefault =
     !!window.eventkoi_params?.mobile_list_default &&
     window.matchMedia?.("(max-width: 767px)")?.matches;
+  // A block or page-builder module set to the List timeframe opens on the
+  // list but keeps the full toolbar (same behavior as Pro).
+  const listTimeframeDefault = props.timeframe === "list";
+  // Views this embed shows (PROD-556). Empty/missing means all three, so
+  // existing blocks and modules keep the full Month/Week/List toggle. Only
+  // applies to the calendar embed; the standalone list (display="list") has
+  // no view toggle to restrict.
+  const visibleViews = (() => {
+    const all = ["month", "week", "list"];
+    if (display === "list" || !props.visibleViews) return all;
+    const parsed = String(props.visibleViews)
+      .split(",")
+      .map((v) => v.trim())
+      .filter((v) => all.includes(v));
+    return parsed.length ? parsed : all;
+  })();
+  const gridViewsVisible = visibleViews.some((v) => v !== "list");
+  const listVisible = visibleViews.includes("list");
   const [activeDisplay, setActiveDisplay] = useState(
-    display === "list" || mobileListDefault ? "list" : "calendar"
+    display === "list" ||
+      !gridViewsVisible ||
+      (listVisible && (listTimeframeDefault || mobileListDefault))
+      ? "list"
+      : "calendar"
   );
   // The list opens as a rolling upcoming feed. Once the visitor uses the month
   // navigation it scopes to the month they picked, which is what makes those
@@ -138,6 +160,7 @@ export function Calendar(props) {
     ...props,
     ...listMonthRange,
     display: activeDisplay,
+    visibleViews,
     searchTerm: trimmedSearch,
     calendarRef,
   });
@@ -242,6 +265,7 @@ export function Calendar(props) {
         setView={setView}
         display={activeDisplay}
         setDisplay={setActiveDisplay}
+        visibleViews={visibleViews}
         events={isGlobalSearch ? searchResults : allEvents}
         globalSearch={isGlobalSearch}
         timezone={timezone}
@@ -365,6 +389,7 @@ export function mountEventKoiCalendars(rootElement = document) {
           dateEnd={el.getAttribute("data-date-end")}
           feedUrl={el.getAttribute("data-feed-url")}
           feedWebcal={el.getAttribute("data-feed-webcal")}
+          visibleViews={el.getAttribute("data-visible-views")}
         />
       </ErrorBoundary>
     );

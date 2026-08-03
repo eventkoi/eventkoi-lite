@@ -12,6 +12,10 @@ let attrs = {
   timeframe: {
     type: "string",
   },
+  views: {
+    type: "string",
+    default: "",
+  },
   default_month: {
     type: "string",
     default: "",

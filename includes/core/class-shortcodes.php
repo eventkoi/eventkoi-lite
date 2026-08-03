@@ -148,6 +148,8 @@ class Shortcodes {
 				'date_end'         => '',
 				'expand'           => '',
 				'expand_instances' => '',
+				'timeframe'        => '',
+				'views'            => '',
 			),
 			$user_attributes,
 			$shortcode_name
@@ -247,6 +249,14 @@ class Shortcodes {
 		$calendar_args = array(
 			'calendars' => $ids,
 		);
+
+		if ( '' !== trim( (string) $attributes['timeframe'] ) ) {
+			$calendar_args['timeframe'] = sanitize_key( $attributes['timeframe'] );
+		}
+
+		if ( '' !== trim( (string) $attributes['views'] ) ) {
+			$calendar_args['views'] = sanitize_text_field( $attributes['views'] );
+		}
 
 		if ( 'list' === $display ) {
 			$calendar_args['orderby']          = $orderby;

@@ -21,6 +21,7 @@ export function ToolbarMobile(props) {
     setView,
     display,
     setDisplay,
+    visibleViews,
     isTodayInRange,
     search,
     setSearch,
@@ -83,7 +84,7 @@ export function ToolbarMobile(props) {
         />
         <div className="flex flex-wrap items-center justify-end gap-2">
           <SubscribeButton feedUrl={feedUrl} feedWebcal={feedWebcal} />
-          <ViewToggle calendarApi={calendarApi} view={view} setView={setView} display={display} setDisplay={setDisplay} />
+          <ViewToggle calendarApi={calendarApi} view={view} setView={setView} display={display} setDisplay={setDisplay} visibleViews={visibleViews} />
         </div>
       </div>
 

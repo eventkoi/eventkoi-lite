@@ -18,6 +18,7 @@ export function ToolbarDesktop(props) {
     setView,
     display,
     setDisplay,
+    visibleViews,
     isTodayInRange,
     search,
     setSearch,
@@ -137,7 +138,7 @@ export function ToolbarDesktop(props) {
           </div>
           <div className="shrink-0 flex items-center gap-2">
             <SubscribeButton feedUrl={feedUrl} feedWebcal={feedWebcal} />
-            <ViewToggle calendarApi={calendarApi} view={view} setView={setView} display={display} setDisplay={setDisplay} />
+            <ViewToggle calendarApi={calendarApi} view={view} setView={setView} display={display} setDisplay={setDisplay} visibleViews={visibleViews} />
           </div>
         </div>
         <div className="w-full min-w-0">
@@ -221,7 +222,7 @@ export function ToolbarDesktop(props) {
       {/* Right: subscribe + view toggle */}
       <div className="shrink-0 flex items-center gap-2">
         <SubscribeButton feedUrl={feedUrl} feedWebcal={feedWebcal} />
-        <ViewToggle calendarApi={calendarApi} view={view} setView={setView} display={display} setDisplay={setDisplay} />
+        <ViewToggle calendarApi={calendarApi} view={view} setView={setView} display={display} setDisplay={setDisplay} visibleViews={visibleViews} />
       </div>
     </div>
   );

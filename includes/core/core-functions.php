@@ -319,6 +319,32 @@ function eventkoi_get_content() {
 }
 
 /**
+ * Sanitize the visible calendar views for a block, shortcode, or module.
+ *
+ * Accepts a CSV string or array of view keys. Unknown keys are dropped and an
+ * empty result falls back to every view, so existing embeds keep the full
+ * Month/Week/List toggle unless one was explicitly hidden.
+ *
+ * @param mixed $value Raw views value.
+ * @return string[] Ordered subset of month, week, list — never empty.
+ */
+function eventkoi_sanitize_calendar_views( $value ) {
+	$all = array( 'month', 'week', 'list' );
+
+	if ( is_string( $value ) ) {
+		$value = explode( ',', $value );
+	}
+
+	if ( ! is_array( $value ) ) {
+		return $all;
+	}
+
+	$views = array_values( array_intersect( $all, array_map( 'sanitize_key', array_map( 'trim', array_filter( $value, 'is_scalar' ) ) ) ) );
+
+	return empty( $views ) ? $all : $views;
+}
+
+/**
  * Get calendar template content.
  *
  * @param int    $calendar_id Calendar ID.
@@ -369,6 +395,7 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 	$date_start       = isset( $args['date_start'] ) ? sanitize_text_field( $args['date_start'] ) : '';
 	$date_end         = isset( $args['date_end'] ) ? sanitize_text_field( $args['date_end'] ) : '';
 	$expand_instances = isset( $args['expand_instances'] ) ? (bool) $args['expand_instances'] : false;
+	$visible_views    = eventkoi_sanitize_calendar_views( $args['views'] ?? '' );
 	$container_id     = 'eventkoi-calendar-' . uniqid();
 	$content_size     = ! empty( $args['layout']['contentSize'] ) ? sanitize_text_field( $args['layout']['contentSize'] ) : '';
 	$wide_size        = ! empty( $args['layout']['wideSize'] ) ? sanitize_text_field( $args['layout']['wideSize'] ) : '';
@@ -463,7 +490,8 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 				data-date-end="%22$s"
 				data-expand-instances="%23$s"
 				data-feed-url="%24$s"
-				data-feed-webcal="%25$s">
+				data-feed-webcal="%25$s"
+				data-visible-views="%26$s">
 			</div>
 		</div>
 	<!-- /wp:group -->',
@@ -491,7 +519,8 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 		esc_attr( $date_end ),                      // %22$s
 		$expand_instances ? '1' : '0',              // %23$s
 		esc_url( $feed_url ),                        // %24$s
-		esc_url( $feed_webcal_url, array( 'https', 'http', 'webcal' ) ) // %25$s
+		esc_url( $feed_webcal_url, array( 'https', 'http', 'webcal' ) ), // %25$s
+		esc_attr( implode( ',', $visible_views ) ) // %26$s
 	);
 
 	$output = do_blocks( apply_filters( 'eventkoi_get_calendar_content', $calendar_template ) );

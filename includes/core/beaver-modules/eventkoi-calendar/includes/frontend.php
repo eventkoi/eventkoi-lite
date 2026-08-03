@@ -57,6 +57,17 @@ $args = array(
 	'context'       => 'block',
 );
 
+$module_views = array();
+foreach ( array( 'month', 'week', 'list' ) as $ek_view_key ) {
+	$ek_view_prop = 'show_' . $ek_view_key . '_view';
+	if ( 'no' !== ( $settings->{$ek_view_prop} ?? 'yes' ) ) {
+		$module_views[] = $ek_view_key;
+	}
+}
+if ( count( $module_views ) < 3 && ! empty( $module_views ) ) {
+	$args['views'] = implode( ',', $module_views );
+}
+
 $calendar_id = ! empty( $calendars )
 	? (int) $calendars[0]
 	: eventkoi_resolve_calendar_id( (int) get_option( 'eventkoi_default_event_cal', 0 ) );

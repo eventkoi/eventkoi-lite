@@ -57,6 +57,39 @@ class ET_Builder_Module_EventkoiCalendar extends ET_Builder_Module {
 				'default_on_front' => 'month',
 				'toggle_slug'      => 'main_content',
 			),
+			'eventkoi_show_month_view' => array(
+				'label'            => esc_html__( 'Show Month view', 'eventkoi-lite' ),
+				'type'             => 'yes_no_button',
+				'option_category'  => 'configuration',
+				'options'          => array(
+					'on'  => esc_html__( 'Yes', 'eventkoi-lite' ),
+					'off' => esc_html__( 'No', 'eventkoi-lite' ),
+				),
+				'default_on_front' => 'on',
+				'toggle_slug'      => 'main_content',
+			),
+			'eventkoi_show_week_view' => array(
+				'label'            => esc_html__( 'Show Week view', 'eventkoi-lite' ),
+				'type'             => 'yes_no_button',
+				'option_category'  => 'configuration',
+				'options'          => array(
+					'on'  => esc_html__( 'Yes', 'eventkoi-lite' ),
+					'off' => esc_html__( 'No', 'eventkoi-lite' ),
+				),
+				'default_on_front' => 'on',
+				'toggle_slug'      => 'main_content',
+			),
+			'eventkoi_show_list_view' => array(
+				'label'            => esc_html__( 'Show List view', 'eventkoi-lite' ),
+				'type'             => 'yes_no_button',
+				'option_category'  => 'configuration',
+				'options'          => array(
+					'on'  => esc_html__( 'Yes', 'eventkoi-lite' ),
+					'off' => esc_html__( 'No', 'eventkoi-lite' ),
+				),
+				'default_on_front' => 'on',
+				'toggle_slug'      => 'main_content',
+			),
 			'eventkoi_week_start' => array(
 				'label'            => esc_html__( 'Week starts on', 'eventkoi-lite' ),
 				'type'             => 'select',
@@ -100,6 +133,16 @@ class ET_Builder_Module_EventkoiCalendar extends ET_Builder_Module {
 			'default_year'  => '',
 			'context'       => 'block',
 		);
+
+		$divi_views = array();
+		foreach ( array( 'month', 'week', 'list' ) as $view_key ) {
+			if ( 'off' !== ( $this->props[ 'eventkoi_show_' . $view_key . '_view' ] ?? 'on' ) ) {
+				$divi_views[] = $view_key;
+			}
+		}
+		if ( count( $divi_views ) < 3 && ! empty( $divi_views ) ) {
+			$args['views'] = implode( ',', $divi_views );
+		}
 
 		if ( ! function_exists( 'eventkoi_get_calendar_content' ) ) {
 			return '';

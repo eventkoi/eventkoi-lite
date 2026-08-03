@@ -7,8 +7,20 @@
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { __ } from "@wordpress/i18n";
 
-export function ViewToggle({ calendarApi, view, setView, display, setDisplay }) {
+export function ViewToggle({ calendarApi, view, setView, display, setDisplay, visibleViews }) {
   const isList = display === "list";
+  // Hidden views drop their button; a single remaining view needs no toggle
+  // at all (PROD-556). No prop means every view stays visible.
+  const allViews = ["month", "week", "list"];
+  const shown =
+    Array.isArray(visibleViews) && visibleViews.length
+      ? allViews.filter((v) => visibleViews.includes(v))
+      : allViews;
+
+  if (shown.length < 2) {
+    return null;
+  }
+
   return (
     <ToggleGroup
       type="single"
@@ -46,6 +58,7 @@ export function ViewToggle({ calendarApi, view, setView, display, setDisplay }) 
       aria-label={__("Calendar view mode", "eventkoi-lite")}
       role="radiogroup"
     >
+{shown.includes("month") && (
       <ToggleGroupItem
         value="dayGridMonth"
         role="radio"
@@ -55,7 +68,9 @@ export function ViewToggle({ calendarApi, view, setView, display, setDisplay }) 
       >
         {__("Month", "eventkoi-lite")}
       </ToggleGroupItem>
+      )}
 
+{shown.includes("week") && (
       <ToggleGroupItem
         value="timeGridWeek"
         role="radio"
@@ -65,7 +80,9 @@ export function ViewToggle({ calendarApi, view, setView, display, setDisplay }) 
       >
         {__("Week", "eventkoi-lite")}
       </ToggleGroupItem>
+      )}
 
+{shown.includes("list") && (
       <ToggleGroupItem
         value="list"
         role="radio"
@@ -75,6 +92,7 @@ export function ViewToggle({ calendarApi, view, setView, display, setDisplay }) 
       >
         {__("List", "eventkoi-lite")}
       </ToggleGroupItem>
+      )}
     </ToggleGroup>
   );
 }

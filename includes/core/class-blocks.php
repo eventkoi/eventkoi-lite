@@ -2070,6 +2070,7 @@ JS;
 				'calendars'     => $attrs['calendars'] ?? '',
 				'startday'      => ! empty( $attrs['startday'] ) ? esc_attr( $attrs['startday'] ) : $calendar::get_startday(),
 				'timeframe'     => ! empty( $attrs['timeframe'] ) ? esc_attr( $attrs['timeframe'] ) : $calendar::get_timeframe(),
+				'views'         => ! empty( $attrs['views'] ) ? sanitize_text_field( (string) $attrs['views'] ) : '',
 				'color'         => ! empty( $attrs['color'] ) ? esc_attr( $attrs['color'] ) : eventkoi_default_calendar_color(),
 				'default_month' => ! empty( $attrs['default_month'] ) ? esc_attr( $attrs['default_month'] ) : '',
 				'default_year'  => ! empty( $attrs['default_year'] ) ? esc_attr( $attrs['default_year'] ) : '',

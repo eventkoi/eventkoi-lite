@@ -72,6 +72,7 @@ export function useCalendarData({
   display,
   searchTerm = "",
   timeframe,
+  visibleViews,
   context,
   defaultMonth,
   defaultYear,
@@ -182,7 +183,19 @@ export function useCalendarData({
         response?.calendar?.timeframe === "month"
           ? response.calendar.timeframe
           : "month";
-      const effectiveTimeframe = moduleTimeframe || calendarTimeframe;
+      let effectiveTimeframe = moduleTimeframe || calendarTimeframe;
+
+      // Hidden views can't be the default: fall back to the first grid view
+      // this embed still shows (PROD-556). No restriction means all views.
+      const allowed = Array.isArray(visibleViews) ? visibleViews : [];
+      if (allowed.length && !allowed.includes(effectiveTimeframe)) {
+        effectiveTimeframe = allowed.includes("month")
+          ? "month"
+          : allowed.includes("week")
+          ? "week"
+          : effectiveTimeframe;
+      }
+
       const defaultView =
         effectiveTimeframe === "week" ? "timeGridWeek" : "dayGridMonth";
 

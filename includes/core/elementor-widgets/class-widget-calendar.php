@@ -110,6 +110,24 @@ class Calendar_Widget extends Widget_Base {
 			)
 		);
 
+		foreach ( array(
+			'show_month_view' => __( 'Show Month view', 'eventkoi-lite' ),
+			'show_week_view'  => __( 'Show Week view', 'eventkoi-lite' ),
+			'show_list_view'  => __( 'Show List view', 'eventkoi-lite' ),
+		) as $view_control => $view_label ) {
+			$this->add_control(
+				$view_control,
+				array(
+					'label'        => $view_label,
+					'type'         => Controls_Manager::SWITCHER,
+					'label_on'     => __( 'Yes', 'eventkoi-lite' ),
+					'label_off'    => __( 'No', 'eventkoi-lite' ),
+					'return_value' => 'yes',
+					'default'      => 'yes',
+				)
+			);
+		}
+
 		$this->add_control(
 			'default_month',
 			array(
@@ -242,6 +260,7 @@ class Calendar_Widget extends Widget_Base {
 			'calendars'     => $this->sanitize_calendar_selection( $settings['calendars'] ?? array() ),
 			'startday'      => $this->sanitize_week_start( $settings['week_starts_on'] ?? '' ),
 			'timeframe'     => $this->sanitize_timeframe( $settings['timeframe'] ?? '' ),
+			'views'         => $this->get_visible_views( $settings ),
 			'default_month' => $this->normalize_default_month( $settings['default_month'] ?? 'current' ),
 			'default_year'  => $this->normalize_default_year( $settings['default_year'] ?? '' ),
 			'context'       => 'block',
@@ -328,6 +347,25 @@ class Calendar_Widget extends Widget_Base {
 		$value = strtolower( (string) $value );
 
 		return in_array( $value, array( 'month', 'week' ), true ) ? $value : 'month';
+	}
+
+	/**
+	 * Build the visible-views CSV from the three Show view switchers.
+	 *
+	 * Empty string means every view stays visible, matching the default.
+	 *
+	 * @param array $settings Widget settings.
+	 * @return string CSV of month,week,list subset or ''.
+	 */
+	private function get_visible_views( $settings ) {
+		$views = array();
+		foreach ( array( 'month', 'week', 'list' ) as $view_key ) {
+			if ( 'yes' === ( $settings[ 'show_' . $view_key . '_view' ] ?? 'yes' ) ) {
+				$views[] = $view_key;
+			}
+		}
+
+		return ( count( $views ) < 3 && ! empty( $views ) ) ? implode( ',', $views ) : '';
 	}
 
 	/**
