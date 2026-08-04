@@ -78,6 +78,7 @@ class Event {
 		'virtual_url',
 		'template',
 		'timezone_display',
+		'event_timezone',
 		'timezone',
 		'event_days',
 		'locations',
@@ -507,6 +508,10 @@ class Event {
 		// Default ON for new events to match the editor's default toggle.
 		$timezone_display = array_key_exists( 'timezone_display', $meta ) ? self::normalize_boolean_meta( $meta['timezone_display'] ) : true;
 		$tbc              = array_key_exists( 'tbc', $meta ) ? self::normalize_boolean_meta( $meta['tbc'] ) : false;
+		$event_timezone = isset( $meta['event_timezone'] ) ? sanitize_text_field( (string) $meta['event_timezone'] ) : '';
+		if ( '' !== $event_timezone && ! in_array( $event_timezone, timezone_identifiers_list(), true ) ) {
+			$event_timezone = '';
+		}
 		$tbc_note         = ! empty( $meta['tbc_note'] ) ? esc_attr( $meta['tbc_note'] ) : '';
 
 		$price_from_amount  = isset( $meta['price_from_amount'] ) && '' !== $meta['price_from_amount'] && is_numeric( $meta['price_from_amount'] )
@@ -563,6 +568,11 @@ class Event {
 			update_post_meta( self::$event_id, 'timezone', (string) $all_day_timezone );
 		}
 		update_post_meta( self::$event_id, 'tbc', $tbc ? 1 : 0 );
+		if ( '' === $event_timezone ) {
+			delete_post_meta( self::$event_id, 'event_timezone' );
+		} else {
+			update_post_meta( self::$event_id, 'event_timezone', $event_timezone );
+		}
 		update_post_meta( self::$event_id, 'tbc_note', (string) $tbc_note );
 		update_post_meta( self::$event_id, 'price_from_amount', $price_from_amount );
 		update_post_meta( self::$event_id, 'price_from_url', $price_from_url );
@@ -728,9 +738,32 @@ class Event {
 	 * @return string
 	 */
 	public static function get_timezone() {
-		$timezone = eventkoi_php_timezone( eventkoi_timezone() );
+		$timezone = self::get_event_timezone();
+
+		if ( '' === $timezone ) {
+			$timezone = eventkoi_php_timezone( eventkoi_timezone() );
+		}
 
 		return apply_filters( 'eventkoi_get_event_timezone', (string) $timezone, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Per-event timezone override, or '' when the event follows the site.
+	 *
+	 * Stored under its own key: the legacy `timezone` meta doubles as the
+	 * all-day storage zone and is rewritten on save, so it cannot carry an
+	 * explicit user choice.
+	 *
+	 * @return string Valid timezone identifier or ''.
+	 */
+	public static function get_event_timezone() {
+		$timezone = (string) get_post_meta( self::$event_id, 'event_timezone', true );
+
+		if ( '' === $timezone || ! in_array( $timezone, timezone_identifiers_list(), true ) ) {
+			return '';
+		}
+
+		return $timezone;
 	}
 
 	/**
