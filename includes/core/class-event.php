@@ -767,6 +767,18 @@ class Event {
 	}
 
 	/**
+	 * Timezone used to display this event's dates.
+	 *
+	 * The event's own override when set, the site timezone otherwise — so
+	 * events without an override render exactly as before.
+	 *
+	 * @return \DateTimeZone
+	 */
+	public static function get_display_timezone() {
+		return new \DateTimeZone( self::get_timezone() );
+	}
+
+	/**
 	 * Get event days.
 	 *
 	 * @return array Event days array, or empty array if none.
@@ -2065,7 +2077,7 @@ class Event {
 
 		// Context / formatting settings.
 		$settings    = Settings::get();
-		$wp_timezone = wp_timezone();
+		$wp_timezone = self::get_display_timezone();
 		$date_format = \eventkoi_resolved_date_format();
 		$time_format = \eventkoi_resolved_time_format();
 		$time_pref   = isset( $settings['time_format'] ) ? $settings['time_format'] : '12';
@@ -3882,7 +3894,7 @@ class Event {
 			return '';
 		}
 
-		$timezone = wp_kses_post( eventkoi_timezone() );
+		$timezone = wp_kses_post( self::get_timezone() );
 		$output   = sprintf(
 			'<span class="ek-timezone" data-source-tz="%1$s">%2$s</span>',
 			esc_attr( $timezone ),
@@ -4396,7 +4408,7 @@ class Event {
 				$rule       = $instance_context['rule'];
 				$end_ts     = $instance_context['end_ts'];
 				$is_all_day = (bool) $instance_context['all_day'];
-				$args       = array();
+				$args       = array( 'timezone' => self::get_display_timezone() );
 				if ( $is_all_day ) {
 					$args['timezone'] = self::get_all_day_datetime_timezone(
 						$event_tz,
@@ -4454,7 +4466,7 @@ class Event {
 				: self::normalize_boolean_meta( get_post_meta( self::$event_id, 'all_day', true ) );
 
 			if ( $start_ts ) {
-				$args = array();
+				$args = array( 'timezone' => self::get_display_timezone() );
 				if ( $is_all_day ) {
 					$args['timezone'] = self::get_all_day_datetime_timezone( $event_tz, $first_day );
 				}
@@ -4472,7 +4484,7 @@ class Event {
 				$end_ts     = ! empty( $item['end_date'] ) ? strtotime( $item['end_date'] ) : null;
 				$is_all_day = ! empty( $item['all_day'] );
 
-					$args = array();
+					$args = array( 'timezone' => self::get_display_timezone() );
 					if ( $is_all_day ) {
 						$args['timezone'] = self::get_all_day_datetime_timezone( $event_tz, $item );
 					}
@@ -4665,7 +4677,7 @@ class Event {
 			if ( $instance_context ) {
 				$end_ts     = $instance_context['end_ts'];
 				$is_all_day = (bool) $instance_context['all_day'];
-				$args       = array();
+				$args       = array( 'timezone' => self::get_display_timezone() );
 				if ( $is_all_day ) {
 					$args['timezone'] = self::get_all_day_datetime_timezone(
 						$event_tz,
@@ -4730,7 +4742,7 @@ class Event {
 				$end_ts = null;
 			}
 
-			$args = array();
+			$args = array( 'timezone' => self::get_display_timezone() );
 			if ( $is_all_day ) {
 				$args['timezone'] = self::get_all_day_datetime_timezone( $event_tz, $item );
 			}
@@ -4839,7 +4851,7 @@ class Event {
 			}
 		}
 
-		return wp_timezone();
+		return self::get_display_timezone();
 	}
 
 	/**
