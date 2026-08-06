@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.3.30.0
+Stable tag: 1.3.31.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,12 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.31.0 – Calendar view controls and event timezones – 2026-08-06 =
+* New: Choose which views (Month, Week, List) each calendar embed offers and which one opens first, from the block settings, the [eventkoi_calendar] shortcode and the page-builder widgets. Existing calendars keep behaving exactly as before.
+* New: An event can now override the site timezone. Pick a timezone in the event's date settings and every date for that event, on the frontend and in the calendar, is shown in the event's own timezone.
+* Fix: Manually added attendees now create a proper order record, so the order's Activity tab shows the completed order instead of staying empty.
+* Fix: Events shorter than an hour now show their title in the calendar's week view instead of hiding it.
 
 = 1.3.30.0 – List view merge and attendee export upgrades – 2026-07-31 =
 * New: Setting a calendar to List no longer shows a stripped-down separate list. It now opens the normal calendar on the List tab, keeping the Month and Week toggles, Subscribe button, search and month navigation.
