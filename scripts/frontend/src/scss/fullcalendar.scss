@@ -317,13 +317,18 @@
   // Calendar and stock FullCalendar render short events.
   .fc-timegrid-event-short .fc-event-main {
     display: flex;
-    align-items: center;
+    // Baseline, not center: the time span renders smaller than the title
+    // (stock FullCalendar small-font + themes), and centering their boxes
+    // sinks the title's text below the time's. Sharing a baseline keeps
+    // mixed font sizes on one visual line.
+    align-items: baseline;
     gap: 4px;
     padding-top: 0;
     padding-bottom: 0;
     .fc-event-time,
     .fc-event-title {
       display: inline-block;
+      margin: 0;
     }
     .fc-event-title {
       position: static;
