@@ -233,7 +233,7 @@ This service is provided by Google LLC: [Terms of Service](https://cloud.google.
 
 == Changelog ==
 
-= 1.3.32.0 – Short event title alignment – 2026-08-08 =
+= 1.3.32.0 – Short event title alignment – 2026-08-09 =
 * Fix: On calendar events shorter than an hour, the title now sits on the same line and baseline as the time instead of appearing slightly below it.
 
 = 1.3.31.0 – Calendar view controls and event timezones – 2026-08-06 =
