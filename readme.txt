@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.3.31.0
+Stable tag: 1.3.32.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,9 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.3.32.0 – Short event title alignment – 2026-08-08 =
+* Fix: On calendar events shorter than an hour, the title now sits on the same line and baseline as the time instead of appearing slightly below it.
 
 = 1.3.31.0 – Calendar view controls and event timezones – 2026-08-06 =
 * New: Choose which views (Month, Week, List) each calendar embed offers and which one opens first, from the block settings, the [eventkoi_calendar] shortcode and the page-builder widgets. Existing calendars keep behaving exactly as before.
