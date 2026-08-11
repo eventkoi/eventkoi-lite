@@ -1959,6 +1959,33 @@ JS;
 				}
 			}
 
+			// The row already resolved which occurrence it represents, so match that
+			// timestamp against the stored days. This needs neither an event_day
+			// argument on the permalink nor a per-row day array, both of which a
+			// site can lose to custom rewrite rules, and an exact match makes it
+			// self-validating. Without it a listing silently falls back to the
+			// event's first day and can print a date that has already passed.
+			$resolved_ts = isset( $event['start_ts'] ) ? (int) $event['start_ts'] : 0;
+			if ( $resolved_ts <= 0 && ! empty( $event['start'] ) && is_scalar( $event['start'] ) ) {
+				$resolved_ts = (int) strtotime( (string) $event['start'] );
+			}
+
+			if ( $resolved_ts > 0 ) {
+				$days = get_post_meta( $event_id, 'event_days', true );
+
+				if ( ! empty( $days ) && is_array( $days ) ) {
+					foreach ( array_values( $days ) as $day_index => $day_row ) {
+						if ( empty( $day_row['start_date'] ) ) {
+							continue;
+						}
+
+						if ( (int) strtotime( (string) $day_row['start_date'] ) === $resolved_ts ) {
+							return $day_index;
+						}
+					}
+				}
+			}
+
 			$row_days = isset( $event['event_days'] ) && is_array( $event['event_days'] ) ? array_values( $event['event_days'] ) : array();
 			if ( 1 !== count( $row_days ) || empty( $row_days[0]['start_date'] ) ) {
 				return null;
