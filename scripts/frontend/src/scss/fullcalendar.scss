@@ -311,10 +311,19 @@
       top: 4px;
     }
   }
-  // Sub-hour events (FullCalendar marks them fc-timegrid-event-short) are
-  // one slot tall, so the stacked time/title layout above pushes the title
-  // below the card. Collapse to a single "time title" line, the way Google
-  // Calendar and stock FullCalendar render short events.
+  // Short events (FullCalendar marks them fc-timegrid-event-short, using the
+  // eventShortHeight we set in CalendarGridMode) are too short for the
+  // stacked time/title layout above, which would push the title below the
+  // card. Collapse to a single "time title" line, the way Google Calendar
+  // and stock FullCalendar render short events.
+  //
+  // Clipping here is the backstop: the parent card deliberately runs without
+  // overflow so sticky titles work on multi-day bars, but a short card is by
+  // definition too small to need sticky (the title is position: static
+  // below), so a theme with taller text can never push the line outside it.
+  .fc-timegrid-event-short {
+    overflow: hidden;
+  }
   .fc-timegrid-event-short .fc-event-main {
     display: flex;
     // Baseline, not center: the time span renders smaller than the title

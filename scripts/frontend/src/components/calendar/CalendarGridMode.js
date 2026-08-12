@@ -714,6 +714,14 @@ export function CalendarGridMode({
         firstDay={start_day}
         headerToolbar={false}
         slotEventOverlap={true}
+        // FullCalendar tags a card fc-timegrid-event-short (our one-line
+        // time+title layout) only when it is shorter than this, and its
+        // default of 30px is below what the stacked layout needs: the
+        // title's text ends 38.7px down. A 45-minute card lands at exactly
+        // 30px, missed the cutoff, and spilled its title below the card.
+        // 40px is the smallest threshold that covers the stacked layout
+        // while leaving hour-long cards (41px) on two lines.
+        eventShortHeight={40}
         nowIndicator={true}
         dayCellClassNames={(arg) => {
           // Tint days NOT in the user's configured working_days
