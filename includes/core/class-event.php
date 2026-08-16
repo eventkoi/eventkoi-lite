@@ -3452,6 +3452,13 @@ class Event {
 			'post_author' => get_current_user_id(),
 		);
 
+		// The excerpt lives on the post row rather than in post meta, so
+		// update_meta() below cannot carry it over the way it does the rest of
+		// the event. It has to be copied here or the duplicate loses it.
+		if ( isset( $meta['excerpt'] ) && '' !== $meta['excerpt'] ) {
+			$args['post_excerpt'] = $meta['excerpt'];
+		}
+
 		$last_id        = wp_insert_post( $args );
 		$event          = get_post( $last_id );
 		self::$event    = $event;
