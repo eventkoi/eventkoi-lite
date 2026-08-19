@@ -259,8 +259,20 @@ class Metabox_Embed {
 			.wrap > h1.wp-heading-inline, .wrap > .page-title-action,
 			.wrap > hr.wp-header-end, #wpbody-content > .wrap > .notice,
 			.notice, .updated, .update-nag, .error,
-			#post-body-content, #titlediv, #postdivrich, #slugdiv {
+			#titlediv, #postdivrich, #slugdiv {
 				display: none !important;
+			}
+			/* #post-body-content holds the title and editor, which are hidden
+				above by id. It is NOT hidden wholesale, because ACF renders a
+				field group positioned "High (after title)" into this same
+				container, and hiding the container took those groups with it
+				(helpdesk GRJIWBGX). Its own core children are gone, so it
+				collapses to nothing when a plugin has put nothing there. */
+			#post-body-content {
+				float: none !important;
+				width: 100% !important;
+				margin: 0 !important;
+				min-height: 0 !important;
 			}
 			html, body.wp-admin { background: transparent !important; }
 			body { margin: 0 !important; padding: 0 !important; }
@@ -271,6 +283,7 @@ class Metabox_Embed {
 
 			/* Stack into one column: plugin fields first, update action last. */
 			#post-body.columns-2 { display: flex !important; flex-direction: column !important; margin: 0 !important; }
+			#post-body.columns-2 #post-body-content { order: 0; }
 			#post-body.columns-2 #postbox-container-1 { order: 2; float: none; width: 100% !important; margin: 0 !important; }
 			#post-body.columns-2 #postbox-container-2 { order: 1; width: 100% !important; margin: 0 !important; }
 			/* Collapse the empty sortable areas so they add no blank space. */
