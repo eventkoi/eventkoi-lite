@@ -43,6 +43,12 @@ parameters:
 			path: includes/api/class-calendar.php
 
 		-
+			message: '#^Call to function is_array\(\) with array will always evaluate to true\.$#'
+			identifier: function.alreadyNarrowedType
+			count: 3
+			path: includes/core/api-functions.php
+
+		-
 			message: '#^Method EventKoi\\API\\Calendar\:\:delete_calendar\(\) should return WP_REST_Response but returns WP_Error\.$#'
 			identifier: return.type
 			count: 1
@@ -1471,9 +1477,15 @@ parameters:
 			path: includes/core/elementor-widgets/class-widget-calendar.php
 
 		-
+			message: '#^Access to constant SWITCHER on an unknown class Elementor\\Controls_Manager\.$#'
+			identifier: class.notFound
+			count: 1
+			path: includes/core/elementor-widgets/class-widget-calendar.php
+
+		-
 			message: '#^Call to an undefined method EventKoi\\Core\\Elementor\\Calendar_Widget\:\:add_control\(\)\.$#'
 			identifier: method.notFound
-			count: 9
+			count: 10
 			path: includes/core/elementor-widgets/class-widget-calendar.php
 
 		-
