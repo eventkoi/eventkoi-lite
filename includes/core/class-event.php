@@ -590,6 +590,22 @@ class Event {
 		update_post_meta( self::$event_id, 'description', $description );
 		update_post_meta( self::$event_id, 'image', (string) $image );
 		update_post_meta( self::$event_id, 'image_id', $image_id );
+		// Read before anything below overwrites it: an occurrence that moves has
+		// to be paired with where it moved to, or per-instance overrides end up
+		// stranded on a date that no longer exists (helpdesk T9R4IMAW).
+		$instance_ts_migrations = self::get_instance_ts_migrations(
+			(string) get_post_meta( self::$event_id, 'date_type', true ),
+			(string) get_post_meta( self::$event_id, 'standard_type', true ),
+			(array) get_post_meta( self::$event_id, 'event_days', true ),
+			(array) get_post_meta( self::$event_id, 'recurrence_rules', true ),
+			(string) get_post_meta( self::$event_id, 'timezone', true ),
+			(string) $date_type,
+			(string) $standard_type,
+			(array) $event_days,
+			(array) $recurrence_rules,
+			(string) ( $meta['timezone'] ?? get_post_meta( self::$event_id, 'timezone', true ) )
+		);
+
 		update_post_meta( self::$event_id, 'date_type', (string) $date_type );
 		update_post_meta( self::$event_id, 'event_days', (array) $event_days );
 		update_post_meta( self::$event_id, 'locations', (array) $locations );
@@ -671,6 +687,8 @@ class Event {
 			delete_post_meta( self::$event_id, 'start_date' );
 			delete_post_meta( self::$event_id, 'start_timestamp' );
 		}
+
+		self::migrate_recurrence_override_timestamps( $instance_ts_migrations );
 
 		if ( $end_date ) {
 			$end_utc_ts = strtotime( $end_date );
@@ -5942,6 +5960,373 @@ class Event {
 			'start' => null,
 			'end'   => null,
 		);
+	}
+
+	/**
+	 * Work out where each occurrence moved to when an event's dates changed.
+	 *
+	 * Occurrences are matched by ordinal within a rule, or by row order for a
+	 * selected-dates event, which is what lets anything keyed to an occurrence
+	 * follow it to its new time.
+	 *
+	 * @param string $old_date_type     Previous date type.
+	 * @param string $old_standard_type Previous standard type.
+	 * @param array  $old_event_days    Previous event_days rows.
+	 * @param array  $old_rules         Previous recurrence rules.
+	 * @param string $old_timezone      Previous timezone.
+	 * @param string $new_date_type     New date type.
+	 * @param string $new_standard_type New standard type.
+	 * @param array  $new_event_days    New event_days rows.
+	 * @param array  $new_rules         New recurrence rules.
+	 * @param string $new_timezone      New timezone.
+	 * @return array<int,int> Old timestamp => new timestamp.
+	 */
+	private static function get_instance_ts_migrations( $old_date_type, $old_standard_type, array $old_event_days, array $old_rules, $old_timezone, $new_date_type, $new_standard_type, array $new_event_days, array $new_rules, $new_timezone ) {
+		$migrations = array();
+
+		if ( 'standard' === $old_date_type && 'standard' === $new_date_type && ( 'selected' === $old_standard_type || 'selected' === $new_standard_type ) ) {
+			$migrations = self::merge_instance_ts_migrations(
+				$migrations,
+				self::get_event_day_instance_ts_migrations( $old_event_days, $new_event_days )
+			);
+		}
+
+		if ( 'recurring' === $old_date_type && 'recurring' === $new_date_type ) {
+			$migrations = self::merge_instance_ts_migrations(
+				$migrations,
+				self::get_recurring_rule_instance_ts_migrations( $old_rules, $new_rules, $old_timezone, $new_timezone )
+			);
+		}
+
+		return $migrations;
+	}
+
+	/**
+	 * Pair selected event days by row order.
+	 *
+	 * @param array $old_event_days Previous event_days rows.
+	 * @param array $new_event_days New event_days rows.
+	 * @return array<int,int>
+	 */
+	private static function get_event_day_instance_ts_migrations( array $old_event_days, array $new_event_days ) {
+		$old_starts = self::get_event_day_start_timestamps( $old_event_days );
+		$new_starts = self::get_event_day_start_timestamps( $new_event_days );
+
+		if ( empty( $old_starts ) || empty( $new_starts ) || count( $old_starts ) !== count( $new_starts ) ) {
+			return array();
+		}
+
+		$migrations = array();
+		foreach ( $old_starts as $index => $old_ts ) {
+			$new_ts = isset( $new_starts[ $index ] ) ? (int) $new_starts[ $index ] : 0;
+
+			if ( $old_ts <= 0 || $new_ts <= 0 || $old_ts === $new_ts ) {
+				continue;
+			}
+
+			// The day still exists elsewhere in the list, so it was reordered
+			// rather than moved and whatever is keyed to it should stay put.
+			if ( in_array( $old_ts, $new_starts, true ) ) {
+				continue;
+			}
+
+			$migrations[ $old_ts ] = $new_ts;
+		}
+
+		return $migrations;
+	}
+
+	/**
+	 * Start timestamps of stored event_days rows, in row order.
+	 *
+	 * @param array $event_days Event day rows.
+	 * @return int[]
+	 */
+	private static function get_event_day_start_timestamps( array $event_days ) {
+		$starts = array();
+
+		foreach ( array_values( $event_days ) as $day ) {
+			if ( ! is_array( $day ) || empty( $day['start_date'] ) ) {
+				continue;
+			}
+
+			$start_ts = strtotime( (string) self::normalize_utc_datetime_iso_string( $day['start_date'] ) );
+
+			if ( $start_ts ) {
+				$starts[] = (int) $start_ts;
+			}
+		}
+
+		return $starts;
+	}
+
+	/**
+	 * Pair recurring occurrences by rule index and ordinal.
+	 *
+	 * @param array  $old_rules    Previous recurrence rules.
+	 * @param array  $new_rules    New recurrence rules.
+	 * @param string $old_timezone Previous timezone.
+	 * @param string $new_timezone New timezone.
+	 * @return array<int,int>
+	 */
+	private static function get_recurring_rule_instance_ts_migrations( array $old_rules, array $new_rules, $old_timezone, $new_timezone ) {
+		$old_rules = array_values( array_filter( $old_rules, 'is_array' ) );
+		$new_rules = array_values( array_filter( $new_rules, 'is_array' ) );
+
+		if ( empty( $old_rules ) || empty( $new_rules ) || count( $old_rules ) !== count( $new_rules ) ) {
+			return array();
+		}
+
+		$migrations = array();
+		foreach ( $old_rules as $index => $old_rule ) {
+			// Both lists were filtered to arrays above, so presence is enough.
+			$new_rule = $new_rules[ $index ] ?? array();
+
+			if ( ! self::rules_are_instance_migration_compatible( $old_rule, $new_rule ) ) {
+				continue;
+			}
+
+			$old_starts = self::get_rule_instance_starts_for_migration( $old_rule, $old_timezone );
+			$new_starts = self::get_rule_instance_starts_for_migration( $new_rule, $new_timezone );
+			$limit      = min( count( $old_starts ), count( $new_starts ) );
+
+			for ( $i = 0; $i < $limit; ++$i ) {
+				$old_ts = (int) $old_starts[ $i ];
+				$new_ts = (int) $new_starts[ $i ];
+
+				if ( $old_ts > 0 && $new_ts > 0 && $old_ts !== $new_ts ) {
+					$migrations[ $old_ts ] = $new_ts;
+				}
+			}
+		}
+
+		return $migrations;
+	}
+
+	/**
+	 * Whether two versions of a rule are similar enough to pair by ordinal.
+	 *
+	 * Deliberately strict. Anything that could change how many occurrences a
+	 * rule produces, or which days they land on, makes ordinal pairing a guess,
+	 * and a wrong guess would move a customisation onto the wrong date. Bailing
+	 * out leaves the old behaviour for that rule, which is merely unhelpful.
+	 *
+	 * @param array $old_rule Previous rule.
+	 * @param array $new_rule New rule.
+	 * @return bool
+	 */
+	private static function rules_are_instance_migration_compatible( array $old_rule, array $new_rule ) {
+		$old_frequency = (string) ( $old_rule['frequency'] ?? '' );
+		$new_frequency = (string) ( $new_rule['frequency'] ?? '' );
+
+		if ( '' === $old_frequency || $old_frequency !== $new_frequency ) {
+			return false;
+		}
+
+		if ( max( 1, absint( $old_rule['every'] ?? 1 ) ) !== max( 1, absint( $new_rule['every'] ?? 1 ) ) ) {
+			return false;
+		}
+
+		if ( ! empty( $old_rule['all_day'] ) !== ! empty( $new_rule['all_day'] ) ) {
+			return false;
+		}
+
+		if ( (string) ( $old_rule['ends'] ?? 'never' ) !== (string) ( $new_rule['ends'] ?? 'never' ) ) {
+			return false;
+		}
+
+		$old_weekdays = is_array( $old_rule['weekdays'] ?? null ) ? $old_rule['weekdays'] : array();
+		$new_weekdays = is_array( $new_rule['weekdays'] ?? null ) ? $new_rule['weekdays'] : array();
+
+		if ( 'week' === $old_frequency && count( $old_weekdays ) !== count( $new_weekdays ) ) {
+			return false;
+		}
+
+		if ( 'month' === $old_frequency && (string) ( $old_rule['month_day_rule'] ?? 'day-of-month' ) !== (string) ( $new_rule['month_day_rule'] ?? 'day-of-month' ) ) {
+			return false;
+		}
+
+		if ( 'year' === $old_frequency ) {
+			$old_months = is_array( $old_rule['months'] ?? null ) ? $old_rule['months'] : array();
+			$new_months = is_array( $new_rule['months'] ?? null ) ? $new_rule['months'] : array();
+
+			if ( count( $old_months ) !== count( $new_months ) ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Expand a rule to occurrence start timestamps, using the same RRule path
+	 * the rest of the plugin renders from.
+	 *
+	 * @param array  $rule           Recurrence rule.
+	 * @param string $event_timezone Event timezone.
+	 * @return int[]
+	 */
+	private static function get_rule_instance_starts_for_migration( array $rule, $event_timezone ) {
+		$starts = array();
+
+		if ( empty( $rule['start_date'] ) || empty( $rule['frequency'] ) ) {
+			return $starts;
+		}
+
+		$timezone = self::get_rule_timezone_for_migration( $rule, $event_timezone );
+		$limit    = max( 50, (int) apply_filters( 'eventkoi_max_recurrence_iterations', 500 ) );
+
+		try {
+			$options = self::build_recurring_rule_options( $rule, $timezone );
+
+			if ( empty( $options ) ) {
+				return array();
+			}
+
+			$rrule = new \EKLIB\RRule\RRule( $options );
+			$count = 0;
+
+			foreach ( $rrule as $occurrence ) {
+				if ( $count++ >= $limit ) {
+					break;
+				}
+
+				if ( $occurrence instanceof \DateTimeInterface ) {
+					$starts[] = (int) $occurrence->getTimestamp();
+				}
+			}
+		} catch ( \Exception $e ) {
+			return array();
+		}
+
+		$starts = array_values( array_unique( array_filter( array_map( 'intval', $starts ) ) ) );
+		sort( $starts, SORT_NUMERIC );
+
+		return $starts;
+	}
+
+	/**
+	 * Timezone a rule's occurrences are generated in.
+	 *
+	 * @param array  $rule           Recurrence rule.
+	 * @param string $event_timezone Event timezone.
+	 * @return \DateTimeZone
+	 */
+	private static function get_rule_timezone_for_migration( array $rule, $event_timezone ) {
+		$event_timezone = (string) $event_timezone;
+
+		if ( '' === $event_timezone ) {
+			$event_timezone = self::get_timezone();
+		}
+
+		if ( ! empty( $rule['all_day'] ) ) {
+			try {
+				return self::get_all_day_datetime_timezone( $event_timezone, $rule );
+			} catch ( \Exception $e ) {
+				unset( $e );
+			}
+		}
+
+		try {
+			return new \DateTimeZone( eventkoi_php_timezone( $event_timezone ) );
+		} catch ( \Exception $e ) {
+			return new \DateTimeZone( 'UTC' );
+		}
+	}
+
+	/**
+	 * Merge migration maps without letting a later rule claim a slot already
+	 * taken, in either direction.
+	 *
+	 * @param array $base  Base migrations.
+	 * @param array $extra Extra migrations.
+	 * @return array<int,int>
+	 */
+	private static function merge_instance_ts_migrations( array $base, array $extra ) {
+		foreach ( $extra as $old_ts => $new_ts ) {
+			$old_ts = (int) $old_ts;
+			$new_ts = (int) $new_ts;
+
+			if ( $old_ts <= 0 || $new_ts <= 0 || $old_ts === $new_ts || isset( $base[ $old_ts ] ) || in_array( $new_ts, $base, true ) ) {
+				continue;
+			}
+
+			$base[ $old_ts ] = $new_ts;
+		}
+
+		return $base;
+	}
+
+	/**
+	 * Move per-instance overrides onto the timestamps their occurrences now have.
+	 *
+	 * Overrides are keyed by the occurrence's start timestamp, so a master edit
+	 * that shifts those times used to strand every customised occurrence on a
+	 * timestamp that no longer existed, and the occurrence silently fell back
+	 * to the master's title and description (helpdesk T9R4IMAW).
+	 *
+	 * Done in three passes because the moves can collide with each other: a
+	 * series shifted by exactly its own interval maps each occurrence onto the
+	 * slot the next one is still occupying. Rows are parked above any real epoch
+	 * value first, then landed, and anything that still cannot land goes back
+	 * where it started. Nothing is deleted and nothing is left parked, so the
+	 * worst case is the old behaviour for that one row rather than a lost
+	 * override.
+	 *
+	 * @param array<int,int> $migrations Old timestamp => new timestamp.
+	 * @return void
+	 */
+	private static function migrate_recurrence_override_timestamps( array $migrations ) {
+		if ( ! self::$event_id || empty( $migrations ) ) {
+			return;
+		}
+
+		$pairs = array();
+		foreach ( $migrations as $old_ts => $new_ts ) {
+			$old_ts = (int) $old_ts;
+			$new_ts = (int) $new_ts;
+
+			if ( $old_ts <= 0 || $new_ts <= 0 || $old_ts === $new_ts ) {
+				continue;
+			}
+
+			$pairs[ $old_ts ] = $new_ts;
+		}
+
+		if ( empty( $pairs ) ) {
+			return;
+		}
+
+		global $wpdb;
+		$table    = $wpdb->prefix . 'eventkoi_recurrence_overrides';
+		$event_id = (int) self::$event_id;
+
+		// Far above any real epoch second, and well inside BIGINT UNSIGNED.
+		$parking = 1000000000000000;
+
+		foreach ( array( 'park', 'land', 'restore' ) as $pass ) {
+			foreach ( $pairs as $old_ts => $new_ts ) {
+				if ( 'park' === $pass ) {
+					$from = $old_ts;
+					$to   = $parking + $new_ts;
+				} elseif ( 'land' === $pass ) {
+					$from = $parking + $new_ts;
+					$to   = $new_ts;
+				} else {
+					$from = $parking + $new_ts;
+					$to   = $old_ts;
+				}
+
+				$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+					$wpdb->prepare(
+						"UPDATE IGNORE {$table} SET timestamp = %d WHERE event_id = %d AND timestamp = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+						$to,
+						$event_id,
+						$from
+					)
+				);
+			}
+		}
 	}
 
 	/**
