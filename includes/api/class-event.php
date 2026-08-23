@@ -214,13 +214,64 @@ class Event {
 		}
 
 		$event_obj = new \EventKoi\Core\Event( $event_id );
-		foreach ( array_keys( $options ) as $field ) {
-			if ( isset( $event[ $field ] ) ) {
-				continue;
+
+		// A standard multi-date row must pin the selected-day context, or
+		// fields like event_datetime list every stored day on every expanded
+		// row. The row names its day directly, via its "-dayN" id suffix, or
+		// by its start timestamp matching a stored day.
+		$day_index = isset( $event['event_day'] ) && is_numeric( $event['event_day'] )
+			? absint( $event['event_day'] )
+			: null;
+		if ( null === $day_index && ! empty( $event['id'] ) && is_scalar( $event['id'] ) && preg_match( '/-day(\d+)$/', (string) $event['id'], $matches ) ) {
+			$day_index = absint( $matches[1] );
+		}
+		if ( null === $day_index ) {
+			$row_ts = absint( $event['instance_ts'] ?? ( $event['start_ts'] ?? 0 ) );
+			if ( $row_ts > 0 ) {
+				$days = get_post_meta( $event_id, 'event_days', true );
+				if ( is_array( $days ) ) {
+					foreach ( array_values( $days ) as $index => $day_row ) {
+						if ( empty( $day_row['start_date'] ) ) {
+							continue;
+						}
+						if ( abs( (int) strtotime( (string) $day_row['start_date'] ) - $row_ts ) <= 1 ) {
+							$day_index = (int) $index;
+							break;
+						}
+					}
+				}
 			}
-			$rendered = (string) $event_obj::render_meta( $field );
-			if ( '' !== $rendered ) {
-				$event[ $field ] = $rendered;
+		}
+
+		$had_day_context      = false;
+		$previous_day_context = null;
+		if ( null !== $day_index ) {
+			if ( empty( $GLOBALS['eventkoi_selected_event_day_context'] ) || ! is_array( $GLOBALS['eventkoi_selected_event_day_context'] ) ) {
+				$GLOBALS['eventkoi_selected_event_day_context'] = array();
+			}
+			$had_day_context      = array_key_exists( $event_id, $GLOBALS['eventkoi_selected_event_day_context'] );
+			$previous_day_context = $had_day_context ? $GLOBALS['eventkoi_selected_event_day_context'][ $event_id ] : null;
+
+			$GLOBALS['eventkoi_selected_event_day_context'][ $event_id ] = $day_index;
+		}
+
+		try {
+			foreach ( array_keys( $options ) as $field ) {
+				if ( isset( $event[ $field ] ) ) {
+					continue;
+				}
+				$rendered = (string) $event_obj::render_meta( $field );
+				if ( '' !== $rendered ) {
+					$event[ $field ] = $rendered;
+				}
+			}
+		} finally {
+			if ( null !== $day_index ) {
+				if ( $had_day_context ) {
+					$GLOBALS['eventkoi_selected_event_day_context'][ $event_id ] = $previous_day_context;
+				} else {
+					unset( $GLOBALS['eventkoi_selected_event_day_context'][ $event_id ] );
+				}
 			}
 		}
 
