@@ -79,7 +79,7 @@ export function EventTabs() {
   }) );
 
   return (
-    <div className="grid gap-2 text-sm text-muted-foreground">
+    <div className="grid gap-2 text-sm text-muted-foreground md:sticky md:top-[120px] self-start">
       {items.map((item) => {
         const isActiveView = activeView === item.key ||
           (item.key === "rsvp" && activeView === "attendees") ||
