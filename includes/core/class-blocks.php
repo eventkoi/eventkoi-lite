@@ -600,9 +600,16 @@ JS;
 			$block_content = do_shortcode( $block_content );
 		}
 
-		if ( ! $has_eventkoi_shortcode ) {
+		// These literal tokens only exist in the plugin's own single-event
+		// templates, so the pass is limited to event pages: anywhere else a
+		// bare regex sweep rewrites innocent content (page-builder widgets
+		// carry the key names inside class attributes). The lookarounds keep
+		// tokens embedded in class names or slugs intact even on event pages.
+		$is_event_context = 'eventkoi_event' === get_post_type( get_the_ID() );
+
+		if ( ! $has_eventkoi_shortcode && $is_event_context ) {
 			foreach ( $allowed_keys as $base_key ) {
-				$pattern = '/\b' . preg_quote( $base_key, '/' ) . '(_\d+)?\b/';
+				$pattern = '/(?<![\w-])' . preg_quote( $base_key, '/' ) . '(_\d+)?(?![\w-])/';
 
 				$block_content = preg_replace_callback(
 					$pattern,
