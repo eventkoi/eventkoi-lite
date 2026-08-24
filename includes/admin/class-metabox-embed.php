@@ -259,7 +259,10 @@ class Metabox_Embed {
 			.wrap > h1.wp-heading-inline, .wrap > .page-title-action,
 			.wrap > hr.wp-header-end, #wpbody-content > .wrap > .notice,
 			.notice, .updated, .update-nag, .error,
-			#titlediv, #postdivrich, #slugdiv {
+			#titlediv, #postdivrich, #slugdiv,
+			/* Elementor's own edit button: the event editor offers it in the
+				panel header instead, so the embedded copy would be a duplicate. */
+			#elementor-switch-mode, #elementor-editor {
 				display: none !important;
 			}
 			/* #post-body-content holds the title and editor, which are hidden

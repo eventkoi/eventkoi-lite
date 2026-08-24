@@ -16,8 +16,23 @@ class Elementor_Widgets {
 	 */
 	public function __construct() {
 		add_action( 'elementor/widgets/register', array( $this, 'register_widget' ) );
+		add_action( 'init', array( $this, 'register_event_elementor_support' ), 20 );
 		add_action( 'elementor/elements/categories_registered', array( $this, 'register_category' ) );
 		add_action( 'elementor/editor/before_enqueue_scripts', array( $this, 'enqueue_editor_assets' ) );
+	}
+
+	/**
+	 * Let Elementor open events in its editor.
+	 *
+	 * Elementor only edits post types that declare 'elementor' support; without
+	 * this, the Edit with Elementor button in the event editor would bounce.
+	 */
+	public function register_event_elementor_support() {
+		if ( ! defined( 'ELEMENTOR_VERSION' ) ) {
+			return;
+		}
+
+		add_post_type_support( 'eventkoi_event', 'elementor' );
 	}
 
 	/**

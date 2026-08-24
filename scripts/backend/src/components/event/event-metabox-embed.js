@@ -136,11 +136,19 @@ export function EventMetaboxEmbed() {
     ? baseUrl + (baseUrl.includes("?") ? "&" : "?") + "ek_embed=1"
     : "";
 
+  const elementorEditUrl =
+    eventkoi_params?.elementor_active && event?.id
+      ? `${eventkoi_params?.admin_post_url}?post=${event.id}&action=elementor`
+      : "";
+
   // The embed reports how many third-party boxes it rendered. Nothing to show
-  // on sites where no plugin adds any, so the panel takes itself away.
-  if (boxCount === 0) {
+  // on sites where no plugin adds any, so the panel takes itself away — unless
+  // Elementor is active, whose edit button lives in this container too.
+  if (boxCount === 0 && !elementorEditUrl) {
     return null;
   }
+
+  const showEmbed = boxCount !== 0;
 
   // Until that count arrives the container still renders, with a line saying
   // what is happening, so the area never sits blank or looks broken.
@@ -183,24 +191,37 @@ export function EventMetaboxEmbed() {
                   "Changes made here must be saved separately, using the Save button on the right.",
                   "eventkoi-lite"
                 )
-              : waitingText}
+              : showEmbed
+              ? waitingText
+              : __(
+                  "Design this event with Elementor. The layout saves with the event.",
+                  "eventkoi-lite"
+                )}
           </p>
         </div>
-        {ready && (
-          <Button
-            type="button"
-            className="shrink-0"
-            disabled={saving}
-            onClick={submitEmbed}
-          >
-            {saveLabel}
-          </Button>
-        )}
+        <div className="flex shrink-0 items-center gap-2">
+          {!!elementorEditUrl && (
+            <Button type="button" variant="outline" asChild>
+              <a
+                href={elementorEditUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {__("Edit with Elementor", "eventkoi-lite")}
+              </a>
+            </Button>
+          )}
+          {ready && (
+            <Button type="button" disabled={saving} onClick={submitEmbed}>
+              {saveLabel}
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Mounted as soon as there is a post to embed, hidden until it reports
           its boxes, so the count arrives without the frame flashing in. */}
-      {!!src && (
+      {showEmbed && !!src && (
         <iframe
           ref={iframeRef}
           title={__("Fields from other plugins", "eventkoi-lite")}
