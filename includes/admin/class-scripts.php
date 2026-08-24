@@ -155,9 +155,41 @@ class Scripts {
 			}
 		}
 
-		$elementor_templates = function_exists( 'eventkoi_get_template_ids_by_pattern' )
-			? eventkoi_get_template_ids_by_pattern( 'include/singular/eventkoi_event' )
-			: array();
+		$elementor_templates = array();
+
+		if ( defined( 'ELEMENTOR_VERSION' ) ) {
+			// Any library template can render as an event layout, so the picker
+			// is no longer limited to templates whose display conditions name
+			// the event post type. Only library types that make no sense as a
+			// page body stay out.
+			$excluded_elementor_types = array( 'kit', 'popup', 'header', 'footer', 'loop-item', 'archive', 'search-results', 'error-404' );
+
+			$all_elementor_posts = get_posts(
+				array(
+					'post_type'      => 'elementor_library',
+					'post_status'    => 'publish',
+					'posts_per_page' => -1,
+					'orderby'        => 'title',
+					'order'          => 'ASC',
+				)
+			);
+
+			foreach ( $all_elementor_posts as $tpl_post ) {
+				if ( empty( $tpl_post->post_name ) ) {
+					continue;
+				}
+
+				$tpl_type = (string) get_post_meta( $tpl_post->ID, '_elementor_template_type', true );
+				if ( in_array( $tpl_type, $excluded_elementor_types, true ) ) {
+					continue;
+				}
+
+				$elementor_templates[] = array(
+					'slug'  => $tpl_post->post_name,
+					'title' => $tpl_post->post_title,
+				);
+			}
+		}
 
 		$result = array(
 			array(
@@ -217,6 +249,8 @@ class Scripts {
 			'instance_id'         => get_option( 'eventkoi_site_instance_id' ),
 			'ajax_url'            => admin_url( 'admin-ajax.php' ),
 			'wc_settings_url'     => admin_url( 'admin.php?page=wc-settings' ),
+			'admin_post_url'      => admin_url( 'post.php' ),
+			'elementor_active'    => defined( 'ELEMENTOR_VERSION' ),
 			'api_key'             => REST::get_api_key(),
 			'has_seo_plugin'      => self::has_seo_plugin(),
 			'is_admin'            => current_user_can( 'manage_options' ),
