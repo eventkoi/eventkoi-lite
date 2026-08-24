@@ -16,15 +16,20 @@ export function EventName({
   endDate,
   timezone,
 }) {
-  const { event, setEvent, isPublishing } = useEventEditContext();
+  const { event, setEvent, nameError, setNameError } = useEventEditContext();
   const [error, setError] = useState(false);
   const textareaRef = useRef(null);
+
+  const showBlankError = error || ( ! isInstance && nameError );
 
   const effectiveTimezone = timezone || event?.timezone || "UTC";
 
   function updateName(e) {
     const val = e.target.value;
     setError(!val.trim());
+    if (val.trim()) {
+      setNameError?.(false);
+    }
 
     if (isInstance && onChange) {
       onChange(val);
@@ -70,7 +75,7 @@ export function EventName({
           id="event-name"
           className={cn(
             "inline-flex sm:w-full resize-none overflow-hidden bg-transparent focus:outline-none border-2 border-transparent hover:border-input focus:border-input active:border-input rounded-md p-2 font-medium text-2xl leading-tight min-h-0 w-full max-w-full",
-            error && "border-red-500",
+            showBlankError && "border-red-500",
             !displayValue && "text-muted-foreground"
           )}
           value={displayValue}
@@ -127,7 +132,7 @@ export function EventName({
         </div>
       )}
 
-      {error && (
+      {showBlankError && (
         <p className="text-xs text-red-500 font-medium" role="alert">
           {__("Event name cannot be blank", "eventkoi-lite")}
         </p>

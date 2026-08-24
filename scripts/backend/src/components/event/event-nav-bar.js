@@ -83,6 +83,7 @@ export function EventNavBar() {
     setLoading,
     setIsPublishing,
     setDisableAutoSave,
+    setNameError,
     runBeforeSave,
   } = useEventEditContext();
 
@@ -91,9 +92,7 @@ export function EventNavBar() {
   const hasSavedOnce = useRef(false);
   const [highlightPreview, setHighlightPreview] = useState(false);
 
-  const isDisabled = isInstanceEdit
-    ? saving || loading
-    : !event?.title?.trim() || saving || loading;
+  const isDisabled = saving || loading;
 
   const handleSaveInstance = async () => {
     if (!instanceCtx?.data || !instanceCtx.eventId || !instanceCtx.timestamp)
@@ -168,8 +167,15 @@ export function EventNavBar() {
   };
 
   const saveEvent = async (status) => {
-    if (!event?.title?.trim()) {
+    const trimmedTitle = (event?.title || "").trim();
+    if (!trimmedTitle || "Untitled event" === trimmedTitle) {
+      setNameError?.(true);
       showToast({ message: __("Please enter an event name.", "eventkoi-lite") });
+      const nameField = document.getElementById("event-name");
+      if (nameField) {
+        nameField.scrollIntoView({ behavior: "smooth", block: "center" });
+        nameField.focus({ preventScroll: true });
+      }
       return;
     }
 
