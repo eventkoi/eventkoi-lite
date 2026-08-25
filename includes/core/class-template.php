@@ -49,6 +49,7 @@ class Template {
 		add_filter( 'singular_template', array( __CLASS__, 'maybe_force_bb_layout_editor_template' ), 40 );
 		add_filter( 'template_include', array( __CLASS__, 'capture_initial_template_include' ), 1 );
 		add_filter( 'template_include', array( __CLASS__, 'enforce_explicit_default_template' ), 9999 );
+		add_filter( 'template_include', array( __CLASS__, 'maybe_force_elementor_preview_template' ), 10000 );
 		add_filter( 'fl_builder_render_module_content', array( __CLASS__, 'maybe_replace_tokens_in_beaver_module_output' ), 20, 2 );
 		add_filter( 'fl_theme_builder_template_include', array( __CLASS__, 'maybe_override_beaver_themer_template_include' ), 20, 2 );
 		add_filter( 'deprecated_file_trigger_error', array( __CLASS__, 'maybe_disable_deprecated_file_warnings_for_bb_editor' ), 10, 1 );
@@ -631,6 +632,34 @@ class Template {
 	 *
 	 * Beaver's editor route can call get_header()/get_footer() on block themes,
 	 * which triggers deprecated notices when header.php/footer.php don't exist.
+	 *
+	 * @param string $template Current template path.
+	 *
+	 * @return string
+	 */
+	public static function maybe_force_elementor_preview_template( $template ) {
+		if ( ! is_singular( 'eventkoi_event' ) ) {
+			return $template;
+		}
+
+		if ( ! isset( $_GET['elementor-preview'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only routing check; Elementor validates its own preview nonce.
+			return $template;
+		}
+
+		// Elementor's editor canvas arrives through the_content, which the
+		// plugin's event block template never prints. Runs after
+		// enforce_explicit_default_template so the editor always gets a
+		// template with a content area instead of "content area not found".
+		$compat_template = EVENTKOI_PLUGIN_DIR . 'includes/core/views/elementor-preview-compat.php';
+		if ( file_exists( $compat_template ) ) {
+			return $compat_template;
+		}
+
+		return $template;
+	}
+
+	/**
+	 * Force a block-theme-safe template when editing Beaver Themer layouts.
 	 *
 	 * @param string $template Current template path.
 	 *

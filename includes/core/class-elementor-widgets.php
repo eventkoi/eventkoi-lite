@@ -19,6 +19,7 @@ class Elementor_Widgets {
 		add_action( 'init', array( $this, 'register_event_elementor_support' ), 20 );
 		add_action( 'elementor/elements/categories_registered', array( $this, 'register_category' ) );
 		add_action( 'elementor/editor/before_enqueue_scripts', array( $this, 'enqueue_editor_assets' ) );
+		add_action( 'elementor/preview/enqueue_scripts', array( $this, 'enqueue_preview_assets' ) );
 	}
 
 	/**
@@ -76,5 +77,36 @@ class Elementor_Widgets {
 	 */
 	public function enqueue_editor_assets() {
 		Scripts::enqueue_frontend_assets();
+	}
+
+	/**
+	 * Load frontend assets into the preview iframe and re-mount on injection.
+	 *
+	 * Elementor injects widget markup into the preview after page scripts have
+	 * run, and again on every settings change, so the load-time mount never
+	 * sees it and the calendar shows as an empty box while editing.
+	 */
+	public function enqueue_preview_assets() {
+		Scripts::enqueue_frontend_assets();
+
+		wp_add_inline_script(
+			'eventkoi-frontend',
+			'( function () {
+				var ekReinit = function () {
+					if ( typeof window.eventkoiInitCalendars === "function" ) {
+						window.eventkoiInitCalendars();
+					}
+				};
+				var ekBind = function () {
+					if ( ! window.elementorFrontend || ! window.elementorFrontend.hooks ) {
+						return;
+					}
+					window.elementorFrontend.hooks.addAction( "frontend/element_ready/eventkoi-calendar.default", ekReinit );
+					window.elementorFrontend.hooks.addAction( "frontend/element_ready/eventkoi-event.default", ekReinit );
+				};
+				ekBind();
+				window.addEventListener( "elementor/frontend/init", ekBind );
+			} )();'
+		);
 	}
 }

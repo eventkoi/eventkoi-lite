@@ -426,7 +426,18 @@ class Calendar_Widget extends Widget_Base {
 	 * @return array
 	 */
 	private function sanitize_calendar_selection( $calendars ) {
-		if ( empty( $calendars ) || ! is_array( $calendars ) ) {
+		if ( empty( $calendars ) ) {
+			return array();
+		}
+
+		// A single-select SELECT2 stores its value as a scalar, so an
+		// array-only guard silently threw the builder's calendar choice
+		// away and every embed fell back to the site default calendar.
+		if ( is_scalar( $calendars ) ) {
+			$calendars = array_map( 'trim', explode( ',', (string) $calendars ) );
+		}
+
+		if ( ! is_array( $calendars ) ) {
 			return array();
 		}
 

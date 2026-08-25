@@ -1224,7 +1224,7 @@ class Event {
 	 *
 	 * @return array
 	 */
-	private static function get_description_allowed_html() {
+	public static function get_description_allowed_html() {
 		$allowed = wp_kses_allowed_html( 'post' );
 
 		$allowed['iframe'] = array(
@@ -3601,6 +3601,31 @@ class Event {
 	 * @return string Rendered HTML-safe description.
 	 */
 	public static function rendered_details() {
+		// An event designed with Elementor shows that design as its details:
+		// Elementor content only reaches pages through the_content, which the
+		// event templates never print, so this is where "the layout saves
+		// with the event" actually surfaces. The static stack breaks recursion
+		// when the design itself embeds a widget asking for the details again.
+		static $rendering_builder = array();
+		if ( did_action( 'elementor/loaded' ) && class_exists( '\Elementor\Plugin' ) && empty( $rendering_builder[ self::$event_id ] ) ) {
+			$document = \Elementor\Plugin::$instance->documents->get( self::$event_id );
+			if ( $document && $document->is_built_with_elementor() ) {
+				$rendering_builder[ self::$event_id ] = true;
+				try {
+					// get_builder_content, not the *_for_display wrapper: the
+					// wrapper refuses to render the currently queried post,
+					// which is exactly the post whose details these are.
+					$built = (string) \Elementor\Plugin::$instance->frontend->get_builder_content( self::$event_id );
+				} finally {
+					unset( $rendering_builder[ self::$event_id ] );
+				}
+
+				if ( '' !== trim( $built ) ) {
+					return apply_filters( 'eventkoi_rendered_event_details', $built, self::$event_id, self::$event );
+				}
+			}
+		}
+
 		$details = self::get_instance_field( 'description' );
 
 		$has_content = ! empty( $details ) && ( trim( wp_strip_all_tags( $details ) ) || preg_match( '/<[a-z][a-z0-9]*[\s\/>]/i', $details ) );
@@ -3893,7 +3918,10 @@ class Event {
 	 * Rendered Google Map.
 	 */
 	public static function rendered_gmap() {
-		return ''; // Legacy fallback — no longer used in block rendering.
+		// The same mount point the event template's map block emits; the
+		// frontend script hydrates it from the current event page's data and
+		// hides it when the event has no embeddable location.
+		return '<div class="eventkoi-gmap"></div>';
 	}
 
 	/**

@@ -100,6 +100,16 @@ class Shortcodes {
 	private static function resolve_event_id_from_context( $event_id ) {
 		$event_id = absint( $event_id );
 		if ( $event_id > 0 ) {
+			// An explicit id is trusted only while the event stays publicly
+			// visible: a hardcoded id in a page-builder layout must not keep
+			// exposing an event after it is drafted or trashed.
+			if ( 'eventkoi_event' !== get_post_type( $event_id ) ) {
+				return 0;
+			}
+			if ( 'publish' !== get_post_status( $event_id ) && ! current_user_can( 'edit_post', $event_id ) ) {
+				return 0;
+			}
+
 			return $event_id;
 		}
 
@@ -408,13 +418,13 @@ class Shortcodes {
 			'',
 			array_map(
 				function ( $item ) {
-					return '<div class="eventkoi-data">' . wp_kses_post( $item ) . '</div>';
+					return '<div class="eventkoi-data">' . wp_kses( $item, \EventKoi\Core\Event::get_description_allowed_html() ) . '</div>';
 				},
 				array_filter( $parts )
 			)
 		);
 
-		return '<div class="eventkoi-shortcode">' . wp_kses_post( $wrapped ) . '</div>';
+		return '<div class="eventkoi-shortcode">' . $wrapped . '</div>';
 	}
 
 	/**

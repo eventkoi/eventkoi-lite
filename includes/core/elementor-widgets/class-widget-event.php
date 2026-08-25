@@ -82,10 +82,10 @@ class Event_Widget extends Widget_Base {
 			array(
 				'label'       => __( 'Select Event', 'eventkoi-lite' ),
 				'type'        => Controls_Manager::SELECT2,
-				'options'     => $this->get_events(),
+				'options'     => array( '0' => __( 'Current event', 'eventkoi-lite' ) ) + $this->get_events(),
 				'multiple'    => false,
 				'label_block' => true,
-				'default'     => '',
+				'default'     => '0',
 				'description' => __( 'Choose the event to display.', 'eventkoi-lite' ),
 			)
 		);
@@ -241,10 +241,9 @@ class Event_Widget extends Widget_Base {
 	protected function render() {
 		$settings = $this->get_settings_for_display();
 
+		// 0 = "Current event": the shortcode resolves the event from the page
+		// being viewed, so one layout serves every event page.
 		$event_id = absint( $settings['event_id'] ?? 0 );
-		if ( 0 === $event_id ) {
-			return;
-		}
 
 		$event_data_items = $settings['event_data_items'] ?? array();
 		if ( empty( $event_data_items ) ) {
@@ -264,12 +263,11 @@ class Event_Widget extends Widget_Base {
 				continue;
 			}
 
-			// Generate shortcode: [eventkoi id=X data=Y]
-			$shortcode = sprintf(
-				'[eventkoi id=%d data=%s]',
-				$event_id,
-				esc_attr( $data_type )
-			);
+			// Generate shortcode: [eventkoi id=X data=Y]. Without an id the
+			// shortcode resolves the current event from context.
+			$shortcode = $event_id > 0
+				? sprintf( '[eventkoi id=%d data=%s]', $event_id, esc_attr( $data_type ) )
+				: sprintf( '[eventkoi data=%s]', esc_attr( $data_type ) );
 
 			$shortcode_output = do_shortcode( $shortcode );
 
@@ -291,7 +289,9 @@ class Event_Widget extends Widget_Base {
 
 		if ( ! empty( $output ) ) {
 			echo '<div class="eventkoi-elementor-widget">';
-			echo wp_kses_post( implode( '', $output ) );
+			// Same allowed set the event description sanitizer uses, so video
+			// embeds the editor legitimately stored survive the widget.
+			echo wp_kses( implode( '', $output ), \EventKoi\Core\Event::get_description_allowed_html() );
 			echo '</div>';
 		}
 	}
