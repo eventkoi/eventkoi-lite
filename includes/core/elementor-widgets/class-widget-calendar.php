@@ -421,7 +421,7 @@ class Calendar_Widget extends Widget_Base {
 	/**
 	 * Cast selected calendars to integers.
 	 *
-	 * @param array $calendars Selected calendars.
+	 * @param array|string $calendars Selected calendars. A single-select control passes a scalar.
 	 *
 	 * @return array
 	 */

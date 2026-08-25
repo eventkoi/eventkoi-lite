@@ -318,17 +318,11 @@ class Shortcodes {
 			$shortcode_name
 		);
 
-		// Prefer explicitly passed ID.
-		$event_id = absint( $attributes['id'] );
-
-		// Attempt to detect event ID from current post when none provided.
-		if ( 0 === $event_id ) {
-			global $post;
-
-			if ( isset( $post->ID ) && 'eventkoi_event' === get_post_type( $post->ID ) ) {
-				$event_id = (int) $post->ID;
-			}
-		}
+		// Prefer explicitly passed ID, otherwise resolve from context. The
+		// shared resolver also refuses ids whose event is no longer public,
+		// so a hardcoded id in a page-builder layout cannot keep exposing a
+		// drafted or trashed event.
+		$event_id = self::resolve_event_id_from_context( $attributes['id'] );
 
 		// Bail if still no valid event ID or missing data parameter.
 		if ( 0 === $event_id || empty( $attributes['data'] ) ) {
