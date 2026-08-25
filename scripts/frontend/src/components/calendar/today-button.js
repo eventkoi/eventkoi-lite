@@ -18,7 +18,7 @@ export function TodayButton({ calendarApi, setCurrentDate, isTodayInRange }) {
     <Button
       variant="outline"
       className={cn(
-        "border-solid box-border font-normal shadow-none cursor-pointer",
+        "border-solid box-border font-normal shadow-none cursor-pointer shrink-0",
         "rounded disabled:opacity-100 disabled:bg-background disabled:text-muted-foreground/50 text-foreground"
       )}
       disabled={isTodayInRange}

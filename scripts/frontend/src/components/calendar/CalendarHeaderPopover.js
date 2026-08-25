@@ -98,11 +98,11 @@ export function CalendarHeaderPopover({
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          className="text-sm box-border text-foreground bg-background shadow-none rounded border-[1px] border-border border-solid px-3 py-1 pr-2 gap-2 h-10 justify-between hover:bg-muted cursor-pointer font-normal"
+          className="text-sm box-border text-foreground bg-background shadow-none rounded border-[1px] border-border border-solid px-3 py-1 pr-2 gap-2 h-10 justify-between hover:bg-muted cursor-pointer font-normal min-w-0 overflow-hidden"
           aria-label={__("Select month and year", "eventkoi-lite")}
           title={__("Select month and year", "eventkoi-lite")}
         >
-          {`${MONTHS[selectedMonth]} ${yearView}`}
+          <span className="truncate">{`${MONTHS[selectedMonth]} ${yearView}`}</span>
           <ChevronDown className="h-4 w-4 min-w-4" aria-hidden="true" />
         </Button>
       </PopoverTrigger>

@@ -31,10 +31,10 @@ export function WeekPopover({ calendarApi, currentDate, setCurrentDate }) {
               ? __("Close week picker", "eventkoi-lite")
               : __("Open week picker", "eventkoi-lite")
           }
-          className="text-sm box-border text-foreground bg-background shadow-none rounded border-[1px] border-border border-solid px-3 py-1 pr-2 gap-2 h-10 justify-between hover:bg-muted cursor-pointer font-normal"
+          className="text-sm box-border text-foreground bg-background shadow-none rounded border-[1px] border-border border-solid px-3 py-1 pr-2 gap-2 h-10 justify-between hover:bg-muted cursor-pointer font-normal min-w-0 overflow-hidden"
         >
           {/* translators: The current week or month title in the calendar header */}
-          {title || __("Select week", "eventkoi-lite")}
+          <span className="truncate">{title || __("Select week", "eventkoi-lite")}</span>
           <ChevronDown
             className="h-4 w-4 min-w-4"
             aria-hidden="true"
