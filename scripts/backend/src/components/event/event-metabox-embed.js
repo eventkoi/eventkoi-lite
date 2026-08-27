@@ -200,16 +200,21 @@ export function EventMetaboxEmbed() {
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
+          {/* Deliberately WordPress's own button-primary rather than our
+              Button component, because that is exactly what Elementor's real
+              "Edit with Elementor" button is. Its blue comes from the admin
+              colour scheme, so matching by class keeps the two identical on
+              every install instead of pinning a hex that is right on one. */}
           {!!elementorEditUrl && (
-            <Button type="button" variant="outline" asChild>
-              <a
-                href={elementorEditUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                {__("Edit with Elementor", "eventkoi-lite")}
-              </a>
-            </Button>
+            <a
+              href={elementorEditUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="button button-primary button-large eventkoi-elementor-edit"
+            >
+              <i className="eicon-elementor-square" aria-hidden="true" />
+              {__("Edit with Elementor", "eventkoi-lite")}
+            </a>
           )}
           {ready && (
             <Button type="button" disabled={saving} onClick={submitEmbed}>

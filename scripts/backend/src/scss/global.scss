@@ -197,3 +197,19 @@ body.eventkoi-active
     color: currentColor !important;
   }
 }
+
+// Our "Edit with Elementor" link reuses WordPress's button-primary so it is
+// visually identical to Elementor's own button, whose blue follows the admin
+// colour scheme. Tailwind's preflight strips the inline-block and line-height
+// core relies on, so restore just enough to sit the icon next to the label.
+.eventkoi-elementor-edit {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+
+  .eicon-elementor-square {
+    margin-right: 3px;
+    font-size: 16.25px;
+    line-height: 1;
+  }
+}
