@@ -1155,10 +1155,20 @@ class Event {
 	 * @return array
 	 */
 	public static function get_recurrence_overrides() {
-		$rows = DB::table( 'eventkoi_recurrence_overrides' )
-		->where( 'event_id', self::$event_id )
-		->orderBy( 'timestamp', 'asc' )
-		->getAll();
+		try {
+			$rows = DB::table( 'eventkoi_recurrence_overrides' )
+			->where( 'event_id', self::$event_id )
+			->orderBy( 'timestamp', 'asc' )
+			->getAll();
+		} catch ( \Exception $e ) {
+			// This runs while enqueueing front end assets, so an unreadable
+			// table used to throw straight through wp_enqueue_scripts and white
+			// screen the whole site. An event without its overrides still
+			// renders, so degrade and try to rebuild the table (XVSZTDGT).
+			Activator::maybe_repair_tables();
+
+			return apply_filters( 'eventkoi_get_event_recurrence_overrides', array(), self::$event_id, self::$event );
+		}
 
 		$overrides = array();
 

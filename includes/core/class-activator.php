@@ -442,4 +442,58 @@ class Activator {
 
 		update_option( 'eventkoi_rsvp_instance_ts_healed', '1' );
 	}
+	/**
+	 * Recreate any custom table that has gone missing.
+	 *
+	 * Table creation is version gated, so a table dropped or lost in a partial
+	 * migration was never rebuilt and every read of it threw. Rate limited so a
+	 * page making many failing reads cannot turn one broken table into a burst
+	 * of schema work (XVSZTDGT).
+	 *
+	 * @return bool Whether anything was rebuilt.
+	 */
+	public static function maybe_repair_tables() {
+		if ( get_transient( 'eventkoi_table_repair_attempted' ) ) {
+			return false;
+		}
+
+		set_transient( 'eventkoi_table_repair_attempted', 1, 10 * MINUTE_IN_SECONDS );
+
+		$tables = array(
+			Orders::class,
+			Charges::class,
+			Customers::class,
+			Order_Notes::class,
+			Recurrence_Overrides::class,
+			Rsvps::class,
+			Tickets::class,
+			Ticket_Orders::class,
+		);
+
+		$repaired = false;
+
+		foreach ( $tables as $table_class ) {
+			if ( ! class_exists( $table_class ) ) {
+				continue;
+			}
+
+			try {
+				$table = new $table_class();
+
+				if ( $table->exists() ) {
+					continue;
+				}
+
+				$table->update();
+				$repaired = true;
+			} catch ( \Exception $e ) {
+				// A host that forbids CREATE TABLE cannot be helped from here;
+				// the caller still degrades instead of fataling.
+				continue;
+			}
+		}
+
+		return $repaired;
+	}
+
 }
