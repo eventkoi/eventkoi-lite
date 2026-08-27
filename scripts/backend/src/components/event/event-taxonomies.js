@@ -1,7 +1,8 @@
+import { Box } from "@/components/box";
 import { Heading } from "@/components/heading";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
+import { MultiSelect } from "@/components/ui/multiselect";
 import { useEventEditContext } from "@/hooks/EventEditContext";
+import { __, sprintf } from "@wordpress/i18n";
 
 // Third-party taxonomies registered for events (e.g. a site's Places or
 // Activities), assignable without leaving the EventKoi editor. EventKoi's
@@ -18,19 +19,12 @@ export function EventTaxonomies() {
     return null;
   }
 
-  const toggleTerm = (taxonomy, termId, checked) => {
+  const setAssigned = (taxonomy, ids) => {
     setEvent((prev) => ({
       ...prev,
-      custom_taxonomies: (prev.custom_taxonomies || []).map((item) => {
-        if (item.taxonomy !== taxonomy) return item;
-        const assigned = new Set((item.assigned || []).map(Number));
-        if (checked) {
-          assigned.add(Number(termId));
-        } else {
-          assigned.delete(Number(termId));
-        }
-        return { ...item, assigned: Array.from(assigned) };
-      }),
+      custom_taxonomies: (prev.custom_taxonomies || []).map((item) =>
+        item.taxonomy === taxonomy ? { ...item, assigned: ids } : item
+      ),
     }));
   };
 
@@ -59,33 +53,60 @@ export function EventTaxonomies() {
     return out;
   };
 
+  // A dropdown has no room to indent a child row, so carry the depth in the
+  // label itself the way core's category dropdowns do.
+  const optionName = (term) =>
+    `${" ".repeat(term.depth * 3)}${term.name}`;
+
+  const sameIds = (a, b) =>
+    a.length === b.length && a.every((id, i) => id === b[i]);
+
   return (
-    <div className="flex flex-col gap-6">
+    <>
       {taxonomies.map((item) => {
-        const assigned = new Set((item.assigned || []).map(Number));
+        const options = orderedTerms(item).map((term) => ({
+          id: Number(term.id),
+          name: optionName(term),
+        }));
+
+        const assigned = (item.assigned || []).map(Number);
+        const value = options.filter((option) => assigned.includes(option.id));
+
         return (
-          <div key={item.taxonomy} className="flex flex-col gap-2">
-            <Heading level={4}>{item.label}</Heading>
-            <div className="max-h-52 overflow-y-auto rounded-md border border-border p-3 flex flex-col gap-1.5">
-              {orderedTerms(item).map((term) => (
-                <label
-                  key={term.id}
-                  className="flex items-center gap-2 text-sm cursor-pointer"
-                  style={{ paddingLeft: `${term.depth * 18}px` }}
-                >
-                  <Checkbox
-                    checked={assigned.has(Number(term.id))}
-                    onCheckedChange={(checked) =>
-                      toggleTerm(item.taxonomy, term.id, !!checked)
-                    }
-                  />
-                  <span>{term.name}</span>
-                </label>
-              ))}
-            </div>
-          </div>
+          <Box container key={item.taxonomy} className="gap-4">
+            {/* Each taxonomy is its own container titled with its own name:
+                someone who went to the trouble of building "Locations" is
+                looking for Locations, not a generic "Taxonomies" box. */}
+            <Heading level={3}>{item.label}</Heading>
+            <MultiSelect
+              options={options}
+              value={value}
+              placeholder={sprintf(
+                /* translators: %s: taxonomy plural label, lowercase, e.g. "locations" */
+                __("Select %s", "eventkoi-lite"),
+                String(item.label || "").toLowerCase()
+              )}
+              searchPlaceholder={sprintf(
+                /* translators: %s: taxonomy plural label, lowercase */
+                __("Search %s...", "eventkoi-lite"),
+                String(item.label || "").toLowerCase()
+              )}
+              noItems={__("No terms found.", "eventkoi-lite")}
+              onSelectionChange={(selected) => {
+                // MultiSelect reports its selection on mount as well, so a
+                // straight write here would dirty an untouched event.
+                const nextIds = (selected || []).map((option) =>
+                  Number(option.id)
+                );
+                if (sameIds([...assigned].sort(), [...nextIds].sort())) {
+                  return;
+                }
+                setAssigned(item.taxonomy, nextIds);
+              }}
+            />
+          </Box>
         );
       })}
-    </div>
+    </>
   );
 }

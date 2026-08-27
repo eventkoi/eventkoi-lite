@@ -141,10 +141,7 @@ function EventTaxonomiesBox() {
     return null;
   }
 
-  return (
-    <Box container className="gap-4">
-      <Heading level={3}>{__("Taxonomies", "eventkoi-lite")}</Heading>
-      <EventTaxonomies />
-    </Box>
-  );
+  // No wrapper box or generic heading: each taxonomy renders its own
+  // container titled with its own name.
+  return <EventTaxonomies />;
 }
