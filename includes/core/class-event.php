@@ -141,6 +141,20 @@ class Event {
 	}
 
 	/**
+	 * The event the static renderers are currently pointed at.
+	 *
+	 * Constructing an Event repoints every static renderer for the rest of the
+	 * request. Anything that renders a field for a post other than the one
+	 * being displayed has to put the previous event back afterwards, and it
+	 * needs this to know what that was.
+	 *
+	 * @return int Event ID, or 0 when none is set.
+	 */
+	public static function current_id() {
+		return (int) self::$event_id;
+	}
+
+	/**
 	 * Set whether to suppress inline rule summaries inside rendered_datetime().
 	 *
 	 * @param bool $value True to suppress summaries, false to include them.
