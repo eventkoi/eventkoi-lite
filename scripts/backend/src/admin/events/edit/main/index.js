@@ -121,7 +121,7 @@ export function EventEditMain() {
       </Box>
 
       {/* Third-party taxonomies (only renders when the site registered any) */}
-      <EventTaxonomiesBox />
+      <EventTaxonomiesBox showAttributes={showAttributes} />
 
       {/* Metaboxes other plugins add (ACF, Pods, Yoast, ...) in one panel */}
       <EventMetaboxEmbed />
@@ -129,7 +129,7 @@ export function EventEditMain() {
   );
 }
 
-function EventTaxonomiesBox() {
+function EventTaxonomiesBox({ showAttributes }) {
   const { event } = useEventEditContext();
   const hasTaxonomies =
     Array.isArray(event?.custom_taxonomies) &&
@@ -143,5 +143,5 @@ function EventTaxonomiesBox() {
 
   // No wrapper box or generic heading: each taxonomy renders its own
   // container titled with its own name.
-  return <EventTaxonomies />;
+  return <EventTaxonomies showAttributes={showAttributes} />;
 }

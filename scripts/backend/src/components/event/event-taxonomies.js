@@ -1,5 +1,6 @@
 import { Box } from "@/components/box";
 import { Heading } from "@/components/heading";
+import { ShortcodeBox } from "@/components/ShortcodeBox";
 import { MultiSelect } from "@/components/ui/multiselect";
 import { useEventEditContext } from "@/hooks/EventEditContext";
 import { __, sprintf } from "@wordpress/i18n";
@@ -7,7 +8,7 @@ import { __, sprintf } from "@wordpress/i18n";
 // Third-party taxonomies registered for events (e.g. a site's Places or
 // Activities), assignable without leaving the EventKoi editor. EventKoi's
 // own calendar taxonomy is excluded server-side.
-export function EventTaxonomies() {
+export function EventTaxonomies({ showAttributes = false }) {
   const { event, setEvent } = useEventEditContext();
   // Only surface taxonomies that actually have terms; an empty one would render
   // a labeled box with nothing assignable inside it.
@@ -104,6 +105,13 @@ export function EventTaxonomies() {
                 setAssigned(item.taxonomy, nextIds);
               }}
             />
+            {showAttributes && (
+              <ShortcodeBox
+                attribute={`event_tax_${item.taxonomy}`}
+                data={`tax_${item.taxonomy}`}
+                eventId={event?.id}
+              />
+            )}
           </Box>
         );
       })}
