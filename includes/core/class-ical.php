@@ -486,6 +486,27 @@ class ICal {
 			$parts[] = 'BYDAY=' . implode( ',', array_values( array_unique( $byday ) ) );
 		}
 
+		// A bare FREQ=MONTHLY repeats on the day number in DTSTART, so "the
+		// second Friday" was handed to subscribers as "the 12th of every
+		// month". Carry the monthly pattern the same way the event's own
+		// expander does. The weekday is taken from the instant DTSTART already
+		// carries, so the two can never disagree.
+		if ( 'month' === (string) $rule['frequency'] ) {
+			$month_rule = (string) ( $rule['month_day_rule'] ?? '' );
+			$start_ts   = ! empty( $rule['start_date'] ) ? strtotime( (string) $rule['start_date'] ) : false;
+
+			if ( 'weekday-of-month' === $month_rule && false !== $start_ts && empty( $byday ) ) {
+				$weekday_code = $byday_codes[ (int) gmdate( 'w', $start_ts ) ];
+				$position     = (int) ceil( (int) gmdate( 'j', $start_ts ) / 7 );
+
+				// RFC 5545 §3.3.10: an ordinal prefix on BYDAY ("2FR") is the
+				// widest supported way to say "the second Friday".
+				$parts[] = 'BYDAY=' . $position . $weekday_code;
+			} elseif ( 'day-of-month' === $month_rule && ! empty( $rule['month_day_value'] ) ) {
+				$parts[] = 'BYMONTHDAY=' . absint( $rule['month_day_value'] );
+			}
+		}
+
 		if ( ! empty( $rule['months'] ) && is_array( $rule['months'] ) ) {
 			$months = array_values( array_filter( array_map( 'absint', $rule['months'] ) ) );
 			if ( ! empty( $months ) ) {
