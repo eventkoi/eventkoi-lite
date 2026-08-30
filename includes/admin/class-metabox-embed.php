@@ -133,7 +133,14 @@ class Metabox_Embed {
 
 		// Force the classic editor so third-party metaboxes render (and so the
 		// screen carries the standard post.php form we can submit intact).
-		add_filter( 'use_block_editor_for_post', '__return_false', 100 );
+		//
+		// PHP_INT_MAX, not a polite 100: plenty of themes and plugins insist on
+		// the block editor from their own filter, and any priority above ours
+		// wins. When that happened the iframe loaded Gutenberg, every plugin
+		// metabox was rendered into a container this embed's CSS does not lay
+		// out, and the panel showed an empty box with no explanation — the
+		// fields were in the DOM at zero height (helpdesk GRJIWBGX).
+		add_filter( 'use_block_editor_for_post', '__return_false', PHP_INT_MAX );
 
 		add_filter( 'admin_body_class', array( $this, 'add_body_class' ) );
 		add_action( 'admin_head', array( $this, 'print_embed_css' ), 999 );
