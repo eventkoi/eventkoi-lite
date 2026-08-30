@@ -508,7 +508,19 @@ class ICal {
 		}
 
 		if ( ! empty( $rule['months'] ) && is_array( $rule['months'] ) ) {
-			$months = array_values( array_filter( array_map( 'absint', $rule['months'] ) ) );
+			// months is 0 indexed, the way the expander and the calendar both
+			// read it. Passing it through untouched shifted every month back
+			// by one and dropped January entirely, because absint() turned its
+			// 0 into a value array_filter then discarded.
+			$months = array_values(
+				array_map(
+					static function ( $month ) {
+						return (int) $month + 1;
+					},
+					array_filter( $rule['months'], 'is_numeric' )
+				)
+			);
+
 			if ( ! empty( $months ) ) {
 				$parts[] = 'BYMONTH=' . implode( ',', $months );
 			}
