@@ -1,15 +1,22 @@
 import { Box } from "@/components/box";
 import { Heading } from "@/components/heading";
 import { ShortcodeBox } from "@/components/ShortcodeBox";
-import { MultiSelect } from "@/components/ui/multiselect";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import { useEventEditContext } from "@/hooks/EventEditContext";
 import { __, sprintf } from "@wordpress/i18n";
+import { useState } from "react";
+
+// Terms above this count get a filter field. Below it the list is short enough
+// to read at a glance, and an extra input would just be noise.
+const FILTER_THRESHOLD = 12;
 
 // Third-party taxonomies registered for events (e.g. a site's Places or
 // Activities), assignable without leaving the EventKoi editor. EventKoi's
 // own calendar taxonomy is excluded server-side.
 export function EventTaxonomies({ showAttributes = false }) {
   const { event, setEvent } = useEventEditContext();
+  const [filters, setFilters] = useState({});
   // Only surface taxonomies that actually have terms; an empty one would render
   // a labeled box with nothing assignable inside it.
   const taxonomies = (
@@ -20,12 +27,21 @@ export function EventTaxonomies({ showAttributes = false }) {
     return null;
   }
 
-  const setAssigned = (taxonomy, ids) => {
+  // Toggling one term touches only that id, so terms the editor never received
+  // (a taxonomy larger than the 500-term preload) keep their assignment.
+  const toggleTerm = (taxonomy, termId, checked) => {
     setEvent((prev) => ({
       ...prev,
-      custom_taxonomies: (prev.custom_taxonomies || []).map((item) =>
-        item.taxonomy === taxonomy ? { ...item, assigned: ids } : item
-      ),
+      custom_taxonomies: (prev.custom_taxonomies || []).map((item) => {
+        if (item.taxonomy !== taxonomy) return item;
+        const assigned = new Set((item.assigned || []).map(Number));
+        if (checked) {
+          assigned.add(Number(termId));
+        } else {
+          assigned.delete(Number(termId));
+        }
+        return { ...item, assigned: Array.from(assigned) };
+      }),
     }));
   };
 
@@ -54,32 +70,36 @@ export function EventTaxonomies({ showAttributes = false }) {
     return out;
   };
 
-  // A dropdown has no room to indent a child row, so carry the depth in the
-  // label itself the way core's category dropdowns do.
-  const optionName = (term) =>
-    `${" ".repeat(term.depth * 3)}${term.name}`;
+  // Filtering a tree on the matches alone strands children under a parent that
+  // is no longer on screen, which is what made the term impossible to place.
+  // Keep every ancestor of a match so each row still reads in context.
+  const visibleTerms = (ordered, query) => {
+    const needle = query.trim().toLowerCase();
+    if (!needle) return ordered;
 
-  const sameIds = (a, b) =>
-    a.length === b.length && a.every((id, i) => id === b[i]);
+    const byId = new Map(ordered.map((term) => [Number(term.id), term]));
+    const keep = new Set();
+
+    ordered.forEach((term) => {
+      if (!String(term.name || "").toLowerCase().includes(needle)) return;
+      keep.add(Number(term.id));
+      let parent = Number(term.parent) || 0;
+      while (parent && byId.has(parent) && !keep.has(parent)) {
+        keep.add(parent);
+        parent = Number(byId.get(parent).parent) || 0;
+      }
+    });
+
+    return ordered.filter((term) => keep.has(Number(term.id)));
+  };
 
   return (
     <>
       {taxonomies.map((item) => {
-        const options = orderedTerms(item).map((term) => ({
-          id: Number(term.id),
-          name: optionName(term),
-        }));
-
-        const assigned = (item.assigned || []).map(Number);
-        const value = options.filter((option) => assigned.includes(option.id));
-
-        // The editor only preloads the first 500 terms, so a taxonomy larger
-        // than that can leave an event tagged with terms this picker never
-        // received. Those must survive being opened and saved: without this
-        // the mount-time selection reports only what it can see and the
-        // assignment is silently thrown away.
-        const knownIds = new Set(options.map((option) => option.id));
-        const unlistedIds = assigned.filter((id) => !knownIds.has(id));
+        const ordered = orderedTerms(item);
+        const query = filters[item.taxonomy] || "";
+        const shown = visibleTerms(ordered, query);
+        const assigned = new Set((item.assigned || []).map(Number));
 
         return (
           <Box container key={item.taxonomy} className="gap-4">
@@ -87,35 +107,47 @@ export function EventTaxonomies({ showAttributes = false }) {
                 someone who went to the trouble of building "Locations" is
                 looking for Locations, not a generic "Taxonomies" box. */}
             <Heading level={3}>{item.label}</Heading>
-            <MultiSelect
-              options={options}
-              value={value}
-              placeholder={sprintf(
-                /* translators: %s: taxonomy plural label, lowercase, e.g. "locations" */
-                __("Select %s", "eventkoi-lite"),
-                String(item.label || "").toLowerCase()
-              )}
-              searchPlaceholder={sprintf(
-                /* translators: %s: taxonomy plural label, lowercase */
-                __("Search %s...", "eventkoi-lite"),
-                String(item.label || "").toLowerCase()
-              )}
-              noItems={__("No terms found.", "eventkoi-lite")}
-              onSelectionChange={(selected) => {
-                // MultiSelect reports its selection on mount as well, so a
-                // straight write here would dirty an untouched event.
-                const nextIds = (selected || []).map((option) =>
-                  Number(option.id)
-                );
-                // Carry back anything the picker never had, so editing a
-                // visible term cannot drop an unlisted one.
-                const merged = [...nextIds, ...unlistedIds];
-                if (sameIds([...assigned].sort(), [...merged].sort())) {
-                  return;
+            {ordered.length > FILTER_THRESHOLD && (
+              <Input
+                type="search"
+                value={query}
+                onChange={(e) =>
+                  setFilters((prev) => ({
+                    ...prev,
+                    [item.taxonomy]: e.target.value,
+                  }))
                 }
-                setAssigned(item.taxonomy, merged);
-              }}
-            />
+                placeholder={sprintf(
+                  /* translators: %s: taxonomy plural label, lowercase */
+                  __("Search %s...", "eventkoi-lite"),
+                  String(item.label || "").toLowerCase()
+                )}
+              />
+            )}
+            <div className="max-h-64 overflow-y-auto rounded-md border border-input p-3 flex flex-col gap-1.5">
+              {shown.length === 0 && (
+                <span className="text-sm text-muted-foreground">
+                  {__("No terms found.", "eventkoi-lite")}
+                </span>
+              )}
+              {shown.map((term) => (
+                <label
+                  key={term.id}
+                  className="flex items-center gap-2 text-sm cursor-pointer"
+                  // Real indentation: a depth carried in the label text
+                  // collapses to a single space in HTML, so the tree read flat.
+                  style={{ paddingLeft: `${term.depth * 18}px` }}
+                >
+                  <Checkbox
+                    checked={assigned.has(Number(term.id))}
+                    onCheckedChange={(checked) =>
+                      toggleTerm(item.taxonomy, term.id, !!checked)
+                    }
+                  />
+                  <span>{term.name}</span>
+                </label>
+              ))}
+            </div>
             {showAttributes && (
               <ShortcodeBox
                 attribute={`event_tax_${item.taxonomy}`}
