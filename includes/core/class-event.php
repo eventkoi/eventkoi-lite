@@ -233,7 +233,13 @@ class Event {
 	 */
 	public static function render_meta( $name ) {
 		$name = str_replace( 'eventkoi/', '', $name );
-		$name = str_replace( '-', '_', $name );
+
+		// A taxonomy slug may contain hyphens, and turning them into
+		// underscores would stop the slug resolving.
+		if ( 0 !== strpos( $name, 'event_tax_' ) && 0 !== strpos( $name, 'tax_' ) ) {
+			$name = str_replace( '-', '_', $name );
+		}
+
 		$name = str_replace( 'event_', '', $name );
 
 		// Support location_1, location_2, etc.
@@ -300,12 +306,53 @@ class Event {
 	}
 
 	/**
+	 * Render the terms this event has in one taxonomy.
+	 *
+	 * Plain comma separated names: every builder can print it, and it carries
+	 * no assumptions about a term having a public archive.
+	 *
+	 * @param string $slug Taxonomy slug.
+	 * @return string Comma separated term names, or an empty string.
+	 */
+	public static function rendered_taxonomy_terms( $slug ) {
+		$slug = sanitize_key( (string) $slug );
+
+		if ( '' === $slug || ! taxonomy_exists( $slug ) ) {
+			// A deleted taxonomy leaves its field behind in saved layouts, so
+			// this has to read as "nothing to show" rather than break the page.
+			return '';
+		}
+
+		$terms = wp_get_object_terms( self::$event_id, $slug, array( 'fields' => 'names' ) );
+
+		if ( is_wp_error( $terms ) || empty( $terms ) ) {
+			return '';
+		}
+
+		$separator = apply_filters( 'eventkoi_taxonomy_terms_separator', ', ', $slug, self::$event_id );
+
+		return apply_filters(
+			'eventkoi_rendered_taxonomy_terms',
+			implode( $separator, array_map( 'sanitize_text_field', $terms ) ),
+			$slug,
+			self::$event_id
+		);
+	}
+
+	/**
 	 * Render a single meta key.
 	 *
 	 * @param string $key A meta key to render.
 	 */
 	public static function rendered_meta( $key = '' ) {
 		$value = '';
+
+		// A site's own taxonomies resolve here the same way custom fields do,
+		// so a taxonomy prints its assigned terms wherever event data is
+		// available.
+		if ( 0 === strpos( $key, 'tax_' ) ) {
+			return self::rendered_taxonomy_terms( substr( $key, 4 ) );
+		}
 
 		if ( 'date_type' === $key ) {
 			$value = self::get_date_type();

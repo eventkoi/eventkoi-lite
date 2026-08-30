@@ -338,8 +338,15 @@ class Shortcodes {
 		$show_label  = self::parse_boolean_attribute( $attributes['with_name'] ?? false, is_array( $user_attributes ) && in_array( 'with_name', $user_attributes, true ) );
 
 		foreach ( $keys as $key ) {
-			$normalized_key = strtolower( str_replace( '-', '_', $key ) );
-			$normalized_key = preg_replace( '/[^a-z0-9_]/', '', $normalized_key );
+			$raw_key = strtolower( $key );
+
+			// A taxonomy slug can contain hyphens, so those keys keep theirs.
+			// Everything else stays on the historical underscore normalising.
+			if ( 0 === strpos( $raw_key, 'event_tax_' ) || 0 === strpos( $raw_key, 'tax_' ) ) {
+				$normalized_key = preg_replace( '/[^a-z0-9_.-]/', '', str_replace( ' ', '_', $raw_key ) );
+			} else {
+				$normalized_key = preg_replace( '/[^a-z0-9_]/', '', str_replace( '-', '_', $raw_key ) );
+			}
 
 			if ( ! empty( $normalized_key ) ) {
 
