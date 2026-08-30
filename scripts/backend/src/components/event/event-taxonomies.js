@@ -73,6 +73,14 @@ export function EventTaxonomies({ showAttributes = false }) {
         const assigned = (item.assigned || []).map(Number);
         const value = options.filter((option) => assigned.includes(option.id));
 
+        // The editor only preloads the first 500 terms, so a taxonomy larger
+        // than that can leave an event tagged with terms this picker never
+        // received. Those must survive being opened and saved: without this
+        // the mount-time selection reports only what it can see and the
+        // assignment is silently thrown away.
+        const knownIds = new Set(options.map((option) => option.id));
+        const unlistedIds = assigned.filter((id) => !knownIds.has(id));
+
         return (
           <Box container key={item.taxonomy} className="gap-4">
             {/* Each taxonomy is its own container titled with its own name:
@@ -99,10 +107,13 @@ export function EventTaxonomies({ showAttributes = false }) {
                 const nextIds = (selected || []).map((option) =>
                   Number(option.id)
                 );
-                if (sameIds([...assigned].sort(), [...nextIds].sort())) {
+                // Carry back anything the picker never had, so editing a
+                // visible term cannot drop an unlisted one.
+                const merged = [...nextIds, ...unlistedIds];
+                if (sameIds([...assigned].sort(), [...merged].sort())) {
                   return;
                 }
-                setAssigned(item.taxonomy, nextIds);
+                setAssigned(item.taxonomy, merged);
               }}
             />
             {showAttributes && (
