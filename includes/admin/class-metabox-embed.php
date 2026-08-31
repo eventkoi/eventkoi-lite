@@ -142,6 +142,14 @@ class Metabox_Embed {
 		// fields were in the DOM at zero height (helpdesk GRJIWBGX).
 		add_filter( 'use_block_editor_for_post', '__return_false', PHP_INT_MAX );
 
+		// Nothing stays hidden in here. A box unticked once under Screen
+		// Options on the native edit screen is rendered display:none, and the
+		// embed hides Screen Options, so there was no way to get it back: the
+		// customer saw an empty panel on one site and a working one on the
+		// next, with identical plugins (helpdesk GRJIWBGX). The native screen
+		// keeps the preference; this view exists to show plugin fields.
+		add_filter( 'hidden_meta_boxes', '__return_empty_array', PHP_INT_MAX );
+
 		add_filter( 'admin_body_class', array( $this, 'add_body_class' ) );
 		add_action( 'admin_head', array( $this, 'print_embed_css' ), 999 );
 		add_action( 'admin_footer', array( $this, 'print_embed_js' ), 999 );
