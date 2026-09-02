@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.4.0.1
+Stable tag: 1.4.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,9 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.4.1.0 – Plugin fields panel visibility fix – 2026-09-03 =
+* Fix: Field panels from other plugins could vanish for a user who had once hidden them through Screen Options, with no way to bring them back. The fields panel now shows every plugin metabox.
 
 = 1.4.0.1 – Taxonomy tree and plugin fields panel fixes – 2026-08-30 =
 * Fix: Hierarchical taxonomies in the event editor rendered as a flat list, and a selected parent term could drop out of view. The indented tree of checkboxes is back, with a search box above longer lists.
