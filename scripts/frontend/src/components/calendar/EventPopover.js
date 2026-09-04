@@ -39,7 +39,7 @@ import {
   X,
 } from "lucide-react";
 import { DateTime } from "luxon";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { __ } from "@wordpress/i18n";
 
@@ -347,6 +347,41 @@ export function EventPopover({
   const [copied, setCopied] = useState(false);
   const [calendarMenuOpen, setCalendarMenuOpen] = useState(false);
   const [fixedAnchor] = useState(anchor);
+  const popoverRef = useRef(null);
+  const [clampedPos, setClampedPos] = useState(null);
+
+  // Keep the popover inside the calendar container: a chip in the grid's
+  // last row (next month's trailing days included) used to push the popover
+  // past the bottom edge, off the visible area (wp.org report).
+  useLayoutEffect(() => {
+    const el = popoverRef.current;
+    const container = document.querySelector(".fc");
+
+    if (!el || !container || !fixedAnchor) {
+      return;
+    }
+
+    const containerRect = container.getBoundingClientRect();
+    const height = el.offsetHeight;
+    const width = el.offsetWidth;
+
+    let x = fixedAnchor.x;
+    let y = fixedAnchor.y;
+
+    if (y + height > containerRect.height) {
+      y = Math.max(8, containerRect.height - height - 8);
+    }
+
+    if (x + width > containerRect.width) {
+      x = Math.max(0, containerRect.width - width);
+    }
+
+    if (x !== fixedAnchor.x || y !== fixedAnchor.y) {
+      setClampedPos({ x, y });
+    }
+  }, [fixedAnchor, event]);
+
+  const popoverPos = clampedPos || fixedAnchor;
 
   const location = event.location_line;
 
@@ -532,11 +567,12 @@ export function EventPopover({
   return createPortal(
     <>
       <div
+        ref={popoverRef}
         data-event-popover
         className="absolute z-50 rounded-lg border bg-white shadow-[0_0_4px_#bbb] text-sm overflow-hidden w-[370px] max-w-full"
         style={{
-          left: `${fixedAnchor.x}px`,
-          top: `${fixedAnchor.y}px`,
+          left: `${popoverPos.x}px`,
+          top: `${popoverPos.y}px`,
         }}
         onMouseDown={(e) => {
           if (e.target.closest("[data-event-popover]")) {

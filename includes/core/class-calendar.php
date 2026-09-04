@@ -959,7 +959,7 @@ class Calendar {
 							'end_real'      => $end_real,
 							'end_all_day'   => ! empty( $instance['all_day'] ),
 							'allDay'        => ! empty( $instance['all_day'] ),
-							'url'           => $event::is_package()
+							'url'           => $event::is_package() || 'selected' === $event::get_standard_type()
 								? self::append_frontend_timezone_arg( $event::get_url() )
 								: self::append_event_day_arg( self::append_frontend_timezone_arg( $event::get_url() ), $i ),
 							'description'   => $event::get_summary(),
