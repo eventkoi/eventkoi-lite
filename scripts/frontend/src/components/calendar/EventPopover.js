@@ -361,24 +361,43 @@ export function EventPopover({
       return;
     }
 
-    const containerRect = container.getBoundingClientRect();
-    const height = el.offsetHeight;
-    const width = el.offsetWidth;
+    const applyClamp = () => {
+      const containerRect = container.getBoundingClientRect();
+      const height = el.offsetHeight;
+      const width = el.offsetWidth;
 
-    let x = fixedAnchor.x;
-    let y = fixedAnchor.y;
+      let x = fixedAnchor.x;
+      let y = fixedAnchor.y;
 
-    if (y + height > containerRect.height) {
-      y = Math.max(8, containerRect.height - height - 8);
-    }
+      if (y + height > containerRect.height) {
+        y = Math.max(8, containerRect.height - height - 8);
+      }
 
-    if (x + width > containerRect.width) {
-      x = Math.max(0, containerRect.width - width);
-    }
+      if (x + width > containerRect.width) {
+        x = Math.max(0, containerRect.width - width);
+      }
 
-    if (x !== fixedAnchor.x || y !== fixedAnchor.y) {
-      setClampedPos({ x, y });
-    }
+      setClampedPos((prev) => {
+        if (x === fixedAnchor.x && y === fixedAnchor.y) {
+          return null;
+        }
+        if (prev && prev.x === x && prev.y === y) {
+          return prev;
+        }
+        return { x, y };
+      });
+    };
+
+    applyClamp();
+
+    // Images and lazy content grow the popover after mount; re-clamp as it
+    // resizes so it never outgrows the calendar (PROD-583: the live popover
+    // carried an image and long description that loaded past the grid).
+    const observer =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(applyClamp) : null;
+    observer?.observe(el);
+
+    return () => observer?.disconnect();
   }, [fixedAnchor, event]);
 
   const popoverPos = clampedPos || fixedAnchor;

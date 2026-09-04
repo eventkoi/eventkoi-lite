@@ -256,6 +256,22 @@ export function Calendar(props) {
 
   return (
     <div className="relative">
+      {activeDisplay === "calendar" && (
+        <div className="flex justify-start md:justify-end py-4 text-sm text-foreground">
+          {isEmpty ? (
+            <Skeleton className="h-5 w-40 rounded-md" />
+          ) : (
+            <TimezonePicker
+              timezone={timezone}
+              setTimezone={setTimezone}
+              timeFormat={timeFormat}
+              setTimeFormat={setTimeFormat}
+            />
+          )}
+        </div>
+      )}
+
+
       <CalendarToolbar
         calendar={calendar}
         calendarApi={calendarApi}
@@ -276,20 +292,6 @@ export function Calendar(props) {
         feedWebcal={feedWebcal}
       />
 
-      {activeDisplay === "calendar" && (
-        <div className="flex justify-start md:justify-end py-4 text-sm text-foreground">
-          {isEmpty ? (
-            <Skeleton className="h-5 w-40 rounded-md" />
-          ) : (
-            <TimezonePicker
-              timezone={timezone}
-              setTimezone={setTimezone}
-              timeFormat={timeFormat}
-              setTimeFormat={setTimeFormat}
-            />
-          )}
-        </div>
-      )}
 
       {activeDisplay === "list" ? (
         <CalendarListMode

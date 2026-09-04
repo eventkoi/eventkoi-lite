@@ -680,6 +680,16 @@ export default function Edit({
         }
       >
         <div className="relative">
+          {/* Timezone switcher */}
+          <div className="flex justify-start md:justify-end py-4 text-sm text-foreground">
+            <TimezonePicker
+              timezone={timezone}
+              setTimezone={setTimezone}
+              timeFormat={timeFormat}
+              setTimeFormat={setTimeFormat}
+            />
+          </div>
+
           <CalendarToolbar
             calendarApi={calendarApi}
             currentDate={currentDate}
@@ -693,15 +703,6 @@ export default function Edit({
             timeFormat={timeFormat}
           />
 
-          {/* Timezone switcher */}
-          <div className="flex justify-start md:justify-end py-4 text-sm text-foreground">
-            <TimezonePicker
-              timezone={timezone}
-              setTimezone={setTimezone}
-              timeFormat={timeFormat}
-              setTimeFormat={setTimeFormat}
-            />
-          </div>
 
           {/*
             Pre-seed FullCalendar's style root. In WP's iframed block editor,
