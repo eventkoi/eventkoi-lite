@@ -173,6 +173,11 @@ export function MultiSelect({
                       setSelected((prev) => [...prev, option]);
                     }}
                     className="cursor-pointer"
+                    style={
+                      option.depth
+                        ? { paddingLeft: `${8 + option.depth * 16}px` }
+                        : undefined
+                    }
                   >
                     <span>{option.name}</span>
                   </CommandItem>
