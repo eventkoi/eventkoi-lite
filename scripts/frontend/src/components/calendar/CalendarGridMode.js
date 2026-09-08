@@ -553,6 +553,46 @@ export function CalendarGridMode({
     ? "auto"
     : slotsToShow * slotHeightPx;
 
+  // FullCalendar turns scrollTime into a pixel offset using the slot height
+  // it measures at that moment. A webfont arriving after mount makes every
+  // slot a little taller, and the already-applied offset then points one
+  // hour early (a start of 8 AM showed 7 AM). Re-anchor once the fonts are
+  // in, unless the visitor has already scrolled the grid themselves.
+  useEffect(() => {
+    if (!isTimeGridView) {
+      return undefined;
+    }
+
+    let cancelled = false;
+    let userScrolled = false;
+
+    const markUserScroll = () => {
+      userScrolled = true;
+    };
+    window.addEventListener("wheel", markUserScroll, { passive: true });
+    window.addEventListener("touchmove", markUserScroll, { passive: true });
+
+    const reanchor = () => {
+      if (cancelled || userScrolled) {
+        return;
+      }
+      calendarRef?.current?.getApi?.()?.scrollToTime?.(scrollTime);
+    };
+
+    document.fonts?.ready
+      ?.then?.(() => setTimeout(reanchor, 0))
+      ?.catch?.(() => {});
+    // Belt for late non-font layout growth (slow stylesheets, zoom quirks).
+    const lateTimer = setTimeout(reanchor, 1500);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(lateTimer);
+      window.removeEventListener("wheel", markUserScroll);
+      window.removeEventListener("touchmove", markUserScroll);
+    };
+  }, [isTimeGridView, view, scrollTime, calendarRef]);
+
   // Publish the FullCalendar API upwards once it exists. The toolbar reads it
   // from a ref, and a ref assignment does not re-render, so without this the
   // toolbar holds `undefined` for the first render after every (re)mount and
