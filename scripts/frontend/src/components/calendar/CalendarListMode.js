@@ -12,20 +12,23 @@ export function CalendarListMode({
   showImage,
   showDescription,
   showLocation,
+  showTimezone = true,
   borderStyle,
   borderSize,
   loading,
 }) {
   return (
     <>
-      <div className="flex justify-end pt-4 text-sm text-foreground">
-        <TimezonePicker
-          timezone={timezone}
-          setTimezone={setTimezone}
-          timeFormat={timeFormat}
-          setTimeFormat={setTimeFormat}
-        />
-      </div>
+      {showTimezone && (
+        <div className="flex justify-end pt-4 text-sm text-foreground">
+          <TimezonePicker
+            timezone={timezone}
+            setTimezone={setTimezone}
+            timeFormat={timeFormat}
+            setTimeFormat={setTimeFormat}
+          />
+        </div>
+      )}
       <ListView
         events={events}
         timezone={timezone}

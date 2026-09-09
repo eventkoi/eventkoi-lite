@@ -181,6 +181,7 @@ class Calendar {
 			'count'           => self::get_count(),
 			'display'         => self::get_display(),
 			'timeframe'       => self::get_timeframe(),
+			'show_timezone'   => self::get_show_timezone(),
 			'startday'        => self::get_startday(),
 			'day_start_time'  => self::get_day_start_time(),
 			'shortcode'       => self::get_shortcode(),
@@ -337,6 +338,20 @@ class Calendar {
 	}
 
 	/**
+	 * Whether the frontend timezone label shows. Defaults to true so existing
+	 * calendars keep showing it; a stored '0' hides it (Kim, GHGUBXLR).
+	 *
+	 * @return bool
+	 */
+	public static function get_show_timezone() {
+		$stored = get_term_meta( self::$calendar_id, 'show_timezone', true );
+
+		$show = ( '' === $stored ) ? true : rest_sanitize_boolean( $stored );
+
+		return (bool) apply_filters( 'eventkoi_get_calendar_show_timezone', $show, self::$calendar_id, self::$calendar );
+	}
+
+	/**
 	 * Get week start day.
 	 *
 	 * @return string Start day key (e.g. 'monday', 'sunday', etc.).
@@ -476,6 +491,7 @@ class Calendar {
 
 		update_term_meta( self::$calendar_id, 'display', (string) $display );
 		update_term_meta( self::$calendar_id, 'timeframe', (string) $timeframe );
+		update_term_meta( self::$calendar_id, 'show_timezone', ( array_key_exists( 'show_timezone', $meta ) && ! rest_sanitize_boolean( $meta['show_timezone'] ) ) ? '0' : '1' );
 		update_term_meta( self::$calendar_id, 'startday', (string) $startday );
 		if ( '' !== $day_start_time ) {
 			update_term_meta( self::$calendar_id, 'day_start_time', (string) $day_start_time );

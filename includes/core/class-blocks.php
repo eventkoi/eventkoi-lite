@@ -2121,6 +2121,10 @@ JS;
 				);
 		}
 
+		if ( array_key_exists( 'showTimezone', $attrs ) ) {
+			$args['show_timezone'] = self::parse_boolean_attribute( $attrs['showTimezone'] );
+		}
+
 		$args['layout'] = $attrs['layout'] ?? array();
 		$args['align']  = $attrs['align'] ?? '';
 

@@ -69,6 +69,11 @@ export function Calendar(props) {
     return parsed.length ? parsed : all;
   })();
   const gridViewsVisible = visibleViews.some((v) => v !== "list");
+
+  // Timezone label shows by default; only an explicit "0"/"false" hides it.
+  const showTimezone = !["0", "false", "no"].includes(
+    String(props.showTimezone ?? "").toLowerCase()
+  );
   const listVisible = visibleViews.includes("list");
   const [activeDisplay, setActiveDisplay] = useState(
     display === "list" ||
@@ -256,7 +261,7 @@ export function Calendar(props) {
 
   return (
     <div className="relative">
-      {activeDisplay === "calendar" && (
+      {activeDisplay === "calendar" && showTimezone && (
         <div className="flex justify-start md:justify-end py-4 text-sm text-foreground">
           {isEmpty ? (
             <Skeleton className="h-5 w-40 rounded-md" />
@@ -303,6 +308,7 @@ export function Calendar(props) {
           showImage={showImage}
           showDescription={showDescription}
           showLocation={showLocation}
+          showTimezone={showTimezone}
           borderStyle={borderStyle}
           borderSize={borderSize}
           loading={loading}
@@ -392,6 +398,7 @@ export function mountEventKoiCalendars(rootElement = document) {
           feedUrl={el.getAttribute("data-feed-url")}
           feedWebcal={el.getAttribute("data-feed-webcal")}
           visibleViews={el.getAttribute("data-visible-views")}
+          showTimezone={el.getAttribute("data-show-timezone")}
         />
       </ErrorBoundary>
     );

@@ -7,6 +7,7 @@ import { CalendarName } from "@/components/calendar/calendar-name";
 import { CalendarSlug } from "@/components/calendar/calendar-slug";
 import { CalendarStartDay } from "@/components/calendar/calendar-start-day";
 import { CalendarTimeFrame } from "@/components/calendar/calendar-time-frame";
+import { CalendarTimezoneSetting } from "@/components/calendar/calendar-timezone-setting";
 import { SeoPluginEditorLink } from "@/components/seo-plugin-editor-link";
 import { Separator } from "@/components/ui/separator";
 import { useOutletContext } from "react-router-dom";
@@ -25,6 +26,7 @@ export function CalendarEditMain() {
           <CalendarColor calendar={calendar} setCalendar={setCalendar} />
           <CalendarDisplay calendar={calendar} setCalendar={setCalendar} />
           <CalendarTimeFrame calendar={calendar} setCalendar={setCalendar} />
+          <CalendarTimezoneSetting calendar={calendar} setCalendar={setCalendar} />
           <CalendarDayStartTime calendar={calendar} setCalendar={setCalendar} />
           <CalendarDefaults calendar={calendar} setCalendar={setCalendar} />
           <CalendarStartDay calendar={calendar} setCalendar={setCalendar} />

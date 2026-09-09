@@ -129,6 +129,19 @@ class Calendar_Widget extends Widget_Base {
 		}
 
 		$this->add_control(
+			'show_timezone',
+			array(
+				'label'        => __( 'Show timezone', 'eventkoi-lite' ),
+				'type'         => Controls_Manager::SWITCHER,
+				'label_on'     => __( 'Yes', 'eventkoi-lite' ),
+				'label_off'    => __( 'No', 'eventkoi-lite' ),
+				'return_value' => 'yes',
+				'default'      => 'yes',
+				'description'  => __( 'Show the timezone label above the calendar.', 'eventkoi-lite' ),
+			)
+		);
+
+		$this->add_control(
 			'default_month',
 			array(
 				'label'       => __( 'Default month to display', 'eventkoi-lite' ),
@@ -265,6 +278,8 @@ class Calendar_Widget extends Widget_Base {
 			'default_year'  => $this->normalize_default_year( $settings['default_year'] ?? '' ),
 			'context'       => 'block',
 		);
+
+		$args['show_timezone'] = ( 'no' === ( $settings['show_timezone'] ?? 'yes' ) ) ? false : true;
 
 		$calendar_id = \eventkoi_resolve_calendar_id( (int) get_option( 'eventkoi_default_event_cal', 0 ) );
 

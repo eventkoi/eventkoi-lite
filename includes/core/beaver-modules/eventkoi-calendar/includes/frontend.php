@@ -57,6 +57,8 @@ $args = array(
 	'context'       => 'block',
 );
 
+$args['show_timezone'] = ( 'no' === ( $settings->show_timezone ?? 'yes' ) ) ? false : true;
+
 $module_views = array();
 foreach ( array( 'month', 'week', 'list' ) as $ek_view_key ) {
 	$ek_view_prop = 'show_' . $ek_view_key . '_view';

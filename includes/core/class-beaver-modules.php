@@ -152,6 +152,15 @@ class Beaver_Modules {
 									'no'  => __( 'No', 'eventkoi-lite' ),
 								),
 							),
+							'show_timezone'  => array(
+								'type'    => 'select',
+								'label'   => __( 'Show timezone', 'eventkoi-lite' ),
+								'default' => 'yes',
+								'options' => array(
+									'yes' => __( 'Yes', 'eventkoi-lite' ),
+									'no'  => __( 'No', 'eventkoi-lite' ),
+								),
+							),
 							),
 							'default_month'  => array(
 								'type'    => 'select',

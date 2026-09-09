@@ -396,6 +396,9 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 	$date_end         = isset( $args['date_end'] ) ? sanitize_text_field( $args['date_end'] ) : '';
 	$expand_instances = isset( $args['expand_instances'] ) ? (bool) $args['expand_instances'] : false;
 	$visible_views    = eventkoi_sanitize_calendar_views( $args['views'] ?? '' );
+	$show_timezone    = isset( $args['show_timezone'] )
+		? (bool) filter_var( $args['show_timezone'], FILTER_VALIDATE_BOOLEAN )
+		: (bool) $calendar::get_show_timezone();
 	$container_id     = 'eventkoi-calendar-' . uniqid();
 	$content_size     = ! empty( $args['layout']['contentSize'] ) ? sanitize_text_field( $args['layout']['contentSize'] ) : '';
 	$wide_size        = ! empty( $args['layout']['wideSize'] ) ? sanitize_text_field( $args['layout']['wideSize'] ) : '';
@@ -491,7 +494,8 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 				data-expand-instances="%23$s"
 				data-feed-url="%24$s"
 				data-feed-webcal="%25$s"
-				data-visible-views="%26$s">
+				data-visible-views="%26$s"
+				data-show-timezone="%27$s">
 			</div>
 		</div>
 	<!-- /wp:group -->',
@@ -520,7 +524,8 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 		$expand_instances ? '1' : '0',              // %23$s
 		esc_url( $feed_url ),                        // %24$s
 		esc_url( $feed_webcal_url, array( 'https', 'http', 'webcal' ) ), // %25$s
-		esc_attr( implode( ',', $visible_views ) ) // %26$s
+		esc_attr( implode( ',', $visible_views ) ), // %26$s
+		esc_attr( $show_timezone ? '1' : '0' ) // %27$s
 	);
 
 	$output = do_blocks( apply_filters( 'eventkoi_get_calendar_content', $calendar_template ) );

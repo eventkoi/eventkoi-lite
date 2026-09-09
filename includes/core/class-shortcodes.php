@@ -160,6 +160,7 @@ class Shortcodes {
 				'expand_instances' => '',
 				'timeframe'        => '',
 				'views'            => '',
+				'show_timezone'    => '',
 			),
 			$user_attributes,
 			$shortcode_name
@@ -266,6 +267,10 @@ class Shortcodes {
 
 		if ( '' !== trim( (string) $attributes['views'] ) ) {
 			$calendar_args['views'] = sanitize_text_field( $attributes['views'] );
+		}
+
+		if ( '' !== trim( (string) $attributes['show_timezone'] ) ) {
+			$calendar_args['show_timezone'] = (bool) filter_var( $attributes['show_timezone'], FILTER_VALIDATE_BOOLEAN );
 		}
 
 		if ( 'list' === $display ) {

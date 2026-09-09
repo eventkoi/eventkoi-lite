@@ -152,6 +152,13 @@ export const Controls = (props) => {
             __nextHasNoMarginBottom
           />
         ))}
+        <ToggleControl
+          label={__("Show timezone", "eventkoi-lite")}
+          help={__("Show the timezone label above the calendar.", "eventkoi-lite")}
+          checked={attributes.showTimezone !== false}
+          onChange={(value) => setAttributes({ showTimezone: value })}
+          __nextHasNoMarginBottom
+        />
         <ToggleGroupControl
           label={__("Timeframe defaults to", "eventkoi-lite")}
           value={timeframe}

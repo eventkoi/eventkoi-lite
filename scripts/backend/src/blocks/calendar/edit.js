@@ -681,14 +681,16 @@ export default function Edit({
       >
         <div className="relative">
           {/* Timezone switcher */}
-          <div className="flex justify-start md:justify-end py-4 text-sm text-foreground">
-            <TimezonePicker
-              timezone={timezone}
-              setTimezone={setTimezone}
-              timeFormat={timeFormat}
-              setTimeFormat={setTimeFormat}
-            />
-          </div>
+          {attributes.showTimezone !== false && (
+            <div className="flex justify-start md:justify-end py-4 text-sm text-foreground">
+              <TimezonePicker
+                timezone={timezone}
+                setTimezone={setTimezone}
+                timeFormat={timeFormat}
+                setTimeFormat={setTimeFormat}
+              />
+            </div>
+          )}
 
           <CalendarToolbar
             calendarApi={calendarApi}

@@ -90,6 +90,17 @@ class ET_Builder_Module_EventkoiCalendar extends ET_Builder_Module {
 				'default_on_front' => 'on',
 				'toggle_slug'      => 'main_content',
 			),
+			'eventkoi_show_timezone' => array(
+				'label'            => esc_html__( 'Show timezone', 'eventkoi-lite' ),
+				'type'             => 'yes_no_button',
+				'option_category'  => 'configuration',
+				'options'          => array(
+					'on'  => esc_html__( 'Yes', 'eventkoi-lite' ),
+					'off' => esc_html__( 'No', 'eventkoi-lite' ),
+				),
+				'default_on_front' => 'on',
+				'toggle_slug'      => 'main_content',
+			),
 			'eventkoi_week_start' => array(
 				'label'            => esc_html__( 'Week starts on', 'eventkoi-lite' ),
 				'type'             => 'select',
@@ -133,6 +144,8 @@ class ET_Builder_Module_EventkoiCalendar extends ET_Builder_Module {
 			'default_year'  => '',
 			'context'       => 'block',
 		);
+
+		$args['show_timezone'] = ( 'off' === ( $this->props['eventkoi_show_timezone'] ?? 'on' ) ) ? false : true;
 
 		$divi_views = array();
 		foreach ( array( 'month', 'week', 'list' ) as $view_key ) {
