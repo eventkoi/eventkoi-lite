@@ -556,10 +556,16 @@ class Shortcodes {
 			(int) $instance_ts
 		);
 
+		// The mount node carries a server-rendered no-JS fallback form. React
+		// replaces it on mount (modal stays primary); if the script never runs,
+		// the form remains and can still complete a purchase.
+		$fallback = \EventKoi\Core\Ticket_Fallback::render_form( $event_id, $instance_ts );
+
 		return sprintf(
-			'<div class="eventkoi-front"><div id="eventkoi-tickets-%1$d" class="eventkoi-tickets" %2$s></div></div>',
+			'<div class="eventkoi-front"><div id="eventkoi-tickets-%1$d" class="eventkoi-tickets" %2$s>%3$s</div></div>',
 			(int) $event_id,
-			$attrs
+			$attrs,
+			$fallback
 		);
 	}
 

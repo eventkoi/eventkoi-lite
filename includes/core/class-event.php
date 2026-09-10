@@ -4064,10 +4064,16 @@ class Event {
 				(int) $instance_ts
 			);
 
+			// The mount node carries a server-rendered no-JS fallback form. React
+			// replaces it on mount (modal stays primary); if the script never
+			// runs, the form remains and can still complete a purchase.
+			$fallback = \EventKoi\Core\Ticket_Fallback::render_form( $event_id, $instance_ts );
+
 			$output = sprintf(
-				'<div class="eventkoi-front"><div id="eventkoi-tickets-%1$d" class="eventkoi-tickets" %2$s></div></div>',
+				'<div class="eventkoi-front"><div id="eventkoi-tickets-%1$d" class="eventkoi-tickets" %2$s>%3$s</div></div>',
 				(int) $event_id,
-				$attrs
+				$attrs,
+				$fallback
 			);
 
 			return apply_filters( 'eventkoi_rendered_event_tickets', $output, self::$event_id, self::$event );
