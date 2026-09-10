@@ -58,6 +58,20 @@ function WooLogo({ className = "" }) {
   );
 }
 
+function SureCartLogo({ className = "" }) {
+  return (
+    <span
+      className={cn(
+        "font-semibold tracking-tight text-[#1e1e2f] leading-none",
+        className
+      )}
+      aria-hidden="true"
+    >
+      Sure<span className="text-[#5b8def]">Cart</span>
+    </span>
+  );
+}
+
 export function SettingsCheckoutMethod({ settings, setSettings }) {
   const wooActive = !!window?.eventkoi_params?.woocommerce_active;
   const method = settings?.ticket_checkout_method || "woocommerce";
@@ -111,7 +125,7 @@ export function SettingsCheckoutMethod({ settings, setSettings }) {
             {__("Select a checkout method for processing ticket payments.", "eventkoi-lite")}
           </p>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 sm:grid-cols-3">
             <a
               href="https://eventkoi.com/upgradeqf35m3ref/"
               target="_blank"
@@ -137,6 +151,21 @@ export function SettingsCheckoutMethod({ settings, setSettings }) {
                   : __("Install and activate WooCommerce to start selling tickets.", "eventkoi-lite")}
               </p>
             </div>
+
+            <a
+              href="https://eventkoi.com/upgradeqf35m3ref/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-col items-center gap-3 py-6 px-4 bg-white border rounded-2xl border-border opacity-60 hover:opacity-80 transition-opacity no-underline"
+            >
+              <div className="inline-flex items-center gap-2">
+                <SureCartLogo className="text-lg" />
+                <ProBadge className="ml-0" />
+              </div>
+              <p className="text-xs text-muted-foreground text-center">
+                {__("Check out with SureCart on your event pages.", "eventkoi-lite")}
+              </p>
+            </a>
           </div>
         </Panel>
       </div>
