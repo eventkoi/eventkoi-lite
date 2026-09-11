@@ -644,6 +644,13 @@ class ICS_Importer {
 			$start_dt                   = new \DateTime( $start_iso );
 			$ek_rule['months']          = array( (int) $start_dt->format( 'n' ) - 1 );
 			$ek_rule['month_day_value'] = (int) $start_dt->format( 'j' );
+
+			// A weekly rule with no BYDAY recurs on the start date's weekday
+			// (RFC 5545). Without a weekday the expander degrades to daily, so
+			// anchor it to the start day (Sunday-indexed, matching the BYDAY map).
+			if ( 'week' === $ek_rule['frequency'] && empty( $ek_rule['weekdays'] ) ) {
+				$ek_rule['weekdays'] = array( (int) $start_dt->format( 'w' ) );
+			}
 		} catch ( \Exception $e ) {
 			unset( $e );
 		}
