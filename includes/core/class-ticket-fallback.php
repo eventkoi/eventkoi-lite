@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 class Ticket_Fallback {
 
 	/**
-	 * admin-post action name.
+	 * Admin-post action name.
 	 */
 	const ACTION = 'eventkoi_ticket_fallback';
 
@@ -220,7 +220,9 @@ class Ticket_Fallback {
 			self::redirect_error( $return_url, __( 'Your session expired. Please try again.', 'eventkoi-lite' ) );
 		}
 
-		$raw_qty = isset( $_POST['ek_qty'] ) && is_array( $_POST['ek_qty'] ) ? wp_unslash( $_POST['ek_qty'] ) : array();
+		$raw_qty = isset( $_POST['ek_qty'] ) && is_array( $_POST['ek_qty'] )
+			? array_map( 'absint', wp_unslash( $_POST['ek_qty'] ) )
+			: array();
 		$first   = isset( $_POST['first_name'] ) ? sanitize_text_field( wp_unslash( $_POST['first_name'] ) ) : '';
 		$last    = isset( $_POST['last_name'] ) ? sanitize_text_field( wp_unslash( $_POST['last_name'] ) ) : '';
 		$email   = isset( $_POST['email'] ) ? sanitize_email( wp_unslash( $_POST['email'] ) ) : '';
