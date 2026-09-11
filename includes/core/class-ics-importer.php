@@ -149,10 +149,11 @@ class ICS_Importer {
 			return new WP_Error( 'expired', __( 'Parsed data has expired. Please upload the file again.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
-		$results  = array();
-		$imported = 0;
-		$skipped  = 0;
-		$errors   = 0;
+		$results             = array();
+		$imported            = 0;
+		$skipped             = 0;
+		$errors              = 0;
+		$recurring_flattened = 0;
 
 		foreach ( $events as $event ) {
 			$result = self::import_single_event( $event );
@@ -168,6 +169,9 @@ class ICS_Importer {
 				++$skipped;
 			} else {
 				++$imported;
+				if ( ! empty( $result['flattened'] ) ) {
+					++$recurring_flattened;
+				}
 				$results[] = array(
 					'title'    => $result['title'],
 					'success'  => true,
@@ -178,10 +182,11 @@ class ICS_Importer {
 
 		return rest_ensure_response(
 			array(
-				'imported' => $imported,
-				'skipped'  => $skipped,
-				'errors'   => $errors,
-				'results'  => $results,
+				'imported'            => $imported,
+				'skipped'             => $skipped,
+				'errors'              => $errors,
+				'recurring_flattened' => $recurring_flattened,
+				'results'             => $results,
 			)
 		);
 	}
@@ -302,18 +307,13 @@ class ICS_Importer {
 			}
 		}
 
-		// Recurrence.
+		// Recurrence. EventKoi Lite has no recurring events, so a recurring ICS
+		// event is imported as a standard event using only its first occurrence.
+		// The importer reports these so the UI can nudge an upgrade to Pro (which
+		// does import the full series).
 		$date_type        = 'standard';
 		$recurrence_rules = array();
-
-		if ( ! empty( $rrule ) ) {
-			$converted = self::convert_rrule( $rrule, $start_iso, $end_iso, $timezone );
-			if ( ! empty( $converted ) ) {
-				$date_type        = 'recurring';
-				$recurrence_rules = array( $converted );
-				$event_days       = array();
-			}
-		}
+		$was_recurring    = ! empty( $rrule );
 
 		// Create the EventKoi event post.
 		$new_post_id = wp_insert_post(
@@ -374,8 +374,9 @@ class ICS_Importer {
 		}
 
 		return array(
-			'event_id' => $new_post_id,
-			'title'    => $title,
+			'event_id'  => $new_post_id,
+			'title'     => $title,
+			'flattened' => $was_recurring,
 		);
 	}
 
@@ -566,108 +567,6 @@ class ICS_Importer {
 		}
 
 		return $ics_date;
-	}
-
-	/**
-	 * Convert an RRULE string to EventKoi recurrence_rules format.
-	 *
-	 * @param string $rrule_string RRULE value (e.g. FREQ=WEEKLY;BYDAY=MO,WE;COUNT=10).
-	 * @param string $start_iso    Start date in ISO format.
-	 * @param string $end_iso      End date in ISO format.
-	 * @param string $timezone     Timezone identifier.
-	 * @return array EventKoi recurrence rule, or empty array.
-	 */
-	private static function convert_rrule( $rrule_string, $start_iso, $end_iso, $timezone ) {
-		$parts = array();
-		foreach ( explode( ';', $rrule_string ) as $part ) {
-			$kv = explode( '=', $part, 2 );
-			if ( count( $kv ) === 2 ) {
-				$parts[ strtoupper( $kv[0] ) ] = $kv[1];
-			}
-		}
-
-		$freq_map = array(
-			'DAILY'   => 'day',
-			'WEEKLY'  => 'week',
-			'MONTHLY' => 'month',
-			'YEARLY'  => 'year',
-		);
-
-		$freq = $parts['FREQ'] ?? '';
-		if ( empty( $freq ) || ! isset( $freq_map[ $freq ] ) ) {
-			return array();
-		}
-
-		$interval = ! empty( $parts['INTERVAL'] ) ? (int) $parts['INTERVAL'] : 1;
-
-		$ek_rule = array(
-			'start_date'        => $start_iso,
-			'end_date'          => $end_iso,
-			'frequency'         => $freq_map[ $freq ],
-			'every'             => $interval,
-			'all_day'           => false,
-			'working_days_only' => false,
-			'weekdays'          => array(),
-			'months'            => array(),
-			'month_day_rule'    => 'day-of-month',
-			'month_day_value'   => 1,
-			'ends'              => 'never',
-			'ends_after'        => 30,
-			'ends_on'           => '',
-		);
-
-		// BYDAY → weekdays.
-		if ( ! empty( $parts['BYDAY'] ) ) {
-			$day_map = array(
-				'SU' => 0,
-				'MO' => 1,
-				'TU' => 2,
-				'WE' => 3,
-				'TH' => 4,
-				'FR' => 5,
-				'SA' => 6,
-			);
-			$days    = array();
-			foreach ( explode( ',', $parts['BYDAY'] ) as $d ) {
-				$d = preg_replace( '/[^A-Z]/', '', strtoupper( $d ) );
-				if ( isset( $day_map[ $d ] ) ) {
-					$days[] = $day_map[ $d ];
-				}
-			}
-			if ( ! empty( $days ) ) {
-				$ek_rule['weekdays'] = $days;
-			}
-		}
-
-		// Set default month/day from start date.
-		try {
-			$start_dt                   = new \DateTime( $start_iso );
-			$ek_rule['months']          = array( (int) $start_dt->format( 'n' ) - 1 );
-			$ek_rule['month_day_value'] = (int) $start_dt->format( 'j' );
-
-			// A weekly rule with no BYDAY recurs on the start date's weekday
-			// (RFC 5545). Without a weekday the expander degrades to daily, so
-			// anchor it to the start day (Sunday-indexed, matching the BYDAY map).
-			if ( 'week' === $ek_rule['frequency'] && empty( $ek_rule['weekdays'] ) ) {
-				$ek_rule['weekdays'] = array( (int) $start_dt->format( 'w' ) );
-			}
-		} catch ( \Exception $e ) {
-			unset( $e );
-		}
-
-		// COUNT → ends: "after".
-		if ( ! empty( $parts['COUNT'] ) ) {
-			$ek_rule['ends']       = 'after';
-			$ek_rule['ends_after'] = (int) $parts['COUNT'];
-		}
-
-		// UNTIL → ends: "on".
-		if ( ! empty( $parts['UNTIL'] ) ) {
-			$ek_rule['ends']    = 'on';
-			$ek_rule['ends_on'] = self::to_iso_date( $parts['UNTIL'], $timezone );
-		}
-
-		return $ek_rule;
 	}
 
 	/**
