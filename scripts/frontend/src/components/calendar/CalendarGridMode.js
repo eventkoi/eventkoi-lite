@@ -584,12 +584,48 @@ export function CalendarGridMode({
       ?.catch?.(() => {});
     // Belt for late non-font layout growth (slow stylesheets, zoom quirks).
     const lateTimer = setTimeout(reanchor, 1500);
+    // Optimisation plugins (e.g. WP Rocket) can defer or delay the whole
+    // bundle, so the grid settles well after any fixed timer; window load is a
+    // second belt for that.
+    window.addEventListener("load", reanchor);
+
+    // The real trigger is the grid growing taller after the first scroll, which
+    // late fonts, deferred stylesheets or a caching plugin can cause well after
+    // any fixed timer. Watch the grid height and re-anchor when it changes, then
+    // stop so it never fights the visitor's own scrolling.
+    let observer;
+    let stopObserverTimer;
+    const observerStart = setTimeout(() => {
+      const grid = calendarRef?.current
+        ?.getApi?.()
+        ?.el?.querySelector?.(".fc-timegrid-body");
+      if (!grid || typeof ResizeObserver === "undefined") {
+        return;
+      }
+      let lastHeight = grid.offsetHeight;
+      observer = new ResizeObserver(() => {
+        if (cancelled || userScrolled) {
+          return;
+        }
+        const height = grid.offsetHeight;
+        if (height !== lastHeight) {
+          lastHeight = height;
+          reanchor();
+        }
+      });
+      observer.observe(grid);
+      stopObserverTimer = setTimeout(() => observer?.disconnect(), 5000);
+    }, 0);
 
     return () => {
       cancelled = true;
       clearTimeout(lateTimer);
+      clearTimeout(observerStart);
+      clearTimeout(stopObserverTimer);
       window.removeEventListener("wheel", markUserScroll);
       window.removeEventListener("touchmove", markUserScroll);
+      window.removeEventListener("load", reanchor);
+      observer?.disconnect();
     };
   }, [isTimeGridView, view, scrollTime, calendarRef]);
 
