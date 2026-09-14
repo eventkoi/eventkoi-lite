@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.4.2.0
+Stable tag: 1.4.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,13 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.4.3.0 – Timezone toggle, checkout reliability and import fixes – 2026-09-14 =
+* New: A Show timezone toggle across the calendar settings, block, shortcode and page builders, so you can display the event timezone alongside its dates.
+* Improvement: Assign event taxonomy terms with the same searchable dropdown used elsewhere in the calendar.
+* Fix: The buy tickets button could do nothing on some older browsers where the popup failed to load. Checkout now loads reliably, with a no-JavaScript fallback so tickets can still be purchased.
+* Fix: Recurring events imported from an .ics file are now added as a single event, since recurring events are a Pro feature.
+* Fix: The week grid could start at the wrong hour after the layout finished loading. It now anchors to your configured start hour.
 
 = 1.4.2.0 – Calendar polish and selected-dates fixes – 2026-09-04 =
 * Fix: Clicking one date of a Selected dates event in the calendar opened a page showing only that day. Every calendar and list link now opens the event page with all of its dates.
