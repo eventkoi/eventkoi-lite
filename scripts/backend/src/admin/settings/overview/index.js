@@ -19,7 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSettings } from "@/hooks/SettingsContext";
 import { showToast, showToastError } from "@/lib/toast";
@@ -329,13 +328,16 @@ export function SettingsOverview() {
       {/* Calendar & week */}
       <Box>
         <div className="grid w-full">
-          <Panel variant="header">
+          <Panel variant="header" className="gap-1">
             <Heading level={3}>{__("Calendar & week", "eventkoi-lite")}</Heading>
+            <p className="text-sm text-muted-foreground">
+              {__(
+                "These settings are applied at a global level. They can also be adjusted at a calendar level.",
+                "eventkoi-lite"
+              )}
+            </p>
           </Panel>
-
-          <Separator />
-
-          <Panel className="gap-10">
+          <Panel className="gap-10 pt-2">
             {/* Week Start Dropdown */}
             <div className="grid gap-2">
               <Label htmlFor="week-start">{__("Week starts on", "eventkoi-lite")}</Label>
@@ -430,10 +432,7 @@ export function SettingsOverview() {
           <Panel variant="header">
             <Heading level={3}>{__("Dates & times", "eventkoi-lite")}</Heading>
           </Panel>
-
-          <Separator />
-
-          <Panel className="gap-10">
+          <Panel className="gap-10 pt-2">
             {/* Time format */}
             <div className="grid gap-2">
               <Label className="text-sm font-medium">{__("Time format", "eventkoi-lite")}</Label>
@@ -544,10 +543,7 @@ export function SettingsOverview() {
           <Panel variant="header">
             <Heading level={3}>{__("Event URLs", "eventkoi-lite")}</Heading>
           </Panel>
-
-          <Separator />
-
-          <Panel className="gap-10">
+          <Panel className="gap-10 pt-2">
             <div className="grid gap-4">
               <div className="grid gap-6 md:grid-cols-2">
                 <div className="grid gap-2">
@@ -603,10 +599,7 @@ export function SettingsOverview() {
           <Panel variant="header">
             <Heading level={3}>{__("Single event pages", "eventkoi-lite")}</Heading>
           </Panel>
-
-          <Separator />
-
-          <Panel className="gap-10">
+          <Panel className="gap-10 pt-2">
             {/* Default event template */}
             <div className="grid gap-2">
               <Label htmlFor="default-event-template">
