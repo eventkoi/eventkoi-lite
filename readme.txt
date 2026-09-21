@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.4.5.0
+Stable tag: 1.4.5.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,9 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.4.5.1 – Calendar settings clarity – 2026-09-21 =
+* Improvement: The Calendar & week settings now explain that they apply globally and can also be adjusted per calendar, and the divider lines between settings sections were removed for a cleaner layout.
 
 = 1.4.5.0 – Maintenance – 2026-09-15 =
 * Maintenance: Version alignment with EventKoi Pro. No changes to EventKoi Lite in this release.
