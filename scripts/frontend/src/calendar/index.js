@@ -287,7 +287,12 @@ export function Calendar(props) {
         display={activeDisplay}
         setDisplay={setActiveDisplay}
         visibleViews={visibleViews}
-        events={isGlobalSearch ? searchResults : allEvents}
+        // A search in list view is answered by the list request itself
+        // (searchResults stays empty there), so the toolbar keeps reading
+        // allEvents; in grid view a typed term switches to the global results.
+        events={
+          isGlobalSearch && activeDisplay !== "list" ? searchResults : allEvents
+        }
         globalSearch={isGlobalSearch}
         timezone={timezone}
         timeFormat={timeFormat}
