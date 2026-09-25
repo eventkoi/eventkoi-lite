@@ -56,6 +56,21 @@
     line-height: inherit;
     letter-spacing: inherit;
     text-transform: none;
+    text-decoration: none;
+  }
+
+  /* Beaver Builder's Global Styles give every element inside a button the
+     button text color (`.fl-page .fl-builder-content button:hover *` is
+     0,4,1) but paint the background on the button only, so our month picker
+     label came out white on white. Children inherit the button's color; the
+     repeated class lifts this to 0,5,0, and our !important text utilities on
+     inner elements still win. */
+  .eventkoi-front.eventkoi-front
+    :is(button, [type='button'], [type='reset'], [type='submit']):not(
+      .wp-block-button__link
+    ):not(.wp-element-button)
+    * {
+    color: inherit;
   }
 }
 
