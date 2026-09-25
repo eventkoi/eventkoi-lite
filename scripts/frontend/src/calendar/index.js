@@ -185,6 +185,11 @@ export function Calendar(props) {
   // that month from then on.
   const handleToolbarDate = (next) => {
     setListNavigated(true);
+    // Seed the mirrored date in the same batch, so the first render after a
+    // click already queries the new month instead of the previous one.
+    if (next instanceof Date) {
+      setListMonthDate(next);
+    }
     setCurrentDate?.(next);
   };
 
