@@ -87,7 +87,9 @@ export function Calendar(props) {
   // controls meaningful in the list (previously they moved a grid that is not
   // mounted, so nothing happened).
   const [listNavigated, setListNavigated] = useState(false);
-  const [listMonthAnchor, setListMonthAnchor] = useState(null);
+  // The list reads the same date the toolbar label shows; see the effect
+  // below that mirrors currentDate into it.
+  const [listMonthDate, setListMonthDate] = useState(null);
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState([]);
 
@@ -126,7 +128,7 @@ export function Calendar(props) {
   // While the visitor is browsing months in the list, bound the query to that
   // month. Untouched, the list keeps its default rolling-upcoming behaviour.
   const listMonthRange = useMemo(() => {
-    if (activeDisplay !== "list" || !listNavigated || !listMonthAnchor) {
+    if (activeDisplay !== "list" || !listNavigated || !listMonthDate) {
       return {};
     }
     // Same zone as the picker label and the nav stepping: the display
@@ -135,12 +137,12 @@ export function Calendar(props) {
       timezone === "local"
         ? Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
         : timezone || window.eventkoi_params?.timezone || "UTC";
-    const dt = DateTime.fromJSDate(listMonthAnchor).setZone(zone);
+    const dt = DateTime.fromJSDate(listMonthDate).setZone(zone);
     return {
       dateStart: dt.startOf("month").toISODate(),
       dateEnd: dt.endOf("month").toISODate(),
     };
-  }, [activeDisplay, listNavigated, listMonthAnchor, timezone]);
+  }, [activeDisplay, listNavigated, listMonthDate, timezone]);
 
 
   const {
@@ -170,14 +172,19 @@ export function Calendar(props) {
     calendarRef,
   });
 
-  // Toolbar date changes double as the list's month selector: in list view a
-  // prev/next/Today/month-picker click scopes the list to that month.
+  // currentDate is owned by the data hook (the grid writes it as it moves),
+  // so mirror it into the state the list's month range depends on. That way
+  // months stepped in the grid carry over to the list, and the label and the
+  // list can never disagree on which month is open.
+  useEffect(() => {
+    setListMonthDate(currentDate instanceof Date ? currentDate : null);
+  }, [currentDate]);
+
+  // Toolbar date changes double as the list's month selector: a prev/next/
+  // Today/month-picker click, in the list or in the grid, scopes the list to
+  // that month from then on.
   const handleToolbarDate = (next) => {
-    const value = next instanceof Date ? next : currentDate;
-    if (activeDisplay === "list") {
-      setListNavigated(true);
-      setListMonthAnchor(value instanceof Date ? value : new Date());
-    }
+    setListNavigated(true);
     setCurrentDate?.(next);
   };
 
