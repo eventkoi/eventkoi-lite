@@ -73,8 +73,8 @@ export function ToolbarDesktop(props) {
           ref={desktopRef}
           className="ek-desktop-only flex-col gap-3 w-full min-w-0"
         >
-          <div className="flex items-center justify-between gap-2 min-w-0">
-            <div className="flex items-center gap-2 min-w-0 overflow-visible">
+          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-3 min-w-0">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-3 min-w-0 overflow-visible">
               <Skeleton className="h-10 w-24 max-w-full rounded-md" />
               <Skeleton className="h-10 w-32 max-w-full rounded-md" />
               <Skeleton className="h-10 w-20 max-w-full rounded-md" />
@@ -108,8 +108,8 @@ export function ToolbarDesktop(props) {
   if (isTight) {
     return (
       <div ref={desktopRef} className="ek-desktop-only flex-col gap-3 w-full min-w-0">
-        <div className="flex items-center justify-between gap-2 min-w-0">
-          <div className="flex items-center gap-2 min-w-0 overflow-visible">
+        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-3 min-w-0">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-3 min-w-0 overflow-visible">
             <NavControls
               calendarApi={calendarApi}
               currentDate={currentDate}
@@ -136,7 +136,7 @@ export function ToolbarDesktop(props) {
               isTodayInRange={isTodayInRange}
             />
           </div>
-          <div className="shrink-0 flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-3 min-w-0">
             <SubscribeButton feedUrl={feedUrl} feedWebcal={feedWebcal} />
             <ViewToggle calendarApi={calendarApi} view={view} setView={setView} display={display} setDisplay={setDisplay} visibleViews={visibleViews} />
           </div>
