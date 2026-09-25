@@ -176,6 +176,34 @@ class Calendar_Widget extends Widget_Base {
 		$this->end_controls_section();
 
 		$this->start_controls_section(
+			'colors_section',
+			array(
+				'label' => __( 'Colors', 'eventkoi-lite' ),
+				'tab'   => Controls_Manager::TAB_STYLE,
+			)
+		);
+
+		foreach ( self::color_controls() as $control_id => $label ) {
+			$control = array(
+				'label' => $label,
+				'type'  => Controls_Manager::COLOR,
+				'alpha' => false,
+			);
+
+			// The calendar is transparent on its own, so inside a coloured
+			// container it would read as that colour. Start it white, the
+			// way it looks on a plain page; clearing the picker makes it
+			// transparent again.
+			if ( 'calendar_background_color' === $control_id ) {
+				$control['default'] = '#ffffff';
+			}
+
+			$this->add_control( $control_id, $control );
+		}
+
+		$this->end_controls_section();
+
+		$this->start_controls_section(
 			'style_section',
 			array(
 				'label' => __( "Day's Labels", 'eventkoi-lite' ),
@@ -281,11 +309,134 @@ class Calendar_Widget extends Widget_Base {
 
 		$args['show_timezone'] = ( 'no' === ( $settings['show_timezone'] ?? 'yes' ) ) ? false : true;
 
+		// The accent is the calendar's own colour (today marker, event chips),
+		// so it rides the same argument the shortcode and block use.
+		$accent = sanitize_hex_color( (string) ( $settings['calendar_accent_color'] ?? '' ) );
+		if ( $accent ) {
+			$args['color'] = $accent;
+		}
+
 		$calendar_id = \eventkoi_resolve_calendar_id( (int) get_option( 'eventkoi_default_event_cal', 0 ) );
 
+		// The other colours feed the calendar's own design tokens. They are
+		// set on a wrapper so every element inside picks them up, in the
+		// editor preview and on the page alike.
+		$style = self::color_style( $settings );
+
+		echo '<div class="eventkoi-elementor-calendar"' . ( '' !== $style ? ' style="' . esc_attr( $style ) . '"' : '' ) . '>';
 		echo wp_kses_post(
 			eventkoi_get_calendar_content( $calendar_id, 'calendar', $args )
 		);
+		echo '</div>';
+	}
+
+	/**
+	 * The colour pickers offered under Style, keyed by control id.
+	 *
+	 * @return array<string, string>
+	 */
+	private static function color_controls() {
+		return array(
+			'calendar_background_color'  => __( 'Calendar background', 'eventkoi-lite' ),
+			'calendar_text_color'        => __( 'Text', 'eventkoi-lite' ),
+			'calendar_button_color'      => __( 'Buttons', 'eventkoi-lite' ),
+			'calendar_button_text_color' => __( 'Button text', 'eventkoi-lite' ),
+			'calendar_accent_color'      => __( 'Accent', 'eventkoi-lite' ),
+		);
+	}
+
+	/**
+	 * Inline design-token overrides for the chosen colours.
+	 *
+	 * The calendar paints itself from HSL tokens (background, foreground,
+	 * primary ...), so each picked colour is converted to the triplet those
+	 * tokens expect. Unset pickers leave the token untouched.
+	 *
+	 * @param array $settings Widget settings.
+	 * @return string CSS declarations, or an empty string.
+	 */
+	private static function color_style( $settings ) {
+		$tokens = array(
+			'calendar_background_color'  => array( '--background', '--card', '--popover' ),
+			'calendar_text_color'        => array( '--foreground', '--card-foreground', '--popover-foreground', '--secondary-foreground', '--accent-foreground' ),
+			'calendar_button_color'      => array( '--primary' ),
+			'calendar_button_text_color' => array( '--primary-foreground' ),
+		);
+
+		$declarations = array();
+
+		// The calendar itself is transparent so it sits on whatever the page
+		// gives it; a chosen background has to paint the widget as well as
+		// feed the tokens the buttons and popovers read.
+		$background = sanitize_hex_color( (string) ( $settings['calendar_background_color'] ?? '' ) );
+		if ( $background ) {
+			$declarations[] = 'background-color:' . $background;
+		}
+
+		foreach ( $tokens as $control_id => $names ) {
+			$hsl = self::hex_to_hsl( (string) ( $settings[ $control_id ] ?? '' ) );
+
+			if ( '' === $hsl ) {
+				continue;
+			}
+
+			foreach ( $names as $name ) {
+				$declarations[] = $name . ':' . $hsl;
+			}
+		}
+
+		return implode( ';', $declarations );
+	}
+
+	/**
+	 * Convert a hex colour to the "h s% l%" triplet the design tokens use.
+	 *
+	 * @param string $hex Colour such as #1a2b3c or #abc.
+	 * @return string Triplet, or an empty string for anything unreadable.
+	 */
+	private static function hex_to_hsl( $hex ) {
+		$hex = sanitize_hex_color( $hex );
+
+		if ( ! $hex ) {
+			return '';
+		}
+
+		$hex = ltrim( $hex, '#' );
+
+		if ( 3 === strlen( $hex ) ) {
+			$hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+		}
+
+		$r = hexdec( substr( $hex, 0, 2 ) ) / 255;
+		$g = hexdec( substr( $hex, 2, 2 ) ) / 255;
+		$b = hexdec( substr( $hex, 4, 2 ) ) / 255;
+
+		$max   = max( $r, $g, $b );
+		$min   = min( $r, $g, $b );
+		$delta = $max - $min;
+		$l     = ( $max + $min ) / 2;
+		$h     = 0;
+		$s     = 0;
+
+		if ( $delta > 0 ) {
+			$s = $delta / ( 1 - abs( 2 * $l - 1 ) );
+
+			if ( $max === $r ) {
+				$h = fmod( ( $g - $b ) / $delta, 6 );
+			} elseif ( $max === $g ) {
+				$h = ( $b - $r ) / $delta + 2;
+			} else {
+				$h = ( $r - $g ) / $delta + 4;
+			}
+
+			$h *= 60;
+
+			if ( $h < 0 ) {
+				$h += 360;
+			}
+		}
+
+		return sprintf( '%s %s%% %s%%', round( $h, 1 ), round( $s * 100, 1 ), round( $l * 100, 1 ) );
 	}
 
 	/**
