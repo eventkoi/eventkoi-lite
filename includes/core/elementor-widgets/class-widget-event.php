@@ -105,6 +105,14 @@ class Event_Widget extends Widget_Base {
 						'label_block' => true,
 					),
 					array(
+						'name'        => 'label',
+						'label'       => __( 'Label', 'eventkoi-lite' ),
+						'type'        => Controls_Manager::TEXT,
+						'default'     => '',
+						'placeholder' => __( 'Text shown before the value', 'eventkoi-lite' ),
+						'label_block' => true,
+					),
+					array(
 						'name'         => 'show',
 						'label'        => __( 'Show', 'eventkoi-lite' ),
 						'type'         => Controls_Manager::SWITCHER,
@@ -282,6 +290,18 @@ class Event_Widget extends Widget_Base {
 					'<div class="eventkoi-data eventkoi-data-' . esc_attr( $data_type ) . '">',
 					$shortcode_output
 				);
+			}
+
+			// An optional label sits inline before the value, the way the block
+			// templates put text around a token ("Starts on", "Series:").
+			$label = sanitize_text_field( (string) ( $item['label'] ?? '' ) );
+			if ( '' !== $label && '' !== trim( (string) $shortcode_output ) ) {
+				$wrapper = '<div class="eventkoi-data eventkoi-data-' . esc_attr( $data_type ) . '">';
+				$labelled = $wrapper . '<span class="eventkoi-label">' . esc_html( $label ) . '</span> ';
+
+				$shortcode_output = false !== strpos( $shortcode_output, $wrapper )
+					? preg_replace( '/' . preg_quote( $wrapper, '/' ) . '/', $labelled, $shortcode_output, 1 )
+					: $labelled . $shortcode_output . '</div>';
 			}
 
 			$output[] = $shortcode_output;
