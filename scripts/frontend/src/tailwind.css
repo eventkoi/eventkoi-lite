@@ -41,11 +41,12 @@
      text. Re-assert the preflight button reset with a real `.eventkoi-front`
      class so it beats those (0,1,1) rules, while our own !important utilities
      (bg-*, h-*, px-*) still override it on real buttons. WordPress block
-     buttons are skipped so they keep the theme's block styling. */
+     buttons and page builder buttons (Elementor, Beaver, Bricks) are skipped
+     so they keep their own styling, also when our scripts re-render one. */
   .eventkoi-front
     :is(button, [type='button'], [type='reset'], [type='submit']):not(
       .wp-block-button__link
-    ):not(.wp-element-button) {
+    ):not(.wp-element-button):not(.elementor-button):not(.fl-button):not(.bricks-button) {
     margin: 0;
     padding: 0;
     border: 0 solid;
@@ -68,7 +69,7 @@
   .eventkoi-front.eventkoi-front
     :is(button, [type='button'], [type='reset'], [type='submit']):not(
       .wp-block-button__link
-    ):not(.wp-element-button)
+    ):not(.wp-element-button):not(.elementor-button):not(.fl-button):not(.bricks-button)
     * {
     color: inherit;
   }

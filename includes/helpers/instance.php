@@ -360,6 +360,10 @@ if ( ! function_exists( 'eventkoi_get_event_data_options' ) ) {
 			'event_rsvp_remaining'        => __( 'Event RSVP Remaining', 'eventkoi-lite' ),
 			'event_rsvp_going'            => __( 'Event RSVP Going', 'eventkoi-lite' ),
 			'event_rsvp_full'             => __( 'Event RSVP Full', 'eventkoi-lite' ),
+			'event_ticket_rsvp'           => __( 'Event Tickets / RSVP', 'eventkoi-lite' ),
+			'event_custom_fields'         => __( 'Event Custom Fields', 'eventkoi-lite' ),
+			'event_custom_fields_with_name' => __( 'Event Custom Fields with Names', 'eventkoi-lite' ),
+			'event_series_dates'          => __( 'Event Series Dates', 'eventkoi-lite' ),
 		);
 	}
 }

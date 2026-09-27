@@ -531,15 +531,12 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 	$output = do_blocks( apply_filters( 'eventkoi_get_calendar_content', $calendar_template ) );
 
 	// Only wrap when viewing a calendar term page.
+	// Plain markup on purpose: a page builder re-parses its widget output as
+	// blocks, and a post-title block there would print whichever post is
+	// global instead of the calendar's name.
 	if ( is_tax( 'event_cal' ) ) {
 		$title = sprintf(
-			'<!-- wp:group {"className":"eventkoi-title"} -->
-		<div class="wp-block-group eventkoi-title" style="%2$s">
-			<!-- wp:post-title {"level":1} -->
-			<h1 class="wp-block-post-title">%1$s</h1>
-			<!-- /wp:post-title -->
-		</div>
-		<!-- /wp:group -->',
+			'<div class="wp-block-group eventkoi-title" style="%2$s"><h1 class="wp-block-post-title">%1$s</h1></div>',
 			esc_html( eventkoi_decode_term_name( $term->name ) ),
 			esc_attr( $style )
 		);

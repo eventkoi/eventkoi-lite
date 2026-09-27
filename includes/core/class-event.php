@@ -5640,6 +5640,84 @@ class Event {
 	}
 
 	/**
+	 * The upcoming dates of a recurring event, as the series block template
+	 * lists them.
+	 *
+	 * Renders the same event query loop the block template carries, so page
+	 * builders show the identical list (upcoming first, paginated) without a
+	 * loop widget of their own. Empty for anything but a recurring event.
+	 *
+	 * @return string Rendered list, or an empty string.
+	 */
+	public static function rendered_series_dates() {
+		if ( 'recurring' !== self::get_date_type() ) {
+			return '';
+		}
+
+		$parent_id = absint( self::get_id() );
+		if ( $parent_id <= 0 ) {
+			return '';
+		}
+
+		$query = array(
+			'perPage'     => 6,
+			'pages'       => 0,
+			'offset'      => 0,
+			'postType'    => 'eventkoi_event',
+			'order'       => 'asc',
+			'orderBy'     => 'start_date',
+			'author'      => '',
+			'search'      => '',
+			'sticky'      => '',
+			'inherit'     => false,
+			'eventkoiSig' => '|||1|1|0|asc|start_date|6|1',
+		);
+
+		$attributes = array(
+			'queryId'               => 197,
+			'query'                 => $query,
+			'namespace'             => 'eventkoi/event-query-loop',
+			'includeInstances'      => true,
+			'showInstancesForEvent' => true,
+			'instanceParentId'      => $parent_id,
+			'className'             => 'eventkoi-query-loop',
+			'listLayoutStyle'       => 'image-left',
+		);
+
+		$markup = '<!-- wp:query ' . wp_json_encode( $attributes ) . ' -->'
+			. '<div class="wp-block-query eventkoi-query-loop"><!-- wp:post-template {"layout":{"type":"default"}} -->'
+			. '<!-- wp:eventkoi/event-query-item -->'
+			. '<!-- wp:group {"className":"eventkoi-event-loop-card","layout":{"type":"default"}} -->'
+			. '<div class="wp-block-group eventkoi-event-loop-card"><!-- wp:columns -->'
+			. '<div class="wp-block-columns"><!-- wp:column {"width":"30%"} -->'
+			. '<div class="wp-block-column" style="flex-basis:30%"><!-- wp:post-featured-image {"className":"eventkoi-event-image-default"} /--></div>'
+			. '<!-- /wp:column -->'
+			. '<!-- wp:column {"width":"70%"} -->'
+			. '<div class="wp-block-column" style="flex-basis:70%"><!-- wp:eventkoi/event-data {"className":"ek-event-title-default"} /-->'
+			. '<!-- wp:eventkoi/event-data {"field":"timeline","className":"ek-event-timeline-default"} /-->'
+			. '<!-- wp:eventkoi/event-data {"field":"excerpt"} /-->'
+			. '<!-- wp:eventkoi/event-data {"field":"location","className":"ek-event-location-default"} /--></div>'
+			. '<!-- /wp:column --></div>'
+			. '<!-- /wp:columns --></div>'
+			. '<!-- /wp:group -->'
+			. '<!-- /wp:eventkoi/event-query-item -->'
+			. '<!-- /wp:post-template -->'
+			. '<!-- wp:query-pagination {"paginationArrow":"arrow","layout":{"type":"flex","justifyContent":"space-between"}} -->'
+			. '<!-- wp:query-pagination-previous /-->'
+			. '<!-- wp:query-pagination-numbers /-->'
+			. '<!-- wp:query-pagination-next /-->'
+			. '<!-- /wp:query-pagination -->'
+			. '<!-- wp:query-no-results -->'
+			. '<!-- wp:paragraph {"placeholder":"No events found."} --><p></p><!-- /wp:paragraph -->'
+			. '<!-- /wp:query-no-results --></div>'
+			. '<!-- /wp:query -->';
+
+		$output = do_blocks( $markup );
+
+		return apply_filters( 'eventkoi_rendered_event_series_dates', $output, self::$event_id, self::$event );
+	}
+
+	/**
 	 * Rendered recurring rule summary string.
 	 *
 	 * @return string Recurrence summary.

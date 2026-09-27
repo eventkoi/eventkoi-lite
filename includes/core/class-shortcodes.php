@@ -134,7 +134,46 @@ class Shortcodes {
 			return $active_event_id;
 		}
 
-		return 0;
+		return self::sample_event_id_for_builder_preview();
+	}
+
+	/**
+	 * A real event to design against while a page builder edits a template.
+	 *
+	 * A library template has no event of its own, so "Current event" would
+	 * show a placeholder in the editor. The most recent published event
+	 * stands in there, and only there: on the live site the resolution above
+	 * still decides, and a page without an event stays empty.
+	 *
+	 * @return int Event id, or 0 outside a builder editor.
+	 */
+	private static function sample_event_id_for_builder_preview() {
+		if ( ! class_exists( '\Elementor\Plugin' ) || empty( \Elementor\Plugin::$instance->editor ) ) {
+			return 0;
+		}
+
+		$editor  = \Elementor\Plugin::$instance->editor;
+		$preview = \Elementor\Plugin::$instance->preview ?? null;
+
+		$in_editor = ( method_exists( $editor, 'is_edit_mode' ) && $editor->is_edit_mode() )
+			|| ( $preview && method_exists( $preview, 'is_preview_mode' ) && $preview->is_preview_mode() );
+
+		if ( ! $in_editor ) {
+			return 0;
+		}
+
+		$events = get_posts(
+			array(
+				'post_type'      => 'eventkoi_event',
+				'post_status'    => 'publish',
+				'posts_per_page' => 1,
+				'orderby'        => 'date',
+				'order'          => 'DESC',
+				'fields'         => 'ids',
+			)
+		);
+
+		return ! empty( $events[0] ) ? absint( $events[0] ) : 0;
 	}
 
 	/**
