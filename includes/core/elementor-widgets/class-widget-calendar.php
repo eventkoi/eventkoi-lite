@@ -295,7 +295,7 @@ class Calendar_Widget extends Widget_Base {
 	 * Render widget output.
 	 */
 	protected function render() {
-		$settings = $this->get_settings_for_display();
+		$settings = self::resolve_global_colors( $this->get_settings_for_display(), (array) $this->get_settings( '__globals__' ) );
 
 		$args = array(
 			'calendars'     => $this->sanitize_calendar_selection( $settings['calendars'] ?? array() ),
@@ -321,13 +321,126 @@ class Calendar_Widget extends Widget_Base {
 		// The other colours feed the calendar's own design tokens. They are
 		// set on a wrapper so every element inside picks them up, in the
 		// editor preview and on the page alike.
-		$style = self::color_style( $settings );
+		$style      = self::color_style( $settings );
+		$wrapper_id = 'eventkoi-elementor-calendar-' . uniqid();
+		$button_css = self::button_css( $wrapper_id, $settings );
 
-		echo '<div class="eventkoi-elementor-calendar"' . ( '' !== $style ? ' style="' . esc_attr( $style ) . '"' : '' ) . '>';
+		if ( '' !== $button_css ) {
+			// Toolbar buttons paint themselves with the calendar background
+			// token, so the Buttons colours need a rule of their own.
+			echo '<style>' . $button_css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Built from sanitized hex colours and a generated id.
+		}
+
+		echo '<div id="' . esc_attr( $wrapper_id ) . '" class="eventkoi-elementor-calendar"' . ( '' !== $style ? ' style="' . esc_attr( $style ) . '"' : '' ) . '>';
 		echo wp_kses_post(
 			eventkoi_get_calendar_content( $calendar_id, 'calendar', $args )
 		);
 		echo '</div>';
+	}
+
+	/**
+	 * Swap Elementor global colour references for their current values.
+	 *
+	 * A colour picked from the site's global palette is stored as a
+	 * reference under __globals__ and the plain setting stays empty, so the
+	 * render has to look the colour up in the active kit.
+	 *
+	 * @param array $settings Widget settings.
+	 * @param array $globals  Global references keyed by control id.
+	 * @return array Settings with the referenced colours filled in.
+	 */
+	private static function resolve_global_colors( array $settings, array $globals ) {
+		if ( empty( $globals ) ) {
+			return $settings;
+		}
+
+		$palette = self::kit_colors();
+
+		foreach ( array_keys( self::color_controls() ) as $control_id ) {
+			$reference = (string) ( $globals[ $control_id ] ?? '' );
+
+			if ( '' === $reference || ! empty( $settings[ $control_id ] ) ) {
+				continue;
+			}
+
+			$query = (string) wp_parse_url( $reference, PHP_URL_QUERY );
+			parse_str( $query, $parts );
+			$color_id = sanitize_key( (string) ( $parts['id'] ?? '' ) );
+
+			if ( '' !== $color_id && isset( $palette[ $color_id ] ) ) {
+				$settings[ $control_id ] = $palette[ $color_id ];
+			}
+		}
+
+		return $settings;
+	}
+
+	/**
+	 * The active kit's global colours, keyed by their id.
+	 *
+	 * @return array<string, string> Hex colours.
+	 */
+	private static function kit_colors() {
+		if ( ! class_exists( '\Elementor\Plugin' ) || empty( \Elementor\Plugin::$instance->kits_manager ) ) {
+			return array();
+		}
+
+		$kit = \Elementor\Plugin::$instance->kits_manager->get_active_kit_for_frontend();
+		if ( ! $kit || ! method_exists( $kit, 'get_settings_for_display' ) ) {
+			return array();
+		}
+
+		$colors = array();
+
+		foreach ( array( 'system_colors', 'custom_colors' ) as $group ) {
+			foreach ( (array) $kit->get_settings_for_display( $group ) as $item ) {
+				$id  = sanitize_key( (string) ( $item['_id'] ?? '' ) );
+				$hex = sanitize_hex_color( (string) ( $item['color'] ?? '' ) );
+
+				if ( '' !== $id && $hex ) {
+					$colors[ $id ] = $hex;
+				}
+			}
+		}
+
+		return $colors;
+	}
+
+	/**
+	 * Rules that paint the toolbar buttons with the Buttons colours.
+	 *
+	 * The toolbar (previous, next, month, Today, Subscribe) uses the
+	 * background token on purpose, so it sits flat on the calendar. The
+	 * Buttons pickers override exactly those buttons; view toggles and
+	 * event chips keep their own colours.
+	 *
+	 * @param string $wrapper_id Id of the widget wrapper.
+	 * @param array  $settings   Widget settings.
+	 * @return string CSS, or an empty string when neither picker is set.
+	 */
+	private static function button_css( $wrapper_id, array $settings ) {
+		$background = sanitize_hex_color( (string) ( $settings['calendar_button_color'] ?? '' ) );
+		$text       = sanitize_hex_color( (string) ( $settings['calendar_button_text_color'] ?? '' ) );
+
+		if ( ! $background && ! $text ) {
+			return '';
+		}
+
+		$selector     = '#' . sanitize_html_class( $wrapper_id ) . ' .eventkoi-front button.bg-background';
+		$declarations = array();
+
+		if ( $background ) {
+			$declarations[] = 'background-color:' . $background . '!important';
+			$declarations[] = 'border-color:' . $background . '!important';
+		}
+
+		if ( $text ) {
+			$declarations[] = 'color:' . $text . '!important';
+		}
+
+		return $selector . '{' . implode( ';', $declarations ) . '}'
+			. $selector . ':hover{filter:brightness(0.95)}'
+			. $selector . ' *{color:inherit!important}';
 	}
 
 	/**

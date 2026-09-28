@@ -85,7 +85,16 @@ export function MultiSelect({
       return v;
     });
 
-    setSelected(merged);
+    // A parent that stores what onSelectionChange hands it passes a new
+    // array back on every render. Without this check that array would be
+    // copied into state, reported back, and so on forever, which stalls
+    // React and freezes navigation.
+    setSelected((prev) => {
+      const same =
+        prev.length === merged.length &&
+        prev.every((item, index) => item.id === merged[index]?.id && item.name === merged[index]?.name);
+      return same ? prev : merged;
+    });
   }, [value, options]);
 
   const handleOpenChange = (nextOpen) => {
