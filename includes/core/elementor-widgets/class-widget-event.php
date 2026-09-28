@@ -304,14 +304,19 @@ class Event_Widget extends Widget_Base {
 					: $labelled . $shortcode_output . '</div>';
 			}
 
-			$output[] = $shortcode_output;
+			// Rows the plugin renders itself (the ticket and RSVP box with its
+			// no-script form, the map mount, the series dates loop) carry
+			// forms and data attributes the description filter would strip,
+			// and are already escaped at the source. Everything else goes
+			// through the same allowed set the event description uses.
+			$output[] = in_array( $data_type, array( 'event_ticket_rsvp', 'event_gmap', 'event_series_dates' ), true )
+				? $shortcode_output
+				: wp_kses( $shortcode_output, \EventKoi\Core\Event::get_description_allowed_html() );
 		}
 
 		if ( ! empty( $output ) ) {
 			echo '<div class="eventkoi-elementor-widget">';
-			// Same allowed set the event description sanitizer uses, so video
-			// embeds the editor legitimately stored survive the widget.
-			echo wp_kses( implode( '', $output ), \EventKoi\Core\Event::get_description_allowed_html() );
+			echo implode( '', $output ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Each row is escaped above or rendered by the plugin's own escaped renderers.
 			echo '</div>';
 		}
 	}
