@@ -323,12 +323,13 @@ class Calendar_Widget extends Widget_Base {
 		// editor preview and on the page alike.
 		$style      = self::color_style( $settings );
 		$wrapper_id = 'eventkoi-elementor-calendar-' . uniqid();
-		$button_css = self::button_css( $wrapper_id, $settings );
+		$extra_css  = self::text_css( $wrapper_id, $settings ) . self::button_css( $wrapper_id, $settings );
 
-		if ( '' !== $button_css ) {
-			// Toolbar buttons paint themselves with the calendar background
-			// token, so the Buttons colours need a rule of their own.
-			echo '<style>' . $button_css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Built from sanitized hex colours and a generated id.
+		if ( '' !== $extra_css ) {
+			// The grid's day numbers, headings and event titles, and the
+			// toolbar buttons, carry fixed colours of their own, so the Text
+			// and Buttons pickers need rules that reach them.
+			echo '<style>' . $extra_css . '</style>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Built from sanitized hex colours and a generated id.
 		}
 
 		echo '<div id="' . esc_attr( $wrapper_id ) . '" class="eventkoi-elementor-calendar"' . ( '' !== $style ? ' style="' . esc_attr( $style ) . '"' : '' ) . '>';
@@ -404,6 +405,38 @@ class Calendar_Widget extends Widget_Base {
 		}
 
 		return $colors;
+	}
+
+	/**
+	 * Rules that paint the calendar grid's own text with the Text colour.
+	 *
+	 * Day headings, day numbers, event titles and the search box have fixed
+	 * colours in the calendar stylesheet, so the Text token alone does not
+	 * reach them. Today's number (white on the accent) and the muted numbers
+	 * of other months are left alone.
+	 *
+	 * @param string $wrapper_id Id of the widget wrapper.
+	 * @param array  $settings   Widget settings.
+	 * @return string CSS, or an empty string when Text is not set.
+	 */
+	private static function text_css( $wrapper_id, array $settings ) {
+		$text = sanitize_hex_color( (string) ( $settings['calendar_text_color'] ?? '' ) );
+
+		if ( ! $text ) {
+			return '';
+		}
+
+		$root      = '#' . sanitize_html_class( $wrapper_id ) . ' .eventkoi-front ';
+		$selectors = array(
+			$root . '.fc .fc-col-header-cell-cushion',
+			$root . '.fc .fc-daygrid-day:not(.fc-day-other):not(.fc-day-today) .fc-daygrid-day-number',
+			$root . '.fc .fc-daygrid-event',
+			$root . '.fc .fc-event-title',
+			$root . '.fc .fc-list-event-title a',
+			$root . 'input[type="search"]',
+		);
+
+		return implode( ',', $selectors ) . '{color:' . $text . '!important}';
 	}
 
 	/**
