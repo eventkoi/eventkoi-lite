@@ -428,11 +428,12 @@ class Ticket_Order_Sync {
 		$base_id   = 'manual_' . strtolower( substr( str_replace( array( '.', ',' ), '', uniqid( '', true ) ), -12 ) );
 		$created   = gmdate( 'Y-m-d H:i:s' );
 		$rows      = 0;
+		$tokens    = array();
 
 		for ( $seat = 1; $seat <= $quantity; $seat++ ) {
 			$seat_order_id = $base_id . ':' . $ticket_id . ( 1 === $seat ? '' : ':seat_' . $seat );
-
-			$rows += self::upsert_row(
+			$token         = self::generate_checkin_token();
+			$inserted      = self::upsert_row(
 				$table,
 				array(
 					'event_id'       => $event_id,
@@ -446,15 +447,20 @@ class Ticket_Order_Sync {
 					'total_amount'   => 0,
 					'currency'       => strtoupper( sanitize_text_field( $currency ) ),
 					'payment_status' => 'complete',
-					'checkin_token'  => self::generate_checkin_token(),
+					'checkin_token'  => $token,
 					'created_at'     => $created,
 				)
 			);
+
+			$rows += $inserted;
+			if ( $inserted ) {
+				$tokens[] = $token;
+			}
 		}
 
 		if ( $rows > 0 ) {
 			self::sync_quantity_sold( $event_id, array( array( 'ticket_id' => $ticket_id ) ) );
-			self::create_manual_order_parent( $base_id, $ticket_id, $quantity, $customer_name, $customer_email, $currency );
+			self::create_manual_order_parent( $base_id, $ticket_id, $quantity, $customer_name, $customer_email, $currency, $tokens );
 		}
 
 		return array(
@@ -478,9 +484,10 @@ class Ticket_Order_Sync {
 	 * @param string $customer_name  Customer name.
 	 * @param string $customer_email Customer email.
 	 * @param string $currency       Three-letter ISO currency code.
+	 * @param array  $tokens         Per-seat check-in tokens written for this order.
 	 * @return void
 	 */
-	private static function create_manual_order_parent( $base_id, $ticket_id, $quantity, $customer_name, $customer_email, $currency ) {
+	private static function create_manual_order_parent( $base_id, $ticket_id, $quantity, $customer_name, $customer_email, $currency, $tokens = array() ) {
 		$now = time();
 
 		\EKLIB\StellarWP\DB\DB::table( 'eventkoi_orders' )->upsert(
@@ -508,7 +515,15 @@ class Ticket_Order_Sync {
 		$order_row = \EKLIB\StellarWP\DB\DB::table( 'eventkoi_orders' )->where( 'checkout_id', (string) $base_id )->get();
 
 		if ( $order_row && ! empty( $order_row->id ) ) {
-			( new Orders() )->add_note( absint( $order_row->id ), 'order_completed' );
+			$orders = new Orders();
+			$orders->add_note( absint( $order_row->id ), 'order_completed' );
+
+			// The confirmation email embeds one QR code per order. Like the
+			// checkout flows, a single seat reuses its own token so the emailed
+			// code and the attendees row match; more seats get a group code.
+			$tokens      = array_values( array_filter( array_map( 'strval', (array) $tokens ) ) );
+			$master_code = 1 === count( $tokens ) ? $tokens[0] : self::generate_checkin_token();
+			$orders->add_note( absint( $order_row->id ), 'master_checkin_code', $master_code );
 		}
 	}
 

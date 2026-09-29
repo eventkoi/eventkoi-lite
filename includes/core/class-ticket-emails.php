@@ -92,6 +92,35 @@ class Ticket_Emails {
 	}
 
 	/**
+	 * Send the ticket confirmation email for an order that already exists locally.
+	 *
+	 * Used when an admin adds an attendee by hand and asks for the confirmation
+	 * to go out. The order rows are already in place, so the post-send local
+	 * sync is skipped rather than rewriting the same seat rows.
+	 *
+	 * @param string $order_id Order ID (manual_xxx, checkout id or wc_xxx).
+	 * @return bool Whether the email was sent.
+	 */
+	public static function send_for_order_id( $order_id ) {
+		$order_id = sanitize_text_field( (string) $order_id );
+		if ( '' === $order_id ) {
+			return false;
+		}
+
+		if ( preg_match( '/^wc_(\d+)/', $order_id, $m ) ) {
+			$order = self::build_order_from_wc( (int) $m[1] );
+		} else {
+			$order = self::get_order_by_id( $order_id );
+		}
+
+		if ( is_wp_error( $order ) ) {
+			return false;
+		}
+
+		return self::send_for_order( $order, false, false );
+	}
+
+	/**
 	 * Build an order payload from a WooCommerce order for email sending.
 	 *
 	 * @param int $wc_order_id WC order ID.
@@ -207,9 +236,10 @@ class Ticket_Emails {
 	 *
 	 * @param array $order Order payload from edge.
 	 * @param bool  $skip_if_note_exists Skip if confirmation note already exists.
+	 * @param bool  $sync_local Whether to sync the order rows locally after sending.
 	 * @return bool
 	 */
-	private static function send_for_order( $order, $skip_if_note_exists = false ) {
+	private static function send_for_order( $order, $skip_if_note_exists = false, $sync_local = true ) {
 		if ( ! is_array( $order ) ) {
 			return false;
 		}
@@ -398,7 +428,9 @@ class Ticket_Emails {
 
 		if ( $sent && '' !== $order_id ) {
 			self::add_confirmation_note( $order_id );
-			Ticket_Order_Sync::sync_order_to_local( $order );
+			if ( $sync_local ) {
+				Ticket_Order_Sync::sync_order_to_local( $order );
+			}
 		}
 
 		return (bool) $sent;
@@ -808,8 +840,8 @@ class Ticket_Emails {
 			$local_id = (int) $m[1];
 		} elseif ( ctype_digit( $order_id ) ) {
 			$local_id = (int) $order_id;
-		} elseif ( 0 === strpos( $order_id, 'free_' ) ) {
-			// Free checkout passes its checkout_id; resolve the local order row.
+		} elseif ( '' !== $order_id ) {
+			// Free and manual checkouts pass their checkout_id; resolve the local order row.
 			$row      = \EKLIB\StellarWP\DB\DB::table( 'eventkoi_orders' )->where( 'checkout_id', $order_id )->get();
 			$local_id = ( $row && ! empty( $row->id ) ) ? (int) $row->id : 0;
 		}
@@ -847,13 +879,16 @@ class Ticket_Emails {
 			return self::build_order_from_wc( (int) $m[1] );
 		}
 
-		// Non-WC orders: query local ticket_orders table.
+		// Non-WC orders: query local ticket_orders table. Seat rows are keyed
+		// by the base order id plus ":ticket" and ":seat_n" suffixes.
 		global $wpdb;
 		$table = $wpdb->prefix . 'eventkoi_ticket_orders';
-		$rows  = $wpdb->get_results(
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM {$table} WHERE order_id = %s LIMIT 10",
-				$order_id
+				"SELECT * FROM {$table} WHERE order_id = %s OR order_id LIKE %s ORDER BY id ASC LIMIT 100", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$order_id,
+				$wpdb->esc_like( $order_id ) . ':%'
 			),
 			ARRAY_A
 		);
@@ -862,34 +897,78 @@ class Ticket_Emails {
 			return new WP_Error( 'order_not_found', __( 'Order not found.', 'eventkoi-lite' ), array( 'status' => 404 ) );
 		}
 
-		$first = $rows[0];
-		$items = array();
+		$tickets_tbl  = $wpdb->prefix . 'eventkoi_tickets';
+		$ticket_names = array();
+		$first        = $rows[0];
+		$items        = array();
+		$all_codes    = array();
+		$instance_ts  = 0;
 		foreach ( $rows as $row ) {
-			$tid  = absint( $row['ticket_id'] ?? 0 );
-			$name = $tid ? get_the_title( $tid ) : '';
+			$tid = absint( $row['ticket_id'] ?? 0 );
+			if ( $tid && ! isset( $ticket_names[ $tid ] ) ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+				$ticket_names[ $tid ] = (string) $wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT name FROM {$tickets_tbl} WHERE id = %d LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+						$tid
+					)
+				);
+			}
+			if ( ! $instance_ts && ! empty( $row['instance_ts'] ) ) {
+				$instance_ts = absint( $row['instance_ts'] );
+			}
+
+			$token = sanitize_text_field( (string) ( $row['checkin_token'] ?? '' ) );
+			if ( '' !== $token ) {
+				$all_codes[] = $token;
+			}
+
 			$items[] = array(
-				'ticket_id' => $tid,
-				'name'      => $name,
-				'quantity'  => absint( $row['quantity'] ?? 1 ),
-				'price'     => (int) round( floatval( $row['unit_price'] ?? 0 ) * 100 ),
+				'ticket_id'    => $tid,
+				'ticket_name'  => $ticket_names[ $tid ] ?? '',
+				'name'         => $ticket_names[ $tid ] ?? '',
+				'quantity'     => absint( $row['quantity'] ?? 1 ),
+				'price'        => (int) round( floatval( $row['unit_price'] ?? 0 ) * 100 ),
+				'ticket_codes' => '' !== $token ? array( $token ) : array(),
 			);
 		}
 
+		// The emailed QR carries the order's group code when one was stored on
+		// the parent order; a single seat falls back to its own token.
+		$master_checkin_code = '';
+		$parent              = \EKLIB\StellarWP\DB\DB::table( 'eventkoi_orders' )->where( 'checkout_id', $order_id )->get();
+		if ( $parent && ! empty( $parent->id ) ) {
+			$notes_tbl = $wpdb->prefix . 'eventkoi_order_notes';
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$master_checkin_code = (string) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT note_value FROM {$notes_tbl} WHERE order_id = %d AND note_key = %s ORDER BY id DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					(int) $parent->id,
+					'master_checkin_code'
+				)
+			);
+		}
+		if ( '' === $master_checkin_code && 1 === count( $all_codes ) ) {
+			$master_checkin_code = $all_codes[0];
+		}
+
 		return array(
-			'id'             => $order_id,
-			'order_id'       => $order_id,
-			'status'         => (string) ( $first['payment_status'] ?? '' ),
-			'payment_status' => (string) ( $first['payment_status'] ?? '' ),
-			'customer_email' => (string) ( $first['customer_email'] ?? '' ),
-			'customer_name'  => (string) ( $first['customer_name'] ?? '' ),
-			'event_id'       => absint( $first['event_id'] ?? 0 ),
-			'event_instance_ts' => 0,
-			'currency'       => strtolower( (string) ( $first['currency'] ?? 'usd' ) ),
-			'items'          => $items,
-			'metadata'       => array(
-				'event_id'    => (string) absint( $first['event_id'] ?? 0 ),
-				'event_title' => get_the_title( absint( $first['event_id'] ?? 0 ) ),
-				'instance_ts' => (string) 0,
+			'id'                  => $order_id,
+			'order_id'            => $order_id,
+			'status'              => (string) ( $first['payment_status'] ?? '' ),
+			'payment_status'      => (string) ( $first['payment_status'] ?? '' ),
+			'customer_email'      => (string) ( $first['customer_email'] ?? '' ),
+			'customer_name'       => (string) ( $first['customer_name'] ?? '' ),
+			'event_id'            => absint( $first['event_id'] ?? 0 ),
+			'event_instance_ts'   => $instance_ts,
+			'master_checkin_code' => $master_checkin_code,
+			'currency'            => strtolower( (string) ( $first['currency'] ?? 'usd' ) ),
+			'items'               => $items,
+			'metadata'            => array(
+				'event_id'          => (string) absint( $first['event_id'] ?? 0 ),
+				'event_title'       => get_the_title( absint( $first['event_id'] ?? 0 ) ),
+				'instance_ts'       => (string) $instance_ts,
+				'event_instance_ts' => (string) $instance_ts,
 			),
 		);
 	}

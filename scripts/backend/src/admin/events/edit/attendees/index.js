@@ -401,6 +401,7 @@ function AddAttendeeDialog({ event, instanceTs, onAdded }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [quantity, setQuantity] = useState("1");
+  const [sendEmail, setSendEmail] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
@@ -434,18 +435,22 @@ function AddAttendeeDialog({ event, instanceTs, onAdded }) {
     };
   }, [open, event?.id]);
 
+  const hasEmail = email.trim() !== "";
+  const willSendEmail = sendEmail && hasEmail;
+
   const resetForm = () => {
     setTicketId("");
     setName("");
     setEmail("");
     setQuantity("1");
+    setSendEmail(false);
   };
 
   const handleSubmit = async () => {
     if (!ticketId || !name.trim() || isSaving) return;
     setIsSaving(true);
     try {
-      await apiRequest({
+      const response = await apiRequest({
         path: `${eventkoi_params.api}/tickets/orders/add-attendee`,
         method: "POST",
         data: {
@@ -454,11 +459,28 @@ function AddAttendeeDialog({ event, instanceTs, onAdded }) {
           name: name.trim(),
           email: email.trim(),
           quantity: Math.max(1, parseInt(quantity, 10) || 1),
+          send_email: willSendEmail,
           ...(instanceTs ? { instance_ts: Number(instanceTs) } : {}),
         },
         headers: { "EVENTKOI-API-KEY": eventkoi_params.api_key },
       });
-      showToast({ message: __("Attendee added.", "eventkoi-lite") });
+      if (response?.email_requested && response?.email_sent) {
+        showToast({
+          message: __(
+            "Attendee added and confirmation email sent.",
+            "eventkoi-lite"
+          ),
+        });
+      } else if (response?.email_requested) {
+        showToast({
+          message: __(
+            "Attendee added, but the confirmation email could not be sent.",
+            "eventkoi-lite"
+          ),
+        });
+      } else {
+        showToast({ message: __("Attendee added.", "eventkoi-lite") });
+      }
       setOpen(false);
       resetForm();
       onAdded?.();
@@ -552,9 +574,28 @@ function AddAttendeeDialog({ event, instanceTs, onAdded }) {
               className="w-24"
             />
           </div>
+          <label
+            className={cn(
+              "flex items-start gap-3 text-sm leading-6 text-foreground",
+              !hasEmail && "text-muted-foreground"
+            )}
+          >
+            <Checkbox
+              className="mt-1"
+              checked={willSendEmail}
+              disabled={!hasEmail}
+              onCheckedChange={(next) => setSendEmail(!!next)}
+            />
+            <span>
+              {__(
+                "Send purchase confirmation email with check-in code",
+                "eventkoi-lite"
+              )}
+            </span>
+          </label>
           <p className="text-xs text-muted-foreground">
             {__(
-              "Added as a free, completed order with its own check-in code. No email is sent automatically.",
+              "Added as a free, completed order with its own check-in code.",
               "eventkoi-lite"
             )}
           </p>

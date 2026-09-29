@@ -1316,6 +1316,7 @@ class Tickets {
 		$quantity    = absint( $request->get_param( 'quantity' ) );
 		$quantity    = max( 1, min( $quantity ? $quantity : 1, 100 ) );
 		$instance_ts = absint( $request->get_param( 'instance_ts' ) );
+		$send_email  = filter_var( $request->get_param( 'send_email' ), FILTER_VALIDATE_BOOLEAN );
 
 		if ( '' === $name ) {
 			return new WP_Error( 'missing_name', __( 'An attendee name is required.', 'eventkoi-lite' ), array( 'status' => 400 ) );
@@ -1384,11 +1385,20 @@ class Tickets {
 			return new WP_Error( 'insert_failed', __( 'The attendee could not be added.', 'eventkoi-lite' ), array( 'status' => 500 ) );
 		}
 
+		// Optional: email the purchase confirmation (with the QR check-in code)
+		// the same way a checkout would. Needs an address to send to.
+		$email_requested = $send_email && '' !== $email;
+		$email_sent      = $email_requested
+			? \EventKoi\Core\Ticket_Emails::send_for_order_id( (string) $result['order_id'] )
+			: false;
+
 		return new WP_REST_Response(
 			array(
-				'success'  => true,
-				'order_id' => (string) $result['order_id'],
-				'quantity' => (int) $result['rows'],
+				'success'         => true,
+				'order_id'        => (string) $result['order_id'],
+				'quantity'        => (int) $result['rows'],
+				'email_requested' => $email_requested,
+				'email_sent'      => (bool) $email_sent,
 			),
 			200
 		);
