@@ -92,6 +92,7 @@ export function Calendar(props) {
   const [listMonthDate, setListMonthDate] = useState(null);
   const [search, setSearch] = useState("");
   const [searchResults, setSearchResults] = useState([]);
+  const [searchPending, setSearchPending] = useState(false);
 
   const effectiveId = calendars || id;
   const trimmedSearch = (search || "").trim();
@@ -226,9 +227,13 @@ export function Calendar(props) {
   useEffect(() => {
     if (!isGlobalSearch || activeDisplay === "list") {
       setSearchResults([]);
+      setSearchPending(false);
       return undefined;
     }
 
+    // The popover must not say "No events found" while the request is still
+    // on its way, so it knows a search is pending until the response lands.
+    setSearchPending(true);
     let active = true;
     const handle = setTimeout(async () => {
       try {
@@ -244,10 +249,12 @@ export function Calendar(props) {
         });
         if (active) {
           setSearchResults(Array.isArray(res?.events) ? res.events : []);
+          setSearchPending(false);
         }
       } catch {
         if (active) {
           setSearchResults([]);
+          setSearchPending(false);
         }
       }
     }, 250);
@@ -306,6 +313,7 @@ export function Calendar(props) {
           isGlobalSearch && activeDisplay !== "list" ? searchResults : allEvents
         }
         globalSearch={isGlobalSearch}
+        searching={isGlobalSearch && activeDisplay !== "list" && searchPending}
         timezone={timezone}
         timeFormat={timeFormat}
         search={search}

@@ -218,6 +218,7 @@ export function SearchBox({
   searchScope,
   onSearchScopePrev,
   onSearchScopeNext,
+  searching = false,
 }) {
   const isLoading = events === undefined || events === null;
   const isEmpty = !isLoading && events.length === 0;
@@ -261,7 +262,7 @@ export function SearchBox({
     <div
       ref={containerRef}
       className="relative w-full min-w-0 lg:w-[350px] lg:max-w-full"
-      aria-busy={isLoading}
+      aria-busy={isLoading || searching}
       aria-live="polite"
     >
       {/* Hidden accessible label */}
@@ -317,7 +318,7 @@ export function SearchBox({
         aria-hidden="true"
         className="absolute inset-y-0 left-3 flex items-center text-muted-foreground pointer-events-none"
       >
-        {isLoading ? (
+        {isLoading || searching ? (
           <Loader2 className="w-4 h-4 animate-spin" />
         ) : (
           <Search className="w-4 h-4" />
@@ -328,6 +329,8 @@ export function SearchBox({
       <div className="sr-only" role="status">
         {isLoading
           ? __("Loading events...", "eventkoi-lite")
+          : searching
+          ? __("Searching...", "eventkoi-lite")
           : isEmpty
           ? __("No events found.", "eventkoi-lite")
           : sprintf(
@@ -355,7 +358,11 @@ export function SearchBox({
               </div>
             ) : null}
 
-            {filteredResults.length === 0 ? (
+            {filteredResults.length === 0 && searching ? (
+              <div className="p-4 text-muted-foreground text-sm">
+                {__("Searching...", "eventkoi-lite")}
+              </div>
+            ) : filteredResults.length === 0 ? (
               <CommandEmpty className="p-4 text-muted-foreground text-sm">
                 {__("No events found.", "eventkoi-lite")}
               </CommandEmpty>

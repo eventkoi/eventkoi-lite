@@ -19,6 +19,7 @@ export function CalendarToolbar({
   setSearch,
   events,
   globalSearch = false,
+  searching = false,
   timezone,
   timeFormat,
   feedUrl,
@@ -97,6 +98,7 @@ export function CalendarToolbar({
   })();
 
   const props = {
+    searching,
     calendar,
     calendarApi,
     currentDate,
