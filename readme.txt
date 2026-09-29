@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.4.5.1
+Stable tag: 1.4.6.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,21 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.4.6.0 – Elementor calendar colours, attendee emails and calendar fixes – 2026-09-29 =
+* New: Colour pickers on the Elementor calendar widget, which now starts on a white background instead of inheriting grey page colours. Elementor global colours are honoured.
+* New: When adding an attendee by hand, tick a box to email them the ticket confirmation with their check-in code.
+* New: A Series dates data row for page builders, and the Elementor editor previews the Event widget with a real event.
+* Improvement: Event Data rows in the Elementor Event widget can carry a label, so templates read like the block templates.
+* Improvement: The Text colour on the Elementor calendar widget now reaches the day headings, day numbers, event titles and search box.
+* Improvement: Calendar page headings use plain markup, and builder buttons inside the calendar keep their own styling.
+* Fix: Calendar search stayed disabled in months without events, and a search in list view said nothing was found while the list showed the matches. Search now works in any month and shows a searching state until the results arrive.
+* Fix: The month dropdown label could take the button text colour from Beaver Builder global styles and turn white on white.
+* Fix: In narrow columns the toolbar could cover the month picker and the Today button. It now wraps onto extra lines.
+* Fix: Switching from the month grid to list view kept the list on a stale month, and the new month is queried on the first render after a toolbar click.
+* Fix: A multi-select field could lock up the page when its selection was passed straight back to it.
+* Fix: The ticket form and map inside the Elementor Event widget were stripped by output filtering and could not render.
+* Fix: A Stripe webhook saved by an earlier version could come back unreadable and log warnings. It is now read safely.
 
 = 1.4.5.1 – Calendar settings clarity – 2026-09-21 =
 * Improvement: The Calendar & week settings now explain that they apply globally and can also be adjusted per calendar, and the divider lines between settings sections were removed for a cleaner layout.

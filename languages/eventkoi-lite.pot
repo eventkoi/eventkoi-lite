@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: EventKoi Lite 1.3.32.0\n"
+"Project-Id-Version: EventKoi Lite 1.4.6.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/eventkoi-lite\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-26T07:59:57+00:00\n"
+"POT-Creation-Date: 2026-09-29T13:55:16+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -343,6 +343,14 @@ msgid "This will permanently delete this RSVP."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
+msgid "Attendee added and confirmation email sent."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Attendee added, but the confirmation email could not be sent."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
 msgid "Attendee added."
 msgstr ""
 
@@ -385,7 +393,11 @@ msgid "Quantity"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-msgid "Added as a free, completed order with its own check-in code. No email is sent automatically."
+msgid "Send purchase confirmation email with check-in code"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Added as a free, completed order with its own check-in code."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
@@ -402,7 +414,7 @@ msgid "Sending ticket confirmation..."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-ticket-emails.php:819
+#: includes/core/class-ticket-emails.php:851
 msgid "Ticket confirmation sent."
 msgstr ""
 
@@ -683,10 +695,6 @@ msgid "and shortcodes"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-msgid "Taxonomies"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
 msgid "Price from"
 msgstr ""
 
@@ -723,7 +731,7 @@ msgid "Failed to load tickets."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/api/class-tickets.php:2461
+#: includes/api/class-tickets.php:2471
 msgid "Ticket name is required."
 msgstr ""
 
@@ -1216,6 +1224,7 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-bindings.php:49
+#: includes/core/class-seo-compat.php:78
 msgid "Event location"
 msgstr ""
 
@@ -1257,7 +1266,7 @@ msgid "Sent after a completed ticket purchase and when manually resent."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-ticket-emails.php:336
+#: includes/core/class-ticket-emails.php:366
 msgid "[event_name]: Ticket details"
 msgstr ""
 
@@ -1345,6 +1354,7 @@ msgid "New RSVP: [event_name]"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
+#: includes/core/class-seo-compat.php:53
 msgid "Event date and time"
 msgstr ""
 
@@ -1361,7 +1371,7 @@ msgid "Sent to the site admin when a ticket order is completed."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-ticket-emails.php:1289
+#: includes/core/class-ticket-emails.php:1368
 msgid "New ticket sale: [event_name]"
 msgstr ""
 
@@ -1664,9 +1674,13 @@ msgid "Calendar & week"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-beaver-modules.php:173
-#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:94
-#: includes/core/elementor-widgets/class-widget-calendar.php:156
+msgid "These settings are applied at a global level. They can also be adjusted at a calendar level."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+#: includes/core/class-beaver-modules.php:182
+#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:105
+#: includes/core/elementor-widgets/class-widget-calendar.php:169
 msgid "Week starts on"
 msgstr ""
 
@@ -1914,9 +1928,10 @@ msgid "Ticket line %d"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-ticket-emails.php:595
-#: includes/core/class-ticket-emails.php:652
-#: includes/core/class-ticket-emails.php:687
+#: includes/core/class-ticket-emails.php:627
+#: includes/core/class-ticket-emails.php:684
+#: includes/core/class-ticket-emails.php:719
+#: includes/core/class-ticket-fallback.php:140
 msgid "Ticket"
 msgstr ""
 
@@ -2048,8 +2063,9 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-event.php:4138
-#: includes/core/class-ticket-emails.php:347
+#: includes/core/class-event.php:4215
+#: includes/core/class-ticket-emails.php:377
+#: includes/core/class-ticket-fallback.php:135
 msgid "Tickets"
 msgstr ""
 
@@ -2091,6 +2107,7 @@ msgid "List"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
+#: includes/core/elementor-widgets/class-widget-calendar.php:490
 msgid "Accent"
 msgstr ""
 
@@ -2113,110 +2130,122 @@ msgid "Show %s view"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
+#: includes/core/class-beaver-modules.php:157
+#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:94
+#: includes/core/elementor-widgets/class-widget-calendar.php:134
+msgid "Show timezone"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+#: includes/core/elementor-widgets/class-widget-calendar.php:140
+msgid "Show the timezone label above the calendar."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
 #: includes/core/class-beaver-modules.php:122
 #: includes/core/elementor-widgets/class-widget-calendar.php:96
 msgid "Timeframe defaults to"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-beaver-modules.php:158
-#: includes/core/elementor-widgets/class-widget-calendar.php:134
+#: includes/core/class-beaver-modules.php:167
+#: includes/core/elementor-widgets/class-widget-calendar.php:147
 msgid "Default month to display"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/elementor-widgets/class-widget-calendar.php:308
+#: includes/core/elementor-widgets/class-widget-calendar.php:620
 #: includes/helpers/instance.php:133
 msgid "Current month"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:5667
-#: includes/core/elementor-widgets/class-widget-calendar.php:309
+#: includes/core/class-event.php:5822
+#: includes/core/elementor-widgets/class-widget-calendar.php:621
 #: includes/helpers/instance.php:134
 msgid "January"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:5668
-#: includes/core/elementor-widgets/class-widget-calendar.php:310
+#: includes/core/class-event.php:5823
+#: includes/core/elementor-widgets/class-widget-calendar.php:622
 #: includes/helpers/instance.php:135
 msgid "February"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:5669
-#: includes/core/elementor-widgets/class-widget-calendar.php:311
+#: includes/core/class-event.php:5824
+#: includes/core/elementor-widgets/class-widget-calendar.php:623
 #: includes/helpers/instance.php:136
 msgid "March"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:5670
-#: includes/core/elementor-widgets/class-widget-calendar.php:312
+#: includes/core/class-event.php:5825
+#: includes/core/elementor-widgets/class-widget-calendar.php:624
 #: includes/helpers/instance.php:137
 msgid "April"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:5671
-#: includes/core/elementor-widgets/class-widget-calendar.php:313
+#: includes/core/class-event.php:5826
+#: includes/core/elementor-widgets/class-widget-calendar.php:625
 #: includes/helpers/instance.php:138
 msgid "May"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:5672
-#: includes/core/elementor-widgets/class-widget-calendar.php:314
+#: includes/core/class-event.php:5827
+#: includes/core/elementor-widgets/class-widget-calendar.php:626
 #: includes/helpers/instance.php:139
 msgid "June"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:5673
-#: includes/core/elementor-widgets/class-widget-calendar.php:315
+#: includes/core/class-event.php:5828
+#: includes/core/elementor-widgets/class-widget-calendar.php:627
 #: includes/helpers/instance.php:140
 msgid "July"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:5674
-#: includes/core/elementor-widgets/class-widget-calendar.php:316
+#: includes/core/class-event.php:5829
+#: includes/core/elementor-widgets/class-widget-calendar.php:628
 #: includes/helpers/instance.php:141
 msgid "August"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:5675
-#: includes/core/elementor-widgets/class-widget-calendar.php:317
+#: includes/core/class-event.php:5830
+#: includes/core/elementor-widgets/class-widget-calendar.php:629
 #: includes/helpers/instance.php:142
 msgid "September"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:5676
-#: includes/core/elementor-widgets/class-widget-calendar.php:318
+#: includes/core/class-event.php:5831
+#: includes/core/elementor-widgets/class-widget-calendar.php:630
 #: includes/helpers/instance.php:143
 msgid "October"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:5677
-#: includes/core/elementor-widgets/class-widget-calendar.php:319
+#: includes/core/class-event.php:5832
+#: includes/core/elementor-widgets/class-widget-calendar.php:631
 #: includes/helpers/instance.php:144
 msgid "November"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:5678
-#: includes/core/elementor-widgets/class-widget-calendar.php:320
+#: includes/core/class-event.php:5833
+#: includes/core/elementor-widgets/class-widget-calendar.php:632
 #: includes/helpers/instance.php:145
 msgid "December"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-beaver-modules.php:165
-#: includes/core/elementor-widgets/class-widget-calendar.php:145
+#: includes/core/class-beaver-modules.php:174
+#: includes/core/elementor-widgets/class-widget-calendar.php:158
 msgid "Default year to display"
 msgstr ""
 
@@ -2225,6 +2254,7 @@ msgid "Current year"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
+#: includes/core/elementor-widgets/class-widget-calendar.php:181
 msgid "Colors"
 msgstr ""
 
@@ -2308,7 +2338,7 @@ msgid "Event Source"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-beaver-modules.php:259
+#: includes/core/class-beaver-modules.php:268
 #: includes/core/elementor-widgets/class-widget-event.php:83
 msgid "Select Event"
 msgstr ""
@@ -2555,7 +2585,7 @@ msgid "RSVP going"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:5561
+#: includes/core/class-event.php:5638
 msgid "RSVP full"
 msgstr ""
 
@@ -2736,9 +2766,9 @@ msgid "Transparent"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-beaver-modules.php:198
-#: includes/core/elementor-widgets/class-widget-calendar.php:196
-#: includes/core/elementor-widgets/class-widget-calendar.php:227
+#: includes/core/class-beaver-modules.php:207
+#: includes/core/elementor-widgets/class-widget-calendar.php:237
+#: includes/core/elementor-widgets/class-widget-calendar.php:268
 msgid "Color"
 msgstr ""
 
@@ -2852,57 +2882,57 @@ msgid "(e.g. %1$s%2$s)"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:5585
-#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:99
-#: includes/core/elementor-widgets/class-widget-calendar.php:331
+#: includes/core/class-event.php:5740
+#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:110
+#: includes/core/elementor-widgets/class-widget-calendar.php:643
 #: includes/helpers/instance.php:158
 msgid "Monday"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:5586
-#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:100
-#: includes/core/elementor-widgets/class-widget-calendar.php:332
+#: includes/core/class-event.php:5741
+#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:111
+#: includes/core/elementor-widgets/class-widget-calendar.php:644
 #: includes/helpers/instance.php:159
 msgid "Tuesday"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:5587
-#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:101
-#: includes/core/elementor-widgets/class-widget-calendar.php:333
+#: includes/core/class-event.php:5742
+#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:112
+#: includes/core/elementor-widgets/class-widget-calendar.php:645
 #: includes/helpers/instance.php:160
 msgid "Wednesday"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:5588
-#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:102
-#: includes/core/elementor-widgets/class-widget-calendar.php:334
+#: includes/core/class-event.php:5743
+#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:113
+#: includes/core/elementor-widgets/class-widget-calendar.php:646
 #: includes/helpers/instance.php:161
 msgid "Thursday"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:5589
-#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:103
-#: includes/core/elementor-widgets/class-widget-calendar.php:335
+#: includes/core/class-event.php:5744
+#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:114
+#: includes/core/elementor-widgets/class-widget-calendar.php:647
 #: includes/helpers/instance.php:162
 msgid "Friday"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:5590
-#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:104
-#: includes/core/elementor-widgets/class-widget-calendar.php:336
+#: includes/core/class-event.php:5745
+#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:115
+#: includes/core/elementor-widgets/class-widget-calendar.php:648
 #: includes/helpers/instance.php:163
 msgid "Saturday"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:5584
-#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:98
-#: includes/core/elementor-widgets/class-widget-calendar.php:337
+#: includes/core/class-event.php:5739
+#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:109
+#: includes/core/elementor-widgets/class-widget-calendar.php:649
 #: includes/helpers/instance.php:164
 msgid "Sunday"
 msgstr ""
@@ -2917,6 +2947,10 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 msgid "Default time frame to display"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Show the timezone label above the calendar. Turn it off to hide it."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
@@ -3142,7 +3176,7 @@ msgstr ""
 #: includes/core/class-post-types.php:116
 #: includes/core/class-rsvps.php:1400
 #: includes/core/class-template.php:151
-#: includes/core/class-ticket-emails.php:907
+#: includes/core/class-ticket-emails.php:986
 #: includes/core/class-woocommerce-checkout.php:501
 #: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:29
 #: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:44
@@ -3247,27 +3281,27 @@ msgid "Attendees purchase one ticket that covers the whole event, instead of one
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:5594
+#: includes/core/class-event.php:5749
 msgid "first"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:5595
+#: includes/core/class-event.php:5750
 msgid "second"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:5596
+#: includes/core/class-event.php:5751
 msgid "third"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:5597
+#: includes/core/class-event.php:5752
 msgid "fourth"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:5598
+#: includes/core/class-event.php:5753
 msgid "fifth"
 msgstr ""
 
@@ -3352,8 +3386,8 @@ msgid "Notification"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:1850
-#: includes/core/class-event.php:2093
+#: includes/core/class-event.php:1921
+#: includes/core/class-event.php:2164
 msgid "Date and time to be confirmed"
 msgstr ""
 
@@ -3689,6 +3723,24 @@ msgstr ""
 msgid "RSVP"
 msgstr ""
 
+#. translators: %s: taxonomy plural label, lowercase
+#. translators: %s: month name
+#: scripts/backend/build/index.js:1
+#: scripts/frontend/build/index.js:1
+#, js-format
+msgid "Select %s"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "No terms found."
+msgstr ""
+
+#. translators: %s: taxonomy plural label, lowercase
+#: scripts/backend/build/index.js:1
+#, js-format
+msgid "Search %s"
+msgstr ""
+
 #: scripts/backend/build/index.js:1
 msgid "Event template"
 msgstr ""
@@ -3862,8 +3914,8 @@ msgid "Live"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/core-functions.php:1163
-#: includes/core/core-functions.php:1164
+#: includes/core/core-functions.php:1165
+#: includes/core/core-functions.php:1166
 msgid "Completed"
 msgstr ""
 
@@ -4050,22 +4102,22 @@ msgid "Payment failed"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/core-functions.php:1165
+#: includes/core/core-functions.php:1167
 msgid "Refunded"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/core-functions.php:1166
+#: includes/core/core-functions.php:1168
 msgid "Partially refunded"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/core-functions.php:1168
+#: includes/core/core-functions.php:1170
 msgid "Pending payment"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/core-functions.php:1167
+#: includes/core/core-functions.php:1169
 msgid "Failed"
 msgstr ""
 
@@ -4256,6 +4308,10 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 msgid "Install and activate WooCommerce to start selling tickets."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Check out with SureCart on your event pages."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
@@ -4493,7 +4549,7 @@ msgid "More pages"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:1270
+#: includes/core/class-event.php:1341
 msgid "YouTube video"
 msgstr ""
 
@@ -4884,12 +4940,6 @@ msgstr ""
 msgid "Go to next year"
 msgstr ""
 
-#. translators: %s: month name
-#: scripts/frontend/build/index.js:1
-#, js-format
-msgid "Select %s"
-msgstr ""
-
 #: scripts/frontend/build/index.js:1
 msgid "Copy event link to clipboard"
 msgstr ""
@@ -4908,6 +4958,10 @@ msgstr ""
 
 #: scripts/frontend/build/index.js:1
 msgid "Loading events..."
+msgstr ""
+
+#: scripts/frontend/build/index.js:1
+msgid "Searching..."
 msgstr ""
 
 #. translators: %d: number of events found
@@ -5114,12 +5168,12 @@ msgid "This event is fully booked."
 msgstr ""
 
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-ticket-emails.php:308
+#: includes/core/class-ticket-emails.php:338
 msgid "Check-in code:"
 msgstr ""
 
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-event.php:5148
+#: includes/core/class-event.php:5225
 msgid "Sold out"
 msgstr ""
 
@@ -5128,8 +5182,8 @@ msgid "Unable to load tickets."
 msgstr ""
 
 #: scripts/frontend/build/index.js:1
-#: includes/api/class-tickets.php:1645
-#: includes/api/class-tickets.php:1657
+#: includes/api/class-tickets.php:1655
+#: includes/api/class-tickets.php:1667
 msgid "This event has ended and is no longer accepting ticket purchases."
 msgstr ""
 
@@ -5142,12 +5196,12 @@ msgid "Please enter a valid email address."
 msgstr ""
 
 #: scripts/frontend/build/index.js:1
-#: includes/api/class-tickets.php:1680
+#: includes/api/class-tickets.php:1690
 msgid "Please agree to the terms & conditions to continue."
 msgstr ""
 
 #: scripts/frontend/build/index.js:1
-#: includes/api/class-tickets.php:1688
+#: includes/api/class-tickets.php:1698
 msgid "Please agree to all required terms to continue."
 msgstr ""
 
@@ -5231,7 +5285,7 @@ msgid "Not on sale"
 msgstr ""
 
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-event.php:4152
+#: includes/core/class-event.php:4229
 msgid "Get tickets"
 msgstr ""
 
@@ -5244,6 +5298,7 @@ msgid "Select tickets and complete billing information to continue to payment."
 msgstr ""
 
 #: scripts/frontend/build/index.js:1
+#: includes/core/class-ticket-fallback.php:196
 msgid "Buy tickets"
 msgstr ""
 
@@ -5326,6 +5381,7 @@ msgid "Billing information"
 msgstr ""
 
 #: scripts/frontend/build/index.js:1
+#: includes/core/class-ticket-fallback.php:169
 msgid "First name"
 msgstr ""
 
@@ -5334,6 +5390,7 @@ msgid "First name is required."
 msgstr ""
 
 #: scripts/frontend/build/index.js:1
+#: includes/core/class-ticket-fallback.php:173
 msgid "Last name"
 msgstr ""
 
@@ -5342,6 +5399,7 @@ msgid "Last name is required."
 msgstr ""
 
 #: scripts/frontend/build/index.js:1
+#: includes/core/class-ticket-fallback.php:177
 msgid "Email address"
 msgstr ""
 
@@ -5441,9 +5499,9 @@ msgstr ""
 #: includes/api/class-event.php:147
 #: includes/api/class-tickets.php:353
 #: includes/api/class-tickets.php:1001
-#: includes/api/class-tickets.php:1422
-#: includes/api/class-tickets.php:1632
-#: includes/api/class-tickets.php:2444
+#: includes/api/class-tickets.php:1432
+#: includes/api/class-tickets.php:1642
+#: includes/api/class-tickets.php:2454
 #: includes/core/class-ical.php:213
 #: includes/core/class-ical.php:220
 #: includes/core/core-functions.php:104
@@ -5513,8 +5571,8 @@ msgid "Invalid order ID."
 msgstr ""
 
 #: includes/api/class-order.php:67
-#: includes/api/class-tickets.php:2275
-#: includes/core/class-ticket-emails.php:862
+#: includes/api/class-tickets.php:2285
+#: includes/core/class-ticket-emails.php:897
 msgid "Order not found."
 msgstr ""
 
@@ -5545,10 +5603,10 @@ msgstr ""
 #: includes/api/class-rsvps.php:487
 #: includes/api/class-rsvps.php:650
 #: includes/api/class-tickets.php:496
-#: includes/api/class-tickets.php:1331
-#: includes/api/class-tickets.php:1427
-#: includes/api/class-tickets.php:1434
-#: includes/api/class-tickets.php:1637
+#: includes/api/class-tickets.php:1332
+#: includes/api/class-tickets.php:1437
+#: includes/api/class-tickets.php:1444
+#: includes/api/class-tickets.php:1647
 #: includes/core/class-rsvps.php:189
 msgid "Invalid event."
 msgstr ""
@@ -5608,12 +5666,12 @@ msgstr ""
 
 #: includes/api/class-tickets.php:373
 #: includes/api/class-tickets.php:1015
-#: includes/api/class-tickets.php:1467
+#: includes/api/class-tickets.php:1477
 msgid "Database error occurred."
 msgstr ""
 
 #: includes/api/class-tickets.php:1132
-#: includes/api/class-tickets.php:1863
+#: includes/api/class-tickets.php:1873
 msgid "Invalid checkout total."
 msgstr ""
 
@@ -5627,126 +5685,126 @@ msgstr ""
 msgid "Accepted at %1$s. Terms: %2$s"
 msgstr ""
 
-#: includes/api/class-tickets.php:1321
+#: includes/api/class-tickets.php:1322
 msgid "An attendee name is required."
 msgstr ""
 
-#: includes/api/class-tickets.php:1326
+#: includes/api/class-tickets.php:1327
 msgid "The email address is not valid."
 msgstr ""
 
-#: includes/api/class-tickets.php:1357
+#: includes/api/class-tickets.php:1358
 msgid "This ticket type does not belong to the selected event."
 msgstr ""
 
 #. translators: %d: number of seats left.
-#: includes/api/class-tickets.php:1366
+#: includes/api/class-tickets.php:1367
 #, php-format
 msgid "Only %d seat is left for this ticket type."
 msgid_plural "Only %d seats are left for this ticket type."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/api/class-tickets.php:1384
+#: includes/api/class-tickets.php:1385
 msgid "The attendee could not be added."
 msgstr ""
 
-#: includes/api/class-tickets.php:1607
+#: includes/api/class-tickets.php:1617
 msgid "Tickets are not enabled."
 msgstr ""
 
-#: includes/api/class-tickets.php:1667
+#: includes/api/class-tickets.php:1677
 msgid "Too many requests. Please try again later."
 msgstr ""
 
-#: includes/api/class-tickets.php:1734
+#: includes/api/class-tickets.php:1744
 msgid "A valid email address is required."
 msgstr ""
 
-#: includes/api/class-tickets.php:1750
-#: includes/api/class-tickets.php:1778
+#: includes/api/class-tickets.php:1760
+#: includes/api/class-tickets.php:1788
 msgid "Invalid ticket selection."
 msgstr ""
 
-#: includes/api/class-tickets.php:1773
+#: includes/api/class-tickets.php:1783
 msgid "Select at least one ticket."
 msgstr ""
 
-#: includes/api/class-tickets.php:1792
+#: includes/api/class-tickets.php:1802
 msgid "Unable to validate tickets."
 msgstr ""
 
-#: includes/api/class-tickets.php:1813
+#: includes/api/class-tickets.php:1823
 msgid "One or more selected tickets are unavailable."
 msgstr ""
 
-#: includes/api/class-tickets.php:1820
+#: includes/api/class-tickets.php:1830
 msgid "One or more selected tickets are not on sale yet."
 msgstr ""
 
-#: includes/api/class-tickets.php:1824
+#: includes/api/class-tickets.php:1834
 msgid "One or more selected tickets are no longer on sale."
 msgstr ""
 
-#: includes/api/class-tickets.php:1829
+#: includes/api/class-tickets.php:1839
 msgid "Selected quantity exceeds ticket limits."
 msgstr ""
 
-#: includes/api/class-tickets.php:1839
-#: includes/api/class-tickets.php:2961
+#: includes/api/class-tickets.php:1849
+#: includes/api/class-tickets.php:2971
 msgid "Not enough tickets remaining for one or more selections."
 msgstr ""
 
-#: includes/api/class-tickets.php:1872
+#: includes/api/class-tickets.php:1882
 msgid "Not enough tickets remaining for this event."
 msgstr ""
 
-#: includes/api/class-tickets.php:1979
+#: includes/api/class-tickets.php:1989
 msgid "WooCommerce must be installed and activated to process ticket payments."
 msgstr ""
 
-#: includes/api/class-tickets.php:2033
-#: includes/api/class-tickets.php:2058
-#: includes/api/class-tickets.php:2087
-#: includes/api/class-tickets.php:2256
+#: includes/api/class-tickets.php:2043
+#: includes/api/class-tickets.php:2068
+#: includes/api/class-tickets.php:2097
+#: includes/api/class-tickets.php:2266
 msgid "Missing order ID."
 msgstr ""
 
-#: includes/api/class-tickets.php:2217
+#: includes/api/class-tickets.php:2227
 msgid "Order archived via EventKoi."
 msgstr ""
 
-#: includes/api/class-tickets.php:2237
+#: includes/api/class-tickets.php:2247
 msgid "Order unarchived via EventKoi."
 msgstr ""
 
-#: includes/api/class-tickets.php:2368
-#: includes/core/class-ticket-emails.php:163
+#: includes/api/class-tickets.php:2378
+#: includes/core/class-ticket-emails.php:192
 msgid "Missing checkout session ID."
 msgstr ""
 
-#: includes/api/class-tickets.php:2492
+#: includes/api/class-tickets.php:2502
 msgid "Failed to create ticket."
 msgstr ""
 
-#: includes/api/class-tickets.php:2529
-#: includes/api/class-tickets.php:2660
+#: includes/api/class-tickets.php:2539
+#: includes/api/class-tickets.php:2670
 msgid "Invalid ticket ID."
 msgstr ""
 
-#: includes/api/class-tickets.php:2598
+#: includes/api/class-tickets.php:2608
 msgid "No data to update."
 msgstr ""
 
-#: includes/api/class-tickets.php:2614
+#: includes/api/class-tickets.php:2624
 msgid "Failed to update ticket."
 msgstr ""
 
-#: includes/api/class-tickets.php:2673
+#: includes/api/class-tickets.php:2683
 msgid "Failed to delete ticket."
 msgstr ""
 
-#: includes/api/class-tickets.php:2681
+#: includes/api/class-tickets.php:2691
 msgid "Ticket deleted successfully."
 msgstr ""
 
@@ -5803,8 +5861,8 @@ msgid "Data Type"
 msgstr ""
 
 #: includes/core/class-beaver-modules.php:61
-#: includes/core/elementor-widgets/class-widget-event.php:109
-#: includes/core/elementor-widgets/class-widget-event.php:111
+#: includes/core/elementor-widgets/class-widget-event.php:117
+#: includes/core/elementor-widgets/class-widget-event.php:119
 msgid "Show"
 msgstr ""
 
@@ -5812,10 +5870,13 @@ msgstr ""
 #: includes/core/class-beaver-modules.php:133
 #: includes/core/class-beaver-modules.php:142
 #: includes/core/class-beaver-modules.php:151
+#: includes/core/class-beaver-modules.php:160
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:65
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:76
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:87
+#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:98
 #: includes/core/elementor-widgets/class-widget-calendar.php:123
+#: includes/core/elementor-widgets/class-widget-calendar.php:136
 msgid "Yes"
 msgstr ""
 
@@ -5823,10 +5884,13 @@ msgstr ""
 #: includes/core/class-beaver-modules.php:134
 #: includes/core/class-beaver-modules.php:143
 #: includes/core/class-beaver-modules.php:152
+#: includes/core/class-beaver-modules.php:161
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:66
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:77
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:88
+#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:99
 #: includes/core/elementor-widgets/class-widget-calendar.php:124
+#: includes/core/elementor-widgets/class-widget-calendar.php:137
 msgid "No"
 msgstr ""
 
@@ -5875,95 +5939,95 @@ msgstr ""
 msgid "Show List view"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:161
-#: includes/core/elementor-widgets/class-widget-calendar.php:138
+#: includes/core/class-beaver-modules.php:170
+#: includes/core/elementor-widgets/class-widget-calendar.php:151
 msgid "Choose a fixed month or use the current month."
 msgstr ""
 
 #. translators: %s: example year value.
-#: includes/core/class-beaver-modules.php:168
+#: includes/core/class-beaver-modules.php:177
 #, php-format
 msgid "Leave empty to follow the current year or enter a four-digit year (e.g. %s)."
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:182
-#: includes/core/class-beaver-modules.php:276
+#: includes/core/class-beaver-modules.php:191
+#: includes/core/class-beaver-modules.php:285
 msgid "Style"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:185
-#: includes/core/elementor-widgets/class-widget-calendar.php:168
+#: includes/core/class-beaver-modules.php:194
+#: includes/core/elementor-widgets/class-widget-calendar.php:209
 msgid "Day's Labels"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:189
-#: includes/core/class-beaver-modules.php:287
-#: includes/core/elementor-widgets/class-widget-calendar.php:176
-#: includes/core/elementor-widgets/class-widget-event.php:148
+#: includes/core/class-beaver-modules.php:198
+#: includes/core/class-beaver-modules.php:296
+#: includes/core/elementor-widgets/class-widget-calendar.php:217
+#: includes/core/elementor-widgets/class-widget-event.php:156
 msgid "Typography"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:208
-#: includes/core/class-beaver-modules.php:306
-#: includes/core/elementor-widgets/class-widget-calendar.php:207
-#: includes/core/elementor-widgets/class-widget-calendar.php:238
-#: includes/core/elementor-widgets/class-widget-event.php:170
+#: includes/core/class-beaver-modules.php:217
+#: includes/core/class-beaver-modules.php:315
+#: includes/core/elementor-widgets/class-widget-calendar.php:248
+#: includes/core/elementor-widgets/class-widget-calendar.php:279
+#: includes/core/elementor-widgets/class-widget-event.php:178
 msgid "Background Color"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:218
+#: includes/core/class-beaver-modules.php:227
 msgid "Hover Color"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:228
+#: includes/core/class-beaver-modules.php:237
 msgid "Hover Background Color"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:252
+#: includes/core/class-beaver-modules.php:261
 #: includes/core/elementor-widgets/class-widget-event.php:76
 msgid "Event Options"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:265
+#: includes/core/class-beaver-modules.php:274
 #: includes/core/elementor-widgets/class-widget-event.php:96
 msgid "Event Data Items"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:296
-#: includes/core/elementor-widgets/class-widget-event.php:157
+#: includes/core/class-beaver-modules.php:305
+#: includes/core/elementor-widgets/class-widget-event.php:165
 msgid "Text Color"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:316
-#: includes/core/elementor-widgets/class-widget-event.php:183
+#: includes/core/class-beaver-modules.php:325
+#: includes/core/elementor-widgets/class-widget-event.php:191
 msgid "Alignment"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:318
+#: includes/core/class-beaver-modules.php:327
 msgid "Default"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:319
-#: includes/core/elementor-widgets/class-widget-event.php:187
+#: includes/core/class-beaver-modules.php:328
+#: includes/core/elementor-widgets/class-widget-event.php:195
 msgid "Left"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:320
-#: includes/core/elementor-widgets/class-widget-event.php:191
+#: includes/core/class-beaver-modules.php:329
+#: includes/core/elementor-widgets/class-widget-event.php:199
 msgid "Center"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:321
-#: includes/core/elementor-widgets/class-widget-event.php:195
+#: includes/core/class-beaver-modules.php:330
+#: includes/core/elementor-widgets/class-widget-event.php:203
 msgid "Right"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:352
+#: includes/core/class-beaver-modules.php:361
 msgid "Use current event context"
 msgstr ""
 
 #. translators: %d: event post ID used as fallback event label.
-#: includes/core/class-beaver-modules.php:372
+#: includes/core/class-beaver-modules.php:381
 #, php-format
 msgid "Event #%d"
 msgstr ""
@@ -5977,11 +6041,12 @@ msgid "Event excerpt"
 msgstr ""
 
 #: includes/core/class-bindings.php:42
+#: includes/core/class-seo-compat.php:83
 msgid "Event timezone"
 msgstr ""
 
 #: includes/core/class-bindings.php:43
-#: includes/core/elementor-widgets/class-widget-event.php:335
+#: includes/core/elementor-widgets/class-widget-event.php:360
 #: includes/helpers/instance.php:321
 msgid "Event Google Map"
 msgstr ""
@@ -6035,10 +6100,12 @@ msgid "Event date time"
 msgstr ""
 
 #: includes/core/class-bindings.php:59
+#: includes/core/class-seo-compat.php:63
 msgid "Event date"
 msgstr ""
 
 #: includes/core/class-bindings.php:60
+#: includes/core/class-seo-compat.php:68
 msgid "Event time"
 msgstr ""
 
@@ -6154,33 +6221,33 @@ msgstr ""
 msgid "Pagination"
 msgstr ""
 
-#: includes/core/class-blocks.php:2159
+#: includes/core/class-blocks.php:2163
 msgid "No calendar is available to display."
 msgstr ""
 
-#: includes/core/class-blocks.php:2163
+#: includes/core/class-blocks.php:2167
 msgid "Create a calendar"
 msgstr ""
 
-#: includes/core/class-calendar.php:422
+#: includes/core/class-calendar.php:437
 msgid "Calendar created."
 msgstr ""
 
-#: includes/core/class-calendar.php:450
+#: includes/core/class-calendar.php:465
 msgid "Calendar updated."
 msgstr ""
 
-#: includes/core/class-calendar.php:504
+#: includes/core/class-calendar.php:520
 msgid "Calendar deleted."
 msgstr ""
 
 #. translators: %s is calendar name
-#: includes/core/class-calendar.php:520
+#: includes/core/class-calendar.php:536
 #, php-format
 msgid "[Duplicate] %s"
 msgstr ""
 
-#: includes/core/class-calendar.php:538
+#: includes/core/class-calendar.php:554
 msgid "Calendar duplicated."
 msgstr ""
 
@@ -6190,147 +6257,147 @@ msgid_plural "Calendars removed permanently."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/core/class-event.php:399
-#: includes/core/class-event.php:3884
+#: includes/core/class-event.php:460
+#: includes/core/class-event.php:3955
 msgid "Attend online"
 msgstr ""
 
-#: includes/core/class-event.php:460
+#: includes/core/class-event.php:521
 msgid "Event created."
 msgstr ""
 
-#: includes/core/class-event.php:491
+#: includes/core/class-event.php:552
 msgid "Event updated."
 msgstr ""
 
 #. translators: %d is the number of extra recurrence rules.
-#: includes/core/class-event.php:1885
+#: includes/core/class-event.php:1956
 #, php-format
 msgid "%d more rule"
 msgid_plural "%d more rules"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/core/class-event.php:3433
+#: includes/core/class-event.php:3504
 #: includes/core/class-events.php:651
 msgid "Event restored successfully."
 msgid_plural "Events restored successfully."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/core/class-event.php:3449
+#: includes/core/class-event.php:3520
 msgid "Event moved to Trash."
 msgstr ""
 
 #. translators: %s event title
-#: includes/core/class-event.php:3463
+#: includes/core/class-event.php:3534
 #, php-format
 msgid "[Duplicate]: %s"
 msgstr ""
 
-#: includes/core/class-event.php:3492
+#: includes/core/class-event.php:3563
 msgid "Event duplicated."
 msgstr ""
 
-#: includes/core/class-event.php:3592
+#: includes/core/class-event.php:3663
 #: includes/core/class-schema.php:433
 msgid "Untitled event"
 msgstr ""
 
-#: includes/core/class-event.php:3636
+#: includes/core/class-event.php:3707
 msgid "No event details."
 msgstr ""
 
-#: includes/core/class-event.php:3820
-#: includes/core/class-event.php:3906
+#: includes/core/class-event.php:3891
+#: includes/core/class-event.php:3977
 msgid "No location available."
 msgstr ""
 
 #. translators: %s: formatted starting price.
-#: includes/core/class-event.php:4085
+#: includes/core/class-event.php:4162
 #, php-format
 msgid "From %s"
 msgstr ""
 
-#: includes/core/class-event.php:4451
-#: includes/core/class-event.php:4721
+#: includes/core/class-event.php:4528
+#: includes/core/class-event.php:4798
 msgid "Date and time to be confirmed."
 msgstr ""
 
-#: includes/core/class-event.php:5177
+#: includes/core/class-event.php:5254
 msgid "Low stock"
 msgstr ""
 
-#: includes/core/class-event.php:5610
+#: includes/core/class-event.php:5765
 msgid "days"
 msgstr ""
 
-#: includes/core/class-event.php:5611
+#: includes/core/class-event.php:5766
 msgid "weeks"
 msgstr ""
 
-#: includes/core/class-event.php:5612
+#: includes/core/class-event.php:5767
 msgid "months"
 msgstr ""
 
-#: includes/core/class-event.php:5613
+#: includes/core/class-event.php:5768
 msgid "years"
 msgstr ""
 
 #. translators: %1$d: interval number (e.g., 2). %2$s: period plural (e.g., "months").
-#: includes/core/class-event.php:5617
+#: includes/core/class-event.php:5772
 #, php-format
 msgid "Every %1$d %2$s"
 msgstr ""
 
-#: includes/core/class-event.php:5619
+#: includes/core/class-event.php:5774
 msgid "Daily"
 msgstr ""
 
-#: includes/core/class-event.php:5621
+#: includes/core/class-event.php:5776
 msgid "Weekly"
 msgstr ""
 
-#: includes/core/class-event.php:5623
+#: includes/core/class-event.php:5778
 msgid "Monthly"
 msgstr ""
 
-#: includes/core/class-event.php:5625
+#: includes/core/class-event.php:5780
 msgid "Yearly"
 msgstr ""
 
 #. translators: 1: ordinal week in the month, 2: weekday name.
-#: includes/core/class-event.php:5642
+#: includes/core/class-event.php:5797
 #, php-format
 msgid ", on the %1$s %2$s"
 msgstr ""
 
 #. translators: %d: day number in the month.
-#: includes/core/class-event.php:5658
+#: includes/core/class-event.php:5813
 #, php-format
 msgid ", on day %d"
 msgstr ""
 
 #. translators: %s: comma-separated month names.
-#: includes/core/class-event.php:5692
+#: includes/core/class-event.php:5847
 #, php-format
 msgid ", in %s"
 msgstr ""
 
 #. translators: %s: comma-separated weekday names.
-#: includes/core/class-event.php:5723
+#: includes/core/class-event.php:5878
 #, php-format
 msgid ", on %s"
 msgstr ""
 
-#: includes/core/class-event.php:5815
-#: includes/core/class-event.php:5847
+#: includes/core/class-event.php:5970
+#: includes/core/class-event.php:6002
 msgid ", forever"
 msgstr ""
 
 #. translators: %d: total completed events.
-#: includes/core/class-event.php:5820
-#: includes/core/class-event.php:5835
+#: includes/core/class-event.php:5975
+#: includes/core/class-event.php:5990
 #, php-format
 msgid ", all %d event completed"
 msgid_plural ", all %d events completed"
@@ -6338,8 +6405,8 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: remaining events, 2: total events.
-#: includes/core/class-event.php:5826
-#: includes/core/class-event.php:5841
+#: includes/core/class-event.php:5981
+#: includes/core/class-event.php:5996
 #, php-format
 msgid ", %1$d of %2$d event left"
 msgid_plural ", %1$d of %2$d events left"
@@ -6406,7 +6473,7 @@ msgid "No ICS content provided."
 msgstr ""
 
 #: includes/core/class-ics-importer.php:111
-#: includes/core/class-ics-importer.php:216
+#: includes/core/class-ics-importer.php:221
 #: includes/core/class-url-importer.php:925
 msgid "Untitled Event"
 msgstr ""
@@ -6419,12 +6486,12 @@ msgstr ""
 msgid "Parsed data has expired. Please upload the file again."
 msgstr ""
 
-#: includes/core/class-ics-importer.php:227
+#: includes/core/class-ics-importer.php:232
 #: includes/core/class-tec-importer.php:347
 msgid "Event has no start date."
 msgstr ""
 
-#: includes/core/class-ics-importer.php:271
+#: includes/core/class-ics-importer.php:276
 #: includes/core/class-url-importer.php:460
 #: includes/core/class-url-importer.php:661
 #: includes/core/class-url-importer.php:1020
@@ -6539,7 +6606,7 @@ msgid "No calendars found"
 msgstr ""
 
 #: includes/core/class-post-types.php:72
-#: includes/core/elementor-widgets/class-widget-event.php:340
+#: includes/core/elementor-widgets/class-widget-event.php:365
 #: includes/helpers/instance.php:326
 msgid "Event Calendar Link"
 msgstr ""
@@ -6684,8 +6751,8 @@ msgid "Your RSVP for %s"
 msgstr ""
 
 #: includes/core/class-rsvps.php:1087
-#: includes/core/class-ticket-emails.php:316
-#: includes/core/class-ticket-emails.php:459
+#: includes/core/class-ticket-emails.php:346
+#: includes/core/class-ticket-emails.php:491
 msgid "there"
 msgstr ""
 
@@ -6708,7 +6775,7 @@ msgstr ""
 
 #: includes/core/class-rsvps.php:1126
 #: includes/core/class-rsvps.php:1137
-#: includes/core/class-ticket-emails.php:350
+#: includes/core/class-ticket-emails.php:380
 msgid "Location:"
 msgstr ""
 
@@ -6726,19 +6793,55 @@ msgid "Attendee:"
 msgstr ""
 
 #: includes/core/class-rsvps.php:1514
-#: includes/core/class-ticket-emails.php:488
-#: includes/core/class-ticket-emails.php:1298
+#: includes/core/class-ticket-emails.php:520
+#: includes/core/class-ticket-emails.php:1377
 msgid "Event:"
 msgstr ""
 
 #: includes/core/class-rsvps.php:1515
-#: includes/core/class-ticket-emails.php:489
-#: includes/core/class-ticket-emails.php:1299
+#: includes/core/class-ticket-emails.php:521
+#: includes/core/class-ticket-emails.php:1378
 msgid "Date:"
 msgstr ""
 
 #: includes/core/class-scripts.php:145
 msgid "No events were found."
+msgstr ""
+
+#: includes/core/class-seo-compat.php:54
+msgid "The event's date and time."
+msgstr ""
+
+#: includes/core/class-seo-compat.php:58
+msgid "Event date and time with summary"
+msgstr ""
+
+#: includes/core/class-seo-compat.php:59
+msgid "The event's date and time, followed by its recurrence summary."
+msgstr ""
+
+#: includes/core/class-seo-compat.php:64
+msgid "The event's date, without the time."
+msgstr ""
+
+#: includes/core/class-seo-compat.php:69
+msgid "The event's time, without the date."
+msgstr ""
+
+#: includes/core/class-seo-compat.php:73
+msgid "Event recurrence"
+msgstr ""
+
+#: includes/core/class-seo-compat.php:74
+msgid "A summary of how the event repeats."
+msgstr ""
+
+#: includes/core/class-seo-compat.php:79
+msgid "The event's location."
+msgstr ""
+
+#: includes/core/class-seo-compat.php:84
+msgid "The event's timezone."
 msgstr ""
 
 #: includes/core/class-tec-importer.php:88
@@ -6853,101 +6956,121 @@ msgstr ""
 msgid "Ticket confirmation email was not sent."
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:102
+#: includes/core/class-ticket-emails.php:131
 msgid "WooCommerce is not available."
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:107
+#: includes/core/class-ticket-emails.php:136
 msgid "WooCommerce order not found."
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:343
-#: includes/core/class-ticket-emails.php:485
+#: includes/core/class-ticket-emails.php:373
+#: includes/core/class-ticket-emails.php:517
 msgid "Hi [attendee_name],"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:344
+#: includes/core/class-ticket-emails.php:374
 msgid "Thanks for your ticket purchase for [event_name]."
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:345
-#: includes/core/class-ticket-emails.php:487
+#: includes/core/class-ticket-emails.php:375
+#: includes/core/class-ticket-emails.php:519
 msgid "Order ID:"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:348
+#: includes/core/class-ticket-emails.php:378
 msgid "Ticket Codes"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:349
+#: includes/core/class-ticket-emails.php:379
 msgid "Schedule ([event_timezone]):"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:351
-#: includes/core/class-ticket-emails.php:490
+#: includes/core/class-ticket-emails.php:381
+#: includes/core/class-ticket-emails.php:522
 msgid "Event page:"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:475
+#: includes/core/class-ticket-emails.php:507
 msgid "[event_name]: Refund confirmation"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:486
+#: includes/core/class-ticket-emails.php:518
 msgid "A refund has been issued for your order."
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:491
+#: includes/core/class-ticket-emails.php:523
 msgid "Refunded items"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:492
+#: includes/core/class-ticket-emails.php:524
 msgid "Refund amount:"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:493
+#: includes/core/class-ticket-emails.php:525
 msgid "The refund should appear in your account within 5-10 business days, depending on your payment provider."
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:616
+#: includes/core/class-ticket-emails.php:648
 msgid "Refund confirmation sent."
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:833
+#: includes/core/class-ticket-emails.php:865
 msgid "Completed order was not found for this checkout session."
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:1251
+#: includes/core/class-ticket-emails.php:1330
 msgid "Terms and conditions:"
 msgstr ""
 
 #. translators: %s: date/time the customer accepted the terms.
-#: includes/core/class-ticket-emails.php:1254
+#: includes/core/class-ticket-emails.php:1333
 #, php-format
 msgid "Accepted by the customer at checkout on %s."
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:1270
+#: includes/core/class-ticket-emails.php:1349
 msgid "Agreements accepted:"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:1293
+#: includes/core/class-ticket-emails.php:1372
 msgid "A new ticket order has been placed."
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:1294
+#: includes/core/class-ticket-emails.php:1373
 msgid "Customer:"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:1295
+#: includes/core/class-ticket-emails.php:1374
 msgid "Order:"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:1296
+#: includes/core/class-ticket-emails.php:1375
 msgid "Tickets:"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:1297
+#: includes/core/class-ticket-emails.php:1376
 msgid "Total:"
+msgstr ""
+
+#: includes/core/class-ticket-fallback.php:220
+msgid "Your session expired. Please try again."
+msgstr ""
+
+#: includes/core/class-ticket-fallback.php:235
+msgid "Please enter your name and a valid email address."
+msgstr ""
+
+#: includes/core/class-ticket-fallback.php:241
+msgid "Tickets are unavailable. Please try again."
+msgstr ""
+
+#: includes/core/class-ticket-fallback.php:267
+msgid "Please choose at least one ticket."
+msgstr ""
+
+#: includes/core/class-ticket-fallback.php:294
+msgid "Could not start checkout. Please try again."
 msgstr ""
 
 #: includes/core/class-url-importer.php:99
@@ -6991,17 +7114,17 @@ msgstr ""
 msgid "Invalid calendar. Please check the calendar ID."
 msgstr ""
 
-#: includes/core/core-functions.php:572
+#: includes/core/core-functions.php:574
 msgctxt "slug"
 msgid "event"
 msgstr ""
 
-#: includes/core/core-functions.php:573
+#: includes/core/core-functions.php:575
 msgctxt "slug"
 msgid "calendar"
 msgstr ""
 
-#: includes/core/core-functions.php:1171
+#: includes/core/core-functions.php:1173
 msgid "Incomplete"
 msgstr ""
 
@@ -7023,7 +7146,7 @@ msgstr ""
 msgid "Default timeframe"
 msgstr ""
 
-#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:163
+#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:176
 msgid "— Default calendar —"
 msgstr ""
 
@@ -7152,16 +7275,32 @@ msgstr ""
 msgid "Select Calendar"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-calendar.php:149
+#: includes/core/elementor-widgets/class-widget-calendar.php:162
 msgid "Leave empty to follow the current year or enter a four-digit year (e.g. 2025)."
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-calendar.php:189
+#: includes/core/elementor-widgets/class-widget-calendar.php:230
 msgid "Normal"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-calendar.php:220
+#: includes/core/elementor-widgets/class-widget-calendar.php:261
 msgid "Hover"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:486
+msgid "Calendar background"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:487
+msgid "Text"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:488
+msgid "Buttons"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:489
+msgid "Button text"
 msgstr ""
 
 #: includes/core/elementor-widgets/class-widget-event.php:85
@@ -7172,229 +7311,237 @@ msgstr ""
 msgid "Choose the event to display."
 msgstr ""
 
+#: includes/core/elementor-widgets/class-widget-event.php:109
+msgid "Label"
+msgstr ""
+
 #: includes/core/elementor-widgets/class-widget-event.php:112
+msgid "Text shown before the value"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-event.php:120
 msgid "Hide"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:211
+#: includes/core/elementor-widgets/class-widget-event.php:219
 msgid "Margin"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:224
+#: includes/core/elementor-widgets/class-widget-event.php:232
 msgid "Padding"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:332
+#: includes/core/elementor-widgets/class-widget-event.php:357
 #: includes/helpers/instance.php:317
 msgid "Event Title"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:333
+#: includes/core/elementor-widgets/class-widget-event.php:358
 #: includes/helpers/instance.php:318
 msgid "Event Details"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:334
+#: includes/core/elementor-widgets/class-widget-event.php:359
 #: includes/helpers/instance.php:320
 msgid "Event Timezone"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:336
+#: includes/core/elementor-widgets/class-widget-event.php:361
 #: includes/helpers/instance.php:322
 msgid "Event Image"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:337
+#: includes/core/elementor-widgets/class-widget-event.php:362
 #: includes/helpers/instance.php:323
 msgid "Event Image URL"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:338
+#: includes/core/elementor-widgets/class-widget-event.php:363
 #: includes/helpers/instance.php:324
 msgid "Event Calendar URL"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:339
+#: includes/core/elementor-widgets/class-widget-event.php:364
 #: includes/helpers/instance.php:325
 msgid "Event Calendar"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:341
+#: includes/core/elementor-widgets/class-widget-event.php:366
 #: includes/helpers/instance.php:327
 msgid "Event Location"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:342
+#: includes/core/elementor-widgets/class-widget-event.php:367
 #: includes/helpers/instance.php:328
 msgid "Event Location Name"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:343
+#: includes/core/elementor-widgets/class-widget-event.php:368
 #: includes/helpers/instance.php:329
 msgid "Event Location Address"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:344
+#: includes/core/elementor-widgets/class-widget-event.php:369
 #: includes/helpers/instance.php:330
 msgid "Event Location Apartment/Unit"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:345
+#: includes/core/elementor-widgets/class-widget-event.php:370
 #: includes/helpers/instance.php:331
 msgid "Event Location City"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:346
+#: includes/core/elementor-widgets/class-widget-event.php:371
 #: includes/helpers/instance.php:332
 msgid "Event Location State"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:347
+#: includes/core/elementor-widgets/class-widget-event.php:372
 #: includes/helpers/instance.php:333
 msgid "Event Location Country"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:348
+#: includes/core/elementor-widgets/class-widget-event.php:373
 #: includes/helpers/instance.php:334
 msgid "Event Location Post Code"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:349
+#: includes/core/elementor-widgets/class-widget-event.php:374
 #: includes/helpers/instance.php:335
 msgid "Event Datetime with Summary"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:350
+#: includes/core/elementor-widgets/class-widget-event.php:375
 #: includes/helpers/instance.php:336
 msgid "Event Datetime"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:351
+#: includes/core/elementor-widgets/class-widget-event.php:376
 #: includes/helpers/instance.php:337
 msgid "Event Date"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:352
+#: includes/core/elementor-widgets/class-widget-event.php:377
 #: includes/helpers/instance.php:338
 msgid "Event Time"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:353
+#: includes/core/elementor-widgets/class-widget-event.php:378
 #: includes/helpers/instance.php:339
 msgid "Event Date Type"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:354
+#: includes/core/elementor-widgets/class-widget-event.php:379
 #: includes/helpers/instance.php:340
 msgid "Event Rule Summary"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:355
+#: includes/core/elementor-widgets/class-widget-event.php:380
 #: includes/helpers/instance.php:341
 msgid "Event Capacity"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:356
+#: includes/core/elementor-widgets/class-widget-event.php:381
 #: includes/helpers/instance.php:342
 msgid "Event Capacity Remaining"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:357
+#: includes/core/elementor-widgets/class-widget-event.php:382
 #: includes/helpers/instance.php:343
 msgid "Event Capacity Sold"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:358
+#: includes/core/elementor-widgets/class-widget-event.php:383
 #: includes/helpers/instance.php:344
 msgid "Event Sold Out"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:359
+#: includes/core/elementor-widgets/class-widget-event.php:384
 #: includes/helpers/instance.php:345
 msgid "Event Low Stock"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:360
+#: includes/core/elementor-widgets/class-widget-event.php:385
 #: includes/helpers/instance.php:346
 msgid "Event Ticket Count"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:361
+#: includes/core/elementor-widgets/class-widget-event.php:386
 #: includes/helpers/instance.php:347
 msgid "Event Ticket Summary"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:362
+#: includes/core/elementor-widgets/class-widget-event.php:387
 #: includes/helpers/instance.php:348
 msgid "Event Sales Start"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:363
+#: includes/core/elementor-widgets/class-widget-event.php:388
 #: includes/helpers/instance.php:349
 msgid "Event Sales End"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:364
+#: includes/core/elementor-widgets/class-widget-event.php:389
 #: includes/helpers/instance.php:350
 msgid "Event Ticket Price From"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:365
+#: includes/core/elementor-widgets/class-widget-event.php:390
 #: includes/helpers/instance.php:351
 msgid "Event Ticket Price To"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:366
+#: includes/core/elementor-widgets/class-widget-event.php:391
 #: includes/helpers/instance.php:352
 msgid "Event Ticket Price Range"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:367
+#: includes/core/elementor-widgets/class-widget-event.php:392
 #: includes/helpers/instance.php:353
 msgid "Event Date Year"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:368
+#: includes/core/elementor-widgets/class-widget-event.php:393
 #: includes/helpers/instance.php:354
 msgid "Event Date Month"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:369
+#: includes/core/elementor-widgets/class-widget-event.php:394
 #: includes/helpers/instance.php:355
 msgid "Event Date Month Short"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:370
+#: includes/core/elementor-widgets/class-widget-event.php:395
 #: includes/helpers/instance.php:356
 msgid "Event Date Day"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:371
+#: includes/core/elementor-widgets/class-widget-event.php:396
 #: includes/helpers/instance.php:357
 msgid "Event Date Day Name"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:372
+#: includes/core/elementor-widgets/class-widget-event.php:397
 #: includes/helpers/instance.php:358
 msgid "Event Date ISO"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:373
+#: includes/core/elementor-widgets/class-widget-event.php:398
 #: includes/helpers/instance.php:359
 msgid "Event RSVP Capacity"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:374
+#: includes/core/elementor-widgets/class-widget-event.php:399
 #: includes/helpers/instance.php:360
 msgid "Event RSVP Remaining"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:375
+#: includes/core/elementor-widgets/class-widget-event.php:400
 #: includes/helpers/instance.php:361
 msgid "Event RSVP Going"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-event.php:376
+#: includes/core/elementor-widgets/class-widget-event.php:401
 #: includes/helpers/instance.php:362
 msgid "Event RSVP Full"
 msgstr ""
@@ -7405,6 +7552,22 @@ msgstr ""
 
 #: includes/helpers/instance.php:319
 msgid "Event Excerpt"
+msgstr ""
+
+#: includes/helpers/instance.php:363
+msgid "Event Tickets / RSVP"
+msgstr ""
+
+#: includes/helpers/instance.php:364
+msgid "Event Custom Fields"
+msgstr ""
+
+#: includes/helpers/instance.php:365
+msgid "Event Custom Fields with Names"
+msgstr ""
+
+#: includes/helpers/instance.php:366
+msgid "Event Series Dates"
 msgstr ""
 
 #. translators: %1$s calendar title, %2$s site name
