@@ -1782,6 +1782,46 @@ function eventkoi_format_datetime_range( $start_ts, $end_ts = null, $all_day = f
 }
 
 /**
+ * Normalise a stored Stripe webhook slot into a plain array.
+ *
+ * Pro saved the SDK's WebhookEndpoint object straight into the settings
+ * option in earlier versions. That option is autoloaded, so WordPress
+ * unserializes it before any SDK is loaded (Lite ships none) and PHP hands
+ * back a __PHP_Incomplete_Class whose every property read warns and returns
+ * null. Dig the values out of whatever shape is stored.
+ *
+ * @param mixed $slot Stored slot: array, StripeObject, incomplete class or scalar.
+ * @return array<string, mixed> Webhook values (id, secret, url, ...) or an empty array.
+ */
+function eventkoi_stripe_webhook_slot_values( $slot ) {
+	if ( is_array( $slot ) ) {
+		return $slot;
+	}
+
+	if ( ! is_object( $slot ) ) {
+		return array();
+	}
+
+	if ( '__PHP_Incomplete_Class' === get_class( $slot ) ) {
+		// StripeObject keeps its data in the protected $_values property, which
+		// an array cast exposes under a mangled "\0*\0_values" key.
+		foreach ( (array) $slot as $property => $value ) {
+			if ( is_array( $value ) && '_values' === substr( (string) $property, -7 ) ) {
+				return $value;
+			}
+		}
+
+		return array();
+	}
+
+	if ( class_exists( '\Stripe\StripeObject', false ) && $slot instanceof \Stripe\StripeObject ) {
+		return (array) $slot->toArray();
+	}
+
+	return get_object_vars( $slot );
+}
+
+/**
  * Retrieves Stripe's webhook secret.
  *
  * @return string The Stripe webhook secret.
@@ -1793,12 +1833,22 @@ function eventkoi_get_stripe_webhook_secret() {
 	} else {
 		$settings       = \EventKoi\Core\Settings::get();
 		$webhook        = $settings['stripe_webhook'] ?? null;
+		$mode           = isset( $settings['stripe']['mode'] ) ? (string) $settings['stripe']['mode'] : ( $settings['mode'] ?? 'test' );
 		$webhook_secret = '';
 
-		if ( is_object( $webhook ) && ! empty( $webhook->secret ) ) {
-			$webhook_secret = sanitize_text_field( (string) $webhook->secret );
-		} elseif ( is_array( $webhook ) && ! empty( $webhook['secret'] ) ) {
-			$webhook_secret = sanitize_text_field( (string) $webhook['secret'] );
+		// Prefer the mode-specific webhook stored under stripe_webhook[mode].
+		if ( is_array( $webhook ) && isset( $webhook[ $mode ] ) ) {
+			$slot = eventkoi_stripe_webhook_slot_values( $webhook[ $mode ] );
+			if ( ! empty( $slot['secret'] ) ) {
+				$webhook_secret = sanitize_text_field( (string) $slot['secret'] );
+			}
+		}
+
+		if ( '' === $webhook_secret ) {
+			$legacy = eventkoi_stripe_webhook_slot_values( $webhook );
+			if ( ! empty( $legacy['secret'] ) ) {
+				$webhook_secret = sanitize_text_field( (string) $legacy['secret'] );
+			}
 		}
 	}
 
