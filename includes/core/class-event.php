@@ -236,11 +236,17 @@ class Event {
 
 		// A taxonomy slug may contain hyphens, and turning them into
 		// underscores would stop the slug resolving.
-		if ( 0 !== strpos( $name, 'event_tax_' ) && 0 !== strpos( $name, 'tax_' ) ) {
+		$is_taxonomy = 0 === strpos( $name, 'event_tax_' ) || 0 === strpos( $name, 'tax_' );
+
+		if ( ! $is_taxonomy ) {
 			$name = str_replace( '-', '_', $name );
 		}
 
-		$name = str_replace( 'event_', '', $name );
+		// For a taxonomy key only the leading prefix goes: a slug such as
+		// event_types must survive, or the taxonomy would never resolve.
+		$name = $is_taxonomy
+			? preg_replace( '/^event_/', '', $name )
+			: str_replace( 'event_', '', $name );
 
 		// Support location_1, location_2, etc.
 		if ( preg_match( '/^location_(\d+)$/', $name, $matches ) ) {

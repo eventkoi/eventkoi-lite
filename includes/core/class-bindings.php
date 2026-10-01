@@ -25,6 +25,8 @@ class Bindings
     public function __construct()
     {
         add_action('init', array( $this, 'register_block_bindings' ));
+        // Late, so taxonomies other plugins register on init already exist.
+        add_action('init', array( $this, 'register_taxonomy_bindings' ), 999);
         add_filter('block_bindings_source_value', array( $this, 'filter_event_meta_values' ), 10, 5);
     }
 
@@ -87,6 +89,73 @@ class Bindings
         'event_rsvp_going'            => __('Event RSVP going', 'eventkoi-lite'),
         'event_rsvp_full'             => __('Event RSVP full label', 'eventkoi-lite'),
         );
+    }
+
+    /**
+     * Attribute keys for the taxonomies attached to events.
+     *
+     * The event editor tells people a taxonomy is available as the
+     * event_tax_<slug> attribute, so the block editor has to offer it in the
+     * Attributes picker and resolve it like any other event attribute. Covers
+     * every taxonomy shown on events; the calendar has its own attributes.
+     *
+     * @return array<string, string> Attribute key => label.
+     */
+    public static function get_taxonomy_keys()
+    {
+        $keys = array();
+
+        foreach ( get_object_taxonomies('eventkoi_event', 'objects') as $taxonomy ) {
+            if ('event_cal' === $taxonomy->name || empty($taxonomy->show_ui) ) {
+                continue;
+            }
+
+            $keys[ 'event_tax_' . $taxonomy->name ] = (string) ( $taxonomy->labels->name ?? $taxonomy->label );
+        }
+
+        return $keys;
+    }
+
+    /**
+     * Whether a binding key names one of the event taxonomy attributes.
+     *
+     * @param string $key Binding key.
+     * @return bool
+     */
+    public static function is_taxonomy_key( $key )
+    {
+        $key = (string) $key;
+
+        if (0 !== strpos($key, 'event_tax_') ) {
+            return false;
+        }
+
+        return array_key_exists($key, self::get_taxonomy_keys());
+    }
+
+    /**
+     * Offer the event taxonomy attributes in the block editor's Attributes picker.
+     *
+     * The picker lists registered post meta, so each key is registered the same
+     * way the built-in event attributes are.
+     */
+    public function register_taxonomy_bindings()
+    {
+        $post_types = array( 'eventkoi_event', 'wp_template', 'wp_template_part', 'wp_block', 'page', 'post' );
+
+        foreach ( array_keys(self::get_taxonomy_keys()) as $key ) {
+            foreach ( $post_types as $post_type ) {
+                register_meta(
+                    $post_type,
+                    $key,
+                    array(
+                    'show_in_rest' => true,
+                    'single'       => true,
+                    'type'         => 'string',
+                    )
+                );
+            }
+        }
     }
 
     /**
@@ -169,6 +238,11 @@ class Bindings
         if (! empty($source_args['key']) && array_key_exists($source_args['key'], self::get_allowed_keys()) ) {
             $event = new Event($event_id);
             return $event::render_meta($source_args['key']);
+        }
+
+        if (! empty($source_args['key']) && self::is_taxonomy_key($source_args['key']) ) {
+            $event = new Event($event_id);
+            return $event::render_meta((string) $source_args['key']);
         }
 
         return $value;
