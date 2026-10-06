@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.4.6.0
+Stable tag: 1.4.6.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,10 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.4.6.1 – Taxonomy attributes in the block editor – 2026-10-06 =
+* Fix: Event taxonomies were missing from the Attributes list in the block editor, so a block could not be connected to the taxonomy terms of an event. They are now listed and show the terms of the event.
+* Fix: A taxonomy whose slug contains the word event could print nothing when used as an event attribute.
 
 = 1.4.6.0 – Elementor calendar colours, attendee emails and calendar fixes – 2026-09-29 =
 * New: Colour pickers on the Elementor calendar widget, which now starts on a white background instead of inheriting grey page colours. Elementor global colours are honoured.
