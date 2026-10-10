@@ -22,12 +22,148 @@ class Bindings
     /**
      * Constructor.
      */
+    /**
+     * Cron hook that removes the empty rows earlier versions wrote under the
+     * binding keys.
+     */
+    public const STRAY_META_CLEANUP_HOOK = 'eventkoi_cleanup_stray_binding_meta';
+
     public function __construct()
     {
         add_action('init', array( $this, 'register_block_bindings' ));
         // Late, so taxonomies other plugins register on init already exist.
         add_action('init', array( $this, 'register_taxonomy_bindings' ), 999);
         add_filter('block_bindings_source_value', array( $this, 'filter_event_meta_values' ), 10, 5);
+        add_filter('update_post_metadata', array( __CLASS__, 'skip_empty_binding_meta' ), 10, 4);
+        add_filter('add_post_metadata', array( __CLASS__, 'skip_empty_binding_meta' ), 10, 4);
+        add_action('eventkoi_updated', array( __CLASS__, 'schedule_stray_meta_cleanup' ));
+        add_action(self::STRAY_META_CLEANUP_HOOK, array( __CLASS__, 'cleanup_stray_meta' ));
+    }
+
+    /**
+     * Whether a meta key is one of the virtual binding keys.
+     *
+     * @param  string $meta_key Meta key.
+     * @return bool
+     */
+    public static function is_binding_key( $meta_key )
+    {
+        return in_array((string) $meta_key, self::get_registered_binding_keys(), true);
+    }
+
+    /**
+     * Keep an empty value from becoming a row under a binding key.
+     *
+     * The keys are registered as REST post meta so the block editor lists
+     * them in its Attributes picker. When that editor saves a post it sends
+     * every registered key back, with an empty string for the ones that hold
+     * nothing, and WordPress would store each of them. On a site saving posts
+     * and pages that added around fifty empty rows per save.
+     *
+     * An existing row can still be cleared, so real data is never trapped.
+     *
+     * @param  mixed  $check      Short-circuit value handed in by WordPress.
+     * @param  int    $object_id  Post ID.
+     * @param  string $meta_key   Meta key.
+     * @param  mixed  $meta_value Value being written.
+     * @return mixed True to skip the write, otherwise the incoming $check.
+     */
+    public static function skip_empty_binding_meta( $check, $object_id, $meta_key, $meta_value )
+    {
+        if (null !== $check || '' !== $meta_value || ! self::is_binding_key($meta_key) ) {
+            return $check;
+        }
+
+        if (metadata_exists('post', (int) $object_id, $meta_key) ) {
+            return $check;
+        }
+
+        return true;
+    }
+
+    /**
+     * Queue the removal of the empty rows that saving any post from the block
+     * editor used to write under every binding key (before the keys had a
+     * registered default).
+     */
+    public static function schedule_stray_meta_cleanup()
+    {
+        if (! wp_next_scheduled(self::STRAY_META_CLEANUP_HOOK) ) {
+            wp_schedule_single_event(time() + MINUTE_IN_SECONDS, self::STRAY_META_CLEANUP_HOOK);
+        }
+    }
+
+    /**
+     * Every key the bindings register as post meta.
+     *
+     * @return string[]
+     */
+    public static function get_registered_binding_keys()
+    {
+        return array_values(
+            array_unique(
+                array_merge(
+                    array_diff(array_keys(self::get_allowed_keys()), array( 'event_calendar', 'event_calendar_url' )),
+                    array_keys(self::get_taxonomy_keys())
+                )
+            )
+        );
+    }
+
+    /**
+     * Delete empty rows stored under the binding keys on posts that are not
+     * events, one batch at a time, and come back for the rest.
+     *
+     * The binding keys never hold data: their values are rendered from the
+     * event when a bound block renders. An empty row under one of them is
+     * always a leftover from the block editor echoing the key back on save.
+     * Event posts are left alone because event_timezone is real meta there.
+     *
+     * @param  int $batch Rows to remove in this run.
+     * @return int Rows removed.
+     */
+    public static function cleanup_stray_meta( $batch = 2000 )
+    {
+        global $wpdb;
+
+        $batch = max(1, (int) $batch);
+        $keys  = self::get_registered_binding_keys();
+        if (empty($keys) ) {
+            return 0;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($keys), '%s'));
+        $rows         = $wpdb->get_results(
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Placeholders only.
+                "SELECT pm.meta_id, pm.post_id FROM {$wpdb->postmeta} pm INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id WHERE p.post_type <> 'eventkoi_event' AND pm.meta_value = '' AND pm.meta_key IN ( {$placeholders} ) ORDER BY pm.meta_id ASC LIMIT %d",
+                array_merge($keys, array( $batch ))
+            )
+        );
+
+        if (empty($rows) ) {
+            return 0;
+        }
+
+        $meta_ids = array_map('intval', wp_list_pluck($rows, 'meta_id'));
+        $id_slots = implode(',', array_fill(0, count($meta_ids), '%d'));
+        $wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+            $wpdb->prepare(
+                // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Placeholders only.
+                "DELETE FROM {$wpdb->postmeta} WHERE meta_id IN ( {$id_slots} )",
+                $meta_ids
+            )
+        );
+
+        foreach ( array_unique(array_map('intval', wp_list_pluck($rows, 'post_id'))) as $post_id ) {
+            wp_cache_delete($post_id, 'post_meta');
+        }
+
+        if (count($rows) === $batch ) {
+            wp_schedule_single_event(time() + 30, self::STRAY_META_CLEANUP_HOOK);
+        }
+
+        return count($rows);
     }
 
     /**
