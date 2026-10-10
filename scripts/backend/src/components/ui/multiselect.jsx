@@ -182,13 +182,19 @@ export function MultiSelect({
                       setSelected((prev) => [...prev, option]);
                     }}
                     className="cursor-pointer"
-                    style={
-                      option.depth
-                        ? { paddingLeft: `${8 + option.depth * 16}px` }
-                        : undefined
-                    }
                   >
-                    <span>{option.name}</span>
+                    {/* The list applies px-2 to every row with !important, so
+                        a padding on the row itself cannot carry the tree
+                        depth. Indent the label instead. */}
+                    <span
+                      style={
+                        option.depth
+                          ? { paddingLeft: `${option.depth * 16}px` }
+                          : undefined
+                      }
+                    >
+                      {option.name}
+                    </span>
                   </CommandItem>
                 ))}
               </CommandGroup>
