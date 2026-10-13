@@ -87,15 +87,6 @@ class WooCommerce_Checkout {
 		// Delete local EK orders when a WC order is permanently deleted.
 		add_action( 'woocommerce_before_delete_order', array( __CLASS__, 'on_order_deleted' ), 10, 2 );
 		add_action( 'before_delete_post', array( __CLASS__, 'on_order_post_deleted' ) );
-
-		// Suppress WC order emails for EventKoi ticket orders (EventKoi sends its own).
-		add_filter( 'woocommerce_email_enabled_new_order', array( __CLASS__, 'suppress_ticket_order_email' ), 10, 2 );
-		add_filter( 'woocommerce_email_enabled_customer_processing_order', array( __CLASS__, 'suppress_ticket_order_email' ), 10, 2 );
-		add_filter( 'woocommerce_email_enabled_customer_completed_order', array( __CLASS__, 'suppress_ticket_order_email' ), 10, 2 );
-		add_filter( 'woocommerce_email_enabled_customer_on_hold_order', array( __CLASS__, 'suppress_ticket_order_email' ), 10, 2 );
-		add_filter( 'woocommerce_email_enabled_customer_refunded_order', array( __CLASS__, 'suppress_ticket_order_email' ), 10, 2 );
-		add_filter( 'woocommerce_email_enabled_cancelled_order', array( __CLASS__, 'suppress_ticket_order_email' ), 10, 2 );
-		add_filter( 'woocommerce_email_enabled_failed_order', array( __CLASS__, 'suppress_ticket_order_email' ), 10, 2 );
 	}
 
 	/**
@@ -111,20 +102,6 @@ class WooCommerce_Checkout {
 		$settings = Settings::get();
 
 		return 'woocommerce' === ( $settings['ticket_checkout_method'] ?? '' );
-	}
-
-	/**
-	 * Suppress WC order emails for EventKoi ticket orders.
-	 *
-	 * @param bool     $enabled Whether the email is enabled.
-	 * @param WC_Order $order   The order object.
-	 * @return bool
-	 */
-	public static function suppress_ticket_order_email( $enabled, $order ) {
-		if ( $order instanceof \WC_Order && $order->get_meta( '_eventkoi_event_id' ) ) {
-			return false;
-		}
-		return $enabled;
 	}
 
 	/**
