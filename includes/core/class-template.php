@@ -792,30 +792,6 @@ class Template {
 			return $block_content;
 		}
 
-		// Resolve visibility. A per-event override ('show'/'hide') wins over the
-		// global Settings → Overview toggle; anything else inherits the global
-		// value, whose default is true for sites that never saved the option.
-		$override = sanitize_key( (string) get_post_meta( $post_id, 'series_backlink', true ) );
-		if ( 'hide' === $override ) {
-			return $block_content;
-		} elseif ( 'show' !== $override ) {
-			$settings = Settings::get();
-			$enabled  = ! isset( $settings['show_series_backlink'] )
-				|| '1' === (string) $settings['show_series_backlink']
-				|| 1 === $settings['show_series_backlink']
-				|| true === $settings['show_series_backlink'];
-			if ( ! $enabled ) {
-				return $block_content;
-			}
-		}
-
-		$instance_ts = function_exists( 'eventkoi_get_instance_id' ) ? eventkoi_get_instance_id() : null;
-
-		// Only apply to specific instances (not parent event).
-		if ( empty( $instance_ts ) ) {
-			return $block_content;
-		}
-
 		$attrs = $block['attrs'] ?? array();
 		$class = $attrs['className'] ?? '';
 
@@ -824,30 +800,20 @@ class Template {
 			return $block_content;
 		}
 
-		$event = new \EventKoi\Core\Event( $post_id );
-
-		// Ensure event is recurring.
-		if ( method_exists( $event, 'get_date_type' ) && 'recurring' !== $event::get_date_type() ) {
+		// The template already places the link through its own bound block
+		// (event_series_link), wherever the site owner moved it.
+		if ( strpos( $block_content, 'eventkoi-back-to-series' ) !== false ) {
 			return $block_content;
 		}
 
-		$parent_url   = get_permalink( $post_id );
-		$parent_title = $event->get_title();
-		$parent_link  = sprintf(
-			'<a href="%1$s" rel="bookmark">%2$s</a>',
-			esc_url( $parent_url ),
-			esc_html( $parent_title )
-		);
+		// Visibility, recurrence and the occurrence check all live in the
+		// renderer so the block and this fallback can never disagree.
+		new \EventKoi\Core\Event( $post_id );
+		$link_text = \EventKoi\Core\Event::rendered_series_link();
 
-		// Keep the whole sentence in one translatable string with the linked title
-		// as the only placeholder. "series" stays part of the sentence instead of
-		// being baked into the link text, so translators can position it for their
-		// language's grammar (e.g. French "de la serie %s").
-		$link_text = sprintf(
-			/* translators: %s: linked event title. */
-			esc_html__( '← See all events in the %s series', 'eventkoi-lite' ),
-			$parent_link
-		);
+		if ( '' === $link_text ) {
+			return $block_content;
+		}
 
 		$back_link = sprintf(
 			'<div class="eventkoi-back-to-series">%s</div>',

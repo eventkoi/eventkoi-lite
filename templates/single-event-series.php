@@ -18,8 +18,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 <p>← See all events in event_calendar_link</p>
 <!-- /wp:paragraph -->
  
-<!-- wp:heading -->
-<h2 class="wp-block-heading">Series: event_title</h2>
+<!-- wp:heading {"level":1} -->
+<h1 class="wp-block-heading">Series: event_title</h1>
 <!-- /wp:heading -->
 
 <!-- wp:paragraph -->

@@ -3846,6 +3846,63 @@ class Event {
 	}
 
 	/**
+	 * Rendered link back to the series from one of its occurrences.
+	 *
+	 * Empty on the series page itself, on non-recurring events, and when the
+	 * backlink is switched off globally or for this event, so a bound block
+	 * can sit in the template without leaving a stray element behind.
+	 *
+	 * @return string
+	 */
+	public static function rendered_series_link() {
+		$post_id = absint( self::get_id() );
+
+		if ( ! $post_id || 'recurring' !== self::get_date_type() ) {
+			return '';
+		}
+
+		$instance_ts = function_exists( 'eventkoi_get_instance_id' ) ? eventkoi_get_instance_id() : null;
+		if ( empty( $instance_ts ) ) {
+			return '';
+		}
+
+		// A per-event override ('show'/'hide') wins over the global toggle, whose
+		// default is on for sites that never saved the option.
+		$override = sanitize_key( (string) get_post_meta( $post_id, 'series_backlink', true ) );
+		if ( 'hide' === $override ) {
+			return '';
+		}
+		if ( 'show' !== $override ) {
+			$settings = Settings::get();
+			$enabled  = ! isset( $settings['show_series_backlink'] )
+				|| '1' === (string) $settings['show_series_backlink']
+				|| 1 === $settings['show_series_backlink']
+				|| true === $settings['show_series_backlink'];
+			if ( ! $enabled ) {
+				return '';
+			}
+		}
+
+		$parent_link = sprintf(
+			'<a href="%1$s" rel="bookmark">%2$s</a>',
+			esc_url( get_permalink( $post_id ) ),
+			esc_html( self::get_title() )
+		);
+
+		// One translatable sentence with the linked title as the only placeholder,
+		// so translators can position "series" for their grammar.
+		return apply_filters(
+			'eventkoi_rendered_event_series_link',
+			sprintf(
+				/* translators: %s: linked event title. */
+				esc_html__( '← See all events in the %s series', 'eventkoi-lite' ),
+				$parent_link
+			),
+			$post_id
+		);
+	}
+
+	/**
 	 * Rendered calendar.
 	 */
 	public static function rendered_calendar() {

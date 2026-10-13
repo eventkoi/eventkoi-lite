@@ -184,6 +184,7 @@ class Bindings
         'event_calendar_url'          => __('Event calendar URL', 'eventkoi-lite'),
         'event_calendar'              => __('Event calendar', 'eventkoi-lite'),
         'event_calendar_link'         => __('Event calendar link', 'eventkoi-lite'),
+        'event_series_link'           => __('Event series link', 'eventkoi-lite'),
         'event_location'              => __('Event location', 'eventkoi-lite'),
         'event_location_name'           => __('Event location name', 'eventkoi-lite'),
         'event_location_address'        => __('Event location address', 'eventkoi-lite'),

@@ -2043,6 +2043,12 @@ JS;
 			return self::build_div_wrapper( $block['attrs'], 'eventkoi-details no-eventkoi', $event::rendered_details() );
 		}
 
+		if ( 'event_series_link' === $key ) {
+			$content = $event::rendered_series_link();
+
+			return '' === $content ? '' : self::build_div_wrapper( $block['attrs'], 'eventkoi-back-to-series', $content );
+		}
+
 		if ( 'event_gmap' === $key ) {
 			return '<div class="eventkoi-gmap"></div>';
 		}

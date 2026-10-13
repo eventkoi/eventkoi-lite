@@ -14,7 +14,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 <!-- wp:group {"className":"eventkoi-front","style":{"spacing":{"margin":{"top":"40px","bottom":"40px"},"blockGap":"30px","padding":{"right":"30px","left":"30px"}}},"layout":{"type":"constrained","wideSize":"1100px","contentSize":"1100px"}} -->
 <div class="wp-block-group eventkoi-front" style="margin-top:40px;margin-bottom:40px;padding-right:30px;padding-left:30px"><!-- wp:columns {"style":{"spacing":{"blockGap":{"top":"0","left":"var:preset|spacing|30"}}}} -->
 <div class="wp-block-columns"><!-- wp:column {"width":"65%","style":{"spacing":{"blockGap":"0","padding":{"top":"0","bottom":"0"}}}} -->
-<div class="wp-block-column" style="padding-top:0;padding-bottom:0;flex-basis:65%"><!-- wp:paragraph -->
+<div class="wp-block-column" style="padding-top:0;padding-bottom:0;flex-basis:65%"><!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"event_series_link"}}}}} -->
+<p></p>
+<!-- /wp:paragraph -->
+
+<!-- wp:paragraph -->
 <p>← See all events in event_calendar_link</p>
 <!-- /wp:paragraph -->
 
