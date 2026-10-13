@@ -86,7 +86,7 @@ class Event_Widget extends Widget_Base {
 				'multiple'    => false,
 				'label_block' => true,
 				'default'     => '0',
-				'description' => __( 'Choose the event to display.', 'eventkoi-lite' ),
+				'description' => __( 'Current event shows the event being viewed, so one template works for every event.', 'eventkoi-lite' ),
 			)
 		);
 
@@ -318,6 +318,18 @@ class Event_Widget extends Widget_Base {
 			echo '<div class="eventkoi-elementor-widget">';
 			echo implode( '', $output ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Each row is escaped above or rendered by the plugin's own escaped renderers.
 			echo '</div>';
+			return;
+		}
+
+		// Editor-only placeholder: "Current event" has nothing to resolve
+		// inside the Elementor editor, and a silently blank widget reads as
+		// broken. Frontend output stays empty on non-event pages.
+		if ( 0 === $event_id
+			&& class_exists( '\Elementor\Plugin' )
+			&& \Elementor\Plugin::$instance->editor->is_edit_mode() ) {
+			echo '<div class="eventkoi-elementor-widget" style="padding:16px;border:1px dashed #ccc;border-radius:6px;color:#6b7280;font-size:13px;">';
+			echo esc_html__( 'Current event data will display here on event pages.', 'eventkoi-lite' );
+			echo '</div>';
 		}
 	}
 
@@ -353,53 +365,9 @@ class Event_Widget extends Widget_Base {
 	 * @return array
 	 */
 	private function get_event_data_options() {
-		return array(
-			'event_title'                 => __( 'Event Title', 'eventkoi-lite' ),
-			'event_details'               => __( 'Event Details', 'eventkoi-lite' ),
-			'event_timezone'              => __( 'Event Timezone', 'eventkoi-lite' ),
-			'event_gmap'                  => __( 'Event Google Map', 'eventkoi-lite' ),
-			'event_image'                 => __( 'Event Image', 'eventkoi-lite' ),
-			'event_image_url'             => __( 'Event Image URL', 'eventkoi-lite' ),
-			'event_calendar_url'          => __( 'Event Calendar URL', 'eventkoi-lite' ),
-			'event_calendar'              => __( 'Event Calendar', 'eventkoi-lite' ),
-			'event_calendar_link'         => __( 'Event Calendar Link', 'eventkoi-lite' ),
-			'event_location'              => __( 'Event Location', 'eventkoi-lite' ),
-			'event_location_name'         => __( 'Event Location Name', 'eventkoi-lite' ),
-			'event_location_address'      => __( 'Event Location Address', 'eventkoi-lite' ),
-			'event_location_unit'         => __( 'Event Location Apartment/Unit', 'eventkoi-lite' ),
-			'event_location_city'         => __( 'Event Location City', 'eventkoi-lite' ),
-			'event_location_state'        => __( 'Event Location State', 'eventkoi-lite' ),
-			'event_location_country'      => __( 'Event Location Country', 'eventkoi-lite' ),
-			'event_location_zip'          => __( 'Event Location Post Code', 'eventkoi-lite' ),
-			'event_datetime_with_summary' => __( 'Event Datetime with Summary', 'eventkoi-lite' ),
-			'event_datetime'              => __( 'Event Datetime', 'eventkoi-lite' ),
-			'event_date'                  => __( 'Event Date', 'eventkoi-lite' ),
-			'event_time'                  => __( 'Event Time', 'eventkoi-lite' ),
-			'event_date_type'             => __( 'Event Date Type', 'eventkoi-lite' ),
-			'event_rulesummary'           => __( 'Event Rule Summary', 'eventkoi-lite' ),
-			'event_capacity'              => __( 'Event Capacity', 'eventkoi-lite' ),
-			'event_capacity_remaining'    => __( 'Event Capacity Remaining', 'eventkoi-lite' ),
-			'event_capacity_sold'         => __( 'Event Capacity Sold', 'eventkoi-lite' ),
-			'event_sold_out'              => __( 'Event Sold Out', 'eventkoi-lite' ),
-			'event_low_stock'             => __( 'Event Low Stock', 'eventkoi-lite' ),
-			'event_ticket_count'          => __( 'Event Ticket Count', 'eventkoi-lite' ),
-			'event_ticket_summary'        => __( 'Event Ticket Summary', 'eventkoi-lite' ),
-			'event_sales_start'           => __( 'Event Sales Start', 'eventkoi-lite' ),
-			'event_sales_end'             => __( 'Event Sales End', 'eventkoi-lite' ),
-			'event_ticket_price_from'     => __( 'Event Ticket Price From', 'eventkoi-lite' ),
-			'event_ticket_price_to'       => __( 'Event Ticket Price To', 'eventkoi-lite' ),
-			'event_ticket_price_range'    => __( 'Event Ticket Price Range', 'eventkoi-lite' ),
-			'event_date_year'             => __( 'Event Date Year', 'eventkoi-lite' ),
-			'event_date_month'            => __( 'Event Date Month', 'eventkoi-lite' ),
-			'event_date_month_short'      => __( 'Event Date Month Short', 'eventkoi-lite' ),
-			'event_date_day'              => __( 'Event Date Day', 'eventkoi-lite' ),
-			'event_date_day_name'         => __( 'Event Date Day Name', 'eventkoi-lite' ),
-			'event_date_iso'              => __( 'Event Date ISO', 'eventkoi-lite' ),
-			'event_rsvp_capacity'         => __( 'Event RSVP Capacity', 'eventkoi-lite' ),
-			'event_rsvp_remaining'        => __( 'Event RSVP Remaining', 'eventkoi-lite' ),
-			'event_rsvp_going'            => __( 'Event RSVP Going', 'eventkoi-lite' ),
-			'event_rsvp_full'             => __( 'Event RSVP Full', 'eventkoi-lite' ),
-		);
+		// The shared list, so this widget offers the same fields as the block
+		// and the other builders, summaries and series dates included.
+		return eventkoi_get_event_data_options();
 	}
 
 	/**

@@ -378,6 +378,7 @@ class Shortcodes {
 		$keys        = array_map( 'trim', explode( ',', $attributes['data'] ) );
 		$parts       = array();
 		$bare_parts  = array();
+		$part_keys   = array();
 		$auto_unwrap = false;
 		$show_label  = self::parse_boolean_attribute( $attributes['with_name'] ?? false, is_array( $user_attributes ) && in_array( 'with_name', $user_attributes, true ) );
 
@@ -436,6 +437,7 @@ class Shortcodes {
 
 				$parts[]      = $value;
 				$bare_parts[] = $bare_value;
+				$part_keys[]  = $normalized_key;
 			}
 		}
 
@@ -459,15 +461,26 @@ class Shortcodes {
 			return wp_strip_all_tags( reset( $filtered_parts ) );
 		}
 
-		$wrapped = implode(
-			'',
-			array_map(
-				function ( $item ) {
-					return '<div class="eventkoi-data">' . wp_kses( $item, \EventKoi\Core\Event::get_description_allowed_html() ) . '</div>';
-				},
-				array_filter( $parts )
-			)
-		);
+		// The description sanitizer's allowed set, not wp_kses_post: the
+		// details part legitimately carries normalized video embeds that the
+		// stricter post context would silently strip.
+		$allowed_html = \EventKoi\Core\Event::get_description_allowed_html();
+
+		// Rows the plugin renders itself (the ticket box with its no-script
+		// order form, the map mount, the series dates loop) carry a form,
+		// inline styles and data attributes that filter would strip. They are
+		// escaped at the source, so they pass through as rendered.
+		$interactive = array( 'event_ticket_rsvp', 'event_gmap', 'event_series_dates' );
+		$wrapped     = '';
+
+		foreach ( $parts as $index => $item ) {
+			if ( ! $item ) {
+				continue;
+			}
+
+			$is_interactive = in_array( (string) ( $part_keys[ $index ] ?? '' ), $interactive, true );
+			$wrapped       .= '<div class="eventkoi-data">' . ( $is_interactive ? $item : wp_kses( $item, $allowed_html ) ) . '</div>';
+		}
 
 		return '<div class="eventkoi-shortcode">' . $wrapped . '</div>';
 	}

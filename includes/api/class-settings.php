@@ -234,6 +234,9 @@ class Settings {
 				$sanitized = wp_kses( $value, \EventKoi\Core\Settings::get_email_template_allowed_tags() );
 			} elseif ( \EventKoi\Core\Permissions::SETTINGS_KEY === $key ) {
 				$sanitized = self::sanitize_user_permissions( $value );
+			} elseif ( in_array( $key, array( 'default_event_template', 'default_series_template', 'default_calendar_template' ), true ) ) {
+				// Template slugs: a post_name, "default", or empty for unset.
+				$sanitized = sanitize_key( (string) $value );
 			} else {
 				$sanitized = is_array( $value )
 				? array_map( 'sanitize_text_field', $value )

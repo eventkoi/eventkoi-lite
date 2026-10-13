@@ -7,6 +7,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 import { DashboardOverview } from "@/admin/dashboard/overview";
 import { LogoIcon } from "@/components/logo-icon";
+import { ChooseTemplatesStep } from "@/components/onboarding/choose-templates";
 import { ConfirmTimezoneFormatStep } from "@/components/onboarding/confirm-timezone-format";
 import { SetCalendarDefaultsStep } from "@/components/onboarding/set-calendar-defaults";
 import { Button } from "@/components/ui/button";
@@ -30,6 +31,7 @@ export function DashboardOnboarding() {
   const location = useLocation();
 
   const ticketsEnabled = !!window?.eventkoi_params?.tickets_feature_enabled;
+  const elementorActive = !!window?.eventkoi_params?.elementor_active;
 
   const steps = useMemo(
     () => [
@@ -45,6 +47,16 @@ export function DashboardOnboarding() {
         sidebarHidden: true,
         sidebarKey: "calendar",
       },
+      // Only Elementor sites get asked; everyone else keeps the block templates.
+      ...(elementorActive
+        ? [
+            {
+              key: "templates",
+              title: __("Choose event templates", "eventkoi-lite"),
+              component: ChooseTemplatesStep,
+            },
+          ]
+        : []),
       // Ticket setup step hidden while feature is in beta.
       // ...(ticketsEnabled
       //   ? [
@@ -56,7 +68,7 @@ export function DashboardOnboarding() {
       //     ]
       //   : []),
     ],
-    [ticketsEnabled]
+    [ticketsEnabled, elementorActive]
   );
 
   const initialStepIndex = useMemo(() => {

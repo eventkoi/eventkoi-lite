@@ -3,10 +3,8 @@ import apiRequest from "@wordpress/api-fetch";
 import { useEffect, useMemo, useState } from "react";
 
 import { Box } from "@/components/box";
-import { ProLaunch } from "@/components/dashboard/pro-launch";
 import { Heading } from "@/components/heading";
 import { Panel } from "@/components/panel";
-import { ProBadge } from "@/components/pro-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +13,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -38,7 +37,6 @@ const dayLabels = {
 };
 
 const themeSlug = eventkoi_params?.theme || "twentytwentyfive";
-const customTemplates = eventkoi_params?.custom_templates || [];
 const cleanPermalinkBase = (value, fallback) => {
   // Sanitize each path segment separately so nested bases like
   // "agenda/calendar" keep their slashes.
@@ -64,6 +62,18 @@ export function SettingsOverview() {
   const [defaultTemplate, setDefaultTemplate] = useState(
     settings?.default_event_template || "default"
   );
+  const [seriesTemplate, setSeriesTemplate] = useState(
+    settings?.default_series_template || "default"
+  );
+  const [calendarTemplate, setCalendarTemplate] = useState(
+    settings?.default_calendar_template || "default"
+  );
+  // Builder template groups come from a page-load snapshot. They are kept in
+  // state so a list handed back by the server (after the onboarding step
+  // imports the Elementor templates, for instance) replaces it in place.
+  const [templateGroups, setTemplateGroups] = useState(
+    () => eventkoi_params?.custom_templates || []
+  );
   const [autoDetectTimezone, setAutoDetectTimezone] = useState(
     settings?.auto_detect_timezone === "1" ||
       settings?.auto_detect_timezone === true ||
@@ -84,10 +94,27 @@ export function SettingsOverview() {
   const [datePreview, setDatePreview] = useState("");
   const [timePreview, setTimePreview] = useState("");
 
-  const blockTemplates = useMemo(() => {
-    const group = customTemplates.find((tplGroup) => tplGroup.type === "block");
-    return group?.templates || [];
-  }, []);
+  const templateOptions = useMemo(() => {
+    const options = [];
+
+    templateGroups.forEach((group) => {
+      if (group.templates && group.templates.length > 0) {
+        group.templates.forEach((tpl) => {
+          options.push({
+            slug: tpl.slug,
+            title: tpl.title,
+            group: group.label,
+            // "Elementor > EventKoi Event Page": the builder stays visible in
+            // the closed picker, where the group heading is not.
+            label: `${group.label} > ${tpl.title}`,
+            editUrl: tpl.edit_url || "",
+          });
+        });
+      }
+    });
+
+    return options;
+  }, [templateGroups]);
 
   useEffect(() => {
     if (settings?.time_format && settings.time_format !== timeFormat) {
@@ -309,19 +336,140 @@ export function SettingsOverview() {
 
   const handleDefaultTemplateChange = (value) => {
     setDefaultTemplate(value);
+    if (value !== settings?.default_event_template) {
+      saveSettings({ default_event_template: value });
+    }
   };
 
-  // Classic themes have no Site Editor template screens.
+  const handleSeriesTemplateChange = (value) => {
+    setSeriesTemplate(value);
+    if (value !== (settings?.default_series_template || "default")) {
+      saveSettings({ default_series_template: value });
+    }
+  };
+
+  const handleCalendarTemplateChange = (value) => {
+    setCalendarTemplate(value);
+    if (value !== (settings?.default_calendar_template || "default")) {
+      saveSettings({ default_calendar_template: value });
+    }
+  };
+
+  // Keep the pickers in step with settings saved elsewhere (the Elementor
+  // switch below, the onboarding wizard).
+  useEffect(() => {
+    setSeriesTemplate(settings?.default_series_template || "default");
+    setCalendarTemplate(settings?.default_calendar_template || "default");
+  }, [settings?.default_series_template, settings?.default_calendar_template]);
+
+  useEffect(() => {
+    if (Array.isArray(window.eventkoi_params?.custom_templates)) {
+      setTemplateGroups(window.eventkoi_params.custom_templates);
+    }
+  }, [settings?.default_event_template, settings?.default_series_template, settings?.default_calendar_template]);
+
+  const usingDefaultTemplates =
+    (defaultTemplate || "default") === "default" &&
+    (seriesTemplate || "default") === "default" &&
+    (calendarTemplate || "default") === "default";
+
+  const switchBackToDefaultTemplates = () => {
+    setDefaultTemplate("default");
+    setSeriesTemplate("default");
+    setCalendarTemplate("default");
+    saveSettings({
+      default_event_template: "default",
+      default_series_template: "default",
+      default_calendar_template: "default",
+    });
+  };
+
+  // Calendar pages are PHP templates, so only page builder templates can
+  // replace them; the block group stays out of that picker.
+  const calendarTemplateOptions = useMemo(
+    () => templateOptions.filter((option) => option.group !== __("Block", "eventkoi-lite")),
+    [templateOptions]
+  );
+
+  // Classic themes have no Site Editor template screens; only builder
+  // templates with their own edit URL stay editable there.
   const isBlockTheme = !!eventkoi_params?.block_theme;
-  const templateEditorUrl = !isBlockTheme
-    ? ""
-    : defaultTemplate && defaultTemplate !== "default"
-      ? `${
-          eventkoi_params.site_url
-        }/wp-admin/site-editor.php?p=${encodeURIComponent(
-          `/wp_template/${themeSlug}//${defaultTemplate}`
-        )}&canvas=edit`
-      : `${eventkoi_params.site_url}/wp-admin/site-editor.php?p=/template&activeView=eventkoi`;
+  const editorLinkFor = (slug, option) => {
+    if (!slug || slug === "default") {
+      return isBlockTheme
+        ? {
+            href: `${eventkoi_params.site_url}/wp-admin/site-editor.php?p=/template&activeView=EventKoi`,
+            label: __("View/edit templates", "eventkoi-lite"),
+          }
+        : null;
+    }
+    if (option?.editUrl) {
+      return { href: option.editUrl, label: __("Edit template", "eventkoi-lite") };
+    }
+    if (isBlockTheme) {
+      return {
+        href: `${eventkoi_params.site_url}/wp-admin/site-editor.php?p=${encodeURIComponent(
+          `/wp_template/${themeSlug}//${slug}`
+        )}&canvas=edit`,
+        label: __("Edit in Site Editor", "eventkoi-lite"),
+      };
+    }
+    return null;
+  };
+
+  const renderTemplateGroups = (options) =>
+    Object.values(
+      options.reduce((groups, option) => {
+        if (!groups[option.group]) {
+          groups[option.group] = [];
+        }
+        groups[option.group].push(option);
+        return groups;
+      }, {})
+    ).map((groupOptions, index) => {
+      const label = groupOptions[0]?.group;
+      return (
+        <SelectGroup key={`${label}-${index}`}>
+          {groupOptions.map((option) => (
+            <SelectItem key={option.slug} value={option.slug}>
+              {option.label}
+            </SelectItem>
+          ))}
+        </SelectGroup>
+      );
+    });
+
+  const renderTemplatePicker = ({ id, label, value, onChange, options, help }) => {
+    const option = options.find((item) => item.slug === value);
+    const link = editorLinkFor(value, option);
+
+    return (
+      <div className="grid gap-2">
+        <Label htmlFor={id}>{label}</Label>
+        <Select value={value} onValueChange={onChange} disabled={isSaving}>
+          <SelectTrigger id={id} className="w-[250px]">
+            <SelectValue placeholder={__("Select a template", "eventkoi-lite")} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="default">{__("Default template", "eventkoi-lite")}</SelectItem>
+            {renderTemplateGroups(options)}
+          </SelectContent>
+        </Select>
+        <div className="text-muted-foreground">{help}</div>
+        {link && (
+          <a
+            href={link.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-primary underline hover:text-primary/80 transition"
+          >
+            {link.label}
+            <span className="sr-only"> {__("(opens in new tab)", "eventkoi-lite")}</span>
+          </a>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="grid gap-8">
@@ -600,55 +748,46 @@ export function SettingsOverview() {
             <Heading level={3}>{__("Single event pages", "eventkoi-lite")}</Heading>
           </Panel>
           <Panel className="gap-10 pt-2">
-            {/* Default event template */}
-            <div className="grid gap-2">
-              <Label htmlFor="default-event-template">
-                <span className="inline-flex items-center gap-2">
-                  {__("Default event template", "eventkoi-lite")}
-                  <ProBadge />
-                </span>
-              </Label>
-              <Select
-                value={defaultTemplate}
-                onValueChange={handleDefaultTemplateChange}
-                disabled
-              >
-                <SelectTrigger
-                  id="default-event-template"
-                  className="w-[250px]"
+            {renderTemplatePicker({
+              id: "default-event-template",
+              label: __("Default event template", "eventkoi-lite"),
+              value: defaultTemplate,
+              onChange: handleDefaultTemplateChange,
+              options: templateOptions,
+              help: __("Applied to every event page unless overridden on the event itself.", "eventkoi-lite"),
+            })}
+
+            {renderTemplatePicker({
+              id: "default-series-template",
+              label: __("Event series template", "eventkoi-lite"),
+              value: seriesTemplate,
+              onChange: handleSeriesTemplateChange,
+              options: templateOptions,
+              help: __("The overview page of a recurring event, listing its dates. Default keeps EventKoi's built-in series layout.", "eventkoi-lite"),
+            })}
+
+            {renderTemplatePicker({
+              id: "default-calendar-template",
+              label: __("Calendar page template", "eventkoi-lite"),
+              value: calendarTemplate,
+              onChange: handleCalendarTemplateChange,
+              options: calendarTemplateOptions,
+              help: __("The page each calendar opens on. Default keeps EventKoi's built-in calendar page.", "eventkoi-lite"),
+            })}
+
+            {!usingDefaultTemplates && (
+              <div>
+                <Button
+                  variant="outline"
+                  className="h-9 cursor-pointer"
+                  disabled={isSaving}
+                  onClick={switchBackToDefaultTemplates}
                 >
-                  <SelectValue placeholder={__("Select a template", "eventkoi-lite")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="default">{__("Default template", "eventkoi-lite")}</SelectItem>
-                  {blockTemplates.map((tpl) => (
-                    <SelectItem key={tpl.slug} value={tpl.slug}>
-                      {tpl.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="text-muted-foreground">
-                {__("Applied to every event page unless overridden on the event itself.", "eventkoi-lite")}
+                  {__("Switch back to default templates", "eventkoi-lite")}
+                </Button>
               </div>
-              {templateEditorUrl && (
-                <a
-                  href={templateEditorUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-primary underline hover:text-primary/80 transition"
-                >
-                  {defaultTemplate && defaultTemplate !== "default"
-                    ? __("Edit in Site Editor", "eventkoi-lite")
-                    : __("View/edit templates", "eventkoi-lite")}
-                </a>
-              )}
-            </div>
-            <ProLaunch
-              headline="Upgrade to switch default event template"
-              minimal
-              className="!mt-0"
-            />
+            )}
+
           </Panel>
         </div>
       </Box>

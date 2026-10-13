@@ -33,8 +33,8 @@ class Scripts {
 		add_action( 'enqueue_block_editor_assets', array( $this, 'enqueue_block_editor_assets' ) );
 		add_action( 'enqueue_block_assets', array( $this, 'enqueue_block_assets' ) );
 
-		// Invalidate template cache when templates change.
-		foreach ( array( 'elementor_library' ) as $pt ) {
+		// Invalidate cached template list when relevant templates change.
+		foreach ( array( 'elementor_library', 'bricks_template', 'fl-builder-template', 'fl-theme-layout' ) as $pt ) {
 			add_action( "save_post_{$pt}", array( self::class, 'flush_template_cache' ) );
 		}
 		add_action( 'delete_post', array( self::class, 'flush_template_cache' ) );
@@ -131,39 +131,53 @@ class Scripts {
 	}
 
 	/**
-	 * Get custom templates, cached in a 30-minute transient.
+	 * Get custom templates with transient caching.
 	 *
 	 * @return array
 	 */
 	public static function get_custom_templates() {
+		// The ready-made Elementor templates belong in the picker as soon as
+		// Elementor is active, so they are imported into the library here when
+		// missing. Nothing is applied until an owner picks one.
+		if (
+			class_exists( \EventKoi\Core\Elementor_Templates::class )
+			&& \EventKoi\Core\Elementor_Templates::is_available()
+			&& current_user_can( 'manage_options' )
+		) {
+			$status = \EventKoi\Core\Elementor_Templates::status();
+			if ( empty( $status['imported'] ) ) {
+				\EventKoi\Core\Elementor_Templates::import();
+			}
+		}
+
 		$cached = get_transient( 'eventkoi_custom_templates' );
-		if ( false !== $cached ) {
+		if ( is_array( $cached ) ) {
 			return $cached;
 		}
 
-		$theme = wp_get_theme()->get_stylesheet();
-
-		$templates        = get_block_templates( array( 'post_type' => 'wp_template' ), 'wp_template' );
-		$custom_templates = array();
+		$theme           = wp_get_theme()->get_stylesheet();
+		$templates       = get_block_templates( array( 'post_type' => 'wp_template' ), 'wp_template' );
+		$block_templates = array();
 
 		foreach ( $templates as $template ) {
 			if ( $template->theme === $theme ) {
-				$custom_templates[] = array(
+				$block_templates[] = array(
 					'slug'  => $template->slug,
 					'title' => $template->title->rendered ?? $template->title ?? $template->slug,
 				);
 			}
 		}
 
-		$elementor_templates = array();
+		$custom_templates = array(
+			array(
+				'type'      => 'block',
+				'label'     => __( 'Block', 'eventkoi-lite' ),
+				'templates' => $block_templates,
+			),
+		);
 
 		if ( defined( 'ELEMENTOR_VERSION' ) ) {
-			// Any library template can render as an event layout, so the picker
-			// is no longer limited to templates whose display conditions name
-			// the event post type. Only library types that make no sense as a
-			// page body stay out.
-			$excluded_elementor_types = array( 'kit', 'popup', 'header', 'footer', 'loop-item', 'archive', 'search-results', 'error-404' );
-
+			$elementor_templates = array();
 			$all_elementor_posts = get_posts(
 				array(
 					'post_type'      => 'elementor_library',
@@ -173,6 +187,12 @@ class Scripts {
 					'order'          => 'ASC',
 				)
 			);
+
+			// Any library template can render as an event layout, so the picker
+			// is no longer limited to templates whose display conditions name
+			// the event post type. Only library types that make no sense as a
+			// page body stay out.
+			$excluded_elementor_types = array( 'kit', 'popup', 'header', 'footer', 'loop-item', 'archive', 'search-results', 'error-404' );
 
 			foreach ( $all_elementor_posts as $tpl_post ) {
 				if ( empty( $tpl_post->post_name ) ) {
@@ -185,28 +205,109 @@ class Scripts {
 				}
 
 				$elementor_templates[] = array(
-					'slug'  => $tpl_post->post_name,
-					'title' => $tpl_post->post_title,
+					'slug'     => $tpl_post->post_name,
+					'title'    => $tpl_post->post_title,
+					'edit_url' => add_query_arg(
+						array(
+							'post'   => $tpl_post->ID,
+							'action' => 'elementor',
+						),
+						admin_url( 'post.php' )
+					),
+				);
+			}
+
+			if ( ! empty( $elementor_templates ) ) {
+				$custom_templates[] = array(
+					'type'      => 'elementor',
+					'label'     => __( 'Elementor', 'eventkoi-lite' ),
+					'templates' => $elementor_templates,
 				);
 			}
 		}
 
-		$result = array(
-			array(
-				'type'      => 'block',
-				'label'     => __( 'Block', 'eventkoi-lite' ),
-				'templates' => $custom_templates,
-			),
-			array(
-				'type'      => 'elementor',
-				'label'     => __( 'Elementor', 'eventkoi-lite' ),
-				'templates' => $elementor_templates,
-			),
-		);
+		if ( defined( 'BRICKS_VERSION' ) ) {
+			$bricks_templates = array();
+			$all_templates    = get_posts(
+				array(
+					'post_type'      => 'bricks_template',
+					'post_status'    => 'publish',
+					'posts_per_page' => -1,
+				)
+			);
 
-		set_transient( 'eventkoi_custom_templates', $result, 30 * MINUTE_IN_SECONDS );
+			foreach ( $all_templates as $template_post ) {
+				$bricks_templates[] = array(
+					'slug'  => $template_post->post_name,
+					'title' => $template_post->post_title,
+				);
+			}
 
-		return $result;
+			if ( ! empty( $bricks_templates ) ) {
+				$custom_templates[] = array(
+					'type'      => 'bricks',
+					'label'     => __( 'Bricks', 'eventkoi-lite' ),
+					'templates' => $bricks_templates,
+				);
+			}
+		}
+
+		if ( post_type_exists( 'fl-builder-template' ) ) {
+			$beaver_templates = array();
+			$all_templates    = get_posts(
+				array(
+					'post_type'      => 'fl-builder-template',
+					'post_status'    => 'publish',
+					'posts_per_page' => -1,
+				)
+			);
+
+			foreach ( $all_templates as $template_post ) {
+				if ( ! ( $template_post instanceof \WP_Post ) ) {
+					continue;
+				}
+
+				$beaver_templates[] = array(
+					'slug'     => 'bb__' . $template_post->post_name,
+					'title'    => $template_post->post_title,
+					'edit_url' => admin_url( 'post.php?post=' . absint( $template_post->ID ) . '&action=edit' ),
+				);
+			}
+
+			if ( post_type_exists( 'fl-theme-layout' ) ) {
+				$themer_layouts = get_posts(
+					array(
+						'post_type'      => 'fl-theme-layout',
+						'post_status'    => 'publish',
+						'posts_per_page' => -1,
+					)
+				);
+
+				foreach ( $themer_layouts as $template_post ) {
+					if ( ! ( $template_post instanceof \WP_Post ) ) {
+						continue;
+					}
+
+					$beaver_templates[] = array(
+						'slug'     => 'bbt__' . $template_post->post_name,
+						'title'    => $template_post->post_title,
+						'edit_url' => admin_url( 'post.php?post=' . absint( $template_post->ID ) . '&action=edit' ),
+					);
+				}
+			}
+
+			if ( ! empty( $beaver_templates ) ) {
+				$custom_templates[] = array(
+					'type'      => 'beaver',
+					'label'     => __( 'Beaver Builder', 'eventkoi-lite' ),
+					'templates' => $beaver_templates,
+				);
+			}
+		}
+
+		set_transient( 'eventkoi_custom_templates', $custom_templates, 30 * MINUTE_IN_SECONDS );
+
+		return $custom_templates;
 	}
 
 	/**
@@ -251,6 +352,7 @@ class Scripts {
 			'wc_settings_url'     => admin_url( 'admin.php?page=wc-settings' ),
 			'admin_post_url'      => admin_url( 'post.php' ),
 			'elementor_active'    => defined( 'ELEMENTOR_VERSION' ),
+			'elementor_templates' => 'toplevel_page_eventkoi' === $screen->base ? \EventKoi\Core\Elementor_Templates::status() : null,
 			'api_key'             => REST::get_api_key(),
 			'has_seo_plugin'      => self::has_seo_plugin(),
 			'is_admin'            => current_user_can( 'manage_options' ),
@@ -288,6 +390,14 @@ class Scripts {
 		);
 
 		$eventkoi_params['custom_templates'] = self::get_custom_templates();
+
+		if (
+			! empty( $eventkoi_params['new_event'] ) &&
+			! empty( $settings['default_event_template'] ) &&
+			'default' !== $settings['default_event_template']
+		) {
+			$eventkoi_params['new_event']['template'] = sanitize_key( $settings['default_event_template'] );
+		}
 
 		if ( $is_dev ) {
 			$vite_url = trim( file_get_contents( $hot_file ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents

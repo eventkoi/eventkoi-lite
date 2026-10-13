@@ -733,9 +733,13 @@ class Event {
 		$template = ! empty( $meta['template'] ) ? sanitize_key( $meta['template'] ) : '';
 
 		if ( 'default' === $template ) {
+			update_post_meta( self::$event_id, 'eventkoi_template', 'default' );
 			delete_post_meta( self::$event_id, '_wp_page_template' );
 		} elseif ( ! empty( $template ) ) {
+			update_post_meta( self::$event_id, 'eventkoi_template', $template );
 			update_post_meta( self::$event_id, '_wp_page_template', $template );
+		} else {
+			delete_post_meta( self::$event_id, 'eventkoi_template' );
 		}
 
 		if ( $image_id ) {
@@ -3484,16 +3488,33 @@ class Event {
 		$post_id = self::get_id();
 
 		if ( empty( $post_id ) ) {
-			return 'default';
+			return '';
+		}
+
+		$selected = get_post_meta( $post_id, 'eventkoi_template', true );
+
+		if ( ! empty( $selected ) ) {
+			return sanitize_key( $selected );
 		}
 
 		$template = get_post_meta( $post_id, '_wp_page_template', true );
 
-		if ( ! empty( $template ) ) {
+		// Ignore page builder-owned template values (e.g. elementor_canvas,
+		// elementor_header_footer): these are set by the builder's editor and
+		// are not valid event template selections.
+		if ( ! empty( $template ) && 0 !== strpos( $template, 'elementor' ) ) {
 			return sanitize_key( $template );
 		}
 
-		return 'default';
+		// Backward compatibility: older events stored selected template in
+		// "template" post meta before eventkoi_template was introduced.
+		$legacy_template = get_post_meta( $post_id, 'template', true );
+
+		if ( ! empty( $legacy_template ) ) {
+			return sanitize_key( $legacy_template );
+		}
+
+		return '';
 	}
 
 	/**

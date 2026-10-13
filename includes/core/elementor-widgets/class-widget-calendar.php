@@ -297,8 +297,14 @@ class Calendar_Widget extends Widget_Base {
 	protected function render() {
 		$settings = self::resolve_global_colors( $this->get_settings_for_display(), (array) $this->get_settings( '__globals__' ) );
 
+		$selection = $settings['calendars'] ?? array();
+		// "Current calendar" only means something on a calendar page; anywhere
+		// else (a category archive, the editor) the default calendar is shown
+		// instead of whatever term is queried.
+		$current = $this->is_current_calendar_selection( $selection ) && is_tax( 'event_cal' );
+
 		$args = array(
-			'calendars'     => $this->sanitize_calendar_selection( $settings['calendars'] ?? array() ),
+			'calendars'     => $current ? array() : $this->sanitize_calendar_selection( $selection ),
 			'startday'      => $this->sanitize_week_start( $settings['week_starts_on'] ?? '' ),
 			'timeframe'     => $this->sanitize_timeframe( $settings['timeframe'] ?? '' ),
 			'views'         => $this->get_visible_views( $settings ),
@@ -316,7 +322,20 @@ class Calendar_Widget extends Widget_Base {
 			$args['color'] = $accent;
 		}
 
-		$calendar_id = \eventkoi_resolve_calendar_id( (int) get_option( 'eventkoi_default_event_cal', 0 ) );
+		// With "Current calendar" the id is left to the page: on a calendar
+		// archive the queried calendar wins, elsewhere the default one does.
+		$calendar_id = $current
+			? 0
+			: \eventkoi_resolve_calendar_id( (int) get_option( 'eventkoi_default_event_cal', 0 ) );
+
+		// A calendar page keeps that calendar's own display, timeframe, week
+		// start and views, exactly as the built-in page does; the widget's
+		// defaults would otherwise override them.
+		$display = 'calendar';
+		if ( $current ) {
+			$display = '';
+			unset( $args['startday'], $args['timeframe'], $args['views'] );
+		}
 
 		// The other colours feed the calendar's own design tokens. They are
 		// set on a wrapper so every element inside picks them up, in the
@@ -334,7 +353,7 @@ class Calendar_Widget extends Widget_Base {
 
 		echo '<div id="' . esc_attr( $wrapper_id ) . '" class="eventkoi-elementor-calendar"' . ( '' !== $style ? ' style="' . esc_attr( $style ) . '"' : '' ) . '>';
 		echo wp_kses_post(
-			eventkoi_get_calendar_content( $calendar_id, 'calendar', $args )
+			eventkoi_get_calendar_content( $calendar_id, $display, $args )
 		);
 		echo '</div>';
 	}
@@ -607,6 +626,10 @@ class Calendar_Widget extends Widget_Base {
 			$options[ (string) $term->term_id ] = eventkoi_decode_term_name( $term->name );
 		}
 
+		// On a calendar page this follows the calendar being viewed, so one
+		// template serves every calendar; anywhere else it is the default one.
+		$options['current'] = __( 'Current calendar', 'eventkoi-lite' );
+
 		return $options;
 	}
 
@@ -728,6 +751,21 @@ class Calendar_Widget extends Widget_Base {
 		}
 
 		return preg_match( '/^\d{4}$/', $value ) ? $value : '';
+	}
+
+	/**
+	 * Whether the selection asks for the calendar of the page being viewed.
+	 *
+	 * @param array|string $calendars Selected calendars. A single-select control passes a scalar.
+	 *
+	 * @return bool
+	 */
+	private function is_current_calendar_selection( $calendars ) {
+		if ( is_scalar( $calendars ) ) {
+			return in_array( 'current', array_map( 'trim', explode( ',', (string) $calendars ) ), true );
+		}
+
+		return is_array( $calendars ) && in_array( 'current', array_map( 'strval', $calendars ), true );
 	}
 
 	/**

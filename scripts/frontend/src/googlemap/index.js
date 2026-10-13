@@ -156,7 +156,13 @@ const getEmbeddableMapLink = (location = {}) => {
 };
 
 function GoogleMapInstance({ container }) {
-  const { event, gmap } = window.eventkoi_params;
+  const event = window.eventkoi_params?.event;
+  const gmap = window.eventkoi_params?.gmap;
+
+  if (!event) {
+    container.classList.add("hidden");
+    return null;
+  }
 
   const locations = (event.locations || []).filter(
     (loc) =>
