@@ -678,12 +678,15 @@ JS;
 			}
 		}
 
-		$style_attr = '';
+		$style_pairs = array();
 		if ( ! empty( $attrs['style'] ) && is_array( $attrs['style'] ) ) {
 			$style_pairs = self::style_array_to_css( $attrs['style'] );
-			if ( ! empty( $style_pairs ) ) {
-				$style_attr = ' style="' . esc_attr( implode( ';', $style_pairs ) ) . '"';
-			}
+		}
+		$style_pairs = array_merge( $style_pairs, self::image_dimension_styles( $attrs ) );
+
+		$style_attr = '';
+		if ( ! empty( $style_pairs ) ) {
+			$style_attr = ' style="' . esc_attr( implode( ';', $style_pairs ) ) . '"';
 		}
 
 		$img_html = sprintf(
@@ -710,6 +713,51 @@ JS;
 		$class_attr = ! empty( $classes ) ? ' class="' . esc_attr( implode( ' ', $classes ) ) . '"' : '';
 
 		return sprintf( '<figure%1$s>%2$s</figure>', $class_attr, $img_html );
+	}
+
+	/**
+	 * Inline styles for the aspect ratio, width, height and scale an Image or
+	 * Post Featured Image block was given in the editor, in the same shape
+	 * core's featured image renderer emits them.
+	 *
+	 * @param array $attrs Block attributes.
+	 * @return array List of css declarations.
+	 */
+	private static function image_dimension_styles( $attrs ) {
+		$pairs = array();
+
+		$width  = isset( $attrs['width'] ) && '' !== $attrs['width'] && null !== $attrs['width'] ? $attrs['width'] : '';
+		$height = isset( $attrs['height'] ) && '' !== $attrs['height'] && null !== $attrs['height'] ? $attrs['height'] : '';
+
+		if ( is_numeric( $width ) ) {
+			$width .= 'px';
+		}
+		if ( is_numeric( $height ) ) {
+			$height .= 'px';
+		}
+
+		if ( ! empty( $attrs['aspectRatio'] ) ) {
+			if ( 'auto' !== $attrs['aspectRatio'] ) {
+				$pairs[] = safecss_filter_attr( 'aspect-ratio:' . $attrs['aspectRatio'] );
+			}
+			$pairs[] = 'width:100%';
+		}
+
+		if ( '' !== $height ) {
+			$pairs[] = safecss_filter_attr( 'height:' . $height );
+		} elseif ( '' !== $width ) {
+			$pairs[] = 'height:auto';
+		}
+
+		if ( '' !== $width ) {
+			$pairs[] = safecss_filter_attr( 'width:' . $width );
+		}
+
+		if ( ! empty( $attrs['scale'] ) ) {
+			$pairs[] = safecss_filter_attr( 'object-fit:' . $attrs['scale'] );
+		}
+
+		return array_values( array_filter( $pairs ) );
 	}
 
 	/**
