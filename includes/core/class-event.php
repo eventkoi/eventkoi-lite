@@ -1192,6 +1192,41 @@ class Event {
 	}
 
 	/**
+	 * Recurrence rules ordered by their first start, earliest first, for
+	 * listings that print one line per rule. Rules are stored in the order
+	 * the author added them, which is not a date order.
+	 *
+	 * @return array
+	 */
+	public static function get_recurrence_rules_by_start() {
+		$rules = self::get_recurrence_rules();
+
+		if ( ! is_array( $rules ) || count( $rules ) < 2 ) {
+			return $rules;
+		}
+
+		$keyed = array();
+		foreach ( array_values( $rules ) as $index => $rule ) {
+			$ts      = is_array( $rule ) && ! empty( $rule['start_date'] ) ? strtotime( (string) $rule['start_date'] ) : false;
+			$keyed[] = array( $ts ? $ts : PHP_INT_MAX, $index, $rule );
+		}
+
+		usort(
+			$keyed,
+			static function ( $x, $y ) {
+				return $x[0] === $y[0] ? $x[1] <=> $y[1] : $x[0] <=> $y[0];
+			}
+		);
+
+		return array_map(
+			static function ( $row ) {
+				return $row[2];
+			},
+			$keyed
+		);
+	}
+
+	/**
 	 * Get event recurrence rules.
 	 *
 	 * @return array
@@ -4652,7 +4687,7 @@ class Event {
 		// per-card selected-day context that anchors single-date fields to the
 		// upcoming day. A real ?event_day request on a single event page still
 		// scopes the result.
-		$data = ( 'recurring' === $type ) ? self::get_recurrence_rules() : self::get_event_days_for_rendering( true );
+		$data = ( 'recurring' === $type ) ? self::get_recurrence_rules_by_start() : self::get_event_days_for_rendering( true );
 
 		// Standard + continuous events read directly from start_date/end_date meta
 		// and don't require event_days to be populated. Only short-circuit when
@@ -4915,7 +4950,7 @@ class Event {
 		}
 
 		if ( 'recurring' === $type ) {
-			$data = self::get_recurrence_rules();
+			$data = self::get_recurrence_rules_by_start();
 		} else {
 			$data = self::get_event_days_for_rendering();
 		}
