@@ -12,7 +12,7 @@ import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import { __, sprintf } from "@wordpress/i18n";
 import { DateTime } from "luxon";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const days = {
   sunday: 0,
@@ -190,6 +190,25 @@ export function CalendarGridMode({
   const displayTimezoneKey = calendarTimeZone || timezone || "UTC";
   const previousTimezoneRef = useRef(displayTimezoneKey);
   const cascadeScheduledRef = useRef(false);
+
+  // A page builder's phone column can be under 300px wide, which leaves each
+  // day under 45px: "MON" and "TUE" then run into each other. Below 360px the
+  // day headers fall back to one letter, the way phone calendars do.
+  const [compactHeaders, setCompactHeaders] = useState(false);
+  useEffect(() => {
+    const root = calendarRef?.current?.elRef?.current;
+    if (!root || typeof ResizeObserver === "undefined") {
+      return undefined;
+    }
+    const update = () => {
+      const width = root.offsetWidth;
+      setCompactHeaders(width > 0 && width < 360);
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, [calendarRef, view]);
   const scheduleCascade = () => {
     if (cascadeScheduledRef.current) return;
     cascadeScheduledRef.current = true;
@@ -844,7 +863,7 @@ export function CalendarGridMode({
           };
 
           const dayName = formatHeaderDate(date, {
-            weekday: "short",
+            weekday: compactHeaders ? "narrow" : "short",
           });
 
           // For week/day views → two lines: weekday + bold number
