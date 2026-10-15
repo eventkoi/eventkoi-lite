@@ -131,40 +131,7 @@ class ET_Builder_Module_EventkoiCalendar extends ET_Builder_Module {
 	public function render( $attrs, $content, $render_slug ) {
 		unset( $attrs, $content, $render_slug );
 
-		$calendar_id = absint( $this->props['eventkoi_calendar'] ?? 0 );
-		if ( ! $calendar_id ) {
-			$calendar_id = eventkoi_resolve_calendar_id( (int) get_option( 'eventkoi_default_event_cal', 0 ) );
-		}
-
-		$args = array(
-			'calendars'     => $calendar_id ? array( $calendar_id ) : array(),
-			'startday'      => in_array( ( $this->props['eventkoi_week_start'] ?? 'monday' ), array( 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday' ), true ) ? $this->props['eventkoi_week_start'] : 'monday',
-			'timeframe'     => in_array( ( $this->props['eventkoi_timeframe'] ?? 'month' ), array( 'month', 'week' ), true ) ? $this->props['eventkoi_timeframe'] : 'month',
-			'default_month' => '',
-			'default_year'  => '',
-			'context'       => 'block',
-		);
-
-		$args['show_timezone'] = ( 'off' === ( $this->props['eventkoi_show_timezone'] ?? 'on' ) ) ? false : true;
-
-		$divi_views = array();
-		foreach ( array( 'month', 'week', 'list' ) as $view_key ) {
-			if ( 'off' !== ( $this->props[ 'eventkoi_show_' . $view_key . '_view' ] ?? 'on' ) ) {
-				$divi_views[] = $view_key;
-			}
-		}
-		if ( count( $divi_views ) < 3 && ! empty( $divi_views ) ) {
-			$args['views'] = implode( ',', $divi_views );
-		}
-
-		if ( ! function_exists( 'eventkoi_get_calendar_content' ) ) {
-			return '';
-		}
-
-		return sprintf(
-			'<div class="eventkoi-divi-calendar eventkoi-calendar-wrapper">%s</div>',
-			eventkoi_get_calendar_content( $calendar_id, 'calendar', $args )
-		);
+		return \EventKoi\Core\Divi_Renderers::calendar( (array) $this->props );
 	}
 
 	/**
@@ -173,23 +140,6 @@ class ET_Builder_Module_EventkoiCalendar extends ET_Builder_Module {
 	 * @return array
 	 */
 	protected function calendar_options() {
-		$options = array( '' => esc_html__( '— Default calendar —', 'eventkoi-lite' ) );
-
-		$terms = get_terms(
-			array(
-				'taxonomy'   => 'event_cal',
-				'hide_empty' => false,
-			)
-		);
-
-		if ( is_wp_error( $terms ) || empty( $terms ) ) {
-			return $options;
-		}
-
-		foreach ( $terms as $term ) {
-			$options[ (string) $term->term_id ] = eventkoi_decode_term_name( $term->name );
-		}
-
-		return $options;
+		return \EventKoi\Core\Divi_Renderers::calendar_options( esc_html__( '— Default calendar —', 'eventkoi-lite' ) );
 	}
 }

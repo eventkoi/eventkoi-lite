@@ -139,6 +139,7 @@ class REST {
 			Rsvps::class,
 			Tickets::class,
 			Elementor_Templates::class,
+			Divi::class,
 		);
 
 		foreach ( $api_classes as $api_class ) {

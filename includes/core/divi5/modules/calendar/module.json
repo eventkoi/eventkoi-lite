@@ -1,0 +1,383 @@
+{
+  "name": "eventkoi-divi/calendar",
+  "d4Shortcode": "et_pb_eventkoi_calendar",
+  "title": "EventKoi Calendar",
+  "titles": "EventKoi Calendars",
+  "description": "Show an EventKoi calendar in month, week or list view.",
+  "keywords": [
+    "events",
+    "calendar",
+    "eventkoi"
+  ],
+  "moduleIcon": "eventkoi/module-calendar",
+  "moduleClassName": "eventkoi_divi_calendar",
+  "moduleOrderClassName": "eventkoi_divi_calendar",
+  "category": "module",
+  "childrenName": [],
+  "attributes": {
+    "module": {
+      "type": "object",
+      "selector": "{{selector}}",
+      "settings": {
+        "meta": {
+          "adminLabel": {}
+        },
+        "advanced": {
+          "elements": {},
+          "html": {},
+          "link": {},
+          "text": {},
+          "htmlAttributes": {}
+        },
+        "decoration": {
+          "background": {},
+          "sizing": {},
+          "spacing": {},
+          "border": {},
+          "boxShadow": {},
+          "filters": {},
+          "transform": {},
+          "animation": {},
+          "overflow": {},
+          "disabledOn": {},
+          "transition": {},
+          "position": {},
+          "zIndex": {},
+          "scroll": {},
+          "sticky": {}
+        }
+      },
+      "default": {
+        "meta": {
+          "adminLabel": {
+            "desktop": {
+              "value": "EventKoi Calendar"
+            }
+          }
+        }
+      }
+    },
+    "calendar": {
+      "type": "object",
+      "settings": {
+        "innerContent": {
+          "groupType": "group-item",
+          "item": {
+            "groupSlug": "contentCalendar",
+            "priority": 10,
+            "render": true,
+            "attrName": "calendar.innerContent",
+            "label": "Calendar",
+            "features": {
+              "sticky": false,
+              "responsive": false,
+              "hover": false,
+              "dynamicContent": false
+            },
+            "component": {
+              "name": "divi/select",
+              "type": "field",
+              "props": {
+                "options": {
+                  "default": {
+                    "label": "— Default calendar —"
+                  }
+                }
+              }
+            },
+            "description": "Leave empty to use the default calendar."
+          }
+        }
+      },
+      "default": {
+        "innerContent": {
+          "desktop": {
+            "value": "default"
+          }
+        }
+      }
+    },
+    "timeframe": {
+      "type": "object",
+      "settings": {
+        "innerContent": {
+          "groupType": "group-item",
+          "item": {
+            "groupSlug": "contentCalendar",
+            "priority": 20,
+            "render": true,
+            "attrName": "timeframe.innerContent",
+            "label": "Default timeframe",
+            "features": {
+              "sticky": false,
+              "responsive": false,
+              "hover": false,
+              "dynamicContent": false
+            },
+            "component": {
+              "name": "divi/select",
+              "type": "field",
+              "props": {
+                "options": {
+                  "month": {
+                    "label": "Month"
+                  },
+                  "week": {
+                    "label": "Week"
+                  },
+                  "list": {
+                    "label": "List"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "default": {
+        "innerContent": {
+          "desktop": {
+            "value": "month"
+          }
+        }
+      }
+    },
+    "showCalendarFilter": {
+      "type": "object",
+      "settings": {
+        "innerContent": {
+          "groupType": "group-item",
+          "item": {
+            "groupSlug": "contentCalendar",
+            "priority": 30,
+            "render": true,
+            "attrName": "showCalendarFilter.innerContent",
+            "label": "Show calendar filter",
+            "features": {
+              "sticky": false,
+              "responsive": false,
+              "hover": false,
+              "dynamicContent": false
+            },
+            "component": {
+              "name": "divi/toggle",
+              "type": "field"
+            }
+          }
+        }
+      },
+      "default": {
+        "innerContent": {
+          "desktop": {
+            "value": "off"
+          }
+        }
+      }
+    },
+    "showTimezone": {
+      "type": "object",
+      "settings": {
+        "innerContent": {
+          "groupType": "group-item",
+          "item": {
+            "groupSlug": "contentCalendar",
+            "priority": 40,
+            "render": true,
+            "attrName": "showTimezone.innerContent",
+            "label": "Show timezone",
+            "features": {
+              "sticky": false,
+              "responsive": false,
+              "hover": false,
+              "dynamicContent": false
+            },
+            "component": {
+              "name": "divi/toggle",
+              "type": "field"
+            }
+          }
+        }
+      },
+      "default": {
+        "innerContent": {
+          "desktop": {
+            "value": "on"
+          }
+        }
+      }
+    },
+    "showMonthView": {
+      "type": "object",
+      "settings": {
+        "innerContent": {
+          "groupType": "group-item",
+          "item": {
+            "groupSlug": "contentCalendar",
+            "priority": 50,
+            "render": true,
+            "attrName": "showMonthView.innerContent",
+            "label": "Show Month view",
+            "features": {
+              "sticky": false,
+              "responsive": false,
+              "hover": false,
+              "dynamicContent": false
+            },
+            "component": {
+              "name": "divi/toggle",
+              "type": "field"
+            }
+          }
+        }
+      },
+      "default": {
+        "innerContent": {
+          "desktop": {
+            "value": "on"
+          }
+        }
+      }
+    },
+    "showWeekView": {
+      "type": "object",
+      "settings": {
+        "innerContent": {
+          "groupType": "group-item",
+          "item": {
+            "groupSlug": "contentCalendar",
+            "priority": 60,
+            "render": true,
+            "attrName": "showWeekView.innerContent",
+            "label": "Show Week view",
+            "features": {
+              "sticky": false,
+              "responsive": false,
+              "hover": false,
+              "dynamicContent": false
+            },
+            "component": {
+              "name": "divi/toggle",
+              "type": "field"
+            }
+          }
+        }
+      },
+      "default": {
+        "innerContent": {
+          "desktop": {
+            "value": "on"
+          }
+        }
+      }
+    },
+    "showListView": {
+      "type": "object",
+      "settings": {
+        "innerContent": {
+          "groupType": "group-item",
+          "item": {
+            "groupSlug": "contentCalendar",
+            "priority": 70,
+            "render": true,
+            "attrName": "showListView.innerContent",
+            "label": "Show List view",
+            "features": {
+              "sticky": false,
+              "responsive": false,
+              "hover": false,
+              "dynamicContent": false
+            },
+            "component": {
+              "name": "divi/toggle",
+              "type": "field"
+            }
+          }
+        }
+      },
+      "default": {
+        "innerContent": {
+          "desktop": {
+            "value": "on"
+          }
+        }
+      }
+    },
+    "weekStart": {
+      "type": "object",
+      "settings": {
+        "innerContent": {
+          "groupType": "group-item",
+          "item": {
+            "groupSlug": "contentCalendar",
+            "priority": 80,
+            "render": true,
+            "attrName": "weekStart.innerContent",
+            "label": "Week starts on",
+            "features": {
+              "sticky": false,
+              "responsive": false,
+              "hover": false,
+              "dynamicContent": false
+            },
+            "component": {
+              "name": "divi/select",
+              "type": "field",
+              "props": {
+                "options": {
+                  "sunday": {
+                    "label": "Sunday"
+                  },
+                  "monday": {
+                    "label": "Monday"
+                  },
+                  "tuesday": {
+                    "label": "Tuesday"
+                  },
+                  "wednesday": {
+                    "label": "Wednesday"
+                  },
+                  "thursday": {
+                    "label": "Thursday"
+                  },
+                  "friday": {
+                    "label": "Friday"
+                  },
+                  "saturday": {
+                    "label": "Saturday"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "default": {
+        "innerContent": {
+          "desktop": {
+            "value": "monday"
+          }
+        }
+      }
+    }
+  },
+  "customCssFields": {},
+  "settings": {
+    "content": "auto",
+    "design": "auto",
+    "advanced": "auto",
+    "groups": {
+      "contentCalendar": {
+        "panel": "content",
+        "priority": 10,
+        "groupName": "contentCalendar",
+        "multiElements": true,
+        "component": {
+          "name": "divi/composite",
+          "props": {
+            "groupLabel": "Calendar"
+          }
+        }
+      }
+    }
+  }
+}
