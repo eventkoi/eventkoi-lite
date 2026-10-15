@@ -75,6 +75,14 @@ class Divi {
 			return rest_ensure_response( array( 'html' => '' ) );
 		}
 
+		// A chosen event that is not public may only be previewed by someone allowed to read it.
+		if ( 'event' === $module && is_array( $attrs ) ) {
+			$event_id = absint( Divi5_Modules::attr_value( $attrs, 'event', 0 ) );
+			if ( $event_id && ( 'eventkoi_event' !== get_post_type( $event_id ) || ( 'publish' !== get_post_status( $event_id ) && ! current_user_can( 'read_post', $event_id ) ) ) ) {
+				return new \WP_Error( 'rest_forbidden', __( 'You cannot preview this event.', 'eventkoi-lite' ), array( 'status' => 403 ) );
+			}
+		}
+
 		// The event module falls back to "the current event", which is the
 		// post being edited in the builder.
 		if ( $post_id && 'eventkoi_event' === get_post_type( $post_id ) && current_user_can( 'edit_post', $post_id ) ) {
