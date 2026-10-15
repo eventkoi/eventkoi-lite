@@ -34,7 +34,7 @@ const taxonomyAttribute = ( definition, index ) => ( {
 		innerContent: {
 			groupType: 'group-item',
 			item: {
-				groupSlug: 'contentCalendar',
+				groupSlug: 'content',
 				priority: 100 + index * 10,
 				render: true,
 				attrName: `${ definition.attr }.innerContent`,

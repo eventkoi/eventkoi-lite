@@ -64,7 +64,7 @@
         "innerContent": {
           "groupType": "group-item",
           "item": {
-            "groupSlug": "contentEvent",
+            "groupSlug": "content",
             "priority": 10,
             "render": true,
             "attrName": "event.innerContent",
@@ -104,7 +104,7 @@
         "innerContent": {
           "groupType": "group-item",
           "item": {
-            "groupSlug": "contentEvent",
+            "groupSlug": "content",
             "priority": 20,
             "render": true,
             "attrName": "data.innerContent",
@@ -144,10 +144,10 @@
     "design": "auto",
     "advanced": "auto",
     "groups": {
-      "contentEvent": {
+      "content": {
         "panel": "content",
         "priority": 10,
-        "groupName": "contentEvent",
+        "groupName": "content",
         "multiElements": true,
         "component": {
           "name": "divi/composite",

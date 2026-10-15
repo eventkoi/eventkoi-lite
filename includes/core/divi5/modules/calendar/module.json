@@ -63,7 +63,7 @@
         "innerContent": {
           "groupType": "group-item",
           "item": {
-            "groupSlug": "contentCalendar",
+            "groupSlug": "content",
             "priority": 10,
             "render": true,
             "attrName": "calendar.innerContent",
@@ -103,7 +103,7 @@
         "innerContent": {
           "groupType": "group-item",
           "item": {
-            "groupSlug": "contentCalendar",
+            "groupSlug": "content",
             "priority": 20,
             "render": true,
             "attrName": "timeframe.innerContent",
@@ -148,7 +148,7 @@
         "innerContent": {
           "groupType": "group-item",
           "item": {
-            "groupSlug": "contentCalendar",
+            "groupSlug": "content",
             "priority": 30,
             "render": true,
             "attrName": "showCalendarFilter.innerContent",
@@ -180,7 +180,7 @@
         "innerContent": {
           "groupType": "group-item",
           "item": {
-            "groupSlug": "contentCalendar",
+            "groupSlug": "content",
             "priority": 40,
             "render": true,
             "attrName": "showTimezone.innerContent",
@@ -212,7 +212,7 @@
         "innerContent": {
           "groupType": "group-item",
           "item": {
-            "groupSlug": "contentCalendar",
+            "groupSlug": "content",
             "priority": 50,
             "render": true,
             "attrName": "showMonthView.innerContent",
@@ -244,7 +244,7 @@
         "innerContent": {
           "groupType": "group-item",
           "item": {
-            "groupSlug": "contentCalendar",
+            "groupSlug": "content",
             "priority": 60,
             "render": true,
             "attrName": "showWeekView.innerContent",
@@ -276,7 +276,7 @@
         "innerContent": {
           "groupType": "group-item",
           "item": {
-            "groupSlug": "contentCalendar",
+            "groupSlug": "content",
             "priority": 70,
             "render": true,
             "attrName": "showListView.innerContent",
@@ -308,7 +308,7 @@
         "innerContent": {
           "groupType": "group-item",
           "item": {
-            "groupSlug": "contentCalendar",
+            "groupSlug": "content",
             "priority": 80,
             "render": true,
             "attrName": "weekStart.innerContent",
@@ -366,10 +366,10 @@
     "design": "auto",
     "advanced": "auto",
     "groups": {
-      "contentCalendar": {
+      "content": {
         "panel": "content",
         "priority": 10,
-        "groupName": "contentCalendar",
+        "groupName": "content",
         "multiElements": true,
         "component": {
           "name": "divi/composite",
