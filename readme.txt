@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.4.6.1
+Stable tag: 1.4.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,17 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.4.7.0 – Elementor templates, series page fixes and WooCommerce emails – 2026-10-15 =
+* New: Ready-made Elementor templates for event pages, series pages and calendar pages. Pick them under Settings > Single event pages, and a new onboarding step offers them when Elementor is active.
+* New: Template pickers in Settings list block, Elementor, Beaver Builder and Bricks templates with an edit link for each, and a site-wide template now applies to every event page that has no template of its own.
+* Improvement: The series page title is an H1, and the back to series link on event pages is a movable block in the template.
+* Fix: EventKoi no longer switches off WooCommerce order emails for ticket orders. Store owners keep control of every email in WooCommerce settings.
+* Fix: Images inside the Event Query Loop keep the aspect ratio, size and scale set in the editor.
+* Fix: Recurrence rules on the event page are listed by date instead of the order they were added.
+* Fix: Child terms are indented again in the taxonomy dropdown of the event editor.
+* Fix: The block editor no longer writes empty event attribute rows to the database on every save, and old empty rows are cleaned up in the background.
+* Fix: Events without a location no longer render an empty map frame.
 
 = 1.4.6.1 – Taxonomy attributes in the block editor – 2026-10-06 =
 * Fix: Event taxonomies were missing from the Attributes list in the block editor, so a block could not be connected to the taxonomy terms of an event. They are now listed and show the terms of the event.
