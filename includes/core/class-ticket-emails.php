@@ -316,6 +316,8 @@ class Ticket_Emails {
 			'[event_timezone]'      => $event_timezone,
 			'[event_location]'      => $event_location,
 			'[event_url]'           => $event_url,
+			// Pro-only tag; blank it so a template saved under Pro does not print it.
+			'[event_email_message]' => '',
 			'[site_name]'           => get_bloginfo( 'name' ),
 		);
 
