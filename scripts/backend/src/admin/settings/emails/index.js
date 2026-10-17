@@ -114,6 +114,41 @@ const TEMPLATE_CONFIG = {
       { tag: "[site_name]", description: __("Site name", "eventkoi-lite") },
     ],
   },
+  event_reminder: {
+    label: __("Event reminder email", "eventkoi-lite"),
+    group: "user",
+    prefix: "reminder",
+    enabledLabel: __("Enable event reminder email", "eventkoi-lite"),
+    recipient: __("Attendees with an RSVP or ticket", "eventkoi-lite"),
+    description: __(
+      "Sent to attendees the day before the event starts.",
+      "eventkoi-lite",
+    ),
+    defaults: {
+      subject: __("Reminder: [event_name] is tomorrow", "eventkoi-lite"),
+      template: [
+        "<p>Hi [attendee_name],</p>",
+        "<p>This is a reminder that [event_name] is happening tomorrow.</p>",
+        "<p>Schedule ([event_timezone]):<br />[event_datetime]</p>",
+        "<p>Location:<br />[event_location]</p>",
+        "<p>Event page:<br />[event_url]</p>",
+        "<p>&mdash;<br />[site_name]</p>",
+      ].join("\n"),
+    },
+    tags: [
+      { tag: "[attendee_name]", description: __("Attendee first name", "eventkoi-lite") },
+      { tag: "[attendee_email]", description: __("Attendee email", "eventkoi-lite") },
+      { tag: "[event_name]", description: __("Event title", "eventkoi-lite") },
+      { tag: "[event_datetime]", description: __("Event schedule in site timezone", "eventkoi-lite") },
+      { tag: "[event_timezone]", description: __("Event timezone label", "eventkoi-lite") },
+      { tag: "[event_location]", description: __("Event location", "eventkoi-lite") },
+      {
+        tag: "[event_url]",
+        description: __("Event URL, with the manage link for RSVPs", "eventkoi-lite"),
+      },
+      { tag: "[site_name]", description: __("Site name", "eventkoi-lite") },
+    ],
+  },
   refund_confirmation: {
     label: __("Refund confirmation email", "eventkoi-lite"),
     group: "user",

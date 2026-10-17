@@ -98,6 +98,7 @@ class Init {
 			\EventKoi\Core\Install::class,
 			\EventKoi\Core\Permissions::class,
 			\EventKoi\Core\Hooks::class,
+			\EventKoi\Core\Reminder_Emails::class,
 			\EventKoi\Core\Post_Types::class,
 			\EventKoi\Core\Template::class,
 			\EventKoi\Core\Schema::class,

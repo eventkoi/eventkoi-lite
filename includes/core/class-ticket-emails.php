@@ -232,6 +232,155 @@ class Ticket_Emails {
 	}
 
 	/**
+	 * Default reminder subject, shared with the Settings > Emails screen.
+	 *
+	 * @return string
+	 */
+	public static function get_reminder_default_subject() {
+		return __( 'Reminder: [event_name] is tomorrow', 'eventkoi-lite' );
+	}
+
+	/**
+	 * Default reminder body, shared with the Settings > Emails screen.
+	 *
+	 * @return string
+	 */
+	public static function get_reminder_default_template() {
+		return implode(
+			"\n",
+			array(
+				'<p>' . esc_html__( 'Hi [attendee_name],', 'eventkoi-lite' ) . '</p>',
+				'<p>' . esc_html__( 'This is a reminder that [event_name] is happening tomorrow.', 'eventkoi-lite' ) . '</p>',
+				'<p>' . esc_html__( 'Schedule ([event_timezone]):', 'eventkoi-lite' ) . '<br />[event_datetime]</p>',
+				'<p>' . esc_html__( 'Location:', 'eventkoi-lite' ) . '<br />[event_location]</p>',
+				'<p>' . esc_html__( 'Event page:', 'eventkoi-lite' ) . '<br />[event_url]</p>',
+				'<p>&mdash;<br />[site_name]</p>',
+			)
+		);
+	}
+
+	/**
+	 * Send the day-before reminder to one attendee.
+	 *
+	 * @param array $attendee {
+	 *     Attendee resolved by Reminder_Emails.
+	 *
+	 *     @type string $type        'rsvp' or 'ticket'.
+	 *     @type int    $event_id    Event ID.
+	 *     @type int    $instance_ts Instance timestamp, 0 for single events.
+	 *     @type string $name        Attendee name.
+	 *     @type string $email       Attendee email.
+	 *     @type string $token       RSVP check-in token, used for the manage link.
+	 * }
+	 * @return bool
+	 */
+	public static function send_reminder( array $attendee ) {
+		$settings        = Settings::get();
+		$enabled_setting = $settings['reminder_email_enabled'] ?? null;
+		$enabled         = null === $enabled_setting || '' === $enabled_setting
+			? true
+			: filter_var( $enabled_setting, FILTER_VALIDATE_BOOLEAN );
+
+		if ( ! $enabled ) {
+			return false;
+		}
+
+		$recipient_email = sanitize_email( (string) ( $attendee['email'] ?? '' ) );
+		$event_id        = absint( $attendee['event_id'] ?? 0 );
+		$instance_ts     = absint( $attendee['instance_ts'] ?? 0 );
+		$type            = (string) ( $attendee['type'] ?? 'rsvp' );
+
+		if ( ! is_email( $recipient_email ) || ! $event_id || ! get_post( $event_id ) ) {
+			return false;
+		}
+
+		$event_name = self::get_event_title( $event_id, $instance_ts );
+		$event_url  = self::get_event_url( $event_id, $instance_ts );
+		$token      = sanitize_text_field( (string) ( $attendee['token'] ?? '' ) );
+
+		if ( 'rsvp' === $type && '' !== $token && $event_url && Event::get_rsvp_allow_edit() ) {
+			$event_url = add_query_arg( 'eventkoi_rsvp', $token, $event_url );
+		}
+
+		list( $event_datetime, $event_timezone ) = self::get_event_datetime_parts( $event_id, $instance_ts );
+		$event_location                          = self::get_primary_physical_location( $event_id, $instance_ts );
+		$name                                    = sanitize_text_field( (string) ( $attendee['name'] ?? '' ) );
+		$first_name                              = $name ? trim( strtok( $name, ' ' ) ) : '';
+
+		$tags = array(
+			'[attendee_name]'       => $first_name ? $first_name : __( 'there', 'eventkoi-lite' ),
+			'[attendee_email]'      => $recipient_email,
+			'[event_title]'         => $event_name,
+			'[event_name]'          => $event_name,
+			'[event_datetime]'      => $event_datetime,
+			'[event_timezone]'      => $event_timezone,
+			'[event_location]'      => $event_location,
+			'[event_url]'           => $event_url,
+			'[site_name]'           => get_bloginfo( 'name' ),
+		);
+
+		$tags = apply_filters( 'eventkoi_reminder_email_tags', $tags, $attendee );
+
+		$subject = trim( (string) ( $settings['reminder_email_subject'] ?? '' ) );
+		$subject = '' !== $subject ? $subject : self::get_reminder_default_subject();
+		$subject = apply_filters( 'eventkoi_reminder_email_subject', $subject, $tags, $attendee );
+		$subject = self::replace_email_tags( (string) $subject, $tags );
+
+		$body = trim( (string) ( $settings['reminder_email_template'] ?? '' ) );
+		$body = '' !== wp_strip_all_tags( $body ) ? $body : self::get_reminder_default_template();
+		$body = apply_filters( 'eventkoi_reminder_email_template', $body, $tags, $attendee );
+
+		$body = self::replace_email_tags( (string) $body, $tags );
+
+		// A reminder with no address to show should not carry an empty label.
+		if ( '' === $event_location ) {
+			$body = preg_replace( '#<p>\s*' . preg_quote( esc_html__( 'Location:', 'eventkoi-lite' ), '#' ) . '\s*(<br\s*/?>)?\s*</p>#i', '', $body );
+		}
+
+		$body     = preg_replace( "/\n{3,}/", "\n\n", trim( (string) $body ) );
+		$has_html = (bool) preg_match( '/<[^>]+>/', (string) $body );
+		$body     = $has_html
+			? wp_kses( wpautop( (string) $body ), Settings::get_email_template_allowed_tags() )
+			: wpautop( esc_html( (string) $body ) );
+
+		$headers         = array( 'Content-Type: text/html; charset=UTF-8' );
+		$sender_email    = sanitize_email( (string) ( $settings['reminder_email_sender_email'] ?? '' ) );
+		$sender_name     = sanitize_text_field( (string) ( $settings['reminder_email_sender_name'] ?? '' ) );
+		$from_email_hook = null;
+		$from_name_hook  = null;
+
+		if ( $sender_email ) {
+			$from = $sender_email;
+			if ( $sender_name ) {
+				$from = sprintf( '%s <%s>', $sender_name, $sender_email );
+			}
+			$headers[]       = 'From: ' . $from;
+			$from_email_hook = static function () use ( $sender_email ) {
+				return $sender_email;
+			};
+			add_filter( 'wp_mail_from', $from_email_hook );
+		}
+
+		if ( $sender_name ) {
+			$from_name_hook = static function () use ( $sender_name ) {
+				return $sender_name;
+			};
+			add_filter( 'wp_mail_from_name', $from_name_hook );
+		}
+
+		$sent = wp_mail( $recipient_email, $subject, $body, $headers );
+
+		if ( $from_email_hook ) {
+			remove_filter( 'wp_mail_from', $from_email_hook );
+		}
+		if ( $from_name_hook ) {
+			remove_filter( 'wp_mail_from_name', $from_name_hook );
+		}
+
+		return (bool) $sent;
+	}
+
+	/**
 	 * Send ticket confirmation email for order payload.
 	 *
 	 * @param array $order Order payload from edge.

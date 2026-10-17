@@ -78,6 +78,7 @@ class Settings {
 			'rsvp_email_template',
 			'ticket_email_template',
 			'refund_email_template',
+			'reminder_email_template',
 			// Admin notification templates are rich HTML too; keep their
 			// formatting instead of stripping to plain text on save.
 			'admin_sale_email_template',
@@ -123,6 +124,7 @@ class Settings {
 				'rsvp_email_enabled',
 				'ticket_email_enabled',
 				'refund_email_enabled',
+				'reminder_email_enabled',
 				'admin_email_enabled',
 				'admin_rsvp_email_enabled',
 				'admin_sale_email_enabled',

@@ -206,7 +206,7 @@ class Settings {
 		// Fallback: Update settings normally.
 		// Admin notification templates are rich HTML too; without them the save
 		// flattens the template to plain text (all formatting/paragraphs lost).
-		$html_keys = array( 'rsvp_email_template', 'ticket_email_template', 'refund_email_template', 'admin_sale_email_template', 'admin_rsvp_email_template', 'admin_ticket_email_template' );
+		$html_keys = array( 'rsvp_email_template', 'ticket_email_template', 'refund_email_template', 'reminder_email_template', 'admin_sale_email_template', 'admin_rsvp_email_template', 'admin_ticket_email_template' );
 
 		foreach ( $data as $key => $value ) {
 			if ( in_array( $key, array( 'api_key' ), true ) ) {
