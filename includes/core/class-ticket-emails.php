@@ -275,15 +275,11 @@ class Ticket_Emails {
 	 * @return bool
 	 */
 	public static function send_reminder( array $attendee ) {
-		$settings        = Settings::get();
-		$enabled_setting = $settings['reminder_email_enabled'] ?? null;
-		$enabled         = null === $enabled_setting || '' === $enabled_setting
-			? true
-			: filter_var( $enabled_setting, FILTER_VALIDATE_BOOLEAN );
-
-		if ( ! $enabled ) {
+		if ( ! Reminder_Emails::is_enabled() ) {
 			return false;
 		}
+
+		$settings = Settings::get();
 
 		$recipient_email = sanitize_email( (string) ( $attendee['email'] ?? '' ) );
 		$event_id        = absint( $attendee['event_id'] ?? 0 );

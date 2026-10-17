@@ -60,7 +60,8 @@ class Reminder_Emails {
 	}
 
 	/**
-	 * Whether reminders are switched on. Unset means on, like the other emails.
+	 * Whether reminders are switched on. Unlike the other emails this one is
+	 * off until an admin enables it, so updating never starts mailing attendees.
 	 *
 	 * @return bool
 	 */
@@ -69,7 +70,7 @@ class Reminder_Emails {
 		$value    = $settings['reminder_email_enabled'] ?? null;
 
 		if ( null === $value || '' === $value ) {
-			return true;
+			return false;
 		}
 
 		return filter_var( $value, FILTER_VALIDATE_BOOLEAN );

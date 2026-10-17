@@ -115,6 +115,7 @@ const TEMPLATE_CONFIG = {
     ],
   },
   event_reminder: {
+    defaultEnabled: false,
     label: __("Event reminder email", "eventkoi-lite"),
     group: "user",
     prefix: "reminder",
@@ -271,9 +272,9 @@ const isRichTextEmpty = (value) => {
   return stripped === "";
 };
 
-const isEnabledSetting = (value) => {
+const isEnabledSetting = (value, fallback = true) => {
   if (typeof value === "undefined" || value === null || value === "") {
-    return true;
+    return fallback;
   }
 
   return value === true || value === "1" || value === 1;
@@ -322,8 +323,10 @@ export function SettingsEmails() {
     setSenderEmail(
       String(senderEmailValue || "").trim() ? senderEmailValue : DEFAULT_SENDER_EMAIL,
     );
-    setEmailEnabled(isEnabledSetting(settings?.[keys.enabled]));
-  }, [activeConfig.defaults, keys, settings]);
+    setEmailEnabled(
+      isEnabledSetting(settings?.[keys.enabled], activeConfig.defaultEnabled !== false),
+    );
+  }, [activeConfig.defaults, activeConfig.defaultEnabled, keys, settings]);
 
   const hydrateTemplateState = (templateKey) => {
     const cfg = TEMPLATE_CONFIG[templateKey] || TEMPLATE_CONFIG.rsvp_confirmation;
@@ -352,7 +355,7 @@ export function SettingsEmails() {
     setSenderEmail(
       String(senderEmailValue || "").trim() ? senderEmailValue : DEFAULT_SENDER_EMAIL,
     );
-    setEmailEnabled(isEnabledSetting(settings?.[cfgKeys.enabled]));
+    setEmailEnabled(isEnabledSetting(settings?.[cfgKeys.enabled], cfg.defaultEnabled !== false));
   };
 
   const handleTemplateChange = (nextTemplate) => {
