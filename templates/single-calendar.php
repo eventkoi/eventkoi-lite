@@ -29,16 +29,16 @@ if ( eventkoi_current_theme_support() ) : ?>
 
 <div class="wp-site-blocks">
 
-	<?php echo wp_kses_post( $header ); ?>
+	<?php echo $header; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- rendered theme header template part, output as core does. ?>
 
 	<?php do_action( 'eventkoi_before_calendar_content' ); ?>
 
-	<?php echo wp_kses_post( $content ); ?>
+	<?php echo $content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- rendered plugin block output. ?>
 	<?php do_action( 'eventkoi_single_calendar_template' ); ?>
 
 	<?php do_action( 'eventkoi_after_calendar_content' ); ?>
 
-	<?php echo wp_kses_post( $footer ); ?>
+	<?php echo $footer; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- rendered theme footer template part, output as core does. ?>
 
 </div>
 
@@ -54,7 +54,7 @@ else :
 
 		do_action( 'eventkoi_before_calendar_content' );
 
-		echo wp_kses_post( eventkoi_get_calendar_content() );
+		echo eventkoi_get_calendar_content(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- rendered plugin block output.
 		do_action( 'eventkoi_single_calendar_template' );
 
 		do_action( 'eventkoi_after_calendar_content' );
