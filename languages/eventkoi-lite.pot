@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: EventKoi Lite 1.4.7.0\n"
+"Project-Id-Version: EventKoi Lite 1.4.8.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/eventkoi-lite\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-15T09:56:56+00:00\n"
+"POT-Creation-Date: 2026-10-19T09:28:16+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -418,7 +418,7 @@ msgid "Sending ticket confirmation..."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-ticket-emails.php:851
+#: includes/core/class-ticket-emails.php:998
 msgid "Ticket confirmation sent."
 msgstr ""
 
@@ -1065,6 +1065,8 @@ msgid "Ends"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
+#: includes/core/class-divi5-modules.php:311
+#: includes/core/class-divi5-modules.php:313
 #: includes/core/class-post-types.php:61
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:27
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:41
@@ -1233,7 +1235,7 @@ msgid "Event location"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:77
+#: includes/core/class-divi-renderers.php:199
 msgid "Event URL"
 msgstr ""
 
@@ -1270,7 +1272,7 @@ msgid "Sent after a completed ticket purchase and when manually resent."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-ticket-emails.php:366
+#: includes/core/class-ticket-emails.php:513
 msgid "[event_name]: Ticket details"
 msgstr ""
 
@@ -1310,6 +1312,35 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 msgid "Individual ticket codes"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Event reminder email"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Enable event reminder email"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Attendees with an RSVP or ticket"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Sent to attendees the day before the event starts."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+#: includes/core/class-ticket-emails.php:240
+msgid "Reminder: [event_name] is tomorrow"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Attendee first name"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Event URL, with the manage link for RSVPs"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
@@ -1375,7 +1406,7 @@ msgid "Sent to the site admin when a ticket order is completed."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-ticket-emails.php:1368
+#: includes/core/class-ticket-emails.php:1515
 msgid "New ticket sale: [event_name]"
 msgstr ""
 
@@ -1714,6 +1745,7 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-beaver-modules.php:182
+#: includes/core/class-divi5-modules.php:322
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:105
 #: includes/core/elementor-widgets/class-widget-calendar.php:169
 msgid "Week starts on"
@@ -1965,9 +1997,9 @@ msgid "Ticket line %d"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-ticket-emails.php:627
-#: includes/core/class-ticket-emails.php:684
-#: includes/core/class-ticket-emails.php:719
+#: includes/core/class-ticket-emails.php:774
+#: includes/core/class-ticket-emails.php:831
+#: includes/core/class-ticket-emails.php:866
 #: includes/core/class-ticket-fallback.php:140
 msgid "Ticket"
 msgstr ""
@@ -2101,7 +2133,7 @@ msgstr ""
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
 #: includes/core/class-event.php:4334
-#: includes/core/class-ticket-emails.php:377
+#: includes/core/class-ticket-emails.php:524
 #: includes/core/class-ticket-fallback.php:135
 msgid "Tickets"
 msgstr ""
@@ -2125,6 +2157,7 @@ msgstr ""
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
 #: includes/core/class-beaver-modules.php:125
+#: includes/core/class-divi5-modules.php:347
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:54
 #: includes/core/elementor-widgets/class-widget-calendar.php:102
 msgid "Month"
@@ -2133,6 +2166,7 @@ msgstr ""
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
 #: includes/core/class-beaver-modules.php:126
+#: includes/core/class-divi5-modules.php:348
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:55
 #: includes/core/elementor-widgets/class-widget-calendar.php:106
 msgid "Week"
@@ -2140,6 +2174,7 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
+#: includes/core/class-divi5-modules.php:349
 msgid "List"
 msgstr ""
 
@@ -2168,6 +2203,7 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-beaver-modules.php:157
+#: includes/core/class-divi5-modules.php:318
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:94
 #: includes/core/elementor-widgets/class-widget-calendar.php:134
 msgid "Show timezone"
@@ -2406,7 +2442,7 @@ msgid "— Primary —"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:59
+#: includes/core/class-divi-renderers.php:181
 msgid "Title"
 msgstr ""
 
@@ -2420,12 +2456,12 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:66
+#: includes/core/class-divi-renderers.php:188
 msgid "Location"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:61
+#: includes/core/class-divi-renderers.php:183
 msgid "Image"
 msgstr ""
 
@@ -2442,12 +2478,12 @@ msgid "Datetime with summary"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:63
+#: includes/core/class-divi-renderers.php:185
 msgid "Date only"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:64
+#: includes/core/class-divi-renderers.php:186
 msgid "Time only"
 msgstr ""
 
@@ -2532,7 +2568,7 @@ msgid "Location post code"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:74
+#: includes/core/class-divi-renderers.php:196
 msgid "Google map"
 msgstr ""
 
@@ -2541,7 +2577,7 @@ msgid "Image URL"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:60
+#: includes/core/class-divi-renderers.php:182
 msgid "Details"
 msgstr ""
 
@@ -2554,12 +2590,12 @@ msgid "Capacity (total)"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:79
+#: includes/core/class-divi-renderers.php:201
 msgid "Capacity remaining"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:80
+#: includes/core/class-divi-renderers.php:202
 msgid "Capacity sold"
 msgstr ""
 
@@ -2576,7 +2612,7 @@ msgid "Ticket count (types)"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:84
+#: includes/core/class-divi-renderers.php:206
 msgid "Ticket summary"
 msgstr ""
 
@@ -2593,12 +2629,12 @@ msgid "Price range"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:85
+#: includes/core/class-divi-renderers.php:207
 msgid "Sales start"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:86
+#: includes/core/class-divi-renderers.php:208
 msgid "Sales end"
 msgstr ""
 
@@ -2607,17 +2643,17 @@ msgid "— RSVP —"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:96
+#: includes/core/class-divi-renderers.php:218
 msgid "RSVP capacity"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:97
+#: includes/core/class-divi-renderers.php:219
 msgid "RSVP remaining"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:98
+#: includes/core/class-divi-renderers.php:220
 msgid "RSVP going"
 msgstr ""
 
@@ -2914,6 +2950,7 @@ msgid "(e.g. %1$s%2$s)"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
+#: includes/core/class-divi5-modules.php:355
 #: includes/core/class-event.php:5859
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:110
 #: includes/core/elementor-widgets/class-widget-calendar.php:666
@@ -2922,6 +2959,7 @@ msgid "Monday"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
+#: includes/core/class-divi5-modules.php:356
 #: includes/core/class-event.php:5860
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:111
 #: includes/core/elementor-widgets/class-widget-calendar.php:667
@@ -2930,6 +2968,7 @@ msgid "Tuesday"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
+#: includes/core/class-divi5-modules.php:357
 #: includes/core/class-event.php:5861
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:112
 #: includes/core/elementor-widgets/class-widget-calendar.php:668
@@ -2938,6 +2977,7 @@ msgid "Wednesday"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
+#: includes/core/class-divi5-modules.php:358
 #: includes/core/class-event.php:5862
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:113
 #: includes/core/elementor-widgets/class-widget-calendar.php:669
@@ -2946,6 +2986,7 @@ msgid "Thursday"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
+#: includes/core/class-divi5-modules.php:359
 #: includes/core/class-event.php:5863
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:114
 #: includes/core/elementor-widgets/class-widget-calendar.php:670
@@ -2954,6 +2995,7 @@ msgid "Friday"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
+#: includes/core/class-divi5-modules.php:360
 #: includes/core/class-event.php:5864
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:115
 #: includes/core/elementor-widgets/class-widget-calendar.php:671
@@ -2962,6 +3004,7 @@ msgid "Saturday"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
+#: includes/core/class-divi5-modules.php:354
 #: includes/core/class-event.php:5858
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:109
 #: includes/core/elementor-widgets/class-widget-calendar.php:672
@@ -3206,13 +3249,15 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/api/class-rsvps.php:943
+#: includes/core/class-divi5-modules.php:325
+#: includes/core/class-divi5-modules.php:327
 #: includes/core/class-post-types.php:116
 #: includes/core/class-rsvps.php:1400
 #: includes/core/class-template.php:151
-#: includes/core/class-ticket-emails.php:986
+#: includes/core/class-ticket-emails.php:1133
 #: includes/core/class-woocommerce-checkout.php:478
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:29
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:44
+#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:27
+#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:41
 msgid "Event"
 msgstr ""
 
@@ -3707,7 +3752,7 @@ msgid "RSVP closes"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:78
+#: includes/core/class-divi-renderers.php:200
 msgid "Capacity"
 msgstr ""
 
@@ -5241,7 +5286,7 @@ msgid "This event is fully booked."
 msgstr ""
 
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-ticket-emails.php:338
+#: includes/core/class-ticket-emails.php:485
 msgid "Check-in code:"
 msgstr ""
 
@@ -5577,6 +5622,10 @@ msgstr ""
 msgid "No %s provided."
 msgstr ""
 
+#: includes/api/class-divi.php:82
+msgid "You cannot preview this event."
+msgstr ""
+
 #: includes/api/class-elementor-templates.php:101
 msgid "Elementor needs to be active before its templates can be used."
 msgstr ""
@@ -5661,7 +5710,7 @@ msgstr ""
 
 #: includes/api/class-order.php:67
 #: includes/api/class-tickets.php:2285
-#: includes/core/class-ticket-emails.php:897
+#: includes/core/class-ticket-emails.php:1044
 msgid "Order not found."
 msgstr ""
 
@@ -6011,18 +6060,21 @@ msgid "Check one or more calendars to show in this calendar."
 msgstr ""
 
 #: includes/core/class-beaver-modules.php:130
+#: includes/core/class-divi5-modules.php:319
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:61
 #: includes/core/elementor-widgets/class-widget-calendar.php:114
 msgid "Show Month view"
 msgstr ""
 
 #: includes/core/class-beaver-modules.php:139
+#: includes/core/class-divi5-modules.php:320
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:72
 #: includes/core/elementor-widgets/class-widget-calendar.php:115
 msgid "Show Week view"
 msgstr ""
 
 #: includes/core/class-beaver-modules.php:148
+#: includes/core/class-divi5-modules.php:321
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:83
 #: includes/core/elementor-widgets/class-widget-calendar.php:116
 msgid "Show List view"
@@ -6348,6 +6400,162 @@ msgid "Calendar removed permanently."
 msgid_plural "Calendars removed permanently."
 msgstr[0] ""
 msgstr[1] ""
+
+#: includes/core/class-divi-renderers.php:152
+msgid "— Current event —"
+msgstr ""
+
+#: includes/core/class-divi-renderers.php:180
+msgid "Full event"
+msgstr ""
+
+#: includes/core/class-divi-renderers.php:184
+msgid "Date & time"
+msgstr ""
+
+#: includes/core/class-divi-renderers.php:187
+msgid "Date, time & recurring summary"
+msgstr ""
+
+#: includes/core/class-divi-renderers.php:189
+msgid "Location Name"
+msgstr ""
+
+#: includes/core/class-divi-renderers.php:190
+msgid "Location Address"
+msgstr ""
+
+#: includes/core/class-divi-renderers.php:191
+msgid "Location Apartment/Unit"
+msgstr ""
+
+#: includes/core/class-divi-renderers.php:192
+msgid "Location City"
+msgstr ""
+
+#: includes/core/class-divi-renderers.php:193
+msgid "Location State"
+msgstr ""
+
+#: includes/core/class-divi-renderers.php:194
+msgid "Location Country"
+msgstr ""
+
+#: includes/core/class-divi-renderers.php:195
+msgid "Location Post Code"
+msgstr ""
+
+#: includes/core/class-divi-renderers.php:197
+msgid "Recurring summary"
+msgstr ""
+
+#: includes/core/class-divi-renderers.php:198
+msgid "Ticket / RSVP"
+msgstr ""
+
+#: includes/core/class-divi-renderers.php:203
+msgid "Sold out label"
+msgstr ""
+
+#: includes/core/class-divi-renderers.php:204
+msgid "Low stock label"
+msgstr ""
+
+#: includes/core/class-divi-renderers.php:205
+msgid "Ticket count"
+msgstr ""
+
+#: includes/core/class-divi-renderers.php:209
+msgid "Ticket price from"
+msgstr ""
+
+#: includes/core/class-divi-renderers.php:210
+msgid "Ticket price to"
+msgstr ""
+
+#: includes/core/class-divi-renderers.php:211
+msgid "Ticket price range"
+msgstr ""
+
+#: includes/core/class-divi-renderers.php:212
+msgid "Date — year"
+msgstr ""
+
+#: includes/core/class-divi-renderers.php:213
+msgid "Date — month"
+msgstr ""
+
+#: includes/core/class-divi-renderers.php:214
+msgid "Date — month short"
+msgstr ""
+
+#: includes/core/class-divi-renderers.php:215
+msgid "Date — day"
+msgstr ""
+
+#: includes/core/class-divi-renderers.php:216
+msgid "Date — day name"
+msgstr ""
+
+#: includes/core/class-divi-renderers.php:217
+msgid "Date — ISO"
+msgstr ""
+
+#: includes/core/class-divi-renderers.php:221
+msgid "RSVP full label"
+msgstr ""
+
+#. translators: %s: taxonomy name, e.g. "Locations".
+#: includes/core/class-divi5-modules.php:196
+#, php-format
+msgid "Limit to %s"
+msgstr ""
+
+#: includes/core/class-divi5-modules.php:197
+msgid "Leave empty to show every event."
+msgstr ""
+
+#: includes/core/class-divi5-modules.php:314
+#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:46
+#: includes/core/elementor-widgets/class-widget-calendar.php:89
+msgid "Leave empty to use the default calendar."
+msgstr ""
+
+#: includes/core/class-divi5-modules.php:316
+#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:50
+msgid "Default timeframe"
+msgstr ""
+
+#: includes/core/class-divi5-modules.php:317
+msgid "Show calendar filter"
+msgstr ""
+
+#: includes/core/class-divi5-modules.php:328
+#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:47
+msgid "Select an event to display. Use the current event when placed on an event template."
+msgstr ""
+
+#: includes/core/class-divi5-modules.php:330
+#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:51
+msgid "Data to render"
+msgstr ""
+
+#: includes/core/class-divi5-modules.php:344
+#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:143
+msgid "— Default calendar —"
+msgstr ""
+
+#: includes/core/class-divi5-modules.php:386
+msgid "Loading…"
+msgstr ""
+
+#: includes/core/class-divi5-modules.php:387
+msgid "Nothing to show yet. Check the module settings."
+msgstr ""
+
+#: includes/core/class-divi5-modules.php:388
+msgid "The preview could not be loaded."
+msgstr ""
 
 #: includes/core/class-elementor-layouts.php:87
 #: includes/core/class-elementor-layouts.php:143
@@ -6905,8 +7113,9 @@ msgid "Your RSVP for %s"
 msgstr ""
 
 #: includes/core/class-rsvps.php:1087
-#: includes/core/class-ticket-emails.php:346
-#: includes/core/class-ticket-emails.php:491
+#: includes/core/class-ticket-emails.php:307
+#: includes/core/class-ticket-emails.php:493
+#: includes/core/class-ticket-emails.php:638
 msgid "there"
 msgstr ""
 
@@ -6929,7 +7138,9 @@ msgstr ""
 
 #: includes/core/class-rsvps.php:1126
 #: includes/core/class-rsvps.php:1137
-#: includes/core/class-ticket-emails.php:380
+#: includes/core/class-ticket-emails.php:255
+#: includes/core/class-ticket-emails.php:335
+#: includes/core/class-ticket-emails.php:527
 msgid "Location:"
 msgstr ""
 
@@ -6947,14 +7158,14 @@ msgid "Attendee:"
 msgstr ""
 
 #: includes/core/class-rsvps.php:1514
-#: includes/core/class-ticket-emails.php:520
-#: includes/core/class-ticket-emails.php:1377
+#: includes/core/class-ticket-emails.php:667
+#: includes/core/class-ticket-emails.php:1524
 msgid "Event:"
 msgstr ""
 
 #: includes/core/class-rsvps.php:1515
-#: includes/core/class-ticket-emails.php:521
-#: includes/core/class-ticket-emails.php:1378
+#: includes/core/class-ticket-emails.php:668
+#: includes/core/class-ticket-emails.php:1525
 msgid "Date:"
 msgstr ""
 
@@ -7112,92 +7323,99 @@ msgstr ""
 msgid "WooCommerce order not found."
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:373
-#: includes/core/class-ticket-emails.php:517
+#: includes/core/class-ticket-emails.php:252
+#: includes/core/class-ticket-emails.php:520
+#: includes/core/class-ticket-emails.php:664
 msgid "Hi [attendee_name],"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:374
-msgid "Thanks for your ticket purchase for [event_name]."
+#: includes/core/class-ticket-emails.php:253
+msgid "This is a reminder that [event_name] is happening tomorrow."
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:375
-#: includes/core/class-ticket-emails.php:519
-msgid "Order ID:"
-msgstr ""
-
-#: includes/core/class-ticket-emails.php:378
-msgid "Ticket Codes"
-msgstr ""
-
-#: includes/core/class-ticket-emails.php:379
+#: includes/core/class-ticket-emails.php:254
+#: includes/core/class-ticket-emails.php:526
 msgid "Schedule ([event_timezone]):"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:381
-#: includes/core/class-ticket-emails.php:522
+#: includes/core/class-ticket-emails.php:256
+#: includes/core/class-ticket-emails.php:528
+#: includes/core/class-ticket-emails.php:669
 msgid "Event page:"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:507
-msgid "[event_name]: Refund confirmation"
+#: includes/core/class-ticket-emails.php:521
+msgid "Thanks for your ticket purchase for [event_name]."
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:518
-msgid "A refund has been issued for your order."
-msgstr ""
-
-#: includes/core/class-ticket-emails.php:523
-msgid "Refunded items"
-msgstr ""
-
-#: includes/core/class-ticket-emails.php:524
-msgid "Refund amount:"
+#: includes/core/class-ticket-emails.php:522
+#: includes/core/class-ticket-emails.php:666
+msgid "Order ID:"
 msgstr ""
 
 #: includes/core/class-ticket-emails.php:525
+msgid "Ticket Codes"
+msgstr ""
+
+#: includes/core/class-ticket-emails.php:654
+msgid "[event_name]: Refund confirmation"
+msgstr ""
+
+#: includes/core/class-ticket-emails.php:665
+msgid "A refund has been issued for your order."
+msgstr ""
+
+#: includes/core/class-ticket-emails.php:670
+msgid "Refunded items"
+msgstr ""
+
+#: includes/core/class-ticket-emails.php:671
+msgid "Refund amount:"
+msgstr ""
+
+#: includes/core/class-ticket-emails.php:672
 msgid "The refund should appear in your account within 5-10 business days, depending on your payment provider."
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:648
+#: includes/core/class-ticket-emails.php:795
 msgid "Refund confirmation sent."
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:865
+#: includes/core/class-ticket-emails.php:1012
 msgid "Completed order was not found for this checkout session."
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:1330
+#: includes/core/class-ticket-emails.php:1477
 msgid "Terms and conditions:"
 msgstr ""
 
 #. translators: %s: date/time the customer accepted the terms.
-#: includes/core/class-ticket-emails.php:1333
+#: includes/core/class-ticket-emails.php:1480
 #, php-format
 msgid "Accepted by the customer at checkout on %s."
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:1349
+#: includes/core/class-ticket-emails.php:1496
 msgid "Agreements accepted:"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:1372
+#: includes/core/class-ticket-emails.php:1519
 msgid "A new ticket order has been placed."
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:1373
+#: includes/core/class-ticket-emails.php:1520
 msgid "Customer:"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:1374
+#: includes/core/class-ticket-emails.php:1521
 msgid "Order:"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:1375
+#: includes/core/class-ticket-emails.php:1522
 msgid "Tickets:"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:1376
+#: includes/core/class-ticket-emails.php:1523
 msgid "Total:"
 msgstr ""
 
@@ -7285,138 +7503,13 @@ msgstr ""
 msgid "EventKoi Calendars"
 msgstr ""
 
-#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:46
-#: includes/core/elementor-widgets/class-widget-calendar.php:89
-msgid "Leave empty to use the default calendar."
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:50
-msgid "Default timeframe"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:176
-msgid "— Default calendar —"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:21
+#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:19
 #: includes/core/elementor-widgets/class-widget-event.php:32
 msgid "EventKoi Event"
 msgstr ""
 
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:22
+#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:20
 msgid "EventKoi Events"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:50
-msgid "Select an event to display. Use the current event when placed on an event template."
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:54
-msgid "Data to render"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:58
-msgid "Full event"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:62
-msgid "Date & time"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:65
-msgid "Date, time & recurring summary"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:67
-msgid "Location Name"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:68
-msgid "Location Address"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:69
-msgid "Location Apartment/Unit"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:70
-msgid "Location City"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:71
-msgid "Location State"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:72
-msgid "Location Country"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:73
-msgid "Location Post Code"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:75
-msgid "Recurring summary"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:76
-msgid "Ticket / RSVP"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:81
-msgid "Sold out label"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:82
-msgid "Low stock label"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:83
-msgid "Ticket count"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:87
-msgid "Ticket price from"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:88
-msgid "Ticket price to"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:89
-msgid "Ticket price range"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:90
-msgid "Date — year"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:91
-msgid "Date — month"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:92
-msgid "Date — month short"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:93
-msgid "Date — day"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:94
-msgid "Date — day name"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:95
-msgid "Date — ISO"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:99
-msgid "RSVP full label"
-msgstr ""
-
-#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:158
-msgid "— Current event —"
 msgstr ""
 
 #: includes/core/elementor-widgets/class-widget-calendar.php:83

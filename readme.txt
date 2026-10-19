@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.4.7.0
+Stable tag: 1.4.8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,12 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.4.8.0 – Divi 5 modules, event reminder emails and calendar page fixes – 2026-10-19 =
+* New: Native Divi 5 modules for the calendar and single events, with live previews in the builder, conversion of the Divi 4 modules and dynamic content for event data.
+* New: Attendees can get a reminder email the day before their event, with its own template under Settings > Emails. Reminders are off until you switch them on.
+* Improvement: Calendars in a narrow column use one-letter day headers so weekday names no longer run together on phones.
+* Fix: Forms, buttons and icons in the theme header and footer are kept intact on calendar pages. Form plugins such as WPForms no longer lose their fields there.
 
 = 1.4.7.0 – Elementor templates, series page fixes and WooCommerce emails – 2026-10-15 =
 * New: Ready-made Elementor templates for event pages, series pages and calendar pages. Pick them under Settings > Single event pages, and a new onboarding step offers them when Elementor is active.
