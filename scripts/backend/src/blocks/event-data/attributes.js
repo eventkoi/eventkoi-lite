@@ -7,10 +7,6 @@ export const attributes = {
     type: "string",
     default: "div",
   },
-  linkTitle: {
-    type: "boolean",
-    default: true, // Inside a query loop the title links to the event page.
-  },
   textAlign: {
     type: "string",
   },

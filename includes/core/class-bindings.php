@@ -281,7 +281,7 @@ class Bindings
     {
         $post_types = array( 'eventkoi_event', 'wp_template', 'wp_template_part', 'wp_block', 'page', 'post' );
 
-        foreach ( self::get_taxonomy_keys() as $key => $label ) {
+        foreach ( array_keys(self::get_taxonomy_keys()) as $key ) {
             foreach ( $post_types as $post_type ) {
                 register_meta(
                     $post_type,
@@ -290,7 +290,6 @@ class Bindings
                     'show_in_rest' => true,
                     'single'       => true,
                     'type'         => 'string',
-                    'label'        => $label,
                     )
                 );
             }
@@ -317,7 +316,6 @@ class Bindings
                         'show_in_rest' => true,
                         'single'       => true,
                         'type'         => 'string',
-                        'label'        => $label,
                         )
                     );
                 }

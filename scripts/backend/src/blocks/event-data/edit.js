@@ -54,7 +54,6 @@ export default function Edit({ attributes, setAttributes, clientId }) {
     eventId = 0,
     dateFormat = "",
     timeFormat = "",
-    linkTitle = true,
   } = attributes;
 
   const textAlignClass = textAlign ? `has-text-align-${textAlign}` : "";
@@ -289,9 +288,9 @@ export default function Edit({ attributes, setAttributes, clientId }) {
   switch (field) {
     case "title": {
       // Mirror the front-end markup: inside a query loop the title is a link
-      // to the event page unless the block's Link title toggle is off.
+      // to the event page, so the editor shows the same colours as the site.
       const titleHtml = { __html: title };
-      const linksToEvent = isInQuery && linkTitle !== false;
+      const linksToEvent = isInQuery;
       content = (
         <TagName
           {...blockProps}
