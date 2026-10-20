@@ -181,6 +181,7 @@ class Bindings
         'event_gmap'                  => __('Event Google Map', 'eventkoi-lite'),
         'event_image'                 => __('Event image', 'eventkoi-lite'),
         'event_image_url'             => __('Event image URL', 'eventkoi-lite'),
+        'event_url'                   => __('Event URL', 'eventkoi-lite'),
         'event_calendar_url'          => __('Event calendar URL', 'eventkoi-lite'),
         'event_calendar'              => __('Event calendar', 'eventkoi-lite'),
         'event_calendar_link'         => __('Event calendar link', 'eventkoi-lite'),
@@ -280,7 +281,7 @@ class Bindings
     {
         $post_types = array( 'eventkoi_event', 'wp_template', 'wp_template_part', 'wp_block', 'page', 'post' );
 
-        foreach ( array_keys(self::get_taxonomy_keys()) as $key ) {
+        foreach ( self::get_taxonomy_keys() as $key => $label ) {
             foreach ( $post_types as $post_type ) {
                 register_meta(
                     $post_type,
@@ -289,6 +290,7 @@ class Bindings
                     'show_in_rest' => true,
                     'single'       => true,
                     'type'         => 'string',
+                    'label'        => $label,
                     )
                 );
             }
@@ -315,6 +317,7 @@ class Bindings
                         'show_in_rest' => true,
                         'single'       => true,
                         'type'         => 'string',
+                        'label'        => $label,
                         )
                     );
                 }
@@ -358,6 +361,23 @@ class Bindings
     public function filter_event_meta_values( $value, $name, $source_args, $block_instance, $attribute_name )
     {
         unset($attribute_name);
+
+        // Inside the event query loop every block in a row carries that row's
+        // event in its parsed block context, while the WP_Block context still
+        // names the page being rendered. The row's event wins, and its URL is
+        // the occurrence-aware one the loop already worked out.
+        $loop_event = $block_instance->parsed_block['context']['eventkoi_event'] ?? null;
+        if (empty($source_args['id']) && is_array($loop_event) ) {
+            $loop_event_id = absint($loop_event['event_id'] ?? ( $loop_event['id'] ?? 0 ));
+
+            if ($loop_event_id ) {
+                $requested = (string) ( $source_args['key'] ?? $name );
+                if (in_array($requested, array( 'event_url', 'eventkoi/event-url' ), true) && ! empty($loop_event['url']) ) {
+                    return esc_url((string) $loop_event['url']);
+                }
+                $source_args['id'] = $loop_event_id;
+            }
+        }
 
         if (! empty($source_args['id']) ) {
             $event_id = absint($source_args['id']);
