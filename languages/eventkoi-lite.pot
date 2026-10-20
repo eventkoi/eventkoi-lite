@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-19T09:28:16+00:00\n"
+"POT-Creation-Date: 2026-10-20T19:19:39+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -135,7 +135,7 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-blocks.php:1445
+#: includes/core/class-blocks.php:1448
 msgid "Next"
 msgstr ""
 
@@ -1229,12 +1229,13 @@ msgid "Event timezone label"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-bindings.php:188
+#: includes/core/class-bindings.php:189
 #: includes/core/class-seo-compat.php:78
 msgid "Event location"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
+#: includes/core/class-bindings.php:184
 #: includes/core/class-divi-renderers.php:199
 msgid "Event URL"
 msgstr ""
@@ -1486,7 +1487,7 @@ msgstr ""
 #: includes/core/beaver-modules/eventkoi-calendar/class-module-calendar.php:14
 #: includes/core/beaver-modules/eventkoi-event/class-module-event.php:13
 #: includes/core/beaver-modules/eventkoi-event/class-module-event.php:14
-#: includes/core/class-blocks.php:390
+#: includes/core/class-blocks.php:393
 #: includes/core/class-elementor-widgets.php:69
 msgid "EventKoi"
 msgstr ""
@@ -2386,6 +2387,10 @@ msgid "Field"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
+msgid "Link title to the event page"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
 msgid "Date format (PHP)"
 msgstr ""
 
@@ -2680,13 +2685,13 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-blocks.php:1441
+#: includes/core/class-blocks.php:1444
 msgid "Previous"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-blocks.php:1107
+#: includes/core/class-blocks.php:1110
 msgid "No events found."
 msgstr ""
 
@@ -3061,7 +3066,7 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-blocks.php:626
+#: includes/core/class-blocks.php:629
 msgid "Share this event"
 msgstr ""
 
@@ -3321,7 +3326,7 @@ msgid "All day"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-bindings.php:185
+#: includes/core/class-bindings.php:186
 msgid "Event calendar"
 msgstr ""
 
@@ -3447,7 +3452,7 @@ msgid "events"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-bindings.php:201
+#: includes/core/class-bindings.php:202
 msgid "Recurring rule summary"
 msgstr ""
 
@@ -6195,181 +6200,181 @@ msgstr ""
 msgid "Event image URL"
 msgstr ""
 
-#: includes/core/class-bindings.php:184
+#: includes/core/class-bindings.php:185
 msgid "Event calendar URL"
 msgstr ""
 
-#: includes/core/class-bindings.php:186
+#: includes/core/class-bindings.php:187
 msgid "Event calendar link"
 msgstr ""
 
-#: includes/core/class-bindings.php:187
+#: includes/core/class-bindings.php:188
 msgid "Event series link"
 msgstr ""
 
-#: includes/core/class-bindings.php:189
+#: includes/core/class-bindings.php:190
 msgid "Event location name"
 msgstr ""
 
-#: includes/core/class-bindings.php:190
+#: includes/core/class-bindings.php:191
 msgid "Event location address"
 msgstr ""
 
-#: includes/core/class-bindings.php:191
+#: includes/core/class-bindings.php:192
 msgid "Event location apartment/unit"
 msgstr ""
 
-#: includes/core/class-bindings.php:192
+#: includes/core/class-bindings.php:193
 msgid "Event location city"
 msgstr ""
 
-#: includes/core/class-bindings.php:193
+#: includes/core/class-bindings.php:194
 msgid "Event location state"
 msgstr ""
 
-#: includes/core/class-bindings.php:194
+#: includes/core/class-bindings.php:195
 msgid "Event location country"
 msgstr ""
 
-#: includes/core/class-bindings.php:195
+#: includes/core/class-bindings.php:196
 msgid "Event location post code"
 msgstr ""
 
-#: includes/core/class-bindings.php:196
+#: includes/core/class-bindings.php:197
 msgid "Event date time with summary"
 msgstr ""
 
-#: includes/core/class-bindings.php:197
+#: includes/core/class-bindings.php:198
 msgid "Event date time"
 msgstr ""
 
-#: includes/core/class-bindings.php:198
+#: includes/core/class-bindings.php:199
 #: includes/core/class-seo-compat.php:63
 msgid "Event date"
 msgstr ""
 
-#: includes/core/class-bindings.php:199
+#: includes/core/class-bindings.php:200
 #: includes/core/class-seo-compat.php:68
 msgid "Event time"
 msgstr ""
 
-#: includes/core/class-bindings.php:200
+#: includes/core/class-bindings.php:201
 msgid "Event date type"
 msgstr ""
 
-#: includes/core/class-bindings.php:202
+#: includes/core/class-bindings.php:203
 msgid "Event RSVP / Tickets"
 msgstr ""
 
-#: includes/core/class-bindings.php:203
+#: includes/core/class-bindings.php:204
 msgid "Event capacity"
 msgstr ""
 
-#: includes/core/class-bindings.php:204
+#: includes/core/class-bindings.php:205
 msgid "Event capacity remaining"
 msgstr ""
 
-#: includes/core/class-bindings.php:205
+#: includes/core/class-bindings.php:206
 msgid "Event capacity sold"
 msgstr ""
 
-#: includes/core/class-bindings.php:206
+#: includes/core/class-bindings.php:207
 msgid "Event sold out label"
 msgstr ""
 
-#: includes/core/class-bindings.php:207
+#: includes/core/class-bindings.php:208
 msgid "Event low stock label"
 msgstr ""
 
-#: includes/core/class-bindings.php:208
+#: includes/core/class-bindings.php:209
 msgid "Event ticket count"
 msgstr ""
 
-#: includes/core/class-bindings.php:209
+#: includes/core/class-bindings.php:210
 msgid "Event ticket summary"
 msgstr ""
 
-#: includes/core/class-bindings.php:210
+#: includes/core/class-bindings.php:211
 msgid "Event sales start"
 msgstr ""
 
-#: includes/core/class-bindings.php:211
+#: includes/core/class-bindings.php:212
 msgid "Event sales end"
 msgstr ""
 
-#: includes/core/class-bindings.php:212
+#: includes/core/class-bindings.php:213
 msgid "Event ticket price from"
 msgstr ""
 
-#: includes/core/class-bindings.php:213
+#: includes/core/class-bindings.php:214
 msgid "Event ticket price to"
 msgstr ""
 
-#: includes/core/class-bindings.php:214
+#: includes/core/class-bindings.php:215
 msgid "Event price from (starting price)"
 msgstr ""
 
-#: includes/core/class-bindings.php:215
+#: includes/core/class-bindings.php:216
 msgid "Event price from URL"
 msgstr ""
 
-#: includes/core/class-bindings.php:216
+#: includes/core/class-bindings.php:217
 msgid "Event price from details"
 msgstr ""
 
-#: includes/core/class-bindings.php:217
+#: includes/core/class-bindings.php:218
 msgid "Event ticket price range"
 msgstr ""
 
-#: includes/core/class-bindings.php:218
+#: includes/core/class-bindings.php:219
 msgid "Event date year"
 msgstr ""
 
-#: includes/core/class-bindings.php:219
+#: includes/core/class-bindings.php:220
 msgid "Event date month"
 msgstr ""
 
-#: includes/core/class-bindings.php:220
+#: includes/core/class-bindings.php:221
 msgid "Event date month short"
 msgstr ""
 
-#: includes/core/class-bindings.php:221
+#: includes/core/class-bindings.php:222
 msgid "Event date day"
 msgstr ""
 
-#: includes/core/class-bindings.php:222
+#: includes/core/class-bindings.php:223
 msgid "Event date day name"
 msgstr ""
 
-#: includes/core/class-bindings.php:223
+#: includes/core/class-bindings.php:224
 msgid "Event date ISO"
 msgstr ""
 
-#: includes/core/class-bindings.php:224
+#: includes/core/class-bindings.php:225
 msgid "Event RSVP capacity"
 msgstr ""
 
-#: includes/core/class-bindings.php:225
+#: includes/core/class-bindings.php:226
 msgid "Event RSVP remaining"
 msgstr ""
 
-#: includes/core/class-bindings.php:226
+#: includes/core/class-bindings.php:227
 msgid "Event RSVP going"
 msgstr ""
 
-#: includes/core/class-bindings.php:227
+#: includes/core/class-bindings.php:228
 msgid "Event RSVP full label"
 msgstr ""
 
-#: includes/core/class-blocks.php:1457
+#: includes/core/class-blocks.php:1460
 msgid "Pagination"
 msgstr ""
 
-#: includes/core/class-blocks.php:2217
+#: includes/core/class-blocks.php:2220
 msgid "No calendar is available to display."
 msgstr ""
 
-#: includes/core/class-blocks.php:2221
+#: includes/core/class-blocks.php:2224
 msgid "Create a calendar"
 msgstr ""
 

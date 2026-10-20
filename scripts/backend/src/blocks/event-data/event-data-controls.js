@@ -4,6 +4,7 @@ import {
   SelectControl,
   Spinner,
   TextControl,
+  ToggleControl,
 } from "@wordpress/components";
 import { useEffect, useState } from "@wordpress/element";
 import { __ } from "@wordpress/i18n";
@@ -56,7 +57,7 @@ export function EventDataControls({
   isLoadingEvent,
   disableEventSource = false,
 }) {
-  const { field, eventId, dateFormat, timeFormat } = attributes;
+  const { field, eventId, dateFormat, timeFormat, linkTitle } = attributes;
   const [searchValue, setSearchValue] = useState("");
   const { options, isLoading } = useEventOptions(searchValue, eventId);
   const isDateTimeField = DATE_TIME_FIELDS.has(field);
@@ -115,6 +116,17 @@ export function EventDataControls({
           options={getEventDataFieldOptions()}
           onChange={(val) => setAttributes({ field: val })}
         />
+
+        {field === "title" && disableEventSource && (
+          <div style={{ paddingTop: "8px" }}>
+            <ToggleControl
+              label={__("Link title to the event page", "eventkoi-lite")}
+              checked={linkTitle !== false}
+              __nextHasNoMarginBottom={true}
+              onChange={(val) => setAttributes({ linkTitle: !!val })}
+            />
+          </div>
+        )}
 
         {(showDateFormat || showTimeFormat) && (
           <div style={{ marginTop: "12px" }}>

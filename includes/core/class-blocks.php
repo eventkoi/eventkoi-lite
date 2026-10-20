@@ -105,7 +105,10 @@ class Blocks {
 				'dateFormat' => $attributes['dateFormat'] ?? '',
 				'timeFormat' => $attributes['timeFormat'] ?? '',
 			),
+			// Inside a query loop the title links to the event page unless the
+			// block's Link title toggle is off.
 			! empty( $context_event )
+			&& ( ! array_key_exists( 'linkTitle', $attributes ) || self::parse_boolean_attribute( $attributes['linkTitle'] ) )
 		);
 
 		if ( '' === trim( (string) $value ) ) {

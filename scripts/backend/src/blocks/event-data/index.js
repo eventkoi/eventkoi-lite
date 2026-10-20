@@ -38,6 +38,7 @@ registerBlockType("eventkoi/event-data", {
     color: {
       text: true,
       background: true,
+      link: true,
     },
     typography: {
       fontSize: true,
