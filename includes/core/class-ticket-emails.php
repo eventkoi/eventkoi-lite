@@ -1113,7 +1113,7 @@ class Ticket_Emails {
 			'items'               => $items,
 			'metadata'            => array(
 				'event_id'          => (string) absint( $first['event_id'] ?? 0 ),
-				'event_title'       => get_the_title( absint( $first['event_id'] ?? 0 ) ),
+				'event_title'       => eventkoi_event_title_text( absint( $first['event_id'] ?? 0 ) ),
 				'instance_ts'       => (string) $instance_ts,
 				'event_instance_ts' => (string) $instance_ts,
 			),
@@ -1442,7 +1442,7 @@ class Ticket_Emails {
 
 		$event_id    = absint( $order['event_id'] ?? 0 );
 		$instance_ts = $order['event_instance_ts'] ?? '';
-		$event_name  = get_the_title( $event_id );
+		$event_name  = eventkoi_event_title_text( $event_id );
 		$items       = $order['items'] ?? array();
 
 		$customer_name  = sanitize_text_field( (string) ( $order['customer_name'] ?? '' ) );
@@ -1533,7 +1533,9 @@ class Ticket_Emails {
 		$subject  = '' !== $subject ? $subject : $default_subject;
 		$template = '' !== $template ? $template : $default_template;
 
-		$subject = strtr( $subject, $tags );
+		// The tag values are escaped for the HTML body. The subject line is
+		// plain text, so entities there would show up literally in the inbox.
+		$subject = wp_specialchars_decode( strtr( $subject, $tags ), ENT_QUOTES );
 		$body    = strtr( $template, $tags );
 		$body    = wp_kses( wpautop( trim( $body ) ), Settings::get_email_template_allowed_tags() );
 

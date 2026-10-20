@@ -28,6 +28,28 @@ function eventkoi_decode_term_name( $name ) {
 }
 
 /**
+ * Plain-text event title for places that print text rather than HTML.
+ *
+ * WordPress runs get_the_title() through wptexturize, which turns "&" into
+ * "&#038;". That is right inside HTML, but it shows up literally in the React
+ * admin, in email subjects and in payment gateway metadata. This returns the
+ * title the way it was typed, without tags or leftover entities.
+ *
+ * @param int $event_id Event ID.
+ * @return string
+ */
+function eventkoi_event_title_text( $event_id ) {
+	$event_id = absint( $event_id );
+	if ( ! $event_id ) {
+		return '';
+	}
+
+	$title = get_post_field( 'post_title', $event_id, 'raw' );
+
+	return trim( html_entity_decode( wp_strip_all_tags( (string) $title ), ENT_QUOTES, 'UTF-8' ) );
+}
+
+/**
  * Resolve a usable event_cal term_id with validation and fallbacks.
  *
  * Tries (in order): caller-preferred ids, the eventkoi_default_event_cal

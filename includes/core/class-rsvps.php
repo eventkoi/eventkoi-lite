@@ -1522,7 +1522,9 @@ class Rsvps {
 		$subject  = '' !== $subject ? $subject : $default_subject;
 		$template = '' !== $template ? $template : $default_template;
 
-		$subject = strtr( $subject, $tags );
+		// The tag values are escaped for the HTML body. The subject line is
+		// plain text, so entities there would show up literally in the inbox.
+		$subject = wp_specialchars_decode( strtr( $subject, $tags ), ENT_QUOTES );
 		$body    = strtr( $template, $tags );
 		$body    = wp_kses( wpautop( trim( $body ) ), Settings::get_email_template_allowed_tags() );
 

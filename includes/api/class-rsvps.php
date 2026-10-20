@@ -411,7 +411,7 @@ class Rsvps {
 		$csv = stream_get_contents( $handle );
 		fclose( $handle );
 
-		$event_name = get_the_title( $event_id );
+		$event_name = eventkoi_event_title_text( $event_id );
 		$event_slug = $event_name ? sanitize_title( $event_name ) : 'event';
 		$status_slug = sanitize_key( $status );
 		$instance_date = '';

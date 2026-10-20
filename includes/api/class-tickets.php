@@ -574,7 +574,7 @@ class Tickets {
 		$csv = stream_get_contents( $handle );
 		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Closing the in-memory temp handle after CSV generation.
 
-		$event_name = get_the_title( $event_id );
+		$event_name = eventkoi_event_title_text( $event_id );
 		$filename   = sprintf(
 			'%1$s-attendees.csv',
 			$event_name ? sanitize_title( $event_name ) : 'eventkoi-event-' . $event_id
@@ -733,7 +733,7 @@ class Tickets {
 		// Resolve event names from post titles.
 		$name_map = array();
 		foreach ( array_keys( $event_ids ) as $eid ) {
-			$title = get_the_title( $eid );
+			$title = eventkoi_event_title_text( $eid );
 			if ( $title ) {
 				$name_map[ $eid ] = $title;
 			}
@@ -963,7 +963,7 @@ class Tickets {
 			// Resolve event names.
 			$name_map = array();
 			foreach ( array_keys( $event_ids ) as $eid ) {
-				$title = get_the_title( $eid );
+				$title = eventkoi_event_title_text( $eid );
 				if ( $title ) {
 					$name_map[ $eid ] = $title;
 				}
@@ -1073,7 +1073,7 @@ class Tickets {
 		}
 
 		$payload['id']    = absint( $event_id );
-		$payload['title'] = get_the_title( $event_id );
+		$payload['title'] = eventkoi_event_title_text( $event_id );
 
 		if ( empty( $payload['timezone'] ) ) {
 			$payload['timezone'] = wp_timezone_string() ? wp_timezone_string() : 'UTC';
@@ -1546,7 +1546,7 @@ class Tickets {
 			array(
 				'success'                     => true,
 				'event_id'                    => $event_id,
-				'event_title'                 => get_the_title( $event_id ),
+				'event_title'                 => eventkoi_event_title_text( $event_id ),
 				'event'                       => self::get_public_event_payload( $event_id ),
 				'attendance_mode'             => $event::get_attendance_mode(),
 				'tickets_enabled'             => $event::get_tickets_enabled(),
@@ -1716,7 +1716,7 @@ class Tickets {
 			$instance_ts = self::extract_instance_ts_from_url( $return_url );
 		}
 
-		$event_title          = wp_strip_all_tags( get_the_title( $event_id ) );
+		$event_title          = eventkoi_event_title_text( $event_id );
 		$event_instance_title = $event_title;
 		if ( $instance_ts > 0 && function_exists( 'eventkoi_get_instance_override' ) ) {
 			$instance_override = eventkoi_get_instance_override( $event_id, $instance_ts );
