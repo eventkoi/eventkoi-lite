@@ -420,7 +420,9 @@ class Ticket_Emails {
 		$items         = isset( $order['items'] ) && is_array( $order['items'] ) ? $order['items'] : array();
 		$event_id      = absint( $order['event_id'] ?? 0 );
 		$instance_ts   = absint( $order['event_instance_ts'] ?? 0 );
-		$event_name    = sanitize_text_field( (string) ( $metadata['event_instance_title'] ?? $metadata['event_title'] ?? '' ) );
+		// Orders placed before titles were stored as plain text carry texturized
+		// entities in their metadata, so decode on the way out.
+		$event_name    = sanitize_text_field( html_entity_decode( (string) ( $metadata['event_instance_title'] ?? $metadata['event_title'] ?? '' ), ENT_QUOTES, 'UTF-8' ) );
 		$customer_name = sanitize_text_field( (string) ( $order['customer_name'] ?? '' ) );
 
 		if ( ! $event_id && ! empty( $items ) && is_array( $items[0] ?? null ) ) {
@@ -607,7 +609,9 @@ class Ticket_Emails {
 		$items         = isset( $order['items'] ) && is_array( $order['items'] ) ? $order['items'] : array();
 		$event_id      = absint( $order['event_id'] ?? 0 );
 		$instance_ts   = absint( $order['event_instance_ts'] ?? 0 );
-		$event_name    = sanitize_text_field( (string) ( $metadata['event_instance_title'] ?? $metadata['event_title'] ?? '' ) );
+		// Orders placed before titles were stored as plain text carry texturized
+		// entities in their metadata, so decode on the way out.
+		$event_name    = sanitize_text_field( html_entity_decode( (string) ( $metadata['event_instance_title'] ?? $metadata['event_title'] ?? '' ), ENT_QUOTES, 'UTF-8' ) );
 		$customer_name = sanitize_text_field( (string) ( $order['customer_name'] ?? '' ) );
 		$currency      = strtoupper( sanitize_text_field( (string) ( $order['currency'] ?? 'USD' ) ) );
 
