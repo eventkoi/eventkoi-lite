@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.4.8.0
+Stable tag: 1.4.8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,11 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.4.8.1 – Event URL binding, editor title preview and ampersand fixes – 2026-10-21 =
+* Fix: Event titles with ampersands or quotes show as typed in the ticket sales screens, order details, email subjects and admin notifications instead of HTML codes.
+* Fix: The event URL is available as a block attribute, so a Button inside the event query loop can link to each event, and attribute bindings inside the loop read the event in each row rather than the page.
+* Fix: The Event Data title block shows the same link in the editor as on the site, so colours match while you design.
 
 = 1.4.8.0 – Divi 5 modules, event reminder emails and calendar page fixes – 2026-10-19 =
 * New: Native Divi 5 modules for the calendar and single events, with live previews in the builder, conversion of the Divi 4 modules and dynamic content for event data.

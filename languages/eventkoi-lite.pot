@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: EventKoi Lite 1.4.8.0\n"
+"Project-Id-Version: EventKoi Lite 1.4.8.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/eventkoi-lite\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-20T19:32:19+00:00\n"
+"POT-Creation-Date: 2026-10-21T07:53:47+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -418,7 +418,7 @@ msgid "Sending ticket confirmation..."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-ticket-emails.php:998
+#: includes/core/class-ticket-emails.php:1002
 msgid "Ticket confirmation sent."
 msgstr ""
 
@@ -1273,7 +1273,7 @@ msgid "Sent after a completed ticket purchase and when manually resent."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-ticket-emails.php:513
+#: includes/core/class-ticket-emails.php:515
 msgid "[event_name]: Ticket details"
 msgstr ""
 
@@ -1407,7 +1407,7 @@ msgid "Sent to the site admin when a ticket order is completed."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-ticket-emails.php:1515
+#: includes/core/class-ticket-emails.php:1519
 msgid "New ticket sale: [event_name]"
 msgstr ""
 
@@ -1998,9 +1998,9 @@ msgid "Ticket line %d"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-ticket-emails.php:774
-#: includes/core/class-ticket-emails.php:831
-#: includes/core/class-ticket-emails.php:866
+#: includes/core/class-ticket-emails.php:778
+#: includes/core/class-ticket-emails.php:835
+#: includes/core/class-ticket-emails.php:870
 #: includes/core/class-ticket-fallback.php:140
 msgid "Ticket"
 msgstr ""
@@ -2134,7 +2134,7 @@ msgstr ""
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
 #: includes/core/class-event.php:4334
-#: includes/core/class-ticket-emails.php:524
+#: includes/core/class-ticket-emails.php:526
 #: includes/core/class-ticket-fallback.php:135
 msgid "Tickets"
 msgstr ""
@@ -3255,7 +3255,7 @@ msgstr ""
 #: includes/core/class-post-types.php:116
 #: includes/core/class-rsvps.php:1400
 #: includes/core/class-template.php:151
-#: includes/core/class-ticket-emails.php:1133
+#: includes/core/class-ticket-emails.php:1137
 #: includes/core/class-woocommerce-checkout.php:478
 #: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:27
 #: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:41
@@ -3993,8 +3993,8 @@ msgid "Live"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/core-functions.php:1165
-#: includes/core/core-functions.php:1166
+#: includes/core/core-functions.php:1187
+#: includes/core/core-functions.php:1188
 msgid "Completed"
 msgstr ""
 
@@ -4221,22 +4221,22 @@ msgid "Payment failed"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/core-functions.php:1167
+#: includes/core/core-functions.php:1189
 msgid "Refunded"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/core-functions.php:1168
+#: includes/core/core-functions.php:1190
 msgid "Partially refunded"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/core-functions.php:1170
+#: includes/core/core-functions.php:1192
 msgid "Pending payment"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/core-functions.php:1169
+#: includes/core/core-functions.php:1191
 msgid "Failed"
 msgstr ""
 
@@ -5287,7 +5287,7 @@ msgid "This event is fully booked."
 msgstr ""
 
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-ticket-emails.php:485
+#: includes/core/class-ticket-emails.php:487
 msgid "Check-in code:"
 msgstr ""
 
@@ -5643,7 +5643,7 @@ msgstr ""
 #: includes/api/class-tickets.php:2454
 #: includes/core/class-ical.php:213
 #: includes/core/class-ical.php:220
-#: includes/core/core-functions.php:104
+#: includes/core/core-functions.php:126
 msgid "Invalid event ID."
 msgstr ""
 
@@ -5651,8 +5651,8 @@ msgstr ""
 #: includes/api/class-event.php:158
 #: includes/api/class-event.php:432
 #: includes/api/class-event.php:435
-#: includes/core/core-functions.php:135
-#: includes/core/core-functions.php:144
+#: includes/core/core-functions.php:157
+#: includes/core/core-functions.php:166
 msgid "Event not found."
 msgstr ""
 
@@ -5711,7 +5711,7 @@ msgstr ""
 
 #: includes/api/class-order.php:67
 #: includes/api/class-tickets.php:2285
-#: includes/core/class-ticket-emails.php:1044
+#: includes/core/class-ticket-emails.php:1048
 msgid "Order not found."
 msgstr ""
 
@@ -7115,8 +7115,8 @@ msgstr ""
 
 #: includes/core/class-rsvps.php:1087
 #: includes/core/class-ticket-emails.php:307
-#: includes/core/class-ticket-emails.php:493
-#: includes/core/class-ticket-emails.php:638
+#: includes/core/class-ticket-emails.php:495
+#: includes/core/class-ticket-emails.php:642
 msgid "there"
 msgstr ""
 
@@ -7141,7 +7141,7 @@ msgstr ""
 #: includes/core/class-rsvps.php:1137
 #: includes/core/class-ticket-emails.php:255
 #: includes/core/class-ticket-emails.php:335
-#: includes/core/class-ticket-emails.php:527
+#: includes/core/class-ticket-emails.php:529
 msgid "Location:"
 msgstr ""
 
@@ -7159,14 +7159,14 @@ msgid "Attendee:"
 msgstr ""
 
 #: includes/core/class-rsvps.php:1514
-#: includes/core/class-ticket-emails.php:667
-#: includes/core/class-ticket-emails.php:1524
+#: includes/core/class-ticket-emails.php:671
+#: includes/core/class-ticket-emails.php:1528
 msgid "Event:"
 msgstr ""
 
 #: includes/core/class-rsvps.php:1515
-#: includes/core/class-ticket-emails.php:668
-#: includes/core/class-ticket-emails.php:1525
+#: includes/core/class-ticket-emails.php:672
+#: includes/core/class-ticket-emails.php:1529
 msgid "Date:"
 msgstr ""
 
@@ -7325,8 +7325,8 @@ msgid "WooCommerce order not found."
 msgstr ""
 
 #: includes/core/class-ticket-emails.php:252
-#: includes/core/class-ticket-emails.php:520
-#: includes/core/class-ticket-emails.php:664
+#: includes/core/class-ticket-emails.php:522
+#: includes/core/class-ticket-emails.php:668
 msgid "Hi [attendee_name],"
 msgstr ""
 
@@ -7335,88 +7335,88 @@ msgid "This is a reminder that [event_name] is happening tomorrow."
 msgstr ""
 
 #: includes/core/class-ticket-emails.php:254
-#: includes/core/class-ticket-emails.php:526
+#: includes/core/class-ticket-emails.php:528
 msgid "Schedule ([event_timezone]):"
 msgstr ""
 
 #: includes/core/class-ticket-emails.php:256
-#: includes/core/class-ticket-emails.php:528
-#: includes/core/class-ticket-emails.php:669
+#: includes/core/class-ticket-emails.php:530
+#: includes/core/class-ticket-emails.php:673
 msgid "Event page:"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:521
+#: includes/core/class-ticket-emails.php:523
 msgid "Thanks for your ticket purchase for [event_name]."
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:522
-#: includes/core/class-ticket-emails.php:666
+#: includes/core/class-ticket-emails.php:524
+#: includes/core/class-ticket-emails.php:670
 msgid "Order ID:"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:525
+#: includes/core/class-ticket-emails.php:527
 msgid "Ticket Codes"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:654
+#: includes/core/class-ticket-emails.php:658
 msgid "[event_name]: Refund confirmation"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:665
+#: includes/core/class-ticket-emails.php:669
 msgid "A refund has been issued for your order."
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:670
+#: includes/core/class-ticket-emails.php:674
 msgid "Refunded items"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:671
+#: includes/core/class-ticket-emails.php:675
 msgid "Refund amount:"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:672
+#: includes/core/class-ticket-emails.php:676
 msgid "The refund should appear in your account within 5-10 business days, depending on your payment provider."
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:795
+#: includes/core/class-ticket-emails.php:799
 msgid "Refund confirmation sent."
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:1012
+#: includes/core/class-ticket-emails.php:1016
 msgid "Completed order was not found for this checkout session."
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:1477
+#: includes/core/class-ticket-emails.php:1481
 msgid "Terms and conditions:"
 msgstr ""
 
 #. translators: %s: date/time the customer accepted the terms.
-#: includes/core/class-ticket-emails.php:1480
+#: includes/core/class-ticket-emails.php:1484
 #, php-format
 msgid "Accepted by the customer at checkout on %s."
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:1496
+#: includes/core/class-ticket-emails.php:1500
 msgid "Agreements accepted:"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:1519
+#: includes/core/class-ticket-emails.php:1523
 msgid "A new ticket order has been placed."
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:1520
+#: includes/core/class-ticket-emails.php:1524
 msgid "Customer:"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:1521
+#: includes/core/class-ticket-emails.php:1525
 msgid "Order:"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:1522
+#: includes/core/class-ticket-emails.php:1526
 msgid "Tickets:"
 msgstr ""
 
-#: includes/core/class-ticket-emails.php:1523
+#: includes/core/class-ticket-emails.php:1527
 msgid "Total:"
 msgstr ""
 
@@ -7477,21 +7477,21 @@ msgstr ""
 msgid "Status updated via EventKoi."
 msgstr ""
 
-#: includes/core/core-functions.php:371
+#: includes/core/core-functions.php:393
 msgid "Invalid calendar. Please check the calendar ID."
 msgstr ""
 
-#: includes/core/core-functions.php:574
+#: includes/core/core-functions.php:596
 msgctxt "slug"
 msgid "event"
 msgstr ""
 
-#: includes/core/core-functions.php:575
+#: includes/core/core-functions.php:597
 msgctxt "slug"
 msgid "calendar"
 msgstr ""
 
-#: includes/core/core-functions.php:1173
+#: includes/core/core-functions.php:1195
 msgid "Incomplete"
 msgstr ""
 
