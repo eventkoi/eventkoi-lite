@@ -575,23 +575,13 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
 
   useEffect(() => {
     if (!displayTickets.length) return;
-    // A single purchasable ticket type limited to one per order has exactly
-    // one valid choice, so start it at 1 instead of asking for a click on +.
-    const purchasable = displayTickets.filter(
-      (ticket) => !getTicketLimits(ticket).unavailable,
-    );
-    const presetId =
-      purchasable.length === 1 &&
-      getTicketLimits(purchasable[0]).maxPerOrderCount === 1
-        ? String(purchasable[0].id)
-        : null;
     setQuantities((prev) => {
       const next = { ...prev };
       displayTickets.forEach((ticket) => {
         const id = String(ticket.id);
         const { maxAllowedQty, unavailable } = getTicketLimits(ticket);
         if (typeof next[id] !== "number") {
-          next[id] = id === presetId ? 1 : 0;
+          next[id] = 0;
           return;
         }
         if (unavailable) {
