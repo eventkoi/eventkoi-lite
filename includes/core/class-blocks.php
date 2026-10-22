@@ -627,14 +627,19 @@ JS;
 			$block_content
 		);
 
-		$block_content = str_replace(
-			'pin.png" alt=""',
-			'pin.png" alt="" role="presentation" aria-hidden="true"',
+		// Only add the presentation attributes once. This filter runs for every
+		// nesting level of the template and the needle also matches the output,
+		// so a plain str_replace stacked a new copy on each pass.
+		$block_content = preg_replace(
+			'/(pin|date)\.png" alt=""(?! role="presentation")/',
+			'$1.png" alt="" role="presentation" aria-hidden="true"',
 			$block_content
 		);
-		$block_content = str_replace(
-			'date.png" alt=""',
-			'date.png" alt="" role="presentation" aria-hidden="true"',
+		// Templates saved while the old replace was stacking copies keep them
+		// in the database, so collapse any repeats back to a single pair.
+		$block_content = preg_replace(
+			'/( role="presentation" aria-hidden="true"){2,}/',
+			'$1',
 			$block_content
 		);
 

@@ -24,3 +24,13 @@
     }
   }
 }
+
+/* Single event template: the date and location icons sit in a 20px column
+   next to a paragraph. Centre them on the first text line instead of the top
+   of the line box so the front matches the editor. */
+figure.wp-block-image:has(img[src$="/templates/assets/date.png"]),
+figure.wp-block-image:has(img[src$="/templates/assets/pin.png"]) {
+  display: flex;
+  align-items: center;
+  min-height: 1lh;
+}
