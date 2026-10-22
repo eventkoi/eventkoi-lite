@@ -575,13 +575,23 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
 
   useEffect(() => {
     if (!displayTickets.length) return;
+    // A single purchasable ticket type limited to one per order has exactly
+    // one valid choice, so start it at 1 instead of asking for a click on +.
+    const purchasable = displayTickets.filter(
+      (ticket) => !getTicketLimits(ticket).unavailable,
+    );
+    const presetId =
+      purchasable.length === 1 &&
+      getTicketLimits(purchasable[0]).maxPerOrderCount === 1
+        ? String(purchasable[0].id)
+        : null;
     setQuantities((prev) => {
       const next = { ...prev };
       displayTickets.forEach((ticket) => {
         const id = String(ticket.id);
         const { maxAllowedQty, unavailable } = getTicketLimits(ticket);
         if (typeof next[id] !== "number") {
-          next[id] = 0;
+          next[id] = id === presetId ? 1 : 0;
           return;
         }
         if (unavailable) {
@@ -595,6 +605,21 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
       return next;
     });
   }, [displayTickets]);
+
+  useEffect(() => {
+    if (!mountEl) return undefined;
+    const openFromOutside = () => {
+      const soldOut =
+        displayTickets.length > 0 &&
+        displayTickets.every((ticket) => getTicketLimits(ticket).soldOut);
+      if (!soldOut) {
+        setIsDialogOpen(true);
+      }
+    };
+    mountEl.addEventListener("eventkoi:open-tickets", openFromOutside);
+    return () =>
+      mountEl.removeEventListener("eventkoi:open-tickets", openFromOutside);
+  }, [mountEl, displayTickets]);
 
   useEffect(() => {
     if (!isDialogOpen) {
@@ -2027,6 +2052,31 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
     </div>
   );
 }
+
+// Any link to #buy-tickets (a Button block, for example) opens the ticket
+// dialog of the matching widget on the page, like #event-share and
+// #add-to-cal do for their overlays. An optional data-event-id on the link
+// picks the widget when several events are listed.
+function openTicketsFromLink(event) {
+  const link =
+    event.target && event.target.closest
+      ? event.target.closest('a[href="#buy-tickets"]')
+      : null;
+  if (!link) return;
+  const widgets = Array.from(document.querySelectorAll(".eventkoi-tickets"));
+  if (!widgets.length) return;
+  const wantedId = Number(link.getAttribute("data-event-id")) || 0;
+  const target =
+    (wantedId &&
+      widgets.find(
+        (el) => Number(el.getAttribute("data-event-id")) === wantedId,
+      )) ||
+    widgets[0];
+  event.preventDefault();
+  target.dispatchEvent(new CustomEvent("eventkoi:open-tickets"));
+}
+
+document.addEventListener("click", openTicketsFromLink);
 
 function mountTicketsWidgets() {
   document.querySelectorAll(".eventkoi-tickets").forEach((el) => {
