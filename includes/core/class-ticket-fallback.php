@@ -121,9 +121,15 @@ class Ticket_Fallback {
 
 		$return_url = self::current_url();
 		$action_url = admin_url( 'admin-post.php' );
+		$notice     = self::get_status_notice();
 
 		ob_start();
 		echo self::styles(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- static style markup.
+		if ( $notice ) :
+			?>
+			<div class="eventkoi-tickets__fallback-notice is-<?php echo esc_attr( $notice['type'] ); ?>" role="status"><?php echo esc_html( $notice['text'] ); ?></div>
+			<?php
+		endif;
 		?>
 		<form class="eventkoi-tickets__fallback" method="post" action="<?php echo esc_url( $action_url ); ?>">
 			<input type="hidden" name="action" value="<?php echo esc_attr( self::ACTION ); ?>" />
@@ -290,6 +296,13 @@ class Ticket_Fallback {
 		$body       = $response->get_data();
 		$hosted_url = is_array( $body ) ? (string) ( $body['hosted_url'] ?? '' ) : '';
 
+		// Free orders are complete at this point. Without JavaScript nothing
+		// else confirms that, so flag the return URL for the notice above the form.
+		if ( is_array( $body ) && ! empty( $body['free_order'] ) ) {
+			wp_safe_redirect( add_query_arg( 'ek_checkout', 'success', $return_url ) );
+			exit;
+		}
+
 		if ( '' === $hosted_url ) {
 			self::redirect_error( $return_url, __( 'Could not start checkout. Please try again.', 'eventkoi-lite' ) );
 		}
@@ -297,6 +310,48 @@ class Ticket_Fallback {
 		// Gateway URLs are external (Stripe/SureCart), so wp_redirect, not safe_redirect.
 		wp_redirect( $hosted_url ); // phpcs:ignore WordPress.Security.SafeRedirect.wp_redirect_wp_redirect
 		exit;
+	}
+
+	/**
+	 * Outcome of a previous submission, read from the query string the handler
+	 * (or the WooCommerce return) redirects back with. Only the no-JS visitor
+	 * sees this: when the script runs, React replaces the whole mount.
+	 *
+	 * @return array|null Array with `type` and `text`, or null when there is nothing to show.
+	 */
+	private static function get_status_notice() {
+		if ( empty( $_GET['ek_checkout'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+			return null;
+		}
+
+		$status = sanitize_key( wp_unslash( $_GET['ek_checkout'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+		if ( 'success' === $status ) {
+			return array(
+				'type' => 'success',
+				'text' => __( 'Thank you, your order is confirmed. Your tickets are on their way to your email address.', 'eventkoi-lite' ),
+			);
+		}
+
+		if ( 'pending' === $status ) {
+			return array(
+				'type' => 'pending',
+				'text' => __( 'Thank you, your order has been received and is waiting for payment confirmation.', 'eventkoi-lite' ),
+			);
+		}
+
+		if ( 'error' === $status ) {
+			$message = isset( $_GET['ek_checkout_error'] ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				? sanitize_text_field( rawurldecode( wp_unslash( $_GET['ek_checkout_error'] ) ) ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+				: '';
+
+			return array(
+				'type' => 'error',
+				'text' => '' !== $message ? $message : __( 'Something went wrong. Please try again.', 'eventkoi-lite' ),
+			);
+		}
+
+		return null;
 	}
 
 	/**
@@ -364,6 +419,10 @@ class Ticket_Fallback {
 			. '.eventkoi-tickets__fallback-check input{margin-top:3px}'
 			. '.eventkoi-tickets__fallback-submit{appearance:none;border:0;border-radius:9999px;background:#1e1e2f;color:#fff;font-weight:600;padding:14px 20px;cursor:pointer;font-size:15px}'
 			. '.eventkoi-tickets__fallback-submit:hover{opacity:.9}'
+			. '.eventkoi-tickets__fallback-notice{max-width:450px;margin:0 0 12px;padding:12px 14px;border-radius:8px;font-size:14px;line-height:1.5;background:#f3f4f6;color:#111827}'
+			. '.eventkoi-tickets__fallback-notice.is-success{background:#ecfdf5;color:#065f46}'
+			. '.eventkoi-tickets__fallback-notice.is-pending{background:#fffbeb;color:#92400e}'
+			. '.eventkoi-tickets__fallback-notice.is-error{background:#fef2f2;color:#991b1b}'
 			. '</style>';
 	}
 
