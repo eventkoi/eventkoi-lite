@@ -607,6 +607,11 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
       }
     };
     mountEl.addEventListener("eventkoi:open-tickets", openFromOutside);
+    if (mountEl.dataset.eventkoiAutoOpen) {
+      // Mounted on demand by a #buy-tickets link: open straight away.
+      delete mountEl.dataset.eventkoiAutoOpen;
+      openFromOutside();
+    }
     return () =>
       mountEl.removeEventListener("eventkoi:open-tickets", openFromOutside);
   }, [mountEl, displayTickets]);
@@ -2044,26 +2049,57 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
 }
 
 // Any link to #buy-tickets (a Button block, for example) opens the ticket
-// dialog of the matching widget on the page, like #event-share and
-// #add-to-cal do for their overlays. An optional data-event-id on the link
-// picks the widget when several events are listed.
+// dialog, like #event-share and #add-to-cal do for their overlays. The event
+// comes from the link's data-event-id, from a #buy-tickets-123 style URL, or
+// from the query loop row around the link; with none of those the first
+// ticket widget on the page is used. When no widget is mounted for that
+// event, one is created off-screen so the dialog still opens, for example
+// from a button on the front page.
 function openTicketsFromLink(event) {
   const link =
     event.target && event.target.closest
-      ? event.target.closest('a[href="#buy-tickets"]')
+      ? event.target.closest('a[href*="#buy-tickets"]')
       : null;
   if (!link) return;
+  const hash = String(link.hash || link.getAttribute("href") || "");
+  if (!/^#buy-tickets(?:[-_=]\d+)?$/.test(hash)) return;
+  const hashId = (hash.match(/[-_=](\d+)$/) || [])[1];
+  const row = link.closest("[data-event-id]");
+  const wantedId =
+    Number(link.getAttribute("data-event-id")) ||
+    Number(hashId) ||
+    (row ? Number(row.getAttribute("data-event-id")) : 0) ||
+    0;
+  const wantedInstance =
+    Number(link.getAttribute("data-instance-ts")) ||
+    (row ? Number(row.getAttribute("data-instance-ts")) : 0) ||
+    0;
   const widgets = Array.from(document.querySelectorAll(".eventkoi-tickets"));
-  if (!widgets.length) return;
-  const wantedId = Number(link.getAttribute("data-event-id")) || 0;
-  const target =
-    (wantedId &&
-      widgets.find(
-        (el) => Number(el.getAttribute("data-event-id")) === wantedId,
-      )) ||
-    widgets[0];
+  let target = wantedId
+    ? widgets.find(
+        (el) =>
+          Number(el.getAttribute("data-event-id")) === wantedId &&
+          (!wantedInstance ||
+            Number(el.getAttribute("data-instance-ts") || 0) === wantedInstance),
+      )
+    : widgets[0];
+  if (!target && !wantedId) return;
   event.preventDefault();
-  target.dispatchEvent(new CustomEvent("eventkoi:open-tickets"));
+  if (target) {
+    target.dispatchEvent(new CustomEvent("eventkoi:open-tickets"));
+    return;
+  }
+  const wrapper = document.createElement("div");
+  wrapper.className = "eventkoi-front";
+  wrapper.hidden = true;
+  target = document.createElement("div");
+  target.className = "eventkoi-tickets";
+  target.setAttribute("data-event-id", String(wantedId));
+  target.setAttribute("data-instance-ts", String(wantedInstance));
+  target.dataset.eventkoiAutoOpen = "1";
+  wrapper.appendChild(target);
+  document.body.appendChild(wrapper);
+  mountTicketsWidgets();
 }
 
 document.addEventListener("click", openTicketsFromLink);
