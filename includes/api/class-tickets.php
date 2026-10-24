@@ -270,6 +270,16 @@ class Tickets {
 
 		register_rest_route(
 			'eventkoi/v1',
+			'/tickets/orders/export',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'export_orders' ),
+				'permission_callback' => REST::cap( 'eventkoi_orders_view' ),
+			)
+		);
+
+		register_rest_route(
+			'eventkoi/v1',
 			'/tickets/orders/add-attendee',
 			array(
 				'methods'             => 'POST',
@@ -309,8 +319,11 @@ class Tickets {
 
 		$currency = function_exists( 'get_woocommerce_currency' ) ? strtoupper( get_woocommerce_currency() ) : '';
 
-		$parts   = array();
-		$parts[] = "( order_id LIKE 'wc\\_%' OR order_id LIKE 'manual\\_%' )";
+		$parts = array();
+		// Woo orders (wc_), manual orders (manual_) and free checkouts, whose
+		// base id is the numeric local order id. Free orders never touch Woo,
+		// so without the numeric match they were missing from every list.
+		$parts[] = "( order_id LIKE 'wc\\_%' OR order_id LIKE 'manual\\_%' OR order_id REGEXP '^[0-9]+(:|$)' )";
 		$parts[] = "payment_status != 'hold'";
 
 		if ( ! empty( $args['only_archived'] ) ) {
@@ -560,7 +573,7 @@ class Tickets {
 			);
 
 			if ( $fields ) {
-				$values = self::get_order_checkout_field_values( (string) ( $row['order_id'] ?? '' ) );
+				$values = self::get_order_checkout_field_values( (string) ( $row['order_id'] ?? '' ), $event_id );
 
 				foreach ( $fields as $field ) {
 					$line[] = (string) ( $values[ $field['key'] ] ?? '' );
@@ -607,6 +620,146 @@ class Tickets {
 	}
 
 	/**
+	 * Export the Ticket sales list as CSV, including custom checkout fields.
+	 *
+	 * The admin sends the IDs of the rows it is showing so the file matches
+	 * the filtered table. Checkout fields registered for the events in those
+	 * orders (via the `eventkoi_checkout_fields` filter) become extra columns,
+	 * one per distinct label.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function export_orders( WP_REST_Request $request ) {
+		$wanted = $request->get_param( 'order_ids' );
+		$wanted = is_array( $wanted )
+			? array_values( array_filter( array_map( 'sanitize_text_field', array_map( 'strval', $wanted ) ) ) )
+			: array();
+
+		$all  = self::get_all_orders( $request );
+		$rows = $all instanceof WP_REST_Response ? (array) $all->get_data() : array();
+
+		if ( $wanted ) {
+			$lookup = array_flip( $wanted );
+			$rows   = array_values(
+				array_filter(
+					$rows,
+					static function ( $row ) use ( $lookup ) {
+						return isset( $lookup[ (string) ( $row['order_id'] ?? ( $row['id'] ?? '' ) ) ] );
+					}
+				)
+			);
+		}
+
+		// One column per distinct field label across every event in the file;
+		// the same label on two events shares a column.
+		$field_columns = array();
+		$fields_cache  = array();
+		foreach ( $rows as $row ) {
+			foreach ( (array) ( $row['event_ids'] ?? array() ) as $eid ) {
+				$eid = absint( $eid );
+				if ( ! isset( $fields_cache[ $eid ] ) ) {
+					$fields_cache[ $eid ] = \EventKoi\Core\Orders::get_checkout_fields( $eid );
+				}
+				foreach ( $fields_cache[ $eid ] as $field ) {
+					$field_columns[ (string) $field['label'] ][ $eid ] = (string) $field['key'];
+				}
+			}
+		}
+
+		$headers = array(
+			__( 'Order ID', 'eventkoi-lite' ),
+			__( 'Event', 'eventkoi-lite' ),
+			__( 'Customer name', 'eventkoi-lite' ),
+			__( 'Customer email', 'eventkoi-lite' ),
+			__( 'Order status', 'eventkoi-lite' ),
+			__( 'Quantity', 'eventkoi-lite' ),
+			__( 'Amount', 'eventkoi-lite' ),
+			__( 'Currency', 'eventkoi-lite' ),
+			__( 'Date', 'eventkoi-lite' ),
+		);
+		foreach ( array_keys( $field_columns ) as $label ) {
+			$headers[] = $label;
+		}
+
+		$handle = fopen( 'php://temp', 'r+' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- In-memory handle for CSV generation.
+		fputcsv( $handle, $headers, ',', '"', '\\' );
+
+		foreach ( $rows as $row ) {
+			$order_id  = (string) ( $row['order_id'] ?? ( $row['id'] ?? '' ) );
+			$event_ids = array_map( 'absint', (array) ( $row['event_ids'] ?? array() ) );
+			$names     = (array) ( $row['event_names'] ?? array() );
+			$labels    = array();
+			foreach ( $event_ids as $eid ) {
+				$labels[] = (string) ( $names[ (string) $eid ] ?? $eid );
+			}
+			$cents    = (int) round( (float) ( $row['amount_total'] ?? 0 ) );
+			$currency = strtoupper( (string) ( $row['currency'] ?? 'usd' ) );
+
+			$line = array(
+				$order_id,
+				implode( '; ', $labels ),
+				(string) ( $row['customer_name'] ?? '' ),
+				(string) ( $row['customer_email'] ?? '' ),
+				(string) ( $row['payment_status'] ?? ( $row['status'] ?? '' ) ),
+				(string) absint( $row['quantity'] ?? 0 ),
+				number_format( $cents / 100, 2, '.', '' ),
+				$currency,
+				(string) ( $row['created_at'] ?? '' ),
+			);
+
+			if ( $field_columns ) {
+				$values = array();
+				foreach ( $event_ids as $eid ) {
+					$values[ $eid ] = self::get_order_checkout_field_values( $order_id, $eid );
+				}
+				foreach ( $field_columns as $keys_by_event ) {
+					$cell = '';
+					foreach ( $keys_by_event as $eid => $key ) {
+						if ( isset( $values[ $eid ][ $key ] ) && '' !== (string) $values[ $eid ][ $key ] ) {
+							$cell = (string) $values[ $eid ][ $key ];
+							break;
+						}
+					}
+					$line[] = $cell;
+				}
+			}
+
+			fputcsv( $handle, array_map( array( __CLASS__, 'escape_csv_formula' ), $line ), ',', '"', '\\' );
+		}
+
+		rewind( $handle );
+		$csv = stream_get_contents( $handle );
+		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Closing the in-memory temp handle after CSV generation.
+
+		$filename = 'eventkoi-orders-' . gmdate( 'Y-m-d' ) . '.csv';
+		$response = new WP_REST_Response( $csv, 200 );
+		$response->header( 'Content-Type', 'text/csv; charset=utf-8' );
+		$response->header( 'Content-Disposition', 'attachment; filename="' . $filename . '"' );
+
+		add_filter(
+			'rest_pre_serve_request',
+			static function ( $served, $result, $request, $_server ) use ( $csv, $filename ) {
+				unset( $result, $_server );
+
+				if ( '/' . EVENTKOI_API . '/tickets/orders/export' !== $request->get_route() ) {
+					return $served;
+				}
+
+				nocache_headers();
+				header( 'Content-Type: text/csv; charset=utf-8' );
+				header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+				echo $csv; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Raw CSV payload for file download response.
+				return true;
+			},
+			10,
+			4
+		);
+
+		return $response;
+	}
+
+	/**
 	 * Neutralise spreadsheet formulas in a CSV cell.
 	 *
 	 * Attendee names and custom checkout field values are supplied by whoever
@@ -636,10 +789,19 @@ class Tickets {
 	 * @param string $order_id Base order ID (`wc_123`).
 	 * @return array Values keyed by field key.
 	 */
-	private static function get_order_checkout_field_values( $order_id ) {
+	private static function get_order_checkout_field_values( $order_id, $event_id = 0 ) {
 		$order_id = trim( (string) $order_id );
 
-		if ( 0 !== strpos( $order_id, 'wc_' ) || ! function_exists( 'wc_get_order' ) ) {
+		if ( '' === $order_id ) {
+			return array();
+		}
+
+		// Free orders never touch WooCommerce; their values are order notes.
+		if ( 0 !== strpos( $order_id, 'wc_' ) ) {
+			return \EventKoi\Core\Orders::get_checkout_field_values( absint( $order_id ), $event_id );
+		}
+
+		if ( ! function_exists( 'wc_get_order' ) ) {
 			return array();
 		}
 
@@ -1206,6 +1368,10 @@ class Tickets {
 				$label = $definitions[ $key ]['label'] ?? $key;
 				$orders->add_note( $order_id, 'checkout_field', $label . ': ' . $value, 'user' );
 			}
+
+			// The per-field notes are what the order timeline shows; keep a
+			// machine-readable copy so exports can resolve values by key.
+			$orders->add_note( $order_id, 'checkout_fields', $checkout_fields, 'system' );
 		}
 
 		// Per-seat check-in codes, same alphabet and length as the paid flow.

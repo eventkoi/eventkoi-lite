@@ -150,60 +150,39 @@ export function Orders() {
     [timeFilteredData, queryStatus]
   );
 
-  const exportOrdersCsv = (table) => {
+  const exportOrdersCsv = async (table) => {
     setIsExporting(true);
     try {
       const rows = table.getFilteredRowModel().rows || [];
-      const headers = [
-        "Order ID",
-        "Event",
-        "Customer name",
-        "Customer email",
-        "Order status",
-        "Quantity",
-        "Amount",
-        "Currency",
-        "Date",
-      ];
+      const orderIds = rows
+        .map((row) => String(row.original?.order_id || row.original?.id || ""))
+        .filter(Boolean);
 
-      const escapeCsv = (value) => {
-        const text = String(value ?? "");
-        if (text.includes(",") || text.includes('"') || text.includes("\n")) {
-          return `"${text.replace(/"/g, '""')}"`;
-        }
-        return text;
-      };
-
-      const csvRows = rows.map((row) => {
-        const o = row.original;
-        const eventNames = o.event_names || {};
-        const eventIds = Array.isArray(o.event_ids) ? o.event_ids : [];
-        const eventLabel = eventIds.map((id) => eventNames[id] || id).join("; ");
-        const totalCents = Number(o.total_amount ?? o.amount_total ?? o.total ?? 0);
-        const cur = (o.currency || "usd").toUpperCase();
-
-        return [
-          o.order_id || o.id || "",
-          eventLabel,
-          o.ticket_holder_name || o.customer_name || "",
-          o.customer_email || o.billing_email || "",
-          o.payment_status || o.status || "",
-          Number(o.quantity || 0),
-          formatCurrency(totalCents, cur),
-          cur,
-          o.created_at || "",
-        ]
-          .map(escapeCsv)
-          .join(",");
+      // Built on the server so custom checkout fields come along as columns.
+      const response = await apiRequest({
+        path: `${eventkoi_params.api}/tickets/orders/export`,
+        method: "POST",
+        data: { order_ids: orderIds },
+        parse: false,
+        headers: {
+          "EVENTKOI-API-KEY": eventkoi_params.api_key,
+          "X-WP-Nonce": eventkoi_params.nonce || "",
+        },
       });
 
-      const blob = new Blob([[headers.join(","), ...csvRows].join("\n")], {
-        type: "text/csv;charset=utf-8;",
-      });
+      if (!response?.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || "Export failed.");
+      }
+
+      const csvText = await response.text();
+      const blob = new Blob([csvText], { type: "text/csv;charset=utf-8;" });
+      const contentDisposition = response.headers.get("content-disposition") || "";
+      const match = contentDisposition.match(/filename="([^"]+)"/);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
-      link.download = "eventkoi-orders.csv";
+      link.download = match?.[1] || "eventkoi-orders.csv";
       document.body.appendChild(link);
       link.click();
       link.remove();
