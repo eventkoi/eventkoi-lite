@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.4.8.1
+Stable tag: 1.4.9.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,14 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.4.9.0 – Ticket modal links, Event Data block styling and export fields – 2026-10-24 =
+* New: Any button or link can open the ticket modal. Link it to #buy-tickets inside an event query loop to open that row's event, or to #buy-tickets-123 with the event ID anywhere on the site, even on pages without a ticket box.
+* New: The Event Data block has border, radius and link colour controls in the block Styles panel.
+* Improvement: Event query loop rows carry the same classes as the core loop (post-ID, type, status and term classes) plus the event ID, so a single event can be styled with CSS.
+* Improvement: The Ticket sales export includes custom checkout fields as extra columns, and free orders now appear in the Ticket sales list and exports.
+* Fix: The date and location icons in the single event template sit centred on their first line, matching the editor, and no longer pick up duplicated attributes.
+* Fix: Buying a ticket without JavaScript now shows a success, pending or error message above the checkout form, and the form keeps its styling on sites where an SEO plugin renders the content early.
 
 = 1.4.8.1 – Event URL binding, editor title preview and ampersand fixes – 2026-10-21 =
 * Fix: Event titles with ampersands or quotes show as typed in the ticket sales screens, order details, email subjects and admin notifications instead of HTML codes.
