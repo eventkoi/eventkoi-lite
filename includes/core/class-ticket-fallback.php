@@ -199,7 +199,7 @@ class Ticket_Fallback {
 				</label>
 			<?php endforeach; ?>
 
-			<button type="submit" class="eventkoi-tickets__fallback-submit"><?php echo esc_html__( 'Buy tickets', 'eventkoi-lite' ); ?></button>
+			<button type="submit" class="eventkoi-tickets__fallback-submit wp-element-button"><?php echo esc_html__( 'Buy tickets', 'eventkoi-lite' ); ?></button>
 		</form>
 		<?php
 		return (string) ob_get_clean();
@@ -393,19 +393,20 @@ class Ticket_Fallback {
 	}
 
 	/**
-	 * One-time inline styles for the fallback form, matching the ticket widget's
-	 * boxed look so it reads as part of the plugin, not a bare form.
+	 * Inline styles for the fallback form, matching the ticket widget's boxed
+	 * look so it reads as part of the plugin, not a bare form.
+	 *
+	 * The submit carries wp-element-button so the scoped preflight, which resets
+	 * every other button inside .eventkoi-front, leaves it alone.
+	 *
+	 * Printed with every form rather than once per request: SEO plugins render
+	 * the content early to build their meta description and throw that copy
+	 * away, so a one-time guard left the real page without any styles.
 	 *
 	 * @return string
 	 */
 	private static function styles() {
-		static $printed = false;
-		if ( $printed ) {
-			return '';
-		}
-		$printed = true;
-
-		return '<style id="eventkoi-tickets-fallback-css">'
+		return '<style class="eventkoi-tickets-fallback-css">'
 			. '.eventkoi-tickets__fallback{max-width:450px;border:1px solid #eee;background:#f3f3f3;border-radius:10px;padding:24px;display:flex;flex-direction:column;gap:16px;font-size:15px;color:#1e1e2f}'
 			. '.eventkoi-tickets__fallback-title{font-weight:600;text-transform:uppercase;letter-spacing:.02em}'
 			. '.eventkoi-tickets__fallback-row{display:flex;align-items:center;justify-content:space-between;gap:12px}'
@@ -417,8 +418,8 @@ class Ticket_Fallback {
 			. '.eventkoi-tickets__fallback-fields input{padding:10px;border:1px solid #ddd;border-radius:8px;background:#fff}'
 			. '.eventkoi-tickets__fallback-check{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#555}'
 			. '.eventkoi-tickets__fallback-check input{margin-top:3px}'
-			. '.eventkoi-tickets__fallback-submit{appearance:none;border:0;border-radius:9999px;background:#1e1e2f;color:#fff;font-weight:600;padding:14px 20px;cursor:pointer;font-size:15px}'
-			. '.eventkoi-tickets__fallback-submit:hover{opacity:.9}'
+			. '.eventkoi-front form.eventkoi-tickets__fallback button.eventkoi-tickets__fallback-submit{appearance:none;border:0;border-radius:9999px;background:#1e1e2f;color:#fff;font-weight:600;padding:14px 20px;cursor:pointer;font-size:15px;line-height:1.2;width:100%}'
+			. '.eventkoi-front form.eventkoi-tickets__fallback button.eventkoi-tickets__fallback-submit:hover{opacity:.9}'
 			. '.eventkoi-tickets__fallback-notice{max-width:450px;margin:0 0 12px;padding:12px 14px;border-radius:8px;font-size:14px;line-height:1.5;background:#f3f4f6;color:#111827}'
 			. '.eventkoi-tickets__fallback-notice.is-success{background:#ecfdf5;color:#065f46}'
 			. '.eventkoi-tickets__fallback-notice.is-pending{background:#fffbeb;color:#92400e}'
