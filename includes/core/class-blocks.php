@@ -265,6 +265,16 @@ class Blocks {
 						'padding' => true,
 					),
 					'align'      => array( 'left', 'center', 'right' ),
+					'__experimentalBorder' => array(
+						'color'                         => true,
+						'radius'                        => true,
+						'style'                         => true,
+						'width'                         => true,
+						'__experimentalDefaultControls' => array(
+							'color'  => true,
+							'radius' => true,
+						),
+					),
 				),
 			)
 		);
@@ -1581,8 +1591,16 @@ JS;
 		ob_start();
 		?>
 		<ul class="<?php echo esc_attr( $template_class_attr ); ?>"<?php echo $template_style ? ' style="' . esc_attr( $template_style ) . '"' : ''; ?>>
-			<?php foreach ( $events as $event ) : ?>
-				<li class="wp-block-post">
+			<?php
+			foreach ( $events as $event ) :
+				// Same classes core's Query Loop gives its rows (post-123, type,
+				// status, terms) so a single event can be styled, plus the ids a
+				// #buy-tickets link inside the row needs to open the right dialog.
+				$row_post_id  = absint( $event['event_id'] ?? ( $event['id'] ?? 0 ) );
+				$row_classes  = $row_post_id ? get_post_class( 'wp-block-post', $row_post_id ) : array( 'wp-block-post' );
+				$row_instance = 'recurring' === ( $event['date_type'] ?? '' ) ? absint( $event['start_ts'] ?? 0 ) : 0;
+				?>
+				<li class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"<?php echo $row_post_id ? ' data-event-id="' . (int) $row_post_id . '"' : ''; ?><?php echo $row_instance ? ' data-instance-ts="' . (int) $row_instance . '"' : ''; ?>>
 					<?php
 					if ( ! empty( $post_template_block['innerBlocks'] ) ) {
 						foreach ( $post_template_block['innerBlocks'] as $row_block ) {

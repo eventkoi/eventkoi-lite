@@ -38,6 +38,17 @@ registerBlockType("eventkoi/event-data", {
     color: {
       text: true,
       background: true,
+      link: true,
+    },
+    __experimentalBorder: {
+      color: true,
+      radius: true,
+      style: true,
+      width: true,
+      __experimentalDefaultControls: {
+        color: true,
+        radius: true,
+      },
     },
     typography: {
       fontSize: true,
