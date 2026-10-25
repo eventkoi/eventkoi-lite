@@ -54,12 +54,19 @@ const getPrimaryLocation = (event = {}) => {
 function trimExcerptWords(html, count) {
   const limit = parseInt(count, 10) || 0;
   if (limit <= 0 || !html) return html;
-  const holder = document.createElement("div");
-  holder.innerHTML = html;
-  const text = (holder.textContent || "").trim();
+  // Parse into an inert document (nothing loads or runs), take the text, then
+  // escape it again because the preview renders the result as HTML.
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const text = (doc.body?.textContent || "").trim();
   const words = text.split(/\s+/).filter(Boolean);
-  if (words.length <= limit) return text;
-  return words.slice(0, limit).join(" ") + "\u2026";
+  const trimmed =
+    words.length <= limit ? text : words.slice(0, limit).join(" ") + "\u2026";
+  return trimmed
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
 }
 
 export default function Edit({ attributes, setAttributes, clientId }) {
