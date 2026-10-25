@@ -631,11 +631,15 @@ export function getInitialCalendarDate({
 }) {
   const now = DateTime.utc(); // use UTC baseline, not local tz
 
-  // Week view always lands on the week containing today, regardless of
-  // default month/year. Month view uses the default-month logic below.
-  if (timeframe === "week") {
-    return now.toISODate();
-  }
+  // Week view: the default month and year still decide where the calendar
+  // opens. When they point at a month other than the current one, open on
+  // the week that holds the 1st of that month; otherwise land on this week.
+  const weekStart = (year, month) => {
+    if (year === now.year && month === now.month) {
+      return now.toISODate();
+    }
+    return DateTime.utc(year, month, 1).toISODate();
+  };
 
   const safeParseYear = (value, fallback) => {
     const num = parseInt(value, 10);
@@ -668,6 +672,9 @@ export function getInitialCalendarDate({
         ? safeParseYear(defaultYear, now.year)
         : now.year;
 
+    if (timeframe === "week") {
+      return weekStart(yearNum, monthNum || now.month);
+    }
     if (monthNum) {
       return DateTime.utc(yearNum, monthNum, 1).toISODate();
     }
@@ -685,6 +692,9 @@ export function getInitialCalendarDate({
       ? safeParseYear(calendar.default_year, now.year)
       : now.year;
 
+  if (timeframe === "week") {
+    return weekStart(yearNum, monthNum || now.month);
+  }
   if (monthNum) {
     return DateTime.utc(yearNum, monthNum, 1).toISODate();
   }

@@ -252,7 +252,7 @@ exports[`getInitialCalendarDate (signatures differ per bundle) > frontend copy, 
 {
   "{"context":"admin","defaultMonth":"March","defaultYear":2030}": "2026-06-01",
   "{"context":"block","defaultMonth":"March","defaultYear":2030}": "2030-03-01",
-  "{"context":"block","defaultMonth":"March","timeframe":"week"}": "2026-06-15",
+  "{"context":"block","defaultMonth":"March","timeframe":"week"}": "2026-03-01",
   "{"context":"block","defaultMonth":"March"}": "2026-03-01",
   "{"context":"block","defaultMonth":"Nonsense","defaultYear":2030}": "2030-06-01",
   "{"context":"block","defaultMonth":"march","defaultYear":"2030"}": "2030-03-01",
