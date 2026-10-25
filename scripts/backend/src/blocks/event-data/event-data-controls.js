@@ -1,6 +1,7 @@
 import {
   ComboboxControl,
   PanelBody,
+  RangeControl,
   SelectControl,
   Spinner,
   TextControl,
@@ -56,7 +57,13 @@ export function EventDataControls({
   isLoadingEvent,
   disableEventSource = false,
 }) {
-  const { field, eventId, dateFormat, timeFormat } = attributes;
+  const {
+    field,
+    eventId,
+    dateFormat,
+    timeFormat,
+    excerptLength = 0,
+  } = attributes;
   const [searchValue, setSearchValue] = useState("");
   const { options, isLoading } = useEventOptions(searchValue, eventId);
   const isDateTimeField = DATE_TIME_FIELDS.has(field);
@@ -176,6 +183,28 @@ export function EventDataControls({
             </a>
             .
           </p>
+        )}
+
+        {field === "excerpt" && (
+          <div style={{ paddingTop: "8px" }}>
+            <RangeControl
+              label={__("Max number of words", "eventkoi-lite")}
+              help={__("Leave at 0 to show the full description.", "eventkoi-lite")}
+              value={Number(excerptLength) || 0}
+              onChange={(val) =>
+                setAttributes({
+                  excerptLength: Math.max(0, parseInt(val, 10) || 0),
+                })
+              }
+              min={0}
+              max={200}
+              step={1}
+              allowReset={true}
+              resetFallbackValue={0}
+              __next40pxDefaultSize={true}
+              __nextHasNoMarginBottom={true}
+            />
+          </div>
         )}
       </PanelBody>
 

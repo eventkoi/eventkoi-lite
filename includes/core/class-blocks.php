@@ -102,8 +102,9 @@ class Blocks {
 			$field,
 			$event,
 			array(
-				'dateFormat' => $attributes['dateFormat'] ?? '',
-				'timeFormat' => $attributes['timeFormat'] ?? '',
+				'dateFormat'    => $attributes['dateFormat'] ?? '',
+				'timeFormat'    => $attributes['timeFormat'] ?? '',
+				'excerptLength' => $attributes['excerptLength'] ?? 0,
 			),
 			! empty( $context_event )
 		);
@@ -1737,6 +1738,42 @@ JS;
 	}
 
 	/**
+	 * Description HTML for the Event Data block.
+	 *
+	 * Without a word limit the field keeps showing the event summary. With one,
+	 * the full description is trimmed to that many words, like core's Excerpt.
+	 *
+	 * @param array $event      Normalised event array.
+	 * @param array $attributes Block attributes.
+	 * @return string
+	 */
+	private static function excerpt_field_html( $event, $attributes ) {
+		$summary = isset( $event['description'] ) ? (string) $event['description'] : '';
+		$limit   = isset( $attributes['excerptLength'] ) ? absint( $attributes['excerptLength'] ) : 0;
+
+		if ( $limit < 1 ) {
+			return wp_kses_post( $summary );
+		}
+
+		$event_id = ! empty( $event['event_id'] ) ? absint( $event['event_id'] ) : absint( $event['id'] ?? 0 );
+		$text     = '';
+
+		if ( $event_id ) {
+			$event_obj = new Event( $event_id );
+			$text      = (string) $event_obj::get_instance_field( 'description' );
+		}
+
+		if ( '' === trim( $text ) ) {
+			$text = $summary;
+		}
+
+		$text = html_entity_decode( wp_strip_all_tags( $text ), ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+		$text = str_replace( "\xC2\xA0", ' ', $text );
+
+		return esc_html( wp_trim_words( $text, $limit, '&hellip;' ) );
+	}
+
+	/**
 	 * Retrieve event field markup for a given event-data block.
 	 *
 	 * Defaults to rendering the title if no field attribute is provided.
@@ -1908,7 +1945,7 @@ JS;
 				} )()
 				: '',
 			'excerpt'  => ! empty( $event['description'] )
-				? '<div class="ek-event-excerpt--inner ek-event-excerpt-default">' . wp_kses_post( $event['description'] ) . '</div>'
+				? '<div class="ek-event-excerpt--inner ek-event-excerpt-default">' . self::excerpt_field_html( $event, $attributes ) . '</div>'
 				: '',
 			'location' => self::render_location_field_value( $event ),
 			'image'    => ! empty( $event['thumbnail'] )

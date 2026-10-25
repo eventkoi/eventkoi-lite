@@ -25,6 +25,10 @@ export const attributes = {
     type: "string",
     default: "", // PHP time format override; blank = use global EventKoi setting.
   },
+  excerptLength: {
+    type: "integer",
+    default: 0, // Max words for the description field; 0 = show it all.
+  },
 };
 
 export default { attributes };

@@ -1,4 +1,5 @@
 import { useEvent } from "@/blocks/event-query-loop/context";
+import apiRequest from "@wordpress/api-fetch";
 import { cn } from "@/lib/utils";
 import {
   AlignmentControl,
@@ -10,7 +11,7 @@ import {
 } from "@wordpress/block-editor";
 import { cloneBlock, createBlock } from "@wordpress/blocks";
 import { useDispatch, useSelect } from "@wordpress/data";
-import { useEffect, useRef } from "@wordpress/element";
+import { useEffect, useRef, useState } from "@wordpress/element";
 import { dateI18n } from "@wordpress/date";
 import { __ } from "@wordpress/i18n";
 import { Image as ImageIcon } from "lucide-react";
@@ -46,6 +47,21 @@ const getPrimaryLocation = (event = {}) => {
   return locations.find((location) => formatLocationLine(location)) || {};
 };
 
+/**
+ * Keep the first `count` words of some HTML as plain text, with an ellipsis.
+ * A count of 0 returns the HTML untouched.
+ */
+function trimExcerptWords(html, count) {
+  const limit = parseInt(count, 10) || 0;
+  if (limit <= 0 || !html) return html;
+  const holder = document.createElement("div");
+  holder.innerHTML = html;
+  const text = (holder.textContent || "").trim();
+  const words = text.split(/\s+/).filter(Boolean);
+  if (words.length <= limit) return text;
+  return words.slice(0, limit).join(" ") + "\u2026";
+}
+
 export default function Edit({ attributes, setAttributes, clientId }) {
   const {
     field,
@@ -54,6 +70,7 @@ export default function Edit({ attributes, setAttributes, clientId }) {
     eventId = 0,
     dateFormat = "",
     timeFormat = "",
+    excerptLength = 0,
   } = attributes;
 
   const textAlignClass = textAlign ? `has-text-align-${textAlign}` : "";
@@ -95,6 +112,41 @@ export default function Edit({ attributes, setAttributes, clientId }) {
   const TagName = tagName;
   const isInQuery = !!contextEvent;
   const hasMovedIntoItem = useRef(false);
+
+  // With a word limit the server trims the full description, not the short
+  // summary that event lists carry, so fetch the full text for the preview.
+  const [fullDescription, setFullDescription] = useState(null);
+  const fullDescriptionCacheRef = useRef(new Map());
+  const baseEventId = parseInt(event?.event_id || event?.id, 10) || 0;
+  const wordLimit = parseInt(excerptLength, 10) || 0;
+  useEffect(() => {
+    if (!baseEventId || wordLimit <= 0 || field !== "excerpt") {
+      setFullDescription(null);
+      return undefined;
+    }
+    const cache = fullDescriptionCacheRef.current;
+    if (cache.has(baseEventId)) {
+      setFullDescription(cache.get(baseEventId));
+      return undefined;
+    }
+    let isMounted = true;
+    apiRequest({
+      path: `${eventkoi_params.api}/event?id=${baseEventId}`,
+      method: "get",
+    })
+      .then((res) => {
+        const text = res?.description?.rendered || res?.description || "";
+        cache.set(baseEventId, text);
+        if (isMounted) setFullDescription(text);
+      })
+      .catch(() => {
+        cache.set(baseEventId, null);
+        if (isMounted) setFullDescription(null);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [baseEventId, wordLimit, field]);
 
   const {
     isInsideEventQueryLoop,
@@ -268,11 +320,17 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 
   // --- Normalize event fields ---
   const title = event.title?.rendered || event.title || "";
-  const excerpt =
+  const fullExcerpt =
     event.excerpt?.rendered ||
     event.description?.rendered ||
     event.description ||
     "";
+  // Mirror the server: a word limit trims the full description, like core's
+  // Excerpt; without one the summary shows as before.
+  const excerpt = trimExcerptWords(
+    wordLimit > 0 && fullDescription ? fullDescription : fullExcerpt,
+    wordLimit
+  );
   const location = event.location_line || "";
   const timeline = event.datetime;
   const image = event.thumbnail ? (
