@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: EventKoi Lite 1.4.9.0\n"
+"Project-Id-Version: EventKoi Lite 1.4.9.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/eventkoi-lite\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-25T20:19:05+00:00\n"
+"POT-Creation-Date: 2026-10-25T20:53:55+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -135,7 +135,7 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-blocks.php:1460
+#: includes/core/class-blocks.php:1461
 msgid "Next"
 msgstr ""
 
@@ -1491,7 +1491,7 @@ msgstr ""
 #: includes/core/beaver-modules/eventkoi-calendar/class-module-calendar.php:14
 #: includes/core/beaver-modules/eventkoi-event/class-module-event.php:13
 #: includes/core/beaver-modules/eventkoi-event/class-module-event.php:14
-#: includes/core/class-blocks.php:400
+#: includes/core/class-blocks.php:401
 #: includes/core/class-elementor-widgets.php:69
 msgid "EventKoi"
 msgstr ""
@@ -2693,13 +2693,13 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-blocks.php:1456
+#: includes/core/class-blocks.php:1457
 msgid "Previous"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-blocks.php:1122
+#: includes/core/class-blocks.php:1123
 msgid "No events found."
 msgstr ""
 
@@ -3074,7 +3074,7 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-blocks.php:636
+#: includes/core/class-blocks.php:637
 msgid "Share this event"
 msgstr ""
 
@@ -6382,15 +6382,15 @@ msgstr ""
 msgid "Event RSVP full label"
 msgstr ""
 
-#: includes/core/class-blocks.php:1472
+#: includes/core/class-blocks.php:1473
 msgid "Pagination"
 msgstr ""
 
-#: includes/core/class-blocks.php:2276
+#: includes/core/class-blocks.php:2277
 msgid "No calendar is available to display."
 msgstr ""
 
-#: includes/core/class-blocks.php:2280
+#: includes/core/class-blocks.php:2281
 msgid "Create a calendar"
 msgstr ""
 

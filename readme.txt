@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.0
 Requires PHP: 8.0
-Stable tag: 1.4.9.0
+Stable tag: 1.4.9.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -232,6 +232,10 @@ It sends your configured Google Maps API key (if provided) along with requests m
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
 == Changelog ==
+
+= 1.4.9.1 – Event Data word limit and week view default month – 2026-10-25 =
+* New: The Event Data block has a Max number of words setting for the Description field, like the core Excerpt block. Leave it at 0 to keep showing the summary as before.
+* Fix: Calendars set to the Week view now open on the default month and year from the calendar settings instead of always on the current week.
 
 = 1.4.9.0 – Ticket modal links, Event Data block styling and export fields – 2026-10-24 =
 * New: Any button or link can open the ticket modal. Link it to #buy-tickets inside an event query loop to open that row's event, or to #buy-tickets-123 with the event ID anywhere on the site, even on pages without a ticket box.
