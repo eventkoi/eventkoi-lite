@@ -1767,10 +1767,21 @@ JS;
 			$text = $summary;
 		}
 
-		$text = html_entity_decode( wp_strip_all_tags( $text ), ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+		return self::trim_words_html( $text, $limit );
+	}
+
+	/**
+	 * Plain-text copy of some HTML, cut to a number of words with an ellipsis.
+	 *
+	 * @param string $html  Source markup.
+	 * @param int    $limit Word limit, 1 or more.
+	 * @return string Escaped text.
+	 */
+	private static function trim_words_html( $html, $limit ) {
+		$text = html_entity_decode( wp_strip_all_tags( (string) $html ), ENT_QUOTES | ENT_HTML5, 'UTF-8' );
 		$text = str_replace( "\xC2\xA0", ' ', $text );
 
-		return esc_html( wp_trim_words( $text, $limit, '&hellip;' ) );
+		return esc_html( wp_trim_words( $text, absint( $limit ), '&hellip;' ) );
 	}
 
 	/**
@@ -2033,6 +2044,12 @@ JS;
 							if ( $ek_time_cb ) {
 								remove_filter( 'eventkoi_resolved_time_format', $ek_time_cb );
 							}
+						}
+
+						// The Excerpt field takes the same word limit as Description.
+						$excerpt_limit = isset( $attributes['excerptLength'] ) ? absint( $attributes['excerptLength'] ) : 0;
+						if ( 'event_excerpt' === $field && $excerpt_limit > 0 && '' !== trim( (string) $value ) ) {
+							$value = self::trim_words_html( $value, $excerpt_limit );
 						}
 
 						return $value;

@@ -185,11 +185,15 @@ export function EventDataControls({
           </p>
         )}
 
-        {field === "excerpt" && (
+        {(field === "excerpt" || field === "event_excerpt") && (
           <div style={{ paddingTop: "8px" }}>
             <RangeControl
               label={__("Max number of words", "eventkoi-lite")}
-              help={__("Leave at 0 to show the full description.", "eventkoi-lite")}
+              help={
+                field === "event_excerpt"
+                  ? __("Leave at 0 to show the full excerpt.", "eventkoi-lite")
+                  : __("Leave at 0 to show the full description.", "eventkoi-lite")
+              }
               value={Number(excerptLength) || 0}
               onChange={(val) =>
                 setAttributes({

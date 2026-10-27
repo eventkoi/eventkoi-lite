@@ -517,11 +517,14 @@ export default function Edit({ attributes, setAttributes, clientId }) {
           }
         }
 
-        const renderedValue =
+        let renderedValue =
           customFormatted ||
           (event && typeof event[field] === "string"
             ? event[field].trim()
             : "");
+        if (field === "event_excerpt" && wordLimit > 0) {
+          renderedValue = trimExcerptWords(renderedValue, wordLimit);
+        }
 
         if (renderedValue) {
           content = (
