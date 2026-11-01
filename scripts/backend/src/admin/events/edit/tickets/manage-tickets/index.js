@@ -12,6 +12,7 @@ import {
   InputGroupText,
 } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
@@ -103,6 +104,7 @@ export function EventEditManageTickets() {
     terms_conditions: "",
     terms_conditions_required: false,
     agreements: [],
+    attendee_details: "off",
   });
 
   const wpTz = useMemo(
@@ -146,6 +148,11 @@ export function EventEditManageTickets() {
         agreements: Array.isArray(event.tickets_agreements)
           ? event.tickets_agreements
           : [],
+        attendee_details: ["optional", "required"].includes(
+          event.tickets_attendee_details,
+        )
+          ? event.tickets_attendee_details
+          : "off",
       });
     }
   }, [event]);
@@ -296,6 +303,15 @@ export function EventEditManageTickets() {
     );
   };
 
+  const handleAttendeeDetailsChange = (value) => {
+    const newSettings = {
+      ...ticketSettings,
+      attendee_details: value,
+    };
+    setTicketSettings(newSettings);
+    updateEvent(newSettings);
+  };
+
   const handleCapacityChange = (e) => {
     const digits = String(e.target.value || "").replace(/[^0-9]/g, "");
     const newSettings = {
@@ -331,6 +347,7 @@ export function EventEditManageTickets() {
           ? 0
           : Math.max(0, parseInt(newSettings.event_capacity, 10) || 0),
       tickets_display_mode: "cards",
+      tickets_attendee_details: newSettings.attendee_details || "off",
     };
 
     setEvent?.(updatedEvent);
@@ -793,6 +810,61 @@ export function EventEditManageTickets() {
             </p>
           </div>
 
+        </div>
+      </Box>
+
+      <Box container>
+        <Heading level={3}>{__("Attendee details", "eventkoi-lite")}</Heading>
+
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-muted-foreground">
+            {__(
+              "Ask buyers who each ticket is for. Names show on the attendee list, exports, check-in and the confirmation email.",
+              "eventkoi-lite",
+            )}
+          </p>
+
+          <RadioGroup
+            value={ticketSettings.attendee_details}
+            onValueChange={handleAttendeeDetailsChange}
+            className="grid gap-4"
+          >
+            <div className="flex items-start space-x-3">
+              <RadioGroupItem value="off" id="tickets-attendee-off" className="mt-1" />
+              <Label htmlFor="tickets-attendee-off" className="cursor-pointer flex-1">
+                <div className="font-medium">{__("Off", "eventkoi-lite")}</div>
+                <div className="text-sm text-muted-foreground mt-1">
+                  {__("Only the buyer's details are collected.", "eventkoi-lite")}
+                </div>
+              </Label>
+            </div>
+
+            <div className="flex items-start space-x-3">
+              <RadioGroupItem value="optional" id="tickets-attendee-optional" className="mt-1" />
+              <Label htmlFor="tickets-attendee-optional" className="cursor-pointer flex-1">
+                <div className="font-medium">{__("Optional", "eventkoi-lite")}</div>
+                <div className="text-sm text-muted-foreground mt-1">
+                  {__(
+                    "Checkout shows a name and email field for each ticket. Buyers can leave them empty.",
+                    "eventkoi-lite",
+                  )}
+                </div>
+              </Label>
+            </div>
+
+            <div className="flex items-start space-x-3">
+              <RadioGroupItem value="required" id="tickets-attendee-required" className="mt-1" />
+              <Label htmlFor="tickets-attendee-required" className="cursor-pointer flex-1">
+                <div className="font-medium">{__("Required", "eventkoi-lite")}</div>
+                <div className="text-sm text-muted-foreground mt-1">
+                  {__(
+                    "Every ticket needs an attendee name before checkout. Emails stay optional.",
+                    "eventkoi-lite",
+                  )}
+                </div>
+              </Label>
+            </div>
+          </RadioGroup>
         </div>
       </Box>
 

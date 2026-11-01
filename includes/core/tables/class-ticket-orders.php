@@ -22,7 +22,7 @@ class Ticket_Orders extends Table {
 	/**
 	 * {@inheritdoc}
 	 */
-	const SCHEMA_VERSION = '1.0.3';
+	const SCHEMA_VERSION = '1.1.0';
 
 	/**
 	 * Schema slug used for version tracking.
@@ -62,6 +62,9 @@ class Ticket_Orders extends Table {
 				`order_id` varchar(255) NOT NULL,
 				`customer_name` varchar(255) NOT NULL,
 				`customer_email` varchar(255) NOT NULL,
+				`attendee_name` varchar(255) DEFAULT NULL,
+				`attendee_email` varchar(255) DEFAULT NULL,
+				`attendee_meta` longtext DEFAULT NULL,
 				`quantity` int(11) unsigned NOT NULL DEFAULT '1',
 				`unit_price` decimal(10,2) NOT NULL,
 				`total_amount` decimal(10,2) NOT NULL,

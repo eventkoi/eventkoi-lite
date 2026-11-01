@@ -26,6 +26,7 @@ import {
 } from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -89,7 +90,9 @@ const multiColumnSearch = (row, columnId, filterValue) => {
   const codes = Array.isArray(row.original.checkin_codes) ? row.original.checkin_codes.join(" ") : "";
   const searchableRowContent = `${row.original.name || row.original.customer_name || ""} ${
     row.original.email || row.original.customer_email || ""
-  } ${row.original.order_id || ""} ${row.original.checkin_token || row.original.master_checkin_code || ""} ${codes}`;
+  } ${row.original.attendee_name || ""} ${row.original.attendee_email || ""} ${row.original.ticket_name || ""} ${
+    row.original.order_id || ""
+  } ${row.original.checkin_token || ""} ${row.original.checkin_code || ""} ${row.original.master_checkin_code || ""} ${codes}`;
   return searchableRowContent.toLowerCase().includes(filterValue.toLowerCase());
 };
 
@@ -627,7 +630,7 @@ function AddAttendeeDialog({ event, instanceTs, onAdded }) {
   );
 }
 
-function RowTicketActions({ orderId, paymentStatus, onArchive }) {
+function RowTicketActions({ row, orderId, paymentStatus, onArchive, onAttendeeSaved }) {
   const canResend = !!orderId && isCompletedOrderStatus(paymentStatus);
 
   const handleResendConfirmation = async () => {
@@ -727,6 +730,13 @@ function RowTicketActions({ orderId, paymentStatus, onArchive }) {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[190px]">
+        {row ? (
+          <EditAttendeeDialog row={row} onSaved={onAttendeeSaved}>
+            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+              {__("Edit attendee", "eventkoi-lite")}
+            </DropdownMenuItem>
+          </EditAttendeeDialog>
+        ) : null}
         <DropdownMenuItem
           onClick={handleResendConfirmation}
           disabled={!canResend}
@@ -738,7 +748,7 @@ function RowTicketActions({ orderId, paymentStatus, onArchive }) {
           disabled={!orderId}
           className="text-destructive focus:text-destructive"
         >
-          {__("Archive", "eventkoi-lite")}
+          {__("Archive order", "eventkoi-lite")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -809,172 +819,89 @@ function CheckinCountInput({ row, onSave, disabled = false }) {
   );
 }
 
-function CopyableCode({ code, index, copied, onCopy }) {
-  const isCopied = copied === code;
-  return (
-    <div className="flex items-center gap-3 rounded-lg border px-3 py-2.5">
-      <span className="flex items-center justify-center h-5 w-5 rounded-full bg-muted text-[11px] font-medium text-muted-foreground shrink-0">
-        {index}
-      </span>
-      <span className="font-mono text-[13px] tracking-wide text-foreground min-w-0 truncate">
-        {code}
-      </span>
-      <button
-        type="button"
-        onClick={() => onCopy(code)}
-        className="shrink-0 ml-auto inline-flex items-center justify-center h-7 w-7 rounded-md border-0 bg-transparent hover:bg-muted cursor-pointer transition-colors"
-        aria-label={__("Copy code", "eventkoi-lite")}
-      >
-        {isCopied ? (
-          <Check className="h-3.5 w-3.5 text-green-600" />
-        ) : (
-          <Copy className="h-3.5 w-3.5 text-muted-foreground" />
-        )}
-      </button>
-    </div>
-  );
-}
+function EditAttendeeDialog({ row, onSaved, children }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [saving, setSaving] = useState(false);
 
-function CheckinCodesDialog({ codes, masterCode, customerName, orderId, checkedInCount, children }) {
-  const [copied, setCopied] = useState(null);
+  useEffect(() => {
+    if (!open) return;
+    setName(row?.has_attendee ? row.attendee_name || "" : "");
+    setEmail(row?.has_attendee ? row.attendee_email || "" : "");
+  }, [open, row]);
 
-  const handleCopy = (code) => {
-    navigator.clipboard.writeText(code).then(() => {
-      setCopied(code);
-      setTimeout(() => setCopied(null), 1500);
-    });
+  const handleSave = async () => {
+    if (!row?.id) return;
+    setSaving(true);
+    try {
+      const response = await callLocalApi("tickets/attendees/update", {
+        method: "POST",
+        data: {
+          id: row.id,
+          attendee_name: name.trim(),
+          attendee_email: email.trim(),
+        },
+      });
+      onSaved?.(response?.attendee);
+      showToast({ message: __("Attendee updated.", "eventkoi-lite") });
+      setOpen(false);
+    } catch (error) {
+      console.error("Attendee update failed:", error);
+      showToastError(
+        error?.message || __("Failed to update attendee.", "eventkoi-lite"),
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleCopyAll = () => {
-    const allText = codes.join("\n");
-    navigator.clipboard.writeText(allText).then(() => {
-      setCopied("__all__");
-      setTimeout(() => setCopied(null), 1500);
-    });
-  };
-
-  const wcMatch = orderId ? orderId.match(/^wc_(\d+)/) : null;
-  const displayOrderId = wcMatch ? `#${wcMatch[1]}` : orderId;
-
   return (
-    <Dialog>
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[380px] p-0 gap-0 rounded-xl overflow-hidden">
-        <DialogHeader className="px-5 pt-5 pb-4 space-y-0">
-          <div className="flex items-center justify-between">
-            <DialogTitle className="text-[15px] font-semibold tracking-[-0.01em]">
-              {__("Check-in codes", "eventkoi-lite")}
-            </DialogTitle>
-            <span className="text-xs text-muted-foreground tabular-nums bg-muted px-2 py-0.5 rounded-full mr-6">
-              {checkedInCount}/{codes.length} {__("checked in", "eventkoi-lite")}
-            </span>
-          </div>
-          <p className="text-[13px] text-muted-foreground !mt-1">
-            {customerName}
-            {displayOrderId ? <span className="text-muted-foreground/60"> · {displayOrderId}</span> : ""}
-          </p>
+      <DialogContent className="sm:max-w-[420px]">
+        <DialogHeader>
+          <DialogTitle>{__("Edit attendee", "eventkoi-lite")}</DialogTitle>
         </DialogHeader>
-
-        {masterCode && (
-          <div className="px-5 pb-3">
-            <div className="flex items-center justify-between rounded-lg bg-accent/60 px-4 py-3">
-              <div className="min-w-0">
-                <span className="text-[11px] font-medium text-muted-foreground/70 uppercase tracking-widest">
-                  {__("Group check-in", "eventkoi-lite")}
-                </span>
-                <div className="font-mono text-[15px] font-semibold tracking-wide mt-0.5">
-                  {masterCode}
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => handleCopy(masterCode)}
-                className="shrink-0 ml-3 inline-flex items-center justify-center h-8 w-8 rounded-md border-0 bg-transparent hover:bg-background/60 cursor-pointer transition-colors"
-                aria-label={__("Copy group code", "eventkoi-lite")}
-              >
-                {copied === masterCode ? (
-                  <Check className="h-4 w-4 text-green-600" />
-                ) : (
-                  <Copy className="h-4 w-4 text-muted-foreground" />
-                )}
-              </button>
-            </div>
-          </div>
-        )}
-
-        <div className="px-5 pb-2">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-medium text-muted-foreground">
-              {sprintf(_n("%d individual code", "%d individual codes", codes.length, "eventkoi-lite"), codes.length)}
-            </span>
-            {codes.length > 1 && (
-              <button
-                type="button"
-                onClick={handleCopyAll}
-                className="text-xs text-muted-foreground hover:text-foreground cursor-pointer bg-transparent border-0 p-0 transition-colors"
-              >
-                {copied === "__all__" ? __("Copied!", "eventkoi-lite") : __("Copy all", "eventkoi-lite")}
-              </button>
+        <div className="grid gap-4">
+          <p className="text-sm text-muted-foreground">
+            {sprintf(
+              /* translators: 1: ticket name, 2: buyer name */
+              __("%1$s, ordered by %2$s. Leave both fields empty to fall back to the buyer.", "eventkoi-lite"),
+              row?.ticket_name || __("Ticket", "eventkoi-lite"),
+              row?.customer_name || "",
             )}
+          </p>
+          <div className="grid gap-2">
+            <Label htmlFor={`edit-attendee-name-${row?.id}`}>{__("Name", "eventkoi-lite")}</Label>
+            <Input
+              id={`edit-attendee-name-${row?.id}`}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={row?.customer_name || ""}
+            />
           </div>
-        </div>
-
-        <div className="px-5 pb-5 grid gap-2 max-h-[45vh] overflow-y-auto">
-          {codes.map((code, i) => (
-            <CopyableCode key={code} code={code} index={i + 1} copied={copied} onCopy={handleCopy} />
-          ))}
+          <div className="grid gap-2">
+            <Label htmlFor={`edit-attendee-email-${row?.id}`}>{__("Email", "eventkoi-lite")}</Label>
+            <Input
+              id={`edit-attendee-email-${row?.id}`}
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={row?.customer_email || ""}
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>
+              {__("Cancel", "eventkoi-lite")}
+            </Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? __("Saving...", "eventkoi-lite") : __("Save", "eventkoi-lite")}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
-  );
-}
-
-function TicketCheckinCountInput({ row, onSave, disabled = false }) {
-  const maxCount = Math.max(1, Number(row.quantity || 1) || 1);
-  const storedCount = Number(row.checked_in_count || 0);
-  const [value, setValue] = useState(storedCount > 0 ? String(storedCount) : "");
-
-  useEffect(() => {
-    setValue(storedCount > 0 ? String(storedCount) : "");
-  }, [storedCount]);
-
-  const commitValue = () => {
-    const parsed = value === "" ? 0 : Math.max(0, parseInt(value, 10) || 0);
-    const capped = Math.min(parsed, maxCount);
-    if (capped === storedCount) {
-      setValue(capped > 0 ? String(capped) : "");
-      return;
-    }
-    setValue(capped > 0 ? String(capped) : "");
-    onSave?.(capped);
-  };
-
-  return (
-    <Input
-      type="number"
-      min={0}
-      max={maxCount}
-      value={value}
-      onChange={(e) => {
-        const v = e.target.value;
-        if (v === "") {
-          setValue("");
-          return;
-        }
-        const num = Math.max(0, Math.min(maxCount, Number(v) || 0));
-        setValue(String(num));
-      }}
-      onBlur={commitValue}
-      onKeyDown={(e) => {
-        if (e.key === "Enter") {
-          e.currentTarget.blur();
-        }
-      }}
-      disabled={disabled}
-      placeholder="0"
-      aria-label={__("Checked-in count", "eventkoi-lite")}
-      className="h-9 w-14 px-2 text-center tabular-nums"
-    />
   );
 }
 
@@ -1210,7 +1137,7 @@ export function EventEditAttendees() {
         const params = new URLSearchParams({ event_id: String(event.id) });
         const [ordersResponse, combinedStats] = await Promise.all([
           apiRequest({
-            path: `${eventkoi_params.api}/tickets/orders?${params.toString()}`,
+            path: `${eventkoi_params.api}/tickets/attendees?${params.toString()}`,
             method: "GET",
             headers: {
               "EVENTKOI-API-KEY": eventkoi_params.api_key,
@@ -1513,66 +1440,32 @@ export function EventEditAttendees() {
     [],
   );
 
+  const replaceAttendeeRow = useCallback((attendee) => {
+    if (!attendee?.id) return;
+    setData((prev) =>
+      prev.map((row) => (row.id === attendee.id ? { ...row, ...attendee } : row)),
+    );
+  }, []);
+
   const updateTicketCheckin = useCallback(
-    async (orderId, action) => {
-      if (!orderId || !action) return;
+    async (rowId, action) => {
+      if (!rowId || !action) return;
 
       try {
-        const response = await callLocalApi("tickets/orders/checkin", {
+        const response = await callLocalApi("tickets/attendees/checkin", {
           method: "POST",
-          data: {
-            order_id: orderId,
-            action,
-          },
+          data: { id: rowId, action },
         });
-
-        // Optimistic local update — avoid full table + stats refetch.
-        const newCount = Number(response?.checked_in_count ?? 0);
-        setData((prev) =>
-          prev.map((row) =>
-            row.order_id === orderId
-              ? { ...row, checked_in_count: newCount, checked_in: newCount > 0 ? 1 : 0 }
-              : row
-          )
-        );
+        replaceAttendeeRow(response?.attendee);
         showToast({ message: __("Check-in updated.", "eventkoi-lite") });
       } catch (error) {
         console.error("Ticket check-in update error:", error);
-        showToastError(__("Failed to update check-in.", "eventkoi-lite"));
-      }
-    },
-    [],
-  );
-
-  const updateTicketCheckinCount = useCallback(
-    async (orderId, count) => {
-      if (!orderId || count === null || count === undefined) return;
-
-      try {
-        const response = await callLocalApi("tickets/orders/checkin", {
-          method: "POST",
-          data: {
-            order_id: orderId,
-            count,
-          },
-        });
-
-        // Optimistic local update — avoid full table + stats refetch.
-        const newCount = Number(response?.checked_in_count ?? count);
-        setData((prev) =>
-          prev.map((row) =>
-            row.order_id === orderId
-              ? { ...row, checked_in_count: newCount, checked_in: newCount > 0 ? 1 : 0 }
-              : row
-          )
+        showToastError(
+          error?.message || __("Failed to update check-in.", "eventkoi-lite"),
         );
-        showToast({ message: __("Check-in updated.", "eventkoi-lite") });
-      } catch (error) {
-        console.error("Ticket check-in count update error:", error);
-        showToastError(__("Failed to update check-in.", "eventkoi-lite"));
       }
     },
-    [],
+    [replaceAttendeeRow],
   );
 
   const columns = useMemo(
@@ -1911,124 +1804,129 @@ export function EventEditAttendees() {
           enableHiding: false,
         },
         {
-          accessorKey: "customer_name",
+          accessorKey: "attendee_name",
           header: ({ column }) => <SortButton title={__("Name", "eventkoi-lite")} column={column} />,
-          cell: ({ row }) => (
-            <div className="min-w-0">
-              <div className="text-foreground truncate">
-                {row.original.customer_name || ""}
+          cell: ({ row }) => {
+            const attendee = row.original;
+            const showBuyer =
+              attendee.has_attendee &&
+              attendee.customer_name &&
+              attendee.customer_name !== attendee.attendee_name;
+            return (
+              <div className="min-w-0">
+                <div className="text-foreground truncate">
+                  {attendee.attendee_name || attendee.customer_name || ""}
+                </div>
+                <div
+                  className="text-xs text-muted-foreground truncate"
+                  title={attendee.attendee_email || ""}
+                >
+                  {attendee.attendee_email || ""}
+                </div>
+                {showBuyer ? (
+                  <div className="text-xs text-muted-foreground truncate">
+                    {sprintf(
+                      /* translators: %s: buyer name */
+                      __("Ordered by %s", "eventkoi-lite"),
+                      attendee.customer_name,
+                    )}
+                  </div>
+                ) : null}
               </div>
-              <div
-                className="text-xs text-muted-foreground truncate"
-                title={row.original.customer_email || ""}
-              >
-                {row.original.customer_email || ""}
-              </div>
-            </div>
-          ),
+            );
+          },
           filterFn: multiColumnSearch,
+          sortingFn: "alphanumeric",
+        },
+        {
+          accessorKey: "ticket_name",
+          header: ({ column }) => <SortButton title={__("Ticket", "eventkoi-lite")} column={column} />,
+          cell: ({ row }) => (
+            <div className="text-foreground truncate">{row.original.ticket_name || ""}</div>
+          ),
           sortingFn: "alphanumeric",
         },
         {
           accessorKey: "checked_in",
           header: () => <div className="text-sm font-normal">{__("Checked in", "eventkoi-lite")}</div>,
           cell: ({ row }) => {
-            const checkedInCount = Number(row.original.checked_in_count || 0);
-            const totalQty = Number(row.original.quantity || 1);
-            const allCheckedIn = checkedInCount >= totalQty;
-            const status = allCheckedIn ? "checked_in" : "check_in";
-            const buttonLabel = allCheckedIn
+            const isCheckedIn = Number(row.original.checked_in || 0) > 0;
+            const status = isCheckedIn ? "checked_in" : "check_in";
+            const buttonLabel = isCheckedIn
               ? __("Checked in", "eventkoi-lite")
               : __("Check in", "eventkoi-lite");
-            const nextAction = allCheckedIn ? "check_in" : "checked_in";
-            const checkedInClass = allCheckedIn
+            const nextAction = isCheckedIn ? "check_in" : "checked_in";
+            const checkedInClass = isCheckedIn
               ? "bg-[#0D5342] text-white hover:bg-[#0D5342]/90 hover:text-white border-[#0D5342]"
               : "";
-            const orderId = row.original.order_id || "";
-            const controlsDisabled = !isCompletedOrderStatus(row.original.payment_status);
+            const rowId = row.original.id;
+            const controlsDisabled =
+              !row.original.checkin_eligible || !!row.original.is_archived;
 
             return (
-              <div className="flex items-center gap-2">
-                <TicketCheckinCountInput
-                  row={row.original}
-                  onSave={(count) => updateTicketCheckinCount(orderId, count)}
+              <div className="flex items-center gap-[1px]">
+                <Button
+                  variant="outline"
+                  className={cn("h-9 px-3 rounded-r-none font-medium", checkedInClass)}
+                  onClick={() => updateTicketCheckin(rowId, nextAction)}
                   disabled={controlsDisabled}
-                />
-                <div className="flex items-center gap-[1px]">
-                  <Button
-                    variant="outline"
-                    className={cn("h-9 px-3 rounded-r-none font-medium", checkedInClass)}
-                    onClick={() => updateTicketCheckin(orderId, nextAction)}
-                    disabled={controlsDisabled}
-                  >
-                    {buttonLabel}
-                  </Button>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn("h-9 w-8 rounded-l-none p-0", checkedInClass)}
-                        aria-label={__("Check-in actions", "eventkoi-lite")}
-                        disabled={controlsDisabled}
-                      >
-                        <ChevronDown className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-[140px]">
-                      <DropdownMenuItem
-                        onClick={() => updateTicketCheckin(orderId, "check_in")}
-                        disabled={status === "check_in"}
-                      >
-                        {__("Check in", "eventkoi-lite")}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => updateTicketCheckin(orderId, "checked_in")}
-                        disabled={status === "checked_in"}
-                      >
-                        {__("Checked in", "eventkoi-lite")}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                >
+                  {buttonLabel}
+                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn("h-9 w-8 rounded-l-none p-0", checkedInClass)}
+                      aria-label={__("Check-in actions", "eventkoi-lite")}
+                      disabled={controlsDisabled}
+                    >
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-[140px]">
+                    <DropdownMenuItem
+                      onClick={() => updateTicketCheckin(rowId, "check_in")}
+                      disabled={status === "check_in"}
+                    >
+                      {__("Check in", "eventkoi-lite")}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => updateTicketCheckin(rowId, "checked_in")}
+                      disabled={status === "checked_in"}
+                    >
+                      {__("Checked in", "eventkoi-lite")}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             );
           },
           sortingFn: "alphanumeric",
         },
         {
-          accessorKey: "checkin_codes",
-          header: () => <div className="text-sm font-normal">{__("Check-in codes", "eventkoi-lite")}</div>,
+          accessorKey: "checkin_code",
+          header: () => <div className="text-sm font-normal">{__("Check-in code", "eventkoi-lite")}</div>,
           cell: ({ row }) => {
-            const codes = Array.isArray(row.original.checkin_codes)
-              ? row.original.checkin_codes
-              : [];
+            const code = row.original.checkin_code || "";
             const masterCode = row.original.master_checkin_code || "";
-            const allCodes = codes.length > 0 ? codes : masterCode ? [masterCode] : [];
-
-            if (allCodes.length === 0) return <div className="text-muted-foreground">—</div>;
-
-            if (allCodes.length === 1) {
-              return (
-                <span className="font-mono text-xs text-foreground">{allCodes[0]}</span>
-              );
-            }
-
+            if (!code) return <div className="text-muted-foreground">—</div>;
             return (
-              <CheckinCodesDialog
-                codes={allCodes}
-                masterCode={masterCode}
-                customerName={row.original.customer_name || ""}
-                orderId={row.original.order_id || ""}
-                checkedInCount={row.original.checked_in_count || 0}
-              >
-                <button
-                  type="button"
-                  className="text-xs cursor-pointer bg-transparent border-0 p-0 whitespace-nowrap"
-                >
-                  <span className="font-mono text-foreground">{allCodes[0]}</span>{" "}
-                  <span className="text-muted-foreground hover:text-foreground">+{allCodes.length - 1}</span>
-                </button>
-              </CheckinCodesDialog>
+              <div className="min-w-0">
+                <span className="font-mono text-xs text-foreground">{code}</span>
+                {masterCode && masterCode !== code ? (
+                  <div
+                    className="text-xs text-muted-foreground truncate"
+                    title={__("Group check-in code for the whole order", "eventkoi-lite")}
+                  >
+                    {sprintf(
+                      /* translators: %s: group check-in code */
+                      __("Group %s", "eventkoi-lite"),
+                      masterCode,
+                    )}
+                  </div>
+                ) : null}
+              </div>
             );
           },
           sortingFn: "alphanumeric",
@@ -2040,7 +1938,6 @@ export function EventEditAttendees() {
             const orderId = row.original.order_id || "";
             if (!orderId) return <div className="text-foreground" />;
 
-            // WC orders link to WooCommerce admin order page.
             const wcMatch = orderId.match(/^wc_(\d+)/);
             if (wcMatch) {
               return (
@@ -2057,14 +1954,18 @@ export function EventEditAttendees() {
               );
             }
 
+            const displayId = row.original.display_id;
+            const label = displayId ? `#${displayId}` : shortOrderId(orderId);
+            const routeId = displayId ? String(displayId) : orderId;
+
             return (
               <div className="text-foreground">
                 <Link
-                  to={`/tickets/orders/${encodeURIComponent(orderId)}`}
+                  to={`/tickets/orders/${encodeURIComponent(routeId)}`}
                   className="font-medium hover:underline hover:decoration-dotted underline-offset-4"
-                  title={orderId}
+                  title={label}
                 >
-                  {shortOrderId(orderId)}
+                  {label}
                 </Link>
               </div>
             );
@@ -2079,24 +1980,15 @@ export function EventEditAttendees() {
           sortingFn: "alphanumeric",
         },
         {
-          accessorKey: "quantity",
-          header: ({ column }) => <SortButton title={__("Ticket quantity", "eventkoi-lite")} column={column} />,
-          cell: ({ row }) => (
-            <div className="text-foreground">{row.original.quantity || 0}</div>
-          ),
-          sortingFn: "alphanumeric",
-        },
-        {
           id: "order_date",
           accessorFn: (row) => row.created_at,
           header: ({ column }) => (
             <SortButton title={__("Order date", "eventkoi-lite")} column={column} />
           ),
           cell: ({ row }) => {
-            // created_at may arrive as either UTC ISO or MySQL datetime
-            // without a zone. Normalize to UTC, but guard the Invalid-Date
-            // case so a corrupted row doesn't crash the entire table render
-            // via toISOString()'s RangeError.
+            // created_at may arrive as either UTC ISO or a zone-less MySQL
+            // datetime; normalize to UTC before formatting. Garbage input
+            // renders an empty cell instead of crashing the table.
             const raw = String(row.original.created_at || "");
             let created = "";
             if (raw) {
@@ -2122,9 +2014,11 @@ export function EventEditAttendees() {
           cell: ({ row }) => (
             <div className="flex justify-end">
               <RowTicketActions
+                row={row.original}
                 orderId={row.original.order_id || ""}
                 paymentStatus={row.original.payment_status || ""}
                 onArchive={fetchResults}
+                onAttendeeSaved={replaceAttendeeRow}
               />
             </div>
           ),
@@ -2133,7 +2027,7 @@ export function EventEditAttendees() {
         },
       ];
     },
-    [isTicketsAttendees, fetchResults, updateTicketCheckin, updateTicketCheckinCount]
+    [isTicketsAttendees, fetchResults, updateTicketCheckin, replaceAttendeeRow]
   );
 
   // Show "Enable RSVP" message only when viewing RSVP attendees and RSVP is not enabled
@@ -2188,7 +2082,7 @@ export function EventEditAttendees() {
                   <Skeleton className="h-5 w-16" />
                 ) : (
                   `${data.reduce(
-                    (sum, row) => sum + (Number(row.checked_in_count) || 0),
+                    (sum, row) => sum + (Number(row.checked_in) > 0 ? 1 : 0),
                     0
                   )}/${ticketsSoldTotal}`
                 )

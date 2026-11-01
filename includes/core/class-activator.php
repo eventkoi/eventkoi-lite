@@ -252,6 +252,9 @@ class Activator {
 				order_id varchar(255) NOT NULL,
 				customer_name varchar(255) NOT NULL,
 				customer_email varchar(255) NOT NULL,
+				attendee_name varchar(255) DEFAULT NULL,
+				attendee_email varchar(255) DEFAULT NULL,
+				attendee_meta longtext DEFAULT NULL,
 				quantity int(11) unsigned NOT NULL DEFAULT '1',
 				unit_price decimal(10,2) NOT NULL,
 				total_amount decimal(10,2) NOT NULL,
@@ -278,6 +281,42 @@ class Activator {
 		}
 
 		self::ensure_archive_columns( $orders_table, $ticket_orders_table );
+		self::ensure_attendee_columns( $ticket_orders_table );
+	}
+
+	/**
+	 * Add the per-seat attendee columns on installs that pre-date attendee
+	 * details. Idempotent.
+	 *
+	 * @param string $ticket_orders_table Fully-qualified table name.
+	 */
+	private static function ensure_attendee_columns( $ticket_orders_table ) {
+		global $wpdb;
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQLPlaceholders.SchemaChange -- One-shot schema upgrade; table name comes from $wpdb->prefix.
+		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $ticket_orders_table ) );
+		if ( ! $exists ) {
+			return;
+		}
+
+		$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$ticket_orders_table}`", 0 );
+		$columns = is_array( $columns ) ? $columns : array();
+
+		$alter_clauses = array();
+		if ( ! in_array( 'attendee_name', $columns, true ) ) {
+			$alter_clauses[] = 'ADD COLUMN `attendee_name` VARCHAR(255) DEFAULT NULL';
+		}
+		if ( ! in_array( 'attendee_email', $columns, true ) ) {
+			$alter_clauses[] = 'ADD COLUMN `attendee_email` VARCHAR(255) DEFAULT NULL';
+		}
+		if ( ! in_array( 'attendee_meta', $columns, true ) ) {
+			$alter_clauses[] = 'ADD COLUMN `attendee_meta` LONGTEXT DEFAULT NULL';
+		}
+
+		if ( ! empty( $alter_clauses ) ) {
+			$wpdb->query( "ALTER TABLE `{$ticket_orders_table}` " . implode( ', ', $alter_clauses ) );
+		}
+		// phpcs:enable
 	}
 
 	/**
@@ -317,6 +356,7 @@ class Activator {
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		self::ensure_archive_columns( $orders_table, $ticket_orders_table );
+		self::ensure_attendee_columns( $ticket_orders_table );
 		self::heal_orphaned_rsvp_instance_ts();
 
 		if ( ! get_option( 'eventkoi_site_instance_id' ) ) {

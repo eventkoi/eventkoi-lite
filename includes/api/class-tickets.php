@@ -121,6 +121,36 @@ class Tickets {
 
 		register_rest_route(
 			'eventkoi/v1',
+			'/tickets/attendees',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( __CLASS__, 'get_ticket_attendees' ),
+				'permission_callback' => REST::any_cap( 'eventkoi_orders_view', 'eventkoi_attendees_view' ),
+			)
+		);
+
+		register_rest_route(
+			'eventkoi/v1',
+			'/tickets/attendees/update',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'update_ticket_attendee' ),
+				'permission_callback' => REST::cap( 'eventkoi_attendees_manage' ),
+			)
+		);
+
+		register_rest_route(
+			'eventkoi/v1',
+			'/tickets/attendees/checkin',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'update_attendee_checkin' ),
+				'permission_callback' => REST::cap( 'eventkoi_attendees_manage' ),
+			)
+		);
+
+		register_rest_route(
+			'eventkoi/v1',
 			'/tickets/orders/send-confirmation',
 			array(
 				'methods'             => 'POST',
@@ -490,11 +520,398 @@ class Tickets {
 	}
 
 	/**
-	 * Export ticket attendees as CSV, including any custom checkout fields.
+	 * Error for actions on an archived order.
 	 *
-	 * Rows come from get_ticket_orders() so the file always matches what the
-	 * attendees table shows. Custom checkout fields registered for the event
-	 * via the `eventkoi_checkout_fields` filter are appended as extra columns.
+	 * @return WP_Error
+	 */
+	private static function archived_order_error() {
+		return new WP_Error(
+			'order_archived',
+			__( 'This order is archived. Unarchive it before making changes.', 'eventkoi-lite' ),
+			array( 'status' => 409 )
+		);
+	}
+
+	/**
+	 * Whether a ticket row's payment status allows check-in.
+	 *
+	 * @param string $status Ticket payment status.
+	 * @return bool
+	 */
+	private static function is_ticket_checkin_eligible_status( $status ) {
+		return in_array(
+			sanitize_key( (string) $status ),
+			array( 'complete', 'completed', 'succeeded', 'paid', 'partially_refunded' ),
+			true
+		);
+	}
+
+	/**
+	 * Normalize a stored datetime to an ISO 8601 UTC string.
+	 *
+	 * @param string $value MySQL datetime or ISO string.
+	 * @return string
+	 */
+	private static function to_iso_utc( $value ) {
+		$value = trim( (string) $value );
+		if ( '' === $value || '0000-00-00 00:00:00' === $value ) {
+			return '';
+		}
+		if ( preg_match( '/Z$|[+-]\d{2}:?\d{2}$/', $value ) ) {
+			return $value;
+		}
+
+		$timestamp = strtotime( $value . ' UTC' );
+
+		return false === $timestamp ? $value : gmdate( 'Y-m-d\TH:i:s\Z', $timestamp );
+	}
+
+	/**
+	 * Which checkout produced an order, from its base id.
+	 *
+	 * @param string $base_id Base order id.
+	 * @return string woocommerce|manual|free
+	 */
+	private static function detect_order_gateway( $base_id ) {
+		$base_id = (string) $base_id;
+
+		if ( 0 === strpos( $base_id, 'wc_' ) ) {
+			return 'woocommerce';
+		}
+		if ( 0 === strpos( $base_id, 'manual_' ) ) {
+			return 'manual';
+		}
+
+		return 'free';
+	}
+
+	/**
+	 * Master check-in codes for a set of base order ids.
+	 *
+	 * WooCommerce orders keep the code in order meta, every other gateway in
+	 * an order note. Base ids without a code are left out of the result.
+	 *
+	 * @param array $base_ids Base order ids ("wc_12", "8135", "manual_x").
+	 * @return array Map base_id => master code.
+	 */
+	private static function resolve_master_checkin_codes( array $base_ids ) {
+		global $wpdb;
+
+		$codes   = array();
+		$pending = array();
+
+		foreach ( array_unique( array_map( 'strval', $base_ids ) ) as $base_id ) {
+			if ( preg_match( '/^wc_(\d+)/', $base_id, $wc_match ) && function_exists( 'wc_get_order' ) ) {
+				$wc_order = wc_get_order( (int) $wc_match[1] );
+				$code     = $wc_order ? (string) $wc_order->get_meta( '_eventkoi_master_checkin_code' ) : '';
+				if ( '' !== $code ) {
+					$codes[ $base_id ] = $code;
+				}
+				continue;
+			}
+			if ( preg_match( '/^(\d+)(?::|$)/', $base_id, $m ) && (int) $m[1] > 0 ) {
+				$pending[ (int) $m[1] ] = $base_id;
+			}
+		}
+
+		if ( empty( $pending ) ) {
+			return $codes;
+		}
+
+		$notes_tbl  = $wpdb->prefix . 'eventkoi_order_notes';
+		$ids        = array_keys( $pending );
+		$placehold  = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+		$query_args = array_merge( array( 'master_checkin_code' ), $ids );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT order_id, note_value FROM {$notes_tbl} WHERE note_key = %s AND order_id IN ({$placehold}) ORDER BY id DESC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$query_args
+			)
+		);
+		foreach ( (array) $rows as $row ) {
+			$id = (int) $row->order_id;
+			if ( isset( $pending[ $id ] ) && ! isset( $codes[ $pending[ $id ] ] ) ) {
+				$codes[ $pending[ $id ] ] = (string) $row->note_value;
+			}
+		}
+
+		return $codes;
+	}
+
+	/**
+	 * Ticket names keyed by ticket id for an event.
+	 *
+	 * @param int $event_id Event ID.
+	 * @return array Map ticket_id => name.
+	 */
+	private static function get_ticket_names( $event_id ) {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'eventkoi_tickets';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT id, name FROM {$table} WHERE event_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				absint( $event_id )
+			)
+		);
+
+		$names = array();
+		foreach ( (array) $rows as $row ) {
+			$names[ (int) $row->id ] = (string) $row->name;
+		}
+
+		return $names;
+	}
+
+	/**
+	 * Shape one per-seat row for the attendees list.
+	 *
+	 * The attendee falls back to the buyer when checkout did not collect a
+	 * separate name, which is also what the check-in screen and emails show.
+	 *
+	 * @param object $row          Ticket orders row.
+	 * @param array  $ticket_names Map ticket_id => name.
+	 * @param array  $master_codes Map base order id => master code.
+	 * @return array
+	 */
+	private static function format_ticket_attendee_row( $row, array $ticket_names, array $master_codes ) {
+		$full_id = (string) ( $row->order_id ?? '' );
+		$parts   = explode( ':', $full_id, 2 );
+		$base_id = $parts[0];
+
+		$row_status       = (string) ( $row->payment_status ?? '' );
+		$effective_status = ( 'archived' === $row_status ) ? (string) ( $row->archived_prev_status ?? '' ) : $row_status;
+		if ( in_array( $effective_status, array( 'completed', 'succeeded', 'paid' ), true ) ) {
+			$effective_status = 'complete';
+		}
+
+		$attendee_name  = trim( (string) ( $row->attendee_name ?? '' ) );
+		$attendee_email = trim( (string) ( $row->attendee_email ?? '' ) );
+		$buyer_name     = (string) ( $row->customer_name ?? '' );
+		$buyer_email    = (string) ( $row->customer_email ?? '' );
+		$has_attendee   = '' !== $attendee_name || '' !== $attendee_email;
+		$shown_email    = '' !== $attendee_email ? $attendee_email : ( $has_attendee ? '' : $buyer_email );
+		$avatar_email   = '' !== $shown_email ? $shown_email : $buyer_email;
+		$checked_in_at  = (string) ( $row->checked_in_at ?? '' );
+
+		return array(
+			'id'                  => absint( $row->id ?? 0 ),
+			'order_id'            => $base_id,
+			'row_order_id'        => $full_id,
+			'event_id'            => absint( $row->event_id ?? 0 ),
+			'instance_ts'         => absint( $row->instance_ts ?? 0 ),
+			'ticket_id'           => absint( $row->ticket_id ?? 0 ),
+			'ticket_name'         => (string) ( $ticket_names[ absint( $row->ticket_id ?? 0 ) ] ?? '' ),
+			'attendee_name'       => '' !== $attendee_name ? $attendee_name : $buyer_name,
+			'attendee_email'      => $shown_email,
+			'has_attendee'        => $has_attendee,
+			'customer_name'       => $buyer_name,
+			'customer_email'      => $buyer_email,
+			'avatar_url'          => $avatar_email ? esc_url_raw(
+				(string) get_avatar_url(
+					$avatar_email,
+					array(
+						'size'    => 64,
+						'default' => 'identicon',
+					)
+				)
+			) : '',
+			'payment_status'      => $effective_status,
+			'is_archived'         => 'archived' === $row_status,
+			'checkin_code'        => (string) ( $row->checkin_token ?? '' ),
+			'master_checkin_code' => (string) ( $master_codes[ $base_id ] ?? '' ),
+			'checked_in'          => absint( $row->checked_in ?? 0 ) > 0 ? 1 : 0,
+			'checked_in_at'       => ( '' !== $checked_in_at && '0000-00-00 00:00:00' !== $checked_in_at ) ? self::to_iso_utc( $checked_in_at ) : '',
+			'checkin_eligible'    => self::is_ticket_checkin_eligible_status( $effective_status ),
+			'currency'            => strtolower( (string) ( $row->currency ?? 'usd' ) ),
+			'gateway'             => self::detect_order_gateway( $base_id ),
+			'created_at'          => self::to_iso_utc( $row->created_at ?? '' ),
+		);
+	}
+
+	/**
+	 * List ticket attendees for an event, one row per ticket.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function get_ticket_attendees( WP_REST_Request $request ) {
+		global $wpdb;
+
+		$event_id = absint( $request->get_param( 'event_id' ) );
+		if ( ! $event_id ) {
+			return new WP_Error( 'invalid_event_id', __( 'Invalid event ID.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
+		$table_name  = $wpdb->prefix . 'eventkoi_ticket_orders';
+		$instance_ts = $request->get_param( 'instance_ts' );
+		$where       = self::build_ticket_orders_where(
+			array(
+				'event_id'         => $event_id,
+				'instance_ts'      => ( null !== $instance_ts && '' !== $instance_ts ) ? absint( $instance_ts ) : null,
+				'include_archived' => rest_sanitize_boolean( $request->get_param( 'include_archived' ) ),
+				'only_archived'    => rest_sanitize_boolean( $request->get_param( 'only_archived' ) ),
+			)
+		);
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			"SELECT * FROM {$table_name} WHERE {$where} ORDER BY created_at DESC, id ASC" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		);
+
+		if ( null === $rows ) {
+			return new WP_Error( 'database_error', __( 'Database error occurred.', 'eventkoi-lite' ), array( 'status' => 500 ) );
+		}
+
+		$base_ids = array();
+		foreach ( $rows as $row ) {
+			$parts      = explode( ':', (string) ( $row->order_id ?? '' ), 2 );
+			$base_ids[] = $parts[0];
+		}
+
+		$ticket_names = self::get_ticket_names( $event_id );
+		$master_codes = self::resolve_master_checkin_codes( $base_ids );
+
+		$result = array();
+		foreach ( $rows as $row ) {
+			$result[] = self::format_ticket_attendee_row( $row, $ticket_names, $master_codes );
+		}
+
+		return new WP_REST_Response( $result, 200 );
+	}
+
+	/**
+	 * Edit the attendee name and email on one ticket.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function update_ticket_attendee( WP_REST_Request $request ) {
+		global $wpdb;
+
+		$row_id = absint( $request->get_param( 'id' ) );
+		if ( ! $row_id ) {
+			return new WP_Error( 'missing_attendee', __( 'Missing attendee.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
+		$table = $wpdb->prefix . 'eventkoi_ticket_orders';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $row_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		if ( ! $row ) {
+			return new WP_Error( 'not_found', __( 'Attendee not found.', 'eventkoi-lite' ), array( 'status' => 404 ) );
+		}
+		if ( 'archived' === (string) ( $row->payment_status ?? '' ) ) {
+			return self::archived_order_error();
+		}
+
+		$name  = sanitize_text_field( (string) $request->get_param( 'attendee_name' ) );
+		$typed = trim( (string) $request->get_param( 'attendee_email' ) );
+		$email = sanitize_email( $typed );
+		if ( '' !== $typed && ! is_email( $email ) ) {
+			return new WP_Error( 'invalid_attendee_email', __( 'Please enter a valid email address.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->update(
+			$table,
+			array(
+				'attendee_name'  => $name,
+				'attendee_email' => $email,
+				'updated_at'     => gmdate( 'Y-m-d H:i:s' ),
+			),
+			array( 'id' => $row_id ),
+			array( '%s', '%s', '%s' ),
+			array( '%d' )
+		);
+
+		self::invalidate_order_caches( absint( $row->event_id ?? 0 ) );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$fresh = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $row_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$base  = explode( ':', (string) ( $fresh->order_id ?? '' ), 2 )[0];
+
+		return rest_ensure_response(
+			array(
+				'success'  => true,
+				'attendee' => self::format_ticket_attendee_row(
+					$fresh,
+					self::get_ticket_names( absint( $fresh->event_id ?? 0 ) ),
+					self::resolve_master_checkin_codes( array( $base ) )
+				),
+			)
+		);
+	}
+
+	/**
+	 * Check one ticket in or out.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function update_attendee_checkin( WP_REST_Request $request ) {
+		global $wpdb;
+
+		$row_id = absint( $request->get_param( 'id' ) );
+		$action = sanitize_key( (string) $request->get_param( 'action' ) );
+		if ( ! $row_id || ! in_array( $action, array( 'check_in', 'checked_in' ), true ) ) {
+			return new WP_Error( 'invalid_checkin_action', __( 'Invalid check-in action.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
+		$table = $wpdb->prefix . 'eventkoi_ticket_orders';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $row_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		if ( ! $row ) {
+			return new WP_Error( 'not_found', __( 'Attendee not found.', 'eventkoi-lite' ), array( 'status' => 404 ) );
+		}
+		if ( 'archived' === (string) ( $row->payment_status ?? '' ) ) {
+			return self::archived_order_error();
+		}
+		if ( 'checked_in' === $action && ! self::is_ticket_checkin_eligible_status( (string) $row->payment_status ) ) {
+			return new WP_Error( 'checkin_not_eligible', __( 'Ticket payment is not complete.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
+		$checked = 'checked_in' === $action;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->update(
+			$table,
+			array(
+				'checked_in'    => $checked ? 1 : 0,
+				'checked_in_at' => $checked ? current_time( 'mysql', true ) : null,
+			),
+			array( 'id' => $row_id ),
+			array( '%d', '%s' ),
+			array( '%d' )
+		);
+
+		self::invalidate_order_caches( absint( $row->event_id ?? 0 ) );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$fresh = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $row_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$base  = explode( ':', (string) ( $fresh->order_id ?? '' ), 2 )[0];
+
+		return rest_ensure_response(
+			array(
+				'success'  => true,
+				'attendee' => self::format_ticket_attendee_row(
+					$fresh,
+					self::get_ticket_names( absint( $fresh->event_id ?? 0 ) ),
+					self::resolve_master_checkin_codes( array( $base ) )
+				),
+			)
+		);
+	}
+
+	/**
+	 * Export ticket attendees as CSV, one row per ticket, including any custom
+	 * checkout fields.
+	 *
+	 * Rows come from get_ticket_attendees() so the file always matches what
+	 * the attendees table shows. Custom checkout fields registered for the
+	 * event via the `eventkoi_checkout_fields` filter are appended as extra
+	 * columns; they belong to the order, so every ticket of an order repeats
+	 * them.
 	 *
 	 * @param WP_REST_Request $request Request object.
 	 * @return WP_REST_Response|WP_Error
@@ -511,13 +928,13 @@ class Tickets {
 			);
 		}
 
-		$orders = self::get_ticket_orders( $request );
+		$attendees = self::get_ticket_attendees( $request );
 
-		if ( is_wp_error( $orders ) ) {
-			return $orders;
+		if ( is_wp_error( $attendees ) ) {
+			return $attendees;
 		}
 
-		$rows   = (array) $orders->get_data();
+		$rows   = (array) $attendees->get_data();
 		$search = (string) $request->get_param( 'search' );
 
 		if ( '' !== $search ) {
@@ -526,7 +943,7 @@ class Tickets {
 				array_filter(
 					$rows,
 					static function ( $row ) use ( $needle ) {
-						$haystack = trim( ( $row['customer_name'] ?? '' ) . ' ' . ( $row['customer_email'] ?? '' ) );
+						$haystack = trim( ( $row['attendee_name'] ?? '' ) . ' ' . ( $row['attendee_email'] ?? '' ) . ' ' . ( $row['customer_name'] ?? '' ) . ' ' . ( $row['customer_email'] ?? '' ) );
 						$haystack = function_exists( 'mb_strtolower' ) ? mb_strtolower( $haystack ) : strtolower( $haystack );
 
 						return false !== strpos( $haystack, $needle );
@@ -538,12 +955,15 @@ class Tickets {
 		$fields = \EventKoi\Core\Orders::get_checkout_fields( $event_id );
 
 		$headers = array(
-			__( 'Name', 'eventkoi-lite' ),
-			__( 'Email', 'eventkoi-lite' ),
+			__( 'Attendee name', 'eventkoi-lite' ),
+			__( 'Attendee email', 'eventkoi-lite' ),
+			__( 'Ticket', 'eventkoi-lite' ),
 			__( 'Check-in code', 'eventkoi-lite' ),
+			__( 'Checked in', 'eventkoi-lite' ),
+			__( 'Buyer name', 'eventkoi-lite' ),
+			__( 'Buyer email', 'eventkoi-lite' ),
 			__( 'Order ID', 'eventkoi-lite' ),
 			__( 'Order status', 'eventkoi-lite' ),
-			__( 'Ticket quantity', 'eventkoi-lite' ),
 			__( 'Order date', 'eventkoi-lite' ),
 		);
 
@@ -554,29 +974,30 @@ class Tickets {
 		$handle = fopen( 'php://temp', 'r+' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- In-memory handle for CSV generation.
 		fputcsv( $handle, $headers, ',', '"', '\\' );
 
-		foreach ( $rows as $row ) {
-			// Group orders share one master code; otherwise list the per-ticket
-			// codes, which is what the attendees table itself displays.
-			$checkin_code = (string) ( $row['master_checkin_code'] ?? '' );
-			if ( '' === $checkin_code && ! empty( $row['checkin_codes'] ) ) {
-				$checkin_code = implode( ', ', array_map( 'strval', (array) $row['checkin_codes'] ) );
-			}
+		$field_values_cache = array();
 
+		foreach ( $rows as $row ) {
 			$line = array(
+				(string) ( $row['attendee_name'] ?? '' ),
+				(string) ( $row['attendee_email'] ?? '' ),
+				(string) ( $row['ticket_name'] ?? '' ),
+				(string) ( $row['checkin_code'] ?? '' ),
+				! empty( $row['checked_in'] ) ? __( 'Yes', 'eventkoi-lite' ) : __( 'No', 'eventkoi-lite' ),
 				(string) ( $row['customer_name'] ?? '' ),
 				(string) ( $row['customer_email'] ?? '' ),
-				$checkin_code,
 				(string) ( $row['order_id'] ?? '' ),
 				(string) ( $row['payment_status'] ?? '' ),
-				(string) ( $row['quantity'] ?? 0 ),
 				(string) ( $row['created_at'] ?? '' ),
 			);
 
 			if ( $fields ) {
-				$values = self::get_order_checkout_field_values( (string) ( $row['order_id'] ?? '' ), $event_id );
+				$order_key = (string) ( $row['order_id'] ?? '' );
+				if ( ! isset( $field_values_cache[ $order_key ] ) ) {
+					$field_values_cache[ $order_key ] = self::get_order_checkout_field_values( $order_key, $event_id );
+				}
 
 				foreach ( $fields as $field ) {
-					$line[] = (string) ( $values[ $field['key'] ] ?? '' );
+					$line[] = (string) ( $field_values_cache[ $order_key ][ $field['key'] ] ?? '' );
 				}
 			}
 
@@ -1428,6 +1849,7 @@ class Tickets {
 			'event_id'       => $event_id,
 			'instance_ts'    => $instance_ts,
 			'currency'       => $currency,
+			'hold_id'        => $hold_id,
 			'items'          => $order_items,
 			'metadata'       => $metadata,
 		);
@@ -1728,6 +2150,7 @@ class Tickets {
 				'tickets_event_capacity'      => $event_capacity,
 				'tickets_event_remaining'     => $event_remaining,
 				'tickets_display_mode'        => $event::get_tickets_display_mode(),
+				'tickets_attendee_details'    => $event::get_tickets_attendee_details(),
 				'event_ended'                 => $event_ended,
 				'tickets'                     => $tickets,
 			),
@@ -2039,6 +2462,22 @@ class Tickets {
 			return new WP_Error( 'invalid_total', __( 'Invalid checkout total.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
+		// Who each ticket is for, when the event asks. Validated against the
+		// quantities above so a payload can never name more seats than it buys.
+		$email_attendees = rest_sanitize_boolean( $request->get_param( 'email_attendees' ) );
+		$attendees       = \EventKoi\Core\Attendees::sanitize_checkout_attendees(
+			$request->get_param( 'attendees' ),
+			$sanitized_items,
+			$event::get_tickets_attendee_details(),
+			$email_attendees
+		);
+		if ( is_wp_error( $attendees ) ) {
+			return $attendees;
+		}
+		if ( empty( $attendees ) ) {
+			$email_attendees = false;
+		}
+
 		// Enforce the per-event total ticket capacity (venue cap) across all ticket
 		// types, on top of each ticket's own availability validated above.
 		$event_capacity = (int) $event::get_tickets_event_capacity();
@@ -2107,6 +2546,9 @@ class Tickets {
 			return $hold_result;
 		}
 
+		// Who each ticket is for, kept under the hold until the order confirms.
+		\EventKoi\Core\Attendees::stash_checkout_attendees( $hold_id, $attendees, $email_attendees );
+
 		// Free orders: there is nothing to charge, so skip the payment gateway
 		// entirely and complete the order right away (order record, per-seat
 		// tickets, confirmation emails). Free tickets work without WooCommerce.
@@ -2171,6 +2613,7 @@ class Tickets {
 				'wp_user_id'    => $wp_user_id,
 				'wp_user_label' => $wp_user_label,
 				'checkout_note' => $checkout_note,
+				'hold_id'       => $hold_id,
 				'checkout_fields' => $checkout_fields,
 				// Snapshot the terms the customer accepted so the order record and
 				// the admin sale email document the exact consented text.

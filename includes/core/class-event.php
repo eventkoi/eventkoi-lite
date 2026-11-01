@@ -106,6 +106,7 @@ class Event {
 		'tickets_show_sold_out',
 		'tickets_show_upcoming',
 		'tickets_show_ended',
+		'tickets_attendee_details',
 	);
 
 	/**
@@ -710,6 +711,8 @@ class Event {
 		// Total ticket quantity per event (venue capacity). 0 / empty = unlimited.
 		$tickets_event_capacity      = array_key_exists( 'tickets_event_capacity', $meta ) ? max( 0, absint( $meta['tickets_event_capacity'] ) ) : 0;
 		$tickets_display_mode        = isset( $meta['tickets_display_mode'] ) ? sanitize_key( $meta['tickets_display_mode'] ) : 'cards';
+		// Whether checkout asks who each ticket is for: off, optional or required.
+		$tickets_attendee_details = Attendees::normalize_mode( $meta['tickets_attendee_details'] ?? 'off' );
 
 		update_post_meta( self::$event_id, 'tickets_enabled', $tickets_enabled ? 1 : 0 );
 		update_post_meta( self::$event_id, 'tickets_require_account', $tickets_require_account ? 1 : 0 );
@@ -724,6 +727,7 @@ class Event {
 		update_post_meta( self::$event_id, 'tickets_agreements', $tickets_agreements );
 		update_post_meta( self::$event_id, 'tickets_event_capacity', $tickets_event_capacity );
 		update_post_meta( self::$event_id, 'tickets_display_mode', $tickets_display_mode );
+		update_post_meta( self::$event_id, 'tickets_attendee_details', $tickets_attendee_details );
 
 		if ( isset( $meta['custom_taxonomies'] ) && is_array( $meta['custom_taxonomies'] ) ) {
 			self::update_custom_taxonomies( $meta['custom_taxonomies'] );
@@ -2953,6 +2957,17 @@ class Event {
 		}
 
 		return apply_filters( 'eventkoi_get_event_tickets_display_mode', $mode, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Whether checkout collects a name and email per ticket.
+	 *
+	 * @return string off|optional|required
+	 */
+	public static function get_tickets_attendee_details() {
+		$mode = Attendees::normalize_mode( get_post_meta( self::$event_id, 'tickets_attendee_details', true ) );
+
+		return apply_filters( 'eventkoi_get_event_tickets_attendee_details', $mode, self::$event_id, self::$event );
 	}
 
 	/**

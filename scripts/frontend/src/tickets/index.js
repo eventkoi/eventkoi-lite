@@ -471,6 +471,10 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
     ? window.eventkoi_params.checkout_fields
     : [];
   const [checkoutFieldValues, setCheckoutFieldValues] = useState({});
+  // Who each ticket is for, keyed "ticketId:seatNumber".
+  const [attendees, setAttendees] = useState({});
+  const [firstTicketIsBuyer, setFirstTicketIsBuyer] = useState(false);
+  const [emailEachAttendee, setEmailEachAttendee] = useState(false);
   const [billing, setBilling] = useState(() => ({
     first_name: String(window.eventkoi_params?.rsvp_user?.first_name || "").trim(),
     last_name: String(window.eventkoi_params?.rsvp_user?.last_name || "").trim(),
@@ -734,6 +738,64 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
         .filter(Boolean),
     [displayTickets, quantities],
   );
+
+  const attendeeMode = ["optional", "required"].includes(
+    data?.tickets_attendee_details,
+  )
+    ? data.tickets_attendee_details
+    : "off";
+  const collectAttendees = attendeeMode !== "off";
+
+  // One card per seat: "[ticket] - Ticket 2 of 3".
+  const attendeeSeats = useMemo(() => {
+    if (!collectAttendees) return [];
+    const seats = [];
+    selectedTicketItems.forEach((item) => {
+      for (let seat = 1; seat <= item.quantity; seat += 1) {
+        seats.push({
+          key: `${item.ticket_id}:${seat}`,
+          ticket_id: item.ticket_id,
+          ticket_name: item.name,
+          seat,
+          count: item.quantity,
+        });
+      }
+    });
+    return seats;
+  }, [collectAttendees, selectedTicketItems]);
+
+  const buyerFullName = [billing.first_name, billing.last_name]
+    .map((part) => String(part || "").trim())
+    .filter(Boolean)
+    .join(" ");
+
+  const getSeatAttendee = (seat, index) => {
+    if (index === 0 && firstTicketIsBuyer) {
+      return { name: buyerFullName, email: String(billing.email || "").trim() };
+    }
+    const entry = attendees[seat.key] || {};
+    return {
+      name: String(entry.name || "").trim(),
+      email: String(entry.email || "").trim(),
+    };
+  };
+
+  const attendeeEntries = attendeeSeats.map((seat, index) => ({
+    ...seat,
+    ...getSeatAttendee(seat, index),
+  }));
+  const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  const missingAttendeeNames =
+    attendeeMode === "required" &&
+    attendeeEntries.some((entry) => entry.name === "");
+  const invalidAttendeeEmails = attendeeEntries.some(
+    (entry) => entry.email !== "" && !isValidEmail(entry.email),
+  );
+  const missingAttendeeEmails =
+    emailEachAttendee && attendeeEntries.some((entry) => entry.email === "");
+  const hasValidAttendees =
+    !collectAttendees ||
+    (!missingAttendeeNames && !invalidAttendeeEmails && !missingAttendeeEmails);
 
   const summaryDate =
     renderedEventDate ||
@@ -1030,6 +1092,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
     lastNameValue !== "" &&
     hasValidBillingEmail &&
     hasRequiredCheckoutFields &&
+    hasValidAttendees &&
     (!eventTermsRequired || termsAccepted) &&
     allRequiredAgreementsAccepted;
 
@@ -1044,6 +1107,25 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
     }
     if (!hasValidBillingEmail) {
       setCheckoutError(__("Please enter a valid email address.", "eventkoi-lite"));
+      return;
+    }
+    if (missingAttendeeNames) {
+      setCheckoutError(__("Please enter a name for each ticket.", "eventkoi-lite"));
+      return;
+    }
+    if (invalidAttendeeEmails) {
+      setCheckoutError(
+        __("Please enter a valid email address for each attendee.", "eventkoi-lite")
+      );
+      return;
+    }
+    if (missingAttendeeEmails) {
+      setCheckoutError(
+        __(
+          "Add an email address for each attendee to send them their own ticket.",
+          "eventkoi-lite"
+        )
+      );
       return;
     }
     if (eventTermsRequired && !termsAccepted) {
@@ -1152,6 +1234,16 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
           last_name: String(billing.last_name || "").trim(),
           email,
           fields: checkoutFieldValues,
+          ...(collectAttendees
+            ? {
+                attendees: attendeeEntries.map((entry) => ({
+                  ticket_id: entry.ticket_id,
+                  name: entry.name,
+                  email: entry.email,
+                })),
+                email_attendees: emailEachAttendee ? "1" : "",
+              }
+            : {}),
           terms_accepted: termsAccepted ? "1" : "",
           agreements_accepted: eventAgreements
             .filter((item) => !!agreementsAccepted[item.id])
@@ -1765,6 +1857,153 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                         )}
                       </p>
                     </div>
+
+                    {collectAttendees && attendeeSeats.length > 0 ? (
+                      <div className="space-y-3 pt-2">
+                        <div className="space-y-1">
+                          <div className="font-medium text-[13px] text-foreground">
+                            {__("Attendees", "eventkoi-lite")}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {attendeeMode === "required"
+                              ? __(
+                                  "Enter the name of the person using each ticket.",
+                                  "eventkoi-lite",
+                                )
+                              : __(
+                                  "Optional. Tell us who each ticket is for.",
+                                  "eventkoi-lite",
+                                )}
+                          </p>
+                        </div>
+
+                        {attendeeSeats.map((seat, index) => {
+                          const isBuyerSeat = index === 0 && firstTicketIsBuyer;
+                          const entry = getSeatAttendee(seat, index);
+                          const nameId = `${idPrefix}-attendee-${seat.key}-name`;
+                          const emailId = `${idPrefix}-attendee-${seat.key}-email`;
+                          const nameInvalid =
+                            checkoutAttempted &&
+                            attendeeMode === "required" &&
+                            entry.name === "";
+                          const emailInvalid =
+                            checkoutAttempted &&
+                            ((entry.email !== "" && !isValidEmail(entry.email)) ||
+                              (emailEachAttendee && entry.email === ""));
+                          const setSeatValue = (field, value) =>
+                            setAttendees((prev) => ({
+                              ...prev,
+                              [seat.key]: { ...(prev[seat.key] || {}), [field]: value },
+                            }));
+                          const inputClass = (invalid) =>
+                            `h-10 w-full rounded-md border bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-2 disabled:bg-muted/40 disabled:text-muted-foreground ${
+                              invalid
+                                ? "border-destructive focus-visible:ring-destructive"
+                                : "border-input focus-visible:ring-ring"
+                            }`;
+
+                          return (
+                            <div
+                              key={seat.key}
+                              className="space-y-3 rounded-md border border-border p-4"
+                            >
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="text-[13px] font-medium text-foreground">
+                                  {sprintf(
+                                    /* translators: 1: ticket name, 2: seat number, 3: seats of this ticket type */
+                                    __("%1$s - Ticket %2$d of %3$d", "eventkoi-lite"),
+                                    seat.ticket_name,
+                                    seat.seat,
+                                    seat.count,
+                                  )}
+                                </div>
+                                {index === 0 ? (
+                                  <label
+                                    htmlFor={`${idPrefix}-attendee-self`}
+                                    className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer"
+                                  >
+                                    <input
+                                      id={`${idPrefix}-attendee-self`}
+                                      type="checkbox"
+                                      checked={firstTicketIsBuyer}
+                                      onChange={(event) =>
+                                        setFirstTicketIsBuyer(event.target.checked)
+                                      }
+                                      className="size-4 rounded border-input"
+                                    />
+                                    {__("This ticket is for me", "eventkoi-lite")}
+                                  </label>
+                                ) : null}
+                              </div>
+                              <div className="grid gap-3 sm:grid-cols-2">
+                                <div className="space-y-1.5">
+                                  <label
+                                    htmlFor={nameId}
+                                    className="text-xs font-medium text-foreground"
+                                  >
+                                    {__("Name", "eventkoi-lite")}
+                                  </label>
+                                  <input
+                                    id={nameId}
+                                    type="text"
+                                    autoComplete="off"
+                                    value={entry.name}
+                                    disabled={isBuyerSeat}
+                                    required={attendeeMode === "required"}
+                                    aria-invalid={nameInvalid ? "true" : "false"}
+                                    onChange={(event) =>
+                                      setSeatValue("name", event.target.value)
+                                    }
+                                    className={inputClass(nameInvalid)}
+                                  />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <label
+                                    htmlFor={emailId}
+                                    className="text-xs font-medium text-foreground"
+                                  >
+                                    {__("Email", "eventkoi-lite")}
+                                  </label>
+                                  <input
+                                    id={emailId}
+                                    type="email"
+                                    autoComplete="off"
+                                    value={entry.email}
+                                    disabled={isBuyerSeat}
+                                    aria-invalid={emailInvalid ? "true" : "false"}
+                                    onChange={(event) =>
+                                      setSeatValue("email", event.target.value)
+                                    }
+                                    className={inputClass(emailInvalid)}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                        <label
+                          htmlFor={`${idPrefix}-attendee-emails`}
+                          className="flex items-start gap-2.5 text-xs leading-relaxed text-muted-foreground cursor-pointer"
+                        >
+                          <input
+                            id={`${idPrefix}-attendee-emails`}
+                            type="checkbox"
+                            checked={emailEachAttendee}
+                            onChange={(event) =>
+                              setEmailEachAttendee(event.target.checked)
+                            }
+                            className="mt-0.5 size-4 shrink-0 rounded border-input"
+                          />
+                          <span>
+                            {__(
+                              "Email each attendee their own ticket. You still receive all of them.",
+                              "eventkoi-lite",
+                            )}
+                          </span>
+                        </label>
+                      </div>
+                    ) : null}
 
                     {checkoutCustomFields.map((field) => {
                       const fieldId = `eventkoi-checkout-field-${field.key}`;

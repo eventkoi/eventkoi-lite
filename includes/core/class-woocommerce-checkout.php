@@ -84,6 +84,9 @@ class WooCommerce_Checkout {
 		add_action( 'woocommerce_order_status_changed', array( __CLASS__, 'on_order_status_changed' ), 10, 4 );
 		add_action( 'woocommerce_thankyou', array( __CLASS__, 'maybe_redirect_to_event_page' ), 5 );
 
+		// Attendee names next to each ticket line on the admin order screen.
+		add_action( 'woocommerce_after_order_itemmeta', array( __CLASS__, 'render_admin_item_attendees' ), 10, 2 );
+
 		// Delete local EK orders when a WC order is permanently deleted.
 		add_action( 'woocommerce_before_delete_order', array( __CLASS__, 'on_order_deleted' ), 10, 2 );
 		add_action( 'before_delete_post', array( __CLASS__, 'on_order_post_deleted' ) );
@@ -278,6 +281,7 @@ class WooCommerce_Checkout {
 			'ticket_items'        => $all_ticket_items,
 			'checkout_fields'     => is_array( $args['checkout_fields'] ?? null ) ? $args['checkout_fields'] : array(),
 			'terms_consent'       => is_array( $args['terms_consent'] ?? null ) ? $args['terms_consent'] : null,
+			'hold_id'             => sanitize_text_field( (string) ( $args['hold_id'] ?? '' ) ),
 		);
 
 		set_transient( 'eventkoi_cart_' . $token, $checkout_data, \EventKoi\API\Tickets::HOLD_DURATION );
@@ -507,6 +511,53 @@ class WooCommerce_Checkout {
 	}
 
 	/**
+	 * Print the attendees of a ticket line on the admin order screen.
+	 *
+	 * @param int                    $item_id Order item ID.
+	 * @param \WC_Order_Item_Product $item    Order item.
+	 * @return void
+	 */
+	public static function render_admin_item_attendees( $item_id, $item ) {
+		unset( $item_id );
+
+		if ( ! is_admin() || ! is_object( $item ) || ! method_exists( $item, 'get_meta' ) || 'yes' !== (string) $item->get_meta( '_eventkoi_ticket' ) ) {
+			return;
+		}
+
+		$ticket_id = absint( $item->get_meta( '_eventkoi_ticket_id' ) );
+		$order_id  = method_exists( $item, 'get_order_id' ) ? absint( $item->get_order_id() ) : 0;
+		if ( ! $ticket_id || ! $order_id ) {
+			return;
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'eventkoi_ticket_orders';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT attendee_name, attendee_email, checkin_token FROM {$table} WHERE order_id LIKE %s ORDER BY id ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$wpdb->esc_like( 'wc_' . $order_id . ':' . $ticket_id . ':' ) . '%'
+			)
+		);
+
+		$names = array();
+		foreach ( (array) $rows as $row ) {
+			$name  = trim( (string) ( $row->attendee_name ?? '' ) );
+			$email = trim( (string) ( $row->attendee_email ?? '' ) );
+			if ( '' === $name && '' === $email ) {
+				continue;
+			}
+			$names[] = '' !== $email ? ( '' !== $name ? $name . ' (' . $email . ')' : $email ) : $name;
+		}
+
+		if ( empty( $names ) ) {
+			return;
+		}
+
+		echo '<div class="eventkoi-wc-attendees" style="margin-top:4px;color:#555;"><strong>' . esc_html__( 'Attendees:', 'eventkoi-lite' ) . '</strong> ' . esc_html( implode( ', ', $names ) ) . '</div>';
+	}
+
+	/**
 	 * Attach EventKoi metadata to the WC order after checkout.
 	 *
 	 * @param \WC_Order $order WC Order.
@@ -538,6 +589,14 @@ class WooCommerce_Checkout {
 				$label = $definitions[ $key ]['label'] ?? $key;
 				$order->add_order_note( sanitize_text_field( $label . ': ' . $value ) );
 			}
+		}
+
+		$hold_id = (string) ( $checkout_data['hold_id'] ?? '' );
+		$order->update_meta_data( '_eventkoi_hold_id', $hold_id );
+		$attendee_stash = '' !== $hold_id ? \EventKoi\Core\Attendees::get_stashed_checkout_attendees( $hold_id ) : array();
+		if ( ! empty( $attendee_stash['attendees'] ) ) {
+			$order->update_meta_data( '_eventkoi_attendees', $attendee_stash['attendees'] );
+			$order->update_meta_data( '_eventkoi_email_attendees', ! empty( $attendee_stash['email_each'] ) ? 'yes' : 'no' );
 		}
 
 		$consent     = is_array( $checkout_data['terms_consent'] ?? null ) ? $checkout_data['terms_consent'] : null;
@@ -689,6 +748,7 @@ class WooCommerce_Checkout {
 			'event_id'       => $event_id,
 			'currency'       => $currency,
 			'items'          => $order_items,
+			'hold_id'        => (string) $order->get_meta( '_eventkoi_hold_id' ),
 			'metadata'       => $order_payload['metadata'],
 		);
 		Ticket_Order_Sync::sync_order_to_local( $local_order );

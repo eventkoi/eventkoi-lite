@@ -39,6 +39,7 @@ class Ticket_Order_Sync {
 		}
 
 		$order_id       = sanitize_text_field( (string) ( $order['order_id'] ?? $order['id'] ?? '' ) );
+		$hold_id        = sanitize_text_field( (string) ( $order['hold_id'] ?? ( is_array( $order['metadata'] ?? null ) ? ( $order['metadata']['hold_id'] ?? '' ) : '' ) ) );
 		$customer_name  = sanitize_text_field( (string) ( $order['customer_name'] ?? '' ) );
 		$customer_email = sanitize_email( (string) ( $order['customer_email'] ?? $order['billing_email'] ?? '' ) );
 		$payment_status = sanitize_key( (string) ( $order['status'] ?? $order['payment_status'] ?? 'pending' ) );
@@ -69,6 +70,11 @@ class Ticket_Order_Sync {
 			return 0;
 		}
 
+		// Attendee details the buyer typed at checkout, keyed by the hold.
+		$stashed_attendees = '' !== $hold_id
+			? Attendees::get_stashed_checkout_attendees( $hold_id )['attendees']
+			: array();
+
 		foreach ( $items as $item ) {
 			if ( ! is_array( $item ) ) {
 				continue;
@@ -80,53 +86,58 @@ class Ticket_Order_Sync {
 			$ticket_codes = isset( $item['ticket_codes'] ) && is_array( $item['ticket_codes'] ) ? $item['ticket_codes'] : array();
 
 			if ( ! empty( $ticket_codes ) ) {
-				foreach ( $ticket_codes as $code ) {
+				foreach ( array_values( $ticket_codes ) as $seat_index => $code ) {
 					$code          = sanitize_text_field( (string) $code );
 					$composite_key = $order_id . ':' . $ticket_id . ':' . $code;
-					$count        += self::upsert_row(
-						$table,
-						array(
-							'event_id'          => $event_id,
-							'ticket_id'         => $ticket_id,
-							'order_id'          => $composite_key,
-							'customer_name'     => $customer_name,
-							'customer_email'    => $customer_email,
-							'quantity'          => 1,
-							'unit_price'        => $unit_price,
-							'total_amount'      => $unit_price,
-							'currency'          => $currency,
-							'payment_status'    => $payment_status,
-							'payment_intent_id' => $payment_intent,
-							'charge_id'         => $charge_id,
-							'checkin_token'     => $code,
-							'created_at'        => $created_at,
-						)
-					);
-				}
-			} else {
-				$composite_key = $order_id . ':' . $ticket_id;
-				$total_amount  = $unit_price * $quantity;
-				$token         = self::generate_checkin_token();
-
-				$count += self::upsert_row(
-					$table,
-					array(
+					$row           = array(
 						'event_id'          => $event_id,
 						'ticket_id'         => $ticket_id,
 						'order_id'          => $composite_key,
 						'customer_name'     => $customer_name,
 						'customer_email'    => $customer_email,
-						'quantity'          => $quantity,
+						'quantity'          => 1,
 						'unit_price'        => $unit_price,
-						'total_amount'      => $total_amount,
+						'total_amount'      => $unit_price,
 						'currency'          => $currency,
 						'payment_status'    => $payment_status,
 						'payment_intent_id' => $payment_intent,
 						'charge_id'         => $charge_id,
-						'checkin_token'     => $token,
+						'checkin_token'     => $code,
 						'created_at'        => $created_at,
-					)
+					);
+					$attendee      = Attendees::resolve_seat_attendee( $item, $seat_index, $stashed_attendees );
+					if ( $attendee ) {
+						$row['attendee_name']  = $attendee['name'];
+						$row['attendee_email'] = $attendee['email'];
+					}
+					$count += self::upsert_row( $table, $row );
+				}
+			} else {
+				$composite_key = $order_id . ':' . $ticket_id;
+				$total_amount  = $unit_price * $quantity;
+				$token         = self::generate_checkin_token();
+				$row           = array(
+					'event_id'          => $event_id,
+					'ticket_id'         => $ticket_id,
+					'order_id'          => $composite_key,
+					'customer_name'     => $customer_name,
+					'customer_email'    => $customer_email,
+					'quantity'          => $quantity,
+					'unit_price'        => $unit_price,
+					'total_amount'      => $total_amount,
+					'currency'          => $currency,
+					'payment_status'    => $payment_status,
+					'payment_intent_id' => $payment_intent,
+					'charge_id'         => $charge_id,
+					'checkin_token'     => $token,
+					'created_at'        => $created_at,
 				);
+				$attendee      = Attendees::resolve_seat_attendee( $item, 0, $stashed_attendees );
+				if ( $attendee ) {
+					$row['attendee_name']  = $attendee['name'];
+					$row['attendee_email'] = $attendee['email'];
+				}
+				$count += self::upsert_row( $table, $row );
 			}
 		}
 
@@ -612,7 +623,9 @@ class Ticket_Order_Sync {
 
 		if ( $existing ) {
 			$update_data = $data;
-			unset( $update_data['order_id'], $update_data['created_at'], $update_data['checkin_token'] );
+			// Attendee details are captured on the first write and may be edited
+			// by an admin afterwards; a later re-sync must not undo either.
+			unset( $update_data['order_id'], $update_data['created_at'], $update_data['checkin_token'], $update_data['attendee_name'], $update_data['attendee_email'], $update_data['attendee_meta'] );
 			$update_data['updated_at'] = gmdate( 'Y-m-d H:i:s' );
 
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Updates local cache row from edge data.

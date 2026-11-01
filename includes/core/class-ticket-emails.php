@@ -489,7 +489,10 @@ class Ticket_Emails {
 			)
 			: '';
 
-		$ticket_codes_line = self::render_ticket_codes_for_email( $items, $ticket_name_contexts );
+		$seat_attendees    = self::get_seat_attendees( $items );
+		$ticket_codes_line = self::render_ticket_codes_for_email( $items, $ticket_name_contexts, $seat_attendees );
+		// One block per ticket with the attendee's name, email and code.
+		$attendee_tickets = self::render_attendee_tickets_for_email( $items, $seat_attendees, $ticket_name_contexts );
 
 		$tags = array(
 			'[attendee_name]'  => $first_name ? $first_name : __( 'there', 'eventkoi-lite' ),
@@ -507,6 +510,7 @@ class Ticket_Emails {
 			'[checkin_line]'   => $checkin_line,
 			'[ticket_codes]'   => $ticket_codes_line,
 			'[ticket_lines]'   => $tickets_line,
+			'[attendee_tickets]' => $attendee_tickets,
 			'[site_name]'      => get_bloginfo( 'name' ),
 		);
 
@@ -524,7 +528,7 @@ class Ticket_Emails {
 				'<p>' . esc_html__( 'Order ID:', 'eventkoi-lite' ) . ' <br />[order_id]</p>',
 				'[checkin_line]',
 				'<p><strong>' . esc_html__( 'Tickets', 'eventkoi-lite' ) . '</strong><br />[ticket_lines]</p>',
-				'' !== $ticket_codes_line ? '<p><strong>' . esc_html__( 'Ticket Codes', 'eventkoi-lite' ) . '</strong><br />[ticket_codes]</p>' : '',
+				'' !== $attendee_tickets ? '<p><strong>' . esc_html__( 'Your tickets', 'eventkoi-lite' ) . '</strong></p>' . "\n" . '[attendee_tickets]' : '',
 				$event_datetime ? '<p>' . esc_html__( 'Schedule ([event_timezone]):', 'eventkoi-lite' ) . '<br />[event_datetime]</p>' : '',
 				$event_location ? '<p>' . esc_html__( 'Location:', 'eventkoi-lite' ) . '<br />[event_location]</p>' : '',
 				$event_url ? '<p>' . esc_html__( 'Event page:', 'eventkoi-lite' ) . '<br />[event_url]</p>' : '',
@@ -533,14 +537,52 @@ class Ticket_Emails {
 		);
 
 		$body = apply_filters( 'eventkoi_ticket_email_template', $default_body, $tags, $order, $items );
-		$body = self::replace_email_tags( (string) $body, $tags );
+		$body_template = (string) $body;
+		$body          = self::finalize_email_body( self::replace_email_tags( $body_template, $tags ) );
 
+		$sent = self::deliver_ticket_email( $recipient_email, $subject, $body, $settings );
+
+		if ( $sent && '' !== $order_id ) {
+			self::add_confirmation_note( $order_id );
+			if ( $sync_local ) {
+				Ticket_Order_Sync::sync_order_to_local( $order );
+			}
+		}
+
+		// The buyer asked for every attendee to get their own ticket. The hold
+		// id only travels with the first send, so resends reach the buyer alone.
+		if ( $sent && self::order_wants_attendee_emails( $order ) ) {
+			self::send_attendee_ticket_emails( $order, $items, $seat_attendees, $tags, $subject, $body_template, $settings, $recipient_email, $ticket_name_contexts );
+		}
+
+		return (bool) $sent;
+	}
+
+	/**
+	 * Clean an email body the way the ticket email always has.
+	 *
+	 * @param string $body Body with tags already replaced.
+	 * @return string
+	 */
+	private static function finalize_email_body( $body ) {
 		$body     = preg_replace( "/\n{3,}/", "\n\n", trim( (string) $body ) );
 		$has_html = (bool) preg_match( '/<[^>]+>/', (string) $body );
-		$body     = $has_html
+
+		return $has_html
 			? wp_kses( wpautop( (string) $body ), Settings::get_email_template_allowed_tags() )
 			: wpautop( esc_html( (string) $body ) );
+	}
 
+	/**
+	 * Send one ticket email with the configured sender.
+	 *
+	 * @param string $to       Recipient.
+	 * @param string $subject  Subject.
+	 * @param string $body     Final HTML body.
+	 * @param array  $settings Plugin settings.
+	 * @return bool
+	 */
+	private static function deliver_ticket_email( $to, $subject, $body, $settings ) {
 		$headers         = array( 'Content-Type: text/html; charset=UTF-8' );
 		$sender_email    = sanitize_email( (string) ( $settings['ticket_email_sender_email'] ?? '' ) );
 		$sender_name     = sanitize_text_field( (string) ( $settings['ticket_email_sender_name'] ?? '' ) );
@@ -566,7 +608,7 @@ class Ticket_Emails {
 			add_filter( 'wp_mail_from_name', $from_name_hook );
 		}
 
-		$sent = wp_mail( $recipient_email, $subject, $body, $headers );
+		$sent = wp_mail( $to, $subject, $body, $headers );
 
 		if ( $from_email_hook ) {
 			remove_filter( 'wp_mail_from', $from_email_hook );
@@ -575,14 +617,206 @@ class Ticket_Emails {
 			remove_filter( 'wp_mail_from_name', $from_name_hook );
 		}
 
-		if ( $sent && '' !== $order_id ) {
-			self::add_confirmation_note( $order_id );
-			if ( $sync_local ) {
-				Ticket_Order_Sync::sync_order_to_local( $order );
+		return (bool) $sent;
+	}
+
+	/**
+	 * Whether the buyer ticked "Email each attendee their own ticket".
+	 *
+	 * The choice lives in the attendee stash keyed by the checkout hold, which
+	 * only the first send carries.
+	 *
+	 * @param array $order Order payload.
+	 * @return bool
+	 */
+	private static function order_wants_attendee_emails( $order ) {
+		$hold_id = sanitize_text_field( (string) ( $order['hold_id'] ?? ( is_array( $order['metadata'] ?? null ) ? ( $order['metadata']['hold_id'] ?? '' ) : '' ) ) );
+
+		return '' !== $hold_id && Attendees::get_stashed_checkout_attendees( $hold_id )['email_each'];
+	}
+
+	/**
+	 * Send each attendee their own ticket.
+	 *
+	 * Seats sharing an address get one email together; the buyer's own
+	 * address is skipped because the buyer already has every ticket.
+	 *
+	 * @param array  $order          Order payload.
+	 * @param array  $items          Order items with ticket_codes.
+	 * @param array  $seat_attendees Map code => attendee from get_seat_attendees().
+	 * @param array  $tags           Buyer email tags, used as the base.
+	 * @param string $subject        Buyer email subject, already resolved.
+	 * @param string $body_template  Body template with tags still in place.
+	 * @param array  $settings       Plugin settings.
+	 * @param string $buyer_email    Buyer address to skip.
+	 * @param array  $contexts       Event-title contexts stripped from ticket names.
+	 * @return int Emails sent.
+	 */
+	private static function send_attendee_ticket_emails( $order, $items, $seat_attendees, $tags, $subject, $body_template, $settings, $buyer_email, $contexts ) {
+		$by_email = array();
+		foreach ( $items as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+			foreach ( (array) ( $item['ticket_codes'] ?? array() ) as $code ) {
+				$code     = sanitize_text_field( (string) $code );
+				$attendee = $seat_attendees[ $code ] ?? null;
+				$email    = $attendee ? sanitize_email( (string) $attendee['email'] ) : '';
+				if ( '' === $email || ! is_email( $email ) || strtolower( $email ) === strtolower( (string) $buyer_email ) ) {
+					continue;
+				}
+				$by_email[ strtolower( $email ) ]['email']   = $email;
+				$by_email[ strtolower( $email ) ]['name']    = (string) $attendee['name'];
+				$by_email[ strtolower( $email ) ]['items'][] = array_merge(
+					$item,
+					array(
+						'quantity'     => 1,
+						'ticket_codes' => array( $code ),
+						'codes'        => array( $code ),
+					)
+				);
 			}
 		}
 
-		return (bool) $sent;
+		if ( empty( $by_email ) ) {
+			return 0;
+		}
+
+		$sent = 0;
+
+		foreach ( $by_email as $recipient ) {
+			$own_items = $recipient['items'];
+			$own_codes = array();
+			foreach ( $own_items as $own_item ) {
+				$own_codes = array_merge( $own_codes, (array) $own_item['ticket_codes'] );
+			}
+			$single_code = 1 === count( $own_codes ) ? (string) $own_codes[0] : '';
+			$first_name  = '' !== trim( (string) $recipient['name'] ) ? trim( strtok( (string) $recipient['name'], ' ' ) ) : '';
+
+			$own_tags = array_merge(
+				$tags,
+				array(
+					'[attendee_name]'    => $first_name ? $first_name : __( 'there', 'eventkoi-lite' ),
+					'[attendee_email]'   => $recipient['email'],
+					'[checkin_code]'     => $single_code,
+					'[checkin_line]'     => '' !== $single_code
+						? sprintf( '<p>%1$s<br />%2$s</p>', esc_html__( 'Check-in code:', 'eventkoi-lite' ), esc_html( $single_code ) )
+						: '',
+					'[ticket_lines]'     => self::render_ticket_lines_for_email( $own_items, (string) ( $order['currency'] ?? '' ), $contexts ),
+					'[ticket_codes]'     => self::render_ticket_codes_for_email( $own_items, $contexts, $seat_attendees ),
+					'[attendee_tickets]' => self::render_attendee_tickets_for_email( $own_items, $seat_attendees, $contexts ),
+				)
+			);
+
+			$own_body = self::finalize_email_body( self::replace_email_tags( $body_template, $own_tags ) );
+			if ( self::deliver_ticket_email( $recipient['email'], self::replace_email_tags( $subject, $own_tags ), $own_body, $settings ) ) {
+				++$sent;
+			}
+		}
+
+		return $sent;
+	}
+
+	/**
+	 * Attendee details per check-in code for the given items.
+	 *
+	 * @param array $items Order items with ticket_codes.
+	 * @return array Map code => { name, email }.
+	 */
+	private static function get_seat_attendees( $items ) {
+		global $wpdb;
+
+		$codes = array();
+		foreach ( (array) $items as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+			foreach ( (array) ( $item['ticket_codes'] ?? array() ) as $code ) {
+				$code = sanitize_text_field( (string) $code );
+				if ( '' !== $code ) {
+					$codes[] = $code;
+				}
+			}
+		}
+		$codes = array_values( array_unique( $codes ) );
+		if ( empty( $codes ) ) {
+			return array();
+		}
+
+		$table        = $wpdb->prefix . 'eventkoi_ticket_orders';
+		$placeholders = implode( ',', array_fill( 0, count( $codes ), '%s' ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT checkin_token, attendee_name, attendee_email FROM {$table} WHERE checkin_token IN ({$placeholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+				$codes
+			)
+		);
+
+		$map = array();
+		foreach ( (array) $rows as $row ) {
+			$name  = trim( (string) ( $row->attendee_name ?? '' ) );
+			$email = sanitize_email( (string) ( $row->attendee_email ?? '' ) );
+			if ( '' === $name && '' === $email ) {
+				continue;
+			}
+			$map[ (string) $row->checkin_token ] = array(
+				'name'  => $name,
+				'email' => $email,
+			);
+		}
+
+		return $map;
+	}
+
+	/**
+	 * One block per ticket: ticket name, attendee and code.
+	 *
+	 * @param array $items          Order items with ticket_codes.
+	 * @param array $seat_attendees Map code => attendee.
+	 * @param array $contexts       Event-title contexts stripped from ticket names.
+	 * @return string
+	 */
+	private static function render_attendee_tickets_for_email( $items, $seat_attendees, $contexts ) {
+		$blocks = array();
+
+		foreach ( (array) $items as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+			$codes = isset( $item['ticket_codes'] ) && is_array( $item['ticket_codes'] ) ? $item['ticket_codes'] : array();
+			if ( empty( $codes ) ) {
+				continue;
+			}
+
+			$name = sanitize_text_field( (string) ( $item['ticket_name'] ?? ( $item['name'] ?? '' ) ) );
+			$name = self::strip_ticket_context_suffix( $name, $contexts );
+			if ( '' === $name ) {
+				$name = __( 'Ticket', 'eventkoi-lite' );
+			}
+
+			foreach ( $codes as $code ) {
+				$code = sanitize_text_field( (string) $code );
+				if ( '' === $code ) {
+					continue;
+				}
+				$attendee = $seat_attendees[ $code ] ?? null;
+				$lines    = array( '<strong>' . esc_html( $name ) . '</strong>' );
+				if ( $attendee ) {
+					$who = trim( (string) $attendee['name'] );
+					if ( '' !== (string) $attendee['email'] ) {
+						$who = '' !== $who ? $who . ' (' . $attendee['email'] . ')' : (string) $attendee['email'];
+					}
+					if ( '' !== $who ) {
+						$lines[] = esc_html( $who );
+					}
+				}
+				$lines[]  = esc_html__( 'Check-in code:', 'eventkoi-lite' ) . ' ' . esc_html( $code );
+				$blocks[] = '<p>' . implode( '<br />', $lines ) . '</p>';
+			}
+		}
+
+		return implode( "\n", $blocks );
 	}
 
 	/**
@@ -843,11 +1077,12 @@ class Ticket_Emails {
 	/**
 	 * Render individual ticket codes grouped by ticket type.
 	 *
-	 * @param array $items    Order items with ticket_codes arrays.
-	 * @param array $contexts Optional event-title contexts to strip from ticket names.
+	 * @param array $items          Order items with ticket_codes arrays.
+	 * @param array $contexts       Optional event-title contexts to strip from ticket names.
+	 * @param array $seat_attendees Optional map code => attendee, to name each code.
 	 * @return string HTML string of ticket codes, empty if none present.
 	 */
-	private static function render_ticket_codes_for_email( $items, $contexts = array() ) {
+	private static function render_ticket_codes_for_email( $items, $contexts = array(), $seat_attendees = array() ) {
 		if ( empty( $items ) || ! is_array( $items ) ) {
 			return '';
 		}
@@ -873,8 +1108,14 @@ class Ticket_Emails {
 			$codes = array_map( 'sanitize_text_field', $ticket_codes );
 			$codes = array_filter( $codes );
 
-			if ( ! empty( $codes ) ) {
-				$lines[] = esc_html( $name ) . ': ' . esc_html( implode( ', ', $codes ) );
+			$labels = array();
+			foreach ( $codes as $code ) {
+				$attendee_name = trim( (string) ( $seat_attendees[ $code ]['name'] ?? '' ) );
+				$labels[]      = '' !== $attendee_name ? $code . ' (' . $attendee_name . ')' : $code;
+			}
+
+			if ( ! empty( $labels ) ) {
+				$lines[] = esc_html( $name ) . ': ' . esc_html( implode( ', ', $labels ) );
 			}
 		}
 
