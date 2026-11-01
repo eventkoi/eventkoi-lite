@@ -297,6 +297,31 @@ class Activator {
 			return;
 		}
 
+		// Only one request runs the backfill; add_option is atomic, so the
+		// others skip it instead of inserting a second set of guest rows. A
+		// lock older than ten minutes is treated as abandoned.
+		if ( ! add_option( 'eventkoi_rsvp_guest_rows_lock', time(), '', 'no' ) ) {
+			$started = (int) get_option( 'eventkoi_rsvp_guest_rows_lock' );
+			if ( $started && time() - $started > 600 ) {
+				delete_option( 'eventkoi_rsvp_guest_rows_lock' );
+			}
+			return;
+		}
+
+		try {
+			self::upgrade_rsvp_guest_rows();
+		} finally {
+			delete_option( 'eventkoi_rsvp_guest_rows_lock' );
+		}
+	}
+
+	/**
+	 * The guest-row schema change and backfill. Called once, under the lock.
+	 *
+	 * @return void
+	 */
+	private static function upgrade_rsvp_guest_rows() {
+
 		global $wpdb;
 		$table = $wpdb->prefix . 'eventkoi_rsvps';
 
@@ -372,7 +397,8 @@ class Activator {
 		}
 		// phpcs:enable
 
-		update_option( 'eventkoi_rsvp_guest_rows_ready', 1, false );
+		// Autoloaded: the flag is read on every request.
+		update_option( 'eventkoi_rsvp_guest_rows_ready', 1, true );
 	}
 
 	/**

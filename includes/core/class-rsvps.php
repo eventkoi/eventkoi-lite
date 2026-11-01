@@ -351,7 +351,11 @@ class Rsvps {
 
 			self::bump_events_cache_version();
 
-			$already_sent = self::emailed_guest_addresses( absint( $existing->id ) );
+			// Guests were only mailed before if the host had asked for it then.
+			$previous_meta = json_decode( (string) ( $existing->meta ?? '' ), true );
+			$already_sent  = is_array( $previous_meta ) && ! empty( $previous_meta['email_guests'] )
+				? self::emailed_guest_addresses( absint( $existing->id ) )
+				: array();
 			$party        = self::sync_guest_rows( absint( $existing->id ), $event_id, $instance_ts, $status, $guests, $guest_details );
 
 			$new_email     = sanitize_email( $email );
@@ -559,6 +563,32 @@ class Rsvps {
 		$now      = gmdate( 'Y-m-d H:i:s' );
 		$going    = 'going' === $status;
 
+		// The table keeps one row per address within a party, so a repeated
+		// address (two guests sharing an inbox, or the host's own) is stored
+		// once and the other rows keep no address. Clearing the party's
+		// addresses first lets an edit swap two guests' emails safely.
+		$seen = array();
+		if ( is_array( $details ) ) {
+			$host = DB::table( 'eventkoi_rsvps' )->where( 'id', $parent_id )->get();
+			if ( $host && '' !== (string) ( $host->email ?? '' ) ) {
+				$seen[ strtolower( (string) $host->email ) ] = true;
+			}
+			if ( ! empty( $existing ) ) {
+				DB::table( 'eventkoi_rsvps' )->where( 'parent_id', $parent_id )->update( array( 'email' => null ) );
+			}
+			foreach ( $details as $index => $detail ) {
+				$address = strtolower( (string) ( $detail['email'] ?? '' ) );
+				if ( '' === $address ) {
+					continue;
+				}
+				if ( isset( $seen[ $address ] ) ) {
+					$details[ $index ]['email'] = '';
+				} else {
+					$seen[ $address ] = true;
+				}
+			}
+		}
+
 		for ( $i = 0; $i < $guests; $i++ ) {
 			$detail = is_array( $details ) ? ( $details[ $i ] ?? array() ) : null;
 			$row    = $existing[ $i ] ?? null;
@@ -743,6 +773,20 @@ class Rsvps {
 			return new \WP_Error( 'eventkoi_rsvp_guest_email', __( 'Please enter a valid email address.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
+		// One row per address within a party: refuse an address the host or
+		// another guest already uses rather than failing on the unique key.
+		if ( '' !== $mail ) {
+			$parent_id = absint( $row->parent_id );
+			$taken     = DB::table( 'eventkoi_rsvps' )
+				->where( 'email', $mail )
+				->where( 'id', $guest_id, '!=' )
+				->whereRaw( 'AND ( id = %d OR parent_id = %d )', $parent_id, $parent_id )
+				->count();
+			if ( $taken ) {
+				return new \WP_Error( 'eventkoi_rsvp_guest_email_taken', __( 'Someone on this RSVP already uses that email address.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+			}
+		}
+
 		$name = sanitize_text_field( (string) $name );
 		DB::table( 'eventkoi_rsvps' )->where( 'id', $guest_id )->update(
 			array(
@@ -782,7 +826,8 @@ class Rsvps {
 
 		global $wpdb;
 		$table = $wpdb->prefix . 'eventkoi_rsvps';
-		foreach ( self::resolve_parent_ids( array_column( array_map( 'get_object_vars', (array) $rows ), 'parent_id' ) ) as $parent_id ) {
+		$parent_ids = array_values( array_unique( array_filter( array_map( 'absint', array_column( array_map( 'get_object_vars', (array) $rows ), 'parent_id' ) ) ) ) );
+		foreach ( $parent_ids as $parent_id ) {
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 			$left = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE parent_id = %d", $parent_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 			DB::table( 'eventkoi_rsvps' )->where( 'id', $parent_id )->update(
@@ -792,7 +837,7 @@ class Rsvps {
 				)
 			);
 		}
-		self::recount_party_checkins( self::resolve_parent_ids( array_column( array_map( 'get_object_vars', (array) $rows ), 'parent_id' ) ) );
+		self::recount_party_checkins( $parent_ids );
 		self::bump_events_cache_version();
 
 		return count( $ids );

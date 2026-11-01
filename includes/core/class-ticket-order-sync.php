@@ -75,6 +75,16 @@ class Ticket_Order_Sync {
 			? Attendees::get_stashed_checkout_attendees( $hold_id )['attendees']
 			: array();
 
+		// A WooCommerce order can complete long after the hold stash expired,
+		// so fall back to the copy saved on the order itself.
+		if ( empty( $stashed_attendees ) && function_exists( 'wc_get_order' ) && preg_match( '/^wc_(\d+)/', (string) $order_id, $wc_match ) ) {
+			$wc_order = wc_get_order( (int) $wc_match[1] );
+			$wc_copy  = $wc_order ? $wc_order->get_meta( '_eventkoi_attendees' ) : null;
+			if ( is_array( $wc_copy ) && ! empty( $wc_copy ) ) {
+				$stashed_attendees = $wc_copy;
+			}
+		}
+
 		foreach ( $items as $item ) {
 			if ( ! is_array( $item ) ) {
 				continue;
