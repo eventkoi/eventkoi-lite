@@ -47,6 +47,7 @@ import { __, _n, sprintf } from "@wordpress/i18n";
 import {
   ArrowDownToLine,
   ChevronDown,
+  ChevronRight,
   CircleCheck,
   CircleDotDashed,
   CircleMinus,
@@ -257,12 +258,151 @@ function BulkRsvpActions({ table, onComplete }) {
   );
 }
 
+function EditGuestDialog({ guest, onSaved, children }) {
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setName(guest?.name || "");
+    setEmail(guest?.email || "");
+  }, [open, guest]);
+
+  const handleSave = async () => {
+    if (!guest?.id) return;
+    setSaving(true);
+    try {
+      await apiRequest({
+        path: `${eventkoi_params.api}/rsvps/bulk`,
+        method: "POST",
+        data: { ids: [guest.id], action: "guest_update", name: name.trim(), email: email.trim() },
+        headers: { "EVENTKOI-API-KEY": eventkoi_params.api_key },
+      });
+      showToast({ message: __("Guest updated.", "eventkoi-lite") });
+      setOpen(false);
+      onSaved?.();
+    } catch (error) {
+      console.error("Guest update failed:", error);
+      showToastError(error?.message || __("Failed to update guest.", "eventkoi-lite"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>{children}</DialogTrigger>
+      <DialogContent className="sm:max-w-[420px]">
+        <DialogHeader>
+          <DialogTitle>{__("Edit guest", "eventkoi-lite")}</DialogTitle>
+        </DialogHeader>
+        <div className="grid gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor={`edit-guest-name-${guest?.id}`}>{__("Name", "eventkoi-lite")}</Label>
+            <Input
+              id={`edit-guest-name-${guest?.id}`}
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor={`edit-guest-email-${guest?.id}`}>{__("Email", "eventkoi-lite")}</Label>
+            <Input
+              id={`edit-guest-email-${guest?.id}`}
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setOpen(false)} disabled={saving}>
+              {__("Cancel", "eventkoi-lite")}
+            </Button>
+            <Button onClick={handleSave} disabled={saving}>
+              {saving ? __("Saving...", "eventkoi-lite") : __("Save", "eventkoi-lite")}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function RowGuestActions({ guest, onComplete }) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const removeGuest = async () => {
+    try {
+      await apiRequest({
+        path: `${eventkoi_params.api}/rsvps/bulk`,
+        method: "POST",
+        data: { ids: [guest.id], action: "guest_remove" },
+        headers: { "EVENTKOI-API-KEY": eventkoi_params.api_key },
+      });
+      showToast({ message: __("Guest removed.", "eventkoi-lite") });
+      onComplete?.();
+    } catch (error) {
+      console.error("Guest remove failed:", error);
+      showToastError(__("Failed to remove guest.", "eventkoi-lite"));
+    }
+  };
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            aria-label={__("Guest actions", "eventkoi-lite")}
+          >
+            <EllipsisVertical className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-[180px]">
+          <EditGuestDialog guest={guest} onSaved={onComplete}>
+            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+              {__("Edit guest", "eventkoi-lite")}
+            </DropdownMenuItem>
+          </EditGuestDialog>
+          <DropdownMenuItem
+            onClick={() => setConfirmOpen(true)}
+            className="text-destructive focus:text-destructive"
+          >
+            {__("Remove guest", "eventkoi-lite")}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <ConfirmDialog
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        icon="delete"
+        title={__("Remove guest?", "eventkoi-lite")}
+        description={__("The guest is taken off this RSVP and the guest count goes down by one.", "eventkoi-lite")}
+        confirmLabel={__("Remove", "eventkoi-lite")}
+        onConfirm={() => {
+          removeGuest();
+          setConfirmOpen(false);
+        }}
+      />
+    </>
+  );
+}
+
 function RowRsvpActions({
   rsvpId,
   checkinToken,
   canCopyToken,
   canResend,
   onComplete,
+  partySize = 1,
+  partyCheckedIn = 0,
+  canCheckInParty = false,
+  onPartyCheckin,
 }) {
   const [confirmOpen, setConfirmOpen] = useState(false);
 
@@ -370,7 +510,19 @@ function RowRsvpActions({
             <EllipsisVertical className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-[180px]">
+        <DropdownMenuContent align="end" className="w-[200px]">
+          {partySize > 1 ? (
+            <DropdownMenuItem
+              onClick={() =>
+                onPartyCheckin?.(partyCheckedIn >= partySize ? "check_in" : "checked_in")
+              }
+              disabled={!canCheckInParty}
+            >
+              {partyCheckedIn >= partySize
+                ? __("Undo party check-in", "eventkoi-lite")
+                : __("Check in whole party", "eventkoi-lite")}
+            </DropdownMenuItem>
+          ) : null}
           <DropdownMenuItem
             onClick={() => runAction("resend_email")}
             disabled={!canResend}
@@ -1440,6 +1592,46 @@ export function EventEditAttendees() {
     [],
   );
 
+  const updatePartyCheckin = useCallback(
+    async (rsvpId, status) => {
+      if (!rsvpId || !status) return;
+      try {
+        await apiRequest({
+          path: `${eventkoi_params.api}/rsvps/bulk`,
+          method: "POST",
+          data: { ids: [rsvpId], action: "checkin_party", status },
+          headers: { "EVENTKOI-API-KEY": eventkoi_params.api_key },
+        });
+        showToast({ message: __("Check-in updated.", "eventkoi-lite") });
+        fetchResults();
+      } catch (error) {
+        console.error("Party check-in error:", error);
+        showToastError(__("Failed to update check-in.", "eventkoi-lite"));
+      }
+    },
+    [fetchResults],
+  );
+
+  const updateGuestCheckin = useCallback(
+    async (guestId, status) => {
+      if (!guestId || !status) return;
+      try {
+        await apiRequest({
+          path: `${eventkoi_params.api}/rsvps/bulk`,
+          method: "POST",
+          data: { ids: [guestId], action: "checkin", status },
+          headers: { "EVENTKOI-API-KEY": eventkoi_params.api_key },
+        });
+        showToast({ message: __("Check-in updated.", "eventkoi-lite") });
+        fetchResults();
+      } catch (error) {
+        console.error("Guest check-in error:", error);
+        showToastError(__("Failed to update check-in.", "eventkoi-lite"));
+      }
+    },
+    [fetchResults],
+  );
+
   const replaceAttendeeRow = useCallback((attendee) => {
     if (!attendee?.id) return;
     setData((prev) =>
@@ -1486,34 +1678,66 @@ export function EventEditAttendees() {
             />
           </div>
         ),
-        cell: ({ row }) => (
-          <div className="flex items-center justify-center min-h-6">
-            <Checkbox
-              checked={row.getIsSelected()}
-              onCheckedChange={(value) => row.toggleSelected(!!value)}
-              aria-label={__("Select row", "eventkoi-lite")}
-            />
-          </div>
-        ),
+        cell: ({ row }) =>
+          row.original.is_guest ? null : (
+            <div className="flex items-center justify-center min-h-6">
+              <Checkbox
+                checked={row.getIsSelected()}
+                onCheckedChange={(value) => row.toggleSelected(!!value)}
+                aria-label={__("Select row", "eventkoi-lite")}
+              />
+            </div>
+          ),
         enableSorting: false,
         enableHiding: false,
       },
       {
         accessorKey: "name",
         header: ({ column }) => <SortButton title={__("Name", "eventkoi-lite")} column={column} />,
-        cell: ({ row }) => (
-          <div className="min-w-0">
-            <div className="text-foreground truncate">
-              {row.original.name || "—"}
+        cell: ({ row }) => {
+          const isGuest = !!row.original.is_guest;
+          const guestCount = Array.isArray(row.original.guest_rows)
+            ? row.original.guest_rows.length
+            : 0;
+          return (
+            <div className={cn("flex min-w-0 items-start gap-2", isGuest && "pl-7")}>
+              {!isGuest && guestCount > 0 ? (
+                <button
+                  type="button"
+                  onClick={row.getToggleExpandedHandler()}
+                  aria-label={row.getIsExpanded() ? __("Hide guests", "eventkoi-lite") : __("Show guests", "eventkoi-lite")}
+                  className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border-0 bg-transparent p-0 text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  {row.getIsExpanded() ? (
+                    <ChevronDown className="h-4 w-4" />
+                  ) : (
+                    <ChevronRight className="h-4 w-4" />
+                  )}
+                </button>
+              ) : null}
+              <div className="min-w-0">
+                <div className="text-foreground truncate">
+                  {row.original.name || (isGuest ? __("Guest", "eventkoi-lite") : "—")}
+                </div>
+                <div
+                  className="text-xs text-muted-foreground truncate"
+                  title={row.original.email || ""}
+                >
+                  {row.original.email || (isGuest ? __("No email", "eventkoi-lite") : "—")}
+                </div>
+                {!isGuest && guestCount > 0 ? (
+                  <div className="text-xs text-muted-foreground">
+                    {sprintf(
+                      /* translators: %d: number of guests */
+                      _n("%d guest", "%d guests", guestCount, "eventkoi-lite"),
+                      guestCount,
+                    )}
+                  </div>
+                ) : null}
+              </div>
             </div>
-            <div
-              className="text-xs text-muted-foreground truncate"
-              title={row.original.email || ""}
-            >
-              {row.original.email || "—"}
-            </div>
-          </div>
-        ),
+          );
+        },
         filterFn: multiColumnSearch,
         sortingFn: "alphanumeric",
       },
@@ -1521,6 +1745,24 @@ export function EventEditAttendees() {
         accessorKey: "checked_in",
         header: () => <div className="text-sm font-normal">{__("Checked-in", "eventkoi-lite")}</div>,
         cell: ({ row }) => {
+          if (row.original.is_guest) {
+            const guestStatus = (row.original.checkin_status || "").toLowerCase();
+            const guestIn = guestStatus === "checked_in";
+            const canToggle = (row.original.status || "").toLowerCase() === "going";
+            return (
+              <Button
+                variant="outline"
+                className={cn(
+                  "h-8 px-3 font-medium",
+                  guestIn && "bg-[#0D5342] text-white hover:bg-[#0D5342]/90 hover:text-white border-[#0D5342]",
+                )}
+                onClick={() => updateGuestCheckin(row.original.id, guestIn ? "check_in" : "checked_in")}
+                disabled={!canToggle}
+              >
+                {guestIn ? __("Checked in", "eventkoi-lite") : __("Check in", "eventkoi-lite")}
+              </Button>
+            );
+          }
           const rsvpStatus = (row.original.status || "").toLowerCase();
           const rawStatus = (row.original.checkin_status || "").toLowerCase();
           const hasCheckedIn = Boolean(row.original.checked_in);
@@ -1545,14 +1787,32 @@ export function EventEditAttendees() {
               ? "bg-[#FBEFEE] text-[#52140F] hover:bg-[#FBEFEE]/80 hover:text-[#52140F] border-[#F5D6D3] hover:border-[#EBC7C3]"
               : "";
           const controlsDisabled = rsvpStatus !== "going";
+          const partySize = 1 + (Array.isArray(row.original.guest_rows) ? row.original.guest_rows.length : 0);
+          const partyCheckedIn = Number(row.original.checked_in_count || 0);
+          const hasParty = partySize > 1;
+          // With guests, the main button checks the whole party in or out;
+          // the guest rows below handle one person at a time.
+          const onMainClick = () =>
+            hasParty
+              ? updatePartyCheckin(row.original.id, nextStatus === "checked_in" ? "checked_in" : "check_in")
+              : updateRowCheckin(row.original.id, nextStatus);
 
           return (
             <div className="flex items-center gap-2">
-              <CheckinCountInput
-                row={row.original}
-                disabled={controlsDisabled}
-                onSave={(count) => updateRowCheckinCount(row.original.id, count)}
-              />
+              {hasParty ? (
+                <span
+                  className="inline-flex h-9 min-w-[3.25rem] items-center justify-center rounded-md border border-input px-2 text-sm tabular-nums text-muted-foreground"
+                  title={__("Checked in / party size", "eventkoi-lite")}
+                >
+                  {partyCheckedIn}/{partySize}
+                </span>
+              ) : (
+                <CheckinCountInput
+                  row={row.original}
+                  disabled={controlsDisabled}
+                  onSave={(count) => updateRowCheckinCount(row.original.id, count)}
+                />
+              )}
               <div className="flex items-center gap-[1px]">
               <Button
                 variant="outline"
@@ -1561,7 +1821,7 @@ export function EventEditAttendees() {
                   checkedInClass,
                   deniedClass,
                 )}
-                onClick={() => updateRowCheckin(row.original.id, nextStatus)}
+                onClick={onMainClick}
                 disabled={controlsDisabled}
               >
                 {buttonLabel}
@@ -1584,7 +1844,9 @@ export function EventEditAttendees() {
                 <DropdownMenuContent align="end" className="w-[140px]">
                   <DropdownMenuItem
                     onClick={() =>
-                      updateRowCheckin(row.original.id, "check_in")
+                      hasParty
+                        ? updatePartyCheckin(row.original.id, "check_in")
+                        : updateRowCheckin(row.original.id, "check_in")
                     }
                     disabled={status === "check_in"}
                   >
@@ -1592,7 +1854,9 @@ export function EventEditAttendees() {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() =>
-                      updateRowCheckin(row.original.id, "checked_in")
+                      hasParty
+                        ? updatePartyCheckin(row.original.id, "checked_in")
+                        : updateRowCheckin(row.original.id, "checked_in")
                     }
                     disabled={status === "checked_in"}
                   >
@@ -1631,6 +1895,17 @@ export function EventEditAttendees() {
         header: ({ column }) => <SortButton title={__("Status", "eventkoi-lite")} column={column} />,
         cell: ({ row }) => {
           const status = (row.original.status || "").toLowerCase();
+          if (row.original.is_guest) {
+            return (
+              <div className="text-sm text-muted-foreground">
+                {sprintf(
+                  /* translators: %s: name of the person who RSVPd */
+                  __("Guest of %s", "eventkoi-lite"),
+                  row.original.guest_of || "",
+                )}
+              </div>
+            );
+          }
           const statusIcons = {
             going: CircleCheck,
             maybe: CircleDotDashed,
@@ -1711,7 +1986,9 @@ export function EventEditAttendees() {
         accessorKey: "guests",
         header: ({ column }) => <SortButton title={__("Guests", "eventkoi-lite")} column={column} />,
         cell: ({ row }) => (
-          <div className="text-foreground">{row.original.guests ?? 0}</div>
+          <div className="text-foreground">
+            {row.original.is_guest ? "" : row.original.guests ?? 0}
+          </div>
         ),
         sortingFn: "alphanumeric",
       },
@@ -1722,6 +1999,7 @@ export function EventEditAttendees() {
           <SortButton title={__("RSVP date", "eventkoi-lite")} column={column} />
         ),
         cell: ({ row }) => {
+          if (row.original.is_guest) return null;
           const createdRaw = row.original.created;
           const created = createdRaw
             ? new Date(
@@ -1743,30 +2021,39 @@ export function EventEditAttendees() {
       {
         id: "actions",
         header: "",
-        cell: ({ row }) => (
-          <div className="flex justify-end">
-            <RowRsvpActions
-              rsvpId={row.original.id}
-              checkinToken={row.original.checkin_token}
-              canCopyToken={
-                (row.original.status || "").toLowerCase() === "going"
-              }
-              canResend={
-                (row.original.status || "").toLowerCase() === "going" &&
-                (settings?.rsvp_email_enabled === true ||
-                  settings?.rsvp_email_enabled === "1" ||
-                  settings?.rsvp_email_enabled === 1 ||
-                  typeof settings?.rsvp_email_enabled === "undefined")
-              }
-              onComplete={fetchResults}
-            />
-          </div>
-        ),
+        cell: ({ row }) =>
+          row.original.is_guest ? (
+            <div className="flex justify-end">
+              <RowGuestActions guest={row.original} onComplete={fetchResults} />
+            </div>
+          ) : (
+            <div className="flex justify-end">
+              <RowRsvpActions
+                rsvpId={row.original.id}
+                checkinToken={row.original.checkin_token}
+                canCopyToken={
+                  (row.original.status || "").toLowerCase() === "going"
+                }
+                canResend={
+                  (row.original.status || "").toLowerCase() === "going" &&
+                  (settings?.rsvp_email_enabled === true ||
+                    settings?.rsvp_email_enabled === "1" ||
+                    settings?.rsvp_email_enabled === 1 ||
+                    typeof settings?.rsvp_email_enabled === "undefined")
+                }
+                partySize={1 + (Array.isArray(row.original.guest_rows) ? row.original.guest_rows.length : 0)}
+                partyCheckedIn={Number(row.original.checked_in_count || 0)}
+                canCheckInParty={(row.original.status || "").toLowerCase() === "going"}
+                onPartyCheckin={(status) => updatePartyCheckin(row.original.id, status)}
+                onComplete={fetchResults}
+              />
+            </div>
+          ),
         enableSorting: false,
         enableHiding: false,
       },
     ],
-    [fetchResults, updateRowCheckin, updateRowCheckinCount, updateRowStatus],
+    [fetchResults, updateRowCheckin, updateRowCheckinCount, updateRowStatus, updatePartyCheckin, updateGuestCheckin],
   );
 
   const base = event?.id ? `events/${event.id}/attendees` : "events";
@@ -2216,6 +2503,19 @@ export function EventEditAttendees() {
       <DataTable
         data={filteredData}
         columns={columns}
+        getSubRows={(row) =>
+          row.is_guest
+            ? undefined
+            : (row.guest_rows || []).map((guest) => ({
+                ...guest,
+                is_guest: true,
+                guest_of: row.name || "",
+                guests: 0,
+                created: row.created,
+              }))
+        }
+        rowClassName={(row) => (row.original.is_guest ? "bg-muted/30" : "")}
+        enableRowSelection={(row) => !row.original.is_guest}
         empty={__("No RSVPs are found.", "eventkoi-lite")}
         base={base}
         tableLayout="fixed"

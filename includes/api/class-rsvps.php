@@ -116,6 +116,11 @@ class Rsvps {
 			'fields'      => $fields,
 		);
 
+		if ( isset( $data['guest_details'] ) && is_array( $data['guest_details'] ) ) {
+			$payload['guest_details'] = $data['guest_details'];
+		}
+		$payload['email_guests'] = rest_sanitize_boolean( $data['email_guests'] ?? false );
+
 		// When the built-in Name input is replaced by custom fields (e.g. a
 		// first/last name split), compose the stored name from those values.
 		if ( empty( $payload['name'] ) && $fields ) {
@@ -208,6 +213,9 @@ class Rsvps {
 		}
 
 		$items = Core_Rsvps::get_list( $event_id, $instance_ts );
+
+		$items = self::group_guest_rows( (array) $items );
+
 		if ( ! empty( $items ) ) {
 			foreach ( $items as $item ) {
 				$email = isset( $item->email ) ? sanitize_email( $item->email ) : '';
@@ -219,6 +227,50 @@ class Rsvps {
 		}
 
 		return rest_ensure_response( $items );
+	}
+
+	/**
+	 * Keep only RSVP owner rows, attaching each one's guests as `guest_rows`.
+	 *
+	 * @param array $rows RSVP table rows, owners and guests mixed.
+	 * @return array Owner rows.
+	 */
+	private static function group_guest_rows( array $rows ) {
+		$owners = array();
+		$guests = array();
+		foreach ( $rows as $row ) {
+			if ( absint( $row->parent_id ?? 0 ) > 0 ) {
+				$guests[ absint( $row->parent_id ) ][] = self::format_guest_row( $row );
+			} else {
+				$owners[] = $row;
+			}
+		}
+		foreach ( $owners as $owner ) {
+			$owner->guest_rows = $guests[ absint( $owner->id ) ] ?? array();
+		}
+
+		return $owners;
+	}
+
+	/**
+	 * The public shape of a guest row.
+	 *
+	 * @param object $row Guest row.
+	 * @return array
+	 */
+	private static function format_guest_row( $row ) {
+		$checked_in = (string) ( $row->checked_in ?? '' );
+
+		return array(
+			'id'             => absint( $row->id ),
+			'parent_id'      => absint( $row->parent_id ),
+			'name'           => (string) ( $row->name ?? '' ),
+			'email'          => (string) ( $row->email ?? '' ),
+			'status'         => sanitize_key( (string) ( $row->status ?? '' ) ),
+			'checkin_token'  => (string) ( $row->checkin_token ?? '' ),
+			'checkin_status' => sanitize_key( (string) ( $row->checkin_status ?? 'none' ) ),
+			'checked_in'     => ( '' !== $checked_in && '0000-00-00 00:00:00' !== $checked_in ) ? $checked_in : null,
+		);
 	}
 
 	/**
@@ -254,6 +306,13 @@ class Rsvps {
 			$result        = Core_Rsvps::update_checkin_count( $ids, $checkin_count );
 		} elseif ( 'resend_email' === $action ) {
 			$result = Core_Rsvps::resend_emails( $ids );
+		} elseif ( 'checkin_party' === $action ) {
+			$checkin_status = sanitize_key( $data['status'] ?? '' );
+			$result         = Core_Rsvps::update_party_checkin( $ids, $checkin_status );
+		} elseif ( 'guest_update' === $action ) {
+			$result = Core_Rsvps::update_guest( reset( $ids ), (string) ( $data['name'] ?? '' ), (string) ( $data['email'] ?? '' ) );
+		} elseif ( 'guest_remove' === $action ) {
+			$result = Core_Rsvps::remove_guests( $ids );
 		} else {
 			return new WP_Error( 'eventkoi_rsvp_invalid_action', __( 'Invalid action.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
@@ -355,31 +414,62 @@ class Rsvps {
 
 		$custom_fields = Core_Rsvps::get_custom_fields( $event_id );
 
+		// One line per person: the RSVP, then each of its guests.
+		$owners_by_id     = array();
+		$guests_by_parent = array();
 		foreach ( $items as $item ) {
-			$is_going = strtolower( $item->status ?? '' ) === 'going';
-			$created = isset( $item->created ) ? (string) $item->created : '';
-			$created_ts = $created ? strtotime( $created . ' UTC' ) : 0;
+			if ( absint( $item->parent_id ?? 0 ) < 1 ) {
+				$owners_by_id[ absint( $item->id ) ] = $item;
+			} else {
+				$guests_by_parent[ absint( $item->parent_id ) ][] = $item;
+			}
+		}
+		$ordered = array();
+		foreach ( $owners_by_id as $owner_id => $owner ) {
+			$ordered[] = $owner;
+			foreach ( $guests_by_parent[ $owner_id ] ?? array() as $guest ) {
+				$ordered[] = $guest;
+			}
+			unset( $guests_by_parent[ $owner_id ] );
+		}
+		foreach ( $guests_by_parent as $orphans ) {
+			foreach ( $orphans as $guest ) {
+				$ordered[] = $guest;
+			}
+		}
+
+		foreach ( $ordered as $item ) {
+			$is_guest      = absint( $item->parent_id ?? 0 ) > 0;
+			$owner         = $is_guest ? ( $owners_by_id[ absint( $item->parent_id ) ] ?? null ) : $item;
+			$is_going      = strtolower( $item->status ?? '' ) === 'going';
+			$created       = isset( $item->created ) ? (string) $item->created : '';
+			$created_ts    = $created ? strtotime( $created . ' UTC' ) : 0;
 			$created_label = $created_ts
 				? wp_date( $datetime_format, $created_ts, wp_timezone() )
 				: '';
+			$checkin_state = sanitize_key( (string) ( $item->checkin_status ?? '' ) );
 
 			$row = array(
 				'name'         => $item->name ?? '',
 				'email'        => $item->email ?? '',
+				'type'         => $is_guest ? __( 'Guest', 'eventkoi-lite' ) : __( 'RSVP', 'eventkoi-lite' ),
+				'guest_of'     => $is_guest ? (string) ( $owner->name ?? '' ) : '',
+				'status'       => (string) ( $item->status ?? '' ),
 				'checkin_code' => $is_going ? ( $item->checkin_token ?? '' ) : '',
-				'guests'       => isset( $item->guests ) ? absint( $item->guests ) : 0,
+				'checked_in'   => 'checked_in' === $checkin_state ? __( 'Yes', 'eventkoi-lite' ) : __( 'No', 'eventkoi-lite' ),
+				'guests'       => $is_guest ? '' : ( isset( $item->guests ) ? absint( $item->guests ) : 0 ),
 				'rsvp_date'    => $created_label,
 			);
 
-			$item_fields = Core_Rsvps::get_row_fields( $item );
+			$item_fields = $owner ? Core_Rsvps::get_row_fields( $owner ) : array();
 			foreach ( $custom_fields as $field ) {
-				$row[ 'field_' . $field['key'] ] = $item_fields[ $field['key'] ] ?? '';
+				$row[ 'field_' . $field['key'] ] = $is_guest ? '' : ( $item_fields[ $field['key'] ] ?? '' );
 			}
 
 			$rows[] = $row;
 		}
 
-		$header = array( 'Name', 'Email', 'Check-in code', 'Guests', 'RSVP date' );
+		$header = array( 'Name', 'Email', 'Type', 'Guest of', 'Status', 'Check-in code', 'Checked in', 'Guests', 'RSVP date' );
 		foreach ( $custom_fields as $field ) {
 			$header[] = $field['label'];
 		}
@@ -492,10 +582,18 @@ class Rsvps {
 		$standard_type       = Event::get_standard_type();
 		$standard_event_wide = ( 'standard' === $date_type && 'selected' !== $standard_type );
 
+		if ( $token ) {
+			$token_rsvp = Core_Rsvps::get_by_token( $token );
+			// A guest's code identifies the guest, not the RSVP: it never opens the edit form.
+			if ( ! empty( $token_rsvp ) && absint( $token_rsvp->parent_id ?? 0 ) > 0 ) {
+				$token_rsvp = null;
+				$token      = '';
+			}
+		}
+
 		if ( ! $instance_ts ) {
 			if ( 'recurring' === $date_type ) {
 				if ( $token ) {
-					$token_rsvp = Core_Rsvps::get_by_token( $token );
 					if ( ! empty( $token_rsvp ) && (int) $token_rsvp->event_id === $event_id ) {
 						$instance_ts = absint( $token_rsvp->instance_ts );
 					}
@@ -528,26 +626,12 @@ class Rsvps {
 			$token_rsvp = isset( $token_rsvp ) ? $token_rsvp : Core_Rsvps::get_by_token( $token );
 			$token_matches_instance = ! empty( $token_rsvp ) && (int) $token_rsvp->event_id === $event_id && ( $standard_event_wide || (int) $token_rsvp->instance_ts === $instance_ts );
 			if ( $token_matches_instance ) {
-				$rsvp_data = array(
-					'status'        => sanitize_key( $token_rsvp->status ?? '' ),
-					'guests'        => absint( $token_rsvp->guests ?? 0 ),
-					'checkin_token' => sanitize_text_field( $token_rsvp->checkin_token ?? '' ),
-					'name'          => sanitize_text_field( $token_rsvp->name ?? '' ),
-					'email'         => sanitize_email( $token_rsvp->email ?? '' ),
-					'fields'        => Core_Rsvps::get_row_fields( $token_rsvp ),
-				);
+				$rsvp_data = self::format_own_rsvp( $token_rsvp );
 			}
 		} elseif ( $user_id ) {
 			$identity_rsvp = Core_Rsvps::get_by_identity( $event_id, $instance_ts, $user_id, $user_email );
 			if ( ! empty( $identity_rsvp ) ) {
-				$rsvp_data = array(
-					'status'        => sanitize_key( $identity_rsvp->status ?? '' ),
-					'guests'        => absint( $identity_rsvp->guests ?? 0 ),
-					'checkin_token' => sanitize_text_field( $identity_rsvp->checkin_token ?? '' ),
-					'name'          => sanitize_text_field( $identity_rsvp->name ?? '' ),
-					'email'         => sanitize_email( $identity_rsvp->email ?? '' ),
-					'fields'        => Core_Rsvps::get_row_fields( $identity_rsvp ),
-				);
+				$rsvp_data = self::format_own_rsvp( $identity_rsvp );
 			}
 		}
 
@@ -570,6 +654,7 @@ class Rsvps {
 				'show_remaining'  => Event::get_rsvp_show_remaining(),
 				'allow_guests'    => Event::get_rsvp_allow_guests(),
 				'max_guests'      => Event::get_rsvp_max_guests(),
+				'guest_details'   => Event::get_rsvp_guest_details(),
 				'allow_edit'      => Event::get_rsvp_allow_edit(),
 				'rsvp_enabled'    => Event::get_rsvp_enabled(),
 				'sale_start'      => $sale_start,
@@ -577,6 +662,34 @@ class Rsvps {
 				'is_open'         => $is_open,
 				'event_ended'     => $event_ended,
 			)
+		);
+	}
+
+	/**
+	 * The attendee's own RSVP, as the dialog prefills it.
+	 *
+	 * @param object $row RSVP owner row.
+	 * @return array
+	 */
+	private static function format_own_rsvp( $row ) {
+		$meta          = json_decode( (string) ( $row->meta ?? '' ), true );
+		$guest_details = array();
+		foreach ( Core_Rsvps::get_guest_rows( absint( $row->id ) ) as $guest ) {
+			$guest_details[] = array(
+				'name'  => (string) ( $guest->name ?? '' ),
+				'email' => (string) ( $guest->email ?? '' ),
+			);
+		}
+
+		return array(
+			'status'        => sanitize_key( $row->status ?? '' ),
+			'guests'        => absint( $row->guests ?? 0 ),
+			'checkin_token' => sanitize_text_field( $row->checkin_token ?? '' ),
+			'name'          => sanitize_text_field( $row->name ?? '' ),
+			'email'         => sanitize_email( $row->email ?? '' ),
+			'fields'        => Core_Rsvps::get_row_fields( $row ),
+			'guest_details' => $guest_details,
+			'email_guests'  => is_array( $meta ) && ! empty( $meta['email_guests'] ),
 		);
 	}
 
@@ -705,11 +818,21 @@ class Rsvps {
 			$response['event']['timeline'] = true;
 		}
 
+		$is_guest = absint( $record->parent_id ?? 0 ) > 0;
+		if ( $is_guest ) {
+			$host                         = \EKLIB\StellarWP\DB\DB::table( 'eventkoi_rsvps' )->where( 'id', absint( $record->parent_id ) )->get();
+			$response['rsvp']['is_guest'] = true;
+			$response['rsvp']['guest_of'] = sanitize_text_field( (string) ( $host->name ?? '' ) );
+		} else {
+			$response['rsvp']['guest_rows'] = array_map( array( __CLASS__, 'format_guest_row' ), Core_Rsvps::get_guest_rows( absint( $record->id ) ) );
+		}
+
 		$response['summary']        = $standard_event_wide && method_exists( Core_Rsvps::class, 'get_summary_for_event' ) ? Core_Rsvps::get_summary_for_event( $event_id ) : Core_Rsvps::get_summary( $event_id, $display_instance_ts );
 		$response['capacity']       = Event::get_rsvp_capacity();
 		$response['allow_guests']   = Event::get_rsvp_allow_guests();
 		$response['max_guests']     = Event::get_rsvp_max_guests();
-		$response['allow_edit']     = Event::get_rsvp_allow_edit();
+		$response['guest_details']  = Event::get_rsvp_guest_details();
+		$response['allow_edit']     = Event::get_rsvp_allow_edit() && ! $is_guest;
 		$response['rsvp_enabled']   = Event::get_rsvp_enabled();
 
 		$sale_start                 = (string) Event::get_rsvp_sale_start( $display_instance_ts );

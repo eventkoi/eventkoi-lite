@@ -2,6 +2,7 @@ import { __ } from "@wordpress/i18n";
 import { EventDatePackageSetting } from "@/components/event/event-date-package-setting";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { TimeInput } from "@/components/time-input";
 import { FloatingDatePicker } from "@/components/ui/FloatingDatePicker";
@@ -216,6 +217,9 @@ export function EventRsvpSettings({ event, setEvent, className }) {
       ? event.rsvp_show_remaining
       : true;
   const allowGuests = !!event?.rsvp_allow_guests;
+  const guestDetails = ["optional", "required"].includes(event?.rsvp_guest_details)
+    ? event.rsvp_guest_details
+    : "off";
   const allowEdit =
     typeof event?.rsvp_allow_edit === "boolean" ? event.rsvp_allow_edit : true;
   const autoAccount = !!event?.rsvp_auto_account;
@@ -333,6 +337,55 @@ export function EventRsvpSettings({ event, setEvent, className }) {
                   }))
                 }
               />
+            </div>
+          )}
+
+          {allowGuests && (
+            <div className="flex flex-col gap-4">
+              <div className="grid gap-1">
+                <Label className="font-medium">{__("Guest names", "eventkoi-lite")}</Label>
+                <p className="text-sm text-muted-foreground">
+                  {__(
+                    "Ask who each guest is. Names show on the attendee list, exports, check-in and the confirmation email.",
+                    "eventkoi-lite",
+                  )}
+                </p>
+              </div>
+              <RadioGroup
+                value={guestDetails}
+                onValueChange={(value) =>
+                  setEvent((prev) => ({ ...prev, rsvp_guest_details: value }))
+                }
+                className="grid gap-4"
+              >
+                <div className="flex items-start space-x-3">
+                  <RadioGroupItem value="off" id="rsvp-guest-details-off" className="mt-1" />
+                  <Label htmlFor="rsvp-guest-details-off" className="cursor-pointer flex-1">
+                    <div className="font-medium">{__("Off", "eventkoi-lite")}</div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {__("Only the number of guests is collected.", "eventkoi-lite")}
+                    </div>
+                  </Label>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <RadioGroupItem value="optional" id="rsvp-guest-details-optional" className="mt-1" />
+                  <Label htmlFor="rsvp-guest-details-optional" className="cursor-pointer flex-1">
+                    <div className="font-medium">{__("Optional", "eventkoi-lite")}</div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {__("The RSVP form shows a name and email field per guest. They can stay empty.", "eventkoi-lite")}
+                    </div>
+                  </Label>
+                </div>
+                <div className="flex items-start space-x-3">
+                  <RadioGroupItem value="required" id="rsvp-guest-details-required" className="mt-1" />
+                  <Label htmlFor="rsvp-guest-details-required" className="cursor-pointer flex-1">
+                    <div className="font-medium">{__("Required", "eventkoi-lite")}</div>
+                    <div className="text-sm text-muted-foreground mt-1">
+                      {__("Every guest needs a name. Emails stay optional.", "eventkoi-lite")}
+                    </div>
+                  </Label>
+                </div>
+              </RadioGroup>
             </div>
           )}
 

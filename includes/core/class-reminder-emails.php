@@ -244,13 +244,23 @@ class Reminder_Emails {
 
 		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 		if ( self::table_exists( $rsvps_table ) ) {
+			// Guest rows only get a reminder when the person who RSVPd asked
+			// for each guest to be emailed.
+			$guest_join   = '';
+			$guest_filter = '';
+			if ( self::column_exists( $rsvps_table, 'parent_id' ) ) {
+				$guest_join   = "LEFT JOIN {$rsvps_table} h ON h.id = r.parent_id";
+				$guest_filter = "AND ( r.parent_id = 0 OR h.meta LIKE '%\"email_guests\":true%' )";
+			}
 			$rsvps = $wpdb->get_results(
 				$wpdb->prepare(
 					"SELECT r.event_id, r.instance_ts, r.name, r.email, r.checkin_token, r.created
 					   FROM {$rsvps_table} r
 					   INNER JOIN {$wpdb->posts} p ON p.ID = r.event_id AND p.post_status = 'publish'
 					   LEFT JOIN {$wpdb->postmeta} pm ON pm.post_id = r.event_id AND pm.meta_key = 'start_timestamp'
+					   {$guest_join}
 					  WHERE r.status = 'going'
+					    {$guest_filter}
 					    AND ( r.instance_ts BETWEEN %d AND %d OR CAST( pm.meta_value AS UNSIGNED ) BETWEEN %d AND %d )",
 					$from - $slack,
 					$to + $slack,

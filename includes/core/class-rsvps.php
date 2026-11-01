@@ -164,6 +164,11 @@ class Rsvps {
 	}
 
 	/**
+	 * Most guest rows one RSVP can carry, whatever the event's max guests says.
+	 */
+	const MAX_GUEST_ROWS = 50;
+
+	/**
 	 * Create or update an RSVP.
 	 *
 	 * @param array $args RSVP data.
@@ -178,7 +183,16 @@ class Rsvps {
 		$guests      = isset( $args['guests'] ) ? absint( $args['guests'] ) : 0;
 		$user_id     = isset( $args['user_id'] ) ? absint( $args['user_id'] ) : 0;
 		$fields      = isset( $args['fields'] ) && is_array( $args['fields'] ) ? $args['fields'] : array();
-		$meta_json   = $fields ? wp_json_encode( array( 'fields' => $fields ) ) : null;
+		$guest_input = isset( $args['guest_details'] ) && is_array( $args['guest_details'] ) ? $args['guest_details'] : null;
+		$email_each  = ! empty( $args['email_guests'] );
+		$meta        = array();
+		if ( $fields ) {
+			$meta['fields'] = $fields;
+		}
+		if ( $email_each ) {
+			$meta['email_guests'] = true;
+		}
+		$meta_json = $meta ? wp_json_encode( $meta ) : null;
 
 		if ( ! $event_id || ! $email || ! $name ) {
 			return new \WP_Error( 'eventkoi_rsvp_missing_fields', __( 'Missing RSVP fields.', 'eventkoi-lite' ), array( 'status' => 400 ) );
@@ -252,6 +266,15 @@ class Rsvps {
 		} elseif ( $max_guests > 0 ) {
 			$guests = min( $guests, $max_guests );
 		}
+		// Every guest is a row now, so an "unlimited" event still gets a ceiling.
+		$guests = min( $guests, self::MAX_GUEST_ROWS );
+
+		// Who the guests are. Only the dialog sends this list; older clients
+		// just send a number and get unnamed guest rows.
+		$guest_details = self::sanitize_guest_details( $guest_input, $guests, Event::get_rsvp_guest_details() );
+		if ( is_wp_error( $guest_details ) ) {
+			return $guest_details;
+		}
 
 		$auto_account = Event::get_rsvp_auto_account();
 		if ( ! $user_id && 'going' === $status && $auto_account ) {
@@ -263,7 +286,8 @@ class Rsvps {
 
 		$existing_query = DB::table( 'eventkoi_rsvps' )
 			->where( 'event_id', $event_id )
-			->where( 'instance_ts', $instance_ts );
+			->where( 'instance_ts', $instance_ts )
+			->where( 'parent_id', 0 );
 
 		if ( $user_id ) {
 			$existing_query->where( 'user_id', $user_id );
@@ -278,6 +302,7 @@ class Rsvps {
 				->where( 'event_id', $event_id )
 				->where( 'instance_ts', $instance_ts )
 				->where( 'email', $email )
+				->where( 'parent_id', 0 )
 				->get();
 		}
 
@@ -326,6 +351,9 @@ class Rsvps {
 
 			self::bump_events_cache_version();
 
+			$already_sent = self::emailed_guest_addresses( absint( $existing->id ) );
+			$party        = self::sync_guest_rows( absint( $existing->id ), $event_id, $instance_ts, $status, $guests, $guest_details );
+
 			$new_email     = sanitize_email( $email );
 			$old_email     = sanitize_email( $existing->email ?? '' );
 			$email_changed = ! empty( $new_email ) && is_email( $new_email ) && $new_email !== $old_email;
@@ -337,7 +365,10 @@ class Rsvps {
 					|| $email_changed
 				)
 			) {
-				self::send_rsvp_email( $new_email, $name, $event_id, $instance_ts, $updated_token, $guests );
+				self::send_rsvp_email( $new_email, $name, $event_id, $instance_ts, $updated_token, $guests, $party );
+			}
+			if ( 'going' === $status && $email_each ) {
+				self::send_guest_emails( $name, $new_email, $event_id, $instance_ts, $party, $already_sent );
 			}
 
 			return array(
@@ -349,9 +380,10 @@ class Rsvps {
 
 		$checkin_token = self::generate_checkin_token();
 
-		$id = DB::table( 'eventkoi_rsvps' )->insert(
+		$inserted = DB::table( 'eventkoi_rsvps' )->insert(
 			array(
 				'event_id'      => $event_id,
+				'parent_id'     => 0,
 				'instance_ts'   => $instance_ts,
 				'user_id'       => $user_id ? $user_id : null,
 				'name'          => $name,
@@ -368,11 +400,33 @@ class Rsvps {
 			)
 		);
 
+		if ( ! $inserted ) {
+			return new \WP_Error( 'eventkoi_rsvp_create_failed', __( 'Failed to create RSVP.', 'eventkoi-lite' ), array( 'status' => 500 ) );
+		}
+
+		// The query builder reports affected rows, not the new id.
+		global $wpdb;
+		$id = absint( $wpdb->insert_id );
+		if ( ! $id ) {
+			$created = DB::table( 'eventkoi_rsvps' )
+				->where( 'event_id', $event_id )
+				->where( 'instance_ts', $instance_ts )
+				->where( 'email', $email )
+				->where( 'parent_id', 0 )
+				->get();
+			$id      = ! empty( $created->id ) ? absint( $created->id ) : 0;
+		}
+
 		self::bump_events_cache_version();
 
+		$party = $id ? self::sync_guest_rows( $id, $event_id, $instance_ts, $status, $guests, $guest_details ) : array();
+
 		if ( 'going' === $status ) {
-			self::send_rsvp_email( $email, $name, $event_id, $instance_ts, $checkin_token, $guests );
+			self::send_rsvp_email( $email, $name, $event_id, $instance_ts, $checkin_token, $guests, $party );
 			self::send_admin_rsvp_notification( $name, $email, $event_id, $instance_ts, $guests );
+			if ( $email_each ) {
+				self::send_guest_emails( $name, $email, $event_id, $instance_ts, $party );
+			}
 		}
 
 		return array(
@@ -380,6 +434,464 @@ class Rsvps {
 			'checkin_token' => $checkin_token,
 			'created'       => true,
 		);
+	}
+
+	/**
+	 * Clean the guest list a dialog sent for one RSVP.
+	 *
+	 * Returns one entry per guest seat (padded with blanks), or null when the
+	 * client sent no list at all, so unnamed guest rows get created instead.
+	 *
+	 * @param array|null $raw    Request value: list of { name, email }.
+	 * @param int        $guests Guest count after clamping.
+	 * @param string     $mode   Event guest details mode (off|optional|required).
+	 * @return array|null|\WP_Error
+	 */
+	public static function sanitize_guest_details( $raw, $guests, $mode ) {
+		if ( ! is_array( $raw ) || 'off' === $mode ) {
+			return null;
+		}
+
+		$clean = array();
+		foreach ( array_values( $raw ) as $index => $entry ) {
+			if ( $index >= $guests ) {
+				break;
+			}
+			$entry = is_array( $entry ) ? $entry : array();
+			$name  = sanitize_text_field( (string) ( $entry['name'] ?? '' ) );
+			$typed = trim( (string) ( $entry['email'] ?? '' ) );
+			$mail  = sanitize_email( $typed );
+			if ( '' !== $typed && ! is_email( $mail ) ) {
+				return new \WP_Error( 'eventkoi_rsvp_guest_email', __( 'Please enter a valid email address for each guest.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+			}
+			$clean[] = array(
+				'name'  => $name,
+				'email' => $mail,
+			);
+		}
+
+		$missing = $guests - count( $clean );
+		for ( $i = 0; $i < $missing; $i++ ) {
+			$clean[] = array(
+				'name'  => '',
+				'email' => '',
+			);
+		}
+
+		if ( 'required' === $mode ) {
+			foreach ( $clean as $entry ) {
+				if ( '' === $entry['name'] ) {
+					return new \WP_Error( 'eventkoi_rsvp_guest_name', __( 'Please enter a name for each guest.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+				}
+			}
+		}
+
+		return $clean;
+	}
+
+	/**
+	 * Guest rows of an RSVP, in the order they were added.
+	 *
+	 * @param int $parent_id RSVP row id.
+	 * @return array
+	 */
+	public static function get_guest_rows( $parent_id ) {
+		$parent_id = absint( $parent_id );
+		if ( ! $parent_id ) {
+			return array();
+		}
+
+		$rows = DB::table( 'eventkoi_rsvps' )
+			->where( 'parent_id', $parent_id )
+			->orderBy( 'id', 'asc' )
+			->getAll();
+
+		return is_array( $rows ) ? $rows : array();
+	}
+
+	/**
+	 * Guest rows for a set of RSVPs, keyed by parent id.
+	 *
+	 * @param array $parent_ids RSVP row ids.
+	 * @return array Map parent_id => list of rows.
+	 */
+	public static function get_guest_rows_for( array $parent_ids ) {
+		$parent_ids = array_values( array_filter( array_map( 'absint', $parent_ids ) ) );
+		if ( empty( $parent_ids ) ) {
+			return array();
+		}
+
+		$rows = DB::table( 'eventkoi_rsvps' )
+			->whereIn( 'parent_id', $parent_ids )
+			->orderBy( 'id', 'asc' )
+			->getAll();
+
+		$map = array();
+		foreach ( (array) $rows as $row ) {
+			$map[ absint( $row->parent_id ) ][] = $row;
+		}
+
+		return $map;
+	}
+
+	/**
+	 * Make the guest rows of an RSVP match its guest count and details.
+	 *
+	 * Existing rows are updated in order, missing ones created, extra ones
+	 * removed. Guests follow the RSVP's status: a cancelled RSVP cancels its
+	 * guests, and only going guests hold a check-in token.
+	 *
+	 * @param int        $parent_id   RSVP row id.
+	 * @param int        $event_id    Event ID.
+	 * @param int        $instance_ts Instance timestamp.
+	 * @param string     $status      RSVP status.
+	 * @param int        $guests      Guest count.
+	 * @param array|null $details     Guest details (one per seat) or null to keep names as they are.
+	 * @return array Guest rows after the sync.
+	 */
+	public static function sync_guest_rows( $parent_id, $event_id, $instance_ts, $status, $guests, $details = null ) {
+		$parent_id = absint( $parent_id );
+		if ( ! $parent_id ) {
+			return array();
+		}
+
+		$existing = self::get_guest_rows( $parent_id );
+		$now      = gmdate( 'Y-m-d H:i:s' );
+		$going    = 'going' === $status;
+
+		for ( $i = 0; $i < $guests; $i++ ) {
+			$detail = is_array( $details ) ? ( $details[ $i ] ?? array() ) : null;
+			$row    = $existing[ $i ] ?? null;
+
+			if ( $row ) {
+				$token = null;
+				if ( $going ) {
+					$token = '' !== (string) ( $row->checkin_token ?? '' ) ? (string) $row->checkin_token : self::generate_checkin_token();
+				}
+				$values = array(
+					'instance_ts'    => absint( $instance_ts ),
+					'status'         => $status,
+					'checkin_token'  => $token,
+					'checkin_status' => $going ? (string) ( $row->checkin_status ?? 'none' ) : 'none',
+					'updated'        => $now,
+				);
+				if ( ! $going ) {
+					$values['checked_in'] = null;
+				}
+				if ( null !== $detail ) {
+					$values['name']  = '' !== (string) ( $detail['name'] ?? '' ) ? $detail['name'] : null;
+					$values['email'] = '' !== (string) ( $detail['email'] ?? '' ) ? $detail['email'] : null;
+				}
+				DB::table( 'eventkoi_rsvps' )->where( 'id', absint( $row->id ) )->update( $values );
+				continue;
+			}
+
+			DB::table( 'eventkoi_rsvps' )->insert(
+				array(
+					'event_id'         => absint( $event_id ),
+					'parent_id'        => $parent_id,
+					'instance_ts'      => absint( $instance_ts ),
+					'user_id'          => null,
+					'name'             => null !== $detail && '' !== (string) ( $detail['name'] ?? '' ) ? $detail['name'] : null,
+					'email'            => null !== $detail && '' !== (string) ( $detail['email'] ?? '' ) ? $detail['email'] : null,
+					'status'           => $status,
+					'guests'           => 0,
+					'meta'             => null,
+					'checkin_token'    => $going ? self::generate_checkin_token() : null,
+					'checked_in'       => null,
+					'checked_in_count' => null,
+					'checkin_status'   => 'none',
+					'created'          => $now,
+					'updated'          => $now,
+				)
+			);
+		}
+
+		$extra = array_slice( $existing, $guests );
+		if ( ! empty( $extra ) ) {
+			self::delete_rows_by_id( array_map( static fn( $row ) => absint( $row->id ), $extra ) );
+		}
+
+		self::recount_party_checkins( array( $parent_id ) );
+
+		return self::get_guest_rows( $parent_id );
+	}
+
+	/**
+	 * Store how many of a party are checked in on the RSVP row.
+	 *
+	 * The admin table, exports and the QR screen keep reading
+	 * `checked_in_count`, so it has to follow the per-person state.
+	 *
+	 * @param array $parent_ids RSVP row ids.
+	 * @return void
+	 */
+	public static function recount_party_checkins( array $parent_ids ) {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'eventkoi_rsvps';
+		foreach ( array_filter( array_map( 'absint', $parent_ids ) ) as $parent_id ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$parent = $wpdb->get_row(
+				$wpdb->prepare(
+					"SELECT id, guests, checkin_status FROM {$table} WHERE id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$parent_id
+				)
+			);
+			if ( ! $parent ) {
+				continue;
+			}
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$guest_rows     = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT checkin_status FROM {$table} WHERE parent_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$parent_id
+				)
+			);
+			$checked_guests = 0;
+			foreach ( (array) $guest_rows as $guest_row ) {
+				if ( 'checked_in' === (string) $guest_row->checkin_status ) {
+					++$checked_guests;
+				}
+			}
+			// Guests that never got a row of their own (rows written before the
+			// upgrade) still arrive with the host, as they always did.
+			$rowless_guests = max( 0, absint( $parent->guests ) - count( (array) $guest_rows ) );
+			$host_in        = 'checked_in' === (string) $parent->checkin_status;
+			$count          = ( $host_in ? 1 + $rowless_guests : 0 ) + $checked_guests;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$wpdb->update(
+				$table,
+				array( 'checked_in_count' => $count > 0 ? $count : null ),
+				array( 'id' => $parent_id ),
+				array( '%d' ),
+				array( '%d' )
+			);
+		}
+	}
+
+	/**
+	 * Parent ids for any mix of RSVP and guest row ids.
+	 *
+	 * @param array $ids Row ids.
+	 * @return array
+	 */
+	private static function resolve_parent_ids( array $ids ) {
+		$ids = array_values( array_filter( array_map( 'absint', $ids ) ) );
+		if ( empty( $ids ) ) {
+			return array();
+		}
+
+		$rows = DB::table( 'eventkoi_rsvps' )->select( 'id', 'parent_id' )->whereIn( 'id', $ids )->getAll();
+		$out  = array();
+		foreach ( (array) $rows as $row ) {
+			$out[] = absint( $row->parent_id ) > 0 ? absint( $row->parent_id ) : absint( $row->id );
+		}
+
+		return array_values( array_unique( $out ) );
+	}
+
+	/**
+	 * Add the guest row ids of every RSVP in the list.
+	 *
+	 * @param array $ids RSVP row ids.
+	 * @return array
+	 */
+	private static function with_guest_ids( array $ids ) {
+		$ids = array_values( array_filter( array_map( 'absint', $ids ) ) );
+		if ( empty( $ids ) ) {
+			return array();
+		}
+
+		$guests = DB::table( 'eventkoi_rsvps' )->select( 'id' )->whereIn( 'parent_id', $ids )->getAll();
+		foreach ( (array) $guests as $guest ) {
+			$ids[] = absint( $guest->id );
+		}
+
+		return array_values( array_unique( $ids ) );
+	}
+
+	/**
+	 * Check a whole party in or out: the RSVP and every guest.
+	 *
+	 * @param array  $parent_ids RSVP row ids.
+	 * @param string $status     check_in|checked_in|denied|none.
+	 * @return int|\WP_Error
+	 */
+	public static function update_party_checkin( $parent_ids, $status ) {
+		return self::update_checkin_status( self::with_guest_ids( (array) $parent_ids ), $status );
+	}
+
+	/**
+	 * Edit one guest's name and email.
+	 *
+	 * @param int    $guest_id Guest row id.
+	 * @param string $name     Name.
+	 * @param string $email    Email, may be empty.
+	 * @return int|\WP_Error
+	 */
+	public static function update_guest( $guest_id, $name, $email ) {
+		$guest_id = absint( $guest_id );
+		$row      = $guest_id ? DB::table( 'eventkoi_rsvps' )->where( 'id', $guest_id )->get() : null;
+		if ( ! $row || absint( $row->parent_id ) < 1 ) {
+			return new \WP_Error( 'eventkoi_rsvp_guest_missing', __( 'Guest not found.', 'eventkoi-lite' ), array( 'status' => 404 ) );
+		}
+
+		$typed = trim( (string) $email );
+		$mail  = sanitize_email( $typed );
+		if ( '' !== $typed && ! is_email( $mail ) ) {
+			return new \WP_Error( 'eventkoi_rsvp_guest_email', __( 'Please enter a valid email address.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
+		$name = sanitize_text_field( (string) $name );
+		DB::table( 'eventkoi_rsvps' )->where( 'id', $guest_id )->update(
+			array(
+				'name'    => '' !== $name ? $name : null,
+				'email'   => '' !== $mail ? $mail : null,
+				'updated' => gmdate( 'Y-m-d H:i:s' ),
+			)
+		);
+
+		return 1;
+	}
+
+	/**
+	 * Remove guests from their RSVPs and lower the guest counts to match.
+	 *
+	 * @param array $guest_ids Guest row ids.
+	 * @return int|\WP_Error
+	 */
+	public static function remove_guests( $guest_ids ) {
+		$guest_ids = array_values( array_filter( array_map( 'absint', (array) $guest_ids ) ) );
+		if ( empty( $guest_ids ) ) {
+			return 0;
+		}
+
+		$rows = DB::table( 'eventkoi_rsvps' )->select( 'id', 'parent_id' )->whereIn( 'id', $guest_ids )->getAll();
+		$ids  = array();
+		foreach ( (array) $rows as $row ) {
+			if ( absint( $row->parent_id ) > 0 ) {
+				$ids[] = absint( $row->id );
+			}
+		}
+		if ( empty( $ids ) ) {
+			return 0;
+		}
+
+		self::delete_rows_by_id( $ids );
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'eventkoi_rsvps';
+		foreach ( self::resolve_parent_ids( array_column( array_map( 'get_object_vars', (array) $rows ), 'parent_id' ) ) as $parent_id ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$left = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$table} WHERE parent_id = %d", $parent_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+			DB::table( 'eventkoi_rsvps' )->where( 'id', $parent_id )->update(
+				array(
+					'guests'  => $left,
+					'updated' => gmdate( 'Y-m-d H:i:s' ),
+				)
+			);
+		}
+		self::recount_party_checkins( self::resolve_parent_ids( array_column( array_map( 'get_object_vars', (array) $rows ), 'parent_id' ) ) );
+		self::bump_events_cache_version();
+
+		return count( $ids );
+	}
+
+	/**
+	 * Delete rows by id with a plain query; the query builder's delete has
+	 * proven unreliable with IN lists.
+	 *
+	 * @param array $ids Row ids.
+	 * @return int Rows deleted.
+	 */
+	private static function delete_rows_by_id( array $ids ) {
+		global $wpdb;
+
+		$ids = array_values( array_filter( array_map( 'absint', $ids ) ) );
+		if ( empty( $ids ) ) {
+			return 0;
+		}
+
+		$table        = $wpdb->prefix . 'eventkoi_rsvps';
+		$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+		$sql          = call_user_func_array(
+			array( $wpdb, 'prepare' ),
+			array_merge(
+				array(
+					// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					"DELETE FROM {$table} WHERE id IN ({$placeholders})",
+				),
+				$ids
+			)
+		);
+
+		return (int) $wpdb->query( $sql ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.NotPrepared -- Statement was prepared above with a dynamic placeholder list.
+	}
+
+	/**
+	 * A fresh check-in token for callers outside this class (schema upgrades).
+	 *
+	 * @return string
+	 */
+	public static function new_checkin_token() {
+		return self::generate_checkin_token();
+	}
+
+	/**
+	 * Send each guest with an email their own confirmation and QR code.
+	 *
+	 * @param string $host_name   Name of the person who RSVPd.
+	 * @param string $host_email  Their email, skipped if a guest repeats it.
+	 * @param int    $event_id    Event ID.
+	 * @param int    $instance_ts Instance timestamp.
+	 * @param array  $party       Guest rows.
+	 * @param array  $skip        Addresses that already had their email (an edit resends only to new ones).
+	 * @return int Emails sent.
+	 */
+	private static function send_guest_emails( $host_name, $host_email, $event_id, $instance_ts, array $party, array $skip = array() ) {
+		$sent = 0;
+		$seen = array( strtolower( (string) $host_email ) => true );
+		foreach ( $skip as $address ) {
+			$seen[ strtolower( (string) $address ) ] = true;
+		}
+		foreach ( array_slice( $party, 0, 10 ) as $guest ) {
+			$email = sanitize_email( (string) ( $guest->email ?? '' ) );
+			$token = (string) ( $guest->checkin_token ?? '' );
+			if ( '' === $email || ! is_email( $email ) || '' === $token || isset( $seen[ strtolower( $email ) ] ) ) {
+				continue;
+			}
+			$seen[ strtolower( $email ) ] = true;
+			if ( self::send_rsvp_email( $email, (string) ( $guest->name ?? '' ), $event_id, $instance_ts, $token, 0, array(), array( 'guest_of' => $host_name ) ) ) {
+				++$sent;
+			}
+		}
+
+		return $sent;
+	}
+
+	/**
+	 * Guest addresses that already received a confirmation for this RSVP.
+	 *
+	 * Going guests with a token were emailed when they were added, so an edit
+	 * only writes to guests that are new or changed their address.
+	 *
+	 * @param int $parent_id RSVP row id.
+	 * @return array<int,string>
+	 */
+	private static function emailed_guest_addresses( $parent_id ) {
+		$addresses = array();
+		foreach ( self::get_guest_rows( $parent_id ) as $row ) {
+			if ( 'going' !== (string) ( $row->status ?? '' ) || '' === (string) ( $row->checkin_token ?? '' ) ) {
+				continue;
+			}
+			$email = sanitize_email( (string) ( $row->email ?? '' ) );
+			if ( '' !== $email ) {
+				$addresses[] = $email;
+			}
+		}
+
+		return $addresses;
 	}
 
 	/**
@@ -508,6 +1020,7 @@ class Rsvps {
 			->select( 'status', 'guests' )
 			->where( 'event_id', $event_id )
 			->where( 'instance_ts', $instance_ts )
+			->where( 'parent_id', 0 )
 			->getAll();
 
 		$summary = array(
@@ -558,6 +1071,7 @@ class Rsvps {
 		$rows = DB::table( 'eventkoi_rsvps' )
 			->select( 'status', 'guests' )
 			->where( 'event_id', $event_id )
+			->where( 'parent_id', 0 )
 			->getAll();
 
 		$summary = array(
@@ -628,7 +1142,8 @@ class Rsvps {
 
 		$query = DB::table( 'eventkoi_rsvps' )
 			->where( 'event_id', $event_id )
-			->where( 'instance_ts', $instance_ts );
+			->where( 'instance_ts', $instance_ts )
+			->where( 'parent_id', 0 );
 
 		if ( $user_id ) {
 			$query->where( 'user_id', $user_id );
@@ -645,6 +1160,7 @@ class Rsvps {
 				->where( 'event_id', $event_id )
 				->where( 'instance_ts', $instance_ts )
 				->where( 'email', $email )
+				->where( 'parent_id', 0 )
 				->get();
 		}
 
@@ -686,6 +1202,9 @@ class Rsvps {
 		if ( empty( $ids ) ) {
 			return 0;
 		}
+
+		// Guests follow their RSVP.
+		$ids = self::with_guest_ids( $ids );
 
 		if ( ! in_array( $status, self::$allowed_statuses, true ) ) {
 			return new \WP_Error(
@@ -773,22 +1292,39 @@ class Rsvps {
 			global $wpdb;
 			$table        = $wpdb->prefix . 'eventkoi_rsvps';
 			$placeholders = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
-			$sql          = call_user_func_array(
-				array( $wpdb, 'prepare' ),
-				array_merge(
-					array(
-						// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
-						"UPDATE {$table} SET checked_in = %s, checkin_status = %s, checked_in_count = CASE WHEN %s = 'checked_in' THEN IFNULL(checked_in_count, (1 + guests)) ELSE NULL END, updated = %s WHERE id IN ({$placeholders})",
-						$checked_in,
-						$checkin_status,
-						$checkin_status,
-						gmdate( 'Y-m-d H:i:s' ),
-					),
-					$ids
-				)
-			);
-			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+			if ( null === $checked_in ) {
+				$sql = call_user_func_array(
+					array( $wpdb, 'prepare' ),
+					array_merge(
+						array(
+							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+							"UPDATE {$table} SET checked_in = NULL, checkin_status = %s, checked_in_count = NULL, updated = %s WHERE id IN ({$placeholders})",
+							$checkin_status,
+							gmdate( 'Y-m-d H:i:s' ),
+						),
+						$ids
+					)
+				);
+			} else {
+				$sql = call_user_func_array(
+					array( $wpdb, 'prepare' ),
+					array_merge(
+						array(
+							// phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+							"UPDATE {$table} SET checked_in = %s, checkin_status = %s, updated = %s WHERE id IN ({$placeholders})",
+							$checked_in,
+							$checkin_status,
+							gmdate( 'Y-m-d H:i:s' ),
+						),
+						$ids
+					)
+				);
+			}
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQL.NotPrepared -- Statement was prepared above with a dynamic placeholder list.
 			$updated = $wpdb->query( $sql );
+
+			// The host's checked-in count is the people in the party who are in.
+			self::recount_party_checkins( self::resolve_parent_ids( $ids ) );
 
 			if ( $updated > 0 ) {
 				self::bump_events_cache_version();
@@ -902,13 +1438,17 @@ class Rsvps {
 				continue;
 			}
 
+			$is_guest = absint( $row->parent_id ?? 0 ) > 0;
+			$host     = $is_guest ? DB::table( 'eventkoi_rsvps' )->where( 'id', absint( $row->parent_id ) )->get() : null;
 			$did_send = self::send_rsvp_email(
 				$email,
 				isset( $row->name ) ? sanitize_text_field( $row->name ) : '',
 				absint( $row->event_id ),
 				absint( $row->instance_ts ),
 				$token,
-				absint( $row->guests ?? 0 )
+				absint( $row->guests ?? 0 ),
+				$is_guest ? array() : self::get_guest_rows( absint( $row->id ) ),
+				$is_guest ? array( 'guest_of' => (string) ( $host->name ?? '' ) ) : array()
 			);
 			if ( $did_send ) {
 				++$sent;
@@ -930,6 +1470,9 @@ class Rsvps {
 		if ( empty( $ids ) ) {
 			return 0;
 		}
+
+		// Guests go with their RSVP.
+		$ids = self::with_guest_ids( $ids );
 
 		try {
 			$deleted = DB::table( 'eventkoi_rsvps' )
@@ -989,6 +1532,7 @@ class Rsvps {
 			->select( 'guests' )
 			->where( 'event_id', $event_id )
 			->where( 'instance_ts', $instance_ts )
+			->where( 'parent_id', 0 )
 			->where( 'status', 'going' )
 			->getAll();
 
@@ -1011,12 +1555,16 @@ class Rsvps {
 	 * @param int    $instance_ts Instance timestamp.
 	 * @param string $token Check-in token.
 	 * @param int    $guests Guest count.
+	 * @param array  $party Guest rows, named in the body.
+	 * @param array  $options Extras: `guest_of` sends the guest variant (no manage link).
 	 * @return bool
 	 */
-	private static function send_rsvp_email( $email, $name, $event_id, $instance_ts, $token, $guests = 0 ) {
+	private static function send_rsvp_email( $email, $name, $event_id, $instance_ts, $token, $guests = 0, $party = array(), $options = array() ) {
 		if ( empty( $email ) || empty( $token ) ) {
 			return false;
 		}
+
+		$is_guest = ! empty( $options['guest_of'] );
 
 		$settings        = Settings::get();
 		$enabled_setting = $settings['rsvp_email_enabled'] ?? null;
@@ -1076,8 +1624,23 @@ class Rsvps {
 						: eventkoi_date( 'datetime', $event_timestamp )
 				);
 		}
-		$guest_count    = absint( $guests );
-		$guest_line     = $guest_count ? sprintf( __( 'Guests: %d', 'eventkoi-lite' ), $guest_count ) : '';
+		$guest_count = absint( $guests );
+		$guest_names = array();
+		foreach ( (array) $party as $guest ) {
+			$guest_name = trim( (string) ( is_object( $guest ) ? ( $guest->name ?? '' ) : ( $guest['name'] ?? '' ) ) );
+			if ( '' !== $guest_name ) {
+				$guest_names[] = $guest_name;
+			}
+		}
+		/* translators: %d: Number of guests attached to the RSVP. */
+		$guest_line = $guest_count ? sprintf( __( 'Guests: %d', 'eventkoi-lite' ), $guest_count ) : '';
+		if ( $guest_names ) {
+			$guest_line .= ' (' . implode( ', ', $guest_names ) . ')';
+		}
+		if ( $is_guest ) {
+			/* translators: %s: name of the person who RSVPd. */
+			$guest_line = sprintf( __( 'Guest of %s', 'eventkoi-lite' ), (string) $options['guest_of'] );
+		}
 		$event_location = self::get_primary_physical_location( $event_id );
 
 		$first_name = $name ? trim( strtok( $name, ' ' ) ) : '';
@@ -1098,6 +1661,7 @@ class Rsvps {
 			'[rsvp_status]'        => __( 'Going', 'eventkoi-lite' ),
 			'[guest_count]'        => $guest_count,
 			'[guests_line]'        => $guest_line,
+			'[guest_names]'        => implode( ', ', $guest_names ),
 			'[checkin_code]'       => $token,
 			'[site_name]'          => get_bloginfo( 'name' ),
 		);
@@ -1111,7 +1675,8 @@ class Rsvps {
 			)
 			: '';
 		// PROD-444: pick the link line based on whether attendees can edit.
-		$allow_edit     = Event::get_rsvp_allow_edit();
+		// A guest cannot manage the RSVP, so they only get the event page link.
+		$allow_edit     = Event::get_rsvp_allow_edit() && ! $is_guest;
 		$rsvp_link_line = $allow_edit
 			? '<p>' . esc_html__( 'View / manage your RSVP:', 'eventkoi-lite' ) . '<br />[event_url]</p>'
 			: '<p>' . esc_html__( 'View event page:', 'eventkoi-lite' ) . '<br />[event_url]</p>';

@@ -66,6 +66,9 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
   const [name, setName] = useState(prefillName);
   const [email, setEmail] = useState(prefillEmail);
   const [guests, setGuests] = useState("");
+  // Who each guest is, in seat order, plus whether they get their own email.
+  const [guestDetails, setGuestDetails] = useState([]);
+  const [emailGuests, setEmailGuests] = useState(false);
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState(null);
@@ -136,6 +139,15 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
     if (typeof rsvpData.guests === "number") {
       setGuests(String(rsvpData.guests));
     }
+    if (Array.isArray(rsvpData.guest_details)) {
+      setGuestDetails(
+        rsvpData.guest_details.map((g) => ({
+          name: String(g?.name || ""),
+          email: String(g?.email || ""),
+        })),
+      );
+    }
+    setEmailGuests(!!rsvpData.email_guests);
     if (rsvpData.fields && typeof rsvpData.fields === "object") {
       setFieldValues((prev) => ({ ...prev, ...rsvpData.fields }));
     }
@@ -157,6 +169,9 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
 
   const allowGuests = summary?.allow_guests;
   const maxGuests = summary?.max_guests || 0;
+  const guestDetailsMode = ["optional", "required"].includes(summary?.guest_details)
+    ? summary.guest_details
+    : "off";
   const capacity = summary?.capacity || 0;
   const showCount = summary?.show_count !== false;
   const showRemaining = summary?.show_remaining !== false;
@@ -220,12 +235,51 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
     return Math.min(Number(guests) || 0, maxGuestsAllowed);
   }, [allowGuests, status, guests, maxGuestsAllowed]);
 
+  const guestSeatCount = Math.max(0, Number(guestsValue) || 0);
+  const collectGuestDetails = guestDetailsMode !== "off" && guestSeatCount > 0;
+  const guestEntries = Array.from({ length: guestSeatCount }, (_, i) => ({
+    name: String(guestDetails[i]?.name || ""),
+    email: String(guestDetails[i]?.email || ""),
+  }));
+  const setGuestField = (index, field, value) =>
+    setGuestDetails((prev) => {
+      const next = guestEntries.map((g, i) => ({ ...(prev[i] || g) }));
+      next[index] = { ...(next[index] || { name: "", email: "" }), [field]: value };
+      return next;
+    });
+  const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  const guestValidationError = (() => {
+    if (!collectGuestDetails) return null;
+    if (
+      guestDetailsMode === "required" &&
+      guestEntries.some((g) => g.name.trim() === "")
+    ) {
+      return __("Please enter a name for each guest.", "eventkoi-lite");
+    }
+    if (guestEntries.some((g) => g.email.trim() !== "" && !isValidEmail(g.email.trim()))) {
+      return __("Please enter a valid email address for each guest.", "eventkoi-lite");
+    }
+    if (emailGuests && guestEntries.some((g) => g.email.trim() === "")) {
+      return __(
+        "Add an email address for each guest to send them their own confirmation.",
+        "eventkoi-lite",
+      );
+    }
+    return null;
+  })();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
     setFormError(null);
     setMessage(null);
+
+    if (guestValidationError) {
+      setFormError(guestValidationError);
+      setSubmitting(false);
+      return;
+    }
 
     try {
       const payload = {
@@ -236,6 +290,15 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
         status,
         guests: guestsValue,
         fields: fieldValues,
+        ...(collectGuestDetails
+          ? {
+              guest_details: guestEntries.map((g) => ({
+                name: g.name.trim(),
+                email: g.email.trim(),
+              })),
+              email_guests: emailGuests,
+            }
+          : {}),
       };
 
       const res = await fetch(resolvePublicRestUrl("/rsvp"), {
@@ -274,10 +337,6 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
     }
   };
 
-  if (!eventId) {
-    return null;
-  }
-
   useEffect(() => {
     if (isRemoved || !mountEl) return;
 
@@ -306,6 +365,10 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
       }
     }
   }, [summary, isEnabled, error, mountEl, isRemoved]);
+
+  if (!eventId) {
+    return null;
+  }
 
   if (!summary && !error) {
     return (
@@ -622,6 +685,67 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
                     )}
                   </div>
                 )}
+              </div>
+            )}
+            {collectGuestDetails && (
+              <div className="grid gap-3">
+                <div className="text-xs text-muted-foreground">
+                  {guestDetailsMode === "required"
+                    ? __("Enter the name of each guest.", "eventkoi-lite")
+                    : __("Optional. Tell us who your guests are.", "eventkoi-lite")}
+                </div>
+                {guestEntries.map((guest, index) => (
+                  <div
+                    key={index}
+                    className="grid gap-3 rounded-md border border-border p-4"
+                  >
+                    <div className="text-[13px] font-medium text-foreground">
+                      {sprintf(
+                        /* translators: %d: guest number */
+                        __("Guest %d", "eventkoi-lite"),
+                        index + 1,
+                      )}
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="grid gap-2">
+                        <Label htmlFor={`eventkoi-rsvp-guest-${index}-name`}>
+                          {__("Name", "eventkoi-lite")}
+                        </Label>
+                        <Input
+                          id={`eventkoi-rsvp-guest-${index}-name`}
+                          value={guest.name}
+                          required={guestDetailsMode === "required"}
+                          onChange={(e) => setGuestField(index, "name", e.target.value)}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor={`eventkoi-rsvp-guest-${index}-email`}>
+                          {__("Email", "eventkoi-lite")}
+                        </Label>
+                        <Input
+                          id={`eventkoi-rsvp-guest-${index}-email`}
+                          type="email"
+                          value={guest.email}
+                          onChange={(e) => setGuestField(index, "email", e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <Label className="flex items-start gap-2.5 text-xs font-normal leading-relaxed text-muted-foreground cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={emailGuests}
+                    onChange={(e) => setEmailGuests(e.target.checked)}
+                    className="mt-0.5 size-4 shrink-0 rounded border-input"
+                  />
+                  <span>
+                    {__(
+                      "Email each guest their own confirmation and check-in code.",
+                      "eventkoi-lite",
+                    )}
+                  </span>
+                </Label>
               </div>
             )}
             </DialogBody>

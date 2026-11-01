@@ -282,6 +282,97 @@ class Activator {
 
 		self::ensure_archive_columns( $orders_table, $ticket_orders_table );
 		self::ensure_attendee_columns( $ticket_orders_table );
+		self::maybe_upgrade_rsvp_guests();
+	}
+
+	/**
+	 * Bring the RSVP table up to the guest-row schema and give every existing
+	 * RSVP its unnamed guest rows. Runs once, guarded by an option, so the
+	 * plugins_loaded hook can call it cheaply on every request.
+	 *
+	 * @return void
+	 */
+	public static function maybe_upgrade_rsvp_guests() {
+		if ( get_option( 'eventkoi_rsvp_guest_rows_ready' ) ) {
+			return;
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'eventkoi_rsvps';
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQLPlaceholders.SchemaChange -- One-shot schema upgrade; table name comes from $wpdb->prefix.
+		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+		if ( ! $exists ) {
+			return;
+		}
+
+		$columns = $wpdb->get_results( "SHOW COLUMNS FROM `{$table}`" );
+		$by_name = array();
+		foreach ( (array) $columns as $column ) {
+			$by_name[ (string) $column->Field ] = $column; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+		}
+
+		if ( ! isset( $by_name['parent_id'] ) ) {
+			$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `parent_id` BIGINT(20) UNSIGNED NOT NULL DEFAULT 0 AFTER `event_id`" );
+		}
+		if ( isset( $by_name['email'] ) && 'NO' === (string) $by_name['email']->Null ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+			$wpdb->query( "ALTER TABLE `{$table}` MODIFY `email` VARCHAR(150) DEFAULT NULL" );
+		}
+
+		$indexes = $wpdb->get_col( "SHOW INDEX FROM `{$table}`", 2 );
+		$indexes = is_array( $indexes ) ? array_unique( $indexes ) : array();
+		if ( ! in_array( 'event_instance_email_parent_uniq', $indexes, true ) ) {
+			$wpdb->query( "ALTER TABLE `{$table}` ADD UNIQUE KEY `event_instance_email_parent_uniq` (`event_id`, `instance_ts`, `email`, `parent_id`)" );
+		}
+		if ( in_array( 'event_instance_email_uniq', $indexes, true ) ) {
+			$wpdb->query( "ALTER TABLE `{$table}` DROP INDEX `event_instance_email_uniq`" );
+		}
+		if ( ! in_array( 'parent_id_idx', $indexes, true ) ) {
+			$wpdb->query( "ALTER TABLE `{$table}` ADD INDEX `parent_id_idx` (`parent_id`)" );
+		}
+
+		// RSVPs made before guest rows existed only carry a guest count. Give
+		// each of them unnamed guest rows so check-in, exports and the dialog
+		// treat old and new parties the same way, keeping the headcount that
+		// was already checked in.
+		$parents = $wpdb->get_results(
+			"SELECT r.id, r.event_id, r.instance_ts, r.status, r.guests, r.checked_in, r.checked_in_count, r.checkin_status
+			 FROM `{$table}` r
+			 LEFT JOIN `{$table}` g ON g.parent_id = r.id
+			 WHERE r.parent_id = 0 AND r.guests > 0 AND g.id IS NULL"
+		);
+		$now     = gmdate( 'Y-m-d H:i:s' );
+		foreach ( (array) $parents as $parent ) {
+			$guests          = absint( $parent->guests );
+			$going           = 'going' === (string) $parent->status;
+			$already_checked = max( 0, absint( $parent->checked_in_count ) - 1 );
+			for ( $i = 0; $i < $guests; $i++ ) {
+				$checked = $going && 'checked_in' === (string) $parent->checkin_status && $i < $already_checked;
+				$wpdb->insert(
+					$table,
+					array(
+						'event_id'         => absint( $parent->event_id ),
+						'parent_id'        => absint( $parent->id ),
+						'instance_ts'      => absint( $parent->instance_ts ),
+						'user_id'          => null,
+						'name'             => null,
+						'email'            => null,
+						'status'           => (string) $parent->status,
+						'guests'           => 0,
+						'meta'             => null,
+						'checkin_token'    => $going ? \EventKoi\Core\Rsvps::new_checkin_token() : null,
+						'checked_in'       => $checked ? (string) $parent->checked_in : null,
+						'checked_in_count' => null,
+						'checkin_status'   => $checked ? 'checked_in' : 'none',
+						'created'          => $now,
+						'updated'          => $now,
+					)
+				);
+			}
+		}
+		// phpcs:enable
+
+		update_option( 'eventkoi_rsvp_guest_rows_ready', 1, false );
 	}
 
 	/**
@@ -357,6 +448,7 @@ class Activator {
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		self::ensure_archive_columns( $orders_table, $ticket_orders_table );
 		self::ensure_attendee_columns( $ticket_orders_table );
+		self::maybe_upgrade_rsvp_guests();
 		self::heal_orphaned_rsvp_instance_ts();
 
 		if ( ! get_option( 'eventkoi_site_instance_id' ) ) {

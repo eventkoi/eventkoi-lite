@@ -23,7 +23,7 @@ class Rsvps extends Table {
 	/**
 	 * Schema version.
 	 */
-	const SCHEMA_VERSION = '1.2.0';
+	const SCHEMA_VERSION = '1.3.0';
 
 	/**
 	 * Table name.
@@ -66,10 +66,11 @@ class Rsvps extends Table {
             CREATE TABLE `{$table_name}` (
                 `id` BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
                 `event_id` BIGINT(20) UNSIGNED NOT NULL,
+                `parent_id` BIGINT(20) UNSIGNED NOT NULL DEFAULT 0,
                 `instance_ts` BIGINT(20) UNSIGNED NOT NULL,
                 `user_id` BIGINT(20) UNSIGNED DEFAULT NULL,
                 `name` VARCHAR(150) DEFAULT NULL,
-                `email` VARCHAR(150) NOT NULL,
+                `email` VARCHAR(150) DEFAULT NULL,
                 `status` VARCHAR(30) NOT NULL DEFAULT 'going',
                 `guests` INT(10) UNSIGNED NOT NULL DEFAULT 0,
                 `meta` LONGTEXT DEFAULT NULL,
@@ -81,8 +82,9 @@ class Rsvps extends Table {
                 `updated` DATETIME NOT NULL,
                 PRIMARY KEY (`id`),
                 UNIQUE KEY `checkin_token_uniq` (`checkin_token`),
-                UNIQUE KEY `event_instance_email_uniq` (`event_id`, `instance_ts`, `email`),
+                UNIQUE KEY `event_instance_email_parent_uniq` (`event_id`, `instance_ts`, `email`, `parent_id`),
                 INDEX `event_id_idx` (`event_id`),
+                INDEX `parent_id_idx` (`parent_id`),
                 INDEX `instance_ts_idx` (`instance_ts`),
                 INDEX `email_idx` (`email`),
                 INDEX `status_idx` (`status`)

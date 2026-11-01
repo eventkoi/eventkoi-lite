@@ -164,6 +164,8 @@ class Init {
 						Ticket_Orders::class,
 					)
 				);
+
+				\EventKoi\Core\Activator::maybe_upgrade_rsvp_guests();
 			}
 		);
 	}

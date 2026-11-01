@@ -96,6 +96,7 @@ class Event {
 		'rsvp_max_guests',
 		'rsvp_allow_edit',
 		'rsvp_auto_account',
+		'rsvp_guest_details',
 		'rsvp_sale_start',
 		'rsvp_sale_end',
 		'tickets_terms_conditions_required',
@@ -628,6 +629,8 @@ class Event {
 		$rsvp_max_guests     = isset( $meta['rsvp_max_guests'] ) ? absint( $meta['rsvp_max_guests'] ) : 0;
 		$rsvp_allow_edit     = array_key_exists( 'rsvp_allow_edit', $meta ) ? self::normalize_boolean_meta( $meta['rsvp_allow_edit'] ) : true;
 		$rsvp_auto_account   = array_key_exists( 'rsvp_auto_account', $meta ) ? self::normalize_boolean_meta( $meta['rsvp_auto_account'] ) : false;
+		// Whether the RSVP dialog asks for each guest's name: off, optional or required.
+		$rsvp_guest_details = Attendees::normalize_mode( $meta['rsvp_guest_details'] ?? 'off' );
 		$rsvp_sale_start     = isset( $meta['rsvp_sale_start'] ) ? self::normalize_utc_datetime_string( $meta['rsvp_sale_start'] ) : '';
 		$rsvp_sale_end       = isset( $meta['rsvp_sale_end'] ) ? self::normalize_utc_datetime_string( $meta['rsvp_sale_end'] ) : '';
 
@@ -691,6 +694,7 @@ class Event {
 		update_post_meta( self::$event_id, 'rsvp_max_guests', $rsvp_max_guests );
 		update_post_meta( self::$event_id, 'rsvp_allow_edit', $rsvp_allow_edit ? 1 : 0 );
 		update_post_meta( self::$event_id, 'rsvp_auto_account', $rsvp_auto_account ? 1 : 0 );
+		update_post_meta( self::$event_id, 'rsvp_guest_details', $rsvp_guest_details );
 		update_post_meta( self::$event_id, 'rsvp_sale_start', (string) $rsvp_sale_start );
 		update_post_meta( self::$event_id, 'rsvp_sale_end', (string) $rsvp_sale_end );
 		update_post_meta( self::$event_id, 'attendance_mode', $attendance_mode );
@@ -3070,6 +3074,17 @@ class Event {
 		$auto_account = get_post_meta( self::$event_id, 'rsvp_auto_account', true );
 
 		return apply_filters( 'eventkoi_get_event_rsvp_auto_account', self::normalize_boolean_meta( $auto_account ), self::$event_id, self::$event );
+	}
+
+	/**
+	 * Whether the RSVP dialog asks for each guest's name and email.
+	 *
+	 * @return string off|optional|required
+	 */
+	public static function get_rsvp_guest_details() {
+		$mode = Attendees::normalize_mode( get_post_meta( self::$event_id, 'rsvp_guest_details', true ) );
+
+		return apply_filters( 'eventkoi_get_event_rsvp_guest_details', $mode, self::$event_id, self::$event );
 	}
 
 	/**
@@ -5698,7 +5713,7 @@ class Event {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT status, COALESCE(SUM(1 + guests),0) AS cnt FROM {$table} WHERE event_id = %d AND status IN ('going','maybe') GROUP BY status", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT status, COALESCE(SUM(1 + guests),0) AS cnt FROM {$table} WHERE event_id = %d AND parent_id = 0 AND status IN ('going','maybe') GROUP BY status", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$event_id
 			)
 		);

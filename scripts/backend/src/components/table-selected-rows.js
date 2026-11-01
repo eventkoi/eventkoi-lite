@@ -4,8 +4,10 @@ export function TableSelectedRows(props) {
   const { table, compact, totalCountOverride } = props;
   const formatNumber = (value) => Number(value || 0).toLocaleString();
 
-  const selectedCount = table.getFilteredSelectedRowModel().rows.length;
-  const visibleCount = table.getRowModel().rows.length;
+  // Expanded sub rows (guests under an RSVP) are not rows of their own here.
+  const topLevel = (rows) => rows.filter((row) => !row.depth).length;
+  const selectedCount = topLevel(table.getFilteredSelectedRowModel().rows);
+  const visibleCount = topLevel(table.getRowModel().rows);
   const totalCount =
     typeof totalCountOverride === "number"
       ? totalCountOverride

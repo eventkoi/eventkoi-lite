@@ -191,6 +191,11 @@ function CheckinWidget({ mountEl }) {
   const location = data?.event?.location || "";
   const status = (data?.rsvp?.status || "").toLowerCase();
   const guests = Number(data?.rsvp?.guests || 0);
+  const isGuest = Boolean(data?.rsvp?.is_guest);
+  const guestOf = decodeEntities(data?.rsvp?.guest_of || "");
+  const guestNames = (data?.rsvp?.guest_rows || [])
+    .map((g) => decodeEntities(g?.name || ""))
+    .filter(Boolean);
   const checkinToken = data?.rsvp?.checkin_token || "";
   const attendeeName = decodeEntities(data?.rsvp?.name || "");
   const avatarUrl = data?.rsvp?.avatar_url || "";
@@ -394,14 +399,28 @@ function CheckinWidget({ mountEl }) {
               </div>
             )}
 
-            {guests > 0 && (
+            {isGuest && guestOf && (
               <div className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
                 {sprintf(
-                  /* translators: %d: guest count */
-                  __("Guests: %d", "eventkoi-lite"),
-                  guests,
+                  /* translators: %s: name of the person who RSVPd */
+                  __("Guest of %s", "eventkoi-lite"),
+                  guestOf,
                 )}
+              </div>
+            )}
+
+            {!isGuest && guests > 0 && (
+              <div className="flex items-start gap-2">
+                <Users className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <span>
+                  {sprintf(
+                    /* translators: %d: guest count */
+                    __("Guests: %d", "eventkoi-lite"),
+                    guests,
+                  )}
+                  {guestNames.length > 0 ? ` (${guestNames.join(", ")})` : ""}
+                </span>
               </div>
             )}
 

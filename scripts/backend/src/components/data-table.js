@@ -18,6 +18,7 @@ import { cn } from "@/lib/utils";
 import {
   flexRender,
   getCoreRowModel,
+  getExpandedRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
@@ -60,8 +61,12 @@ export function DataTable({
   refreshStatusCounts,
   titleColumnWidth,
   statusFiltersBelowControls = false,
+  getSubRows,
+  rowClassName,
+  enableRowSelection = true,
 }) {
   const [sorting, setSorting] = useState(defaultSort);
+  const [expanded, setExpanded] = useState({});
   const [columnFilters, setColumnFilters] = useState([]);
   const [columnVisibility, setColumnVisibility] = useState({});
   const [rowSelection, setRowSelection] = React.useState({});
@@ -74,15 +79,25 @@ export function DataTable({
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    ...(getSubRows
+      ? {
+          getSubRows,
+          getExpandedRowModel: getExpandedRowModel(),
+          onExpandedChange: setExpanded,
+          paginateExpandedRows: false,
+        }
+      : {}),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    enableRowSelection,
     state: {
       sorting,
       columnFilters,
       columnVisibility,
       rowSelection,
+      ...(getSubRows ? { expanded } : {}),
     },
   });
 
@@ -280,7 +295,7 @@ export function DataTable({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="group"
+                  className={cn("group", rowClassName ? rowClassName(row) : "")}
                 >
                   {row.getVisibleCells().map((cell) => {
                     const isTitleCell = ["title", "name", "shortcode"].includes(
