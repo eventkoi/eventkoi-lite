@@ -684,6 +684,10 @@ class Ticket_Emails {
 
 		$sent = 0;
 
+		// A public free checkout could otherwise turn one request into a mail
+		// blast; no real order names more attendees than this.
+		$by_email = array_slice( $by_email, 0, 10, true );
+
 		foreach ( $by_email as $recipient ) {
 			$own_items = $recipient['items'];
 			$own_codes = array();
