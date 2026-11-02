@@ -828,7 +828,11 @@ export function CalendarsOverview() {
           hideBottomBar
           customTopLeft={() => null}
         />
-        <ProLaunch headline="Upgrade to access Unlimited Calendars" minimal />
+        <ProLaunch
+          headline="Upgrade to access Unlimited Calendars"
+          minimal
+          source="calendars"
+        />
       </div>
 
       {onboardingToast}

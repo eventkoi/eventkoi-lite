@@ -21,6 +21,7 @@ export function SettingsSubmissions() {
       <ProLaunch
         headline={__("Upgrade to access Frontend Submissions", "eventkoi-lite")}
         minimal
+        source="settings-submissions"
       />
 
       <Box>

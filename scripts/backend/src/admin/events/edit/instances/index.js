@@ -411,7 +411,7 @@ export function EventEditInstances() {
 
   return (
     <>
-      <ProLaunch className="mb-8" />
+      <ProLaunch className="mb-8" source="event-instances" />
       <div className="flex flex-col w-full gap-8">
         <Box container>
           <Panel className="flex gap-2 p-0">

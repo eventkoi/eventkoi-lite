@@ -589,6 +589,7 @@ export function SettingsEmails() {
                   headline={__("Upgrade to customize email templates", "eventkoi-lite")}
                   minimal
                   className="mb-6"
+                  source="settings-emails"
                 />
 
                 <div className="grid w-full max-w-[520px] gap-2 mb-6">

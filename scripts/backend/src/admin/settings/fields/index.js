@@ -24,7 +24,11 @@ const sampleFields = [
 export function SettingsFields() {
   return (
     <div className="grid gap-8">
-      <ProLaunch headline={__("Upgrade to access Custom Fields", "eventkoi-lite")} minimal />
+      <ProLaunch
+        headline={__("Upgrade to access Custom Fields", "eventkoi-lite")}
+        minimal
+        source="settings-fields"
+      />
       <Box className="gap-0">
         <Panel variant="header">
           <Heading level={3}>{__("Custom fields", "eventkoi-lite")}</Heading>

@@ -2,6 +2,7 @@
 
 import { Box } from "@/components/box";
 import { Button } from "@/components/ui/button";
+import { upgradeUrl } from "@/lib/upgrade-url";
 import { cn } from "@/lib/utils";
 import { __ } from "@wordpress/i18n";
 
@@ -25,12 +26,25 @@ function ZapFilled({ className }) {
 const features = [
   __("Recurring events", "eventkoi-lite"),
   __("Unlimited calendars", "eventkoi-lite"),
-  __("Custom fields", "eventkoi-lite"),
+  __("Custom fields and taxonomies", "eventkoi-lite"),
+  __("Reusable locations", "eventkoi-lite"),
+  __("Eventbrite and .ics sync", "eventkoi-lite"),
+  __("Customisable email templates", "eventkoi-lite"),
+  __("Frontend event submissions", "eventkoi-lite"),
+  __(
+    "Advanced integrations for Elementor, Beaver Builder, Divi, and Bricks",
+    "eventkoi-lite"
+  ),
   __("Priority support", "eventkoi-lite"),
   __("30 day money-back guarantee", "eventkoi-lite"),
 ];
 
-export function ProLaunch({ className, headline, minimal = false }) {
+export function ProLaunch({
+  className,
+  headline,
+  minimal = false,
+  source = "dashboard",
+}) {
   return (
     <Box container className={cn("border-[#B8D7D4] gap-8", className)}>
       <div className="flex gap-4">
@@ -57,7 +71,7 @@ export function ProLaunch({ className, headline, minimal = false }) {
             size="sm"
           >
             <a
-              href="https://eventkoi.com/upgradeqf35m3ref/"
+              href={upgradeUrl("upgrade-banner", source)}
               target="_blank"
               rel="noopener noreferrer"
             >

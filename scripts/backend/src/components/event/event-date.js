@@ -78,6 +78,7 @@ export function EventDate({ showAttributes }) {
             headline="Upgrade to access Recurring Events"
             minimal
             className="mb-8 mt-6"
+            source="event-recurring"
           />
           <div
             className="pointer-events-none opacity-60 select-none"

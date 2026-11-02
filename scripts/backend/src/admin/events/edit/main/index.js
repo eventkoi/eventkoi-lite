@@ -117,6 +117,7 @@ export function EventEditMain() {
         <ProLaunch
           headline="Upgrade to switch event templates and calendars"
           minimal
+          source="event-templates"
         />
       </Box>
 

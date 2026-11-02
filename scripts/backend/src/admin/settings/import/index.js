@@ -15,6 +15,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { showToast, showToastError } from "@/lib/toast";
+import { upgradeUrl } from "@/lib/upgrade-url";
 import { Loader2, Download, ArrowRight, CalendarDays, Upload, Link2 } from "lucide-react";
 import { URLImportDialog } from "@/components/url-import-dialog";
 
@@ -476,7 +477,7 @@ function IntegrationCard({
             )}
           </p>
           <a
-            href="https://eventkoi.com/upgradeqf35m3ref/"
+            href={upgradeUrl("import-recurring", "import")}
             target="_blank"
             rel="noopener noreferrer"
             className="mt-3 inline-flex h-8 items-center rounded-md border border-amber-300 bg-white px-3 text-xs font-medium text-amber-900 no-underline hover:bg-amber-100 dark:border-amber-800 dark:bg-transparent dark:text-amber-100"

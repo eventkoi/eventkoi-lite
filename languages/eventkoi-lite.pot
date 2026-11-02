@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-01T09:25:03+00:00\n"
+"POT-Creation-Date: 2026-11-02T08:37:34+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -250,7 +250,7 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-rsvps.php:1661
+#: includes/core/class-rsvps.php:1706
 msgid "Going"
 msgstr ""
 
@@ -632,7 +632,7 @@ msgstr ""
 #. translators: %s: name of the person who RSVPd.
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-rsvps.php:1642
+#: includes/core/class-rsvps.php:1687
 #, js-format,php-format
 msgid "Guest of %s"
 msgstr ""
@@ -1319,7 +1319,7 @@ msgid "Ticket sales"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-template.php:1132
+#: includes/core/class-template.php:1143
 msgid "Custom fields"
 msgstr ""
 
@@ -1538,7 +1538,7 @@ msgid "Sent to the site admin when someone RSVPs to an event."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-rsvps.php:2072
+#: includes/core/class-rsvps.php:2117
 msgid "New RSVP: [event_name]"
 msgstr ""
 
@@ -3325,6 +3325,30 @@ msgid "Unlimited calendars"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
+msgid "Custom fields and taxonomies"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Reusable locations"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Eventbrite and .ics sync"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Customisable email templates"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Frontend event submissions"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Advanced integrations for Elementor, Beaver Builder, Divi, and Bricks"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
 msgid "Priority support"
 msgstr ""
 
@@ -3403,7 +3427,7 @@ msgstr ""
 #: includes/core/class-divi5-modules.php:325
 #: includes/core/class-divi5-modules.php:327
 #: includes/core/class-post-types.php:116
-#: includes/core/class-rsvps.php:1965
+#: includes/core/class-rsvps.php:2010
 #: includes/core/class-template.php:151
 #: includes/core/class-ticket-emails.php:1382
 #: includes/core/class-woocommerce-checkout.php:482
@@ -5138,7 +5162,7 @@ msgstr ""
 #. translators: %d: guest count
 #. translators: %d: Number of guests attached to the RSVP.
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-rsvps.php:1636
+#: includes/core/class-rsvps.php:1681
 #, js-format,php-format
 msgid "Guests: %d"
 msgstr ""
@@ -5438,12 +5462,12 @@ msgid "Your RSVP: %s"
 msgstr ""
 
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-rsvps.php:484
+#: includes/core/class-rsvps.php:488
 msgid "Please enter a name for each guest."
 msgstr ""
 
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-rsvps.php:465
+#: includes/core/class-rsvps.php:469
 msgid "Please enter a valid email address for each guest."
 msgstr ""
 
@@ -5525,7 +5549,7 @@ msgstr ""
 
 #: scripts/frontend/build/index.js:1
 #: includes/api/class-tickets.php:813
-#: includes/core/class-rsvps.php:743
+#: includes/core/class-rsvps.php:773
 msgid "Please enter a valid email address."
 msgstr ""
 
@@ -6028,7 +6052,7 @@ msgid "Invalid action."
 msgstr ""
 
 #: includes/api/class-rsvps.php:379
-#: includes/core/class-rsvps.php:1212
+#: includes/core/class-rsvps.php:1257
 msgid "Invalid RSVP status."
 msgstr ""
 
@@ -7379,40 +7403,44 @@ msgstr ""
 msgid "RSVP already exists."
 msgstr ""
 
-#: includes/core/class-rsvps.php:404
+#: includes/core/class-rsvps.php:408
 msgid "Failed to create RSVP."
 msgstr ""
 
-#: includes/core/class-rsvps.php:737
+#: includes/core/class-rsvps.php:767
 msgid "Guest not found."
 msgstr ""
 
-#: includes/core/class-rsvps.php:1255
+#: includes/core/class-rsvps.php:786
+msgid "Someone on this RSVP already uses that email address."
+msgstr ""
+
+#: includes/core/class-rsvps.php:1300
 msgid "Failed to update RSVP status."
 msgstr ""
 
-#: includes/core/class-rsvps.php:1279
+#: includes/core/class-rsvps.php:1324
 msgid "Invalid check-in status."
 msgstr ""
 
-#: includes/core/class-rsvps.php:1337
+#: includes/core/class-rsvps.php:1382
 msgid "Failed to update check-in status."
 msgstr ""
 
-#: includes/core/class-rsvps.php:1400
+#: includes/core/class-rsvps.php:1445
 msgid "Failed to update check-in count."
 msgstr ""
 
-#: includes/core/class-rsvps.php:1510
+#: includes/core/class-rsvps.php:1555
 msgid "Failed to delete RSVPs."
 msgstr ""
 
-#: includes/core/class-rsvps.php:1585
+#: includes/core/class-rsvps.php:1630
 #, php-format
 msgid "Your RSVP for %s"
 msgstr ""
 
-#: includes/core/class-rsvps.php:1650
+#: includes/core/class-rsvps.php:1695
 #: includes/core/class-ticket-emails.php:307
 #: includes/core/class-ticket-emails.php:498
 #: includes/core/class-ticket-emails.php:703
@@ -7420,25 +7448,25 @@ msgstr ""
 msgid "there"
 msgstr ""
 
-#: includes/core/class-rsvps.php:1673
+#: includes/core/class-rsvps.php:1718
 #, php-format
 msgid "Schedule (%s):"
 msgstr ""
 
-#: includes/core/class-rsvps.php:1674
+#: includes/core/class-rsvps.php:1719
 msgid "Schedule:"
 msgstr ""
 
-#: includes/core/class-rsvps.php:1681
+#: includes/core/class-rsvps.php:1726
 msgid "View / manage your RSVP:"
 msgstr ""
 
-#: includes/core/class-rsvps.php:1682
+#: includes/core/class-rsvps.php:1727
 msgid "View event page:"
 msgstr ""
 
-#: includes/core/class-rsvps.php:1691
-#: includes/core/class-rsvps.php:1702
+#: includes/core/class-rsvps.php:1736
+#: includes/core/class-rsvps.php:1747
 #: includes/core/class-ticket-emails.php:255
 #: includes/core/class-ticket-emails.php:335
 #: includes/core/class-ticket-emails.php:533
@@ -7446,25 +7474,25 @@ msgid "Location:"
 msgstr ""
 
 #. translators: %d: Number of guests.
-#: includes/core/class-rsvps.php:2060
+#: includes/core/class-rsvps.php:2105
 msgid "Guests:"
 msgstr ""
 
-#: includes/core/class-rsvps.php:2076
+#: includes/core/class-rsvps.php:2121
 msgid "A new RSVP has been submitted."
 msgstr ""
 
-#: includes/core/class-rsvps.php:2077
+#: includes/core/class-rsvps.php:2122
 msgid "Attendee:"
 msgstr ""
 
-#: includes/core/class-rsvps.php:2079
+#: includes/core/class-rsvps.php:2124
 #: includes/core/class-ticket-emails.php:909
 #: includes/core/class-ticket-emails.php:1773
 msgid "Event:"
 msgstr ""
 
-#: includes/core/class-rsvps.php:2080
+#: includes/core/class-rsvps.php:2125
 #: includes/core/class-ticket-emails.php:910
 #: includes/core/class-ticket-emails.php:1774
 msgid "Date:"
@@ -7596,11 +7624,11 @@ msgstr ""
 msgid "Template used when viewing a recurring event series."
 msgstr ""
 
-#: includes/core/class-template.php:1124
+#: includes/core/class-template.php:1135
 msgid "Event Field Group"
 msgstr ""
 
-#: includes/core/class-template.php:1128
+#: includes/core/class-template.php:1139
 msgid "Event Field"
 msgstr ""
 

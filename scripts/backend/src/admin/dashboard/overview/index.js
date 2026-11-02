@@ -16,7 +16,7 @@ export function DashboardOverview() {
         <UpcomingEvents />
       </div>
       <div className="grid">
-        <ProLaunch />
+        <ProLaunch source="dashboard" />
       </div>
       <div className="grid gap-8 md:grid-cols-2">
         <GettingStarted />

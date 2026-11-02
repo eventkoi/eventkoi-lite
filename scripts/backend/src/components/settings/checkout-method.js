@@ -8,6 +8,7 @@ import { Panel } from "@/components/panel";
 import { ProBadge } from "@/components/pro-badge";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { upgradeUrl } from "@/lib/upgrade-url";
 import { showToast, showToastError } from "@/lib/toast";
 
 function StripeLogo({ className = "" }) {
@@ -127,7 +128,7 @@ export function SettingsCheckoutMethod({ settings, setSettings }) {
 
           <div className="grid gap-4 sm:grid-cols-3">
             <a
-              href="https://eventkoi.com/upgradeqf35m3ref/"
+              href={upgradeUrl("pro-feature-card", "checkout-stripe")}
               target="_blank"
               rel="noopener noreferrer"
               className="flex flex-col items-center gap-3 py-6 px-4 bg-white border rounded-2xl border-border opacity-60 hover:opacity-80 transition-opacity no-underline"
@@ -153,7 +154,7 @@ export function SettingsCheckoutMethod({ settings, setSettings }) {
             </div>
 
             <a
-              href="https://eventkoi.com/upgradeqf35m3ref/"
+              href={upgradeUrl("pro-feature-card", "checkout-surecart")}
               target="_blank"
               rel="noopener noreferrer"
               className="flex flex-col items-center gap-3 py-6 px-4 bg-white border rounded-2xl border-border opacity-60 hover:opacity-80 transition-opacity no-underline"
