@@ -3,7 +3,7 @@ Contributors: eventkoi, lesleysim, ahmedfouaddev
 Donate link: https://donate.stripe.com/fZubJ1auN86Y1PU8cSdUY01
 Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 8.0
 Stable tag: 1.4.9.1
 License: GPLv2 or later
