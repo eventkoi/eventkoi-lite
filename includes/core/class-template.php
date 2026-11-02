@@ -444,7 +444,12 @@ class Template {
 
 		// A page builder template (Beaver, Elementor, Bricks) renders and exits
 		// here; anything else falls through to the block template handling.
-		self::render_builder_template( $selected_template_slug, $event );
+		// Elementor's editor preview of the event itself is left alone: it
+		// needs the_content for its canvas, which the compat template at the
+		// end of template_include provides, not the site's Elementor template.
+		if ( ! self::is_elementor_preview_request() ) {
+			self::render_builder_template( $selected_template_slug, $event );
+		}
 
 		$event_template = self::get_effective_template_slug( $event, $instance_ts, $overrides );
 		if ( ! empty( $event_template ) && 'default' !== $event_template ) {
@@ -597,10 +602,16 @@ class Template {
 	}
 
 	/**
-	 * Force a block-theme-safe template when editing Beaver Themer layouts.
+	 * Whether the request is Elementor's editor preview of the current page.
 	 *
-	 * Beaver's editor route can call get_header()/get_footer() on block themes,
-	 * which triggers deprecated notices when header.php/footer.php don't exist.
+	 * @return bool
+	 */
+	private static function is_elementor_preview_request() {
+		return isset( $_GET['elementor-preview'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only routing check; Elementor validates its own preview nonce.
+	}
+
+	/**
+	 * Serve a content-area template to Elementor's editor preview of events.
 	 *
 	 * @param string $template Current template path.
 	 *
@@ -611,7 +622,7 @@ class Template {
 			return $template;
 		}
 
-		if ( ! isset( $_GET['elementor-preview'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only routing check; Elementor validates its own preview nonce.
+		if ( ! self::is_elementor_preview_request() ) {
 			return $template;
 		}
 
