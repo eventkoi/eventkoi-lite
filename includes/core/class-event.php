@@ -1540,7 +1540,17 @@ class Event {
 			return '';
 		}
 
-		if ( 'recurring' === self::get_date_type() && $instance ) {
+		// Loop integrations already hand back the instance URL from get_permalink();
+		// only append the instance when the URL does not carry it yet.
+		$query_instance = '';
+		$query_string   = (string) wp_parse_url( $url, PHP_URL_QUERY );
+		if ( '' !== $query_string ) {
+			wp_parse_str( $query_string, $query_vars );
+			$query_instance = (string) ( $query_vars['instance'] ?? '' );
+		}
+		$has_instance = $instance && ( false !== strpos( $url, '/' . $instance . '/' ) || (string) $instance === $query_instance );
+
+		if ( 'recurring' === self::get_date_type() && $instance && ! $has_instance ) {
 			if ( get_option( 'permalink_structure' ) ) {
 				// Pretty permalinks — append instance timestamp as path segment.
 				$url = trailingslashit( $url ) . $instance . '/';
