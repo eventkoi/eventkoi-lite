@@ -607,7 +607,14 @@ class Template {
 	 * @return bool
 	 */
 	private static function is_elementor_preview_request() {
-		return isset( $_GET['elementor-preview'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only routing check; Elementor validates its own preview nonce.
+		if ( ! isset( $_GET['elementor-preview'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only routing check; Elementor validates its own preview nonce.
+			return false;
+		}
+
+		// Only the editor's own preview frame skips the builder template, never a visitor adding the parameter.
+		$post_id = absint( wp_unslash( $_GET['elementor-preview'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Same read-only routing check.
+
+		return $post_id > 0 && current_user_can( 'edit_post', $post_id );
 	}
 
 	/**

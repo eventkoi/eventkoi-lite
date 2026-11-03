@@ -265,6 +265,19 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
         "eventkoi-lite",
       );
     }
+    if (emailGuests) {
+      const seen = new Set([String(email || "").trim().toLowerCase()]);
+      for (const g of guestEntries) {
+        const value = g.email.trim().toLowerCase();
+        if (value && seen.has(value)) {
+          return __(
+            "Each guest needs their own email address to get their own confirmation.",
+            "eventkoi-lite",
+          );
+        }
+        if (value) seen.add(value);
+      }
+    }
     return null;
   })();
 

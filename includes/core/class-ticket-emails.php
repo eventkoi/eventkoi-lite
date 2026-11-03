@@ -80,7 +80,7 @@ class Ticket_Emails {
 			return $order;
 		}
 
-		$sent = self::send_for_order( $order, false );
+		$sent = self::send_for_order( $order, false, true );
 		if ( ! $sent ) {
 			return new WP_Error( 'ticket_email_not_sent', __( 'Ticket confirmation email was not sent.', 'eventkoi-lite' ), array( 'status' => 500 ) );
 		}
@@ -117,7 +117,7 @@ class Ticket_Emails {
 			return false;
 		}
 
-		return self::send_for_order( $order, false, false );
+		return self::send_for_order( $order, false, false, false );
 	}
 
 	/**
@@ -383,10 +383,11 @@ class Ticket_Emails {
 	 *
 	 * @param array $order Order payload from edge.
 	 * @param bool  $skip_if_note_exists Skip if confirmation note already exists.
+	 * @param bool  $is_resend Whether this is a manual resend from the admin.
 	 * @param bool  $sync_local Whether to sync the order rows locally after sending.
 	 * @return bool
 	 */
-	private static function send_for_order( $order, $skip_if_note_exists = false, $sync_local = true ) {
+	private static function send_for_order( $order, $skip_if_note_exists = false, $is_resend = false, $sync_local = true ) {
 		if ( ! is_array( $order ) ) {
 			return false;
 		}
@@ -543,15 +544,19 @@ class Ticket_Emails {
 		$sent = self::deliver_ticket_email( $recipient_email, $subject, $body, $settings );
 
 		if ( $sent && '' !== $order_id ) {
-			self::add_confirmation_note( $order_id );
-			if ( $sync_local ) {
-				Ticket_Order_Sync::sync_order_to_local( $order );
+			if ( $is_resend ) {
+				self::add_resend_note( $order_id );
+			} else {
+				self::add_confirmation_note( $order_id );
+				if ( $sync_local ) {
+					Ticket_Order_Sync::sync_order_to_local( $order );
+				}
 			}
 		}
 
-		// The buyer asked for every attendee to get their own ticket. The hold
-		// id only travels with the first send, so resends reach the buyer alone.
-		if ( $sent && self::order_wants_attendee_emails( $order ) ) {
+		// The buyer asked for every attendee to get their own ticket. Only on
+		// the first send: an admin resend goes to the buyer alone.
+		if ( $sent && ! $is_resend && self::order_wants_attendee_emails( $order ) ) {
 			self::send_attendee_ticket_emails( $order, $items, $seat_attendees, $tags, $subject, $body_template, $settings, $recipient_email, $ticket_name_contexts );
 		}
 
@@ -623,16 +628,25 @@ class Ticket_Emails {
 	/**
 	 * Whether the buyer ticked "Email each attendee their own ticket".
 	 *
-	 * The choice lives in the attendee stash keyed by the checkout hold, which
-	 * only the first send carries.
+	 * The choice lives in the attendee stash keyed by the checkout hold, and
+	 * WooCommerce orders also carry it as order meta.
 	 *
 	 * @param array $order Order payload.
 	 * @return bool
 	 */
 	private static function order_wants_attendee_emails( $order ) {
 		$hold_id = sanitize_text_field( (string) ( $order['hold_id'] ?? ( is_array( $order['metadata'] ?? null ) ? ( $order['metadata']['hold_id'] ?? '' ) : '' ) ) );
+		if ( '' !== $hold_id && Attendees::get_stashed_checkout_attendees( $hold_id )['email_each'] ) {
+			return true;
+		}
 
-		return '' !== $hold_id && Attendees::get_stashed_checkout_attendees( $hold_id )['email_each'];
+		$order_id = (string) ( $order['order_id'] ?? $order['id'] ?? '' );
+		if ( preg_match( '/^wc_(\d+)/', $order_id, $m ) && function_exists( 'wc_get_order' ) ) {
+			$wc_order = wc_get_order( (int) $m[1] );
+			return $wc_order && 'yes' === (string) $wc_order->get_meta( '_eventkoi_email_attendees' );
+		}
+
+		return false;
 	}
 
 	/**
@@ -688,6 +702,8 @@ class Ticket_Emails {
 		// blast; no real order names more attendees than this.
 		$by_email = array_slice( $by_email, 0, 10, true );
 
+		$order_id = sanitize_text_field( (string) ( $order['id'] ?? $order['order_id'] ?? '' ) );
+
 		foreach ( $by_email as $recipient ) {
 			$own_items = $recipient['items'];
 			$own_codes = array();
@@ -715,6 +731,9 @@ class Ticket_Emails {
 			$own_body = self::finalize_email_body( self::replace_email_tags( $body_template, $own_tags ) );
 			if ( self::deliver_ticket_email( $recipient['email'], self::replace_email_tags( $subject, $own_tags ), $own_body, $settings ) ) {
 				++$sent;
+				if ( ctype_digit( $order_id ) ) {
+					( new \EventKoi\Core\Orders() )->add_note( (int) $order_id, 'attendee_ticket_sent', $recipient['email'], 'system' );
+				}
 			}
 		}
 
@@ -1223,12 +1242,27 @@ class Ticket_Emails {
 	}
 
 	/**
-	 * Add order note after sending confirmation.
+	 * Add order note after an admin resend.
 	 *
 	 * @param string $order_id Order ID.
 	 * @return void
 	 */
-	private static function add_confirmation_note( $order_id ) {
+	private static function add_resend_note( $order_id ) {
+		$local_id = self::resolve_local_order_id( $order_id );
+
+		if ( $local_id > 0 ) {
+			$orders = new \EventKoi\Core\Orders();
+			$orders->add_note( $local_id, 'ticket_confirmation_resent', __( 'Ticket confirmation resent.', 'eventkoi-lite' ), 'system' );
+		}
+	}
+
+	/**
+	 * Resolve the local order row id for a wc_, numeric or checkout order id.
+	 *
+	 * @param string $order_id Order ID.
+	 * @return int
+	 */
+	private static function resolve_local_order_id( $order_id ) {
 		$order_id = (string) $order_id;
 		$local_id = 0;
 
@@ -1241,6 +1275,17 @@ class Ticket_Emails {
 			$row      = \EKLIB\StellarWP\DB\DB::table( 'eventkoi_orders' )->where( 'checkout_id', $order_id )->get();
 			$local_id = ( $row && ! empty( $row->id ) ) ? (int) $row->id : 0;
 		}
+
+		return $local_id;
+	}
+
+	/**
+	 * Add a confirmation-sent note to the order.
+	 *
+	 * @param string $order_id Order ID.
+	 */
+	private static function add_confirmation_note( $order_id ) {
+		$local_id = self::resolve_local_order_id( $order_id );
 
 		if ( $local_id > 0 ) {
 			$orders = new \EventKoi\Core\Orders();

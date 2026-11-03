@@ -1,4 +1,5 @@
 import { ProLaunch } from "@/components/dashboard/pro-launch";
+import { __ } from "@wordpress/i18n";
 import { EventDateRecurring } from "@/components/event/event-date-recurring";
 import { EventDateStandard } from "@/components/event/event-date-standard";
 import { Panel } from "@/components/panel";
@@ -75,7 +76,7 @@ export function EventDate({ showAttributes }) {
 
         <TabsContent value="recurring">
           <ProLaunch
-            headline="Upgrade to access Recurring Events"
+            headline={__("Upgrade to access Recurring Events", "eventkoi-lite")}
             minimal
             className="mb-8 mt-6"
             source="event-recurring"

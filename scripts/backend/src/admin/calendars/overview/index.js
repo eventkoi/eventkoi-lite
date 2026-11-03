@@ -829,7 +829,7 @@ export function CalendarsOverview() {
           customTopLeft={() => null}
         />
         <ProLaunch
-          headline="Upgrade to access Unlimited Calendars"
+          headline={__("Upgrade to access Unlimited Calendars", "eventkoi-lite")}
           minimal
           source="calendars"
         />

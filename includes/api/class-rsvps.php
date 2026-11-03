@@ -469,13 +469,23 @@ class Rsvps {
 			$rows[] = $row;
 		}
 
-		$header = array( 'Name', 'Email', 'Type', 'Guest of', 'Status', 'Check-in code', 'Checked in', 'Guests', 'RSVP date' );
+		$header = array(
+			__( 'Name', 'eventkoi-lite' ),
+			__( 'Email', 'eventkoi-lite' ),
+			__( 'Type', 'eventkoi-lite' ),
+			__( 'Guest of', 'eventkoi-lite' ),
+			__( 'Status', 'eventkoi-lite' ),
+			__( 'Check-in code', 'eventkoi-lite' ),
+			__( 'Checked in', 'eventkoi-lite' ),
+			__( 'Guests', 'eventkoi-lite' ),
+			__( 'RSVP date', 'eventkoi-lite' ),
+		);
 		foreach ( $custom_fields as $field ) {
 			$header[] = $field['label'];
 		}
 
 		$handle = fopen( 'php://temp', 'r+' );
-		fputcsv( $handle, $header );
+		fputcsv( $handle, $header, ',', '"', '\\' );
 
 		// Prevent CSV-formula injection: any cell starting with =, +, -, @, tab
 		// or CR is interpreted as a formula by Excel/Sheets/Numbers. Attendee
@@ -494,7 +504,7 @@ class Rsvps {
 		};
 
 		foreach ( $rows as $row ) {
-			fputcsv( $handle, array_map( $sanitize_cell, array_values( $row ) ) );
+			fputcsv( $handle, array_map( $sanitize_cell, array_values( $row ) ), ',', '"', '\\' );
 		}
 
 		rewind( $handle );

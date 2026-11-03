@@ -276,6 +276,22 @@ class Rsvps {
 			return $guest_details;
 		}
 
+		// Each guest needs an address of their own to get their own confirmation;
+		// a repeated address is stored once per party and would vanish on edit.
+		if ( $email_each && is_array( $guest_details ) ) {
+			$seen = array( strtolower( $email ) );
+			foreach ( $guest_details as $entry ) {
+				$guest_email = strtolower( (string) ( $entry['email'] ?? '' ) );
+				if ( '' === $guest_email ) {
+					continue;
+				}
+				if ( in_array( $guest_email, $seen, true ) ) {
+					return new \WP_Error( 'eventkoi_rsvp_guest_email_unique', __( 'Each guest needs their own email address to get their own confirmation.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+				}
+				$seen[] = $guest_email;
+			}
+		}
+
 		$auto_account = Event::get_rsvp_auto_account();
 		if ( ! $user_id && 'going' === $status && $auto_account ) {
 			$user_id = self::get_or_create_user( $email, $name );

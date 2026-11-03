@@ -115,7 +115,7 @@ export function EventEditMain() {
           </div>
         )}
         <ProLaunch
-          headline="Upgrade to switch event templates and calendars"
+          headline={__("Upgrade to switch event templates and calendars", "eventkoi-lite")}
           minimal
           source="event-templates"
         />
