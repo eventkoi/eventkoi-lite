@@ -10,6 +10,7 @@
 $data_types = array(
 	'event_title',
 	'event_details',
+	'event_excerpt',
 	'event_timezone',
 	'event_gmap',
 	'event_image',

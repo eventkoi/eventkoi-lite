@@ -30,6 +30,7 @@ export function Calendar(props) {
     calendars,
     showImage,
     showDescription,
+    descriptionSource,
     showLocation,
     borderStyle,
     borderSize,
@@ -332,6 +333,7 @@ export function Calendar(props) {
           setTimeFormat={setTimeFormat}
           showImage={showImage}
           showDescription={showDescription}
+          descriptionSource={descriptionSource}
           showLocation={showLocation}
           showTimezone={showTimezone}
           borderStyle={borderStyle}
@@ -409,6 +411,7 @@ export function mountEventKoiCalendars(rootElement = document) {
           showImage={el.getAttribute("data-show-image")}
           showLocation={el.getAttribute("data-show-location")}
           showDescription={el.getAttribute("data-show-description")}
+          descriptionSource={el.getAttribute("data-description-source")}
           borderStyle={el.getAttribute("data-border-style")}
           borderSize={el.getAttribute("data-border-size")}
           context={el.getAttribute("data-context")}

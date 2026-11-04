@@ -48,6 +48,15 @@ export function EventEditMain() {
         <div className="flex flex-col sm:flex-row sm:items-start sm:gap-6 [&>*]:flex-1 [&>*]:min-w-0">
           <EventSlug />
           <EventExcerpt />
+          {showAttributes && (
+            <div className="text-sm text-muted-foreground -mt-6">
+              <ShortcodeBox
+                attribute="event_excerpt"
+                data="excerpt"
+                eventId={event?.id}
+              />
+            </div>
+          )}
         </div>
       </Box>
 

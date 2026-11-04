@@ -11,6 +11,7 @@ export function CalendarListMode({
   setTimeFormat,
   showImage,
   showDescription,
+  descriptionSource,
   showLocation,
   showTimezone = true,
   borderStyle,
@@ -34,6 +35,7 @@ export function CalendarListMode({
         timezone={timezone}
         showImage={showImage}
         showDescription={showDescription}
+        descriptionSource={descriptionSource}
         showLocation={showLocation}
         borderStyle={borderStyle}
         borderSize={borderSize}

@@ -187,19 +187,20 @@ class Shortcodes {
 	public static function render_calendar( $user_attributes, $content, $shortcode_name ) {
 		$attributes = shortcode_atts(
 			array(
-				'id'               => '',
-				'display'          => 'calendar',
-				'orderby'          => 'date_modified',
-				'order'            => 'desc',
-				'per_page'         => 10,
-				'max_results'      => 0,
-				'date_start'       => '',
-				'date_end'         => '',
-				'expand'           => '',
-				'expand_instances' => '',
-				'timeframe'        => '',
-				'views'            => '',
-				'show_timezone'    => '',
+				'id'                 => '',
+				'display'            => 'calendar',
+				'orderby'            => 'date_modified',
+				'order'              => 'desc',
+				'per_page'           => 10,
+				'max_results'        => 0,
+				'date_start'         => '',
+				'date_end'           => '',
+				'expand'             => '',
+				'expand_instances'   => '',
+				'timeframe'          => '',
+				'views'              => '',
+				'show_timezone'      => '',
+				'description_source' => '',
 			),
 			$user_attributes,
 			$shortcode_name
@@ -320,6 +321,11 @@ class Shortcodes {
 			$calendar_args['date_start']       = $date_start;
 			$calendar_args['date_end']         = $date_end;
 			$calendar_args['expand_instances'] = $expand_instances;
+
+			$description_source = sanitize_key( (string) $attributes['description_source'] );
+			if ( in_array( $description_source, array( 'details', 'excerpt' ), true ) ) {
+				$calendar_args['description_source'] = $description_source;
+			}
 		}
 
 		$html = eventkoi_get_calendar_content( $primary_id, $display, $calendar_args );

@@ -87,12 +87,19 @@ export function ListView({
   timezone,
   showImage,
   showDescription,
+  descriptionSource = "details",
   showLocation,
   borderSize,
   borderStyle,
   timeFormat,
   loading,
 }) {
+  // The calendar's list setting decides whether the line under the title is
+  // the description summary or the hand-written excerpt.
+  const summaryText = (event) =>
+    descriptionSource === "excerpt"
+      ? event?.excerpt || ""
+      : event?.description || "";
   if (events === null || loading) {
     return (
       <div
@@ -296,9 +303,9 @@ export function ListView({
                 </a>
               </h3>
 
-              {showDescription === "yes" && event.description && (
+              {showDescription === "yes" && summaryText(event) && (
                 <p className="text-base text-muted-foreground line-clamp-2 m-0">
-                  {event.description}
+                  {summaryText(event)}
                 </p>
               )}
 

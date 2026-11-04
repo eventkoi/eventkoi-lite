@@ -819,6 +819,29 @@ class Event {
 	}
 
 	/**
+	 * Plain-text excerpt for list rows.
+	 *
+	 * The hand-written excerpt only, cleaned the same way as the description
+	 * summary but never truncated, since excerpts are already short.
+	 *
+	 * @return string
+	 */
+	public static function get_excerpt_text() {
+		$excerpt = (string) self::get_excerpt();
+
+		if ( '' === trim( $excerpt ) ) {
+			return '';
+		}
+
+		$excerpt = html_entity_decode( $excerpt, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+		$excerpt = wp_strip_all_tags( strip_shortcodes( $excerpt ) );
+		$excerpt = str_replace( array( "\xC2\xA0", '&nbsp;' ), ' ', $excerpt );
+		$excerpt = (string) preg_replace( '/\s+/', ' ', trim( $excerpt ) );
+
+		return apply_filters( 'eventkoi_get_event_excerpt_text', $excerpt, self::$event_id, self::$event );
+	}
+
+	/**
 	 * Get event slug.
 	 *
 	 * @return string

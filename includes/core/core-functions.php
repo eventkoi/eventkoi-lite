@@ -425,6 +425,14 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 	$content_size     = ! empty( $args['layout']['contentSize'] ) ? sanitize_text_field( $args['layout']['contentSize'] ) : '';
 	$wide_size        = ! empty( $args['layout']['wideSize'] ) ? sanitize_text_field( $args['layout']['wideSize'] ) : '';
 
+	// Which text the list prints under each event title: the description
+	// summary or the hand-written excerpt. An embed argument wins over the
+	// calendar setting.
+	$description_source = isset( $args['description_source'] ) ? sanitize_key( (string) $args['description_source'] ) : 'details';
+	if ( ! in_array( $description_source, array( 'details', 'excerpt' ), true ) ) {
+		$description_source = 'details';
+	}
+
 	if ( empty( $content_size ) && is_tax( 'event_cal' ) ) {
 		$content_size = '1100px';
 	}
@@ -517,7 +525,8 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 				data-feed-url="%24$s"
 				data-feed-webcal="%25$s"
 				data-visible-views="%26$s"
-				data-show-timezone="%27$s">
+				data-show-timezone="%27$s"
+				data-description-source="%28$s">
 			</div>
 		</div>
 	<!-- /wp:group -->',
@@ -547,7 +556,8 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 		esc_url( $feed_url ),                        // %24$s
 		esc_url( $feed_webcal_url, array( 'https', 'http', 'webcal' ) ), // %25$s
 		esc_attr( implode( ',', $visible_views ) ), // %26$s
-		esc_attr( $show_timezone ? '1' : '0' ) // %27$s
+		esc_attr( $show_timezone ? '1' : '0' ), // %27$s
+		esc_attr( $description_source )          // %28$s
 	);
 
 	$output = do_blocks( apply_filters( 'eventkoi_get_calendar_content', $calendar_template ) );

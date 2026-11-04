@@ -180,6 +180,7 @@ class Divi_Renderers {
 			'full'                        => esc_html__( 'Full event', 'eventkoi-lite' ),
 			'event_title'                 => esc_html__( 'Title', 'eventkoi-lite' ),
 			'event_details'               => esc_html__( 'Details', 'eventkoi-lite' ),
+			'event_excerpt'               => esc_html__( 'Excerpt', 'eventkoi-lite' ),
 			'event_image'                 => esc_html__( 'Image', 'eventkoi-lite' ),
 			'event_datetime'              => esc_html__( 'Date & time', 'eventkoi-lite' ),
 			'event_date'                  => esc_html__( 'Date only', 'eventkoi-lite' ),
