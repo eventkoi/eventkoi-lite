@@ -1658,6 +1658,8 @@ class Tickets {
 		$payload['id']    = absint( $event_id );
 		$payload['title'] = eventkoi_event_title_text( $event_id );
 
+		$payload['is_package'] = Event::is_package();
+
 		if ( empty( $payload['timezone'] ) ) {
 			$payload['timezone'] = wp_timezone_string() ? wp_timezone_string() : 'UTC';
 		}

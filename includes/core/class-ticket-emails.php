@@ -322,7 +322,7 @@ class Ticket_Emails {
 		$subject = trim( (string) ( $settings['reminder_email_subject'] ?? '' ) );
 		$subject = '' !== $subject ? $subject : self::get_reminder_default_subject();
 		$subject = apply_filters( 'eventkoi_reminder_email_subject', $subject, $tags, $attendee );
-		$subject = self::replace_email_tags( (string) $subject, $tags );
+		$subject = self::replace_subject_tags( $subject, $tags );
 
 		$body = trim( (string) ( $settings['reminder_email_template'] ?? '' ) );
 		$body = '' !== wp_strip_all_tags( $body ) ? $body : self::get_reminder_default_template();
@@ -519,7 +519,7 @@ class Ticket_Emails {
 
 		$subject_default = __( '[event_name]: Ticket details', 'eventkoi-lite' );
 		$subject         = apply_filters( 'eventkoi_ticket_email_subject', $subject_default, $tags, $order, $items );
-		$subject         = self::replace_email_tags( (string) $subject, $tags );
+		$subject         = self::replace_subject_tags( $subject, $tags );
 
 		$default_body = implode(
 			"\n",
@@ -917,7 +917,7 @@ class Ticket_Emails {
 			? (string) $settings['refund_email_subject']
 			: $subject_default;
 		$subject         = apply_filters( 'eventkoi_refund_email_subject', $subject_raw, $tags, $order );
-		$subject         = self::replace_email_tags( (string) $subject, $tags );
+		$subject         = self::replace_subject_tags( $subject, $tags );
 
 		$default_body = implode(
 			"\n",
@@ -1220,6 +1220,17 @@ class Ticket_Emails {
 	}
 
 	/**
+	 * Replace tags in a subject line, which has to stay on one line.
+	 *
+	 * @param string $subject Subject.
+	 * @param array  $tags Tags map.
+	 * @return string
+	 */
+	private static function replace_subject_tags( $subject, $tags ) {
+		return str_replace( "\n", ', ', self::replace_email_tags( (string) $subject, $tags ) );
+	}
+
+	/**
 	 * Check whether confirmation note already exists.
 	 *
 	 * @param array $order Order payload.
@@ -1488,6 +1499,30 @@ class Ticket_Emails {
 		}
 
 		new Event( $event_id );
+
+		// One ticket covers every date, so list them one per line.
+		if ( Event::is_package() ) {
+			$lines = array();
+			foreach ( Event::get_event_days() as $day ) {
+				$day_start = is_array( $day ) && ! empty( $day['start_date'] ) ? (int) strtotime( (string) $day['start_date'] ) : 0;
+				if ( ! $day_start ) {
+					continue;
+				}
+
+				$day_end = ! empty( $day['end_date'] ) ? (int) strtotime( (string) $day['end_date'] ) : 0;
+				if ( ! empty( $day['all_day'] ) ) {
+					$lines[ $day_start ] = eventkoi_format_datetime_range( $day_start, $day_end, true, array( 'timezone' => wp_timezone() ) );
+				} else {
+					$lines[ $day_start ] = $day_end
+						? eventkoi_date( 'datetime', $day_start ) . ' — ' . eventkoi_date( 'datetime', $day_end )
+						: eventkoi_date( 'datetime', $day_start );
+				}
+			}
+			ksort( $lines );
+
+			return array( implode( "\n", $lines ), eventkoi_timezone() );
+		}
+
 		$date_type      = Event::get_date_type();
 		$standard_type  = Event::get_standard_type();
 		$current_start  = absint( get_post_meta( $event_id, 'start_timestamp', true ) );
@@ -1829,7 +1864,7 @@ class Ticket_Emails {
 
 		// The tag values are escaped for the HTML body. The subject line is
 		// plain text, so entities there would show up literally in the inbox.
-		$subject = wp_specialchars_decode( strtr( $subject, $tags ), ENT_QUOTES );
+		$subject = wp_specialchars_decode( self::replace_subject_tags( $subject, $tags ), ENT_QUOTES );
 		$body    = strtr( $template, $tags );
 		$body    = wp_kses( wpautop( trim( $body ) ), Settings::get_email_template_allowed_tags() );
 

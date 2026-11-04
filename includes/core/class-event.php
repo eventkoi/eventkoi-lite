@@ -3246,6 +3246,13 @@ class Event {
 			}
 		}
 
+		// Nothing else to show, so fall back to an online location with only a name.
+		foreach ( $locations as $loc ) {
+			if ( is_array( $loc ) && 'online' === self::get_location_type( $loc ) && '' !== self::location_text_value( $loc, 'name' ) ) {
+				return $loc;
+			}
+		}
+
 		return null;
 	}
 
@@ -3286,7 +3293,9 @@ class Event {
 		}
 
 		if ( 'online' === $type ) {
-			return esc_url_raw( self::get_location_virtual_url( $loc ) );
+			$virtual_url = self::get_location_virtual_url( $loc );
+
+			return '' !== $virtual_url ? esc_url_raw( $virtual_url ) : self::location_text_value( $loc, 'name' );
 		}
 
 		return '';
@@ -4141,6 +4150,9 @@ class Event {
 					$lines[] = '<a href="' . esc_url( $url ) . '" target="_blank" rel="noopener noreferrer">'
 					. esc_html( $online_label ) .
 					'</a>';
+				} elseif ( 'online' === $type && ! empty( $name ) ) {
+					// The link can stay private, for example when it comes with the ticket.
+					$lines[] = '<strong>' . esc_html( $name ) . '</strong>';
 				}
 
 				if ( empty( $lines ) ) {

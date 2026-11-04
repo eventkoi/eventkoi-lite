@@ -188,7 +188,23 @@ function getActiveInstance(event = {}, instanceTs = 0) {
 }
 
 function formatEventDateLine(event = {}, instanceTs = 0) {
-  const instance = getActiveInstance(event, instanceTs);
+  // One ticket covers every date, so the buyer sees all of them.
+  if (event.is_package && Array.isArray(event.event_days)) {
+    return [...event.event_days]
+      .sort(
+        (a, b) =>
+          getDateStartSeconds(a?.start_date) -
+          getDateStartSeconds(b?.start_date),
+      )
+      .map((day) => formatInstanceDateLine(event, day))
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  return formatInstanceDateLine(event, getActiveInstance(event, instanceTs));
+}
+
+function formatInstanceDateLine(event, instance) {
   if (!instance?.start_date) return "";
 
   const displayEvent = {
@@ -714,7 +730,9 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
   const checkoutEventTitle = footerEventTitle || eventTitle || eventInstanceTitle;
   const checkoutEventInstanceTitle = eventInstanceTitle || checkoutEventTitle;
   const footerEventLocation = formatEventLocationLine(eventMeta);
-  const renderedEventDate = getRenderedEventDatetimeText(mountEl, instanceTs);
+  const renderedEventDate = eventMeta?.is_package
+    ? ""
+    : getRenderedEventDatetimeText(mountEl, instanceTs);
   const footerEventDate =
     renderedEventDate ||
     formatEventDateLine(eventMeta, instanceTs);
@@ -1634,7 +1652,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                       {footerEventDate ? (
                         <div className="mt-1 flex items-start gap-2 text-sm text-foreground">
                           <Calendar className="mt-0.5 size-4 shrink-0" />
-                          <span>{footerEventDate}</span>
+                          <span className="whitespace-pre-line">{footerEventDate}</span>
                         </div>
                       ) : null}
                     </div>
@@ -2243,7 +2261,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                       {footerEventDate ? (
                         <div className="mt-2.5 flex items-start gap-2 text-sm text-foreground">
                           <Calendar className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                          <span>{footerEventDate}</span>
+                          <span className="whitespace-pre-line">{footerEventDate}</span>
                         </div>
                       ) : null}
                     </div>
