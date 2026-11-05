@@ -6,11 +6,14 @@ import { isSinglePackageEligible } from "@/lib/package-event";
 /**
  * "Sign up once for the whole event" toggle.
  *
- * Sits inside Display options on the Tickets and RSVP tabs rather than in the
- * date picker: the choice is about how people register, not about when the
- * event runs. The wording follows the tab it is shown in, so it reads as a
- * ticketing rule or an RSVP rule instead of the generic "register" that meant
- * neither. Rendered as a row so it matches the other Display options settings.
+ * Sits inside the options on the Tickets and RSVP tabs rather than in the date
+ * picker: the choice is about how people register, not about when the event
+ * runs. The wording follows the tab it is shown in, so it reads as a ticketing
+ * rule or an RSVP rule instead of the generic "register" that meant neither.
+ * Rendered as a row so it matches the other settings there.
+ *
+ * Tickets on a standard event always cover the whole event, so the row stays on
+ * there and points to recurring events for selling one day at a time.
  */
 export function EventDatePackageSetting({ event, setEvent, context = "tickets" }) {
   // Only meaningful for a multi-day selected-dates standard event.
@@ -30,7 +33,7 @@ export function EventDatePackageSetting({ event, setEvent, context = "tickets" }
         "eventkoi-lite",
       )
     : __(
-        "Attendees purchase one ticket that covers the whole event, instead of one ticket per day.",
+        "Attendees purchase one ticket that covers the whole event, instead of one ticket per day. To allow attendees to purchase one ticket per day, create a recurring event instead.",
         "eventkoi-lite",
       );
 
@@ -38,7 +41,8 @@ export function EventDatePackageSetting({ event, setEvent, context = "tickets" }
     <div className="flex items-start gap-4 max-w-[500px]">
       <Switch
         id="event_single_package"
-        checked={!!event?.event_single_package}
+        checked={!isRsvp || !!event?.event_single_package}
+        disabled={!isRsvp}
         className="mt-[1px]"
         onCheckedChange={(bool) =>
           setEvent((prevState) => ({

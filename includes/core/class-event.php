@@ -1016,6 +1016,36 @@ class Event {
 	}
 
 	/**
+	 * The dates a selected-dates standard event is showing, in date order: every
+	 * date, or just one when a loop row or the URL has picked it.
+	 *
+	 * @return array
+	 */
+	private static function get_listed_event_days() {
+		if ( 'standard' !== self::get_date_type() || 'selected' !== self::get_standard_type() ) {
+			return array();
+		}
+
+		$days = array_values(
+			array_filter(
+				self::get_event_days_for_rendering(),
+				static function ( $day ) {
+					return is_array( $day ) && ! empty( $day['start_date'] );
+				}
+			)
+		);
+
+		usort(
+			$days,
+			static function ( $a, $b ) {
+				return strtotime( $a['start_date'] ) <=> strtotime( $b['start_date'] );
+			}
+		);
+
+		return $days;
+	}
+
+	/**
 	 * Add source timezone date-only fields to all-day event-day rows.
 	 *
 	 * Stored dates remain UTC instants. These derived fields let editors and
@@ -2541,14 +2571,20 @@ class Event {
 	/**
 	 * Whether a multi-day selected-dates event should be treated as one package.
 	 *
-	 * New events default ON; existing events without the meta default OFF so the
-	 * historical per-day behaviour is preserved on update (grandfathering).
+	 * Tickets on a standard event always cover the whole event. New events default
+	 * ON; other existing events without the meta default OFF so the historical
+	 * per-day behaviour is preserved on update (grandfathering).
 	 *
 	 * @return bool
 	 */
 	public static function get_event_single_package() {
 		// New, unsaved events (the editor template runs with event id 0): default ON.
 		if ( empty( self::$event_id ) ) {
+			return apply_filters( 'eventkoi_get_event_single_package', true, self::$event_id, self::$event );
+		}
+
+		// Selling a day at a time is what recurring events are for.
+		if ( 'tickets' === self::get_attendance_mode() && 'standard' === self::get_date_type() ) {
 			return apply_filters( 'eventkoi_get_event_single_package', true, self::$event_id, self::$event );
 		}
 
@@ -4874,6 +4910,27 @@ class Event {
 			}
 		}
 
+		$listed_days = self::get_listed_event_days();
+		if ( count( $listed_days ) > 1 ) {
+			$lines = array();
+			foreach ( $listed_days as $day ) {
+				$start_ts = strtotime( $day['start_date'] );
+				$end_ts   = ! empty( $day['end_date'] ) ? strtotime( $day['end_date'] ) : null;
+				$args     = ! empty( $day['all_day'] )
+					? array( 'timezone' => self::get_all_day_datetime_timezone( self::get_timezone(), $day ) )
+					: array();
+
+				$lines[] = eventkoi_format_datetime_range( $start_ts, $end_ts && $end_ts >= $start_ts ? $end_ts : null, true, $args );
+			}
+
+			return apply_filters(
+				'eventkoi_rendered_event_date',
+				implode( '<br>', $lines ),
+				self::$event_id,
+				self::$event
+			);
+		}
+
 		$first = self::get_first_instance();
 
 		$start_ts = ! empty( $first['start_date'] ) ? strtotime( $first['start_date'] ) : null;
@@ -4940,38 +4997,44 @@ class Event {
 			}
 		}
 
-		$first = self::get_first_instance();
-
-		if ( ! empty( $first['all_day'] ) ) {
-			return apply_filters( 'eventkoi_rendered_event_time', '', self::$event_id, self::$event );
-		}
-
-		$start_ts = ! empty( $first['start_date'] ) ? strtotime( $first['start_date'] ) : null;
-		$end_ts   = ! empty( $first['end_date'] ) ? strtotime( $first['end_date'] ) : null;
-
-		if ( ! $start_ts ) {
-			return apply_filters( 'eventkoi_rendered_event_time', '', self::$event_id, self::$event );
-		}
-
-		if ( $end_ts && $end_ts < $start_ts ) {
-			$end_ts = null;
-		}
-
-		$start_str = wp_date( $time_format, $start_ts );
-
-		$same_day = $end_ts && wp_date( 'Y-m-d', $start_ts ) === wp_date( 'Y-m-d', $end_ts );
-		if ( $end_ts && $same_day ) {
-			$output = $start_str . ' — ' . wp_date( $time_format, $end_ts );
-		} else {
-			$output = $start_str;
+		// Dates sharing a time show it once; different times are each listed.
+		$listed_days = self::get_listed_event_days();
+		$rows        = count( $listed_days ) > 1 ? $listed_days : array( self::get_first_instance() );
+		$lines       = array();
+		foreach ( $rows as $row ) {
+			$lines[] = self::format_day_time_range( $row, $time_format );
 		}
 
 		return apply_filters(
 			'eventkoi_rendered_event_time',
-			$output,
+			implode( '<br>', array_unique( array_filter( $lines ) ) ),
 			self::$event_id,
 			self::$event
 		);
+	}
+
+	/**
+	 * Format one date row's time range. Empty for an all-day row.
+	 *
+	 * @param array  $day         Date row.
+	 * @param string $time_format PHP time format.
+	 * @return string
+	 */
+	private static function format_day_time_range( $day, $time_format ) {
+		$start_ts = ! empty( $day['start_date'] ) ? strtotime( $day['start_date'] ) : null;
+		$end_ts   = ! empty( $day['end_date'] ) ? strtotime( $day['end_date'] ) : null;
+
+		if ( ! empty( $day['all_day'] ) || ! $start_ts ) {
+			return '';
+		}
+
+		$start_str = wp_date( $time_format, $start_ts );
+
+		if ( $end_ts && $end_ts >= $start_ts && wp_date( 'Y-m-d', $start_ts ) === wp_date( 'Y-m-d', $end_ts ) ) {
+			return $start_str . ' — ' . wp_date( $time_format, $end_ts );
+		}
+
+		return $start_str;
 	}
 
 	/**

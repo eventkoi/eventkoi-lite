@@ -270,7 +270,7 @@ function getRenderedEventDatetimeText(mountEl = null, instanceTs = 0) {
         .forEach((n) => n.remove());
 
       const text = clone.textContent?.replace(/\s+/g, " ").trim() || "";
-      if (text) {
+      if (text && !rendered.includes(text)) {
         rendered.push(text);
       }
     }

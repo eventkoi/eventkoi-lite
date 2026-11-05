@@ -499,7 +499,7 @@ class Ticket_Emails {
 			'[attendee_name]'  => $first_name ? $first_name : __( 'there', 'eventkoi-lite' ),
 			'[attendee_email]' => $recipient_email,
 			'[customer_name]'  => $customer_name,
-			'[order_id]'       => $order_id,
+			'[order_id]'       => self::get_order_number( $order, $order_id ),
 			'[order_status]'   => $formatted_status,
 			'[event_title]'    => $event_name,
 			'[event_name]'     => $event_name,
@@ -899,7 +899,7 @@ class Ticket_Emails {
 			'[attendee_name]'  => $first_name ? $first_name : __( 'there', 'eventkoi-lite' ),
 			'[attendee_email]' => $recipient_email,
 			'[customer_name]'  => $customer_name,
-			'[order_id]'       => $order_id,
+			'[order_id]'       => self::get_order_number( $order, $order_id ),
 			'[event_title]'    => $event_name,
 			'[event_name]'     => $event_name,
 			'[event_datetime]' => $event_datetime,
@@ -1745,7 +1745,62 @@ class Ticket_Emails {
 	 * @return string
 	 */
 	private static function get_order_display_id( $order ) {
-		return sanitize_text_field( (string) ( $order['id'] ?? $order['order_id'] ?? '' ) );
+		$display_id = self::resolve_display_id( $order );
+
+		return $display_id > 0 ? (string) $display_id : sanitize_text_field( (string) ( $order['id'] ?? $order['order_id'] ?? '' ) );
+	}
+
+	/**
+	 * The order number shown to a buyer.
+	 *
+	 * @param array  $order    Order payload.
+	 * @param string $fallback Order ID to show when there is no number.
+	 * @return string
+	 */
+	private static function get_order_number( $order, $fallback ) {
+		$display_id = self::resolve_display_id( $order );
+
+		return $display_id > 0 ? '#' . $display_id : $fallback;
+	}
+
+	/**
+	 * Resolve the human-readable numeric order ID for an order payload.
+	 *
+	 * WC orders use the WC post ID; other orders use eventkoi_orders.id.
+	 *
+	 * @param array $order Order payload.
+	 * @return int Numeric display ID, or 0 if not resolvable.
+	 */
+	private static function resolve_display_id( $order ) {
+		if ( ! is_array( $order ) ) {
+			return 0;
+		}
+
+		$existing = absint( $order['display_id'] ?? 0 );
+		if ( $existing > 0 ) {
+			return $existing;
+		}
+
+		$candidate = (string) ( $order['checkout_id'] ?? $order['id'] ?? $order['order_id'] ?? '' );
+		if ( '' === $candidate ) {
+			return 0;
+		}
+
+		if ( preg_match( '/^wc_(\d+)/', $candidate, $m ) ) {
+			return (int) $m[1];
+		}
+
+		global $wpdb;
+		$orders_tbl = $wpdb->prefix . 'eventkoi_orders';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT id FROM {$orders_tbl} WHERE checkout_id = %s LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$candidate
+			)
+		);
+
+		return $row ? absint( $row->id ) : 0;
 	}
 
 	/**

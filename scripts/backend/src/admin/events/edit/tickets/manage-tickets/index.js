@@ -713,7 +713,7 @@ export function EventEditManageTickets() {
   return (
     <div className="flex flex-col w-full gap-8">
       <Box container>
-        <Heading level={3}>{__("Display options", "eventkoi-lite")}</Heading>
+        <Heading level={3}>{__("Event options", "eventkoi-lite")}</Heading>
 
         {!event?.id && (
           <p className="text-sm text-muted-foreground">
