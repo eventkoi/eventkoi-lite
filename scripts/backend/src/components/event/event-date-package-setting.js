@@ -16,12 +16,13 @@ import { isSinglePackageEligible } from "@/lib/package-event";
  * there and points to recurring events for selling one day at a time.
  */
 export function EventDatePackageSetting({ event, setEvent, context = "tickets" }) {
-  // Only meaningful for a multi-day selected-dates standard event.
-  if (!isSinglePackageEligible(event)) {
+  const isRsvp = context === "rsvp";
+
+  // RSVP only offers this on a multi-day selected-dates event. Tickets on a
+  // standard event are always on, so the row always shows there.
+  if (isRsvp && !isSinglePackageEligible(event)) {
     return null;
   }
-
-  const isRsvp = context === "rsvp";
 
   const title = isRsvp
     ? __("RSVP once for the whole event", "eventkoi-lite")
