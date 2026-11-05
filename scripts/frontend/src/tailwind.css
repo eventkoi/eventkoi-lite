@@ -177,3 +177,21 @@
     display: block;
   }
 }
+
+/* Content added through the eventkoi_calendar_grid_event_content filter. */
+.eventkoi-grid-event {
+  min-width: 0;
+  width: 100%;
+}
+
+.eventkoi-grid-event__main {
+  align-items: center;
+  display: flex;
+  min-width: 0;
+}
+
+.eventkoi-grid-event img {
+  display: block;
+  height: auto;
+  max-width: 100%;
+}

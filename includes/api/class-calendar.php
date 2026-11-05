@@ -303,13 +303,67 @@ class Calendar {
 			)
 		);
 
+		$events = self::enrich_events_for_editor( $event_data['items'] ?? array() );
+
 		$response = array(
 			'calendar' => $calendar::get_meta(),
-			'events'   => self::enrich_events_for_editor( $event_data['items'] ?? array() ),
+			'events'   => 'calendar' === $display ? self::apply_grid_event_content( $events ) : $events,
 			'total'    => $event_data['total'] ?? count( $event_data['items'] ?? array() ),
 		);
 
 		return rest_ensure_response( $response );
+	}
+
+	/**
+	 * Let sites add to or remove from what each event shows in the calendar grid.
+	 *
+	 * @param array $events Calendar event rows.
+	 * @return array
+	 */
+	private static function apply_grid_event_content( $events ) {
+		if ( ! has_filter( 'eventkoi_calendar_grid_event_content' ) ) {
+			return $events;
+		}
+
+		foreach ( $events as $index => $event ) {
+			/**
+			 * Filter what one event shows in the calendar grid (month and week views).
+			 *
+			 * @param array $content {
+			 *     What the event shows.
+			 *
+			 *     @type string $before     HTML above the time and title.
+			 *     @type bool   $show_dot   Whether to show the colored dot in month view.
+			 *     @type bool   $show_time  Whether to show the time.
+			 *     @type bool   $show_title Whether to show the title.
+			 *     @type string $after      HTML below the time and title.
+			 * }
+			 * @param array $event    The calendar row: title, start, end, url and more.
+			 * @param int   $event_id The event's post ID.
+			 */
+			$content = (array) apply_filters(
+				'eventkoi_calendar_grid_event_content',
+				array(
+					'before'     => '',
+					'show_dot'   => true,
+					'show_time'  => true,
+					'show_title' => true,
+					'after'      => '',
+				),
+				$event,
+				absint( $event['event_id'] ?? ( $event['id'] ?? 0 ) )
+			);
+
+			$events[ $index ]['grid_content'] = array(
+				'before'     => wp_kses_post( (string) ( $content['before'] ?? '' ) ),
+				'show_dot'   => ! empty( $content['show_dot'] ),
+				'show_time'  => ! empty( $content['show_time'] ),
+				'show_title' => ! empty( $content['show_title'] ),
+				'after'      => wp_kses_post( (string) ( $content['after'] ?? '' ) ),
+			);
+		}
+
+		return $events;
 	}
 
 	/**

@@ -420,27 +420,45 @@ export function CalendarGridMode({
         />
       ) : null;
 
-    if (arg.event?.allDay || !arg.event?.start) {
-      return (
-        <>
-          {dot}
-          <span className="fc-event-title">{title}</span>
-        </>
-      );
-    }
-
     // Empty return from formatCalendarTimeRange is intentional (multi-day
     // middle/end segment, Google style). Don't fall through to FC's
     // default which would resurrect the hidden time.
-    const timeText = formatCalendarTimeRange(arg);
+    const timeText =
+      arg.event?.allDay || !arg.event?.start ? "" : formatCalendarTimeRange(arg);
+    const gridContent = arg.event?.extendedProps?.grid_content;
+    const showTime = gridContent?.show_time !== false && timeText;
+
+    const parts = (
+      <>
+        {gridContent?.show_dot !== false ? dot : null}
+        {showTime ? <span className="fc-event-time">{timeText}</span> : null}
+        {showTime ? " " : null}
+        {gridContent?.show_title !== false ? (
+          <span className="fc-event-title">{title}</span>
+        ) : null}
+      </>
+    );
+
+    if (!gridContent?.before && !gridContent?.after) {
+      return parts;
+    }
 
     return (
-      <>
-        {dot}
-        {timeText ? <span className="fc-event-time">{timeText}</span> : null}
-        {timeText ? " " : null}
-        <span className="fc-event-title">{title}</span>
-      </>
+      <div className="eventkoi-grid-event">
+        {gridContent.before ? (
+          <div
+            className="eventkoi-grid-event__before"
+            dangerouslySetInnerHTML={{ __html: gridContent.before }}
+          />
+        ) : null}
+        <div className="eventkoi-grid-event__main">{parts}</div>
+        {gridContent.after ? (
+          <div
+            className="eventkoi-grid-event__after"
+            dangerouslySetInnerHTML={{ __html: gridContent.after }}
+          />
+        ) : null}
+      </div>
     );
   };
   const formatInCalendarTz = (date, options) => {
