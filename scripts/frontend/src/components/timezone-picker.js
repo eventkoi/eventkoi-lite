@@ -69,13 +69,13 @@ export function TimezonePicker({
               <TabsList className="flex bg-muted px-2 gap-2 shadow-none rounded-none">
                 <TabsTrigger
                   value="12"
-                  className="rounded-sm bg-muted text-foreground hover:text-foreground flex-1 data-[state=active]:font-semibold shadow-none border-none cursor-pointer"
+                  className="rounded-sm bg-muted text-foreground hover:text-foreground flex-1 data-[state=active]:hover:text-primary-foreground data-[state=active]:font-semibold shadow-none border-none cursor-pointer"
                 >
                   {__("12hr (AM/PM)", "eventkoi-lite")}
                 </TabsTrigger>
                 <TabsTrigger
                   value="24"
-                  className="rounded-sm bg-muted text-foreground hover:text-foreground flex-1 data-[state=active]:font-semibold shadow-none border-none cursor-pointer"
+                  className="rounded-sm bg-muted text-foreground hover:text-foreground flex-1 data-[state=active]:hover:text-primary-foreground data-[state=active]:font-semibold shadow-none border-none cursor-pointer"
                 >
                   {__("24hr", "eventkoi-lite")}
                 </TabsTrigger>

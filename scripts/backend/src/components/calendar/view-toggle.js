@@ -22,14 +22,14 @@ export function ViewToggle({ calendarApi, view, setView }) {
       <ToggleGroupItem
         value="dayGridMonth"
         aria-label={__("Month view", "eventkoi-lite")}
-        className="border-none transition-none cursor-pointer shadow-none h-full rounded-sm text-foreground hover:text-foreground data-[state=on]:bg-white data-[state=on]:font-semibold"
+        className="border-none transition-none cursor-pointer shadow-none h-full rounded-sm text-foreground hover:text-foreground data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:text-primary-foreground data-[state=on]:font-semibold"
       >
         {__("Month", "eventkoi-lite")}
       </ToggleGroupItem>
       <ToggleGroupItem
         value="timeGridWeek"
         aria-label={__("Week view", "eventkoi-lite")}
-        className="border-none transition-none cursor-pointer shadow-none h-full rounded-sm text-foreground hover:text-foreground data-[state=on]:bg-white data-[state=on]:font-semibold"
+        className="border-none transition-none cursor-pointer shadow-none h-full rounded-sm text-foreground hover:text-foreground data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:text-primary-foreground data-[state=on]:font-semibold"
       >
         {__("Week", "eventkoi-lite")}
       </ToggleGroupItem>
@@ -38,7 +38,7 @@ export function ViewToggle({ calendarApi, view, setView }) {
         role="radio"
         aria-checked={activeView === "list"}
         aria-label={__("List view", "eventkoi-lite")}
-        className="border-none transition-none cursor-pointer shadow-none h-full rounded-sm text-foreground hover:text-foreground data-[state=on]:bg-white data-[state=on]:font-semibold"
+        className="border-none transition-none cursor-pointer shadow-none h-full rounded-sm text-foreground hover:text-foreground data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:text-primary-foreground data-[state=on]:font-semibold"
       >
         {__("List", "eventkoi-lite")}
       </ToggleGroupItem>
