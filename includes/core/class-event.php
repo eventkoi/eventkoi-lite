@@ -242,8 +242,14 @@ class Event {
 		$name = str_replace( 'eventkoi/', '', $name );
 
 		// A locked event only shows its title, dates and the password form.
-		if ( self::is_locked_for_visitor() && ! preg_match( '/^(?:event[-_])?(?:title|url|slug|start|end|date|time|image|rule|calendar|details|ical)/', (string) $name ) ) {
-			return '';
+		if ( self::is_locked_for_visitor() ) {
+			if ( self::get_tbc() && preg_match( '/^(?:event[-_])?(?:start|end|date|time(?!zone))/', (string) $name ) ) {
+				return __( 'Date and time to be confirmed', 'eventkoi-lite' );
+			}
+
+			if ( ! preg_match( '/^(?:event[-_])?(?:title|url|slug|start|end|date|time|image|rule|calendar|details|ical)/', (string) $name ) ) {
+				return '';
+			}
 		}
 
 		// A taxonomy slug may contain hyphens, and turning them into
@@ -922,6 +928,15 @@ class Event {
 			'template',
 			'series_backlink',
 		);
+
+		// A date to be confirmed shows its note as the date, so that text goes too.
+		if ( ! empty( $data['tbc'] ) ) {
+			foreach ( array( 'timeline', 'datetime' ) as $key ) {
+				if ( array_key_exists( $key, $data ) ) {
+					$data[ $key ] = __( 'Date and time to be confirmed', 'eventkoi-lite' );
+				}
+			}
+		}
 
 		foreach ( $data as $key => $value ) {
 			if ( 'active_instance' === $key && is_array( $value ) ) {
