@@ -175,7 +175,8 @@ class Email_Routing {
 			}
 		}
 
-		$sent = wp_mail( $to, $subject, $body, $headers );
+		// One recipient stays a plain address, as mail filters have always received it.
+		$sent = wp_mail( 1 === count( $to ) ? $to[0] : $to, $subject, $body, $headers );
 
 		if ( $from_email_hook ) {
 			remove_filter( 'wp_mail_from', $from_email_hook );
