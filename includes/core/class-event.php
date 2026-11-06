@@ -3981,11 +3981,27 @@ class Event {
 	}
 
 	/**
+	 * Whether the "See all events in" calendar link shows. On for sites that never
+	 * saved the setting.
+	 *
+	 * @return bool
+	 */
+	public static function is_calendar_backlink_enabled() {
+		$settings = Settings::get();
+
+		return ! isset( $settings['show_calendar_backlink'] ) || in_array( $settings['show_calendar_backlink'], array( '1', 1, true ), true );
+	}
+
+	/**
 	 * Render linked calendar names for the current event.
 	 *
 	 * @return string HTML string with anchor tags for each calendar.
 	 */
 	public static function rendered_calendar_link() {
+		if ( ! self::is_calendar_backlink_enabled() ) {
+			return '';
+		}
+
 		$calendars = self::get_calendar();
 
 		if ( empty( $calendars ) ) {

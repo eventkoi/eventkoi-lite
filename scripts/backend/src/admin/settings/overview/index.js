@@ -8,6 +8,7 @@ import { Panel } from "@/components/panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { foldAccents } from "@/lib/slug";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
@@ -84,6 +85,13 @@ export function SettingsOverview() {
   const [dateFormat, setDateFormat] = useState(settings?.date_format || "");
   const [timeFormatString, setTimeFormatString] = useState(
     settings?.time_format_string || ""
+  );
+  const [calendarBackLink, setCalendarBackLink] = useState(
+    typeof settings?.show_calendar_backlink === "undefined"
+      ? true
+      : settings.show_calendar_backlink === "1" ||
+          settings.show_calendar_backlink === 1 ||
+          settings.show_calendar_backlink === true
   );
   const [eventBase, setEventBase] = useState(
     settings?.permalinks?.event_base || "event"
@@ -788,6 +796,31 @@ export function SettingsOverview() {
               </div>
             )}
 
+            {/* Calendar back-link toggle */}
+            <div className="grid gap-2">
+              <div className="flex items-start gap-3">
+                <Switch
+                  id="show-calendar-backlink"
+                  checked={calendarBackLink}
+                  onCheckedChange={(value) => {
+                    setCalendarBackLink(value);
+                    saveSettings({ show_calendar_backlink: value ? "1" : "0" });
+                  }}
+                  disabled={isSaving}
+                />
+                <div className="grid gap-1">
+                  <Label htmlFor="show-calendar-backlink" className="cursor-pointer">
+                    {__("Show 'See all events in calendar' link", "eventkoi-lite")}
+                  </Label>
+                  <div className="text-sm text-muted-foreground">
+                    {__(
+                      "Adds a small link above the title on event pages that takes visitors to the event's calendar.",
+                      "eventkoi-lite"
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           </Panel>
         </div>
       </Box>

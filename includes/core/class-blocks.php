@@ -43,6 +43,7 @@ class Blocks {
 		add_filter( 'pre_render_block', array( __CLASS__, 'mark_eventkoi_query_loop' ), 5, 2 );
 		add_filter( 'query_loop_block_query_vars', array( __CLASS__, 'filter_event_query_loop' ), 10, 2 );
 		add_filter( 'register_block_type_args', array( __CLASS__, 'register_core_query_attributes' ), 10, 2 );
+		add_filter( 'render_block', array( __CLASS__, 'hide_calendar_backlink' ), 1, 2 );
 		add_filter( 'render_block', array( __CLASS__, 'seed_visibility_wrapper' ), 7, 2 );
 		add_filter( 'render_block', array( __CLASS__, 'render_eventkoi_image' ), 9, 2 );
 		add_filter( 'render_block', array( __CLASS__, 'render_shortcodes_in_image_src' ), 8, 2 );
@@ -53,6 +54,22 @@ class Blocks {
 		add_filter( 'render_block_eventkoi/calendar', array( __CLASS__, 'render_calendar_block' ), 88, 2 );
 		add_filter( 'render_block_eventkoi/list', array( __CLASS__, 'render_list_block' ), 89, 2 );
 		add_filter( 'render_block', array( __CLASS__, 'render_event_block' ), 99, 2 );
+	}
+
+	/**
+	 * Remove the template's whole "See all events in" line when the setting is off,
+	 * so its text is not left behind without the link.
+	 *
+	 * @param string $block_content Block content.
+	 * @param array  $block         Parsed block.
+	 * @return string
+	 */
+	public static function hide_calendar_backlink( $block_content, $block ) {
+		if ( 'core/paragraph' !== ( $block['blockName'] ?? '' ) || false === strpos( (string) $block_content, 'See all events in event_calendar_link' ) ) {
+			return $block_content;
+		}
+
+		return Event::is_calendar_backlink_enabled() ? $block_content : '';
 	}
 
 	/**
