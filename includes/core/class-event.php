@@ -930,7 +930,9 @@ class Event {
 		);
 
 		// A date to be confirmed shows its note as the date, so that text goes too.
-		if ( ! empty( $data['tbc'] ) ) {
+		// List rows carry no flag of their own, so ask the event.
+		$row_event_id = absint( $data['event_id'] ?? ( $data['id'] ?? 0 ) );
+		if ( ! empty( $data['tbc'] ) || ( $row_event_id && self::normalize_boolean_meta( get_post_meta( $row_event_id, 'tbc', true ) ) ) ) {
 			foreach ( array( 'timeline', 'datetime' ) as $key ) {
 				if ( array_key_exists( $key, $data ) ) {
 					$data[ $key ] = __( 'Date and time to be confirmed', 'eventkoi-lite' );
@@ -2180,7 +2182,7 @@ class Event {
 	 */
 	public static function get_timeline() {
 		if ( self::get_tbc() ) {
-			$tbc_note = self::get_tbc_note();
+			$tbc_note = self::get_visible_tbc_note();
 			return $tbc_note ? $tbc_note : __( 'Date and time to be confirmed', 'eventkoi-lite' );
 		}
 
@@ -2400,6 +2402,16 @@ class Event {
 	}
 
 	/**
+	 * The note to show in place of a date to be confirmed. A locked event keeps it
+	 * from visitors, so they see the generic text.
+	 *
+	 * @return string
+	 */
+	public static function get_visible_tbc_note() {
+		return self::is_locked_for_visitor() ? '' : self::get_tbc_note();
+	}
+
+	/**
 	 * Get to be confirmed notification.
 	 */
 	public static function get_tbc_note() {
@@ -2418,7 +2430,7 @@ class Event {
 	public static function get_datetime() {
 		// Handle TBC.
 		if ( self::get_tbc() ) {
-			$tbc_note = self::get_tbc_note();
+			$tbc_note = self::get_visible_tbc_note();
 
 			if ( ! empty( $tbc_note ) ) {
 				return $tbc_note;
@@ -4932,7 +4944,7 @@ class Event {
 		$event_tz    = self::get_timezone();
 
 		if ( self::get_tbc() ) {
-			$tbc_note = self::get_tbc_note();
+			$tbc_note = self::get_visible_tbc_note();
 
 			$message = ! empty( $tbc_note )
 			? esc_html( $tbc_note )
@@ -5229,7 +5241,7 @@ class Event {
 		$instance_ts = eventkoi_get_instance_id();
 
 		if ( self::get_tbc() ) {
-			$tbc_note = self::get_tbc_note();
+			$tbc_note = self::get_visible_tbc_note();
 
 			$message = ! empty( $tbc_note )
 			? esc_html( $tbc_note )
