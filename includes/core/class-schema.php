@@ -443,7 +443,7 @@ class Schema {
 	 * @return string
 	 */
 	private static function get_schema_description( Event $event ) {
-		$description = self::schema_text( $event::get_instance_field( 'description' ) );
+		$description = $event::is_password_protected() ? '' : self::schema_text( $event::get_instance_field( 'description' ) );
 
 		if ( '' === $description ) {
 			$description = self::schema_text( $event->get_summary() );

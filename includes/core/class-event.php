@@ -224,6 +224,13 @@ class Event {
 			}
 		}
 
+		// A locked event's text stays out of the page data until it is unlocked.
+		if ( self::$event_id && post_password_required( self::$event_id ) && ! current_user_can( 'edit_post', self::$event_id ) ) {
+			foreach ( array( 'description', 'excerpt', 'summary' ) as $locked_key ) {
+				$meta[ $locked_key ] = '';
+			}
+		}
+
 		return apply_filters( 'eventkoi_get_event_meta', $meta, self::$event_id, self::$event );
 	}
 
@@ -819,6 +826,19 @@ class Event {
 	}
 
 	/**
+	 * Whether an event has a WordPress password. Lists never show its text, because
+	 * their results are cached and shared between visitors.
+	 *
+	 * @param int $event_id Event ID, the current event when empty.
+	 * @return bool
+	 */
+	public static function is_password_protected( $event_id = 0 ) {
+		$event_id = $event_id ? absint( $event_id ) : absint( self::$event_id );
+
+		return $event_id > 0 && '' !== (string) get_post_field( 'post_password', $event_id );
+	}
+
+	/**
 	 * Plain-text excerpt for list rows.
 	 *
 	 * The hand-written excerpt only, cleaned the same way as the description
@@ -827,6 +847,10 @@ class Event {
 	 * @return string
 	 */
 	public static function get_excerpt_text() {
+		if ( self::is_password_protected() ) {
+			return '';
+		}
+
 		$excerpt = (string) self::get_excerpt();
 
 		if ( '' === trim( $excerpt ) ) {
@@ -3745,6 +3769,10 @@ class Event {
 	 * @return string
 	 */
 	public static function get_summary( $max_chars = 160 ) {
+		if ( self::is_password_protected() ) {
+			return '';
+		}
+
 		$content = self::get_instance_field( 'description' );
 
 		// Decode HTML entities like &nbsp; and &amp;.
@@ -3842,6 +3870,11 @@ class Event {
 	 * @return string Rendered HTML-safe description.
 	 */
 	public static function rendered_details() {
+		// A locked event shows the password form in place of its details.
+		if ( self::$event_id && post_password_required( self::$event_id ) ) {
+			return apply_filters( 'eventkoi_rendered_event_details', get_the_password_form( self::$event_id ), self::$event_id, self::$event );
+		}
+
 		// An event designed with Elementor shows that design as its details:
 		// Elementor content only reaches pages through the_content, which the
 		// event templates never print, so this is where "the layout saves
@@ -3883,14 +3916,15 @@ class Event {
 	/**
 	 * Rendered event excerpt.
 	 *
-	 * Deliberately the hand-written post excerpt only, with no fallback to the
-	 * description. The excerpt exists so a short summary can be shown next to,
-	 * or instead of, the full details; falling back would make the two fields
-	 * render the same text and defeat the point of having both.
+	 * The hand-written post excerpt first, then the description when there is none.
 	 *
 	 * @return string
 	 */
 	public static function rendered_excerpt() {
+		if ( self::is_password_protected() ) {
+			return '';
+		}
+
 		$excerpt = trim( (string) get_post_field( 'post_excerpt', self::$event_id ) );
 
 		// Events without an excerpt fall back to their description.
