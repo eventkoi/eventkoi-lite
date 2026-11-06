@@ -140,54 +140,57 @@ class Permissions {
 	 * @return array<string,string>
 	 */
 	public static function settings_key_caps(): array {
-		return array(
-			// Payments.
-			'ticket_checkout_method'     => 'eventkoi_settings_payments',
-			'stripe'                     => 'eventkoi_settings_payments',
-			'currency'                   => 'eventkoi_settings_payments',
+		return array_merge(
+			array(
+				// Payments.
+				'ticket_checkout_method'     => 'eventkoi_settings_payments',
+				'stripe'                     => 'eventkoi_settings_payments',
+				'currency'                   => 'eventkoi_settings_payments',
 
-			// Emails — templates + per-email sender + enable toggles.
-			'rsvp_email_template'        => 'eventkoi_settings_emails',
-			'ticket_email_template'      => 'eventkoi_settings_emails',
-			'refund_email_template'      => 'eventkoi_settings_emails',
-			'rsvp_email_enabled'         => 'eventkoi_settings_emails',
-			'ticket_email_enabled'       => 'eventkoi_settings_emails',
-			'refund_email_enabled'       => 'eventkoi_settings_emails',
-			'rsvp_email_sender_email'    => 'eventkoi_settings_emails',
-			'rsvp_email_sender_name'     => 'eventkoi_settings_emails',
-			'ticket_email_sender_email'  => 'eventkoi_settings_emails',
-			'ticket_email_sender_name'   => 'eventkoi_settings_emails',
-			'refund_email_sender_email'  => 'eventkoi_settings_emails',
-			'refund_email_sender_name'   => 'eventkoi_settings_emails',
-			'reminder_email_enabled'     => 'eventkoi_settings_emails',
-			'reminder_email_subject'     => 'eventkoi_settings_emails',
-			'reminder_email_template'    => 'eventkoi_settings_emails',
-			'reminder_email_sender_name' => 'eventkoi_settings_emails',
-			'reminder_email_sender_email' => 'eventkoi_settings_emails',
-			'admin_email_enabled'        => 'eventkoi_settings_emails',
-			'admin_email_recipient'      => 'eventkoi_settings_emails',
-			'admin_rsvp_email_enabled'   => 'eventkoi_settings_emails',
-			'admin_rsvp_email_recipient' => 'eventkoi_settings_emails',
+				// Emails — templates + per-email sender + enable toggles.
+				'rsvp_email_template'        => 'eventkoi_settings_emails',
+				'ticket_email_template'      => 'eventkoi_settings_emails',
+				'refund_email_template'      => 'eventkoi_settings_emails',
+				'rsvp_email_enabled'         => 'eventkoi_settings_emails',
+				'ticket_email_enabled'       => 'eventkoi_settings_emails',
+				'refund_email_enabled'       => 'eventkoi_settings_emails',
+				'rsvp_email_sender_email'    => 'eventkoi_settings_emails',
+				'rsvp_email_sender_name'     => 'eventkoi_settings_emails',
+				'ticket_email_sender_email'  => 'eventkoi_settings_emails',
+				'ticket_email_sender_name'   => 'eventkoi_settings_emails',
+				'refund_email_sender_email'  => 'eventkoi_settings_emails',
+				'refund_email_sender_name'   => 'eventkoi_settings_emails',
+				'reminder_email_enabled'     => 'eventkoi_settings_emails',
+				'reminder_email_subject'     => 'eventkoi_settings_emails',
+				'reminder_email_template'    => 'eventkoi_settings_emails',
+				'reminder_email_sender_name' => 'eventkoi_settings_emails',
+				'reminder_email_sender_email' => 'eventkoi_settings_emails',
+				'admin_email_enabled'        => 'eventkoi_settings_emails',
+				'admin_email_recipient'      => 'eventkoi_settings_emails',
+				'admin_rsvp_email_enabled'   => 'eventkoi_settings_emails',
+				'admin_rsvp_email_recipient' => 'eventkoi_settings_emails',
 
-			// Integrations.
-			'api_key'                    => 'eventkoi_settings_integrations',
-			'gmap_api_key'               => 'eventkoi_settings_integrations',
-			'gmap_connection_status'     => 'eventkoi_settings_integrations',
+				// Integrations.
+				'api_key'                    => 'eventkoi_settings_integrations',
+				'gmap_api_key'               => 'eventkoi_settings_integrations',
+				'gmap_connection_status'     => 'eventkoi_settings_integrations',
 
-			// License (kept here for completeness; license fields live in
-			// dedicated options and are written via class-license.php anyway).
-			'license_key'                => 'eventkoi_settings_license',
-			'license_status'             => 'eventkoi_settings_license',
-			'license_expires'            => 'eventkoi_settings_license',
+				// License (kept here for completeness; license fields live in
+				// dedicated options and are written via class-license.php anyway).
+				'license_key'                => 'eventkoi_settings_license',
+				'license_status'             => 'eventkoi_settings_license',
+				'license_expires'            => 'eventkoi_settings_license',
 
-			// Permissions panel itself — the master switch needs admin-level
-			// settings access.
-			self::SETTINGS_KEY           => 'eventkoi_settings_defaults',
+				// Permissions panel itself — the master switch needs admin-level
+				// settings access.
+				self::SETTINGS_KEY           => 'eventkoi_settings_defaults',
 
-			// Custom PHP date/time formats — live in the Default settings tab.
-			'date_format'                => 'eventkoi_settings_defaults',
-			'time_format_string'         => 'eventkoi_settings_defaults',
-			'permalinks'                 => 'eventkoi_settings_defaults',
+				// Custom PHP date/time formats — live in the Default settings tab.
+				'date_format'                => 'eventkoi_settings_defaults',
+				'time_format_string'         => 'eventkoi_settings_defaults',
+				'permalinks'                 => 'eventkoi_settings_defaults',
+			),
+			Email_Routing::settings_key_caps()
 		);
 	}
 

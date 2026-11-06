@@ -1776,37 +1776,8 @@ class Rsvps {
 		$subject = apply_filters( 'eventkoi_rsvp_email_subject', $subject, $tags, $event_id, $instance_ts );
 		$subject = self::replace_email_tags( $subject, $tags );
 
-		$headers = array( 'Content-Type: text/html; charset=UTF-8' );
-		$sender_email = sanitize_email( $settings['rsvp_email_sender_email'] ?? '' );
-		$sender_name  = sanitize_text_field( $settings['rsvp_email_sender_name'] ?? '' );
-		$from_email_filter = null;
-		$from_name_filter  = null;
-
-		if ( $sender_email ) {
-			$from = $sender_email;
-			if ( $sender_name ) {
-				$from = sprintf( '%s <%s>', $sender_name, $sender_email );
-			}
-			$headers[] = 'From: ' . $from;
-
-			$from_email_filter = static function () use ( $sender_email ) {
-				return $sender_email;
-			};
-			add_filter( 'wp_mail_from', $from_email_filter );
-		}
-
-		if ( $sender_name ) {
-			$from_name_filter = static function () use ( $sender_name ) {
-				return $sender_name;
-			};
-			add_filter( 'wp_mail_from_name', $from_name_filter );
-		}
-
-		$sent = wp_mail( $email, $subject, $body, $headers );
-
-		if ( $from_email_filter ) {
-			remove_filter( 'wp_mail_from', $from_email_filter );
-		}
+		// A guest's own copy goes only to them.
+		$sent = Email_Routing::send( 'rsvp', $email, $subject, $body, $settings, array( 'personal' => $is_guest ) );
 
 		if ( $from_name_filter ) {
 			remove_filter( 'wp_mail_from_name', $from_name_filter );
@@ -2154,39 +2125,7 @@ class Rsvps {
 		$body    = strtr( $template, $tags );
 		$body    = wp_kses( wpautop( trim( $body ) ), Settings::get_email_template_allowed_tags() );
 
-		$headers         = array( 'Content-Type: text/html; charset=UTF-8' );
-		$sender_email    = sanitize_email( (string) ( $settings['admin_rsvp_email_sender_email'] ?? '' ) );
-		$sender_name     = sanitize_text_field( (string) ( $settings['admin_rsvp_email_sender_name'] ?? '' ) );
-		$from_email_hook = null;
-		$from_name_hook  = null;
-
-		if ( $sender_email ) {
-			$from = $sender_email;
-			if ( $sender_name ) {
-				$from = sprintf( '%s <%s>', $sender_name, $sender_email );
-			}
-			$headers[]       = 'From: ' . $from;
-			$from_email_hook = static function () use ( $sender_email ) {
-				return $sender_email;
-			};
-			add_filter( 'wp_mail_from', $from_email_hook );
-		}
-
-		if ( $sender_name ) {
-			$from_name_hook = static function () use ( $sender_name ) {
-				return $sender_name;
-			};
-			add_filter( 'wp_mail_from_name', $from_name_hook );
-		}
-
-		wp_mail( $admin_email, $subject, $body, $headers );
-
-		if ( $from_email_hook ) {
-			remove_filter( 'wp_mail_from', $from_email_hook );
-		}
-		if ( $from_name_hook ) {
-			remove_filter( 'wp_mail_from_name', $from_name_hook );
-		}
+		Email_Routing::send( 'admin_rsvp', $admin_email, $subject, $body, $settings );
 	}
 
 	/**

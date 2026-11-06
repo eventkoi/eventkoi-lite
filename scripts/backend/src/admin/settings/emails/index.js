@@ -1,5 +1,5 @@
 import apiRequest from "@wordpress/api-fetch";
-import { __ } from "@wordpress/i18n";
+import { __, _n, sprintf } from "@wordpress/i18n";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import { Box } from "@/components/box";
@@ -8,7 +8,18 @@ import { Heading } from "@/components/heading";
 import { Panel } from "@/components/panel";
 import { ProBadge } from "@/components/pro-badge";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
@@ -266,7 +277,45 @@ const getKeys = (prefix) => ({
   enabled: `${prefix}_email_enabled`,
   senderName: `${prefix}_email_sender_name`,
   senderEmail: `${prefix}_email_sender_email`,
+  senderGlobal: `${prefix}_email_sender_global`,
+  recipients: `${prefix}_email_recipients`,
+  cc: `${prefix}_email_cc`,
+  bcc: `${prefix}_email_bcc`,
 });
+
+const GLOBAL_SENDER_NAME_KEY = "email_sender_global_name";
+const GLOBAL_SENDER_EMAIL_KEY = "email_sender_global_email";
+const ADDRESS_TOKENS = ["[attendee_email]", "[admin_email]", "[submitter_email]"];
+
+// The person an email normally goes to, as a token that can be removed.
+const defaultRecipientFor = (prefix) => {
+  if (prefix.startsWith("admin_")) return "[admin_email]";
+  if (prefix.startsWith("submitter_")) return "[submitter_email]";
+  return "[attendee_email]";
+};
+
+const splitAddresses = (value) =>
+  String(value || "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+const invalidAddresses = (value) =>
+  splitAddresses(value).filter(
+    (item) =>
+      !ADDRESS_TOKENS.includes(item) && !/^[^\s@,]+@[^\s@,]+\.[^\s@,]+$/.test(item),
+  );
+
+// An email that had its own sender before the global default keeps it.
+const usesGlobalSender = (settings, prefix) => {
+  const flag = settings?.[`${prefix}_email_sender_global`];
+  if (flag !== undefined && flag !== "") return String(flag) === "1";
+
+  return (
+    !String(settings?.[`${prefix}_email_sender_name`] || "").trim() &&
+    !String(settings?.[`${prefix}_email_sender_email`] || "").trim()
+  );
+};
 
 const isRichTextEmpty = (value) => {
   const raw = String(value || "");
@@ -294,6 +343,11 @@ export function SettingsEmails() {
   const [emailEnabled, setEmailEnabled] = useState(true);
   const [senderName, setSenderName] = useState(DEFAULT_SENDER_NAME);
   const [senderEmail, setSenderEmail] = useState(DEFAULT_SENDER_EMAIL);
+  const [useGlobalSender, setUseGlobalSender] = useState(true);
+  const [recipients, setRecipients] = useState("");
+  const [cc, setCc] = useState("");
+  const [bcc, setBcc] = useState("");
+  const [pendingSave, setPendingSave] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [copiedTag, setCopiedTag] = useState(null);
   const copyTimerRef = useRef(null);
@@ -369,6 +423,90 @@ export function SettingsEmails() {
     setActiveTemplate(nextTemplate);
   };
 
+  const globalSenderName = String(settings?.[GLOBAL_SENDER_NAME_KEY] || "");
+  const globalSenderEmail = String(settings?.[GLOBAL_SENDER_EMAIL_KEY] || "");
+  const ownSenderName = String(settings?.[keys.senderName] || "");
+  const ownSenderEmail = String(settings?.[keys.senderEmail] || "");
+  const defaultRecipient = defaultRecipientFor(activeConfig.prefix);
+
+  // Sender and recipients come from what is saved for the email in view.
+  useEffect(() => {
+    const isGlobal = usesGlobalSender(settings, activeConfig.prefix);
+    setUseGlobalSender(isGlobal);
+    if (isGlobal) {
+      setSenderName(globalSenderName);
+      setSenderEmail(globalSenderEmail);
+    }
+    const storedRecipients = settings?.[keys.recipients];
+    setRecipients(
+      typeof storedRecipients === "string" ? storedRecipients : defaultRecipient,
+    );
+    setCc(String(settings?.[keys.cc] || ""));
+    setBcc(String(settings?.[keys.bcc] || ""));
+  }, [
+    activeConfig.prefix,
+    settings,
+    keys,
+    defaultRecipient,
+    globalSenderName,
+    globalSenderEmail,
+  ]);
+
+  const handleGlobalSenderToggle = (checked) => {
+    const next = checked === true;
+    setUseGlobalSender(next);
+    setSenderName(next ? globalSenderName : ownSenderName);
+    setSenderEmail(next ? globalSenderEmail : ownSenderEmail);
+  };
+
+  const emailsUsingGlobalSender = useMemo(() => {
+    const prefixes = Object.values(TEMPLATE_CONFIG).map((item) => item.prefix);
+    return prefixes.filter(
+      (prefix) =>
+        prefix === activeConfig.prefix || usesGlobalSender(settings, prefix),
+    ).length;
+  }, [settings, activeConfig.prefix]);
+
+  // Checks the addresses, and asks first when the shared sender would change.
+  const requestSave = (override = {}) => {
+    const nextOverride =
+      override && typeof override === "object" && !override?.nativeEvent
+        ? override
+        : {};
+
+    if (!splitAddresses(recipients).length) {
+      showToastError(__("Add at least one recipient.", "eventkoi-lite"));
+      return;
+    }
+
+    const invalid = [
+      ...invalidAddresses(recipients),
+      ...invalidAddresses(cc),
+      ...invalidAddresses(bcc),
+    ];
+    if (invalid.length) {
+      showToastError(
+        sprintf(
+          /* translators: %s: the addresses that are not valid. */
+          __("Check these email addresses: %s", "eventkoi-lite"),
+          invalid.join(", "),
+        ),
+      );
+      return;
+    }
+
+    const changesGlobalSender =
+      useGlobalSender &&
+      (senderName !== globalSenderName || senderEmail !== globalSenderEmail);
+
+    if (changesGlobalSender) {
+      setPendingSave(nextOverride);
+      return;
+    }
+
+    handleSave(nextOverride);
+  };
+
   const handleSave = async (override = {}) => {
     if (!override || typeof override !== "object" || override?.nativeEvent) {
       override = {};
@@ -376,12 +514,25 @@ export function SettingsEmails() {
 
     try {
       setIsSaving(true);
+      const senderData = useGlobalSender
+        ? {
+            [keys.senderGlobal]: "1",
+            [GLOBAL_SENDER_NAME_KEY]: senderName,
+            [GLOBAL_SENDER_EMAIL_KEY]: senderEmail,
+          }
+        : {
+            [keys.senderGlobal]: "0",
+            [keys.senderName]: senderName,
+            [keys.senderEmail]: senderEmail,
+          };
       const data = {
           [keys.subject]: subject,
           [keys.template]: template,
           [keys.enabled]: emailEnabled ? "1" : "0",
-          [keys.senderName]: senderName,
-          [keys.senderEmail]: senderEmail,
+          ...senderData,
+          [keys.recipients]: recipients,
+          [keys.cc]: cc,
+          [keys.bcc]: bcc,
           ...override,
         };
       const response = await apiRequest({
@@ -415,8 +566,12 @@ export function SettingsEmails() {
     const defaults = activeConfig.defaults || {};
     setSubject(defaults.subject);
     setTemplate(defaults.template);
-    setSenderName(DEFAULT_SENDER_NAME);
-    setSenderEmail(DEFAULT_SENDER_EMAIL);
+    setUseGlobalSender(true);
+    setSenderName(globalSenderName);
+    setSenderEmail(globalSenderEmail);
+    setRecipients(defaultRecipient);
+    setCc("");
+    setBcc("");
 
     try {
       setIsSaving(true);
@@ -429,6 +584,10 @@ export function SettingsEmails() {
           [keys.enabled]: emailEnabled ? "1" : "0",
           [keys.senderName]: DEFAULT_SENDER_NAME,
           [keys.senderEmail]: DEFAULT_SENDER_EMAIL,
+          [keys.senderGlobal]: "1",
+          [keys.recipients]: defaultRecipient,
+          [keys.cc]: "",
+          [keys.bcc]: "",
         },
         headers: {
           "EVENTKOI-API-KEY": eventkoi_params.api_key,
@@ -458,6 +617,10 @@ export function SettingsEmails() {
   const templateSenderNameId = `eventkoi-${activeConfig.prefix}-email-sender-name`;
   const templateSenderEmailId = `eventkoi-${activeConfig.prefix}-email-sender-email`;
   const templateEditorId = `eventkoi-${activeConfig.prefix}-email-template`;
+  const templateGlobalSenderId = `eventkoi-${activeConfig.prefix}-email-sender-global`;
+  const templateRecipientsId = `eventkoi-${activeConfig.prefix}-email-recipients`;
+  const templateCcId = `eventkoi-${activeConfig.prefix}-email-cc`;
+  const templateBccId = `eventkoi-${activeConfig.prefix}-email-bcc`;
 
   return (
     <div className="grid gap-8">
@@ -523,7 +686,7 @@ export function SettingsEmails() {
                   checked={emailEnabled}
                   onCheckedChange={(value) => {
                     setEmailEnabled(value);
-                    handleSave({ [keys.enabled]: value ? "1" : "0" });
+                    requestSave({ [keys.enabled]: value ? "1" : "0" });
                   }}
                 />
                 <Label
@@ -543,7 +706,7 @@ export function SettingsEmails() {
                 >
                   {__("Restore defaults", "eventkoi-lite")}
                 </Button>
-                <Button type="button" onClick={() => handleSave()} disabled={isSaving}>
+                <Button type="button" onClick={() => requestSave()} disabled={isSaving}>
                   {isSaving ? __("Saving...", "eventkoi-lite") : __("Save changes", "eventkoi-lite")}
                 </Button>
               </div>
@@ -579,6 +742,88 @@ export function SettingsEmails() {
                         value={senderEmail}
                         onChange={(event) => setSenderEmail(event.target.value)}
                         placeholder={eventkoi_params?.admin_email || ""}
+                        disabled={!emailEnabled || isSaving}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2 pt-2">
+                    <Checkbox
+                      id={templateGlobalSenderId}
+                      checked={useGlobalSender}
+                      onCheckedChange={handleGlobalSenderToggle}
+                      disabled={!emailEnabled || isSaving}
+                      className="mt-0.5"
+                    />
+                    <div className="grid gap-1">
+                      <Label
+                        htmlFor={templateGlobalSenderId}
+                        className={`font-normal cursor-pointer ${!emailEnabled ? "text-muted-foreground" : ""}`}
+                      >
+                        {__("Set as global default", "eventkoi-lite")}
+                      </Label>
+                      <p className="m-0 text-sm text-muted-foreground">
+                        {__(
+                          "All emails with this checked use the same sender. Changing it here changes it for all of them.",
+                          "eventkoi-lite",
+                        )}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid w-full max-w-[520px] gap-6 mb-6">
+                  <div className="grid gap-2">
+                    <Label
+                      htmlFor={templateRecipientsId}
+                      className={!emailEnabled ? "text-muted-foreground" : ""}
+                    >
+                      {__("Recipients", "eventkoi-lite")}
+                    </Label>
+                    <Input
+                      id={templateRecipientsId}
+                      value={recipients}
+                      onChange={(event) => setRecipients(event.target.value)}
+                      placeholder={defaultRecipient}
+                      disabled={!emailEnabled || isSaving}
+                    />
+                    <p className="m-0 text-sm text-muted-foreground">
+                      {sprintf(
+                        /* translators: 1: address token such as [attendee_email], 2: who it stands for. */
+                        __(
+                          "Separate addresses with commas. %1$s sends to: %2$s.",
+                          "eventkoi-lite",
+                        ),
+                        defaultRecipient,
+                        activeConfig.recipient,
+                      )}
+                    </p>
+                  </div>
+                  <div className="flex flex-col gap-8 sm:flex-row sm:items-start">
+                    <div className="grid flex-1 gap-2">
+                      <Label
+                        htmlFor={templateCcId}
+                        className={!emailEnabled ? "text-muted-foreground" : ""}
+                      >
+                        {__("Cc", "eventkoi-lite")}
+                      </Label>
+                      <Input
+                        id={templateCcId}
+                        value={cc}
+                        onChange={(event) => setCc(event.target.value)}
+                        disabled={!emailEnabled || isSaving}
+                      />
+                    </div>
+                    <div className="grid flex-1 gap-2">
+                      <Label
+                        htmlFor={templateBccId}
+                        className={!emailEnabled ? "text-muted-foreground" : ""}
+                      >
+                        {__("Bcc", "eventkoi-lite")}
+                      </Label>
+                      <Input
+                        id={templateBccId}
+                        value={bcc}
+                        onChange={(event) => setBcc(event.target.value)}
                         disabled={!emailEnabled || isSaving}
                       />
                     </div>
@@ -666,6 +911,44 @@ export function SettingsEmails() {
           </Panel>
         </div>
       </Box>
+      <AlertDialog
+        open={pendingSave !== null}
+        onOpenChange={(open) => {
+          if (!open) setPendingSave(null);
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {__("Change the global default sender?", "eventkoi-lite")}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {sprintf(
+                /* translators: %d: number of emails using the global default sender. */
+                _n(
+                  "%d email uses the global default and will send from the new sender.",
+                  "%d emails use the global default and will send from the new sender.",
+                  emailsUsingGlobalSender,
+                  "eventkoi-lite",
+                ),
+                emailsUsingGlobalSender,
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{__("Cancel", "eventkoi-lite")}</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const override = pendingSave || {};
+                setPendingSave(null);
+                handleSave(override);
+              }}
+            >
+              {__("Change sender", "eventkoi-lite")}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

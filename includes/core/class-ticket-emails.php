@@ -341,39 +341,7 @@ class Ticket_Emails {
 			? wp_kses( wpautop( (string) $body ), Settings::get_email_template_allowed_tags() )
 			: wpautop( esc_html( (string) $body ) );
 
-		$headers         = array( 'Content-Type: text/html; charset=UTF-8' );
-		$sender_email    = sanitize_email( (string) ( $settings['reminder_email_sender_email'] ?? '' ) );
-		$sender_name     = sanitize_text_field( (string) ( $settings['reminder_email_sender_name'] ?? '' ) );
-		$from_email_hook = null;
-		$from_name_hook  = null;
-
-		if ( $sender_email ) {
-			$from = $sender_email;
-			if ( $sender_name ) {
-				$from = sprintf( '%s <%s>', $sender_name, $sender_email );
-			}
-			$headers[]       = 'From: ' . $from;
-			$from_email_hook = static function () use ( $sender_email ) {
-				return $sender_email;
-			};
-			add_filter( 'wp_mail_from', $from_email_hook );
-		}
-
-		if ( $sender_name ) {
-			$from_name_hook = static function () use ( $sender_name ) {
-				return $sender_name;
-			};
-			add_filter( 'wp_mail_from_name', $from_name_hook );
-		}
-
-		$sent = wp_mail( $recipient_email, $subject, $body, $headers );
-
-		if ( $from_email_hook ) {
-			remove_filter( 'wp_mail_from', $from_email_hook );
-		}
-		if ( $from_name_hook ) {
-			remove_filter( 'wp_mail_from_name', $from_name_hook );
-		}
+		$sent = Email_Routing::send( 'reminder', $recipient_email, $subject, $body, $settings );
 
 		return (bool) $sent;
 	}
@@ -585,42 +553,11 @@ class Ticket_Emails {
 	 * @param string $subject  Subject.
 	 * @param string $body     Final HTML body.
 	 * @param array  $settings Plugin settings.
+	 * @param bool   $personal One attendee's own ticket: only they get it.
 	 * @return bool
 	 */
-	private static function deliver_ticket_email( $to, $subject, $body, $settings ) {
-		$headers         = array( 'Content-Type: text/html; charset=UTF-8' );
-		$sender_email    = sanitize_email( (string) ( $settings['ticket_email_sender_email'] ?? '' ) );
-		$sender_name     = sanitize_text_field( (string) ( $settings['ticket_email_sender_name'] ?? '' ) );
-		$from_email_hook = null;
-		$from_name_hook  = null;
-
-		if ( $sender_email ) {
-			$from = $sender_email;
-			if ( $sender_name ) {
-				$from = sprintf( '%s <%s>', $sender_name, $sender_email );
-			}
-			$headers[]       = 'From: ' . $from;
-			$from_email_hook = static function () use ( $sender_email ) {
-				return $sender_email;
-			};
-			add_filter( 'wp_mail_from', $from_email_hook );
-		}
-
-		if ( $sender_name ) {
-			$from_name_hook = static function () use ( $sender_name ) {
-				return $sender_name;
-			};
-			add_filter( 'wp_mail_from_name', $from_name_hook );
-		}
-
-		$sent = wp_mail( $to, $subject, $body, $headers );
-
-		if ( $from_email_hook ) {
-			remove_filter( 'wp_mail_from', $from_email_hook );
-		}
-		if ( $from_name_hook ) {
-			remove_filter( 'wp_mail_from_name', $from_name_hook );
-		}
+	private static function deliver_ticket_email( $to, $subject, $body, $settings, $personal = false ) {
+		return Email_Routing::send( 'ticket', $to, $subject, $body, $settings, array( 'personal' => $personal ) );
 
 		return (bool) $sent;
 	}
@@ -729,7 +666,7 @@ class Ticket_Emails {
 			);
 
 			$own_body = self::finalize_email_body( self::replace_email_tags( $body_template, $own_tags ) );
-			if ( self::deliver_ticket_email( $recipient['email'], self::replace_email_tags( $subject, $own_tags ), $own_body, $settings ) ) {
+			if ( self::deliver_ticket_email( $recipient['email'], self::replace_email_tags( $subject, $own_tags ), $own_body, $settings, true ) ) {
 				++$sent;
 				if ( ctype_digit( $order_id ) ) {
 					( new \EventKoi\Core\Orders() )->add_note( (int) $order_id, 'attendee_ticket_sent', $recipient['email'], 'system' );
@@ -947,39 +884,7 @@ class Ticket_Emails {
 			? wp_kses( wpautop( (string) $body ), Settings::get_email_template_allowed_tags() )
 			: wpautop( esc_html( (string) $body ) );
 
-		$headers         = array( 'Content-Type: text/html; charset=UTF-8' );
-		$sender_email    = sanitize_email( (string) ( $settings['refund_email_sender_email'] ?? $settings['ticket_email_sender_email'] ?? '' ) );
-		$sender_name     = sanitize_text_field( (string) ( $settings['refund_email_sender_name'] ?? $settings['ticket_email_sender_name'] ?? '' ) );
-		$from_email_hook = null;
-		$from_name_hook  = null;
-
-		if ( $sender_email ) {
-			$from = $sender_email;
-			if ( $sender_name ) {
-				$from = sprintf( '%s <%s>', $sender_name, $sender_email );
-			}
-			$headers[]       = 'From: ' . $from;
-			$from_email_hook = static function () use ( $sender_email ) {
-				return $sender_email;
-			};
-			add_filter( 'wp_mail_from', $from_email_hook );
-		}
-
-		if ( $sender_name ) {
-			$from_name_hook = static function () use ( $sender_name ) {
-				return $sender_name;
-			};
-			add_filter( 'wp_mail_from_name', $from_name_hook );
-		}
-
-		$sent = wp_mail( $recipient_email, $subject, $body, $headers );
-
-		if ( $from_email_hook ) {
-			remove_filter( 'wp_mail_from', $from_email_hook );
-		}
-		if ( $from_name_hook ) {
-			remove_filter( 'wp_mail_from_name', $from_name_hook );
-		}
+		$sent = Email_Routing::send( 'refund', $recipient_email, $subject, $body, $settings, array( 'fallback_prefix' => 'ticket' ) );
 
 		if ( $sent && '' !== $order_id ) {
 			self::add_refund_confirmation_note( $order_id );
@@ -1923,38 +1828,6 @@ class Ticket_Emails {
 		$body    = strtr( $template, $tags );
 		$body    = wp_kses( wpautop( trim( $body ) ), Settings::get_email_template_allowed_tags() );
 
-		$headers         = array( 'Content-Type: text/html; charset=UTF-8' );
-		$sender_email    = sanitize_email( (string) ( $settings['admin_sale_email_sender_email'] ?? '' ) );
-		$sender_name     = sanitize_text_field( (string) ( $settings['admin_sale_email_sender_name'] ?? '' ) );
-		$from_email_hook = null;
-		$from_name_hook  = null;
-
-		if ( $sender_email ) {
-			$from = $sender_email;
-			if ( $sender_name ) {
-				$from = sprintf( '%s <%s>', $sender_name, $sender_email );
-			}
-			$headers[]       = 'From: ' . $from;
-			$from_email_hook = static function () use ( $sender_email ) {
-				return $sender_email;
-			};
-			add_filter( 'wp_mail_from', $from_email_hook );
-		}
-
-		if ( $sender_name ) {
-			$from_name_hook = static function () use ( $sender_name ) {
-				return $sender_name;
-			};
-			add_filter( 'wp_mail_from_name', $from_name_hook );
-		}
-
-		wp_mail( $admin_email, $subject, $body, $headers );
-
-		if ( $from_email_hook ) {
-			remove_filter( 'wp_mail_from', $from_email_hook );
-		}
-		if ( $from_name_hook ) {
-			remove_filter( 'wp_mail_from_name', $from_name_hook );
-		}
+		Email_Routing::send( 'admin_sale', $admin_email, $subject, $body, $settings );
 	}
 }
