@@ -483,6 +483,10 @@ class Schema {
 	 * @return array
 	 */
 	private static function get_schema_locations( Event $event ) {
+		if ( $event::is_password_protected() ) {
+			return array();
+		}
+
 		$locations = $event::get_instance_field( 'locations' );
 		$has_instance_locations_override = false;
 		$instance_ts                     = function_exists( 'eventkoi_get_instance_id' ) ? absint( eventkoi_get_instance_id() ) : 0;

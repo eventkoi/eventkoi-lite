@@ -138,9 +138,10 @@ function eventkoi_get_event( $event_id ) {
 		array(),
 		false,
 		array(
-			'include'  => array( $event_id ),
-			'per_page' => 1,
-			'post_status' => $post_status,
+			'include'            => array( $event_id ),
+			'per_page'           => 1,
+			'post_status'        => $post_status,
+			'keep_locked_fields' => ! \EventKoi\Core\Event::is_locked_for_visitor( $event_id ),
 		)
 	);
 

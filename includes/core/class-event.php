@@ -224,11 +224,9 @@ class Event {
 			}
 		}
 
-		// A locked event's text stays out of the page data until it is unlocked.
-		if ( self::$event_id && post_password_required( self::$event_id ) && ! current_user_can( 'edit_post', self::$event_id ) ) {
-			foreach ( array( 'description', 'excerpt', 'summary' ) as $locked_key ) {
-				$meta[ $locked_key ] = '';
-			}
+		// A locked event's details stay out of the page data until it is unlocked.
+		if ( self::is_locked_for_visitor() ) {
+			$meta = self::strip_locked_fields( $meta );
 		}
 
 		return apply_filters( 'eventkoi_get_event_meta', $meta, self::$event_id, self::$event );
@@ -242,6 +240,11 @@ class Event {
 	 */
 	public static function render_meta( $name ) {
 		$name = str_replace( 'eventkoi/', '', $name );
+
+		// A locked event only shows its title, dates and the password form.
+		if ( self::is_locked_for_visitor() && ! preg_match( '/^(?:event[-_])?(?:title|url|slug|start|end|date|time|image|rule|calendar|details|ical)/', (string) $name ) ) {
+			return '';
+		}
 
 		// A taxonomy slug may contain hyphens, and turning them into
 		// underscores would stop the slug resolving.
@@ -836,6 +839,77 @@ class Event {
 		$event_id = $event_id ? absint( $event_id ) : absint( self::$event_id );
 
 		return $event_id > 0 && '' !== (string) get_post_field( 'post_password', $event_id );
+	}
+
+	/**
+	 * Whether this visitor still needs the event's password. People who can edit
+	 * the event always get its full details, so a save never loses anything.
+	 *
+	 * @param int $event_id Event ID, the current event when empty.
+	 * @return bool
+	 */
+	public static function is_locked_for_visitor( $event_id = 0 ) {
+		$event_id = $event_id ? absint( $event_id ) : absint( self::$event_id );
+
+		return $event_id > 0 && post_password_required( $event_id ) && ! current_user_can( 'edit_post', $event_id );
+	}
+
+	/**
+	 * Remove what a locked event keeps from visitors. Its title and dates stay, so
+	 * people can tell what they are unlocking.
+	 *
+	 * @param array $data Event data.
+	 * @return array
+	 */
+	public static function strip_locked_fields( $data ) {
+		$private = array(
+			'description',
+			'excerpt',
+			'summary',
+			'tbc_note',
+			'email_message',
+			'custom_fields',
+			'custom_taxonomies',
+			'taxonomy_terms',
+			'locations',
+			'location',
+			'location_line',
+			'location_mode',
+			'address1',
+			'address2',
+			'address3',
+			'city',
+			'state',
+			'country',
+			'zip',
+			'latitude',
+			'longitude',
+			'embed_gmap',
+			'gmap_link',
+			'virtual_url',
+			'link_text',
+			'price_from_details',
+		);
+
+		foreach ( $private as $key ) {
+			if ( array_key_exists( $key, $data ) ) {
+				$data[ $key ] = is_array( $data[ $key ] ) ? array() : '';
+			}
+		}
+
+		if ( ! empty( $data['active_instance'] ) && is_array( $data['active_instance'] ) ) {
+			$data['active_instance'] = self::strip_locked_fields( $data['active_instance'] );
+		}
+
+		if ( ! empty( $data['recurrence_overrides'] ) && is_array( $data['recurrence_overrides'] ) ) {
+			foreach ( $data['recurrence_overrides'] as $timestamp => $override ) {
+				if ( is_array( $override ) ) {
+					$data['recurrence_overrides'][ $timestamp ] = self::strip_locked_fields( $override );
+				}
+			}
+		}
+
+		return $data;
 	}
 
 	/**
@@ -4166,6 +4240,10 @@ class Event {
 	 * @return string Rendered HTML-safe locations list.
 	 */
 	public static function rendered_location() {
+		if ( self::is_locked_for_visitor() ) {
+			return '';
+		}
+
 		$locations = self::get_instance_field( 'locations' );
 
 		if ( ! is_array( $locations ) || empty( $locations ) ) {

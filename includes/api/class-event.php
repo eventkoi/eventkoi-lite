@@ -439,6 +439,9 @@ class Event {
 		$raw   = $event::get_meta();
 
 		$override = eventkoi_get_instance_override( $event_id, $timestamp );
+		if ( \EventKoi\Core\Event::is_locked_for_visitor( $event_id ) && is_array( $override ) ) {
+			$override = \EventKoi\Core\Event::strip_locked_fields( $override );
+		}
 		$merged   = is_array( $override )
 		? eventkoi_merge_instance_data( $raw, $override )
 		: $raw;

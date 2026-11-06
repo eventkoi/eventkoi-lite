@@ -1265,6 +1265,18 @@ class Calendar {
 			self::$calendar_id = $prev_calendar_id;
 		}
 
+		// Lists are cached and shared between visitors, so a protected event's
+		// private details never go in them. A single event page asks to keep them
+		// once it knows this visitor may see them.
+		if ( empty( $args['keep_locked_fields'] ) ) {
+			foreach ( $results as $index => $row ) {
+				$row_event_id = absint( $row['event_id'] ?? ( $row['id'] ?? 0 ) );
+				if ( $row_event_id && Event::is_password_protected( $row_event_id ) ) {
+					$results[ $index ] = Event::strip_locked_fields( $row );
+				}
+			}
+		}
+
 		return array(
 			'items' => $results,
 			'total' => $total,
