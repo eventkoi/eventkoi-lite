@@ -613,9 +613,9 @@ export function EventPopover({
             />
           )}
 
-          {event.description && (
+          {(event.excerpt || event.description) && (
             <div className="text-sm text-muted-foreground leading-snug line-clamp-3">
-              {event.description}
+              {event.excerpt || event.description}
             </div>
           )}
         </div>

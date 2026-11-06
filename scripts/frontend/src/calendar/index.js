@@ -357,6 +357,7 @@ export function Calendar(props) {
         </div>
       ) : (
         <CalendarGridMode
+          descriptionSource={descriptionSource}
           calendarRef={calendarRef}
           events={events}
           view={view}

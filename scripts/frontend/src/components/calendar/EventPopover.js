@@ -342,7 +342,13 @@ export function EventPopover({
   onClose,
   ignoreNextOutsideClick,
   timezone = "UTC",
+  descriptionSource = "excerpt",
 }) {
+  // Same order as event lists: the excerpt, then the description.
+  const summaryText =
+    descriptionSource === "description"
+      ? event.description || ""
+      : event.excerpt || event.description || "";
   const [shareOpen, setShareOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [calendarMenuOpen, setCalendarMenuOpen] = useState(false);
@@ -670,9 +676,9 @@ export function EventPopover({
             />
           )}
 
-          {event.description && (
+          {summaryText && (
             <div className="text-sm text-muted-foreground leading-snug line-clamp-3">
-              {event.description}
+              {summaryText}
             </div>
           )}
         </div>

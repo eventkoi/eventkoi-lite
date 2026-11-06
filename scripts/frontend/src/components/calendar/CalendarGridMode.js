@@ -157,6 +157,7 @@ const cascadeTimegrid = (root) => {
 };
 
 export function CalendarGridMode({
+  descriptionSource,
   calendarRef,
   events,
   view,
@@ -962,6 +963,7 @@ export function CalendarGridMode({
           onClose={closeEventPopover}
           ignoreNextOutsideClick={ignoreNextOutsideClick}
           timezone={timezone}
+          descriptionSource={descriptionSource}
         />
       )}
     </>

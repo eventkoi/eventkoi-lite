@@ -25,6 +25,7 @@ export function CalendarToolbar({
         const q = search.toLowerCase();
         return (
           event.title?.toLowerCase().includes(q) ||
+          event.excerpt?.toLowerCase().includes(q) ||
           event.description?.toLowerCase().includes(q) ||
           event.location?.toLowerCase().includes(q)
         );

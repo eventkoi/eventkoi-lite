@@ -1621,10 +1621,20 @@ JS;
 				<li class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"<?php echo $row_post_id ? ' data-event-id="' . (int) $row_post_id . '"' : ''; ?><?php echo $row_instance ? ' data-instance-ts="' . (int) $row_instance . '"' : ''; ?>>
 					<?php
 					if ( ! empty( $post_template_block['innerBlocks'] ) ) {
+						// Core blocks in a row (Title, Excerpt, Date) read the row's event, not the page.
+						$row_context = static function ( $context ) use ( $row_post_id ) {
+							if ( $row_post_id ) {
+								$context['postId']   = $row_post_id;
+								$context['postType'] = 'eventkoi_event';
+							}
+							return $context;
+						};
+						add_filter( 'render_block_context', $row_context );
 						foreach ( $post_template_block['innerBlocks'] as $row_block ) {
 							$prepared = self::inject_event_context( $row_block, $event );
 							echo render_block( $prepared ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 						}
+						remove_filter( 'render_block_context', $row_context );
 					}
 					?>
 				</li>
