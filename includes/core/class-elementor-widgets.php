@@ -20,6 +20,26 @@ class Elementor_Widgets {
 		add_action( 'elementor/elements/categories_registered', array( $this, 'register_category' ) );
 		add_action( 'elementor/editor/before_enqueue_scripts', array( $this, 'enqueue_editor_assets' ) );
 		add_action( 'elementor/preview/enqueue_scripts', array( $this, 'enqueue_preview_assets' ) );
+		add_action( 'elementor/frontend/before_enqueue_scripts', array( $this, 'hide_locked_event_excerpt' ) );
+	}
+
+	/**
+	 * Keep a locked event's excerpt out of Elementor's page config.
+	 *
+	 * Elementor prints the raw post excerpt into elementorFrontendConfig,
+	 * whether the post has a password or not.
+	 */
+	public function hide_locked_event_excerpt() {
+		$frontend = \Elementor\Plugin::$instance->frontend;
+		$post     = $frontend->get_settings( 'post' );
+		$event_id = absint( $post['id'] ?? 0 );
+
+		if ( empty( $post['excerpt'] ) || 'eventkoi_event' !== get_post_type( $event_id ) || ! Event::is_locked_for_visitor( $event_id ) ) {
+			return;
+		}
+
+		$post['excerpt'] = '';
+		$frontend->set_settings( 'post', $post );
 	}
 
 	/**

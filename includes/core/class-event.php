@@ -1570,6 +1570,60 @@ class Event {
 	}
 
 	/**
+	 * Keep the password form usable for the rest of this request.
+	 *
+	 * Builders, shortcodes and block bindings pass rendered details through
+	 * the post kses context, which has no form or input, so visitors got a
+	 * password prompt with nothing to type in. REST responses skip kses.
+	 */
+	private static function keep_password_form_fields() {
+		if ( ! defined( 'REST_REQUEST' ) || ! REST_REQUEST ) {
+			add_filter( 'wp_kses_allowed_html', array( __CLASS__, 'allow_password_form_fields' ), 10, 2 );
+		}
+	}
+
+	/**
+	 * Add the password form's tags to the post kses context.
+	 *
+	 * @param array  $tags    Allowed tags.
+	 * @param string $context Kses context.
+	 * @return array
+	 */
+	public static function allow_password_form_fields( $tags, $context ) {
+		if ( 'post' !== $context ) {
+			return $tags;
+		}
+
+		$tags['form']  = array_merge(
+			$tags['form'] ?? array(),
+			array(
+				'action' => true,
+				'class'  => true,
+				'id'     => true,
+				'method' => true,
+			)
+		);
+		$tags['input'] = array_merge(
+			$tags['input'] ?? array(),
+			array(
+				'aria-describedby' => true,
+				'autocomplete'     => true,
+				'class'            => true,
+				'id'               => true,
+				'name'             => true,
+				'placeholder'      => true,
+				'required'         => true,
+				'size'             => true,
+				'spellcheck'       => true,
+				'type'             => true,
+				'value'            => true,
+			)
+		);
+
+		return $tags;
+	}
+
+	/**
 	 * Replace iframes with normalized safe YouTube embeds.
 	 *
 	 * @param string $description Raw description HTML.
@@ -4007,6 +4061,8 @@ class Event {
 	public static function rendered_details() {
 		// A locked event shows the password form in place of its details.
 		if ( self::$event_id && post_password_required( self::$event_id ) ) {
+			self::keep_password_form_fields();
+
 			return apply_filters( 'eventkoi_rendered_event_details', get_the_password_form( self::$event_id ), self::$event_id, self::$event );
 		}
 
