@@ -26,10 +26,60 @@ defined( 'ABSPATH' ) || exit;
 class ICS_Importer {
 
 	/**
+	 * Event meta: the calendar image URL behind the event's current picture.
+	 *
+	 * @var string
+	 */
+	const IMAGE_URL_META = '_ics_import_image_url';
+
+	/**
+	 * Event meta: an image URL waiting for the background job.
+	 *
+	 * @var string
+	 */
+	const PENDING_IMAGE_META = '_ics_import_pending_image';
+
+	/**
+	 * Attachment meta: the URL a media library item was downloaded from.
+	 *
+	 * @var string
+	 */
+	const IMAGE_SOURCE_META = '_eventkoi_ics_source_url';
+
+	/**
+	 * Background job for images a large import left for later.
+	 *
+	 * @var string
+	 */
+	const PENDING_IMAGES_HOOK = 'eventkoi_ics_process_pending_images';
+
+	/**
+	 * Seconds of image downloading allowed per request.
+	 *
+	 * @var int
+	 */
+	const IMAGE_TIME_BUDGET = 20;
+
+	/**
+	 * Largest image accepted, in bytes.
+	 *
+	 * @var int
+	 */
+	const IMAGE_MAX_BYTES = 10485760;
+
+	/**
+	 * When this request started downloading images.
+	 *
+	 * @var int
+	 */
+	private static $image_clock = 0;
+
+	/**
 	 * Constructor — registers REST routes.
 	 */
 	public function __construct() {
 		add_action( 'rest_api_init', array( __CLASS__, 'register_routes' ) );
+		add_action( self::PENDING_IMAGES_HOOK, array( __CLASS__, 'process_pending_images' ) );
 	}
 
 	/**
@@ -373,11 +423,209 @@ class ICS_Importer {
 			wp_set_post_terms( $new_post_id, array( $default_cal ), 'event_cal' );
 		}
 
+		self::apply_event_image( $new_post_id, (string) ( $event['image_url'] ?? '' ) );
+
 		return array(
 			'event_id'  => $new_post_id,
 			'title'     => $title,
 			'flattened' => $was_recurring,
 		);
+	}
+
+	/**
+	 * Read an image URL from an IMAGE or ATTACH property. Only http(s) URLs count;
+	 * embedded base64 attachments are left out.
+	 *
+	 * @param string $prop_name Property name.
+	 * @param string $value     Property value.
+	 * @param string $params    Property parameters.
+	 * @return string URL, or '' when the property holds no usable image.
+	 */
+	private static function image_url_from_property( $prop_name, $value, $params ) {
+		$url = trim( (string) $value );
+
+		if ( ! preg_match( '#^https?://#i', $url ) ) {
+			return '';
+		}
+
+		if ( 'IMAGE' === $prop_name ) {
+			return $url;
+		}
+
+		$is_image = preg_match( '/(^|;)FMTTYPE="?image\//i', (string) $params )
+			|| preg_match( '/\.(jpe?g|png|gif|webp)$/i', (string) wp_parse_url( $url, PHP_URL_PATH ) );
+
+		return $is_image ? $url : '';
+	}
+
+	/**
+	 * Set an event's image from its calendar source. Unchanged URLs are skipped so
+	 * an hourly feed sync never downloads the same picture twice, and a picture
+	 * someone chose by hand is kept unless the source later changes its own.
+	 *
+	 * @param int    $post_id   Event post id.
+	 * @param string $image_url Image URL from the calendar source, or ''.
+	 * @return void
+	 */
+	private static function apply_event_image( $post_id, $image_url ) {
+		$current = (string) get_post_meta( $post_id, self::IMAGE_URL_META, true );
+
+		delete_post_meta( $post_id, self::PENDING_IMAGE_META );
+
+		if ( '' === $image_url ) {
+			if ( '' !== $current ) {
+				self::remove_imported_image( $post_id, $current );
+			}
+			return;
+		}
+
+		if ( $image_url === $current || ( '' === $current && get_post_meta( $post_id, 'image', true ) ) ) {
+			return;
+		}
+
+		// Big calendars carry on in the background rather than timing out.
+		if ( ! self::has_image_time_left() ) {
+			update_post_meta( $post_id, self::PENDING_IMAGE_META, $image_url );
+			if ( ! wp_next_scheduled( self::PENDING_IMAGES_HOOK ) ) {
+				wp_schedule_single_event( time() + MINUTE_IN_SECONDS, self::PENDING_IMAGES_HOOK );
+			}
+			return;
+		}
+
+		$attachment_id = self::attachment_for_image( $image_url, $post_id );
+		if ( ! $attachment_id ) {
+			return;
+		}
+
+		set_post_thumbnail( $post_id, $attachment_id );
+		update_post_meta( $post_id, 'image', (string) wp_get_attachment_url( $attachment_id ) );
+		update_post_meta( $post_id, 'image_id', $attachment_id );
+		update_post_meta( $post_id, self::IMAGE_URL_META, $image_url );
+	}
+
+	/**
+	 * Take a picture off an event once its source no longer has one, unless
+	 * someone has replaced it by hand since.
+	 *
+	 * @param int    $post_id Event post id.
+	 * @param string $current The source URL the event's picture came from.
+	 * @return void
+	 */
+	private static function remove_imported_image( $post_id, $current ) {
+		$image_id = (int) get_post_meta( $post_id, 'image_id', true );
+
+		if ( $image_id && get_post_meta( $image_id, self::IMAGE_SOURCE_META, true ) === $current ) {
+			delete_post_thumbnail( $post_id );
+			delete_post_meta( $post_id, 'image' );
+			delete_post_meta( $post_id, 'image_id' );
+		}
+
+		delete_post_meta( $post_id, self::IMAGE_URL_META );
+	}
+
+	/**
+	 * Whether this request still has time for another image download.
+	 *
+	 * @return bool
+	 */
+	private static function has_image_time_left() {
+		if ( 0 === self::$image_clock ) {
+			self::$image_clock = time();
+		}
+
+		return ( time() - self::$image_clock ) < self::IMAGE_TIME_BUDGET;
+	}
+
+	/**
+	 * Find the media library item for an image URL, downloading it the first time
+	 * so events that share a picture share one file.
+	 *
+	 * @param string $image_url Image URL.
+	 * @param int    $post_id   Event to attach a new file to.
+	 * @return int Attachment id, or 0 when the URL did not give a usable image.
+	 */
+	private static function attachment_for_image( $image_url, $post_id ) {
+		$found = get_posts(
+			array(
+				'post_type'      => 'attachment',
+				'post_status'    => 'inherit',
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+				'meta_key'       => self::IMAGE_SOURCE_META, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- One lookup per new image URL.
+				'meta_value'     => $image_url, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- One lookup per new image URL.
+			)
+		);
+
+		if ( ! empty( $found ) ) {
+			return (int) $found[0];
+		}
+
+		require_once ABSPATH . 'wp-admin/includes/file.php';
+		require_once ABSPATH . 'wp-admin/includes/media.php';
+		require_once ABSPATH . 'wp-admin/includes/image.php';
+
+		$tmp = download_url( $image_url, 20 );
+		if ( is_wp_error( $tmp ) ) {
+			return 0;
+		}
+
+		$extensions = array(
+			'image/jpeg' => 'jpg',
+			'image/png'  => 'png',
+			'image/gif'  => 'gif',
+			'image/webp' => 'webp',
+		);
+
+		$size = wp_getimagesize( $tmp );
+		$mime = is_array( $size ) ? (string) ( $size['mime'] ?? '' ) : '';
+
+		if ( ! isset( $extensions[ $mime ] ) || filesize( $tmp ) > self::IMAGE_MAX_BYTES ) {
+			wp_delete_file( $tmp );
+			return 0;
+		}
+
+		$name = sanitize_file_name( pathinfo( (string) wp_parse_url( $image_url, PHP_URL_PATH ), PATHINFO_FILENAME ) );
+		$name = '' !== $name ? $name : 'event-image';
+
+		$attachment_id = media_handle_sideload(
+			array(
+				'name'     => $name . '.' . $extensions[ $mime ],
+				'tmp_name' => $tmp,
+			),
+			$post_id
+		);
+
+		if ( is_wp_error( $attachment_id ) ) {
+			wp_delete_file( $tmp );
+			return 0;
+		}
+
+		update_post_meta( $attachment_id, self::IMAGE_SOURCE_META, $image_url );
+
+		return (int) $attachment_id;
+	}
+
+	/**
+	 * Fetch images a large import left for later, then come back if some remain.
+	 *
+	 * @return void
+	 */
+	public static function process_pending_images() {
+		self::$image_clock = 0;
+
+		$pending = get_posts(
+			array(
+				'post_type'      => 'eventkoi_event',
+				'post_status'    => 'any',
+				'posts_per_page' => 50,
+				'fields'         => 'ids',
+				'meta_key'       => self::PENDING_IMAGE_META, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Background job, runs only while images are pending.
+			)
+		);
+
+		foreach ( $pending as $post_id ) {
+			self::apply_event_image( (int) $post_id, (string) get_post_meta( (int) $post_id, self::PENDING_IMAGE_META, true ) );
+		}
 	}
 
 	/**
@@ -429,6 +677,7 @@ class ICS_Importer {
 			'url'         => '',
 			'all_day'     => false,
 			'timezone'    => '',
+			'image_url'   => '',
 		);
 
 		foreach ( $lines as $line ) {
@@ -468,6 +717,15 @@ class ICS_Importer {
 
 				case 'URL':
 					$event['url'] = $value;
+					break;
+
+				case 'IMAGE':
+				case 'ATTACH':
+					$image_url = self::image_url_from_property( $prop_name, $value, $params );
+					// IMAGE is the calendar's own picture, so it outranks an attachment.
+					if ( '' !== $image_url && ( '' === $event['image_url'] || 'IMAGE' === $prop_name ) ) {
+						$event['image_url'] = $image_url;
+					}
 					break;
 
 				case 'DTSTART':
