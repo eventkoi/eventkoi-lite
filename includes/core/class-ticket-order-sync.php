@@ -42,6 +42,14 @@ class Ticket_Order_Sync {
 		$hold_id        = sanitize_text_field( (string) ( $order['hold_id'] ?? ( is_array( $order['metadata'] ?? null ) ? ( $order['metadata']['hold_id'] ?? '' ) : '' ) ) );
 		$customer_name  = sanitize_text_field( (string) ( $order['customer_name'] ?? '' ) );
 		$customer_email = sanitize_email( (string) ( $order['customer_email'] ?? $order['billing_email'] ?? '' ) );
+
+		// An admin's correction stands over what a later payment event carries.
+		$corrected = '' !== $order_id ? Order_Customer::corrected_details( $order_id ) : null;
+		if ( $corrected ) {
+			$customer_name  = $corrected['name'];
+			$customer_email = $corrected['email'];
+		}
+
 		$payment_status = sanitize_key( (string) ( $order['status'] ?? $order['payment_status'] ?? 'pending' ) );
 		$payment_intent = sanitize_text_field( (string) ( $order['stripe_payment_intent_id'] ?? $order['payment_intent_id'] ?? '' ) );
 		$charge_id      = sanitize_text_field( (string) ( $order['charge_id'] ?? '' ) );

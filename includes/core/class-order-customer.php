@@ -63,6 +63,9 @@ class Order_Customer {
 		$old_email       = (string) ( $order_row->billing_email ?? ( $rows[0]->customer_email ?? '' ) );
 		$address_changed = false;
 
+		// A blank name never wipes the one on the order.
+		$name = '' !== $name ? $name : $old_name;
+
 		if ( $order_row ) {
 			$fields = array(
 				'billing_name'  => $name,
@@ -124,6 +127,34 @@ class Order_Customer {
 	}
 
 	/**
+	 * The corrected details of an order an admin has edited. A later payment
+	 * event still carries what the buyer first typed, so callers keep these.
+	 *
+	 * @param string $order_id Order id, the row id or the checkout id.
+	 * @return array|null Name, email and row id, or null if never corrected.
+	 */
+	public static function corrected_details( $order_id ) {
+		global $wpdb;
+
+		$order_row = self::find_order_row( (string) $order_id );
+		if ( ! $order_row ) {
+			return null;
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Custom table.
+		$note = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}eventkoi_order_notes WHERE order_id = %d AND note_key = %s LIMIT 1", (int) $order_row->id, 'customer_details_updated' ) );
+		if ( ! $note ) {
+			return null;
+		}
+
+		return array(
+			'id'    => (int) $order_row->id,
+			'name'  => (string) $order_row->billing_name,
+			'email' => (string) $order_row->billing_email,
+		);
+	}
+
+	/**
 	 * Find the order row for an id, which can be the row id or the checkout id.
 	 *
 	 * @param string $order_id Order id.
@@ -173,8 +204,7 @@ class Order_Customer {
 	 * @return array
 	 */
 	private static function clean_address( $address, $current ) {
-		$stored = json_decode( $current, true );
-		$stored = is_array( $stored ) ? $stored : array();
+		$stored = self::decode_address( $current );
 
 		foreach ( self::ADDRESS_PARTS as $part ) {
 			if ( array_key_exists( $part, $address ) ) {
@@ -186,6 +216,22 @@ class Order_Customer {
 	}
 
 	/**
+	 * Stored address as parts. Text that isn't JSON is kept as the first line.
+	 *
+	 * @param string $current Stored address.
+	 * @return array
+	 */
+	private static function decode_address( $current ) {
+		$stored = json_decode( $current, true );
+
+		if ( is_array( $stored ) ) {
+			return $stored;
+		}
+
+		return '' !== trim( $current ) ? array( 'line1' => $current ) : array();
+	}
+
+	/**
 	 * Whether the address really changed. Empty parts count as missing.
 	 *
 	 * @param string $current Stored address JSON.
@@ -193,8 +239,7 @@ class Order_Customer {
 	 * @return bool
 	 */
 	private static function address_differs( $current, $new ) {
-		$stored = json_decode( $current, true );
-		$stored = is_array( $stored ) ? array_filter( $stored ) : array();
+		$stored = array_filter( self::decode_address( $current ) );
 		$new    = array_filter( $new );
 
 		ksort( $stored );
@@ -222,18 +267,29 @@ class Order_Customer {
 			return;
 		}
 
-		$parts = explode( ' ', $name, 2 );
-		$order->set_billing_first_name( $parts[0] );
-		$order->set_billing_last_name( $parts[1] ?? '' );
+		// Splitting the name again could move a two-part first name, so a name
+		// that did not change is left as it is.
+		if ( trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() ) !== $name ) {
+			$parts = explode( ' ', $name, 2 );
+			$order->set_billing_first_name( $parts[0] );
+			$order->set_billing_last_name( $parts[1] ?? '' );
+		}
+
 		$order->set_billing_email( $email );
 
-		if ( is_array( $address ) ) {
-			$order->set_billing_address_1( sanitize_text_field( (string) ( $address['line1'] ?? '' ) ) );
-			$order->set_billing_address_2( sanitize_text_field( (string) ( $address['line2'] ?? '' ) ) );
-			$order->set_billing_city( sanitize_text_field( (string) ( $address['city'] ?? '' ) ) );
-			$order->set_billing_state( sanitize_text_field( (string) ( $address['state'] ?? '' ) ) );
-			$order->set_billing_postcode( sanitize_text_field( (string) ( $address['postal_code'] ?? '' ) ) );
-			$order->set_billing_country( sanitize_text_field( (string) ( $address['country'] ?? '' ) ) );
+		// Only the parts that were sent are written.
+		$setters = array(
+			'line1'       => 'set_billing_address_1',
+			'line2'       => 'set_billing_address_2',
+			'city'        => 'set_billing_city',
+			'state'       => 'set_billing_state',
+			'postal_code' => 'set_billing_postcode',
+			'country'     => 'set_billing_country',
+		);
+		foreach ( $setters as $part => $setter ) {
+			if ( is_array( $address ) && array_key_exists( $part, $address ) ) {
+				$order->$setter( sanitize_text_field( (string) $address[ $part ] ) );
+			}
 		}
 
 		$order->save();
