@@ -855,56 +855,90 @@ class Event {
 	}
 
 	/**
-	 * Remove what a locked event keeps from visitors. Its title and dates stay, so
-	 * people can tell what they are unlocking.
+	 * Empty everything a locked event keeps from visitors. Only what says when the
+	 * event is stays, so people can tell what they are unlocking, and a field added
+	 * later is private by default. Keys stay in place so page scripts keep working.
 	 *
 	 * @param array $data Event data.
 	 * @return array
 	 */
 	public static function strip_locked_fields( $data ) {
-		$private = array(
-			'description',
-			'excerpt',
-			'summary',
-			'tbc_note',
-			'email_message',
-			'custom_fields',
-			'custom_taxonomies',
-			'taxonomy_terms',
-			'locations',
-			'location',
-			'location_line',
-			'location_mode',
-			'address1',
-			'address2',
-			'address3',
-			'city',
-			'state',
-			'country',
-			'zip',
-			'latitude',
-			'longitude',
-			'embed_gmap',
-			'gmap_link',
-			'virtual_url',
-			'link_text',
-			'price_from_details',
+		$visible = array(
+			'id',
+			'event_id',
+			'title',
+			'slug',
+			'url',
+			'ical',
+			'status',
+			'wp_status',
+			'date_type',
+			'standard_type',
+			'tbc',
+			'start',
+			'end',
+			'allDay',
+			'all_day',
+			'start_date',
+			'start_date_gmt',
+			'start_date_iso',
+			'start_date_g',
+			'end_date',
+			'end_date_gmt',
+			'end_date_iso',
+			'end_date_g',
+			'start_ts',
+			'end_ts',
+			'wp_start_ts',
+			'wp_end_ts',
+			'instance_ts',
+			'start_timestamp',
+			'end_timestamp',
+			'start_date_override',
+			'end_date_override',
+			'all_day_override',
+			'datetime',
+			'timeline',
+			'timezone',
+			'timezone_display',
+			'event_timezone',
+			'modified_date',
+			'modified_date_gmt',
+			'modified_at',
+			'event_days',
+			'recurrence_rules',
+			'rulesummary',
+			'event_single_package',
+			'image',
+			'image_thumb',
+			'image_id',
+			'thumbnail',
+			'calendar',
+			'calendar_link',
+			'calendar_id',
+			'calendar_color',
+			'calendar_name',
+			'color',
+			'template',
+			'series_backlink',
 		);
 
-		foreach ( $private as $key ) {
-			if ( array_key_exists( $key, $data ) ) {
-				$data[ $key ] = is_array( $data[ $key ] ) ? array() : '';
-			}
-		}
-
-		if ( ! empty( $data['active_instance'] ) && is_array( $data['active_instance'] ) ) {
-			$data['active_instance'] = self::strip_locked_fields( $data['active_instance'] );
-		}
-
-		if ( ! empty( $data['recurrence_overrides'] ) && is_array( $data['recurrence_overrides'] ) ) {
-			foreach ( $data['recurrence_overrides'] as $timestamp => $override ) {
-				if ( is_array( $override ) ) {
-					$data['recurrence_overrides'][ $timestamp ] = self::strip_locked_fields( $override );
+		foreach ( $data as $key => $value ) {
+			if ( 'active_instance' === $key && is_array( $value ) ) {
+				$data[ $key ] = self::strip_locked_fields( $value );
+			} elseif ( 'recurrence_overrides' === $key && is_array( $value ) ) {
+				foreach ( $value as $timestamp => $override ) {
+					$data[ $key ][ $timestamp ] = is_array( $override ) ? self::strip_locked_fields( $override ) : array();
+				}
+			} elseif ( ! in_array( $key, $visible, true ) ) {
+				if ( is_array( $value ) ) {
+					$data[ $key ] = array();
+				} elseif ( is_bool( $value ) ) {
+					$data[ $key ] = false;
+				} elseif ( is_int( $value ) || is_float( $value ) ) {
+					$data[ $key ] = 0;
+				} else {
+					$data[ $key ] = '';
 				}
 			}
 		}
