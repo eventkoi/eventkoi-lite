@@ -174,3 +174,13 @@ main.eventkoi-main {
   width: 100%;
   min-width: 0;
 }
+
+// The scoped preflight zeroes input borders, which left a locked event's
+// password box as a white field on a white page. 0,4,2 beats its 0,3,1.
+.eventkoi-front form.post-password-form input[type="password"]:not(.wp-element-button) {
+  border-width: 1px;
+  border-style: solid;
+  border-color: #8c8c8c;
+  border-radius: 6px;
+  padding: 6px 10px;
+}
