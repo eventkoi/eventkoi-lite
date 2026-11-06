@@ -1779,9 +1779,6 @@ class Rsvps {
 		// A guest's own copy goes only to them.
 		$sent = Email_Routing::send( 'rsvp', $email, $subject, $body, $settings, array( 'personal' => $is_guest ) );
 
-		if ( $from_name_filter ) {
-			remove_filter( 'wp_mail_from_name', $from_name_filter );
-		}
 
 		if ( ! $sent && defined( 'WP_DEBUG' ) && WP_DEBUG ) {
 			error_log( sprintf( '[EventKoi] RSVP email failed for %s (event %d).', $email, $event_id ) );
