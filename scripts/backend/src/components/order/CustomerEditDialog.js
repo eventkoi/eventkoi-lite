@@ -58,7 +58,7 @@ export function CustomerEditDialog({ order, open, onOpenChange, onSaved }) {
       showToast({
         message: emailChanged
           ? __(
-              "Customer updated. Use Resend confirmation to send the ticket to the new email.",
+              "Customer updated. Use Resend receipt to send the ticket to the new email.",
               "eventkoi-lite"
             )
           : __("Customer updated.", "eventkoi-lite"),

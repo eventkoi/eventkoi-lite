@@ -59,8 +59,9 @@ class Order_Customer {
 			return new WP_Error( 'order_not_found', __( 'Order not found.', 'eventkoi-lite' ), array( 'status' => 404 ) );
 		}
 
-		$old_name  = (string) ( $order_row->billing_name ?? ( $rows[0]->customer_name ?? '' ) );
-		$old_email = (string) ( $order_row->billing_email ?? ( $rows[0]->customer_email ?? '' ) );
+		$old_name        = (string) ( $order_row->billing_name ?? ( $rows[0]->customer_name ?? '' ) );
+		$old_email       = (string) ( $order_row->billing_email ?? ( $rows[0]->customer_email ?? '' ) );
+		$address_changed = false;
 
 		if ( $order_row ) {
 			$fields = array(
@@ -70,7 +71,10 @@ class Order_Customer {
 			);
 
 			if ( is_array( $address ) ) {
-				$fields['billing_address'] = wp_json_encode( self::clean_address( $address, (string) ( $order_row->billing_address ?? '' ) ) );
+				$current_address           = (string) ( $order_row->billing_address ?? '' );
+				$new_address               = self::clean_address( $address, $current_address );
+				$address_changed           = self::address_differs( $current_address, $new_address );
+				$fields['billing_address'] = wp_json_encode( $new_address );
 			}
 
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Order table is custom.
@@ -99,8 +103,8 @@ class Order_Customer {
 
 		self::update_woocommerce_order( $order_id, $name, $email, $address );
 
-		if ( $order_row && ( $old_name !== $name || strtolower( $old_email ) !== strtolower( $email ) || is_array( $address ) ) ) {
-			( new Orders() )->add_note( (int) $order_row->id, 'customer_details_updated', self::change_summary( $old_name, $name, $old_email, $email ), 'system' );
+		if ( $order_row && ( $old_name !== $name || strtolower( $old_email ) !== strtolower( $email ) || $address_changed ) ) {
+			( new Orders() )->add_note( (int) $order_row->id, 'customer_details_updated', self::change_summary( $old_name, $name, $old_email, $email, $address_changed ), 'system' );
 		}
 
 		/**
@@ -182,6 +186,24 @@ class Order_Customer {
 	}
 
 	/**
+	 * Whether the address really changed. Empty parts count as missing.
+	 *
+	 * @param string $current Stored address JSON.
+	 * @param array  $new     Address about to be saved.
+	 * @return bool
+	 */
+	private static function address_differs( $current, $new ) {
+		$stored = json_decode( $current, true );
+		$stored = is_array( $stored ) ? array_filter( $stored ) : array();
+		$new    = array_filter( $new );
+
+		ksort( $stored );
+		ksort( $new );
+
+		return $stored !== $new;
+	}
+
+	/**
 	 * Keep the WooCommerce order in step when the sale came through WooCommerce.
 	 *
 	 * @param string     $order_id Order id.
@@ -224,9 +246,10 @@ class Order_Customer {
 	 * @param string $name      New name.
 	 * @param string $old_email Previous email.
 	 * @param string $email     New email.
+	 * @param bool   $address_changed Whether the billing address changed.
 	 * @return string
 	 */
-	private static function change_summary( $old_name, $name, $old_email, $email ) {
+	private static function change_summary( $old_name, $name, $old_email, $email, $address_changed = false ) {
 		$changes = array();
 
 		if ( strtolower( $old_email ) !== strtolower( $email ) ) {
@@ -236,6 +259,9 @@ class Order_Customer {
 		if ( $old_name !== $name ) {
 			/* translators: 1: previous name, 2: new name. */
 			$changes[] = sprintf( __( 'name from %1$s to %2$s', 'eventkoi-lite' ), $old_name, $name );
+		}
+		if ( $address_changed && ! empty( $changes ) ) {
+			$changes[] = __( 'billing address', 'eventkoi-lite' );
 		}
 
 		$user = wp_get_current_user();

@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-06T13:33:38+00:00\n"
+"POT-Creation-Date: 2026-11-06T14:58:55+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -1553,7 +1553,7 @@ msgid "Sent to the site admin when someone RSVPs to an event."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-rsvps.php:2104
+#: includes/core/class-rsvps.php:2100
 msgid "New RSVP: [event_name]"
 msgstr ""
 
@@ -3508,7 +3508,7 @@ msgstr ""
 #: includes/core/class-divi5-modules.php:325
 #: includes/core/class-divi5-modules.php:327
 #: includes/core/class-post-types.php:116
-#: includes/core/class-rsvps.php:1997
+#: includes/core/class-rsvps.php:1993
 #: includes/core/class-template.php:151
 #: includes/core/class-ticket-emails.php:1343
 #: includes/core/class-woocommerce-checkout.php:482
@@ -4433,7 +4433,7 @@ msgid "Address line 2"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-msgid "Customer updated. Use Resend confirmation to send the ticket to the new email."
+msgid "Customer updated. Use Resend receipt to send the ticket to the new email."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
@@ -6807,11 +6807,11 @@ msgstr ""
 msgid "Pagination"
 msgstr ""
 
-#: includes/core/class-blocks.php:2311
+#: includes/core/class-blocks.php:2319
 msgid "No calendar is available to display."
 msgstr ""
 
-#: includes/core/class-blocks.php:2315
+#: includes/core/class-blocks.php:2323
 msgid "Create a calendar"
 msgstr ""
 
@@ -7310,29 +7310,33 @@ msgid "Default calendar"
 msgstr ""
 
 #. translators: 1: previous email, 2: new email.
-#: includes/core/class-order-customer.php:234
+#: includes/core/class-order-customer.php:257
 #, php-format
 msgid "email from %1$s to %2$s"
 msgstr ""
 
 #. translators: 1: previous name, 2: new name.
-#: includes/core/class-order-customer.php:238
+#: includes/core/class-order-customer.php:261
 #, php-format
 msgid "name from %1$s to %2$s"
 msgstr ""
 
-#: includes/core/class-order-customer.php:242
+#: includes/core/class-order-customer.php:264
+msgid "billing address"
+msgstr ""
+
+#: includes/core/class-order-customer.php:268
 msgid "An admin"
 msgstr ""
 
 #. translators: %s: who made the change.
-#: includes/core/class-order-customer.php:246
+#: includes/core/class-order-customer.php:272
 #, php-format
 msgid "%s updated the billing address."
 msgstr ""
 
 #. translators: 1: who made the change, 2: the list of changes.
-#: includes/core/class-order-customer.php:250
+#: includes/core/class-order-customer.php:276
 #, php-format
 msgid "%1$s changed the customer %2$s."
 msgstr ""
@@ -7624,25 +7628,25 @@ msgid "Location:"
 msgstr ""
 
 #. translators: %d: Number of guests.
-#: includes/core/class-rsvps.php:2092
+#: includes/core/class-rsvps.php:2088
 msgid "Guests:"
 msgstr ""
 
-#: includes/core/class-rsvps.php:2108
+#: includes/core/class-rsvps.php:2104
 msgid "A new RSVP has been submitted."
 msgstr ""
 
-#: includes/core/class-rsvps.php:2109
+#: includes/core/class-rsvps.php:2105
 msgid "Attendee:"
 msgstr ""
 
-#: includes/core/class-rsvps.php:2111
+#: includes/core/class-rsvps.php:2107
 #: includes/core/class-ticket-emails.php:865
 #: includes/core/class-ticket-emails.php:1813
 msgid "Event:"
 msgstr ""
 
-#: includes/core/class-rsvps.php:2112
+#: includes/core/class-rsvps.php:2108
 #: includes/core/class-ticket-emails.php:866
 #: includes/core/class-ticket-emails.php:1814
 msgid "Date:"
