@@ -429,8 +429,8 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 	// summary or the hand-written excerpt. An embed argument wins over the
 	// calendar setting.
 	$description_source = isset( $args['description_source'] ) ? sanitize_key( (string) $args['description_source'] ) : 'details';
-	if ( ! in_array( $description_source, array( 'details', 'excerpt' ), true ) ) {
-		$description_source = 'details';
+	if ( ! in_array( $description_source, array( 'description', 'excerpt' ), true ) ) {
+		$description_source = 'excerpt';
 	}
 
 	if ( empty( $content_size ) && is_tax( 'event_cal' ) ) {

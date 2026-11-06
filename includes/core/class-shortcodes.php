@@ -323,7 +323,7 @@ class Shortcodes {
 			$calendar_args['expand_instances'] = $expand_instances;
 
 			$description_source = sanitize_key( (string) $attributes['description_source'] );
-			if ( in_array( $description_source, array( 'details', 'excerpt' ), true ) ) {
+			if ( in_array( $description_source, array( 'description', 'excerpt' ), true ) ) {
 				$calendar_args['description_source'] = $description_source;
 			}
 		}

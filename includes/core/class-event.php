@@ -3891,8 +3891,12 @@ class Event {
 	 * @return string
 	 */
 	public static function rendered_excerpt() {
-		$excerpt = (string) get_post_field( 'post_excerpt', self::$event_id );
-		$excerpt = trim( $excerpt );
+		$excerpt = trim( (string) get_post_field( 'post_excerpt', self::$event_id ) );
+
+		// Events without an excerpt fall back to their description.
+		if ( '' === $excerpt ) {
+			$excerpt = trim( (string) self::get_summary() );
+		}
 
 		return apply_filters(
 			'eventkoi_rendered_event_excerpt',
