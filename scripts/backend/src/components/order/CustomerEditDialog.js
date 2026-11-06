@@ -40,6 +40,13 @@ export function CustomerEditDialog({ order, open, onOpenChange, onSaved }) {
     email.trim().toLowerCase() !==
     String(order?.customer_email || "").trim().toLowerCase();
 
+  // An untouched address is never sent, so it can't overwrite what is stored.
+  const addressChanged = ADDRESS_FIELDS.some(
+    ({ key }) =>
+      String(address?.[key] || "") !==
+      String(order?.customer_address?.[key] || "")
+  );
+
   const save = async (event) => {
     event.preventDefault();
     setSaving(true);
@@ -50,7 +57,7 @@ export function CustomerEditDialog({ order, open, onOpenChange, onSaved }) {
           order_id: order.id,
           customer_name: name,
           customer_email: email,
-          customer_address: address,
+          customer_address: addressChanged ? address : undefined,
         },
       });
       await onSaved?.();

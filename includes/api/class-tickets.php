@@ -1305,6 +1305,32 @@ class Tickets {
 	}
 
 	/**
+	 * Billing address of a WooCommerce order, in the parts the order screen reads.
+	 *
+	 * @param string $base_id Base order ID.
+	 * @return array|null Address parts, or null when this is not a WooCommerce order.
+	 */
+	private static function wc_order_address( $base_id ) {
+		if ( ! preg_match( '/^wc_(\d+)$/', (string) $base_id, $match ) || ! function_exists( 'wc_get_order' ) ) {
+			return null;
+		}
+
+		$order = wc_get_order( (int) $match[1] );
+		if ( ! $order ) {
+			return null;
+		}
+
+		return array(
+			'line1'       => (string) $order->get_billing_address_1(),
+			'line2'       => (string) $order->get_billing_address_2(),
+			'city'        => (string) $order->get_billing_city(),
+			'state'       => (string) $order->get_billing_state(),
+			'postal_code' => (string) $order->get_billing_postcode(),
+			'country'     => (string) $order->get_billing_country(),
+		);
+	}
+
+	/**
 	 * Return local WC ticket orders (order_id starts with 'wc_').
 	 *
 	 * @param WP_REST_Request $request Request object.
@@ -1545,6 +1571,7 @@ class Tickets {
 						'event_names'           => array(),
 						'customer_name'         => (string) ( $row->customer_name ?? '' ),
 						'customer_email'        => (string) ( $row->customer_email ?? '' ),
+						'customer_address'      => self::wc_order_address( $base_id ),
 						'payment_status'        => 'pending',
 						'status'                => 'pending',
 						'is_archived'           => false,
@@ -1584,6 +1611,19 @@ class Tickets {
 
 				$grouped[ $base_id ]['quantity']     += absint( $row->quantity ?? 1 );
 				$grouped[ $base_id ]['amount_total'] += (float) ( $row->total_amount ?? 0 ) * 100;
+			}
+
+			$local_ids = array_values( array_filter( array_map( 'absint', array_filter( array_keys( $grouped ), 'is_numeric' ) ) ) );
+			if ( ! empty( $local_ids ) ) {
+				$placeholders = implode( ',', array_fill( 0, count( $local_ids ), '%d' ) );
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+				$address_rows = $wpdb->get_results( $wpdb->prepare( "SELECT id, billing_address FROM {$wpdb->prefix}eventkoi_orders WHERE id IN ({$placeholders})", $local_ids ) );
+				foreach ( (array) $address_rows as $address_row ) {
+					$decoded = json_decode( (string) $address_row->billing_address, true );
+					if ( is_array( $decoded ) && isset( $grouped[ (string) $address_row->id ] ) ) {
+						$grouped[ (string) $address_row->id ]['customer_address'] = $decoded;
+					}
+				}
 			}
 
 			// Derive aggregate status from per-seat row mix.
