@@ -65,11 +65,19 @@ class Blocks {
 	 * @return string
 	 */
 	public static function hide_calendar_backlink( $block_content, $block ) {
-		if ( 'core/paragraph' !== ( $block['blockName'] ?? '' ) || false === strpos( (string) $block_content, 'See all events in event_calendar_link' ) ) {
+		if ( 'core/paragraph' !== ( $block['blockName'] ?? '' ) || false === strpos( (string) $block_content, 'event_calendar_link' ) ) {
 			return $block_content;
 		}
 
-		return Event::is_calendar_backlink_enabled() ? $block_content : '';
+		if ( Event::is_calendar_backlink_enabled() ) {
+			return $block_content;
+		}
+
+		// The line is the link and a few words, in any language. Longer text keeps
+		// its words and only loses the link.
+		$words = preg_split( '/\s+/u', trim( wp_strip_all_tags( (string) $block_content ) ) );
+
+		return count( (array) $words ) <= 12 ? '' : $block_content;
 	}
 
 	/**
