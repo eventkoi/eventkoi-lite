@@ -1757,16 +1757,24 @@ JS;
 	/**
 	 * Description HTML for the Event Data block.
 	 *
-	 * Without a word limit the field keeps showing the event summary. With one,
-	 * the full description is trimmed to that many words, like core's Excerpt.
+	 * Query Loop rows show the event's excerpt first, like every other event list.
+	 * Otherwise, without a word limit the field keeps showing the event summary.
+	 * With one, the full description is trimmed to that many words, like core's
+	 * Excerpt.
 	 *
 	 * @param array $event      Normalised event array.
 	 * @param array $attributes Block attributes.
+	 * @param bool  $in_loop    Whether this is a Query Loop row.
 	 * @return string
 	 */
-	private static function excerpt_field_html( $event, $attributes ) {
+	private static function excerpt_field_html( $event, $attributes, $in_loop = false ) {
 		$summary = isset( $event['description'] ) ? (string) $event['description'] : '';
 		$limit   = isset( $attributes['excerptLength'] ) ? absint( $attributes['excerptLength'] ) : 0;
+		$excerpt = $in_loop && ! empty( $event['excerpt'] ) ? (string) $event['excerpt'] : '';
+
+		if ( '' !== $excerpt ) {
+			return $limit > 0 ? self::trim_words_html( $excerpt, $limit ) : esc_html( $excerpt );
+		}
 
 		if ( $limit < 1 ) {
 			return wp_kses_post( $summary );
@@ -1972,8 +1980,8 @@ JS;
 				return '<div class="ek-event-timeline--inner">' . $wrapped . '</div>';
 				} )()
 				: '',
-			'excerpt'  => ! empty( $event['description'] )
-				? '<div class="ek-event-excerpt--inner ek-event-excerpt-default">' . self::excerpt_field_html( $event, $attributes ) . '</div>'
+			'excerpt'  => ! empty( $event['description'] ) || ( $link_title && ! empty( $event['excerpt'] ) )
+				? '<div class="ek-event-excerpt--inner ek-event-excerpt-default">' . self::excerpt_field_html( $event, $attributes, $link_title ) . '</div>'
 				: '',
 			'location' => self::render_location_field_value( $event ),
 			'image'    => ! empty( $event['thumbnail'] )

@@ -194,7 +194,7 @@ apiFetch.use((options, next) => {
         link: evt?.url || "",
         title: { rendered: title },
         excerpt: {
-          rendered: evt?.excerpt?.rendered || evt?.description || "",
+          rendered: evt?.excerpt?.rendered || (typeof evt?.excerpt === "string" && evt.excerpt) || evt?.description || "",
         },
         content: { rendered: "" },
         featured_media: featuredMediaId,
@@ -349,7 +349,7 @@ apiFetch.use((options, next) => {
             link: evt?.url || "",
             title: { rendered: title },
             excerpt: {
-              rendered: evt?.excerpt?.rendered || evt?.description || "",
+              rendered: evt?.excerpt?.rendered || (typeof evt?.excerpt === "string" && evt.excerpt) || evt?.description || "",
             },
             content: { rendered: "" },
             featured_media: featuredMediaId,

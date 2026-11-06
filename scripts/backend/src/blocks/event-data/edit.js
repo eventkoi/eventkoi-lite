@@ -332,10 +332,17 @@ export default function Edit({ attributes, setAttributes, clientId }) {
     event.description?.rendered ||
     event.description ||
     "";
-  // Mirror the server: a word limit trims the full description, like core's
-  // Excerpt; without one the summary shows as before.
+  // Mirror the server: Query Loop rows show the event's excerpt first. A word
+  // limit trims the full description, like core's Excerpt; without one the
+  // summary shows as before.
+  const rowExcerpt = !isInQuery
+    ? ""
+    : typeof event.excerpt === "string"
+      ? event.excerpt
+      : event._eventkoi?.excerpt || "";
   const excerpt = trimExcerptWords(
-    wordLimit > 0 && fullDescription ? fullDescription : fullExcerpt,
+    rowExcerpt ||
+      (wordLimit > 0 && fullDescription ? fullDescription : fullExcerpt),
     wordLimit
   );
   const location = event.location_line || "";
