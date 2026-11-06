@@ -1,9 +1,13 @@
 // components/order/CustomerInfo.jsx
+import { CustomerEditDialog } from "@/components/order/CustomerEditDialog";
+import { Button } from "@/components/ui/button";
 import { getCountryName } from "@/lib/utils";
 import { __ } from "@wordpress/i18n";
 import { Mail } from "lucide-react";
+import { useState } from "react";
 
-export function CustomerInfo({ order }) {
+export function CustomerInfo({ order, onUpdated }) {
+  const [editing, setEditing] = useState(false);
   const wpUserId = Number(order?.wp_user_id || 0) || 0;
   const wpUserLabel = String(order?.wp_user_label || "").trim();
   const displayCustomerName = String(
@@ -12,9 +16,21 @@ export function CustomerInfo({ order }) {
 
   return (
     <div className="rounded-xl border bg-white p-6">
-      <h3 className="text-base font-medium mb-4">
-        {__("Customer", "eventkoi-lite")}
-      </h3>
+      <div className="flex items-center justify-between gap-2 mb-4">
+        <h3 className="text-base font-medium m-0">
+          {__("Customer", "eventkoi-lite")}
+        </h3>
+        {onUpdated && !order?.is_archived && (
+          <Button
+            type="button"
+            variant="link"
+            className="h-auto p-0 font-normal"
+            onClick={() => setEditing(true)}
+          >
+            {__("Edit", "eventkoi-lite")}
+          </Button>
+        )}
+      </div>
       <div className="space-y-2 text-sm">
         <div className="grid grid-cols-[auto_1fr] gap-2">
           <span className="text-muted-foreground w-32">
@@ -76,6 +92,14 @@ export function CustomerInfo({ order }) {
           )}
         </div>
       </div>
+      {onUpdated && (
+        <CustomerEditDialog
+          order={order}
+          open={editing}
+          onOpenChange={setEditing}
+          onSaved={onUpdated}
+        />
+      )}
     </div>
   );
 }

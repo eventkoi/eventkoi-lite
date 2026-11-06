@@ -61,6 +61,10 @@ function getNoteUI(note) {
     );
   }
 
+  if (key === "customer_details_updated") {
+    return <span className="text-foreground font-normal">{val}</span>;
+  }
+
   if (key === "ticket_confirmation_sent") {
     return (
       <span className="font-medium">

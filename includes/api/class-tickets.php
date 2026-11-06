@@ -81,6 +81,16 @@ class Tickets {
 
 		register_rest_route(
 			'eventkoi/v1',
+			'/tickets/orders/update-customer',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'update_order_customer' ),
+				'permission_callback' => REST::cap( 'eventkoi_orders_manage' ),
+			)
+		);
+
+		register_rest_route(
+			'eventkoi/v1',
 			'/tickets/orders/resend-confirmation',
 			array(
 				'methods'             => 'POST',
@@ -517,6 +527,63 @@ class Tickets {
 		);
 
 		return new WP_REST_Response( $result, 200 );
+	}
+
+	/**
+	 * Determine whether a ticket order is currently archived.
+	 *
+	 * @param string $order_id Base order ID, checkout ID, or numeric local ID.
+	 * @return bool
+	 */
+	private static function is_ticket_order_archived( $order_id ) {
+		global $wpdb;
+
+		$order_id = sanitize_text_field( (string) $order_id );
+		if ( '' === $order_id ) {
+			return false;
+		}
+
+		if ( 0 === strpos( $order_id, 'wc_' ) && function_exists( 'wc_get_order' ) ) {
+			$wc_id    = absint( substr( $order_id, 3 ) );
+			$wc_order = $wc_id ? wc_get_order( $wc_id ) : null;
+			if ( $wc_order && '1' === (string) $wc_order->get_meta( '_eventkoi_is_archived' ) ) {
+				return true;
+			}
+		}
+
+		$orders_tbl = $wpdb->prefix . 'eventkoi_orders';
+		if ( ctype_digit( $order_id ) ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$is_archived = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT is_archived FROM {$orders_tbl} WHERE id = %d LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					absint( $order_id )
+				)
+			);
+		} else {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$is_archived = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT is_archived FROM {$orders_tbl} WHERE checkout_id = %s LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$order_id
+				)
+			);
+		}
+		if ( null !== $is_archived && absint( $is_archived ) > 0 ) {
+			return true;
+		}
+
+		$items_tbl = $wpdb->prefix . 'eventkoi_ticket_orders';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$row_state = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT COUNT(*) AS total_rows, SUM(CASE WHEN payment_status = 'archived' THEN 1 ELSE 0 END) AS archived_rows FROM {$items_tbl} WHERE order_id = %s OR order_id LIKE %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$order_id,
+				$wpdb->esc_like( $order_id ) . ':%'
+			)
+		);
+
+		return $row_state && absint( $row_state->total_rows ?? 0 ) > 0 && absint( $row_state->total_rows ?? 0 ) === absint( $row_state->archived_rows ?? 0 );
 	}
 
 	/**
@@ -2665,6 +2732,34 @@ class Tickets {
 				'sent'    => (bool) ( $result['sent'] ?? false ),
 			)
 		);
+	}
+
+	/**
+	 * Correct the customer details on an order.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function update_order_customer( WP_REST_Request $request ) {
+		$order_id = sanitize_text_field( (string) $request->get_param( 'order_id' ) );
+
+		if ( '' !== $order_id && self::is_ticket_order_archived( $order_id ) ) {
+			return self::archived_order_error();
+		}
+
+		$address = $request->get_param( 'customer_address' );
+		$result  = \EventKoi\Core\Order_Customer::update(
+			$order_id,
+			(string) $request->get_param( 'customer_name' ),
+			(string) $request->get_param( 'customer_email' ),
+			is_array( $address ) ? $address : null
+		);
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		return rest_ensure_response( array_merge( array( 'success' => true ), $result ) );
 	}
 
 	/**

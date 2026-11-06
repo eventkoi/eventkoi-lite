@@ -57,6 +57,16 @@ export function OrderView() {
     }
   }
 
+  async function refreshOrder() {
+    const orders = await callLocalApi("tickets/all-orders");
+    const match = Array.isArray(orders)
+      ? orders.find((o) => o.id === order.id || o.order_id === order.id)
+      : null;
+    if (match) {
+      setOrder(normalizeOrder(match));
+    }
+  }
+
   if (loading) {
     return (
       <>
@@ -114,7 +124,7 @@ export function OrderView() {
           <div className="md:col-span-2 space-y-6">
             <OrderSummary order={order} />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <CustomerInfo order={order} />
+              <CustomerInfo order={order} onUpdated={refreshOrder} />
               <PaymentMethod order={order} />
             </div>
           </div>
