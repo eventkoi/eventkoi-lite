@@ -4241,7 +4241,7 @@ class Event {
 	 */
 	public static function rendered_location() {
 		if ( self::is_locked_for_visitor() ) {
-			return '';
+			return esc_html__( 'Enter the password to see the location.', 'eventkoi-lite' );
 		}
 
 		$locations = self::get_instance_field( 'locations' );
