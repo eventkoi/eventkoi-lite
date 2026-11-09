@@ -1,4 +1,5 @@
 // components/order/CustomerInfo.jsx
+import { formatAnswer } from "@/components/order/AnswerInput";
 import { CustomerEditDialog } from "@/components/order/CustomerEditDialog";
 import { Button } from "@/components/ui/button";
 import { getCountryName } from "@/lib/utils";
@@ -76,6 +77,16 @@ export function CustomerInfo({ order, onUpdated }) {
             <span className="text-foreground"></span>
           )}
         </div>
+        {(order.checkout_fields || []).map((field) => (
+          <div key={field.key} className="grid grid-cols-[auto_1fr] gap-2">
+            <span className="text-muted-foreground w-32 truncate" title={field.label}>
+              {field.label}
+            </span>
+            <span className="text-foreground break-words">
+              {formatAnswer(field.value)}
+            </span>
+          </div>
+        ))}
         <div className="grid grid-cols-[auto_1fr] gap-2">
           <span className="text-muted-foreground w-32">
             {__("WP user", "eventkoi-lite")}

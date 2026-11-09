@@ -61,7 +61,7 @@ function getNoteUI(note) {
     );
   }
 
-  if (key === "customer_details_updated") {
+  if (key === "customer_details_updated" || key === "checkout_fields_updated") {
     return <span className="text-foreground font-normal">{val}</span>;
   }
 

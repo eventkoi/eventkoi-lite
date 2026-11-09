@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { AnswerInput, formatAnswer } from "@/components/order/AnswerInput";
 import { callLocalApi } from "@/lib/remote";
 import { showToast, showToastError } from "@/lib/toast";
 import { __ } from "@wordpress/i18n";
@@ -27,14 +28,33 @@ export function CustomerEditDialog({ order, open, onOpenChange, onSaved }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [address, setAddress] = useState({});
+  const [answers, setAnswers] = useState({});
   const [saving, setSaving] = useState(false);
+  const checkoutFields = Array.isArray(order?.checkout_fields)
+    ? order.checkout_fields
+    : [];
 
   useEffect(() => {
     if (!open) return;
     setName(String(order?.customer_name || order?.ticket_holder_name || ""));
     setEmail(String(order?.customer_email || ""));
     setAddress(order?.customer_address || {});
+    const initial = {};
+    (order?.checkout_fields || []).forEach((field) => {
+      initial[field.key] = field.value ?? "";
+    });
+    setAnswers(initial);
   }, [open, order]);
+
+  // Only the answers the admin changed are sent, so the rest stay as the buyer gave them.
+  const changedAnswers = checkoutFields.reduce((changed, field) => {
+    if (
+      formatAnswer(answers[field.key]) !== formatAnswer(field.value ?? "")
+    ) {
+      changed[field.key] = answers[field.key] ?? "";
+    }
+    return changed;
+  }, {});
 
   const emailChanged =
     email.trim().toLowerCase() !==
@@ -63,6 +83,8 @@ export function CustomerEditDialog({ order, open, onOpenChange, onSaved }) {
           customer_email: email,
           customer_address:
             Object.keys(changedAddress).length > 0 ? changedAddress : undefined,
+          checkout_fields:
+            Object.keys(changedAnswers).length > 0 ? changedAnswers : undefined,
         },
       });
       await onSaved?.();
@@ -130,6 +152,36 @@ export function CustomerEditDialog({ order, open, onOpenChange, onSaved }) {
               </div>
             ))}
           </div>
+          {checkoutFields.length > 0 ? (
+            <div className="grid gap-3">
+              <p className="text-sm font-medium">
+                {__("Custom fields", "eventkoi-lite")}
+              </p>
+              {checkoutFields.map((field) => {
+                const inputId = `ek-order-field-${field.key}`;
+                return (
+                  <div key={field.key} className="grid gap-2">
+                    <Label htmlFor={inputId}>
+                      {field.label}
+                      {field.required ? (
+                        <span className="ml-1 text-destructive" aria-hidden="true">
+                          *
+                        </span>
+                      ) : null}
+                    </Label>
+                    <AnswerInput
+                      field={field}
+                      id={inputId}
+                      value={answers[field.key]}
+                      onChange={(next) =>
+                        setAnswers((prev) => ({ ...prev, [field.key]: next }))
+                      }
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          ) : null}
           <DialogFooter>
             <Button
               type="button"

@@ -1667,7 +1667,8 @@ class Tickets {
 					}
 				}
 				if ( ! empty( $order['event_ids'] ) ) {
-					$order['event_id'] = $order['event_ids'][0];
+					$order['event_id']        = $order['event_ids'][0];
+					$order['checkout_fields'] = \EventKoi\Core\Order_Customer::checkout_fields( (string) $order['id'], (int) $order['event_id'] );
 				}
 			}
 			unset( $order );
@@ -2799,6 +2800,15 @@ class Tickets {
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
+		}
+
+		$fields = $request->get_param( 'checkout_fields' );
+		if ( is_array( $fields ) && ! empty( $fields ) ) {
+			$saved = \EventKoi\Core\Order_Customer::update_checkout_fields( $order_id, $fields );
+			if ( is_wp_error( $saved ) ) {
+				return $saved;
+			}
+			$result['checkout_fields'] = $saved;
 		}
 
 		return rest_ensure_response( array_merge( array( 'success' => true ), $result ) );

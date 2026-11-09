@@ -155,6 +155,165 @@ class Order_Customer {
 	}
 
 	/**
+	 * The custom checkout fields of an order's event, with the buyer's answers.
+	 *
+	 * @param string $order_id Order id, as the order screen knows it.
+	 * @param int    $event_id Event id when the caller already knows it.
+	 * @return array[] List of { key, label, type, required, options, placeholder, description, value }.
+	 */
+	public static function checkout_fields( $order_id, $event_id = 0 ) {
+		$order_id  = sanitize_text_field( (string) $order_id );
+		$order_row = '' !== $order_id ? self::find_order_row( $order_id ) : null;
+		$event_id  = absint( $event_id ) ? absint( $event_id ) : self::event_id_for_order( $order_id, $order_row );
+		$fields    = $event_id ? Orders::get_checkout_fields( $event_id ) : array();
+
+		if ( empty( $fields ) ) {
+			return array();
+		}
+
+		$values = self::stored_checkout_fields( $order_id, $order_row, $event_id );
+		$list   = array();
+
+		foreach ( $fields as $field ) {
+			$field['value'] = $values[ $field['key'] ] ?? '';
+			$list[]         = $field;
+		}
+
+		return $list;
+	}
+
+	/**
+	 * Change the answers a buyer gave to the custom checkout fields of an order.
+	 *
+	 * Only the fields sent are changed, the rest keep their answers, and a
+	 * required field cannot be cleared. WooCommerce orders keep their answers
+	 * in order meta, local orders in a structured order note.
+	 *
+	 * @param string $order_id Order id, as the order screen knows it.
+	 * @param array  $values   New answers keyed by field key.
+	 * @return array|WP_Error The answers now stored, or an error.
+	 */
+	public static function update_checkout_fields( $order_id, $values ) {
+		$order_id  = sanitize_text_field( (string) $order_id );
+		$values    = is_array( $values ) ? $values : array();
+		$order_row = '' !== $order_id ? self::find_order_row( $order_id ) : null;
+		$event_id  = self::event_id_for_order( $order_id, $order_row );
+		$fields    = $event_id ? Orders::get_checkout_fields( $event_id ) : array();
+
+		if ( '' === $order_id || empty( $fields ) ) {
+			return array();
+		}
+
+		$current = self::stored_checkout_fields( $order_id, $order_row, $event_id );
+		$merged  = $current;
+
+		foreach ( $fields as $field ) {
+			if ( array_key_exists( $field['key'], $values ) ) {
+				$merged[ $field['key'] ] = $values[ $field['key'] ];
+			}
+		}
+
+		$clean = Orders::sanitize_checkout_field_values( $merged, $event_id );
+		if ( is_wp_error( $clean ) ) {
+			return $clean;
+		}
+
+		// A cleared answer is stored as empty, so it also overrides what an earlier note held.
+		$stored  = array();
+		$changes = array();
+		foreach ( $fields as $field ) {
+			$key            = $field['key'];
+			$stored[ $key ] = $clean[ $key ] ?? '';
+			$before         = self::answer_text( $current[ $key ] ?? '' );
+			$after          = self::answer_text( $stored[ $key ] );
+
+			if ( $before !== $after ) {
+				/* translators: 1: field label, 2: previous answer, 3: new answer. */
+				$changes[] = sprintf( __( '%1$s from "%2$s" to "%3$s"', 'eventkoi-lite' ), $field['label'], $before, $after );
+			}
+		}
+
+		if ( empty( $changes ) ) {
+			return $stored;
+		}
+
+		if ( preg_match( '/^wc_(\d+)/', $order_id, $match ) && function_exists( 'wc_get_order' ) ) {
+			$order = wc_get_order( (int) $match[1] );
+			if ( $order ) {
+				$order->update_meta_data( '_eventkoi_checkout_fields', $stored );
+				$order->save();
+			}
+		} elseif ( $order_row ) {
+			$orders = new Orders();
+			$orders->add_note( (int) $order_row->id, 'checkout_fields', $stored, 'system' );
+
+			$user = wp_get_current_user();
+			$who  = $user && $user->exists() ? $user->display_name : __( 'An admin', 'eventkoi-lite' );
+			/* translators: 1: who made the change, 2: the list of changed answers. */
+			$orders->add_note( (int) $order_row->id, 'checkout_fields_updated', sprintf( __( '%1$s changed %2$s.', 'eventkoi-lite' ), $who, implode( '; ', $changes ) ), 'system' );
+		}
+
+		/**
+		 * Fires after an admin changes the custom checkout field answers of an order.
+		 *
+		 * @param string $order_id Order id.
+		 * @param array  $stored   Answers now stored, keyed by field key.
+		 * @param array  $current  Answers before the change.
+		 */
+		do_action( 'eventkoi_order_checkout_fields_updated', $order_id, $stored, $current );
+
+		return $stored;
+	}
+
+	/**
+	 * The event an order was placed for, read from its ticket rows.
+	 *
+	 * @param string      $order_id  Order id.
+	 * @param object|null $order_row Order row, when there is one.
+	 * @return int
+	 */
+	private static function event_id_for_order( $order_id, $order_row ) {
+		$keys = array_values( array_unique( array_filter( array( $order_id, (string) ( $order_row->checkout_id ?? '' ), (string) ( $order_row->id ?? '' ) ) ) ) );
+
+		foreach ( self::find_ticket_rows( $keys ) as $row ) {
+			if ( ! empty( $row->event_id ) ) {
+				return absint( $row->event_id );
+			}
+		}
+
+		return 0;
+	}
+
+	/**
+	 * The checkout field answers an order holds now.
+	 *
+	 * @param string      $order_id  Order id.
+	 * @param object|null $order_row Order row, when there is one.
+	 * @param int         $event_id  Event id.
+	 * @return array Answers keyed by field key.
+	 */
+	private static function stored_checkout_fields( $order_id, $order_row, $event_id ) {
+		if ( preg_match( '/^wc_(\d+)/', $order_id, $match ) && function_exists( 'wc_get_order' ) ) {
+			$order  = wc_get_order( (int) $match[1] );
+			$values = $order ? $order->get_meta( '_eventkoi_checkout_fields' ) : array();
+
+			return is_array( $values ) ? $values : array();
+		}
+
+		return $order_row ? Orders::get_checkout_field_values( (int) $order_row->id, $event_id ) : array();
+	}
+
+	/**
+	 * An answer as one line, for comparing and for the activity.
+	 *
+	 * @param mixed $value Answer.
+	 * @return string
+	 */
+	private static function answer_text( $value ) {
+		return is_array( $value ) ? implode( ', ', array_map( 'strval', $value ) ) : (string) $value;
+	}
+
+	/**
 	 * Find the order row for an id, which can be the row id or the checkout id.
 	 *
 	 * @param string $order_id Order id.
