@@ -108,7 +108,8 @@ export function CustomerEditDialog({ order, open, onOpenChange, onSaved }) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      {/* A long list of custom fields scrolls inside the screen, so Save stays reachable. */}
+      <DialogContent className="max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{__("Edit customer", "eventkoi-lite")}</DialogTitle>
         </DialogHeader>

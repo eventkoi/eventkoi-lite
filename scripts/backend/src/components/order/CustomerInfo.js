@@ -83,7 +83,12 @@ export function CustomerInfo({ order, onUpdated }) {
               {field.label}
             </span>
             <span className="text-foreground break-words">
-              {formatAnswer(field.value)}
+              {field.type === "checkbox" &&
+              !(Array.isArray(field.options) && field.options.length > 0)
+                ? field.value && field.value !== "0"
+                  ? __("Yes", "eventkoi-lite")
+                  : ""
+                : formatAnswer(field.value)}
             </span>
           </div>
         ))}
