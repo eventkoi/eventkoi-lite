@@ -241,9 +241,11 @@ export function EventEditSalesHistory() {
           .join(",");
       });
 
-      const blob = new Blob([[headers.join(","), ...csvRows].join("\n")], {
-        type: "text/csv;charset=utf-8;",
-      });
+      // The byte order mark tells Excel the file is UTF-8, so accents survive.
+      const blob = new Blob(
+        ["﻿", [headers.join(","), ...csvRows].join("\n")],
+        { type: "text/csv;charset=utf-8;" }
+      );
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;

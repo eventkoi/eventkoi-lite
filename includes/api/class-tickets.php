@@ -1072,7 +1072,8 @@ class Tickets {
 		}
 
 		rewind( $handle );
-		$csv = stream_get_contents( $handle );
+		// The byte order mark tells Excel the file is UTF-8, so accents survive.
+		$csv = "\xEF\xBB\xBF" . stream_get_contents( $handle );
 		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Closing the in-memory temp handle after CSV generation.
 
 		$event_name = eventkoi_event_title_text( $event_id );
@@ -1217,7 +1218,8 @@ class Tickets {
 		}
 
 		rewind( $handle );
-		$csv = stream_get_contents( $handle );
+		// The byte order mark tells Excel the file is UTF-8, so accents survive.
+		$csv = "\xEF\xBB\xBF" . stream_get_contents( $handle );
 		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Closing the in-memory temp handle after CSV generation.
 
 		$filename = 'eventkoi-orders-' . gmdate( 'Y-m-d' ) . '.csv';

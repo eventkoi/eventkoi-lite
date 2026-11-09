@@ -508,7 +508,8 @@ class Rsvps {
 		}
 
 		rewind( $handle );
-		$csv = stream_get_contents( $handle );
+		// The byte order mark tells Excel the file is UTF-8, so accents survive.
+		$csv = "\xEF\xBB\xBF" . stream_get_contents( $handle );
 		fclose( $handle );
 
 		$event_name = eventkoi_event_title_text( $event_id );

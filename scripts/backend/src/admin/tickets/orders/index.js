@@ -176,7 +176,10 @@ export function Orders() {
       }
 
       const csvText = await response.text();
-      const blob = new Blob([csvText], { type: "text/csv;charset=utf-8;" });
+      // response.text() drops the server's byte order mark, so put it back for Excel.
+      const blob = new Blob(["﻿", csvText], {
+        type: "text/csv;charset=utf-8;",
+      });
       const contentDisposition = response.headers.get("content-disposition") || "";
       const match = contentDisposition.match(/filename="([^"]+)"/);
       const url = window.URL.createObjectURL(blob);
