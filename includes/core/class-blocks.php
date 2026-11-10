@@ -1638,10 +1638,14 @@ JS;
 							return $context;
 						};
 						add_filter( 'render_block_context', $row_context );
+						// Cover with "Use featured image" and other template-tag
+						// blocks ask for the current post, not the block context.
+						$leave_row_post = self::enter_row_post( $row_post_id, $event );
 						foreach ( $post_template_block['innerBlocks'] as $row_block ) {
 							$prepared = self::inject_event_context( $row_block, $event );
 							echo render_block( $prepared ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 						}
+						$leave_row_post();
 						remove_filter( 'render_block_context', $row_context );
 					}
 					?>
@@ -1651,6 +1655,77 @@ JS;
 		<?php
 
 		return ob_get_clean();
+	}
+
+	/**
+	 * Make a loop row's event the current post while the row renders.
+	 *
+	 * Core's own Post Template does this with the_post(). Without it a block
+	 * that calls a template tag, such as Cover set to "Use featured image",
+	 * reads the page the loop sits on and shows the page's image on every row.
+	 * The event's image is also offered as its featured image, since an event
+	 * can hold its image without a WordPress thumbnail being set.
+	 *
+	 * @param int   $row_post_id Event post ID for the row.
+	 * @param array $event       Event data for the row.
+	 * @return callable Call it after the row to put the previous post back.
+	 */
+	protected static function enter_row_post( $row_post_id, array $event ) {
+		global $post;
+
+		$row_post_id = absint( $row_post_id );
+		$row_post    = $row_post_id ? get_post( $row_post_id ) : null;
+		if ( ! $row_post instanceof \WP_Post ) {
+			return static function () {};
+		}
+
+		$previous  = $post;
+		$image_url = isset( $event['thumbnail'] ) && is_string( $event['thumbnail'] ) ? $event['thumbnail'] : '';
+		$title     = isset( $event['title'] ) && is_string( $event['title'] ) ? $event['title'] : '';
+
+		$thumbnail_id = static function ( $thumbnail_id, $candidate ) use ( $row_post_id ) {
+			$candidate_id = $candidate instanceof \WP_Post ? (int) $candidate->ID : absint( $candidate );
+			if ( $thumbnail_id || $candidate_id !== $row_post_id ) {
+				return $thumbnail_id;
+			}
+
+			return absint( get_post_meta( $row_post_id, 'image_id', true ) );
+		};
+
+		// An imported event can have an image URL and no attachment at all.
+		$thumbnail_html = static function ( $html, $post_id, $thumbnail_id, $size, $attr ) use ( $row_post_id, $image_url, $title ) {
+			if ( '' !== $html || absint( $post_id ) !== $row_post_id || '' === $image_url ) {
+				return $html;
+			}
+
+			$attr       = is_array( $attr ) ? $attr : array();
+			$attributes = sprintf( ' src="%s" alt="%s"', esc_url( $image_url ), esc_attr( $attr['alt'] ?? $title ) );
+			foreach ( array( 'class', 'style', 'data-object-fit', 'data-object-position' ) as $name ) {
+				if ( isset( $attr[ $name ] ) && '' !== (string) $attr[ $name ] ) {
+					$attributes .= sprintf( ' %s="%s"', $name, esc_attr( (string) $attr[ $name ] ) );
+				}
+			}
+
+			return '<img' . $attributes . ' loading="lazy" decoding="async" />';
+		};
+
+		add_filter( 'post_thumbnail_id', $thumbnail_id, 10, 2 );
+		add_filter( 'post_thumbnail_html', $thumbnail_html, 10, 5 );
+
+		$post = $row_post; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Same as the_post() in a loop; restored below.
+		setup_postdata( $row_post );
+
+		return static function () use ( $previous, $thumbnail_id, $thumbnail_html ) {
+			global $post;
+
+			remove_filter( 'post_thumbnail_id', $thumbnail_id, 10 );
+			remove_filter( 'post_thumbnail_html', $thumbnail_html, 10 );
+
+			$post = $previous; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Puts back the post from before the row.
+			if ( $previous instanceof \WP_Post ) {
+				setup_postdata( $previous );
+			}
+		};
 	}
 
 	/**
