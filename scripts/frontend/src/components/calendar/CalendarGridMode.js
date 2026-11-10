@@ -83,6 +83,16 @@ const cascadeTimegridColumn = (col) => {
     col.querySelectorAll(":scope > .fc-timegrid-event-harness")
   );
 
+  // FullCalendar gives the "+N" link a full-height slice of the column, which
+  // covers the card beside it. Turn it into a small pill resting on the
+  // bottom right corner of the slot instead, so the card keeps the full width.
+  col.querySelectorAll(":scope > .fc-timegrid-more-link").forEach((link) => {
+    link.style.top = "auto";
+    link.style.insetInlineStart = "auto";
+    link.style.insetInlineEnd = "3px";
+    link.style.zIndex = "20";
+  });
+
   if (harnesses.length < 2) {
     harnesses.forEach((h) => {
       h.style.insetInlineStart = "0";
@@ -199,6 +209,9 @@ export function CalendarGridMode({
   // day under 45px: "MON" and "TUE" then run into each other. Below 360px the
   // day headers fall back to one letter, the way phone calendars do.
   const [compactHeaders, setCompactHeaders] = useState(false);
+  // How many cards a day column shows at the same time before the rest fold
+  // into "+N". A narrow column keeps one readable card instead of slivers.
+  const [timeGridMaxStack, setTimeGridMaxStack] = useState(3);
   useEffect(() => {
     const root = calendarRef?.current?.elRef?.current;
     if (!root || typeof ResizeObserver === "undefined") {
@@ -207,6 +220,8 @@ export function CalendarGridMode({
     const update = () => {
       const width = root.offsetWidth;
       setCompactHeaders(width > 0 && width < 360);
+      const dayWidth = width > 0 ? (width - 56) / 7 : 0;
+      setTimeGridMaxStack(dayWidth >= 190 ? 3 : dayWidth >= 120 ? 2 : 1);
     };
     update();
     const observer = new ResizeObserver(update);
@@ -831,6 +846,11 @@ export function CalendarGridMode({
         firstDay={start_day}
         headerToolbar={false}
         slotEventOverlap={true}
+        // Past this many cards at the same time a day column cannot keep
+        // them readable, so the rest fold into a "+N" link that opens the
+        // full list, the way month view does.
+        eventMaxStack={timeGridMaxStack}
+        moreLinkDidMount={() => scheduleCascade()}
         // FullCalendar tags a card fc-timegrid-event-short (our one-line
         // time+title layout) only when it is shorter than this, and its
         // default of 30px is below what the stacked layout needs: the

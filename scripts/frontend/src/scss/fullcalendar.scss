@@ -391,6 +391,36 @@
   .fc-timegrid-event-harness.ek-cascade-overlap .fc-timegrid-event {
     box-shadow: 0 0 0 2px #fff, 0 6px 14px rgb(0 0 0 / 0.22);
   }
+  // "+N" pill for events that do not fit side by side in a day column. It
+  // rests on the bottom right corner of the slot, over the card, the way a
+  // counter badge does (its position is set by cascadeTimegridColumn()).
+  .fc-timegrid-more-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 18px;
+    min-width: 24px;
+    margin-bottom: 3px;
+    padding: 0 6px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+    line-height: 1;
+    text-decoration: none !important;
+    color: #334155;
+    background: #fff;
+    box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+  }
+  .fc-timegrid-more-link:hover,
+  .fc-timegrid-more-link:focus {
+    background: #f1f5f9;
+  }
+  .fc-timegrid-more-link-inner {
+    padding: 0;
+    position: static;
+  }
   // The header and all-day rows reserve room for the hours' scrollbar, and
   // the row's own right border then drew a stray strip beside the last day
   // and put the all-day columns a pixel off the hour columns.
