@@ -82,17 +82,6 @@ const cascadeTimegridColumn = (col) => {
   const harnesses = Array.from(
     col.querySelectorAll(":scope > .fc-timegrid-event-harness")
   );
-
-  // FullCalendar gives the "+N" link a full-height slice of the column, which
-  // covers the card beside it. Turn it into a small pill resting on the
-  // bottom right corner of the slot instead, so the card keeps the full width.
-  col.querySelectorAll(":scope > .fc-timegrid-more-link").forEach((link) => {
-    link.style.top = "auto";
-    link.style.insetInlineStart = "auto";
-    link.style.insetInlineEnd = "3px";
-    link.style.zIndex = "20";
-  });
-
   if (harnesses.length < 2) {
     harnesses.forEach((h) => {
       h.style.insetInlineStart = "0";
@@ -142,13 +131,11 @@ const cascadeTimegridColumn = (col) => {
   // still has at least MIN_VISIBLE width. For a 2-event stack this falls
   // out to ~45% of the column; deeper stacks use a smaller step so the
   // bottom card isn't crushed.
-  // On a narrow column (a phone week view) the visible minimum shrinks with
-  // the column, so the indent can never push a card past the right edge.
-  const MIN_VISIBLE = Math.min(56, colWidth * 0.6);
+  const MIN_VISIBLE = 56;
   const idealForDepth =
     maxLevel > 0 ? (colWidth - MIN_VISIBLE) / maxLevel : colWidth * 0.45;
   const gutter = Math.max(
-    4,
+    20,
     Math.min(idealForDepth, colWidth * 0.45, 140)
   );
 
@@ -209,9 +196,6 @@ export function CalendarGridMode({
   // day under 45px: "MON" and "TUE" then run into each other. Below 360px the
   // day headers fall back to one letter, the way phone calendars do.
   const [compactHeaders, setCompactHeaders] = useState(false);
-  // How many cards a day column shows at the same time before the rest fold
-  // into "+N". A narrow column keeps one readable card instead of slivers.
-  const [timeGridMaxStack, setTimeGridMaxStack] = useState(3);
   useEffect(() => {
     const root = calendarRef?.current?.elRef?.current;
     if (!root || typeof ResizeObserver === "undefined") {
@@ -220,8 +204,6 @@ export function CalendarGridMode({
     const update = () => {
       const width = root.offsetWidth;
       setCompactHeaders(width > 0 && width < 360);
-      const dayWidth = width > 0 ? (width - 56) / 7 : 0;
-      setTimeGridMaxStack(dayWidth >= 190 ? 3 : dayWidth >= 120 ? 2 : 1);
     };
     update();
     const observer = new ResizeObserver(update);
@@ -846,11 +828,6 @@ export function CalendarGridMode({
         firstDay={start_day}
         headerToolbar={false}
         slotEventOverlap={true}
-        // Past this many cards at the same time a day column cannot keep
-        // them readable, so the rest fold into a "+N" link that opens the
-        // full list, the way month view does.
-        eventMaxStack={timeGridMaxStack}
-        moreLinkDidMount={() => scheduleCascade()}
         // FullCalendar tags a card fc-timegrid-event-short (our one-line
         // time+title layout) only when it is shorter than this, and its
         // default of 30px is below what the stacked layout needs: the

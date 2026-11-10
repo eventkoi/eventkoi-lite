@@ -57,8 +57,8 @@ class Blocks {
 	}
 
 	/**
-	 * Remove the template's whole "See all events in" line when the setting is off
-	 * or the event is in no calendar, so its text is not left behind without the link.
+	 * Remove the template's whole "See all events in" line when the setting is off,
+	 * so its text is not left behind without the link.
 	 *
 	 * @param string $block_content Block content.
 	 * @param array  $block         Parsed block.
@@ -69,7 +69,7 @@ class Blocks {
 			return $block_content;
 		}
 
-		if ( Event::is_calendar_backlink_enabled() && self::viewed_event_has_calendar() ) {
+		if ( Event::is_calendar_backlink_enabled() ) {
 			return $block_content;
 		}
 
@@ -78,23 +78,6 @@ class Blocks {
 		$words = preg_split( '/\s+/u', trim( wp_strip_all_tags( (string) $block_content ) ) );
 
 		return count( (array) $words ) <= 12 ? '' : $block_content;
-	}
-
-	/**
-	 * Whether the event being viewed belongs to a calendar. With none there is
-	 * nothing for "See all events in" to link to.
-	 *
-	 * @return bool True for anything that is not a single event page.
-	 */
-	private static function viewed_event_has_calendar() {
-		$event_id = is_singular( 'eventkoi_event' ) ? get_queried_object_id() : 0;
-		if ( ! $event_id ) {
-			return true;
-		}
-
-		$terms = wp_get_post_terms( $event_id, 'event_cal', array( 'fields' => 'ids' ) );
-
-		return ! is_wp_error( $terms ) && ! empty( $terms );
 	}
 
 	/**
