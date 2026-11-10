@@ -102,7 +102,14 @@ export function DataTable({
   });
 
   return (
-    <div className={cn("w-full grid self-start", gap ? `gap-${gap}` : "gap-6")}>
+    // One zero-minimum column, so a wide table scrolls inside its card instead
+    // of stretching the page.
+    <div
+      className={cn(
+        "w-full grid grid-cols-1 self-start",
+        gap ? `gap-${gap}` : "gap-6"
+      )}
+    >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
           {customTopLeft ? (
