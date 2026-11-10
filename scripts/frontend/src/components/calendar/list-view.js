@@ -184,12 +184,12 @@ export function ListView({
             return (
               <a
                 href={virtualUrl}
-                className="flex gap-2 text-muted-foreground/90 text-sm underline underline-offset-4 truncate"
+                className="flex gap-2 text-muted-foreground text-sm underline underline-offset-4 truncate"
                 title={label}
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <Globe className="w-4 h-4 min-w-4 text-muted-foreground/90" />
+                <Globe className="w-4 h-4 min-w-4 text-muted-foreground" />
                 {label}
               </a>
             );
@@ -197,8 +197,8 @@ export function ListView({
 
           if (hasPhysical) {
             return (
-              <span className="flex text-muted-foreground/90 text-sm gap-2">
-                <MapPin className="w-4 h-4 min-w-4 text-muted-foreground/90" />
+              <span className="flex text-muted-foreground text-sm gap-2">
+                <MapPin className="w-4 h-4 min-w-4 text-muted-foreground" />
                 {locationLine}
               </span>
             );
@@ -207,13 +207,13 @@ export function ListView({
           if (locationLine) {
             const icon =
               event.type === "virtual" ? (
-                <Globe className="w-4 h-4 min-w-4 text-muted-foreground/90" />
+                <Globe className="w-4 h-4 min-w-4 text-muted-foreground" />
               ) : (
-                <MapPin className="w-4 h-4 min-w-4 text-muted-foreground/90" />
+                <MapPin className="w-4 h-4 min-w-4 text-muted-foreground" />
               );
 
             return (
-              <span className="flex text-muted-foreground/90 text-sm gap-2">
+              <span className="flex text-muted-foreground text-sm gap-2">
                 {icon}
                 {locationLine}
               </span>

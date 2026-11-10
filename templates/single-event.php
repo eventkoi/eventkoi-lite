@@ -67,8 +67,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 <p></p>
 <!-- /wp:paragraph -->
 
-<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"event_timezone"}}}},"style":{"elements":{"link":{"color":{"text":"#999999"}}},"color":{"text":"#999999"}}} -->
-<p class="has-text-color has-link-color" style="color:#999999"></p>
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"event_timezone"}}}},"style":{"elements":{"link":{"color":{"text":"#6b6b6b"}}},"color":{"text":"#6b6b6b"}}} -->
+<p class="has-text-color has-link-color" style="color:#6b6b6b"></p>
 <!-- /wp:paragraph --></div>
 <!-- /wp:column --></div>
 <!-- /wp:columns -->

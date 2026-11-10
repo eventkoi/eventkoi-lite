@@ -530,19 +530,24 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
           >
             <DialogBody className="grid gap-4 px-5 pb-5 sm:px-6">
             {formError && (
-              <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-[#b32d2e]" role="alert">
                 {formError}
               </div>
             )}
+            <p className="m-0 text-xs text-muted-foreground">
+              {__("Fields marked with an asterisk (*) are required.", "eventkoi-lite")}
+            </p>
             {showNameField && (
               <div className="grid gap-2">
                 <Label htmlFor="eventkoi-rsvp-name">
                   {__("Name", "eventkoi-lite")}
+                  <span aria-hidden="true" className="text-destructive"> *</span>
                 </Label>
                 <Input
                   id="eventkoi-rsvp-name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  autoComplete="name"
                   required
                 />
               </div>
@@ -550,12 +555,14 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
             <div className="grid gap-2">
               <Label htmlFor="eventkoi-rsvp-email">
                 {__("Email", "eventkoi-lite")}
+                <span aria-hidden="true" className="text-destructive"> *</span>
               </Label>
               <Input
                 id="eventkoi-rsvp-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
                 required
               />
             </div>
@@ -627,10 +634,13 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
               );
             })}
             <div className="grid gap-2">
-              <Label>{__("Status", "eventkoi-lite")}</Label>
+              <Label id="eventkoi-rsvp-status-label">
+                {__("Status", "eventkoi-lite")}
+              </Label>
               <RadioGroup
                 value={status}
                 onValueChange={setStatus}
+                aria-labelledby="eventkoi-rsvp-status-label"
                 className="flex flex-wrap gap-4"
               >
                 {statusOptions.map((option) => (

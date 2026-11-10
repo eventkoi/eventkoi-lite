@@ -99,7 +99,12 @@ export function CalendarHeaderPopover({
         <Button
           variant="ghost"
           className="text-sm box-border text-foreground bg-background shadow-none rounded border-[1px] border-border border-solid px-3 py-1 pr-2 gap-2 h-10 justify-between hover:bg-muted cursor-pointer font-normal min-w-0 overflow-hidden"
-          aria-label={__("Select month and year", "eventkoi-lite")}
+          // The spoken name starts with the visible month, so voice control
+          // users can say what they see.
+          aria-label={`${MONTHS[selectedMonth]} ${yearView}, ${__(
+            "Select month and year",
+            "eventkoi-lite"
+          )}`}
           title={__("Select month and year", "eventkoi-lite")}
         >
           <span className="truncate">{`${MONTHS[selectedMonth]} ${yearView}`}</span>

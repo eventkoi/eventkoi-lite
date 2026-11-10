@@ -491,19 +491,28 @@ function CheckinWidget({ mountEl }) {
 
                     <form className="grid gap-4" onSubmit={handleEditSubmit}>
                       {editError && (
-                        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-[#b32d2e]">
                           {editError}
                         </div>
                       )}
 
+                      <p className="m-0 text-xs text-muted-foreground">
+                        {__(
+                          "Fields marked with an asterisk (*) are required.",
+                          "eventkoi-lite",
+                        )}
+                      </p>
+
                       <div className="grid gap-2">
                         <Label htmlFor="eventkoi-checkin-name">
                           {__("Name", "eventkoi-lite")}
+                          <span aria-hidden="true" className="text-destructive"> *</span>
                         </Label>
                         <Input
                           id="eventkoi-checkin-name"
                           value={editName}
                           onChange={(e) => setEditName(e.target.value)}
+                          autoComplete="name"
                           required
                         />
                       </div>
@@ -511,21 +520,26 @@ function CheckinWidget({ mountEl }) {
                       <div className="grid gap-2">
                         <Label htmlFor="eventkoi-checkin-email">
                           {__("Email", "eventkoi-lite")}
+                          <span aria-hidden="true" className="text-destructive"> *</span>
                         </Label>
                         <Input
                           id="eventkoi-checkin-email"
                           type="email"
                           value={editEmail}
                           onChange={(e) => setEditEmail(e.target.value)}
+                          autoComplete="email"
                           required
                         />
                       </div>
 
                       <div className="grid gap-2">
-                        <Label>{__("Status", "eventkoi-lite")}</Label>
+                        <Label id="eventkoi-checkin-status-label">
+                          {__("Status", "eventkoi-lite")}
+                        </Label>
                         <RadioGroup
                           value={editStatus}
                           onValueChange={setEditStatus}
+                          aria-labelledby="eventkoi-checkin-status-label"
                           className="flex flex-wrap gap-4"
                         >
                           {statusOptions.map((option) => (

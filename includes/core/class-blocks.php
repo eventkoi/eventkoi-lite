@@ -598,7 +598,7 @@ JS;
 				'/<(?P<tag>\w+)(?P<before_class>[^>]*)class="(?P<class>[^"]*eventkoi-front[^"]*)"(?P<after_class>[^>]*)>/',
 				function ( $matches ) use ( $id ) {
 					return sprintf(
-						'<%1$s%2$sclass="%3$s" data-event="%4$d" role="main"%5$s>',
+						'<%1$s%2$sclass="%3$s" data-event="%4$d"%5$s>',
 						$matches['tag'],
 						$matches['before_class'],
 						$matches['class'],
@@ -2233,7 +2233,7 @@ JS;
 					'/<(?P<tag>\w+)(?P<before_class>[^>]*)class="(?P<class>[^"]*eventkoi-front[^"]*)"(?P<after_class>[^>]*)>/',
 					function ( $matches ) use ( $id ) {
 						return sprintf(
-							'<%1$s%2$sclass="%3$s" data-event="%4$d" role="main"%5$s>',
+							'<%1$s%2$sclass="%3$s" data-event="%4$d"%5$s>',
 							$matches['tag'],
 							$matches['before_class'],
 							$matches['class'],

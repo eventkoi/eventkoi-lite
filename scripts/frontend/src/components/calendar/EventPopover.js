@@ -355,6 +355,26 @@ export function EventPopover({
   const [fixedAnchor] = useState(anchor);
   const popoverRef = useRef(null);
   const [clampedPos, setClampedPos] = useState(null);
+  const returnFocusRef = useRef(null);
+
+  // Move keyboard focus into the popover when it opens, and remember what had
+  // it (the event that was clicked) so closing can hand it back.
+  useEffect(() => {
+    const active = document.activeElement;
+    returnFocusRef.current =
+      active instanceof HTMLElement && active !== document.body ? active : null;
+    popoverRef.current
+      ?.querySelector("[data-event-popover-title]")
+      ?.focus({ preventScroll: true });
+  }, []);
+
+  const closeAndReturnFocus = () => {
+    const trigger = returnFocusRef.current;
+    onClose();
+    if (trigger && document.contains(trigger)) {
+      trigger.focus({ preventScroll: true });
+    }
+  };
 
   // Keep the popover inside the calendar container: a chip in the grid's
   // last row (next month's trailing days included) used to push the popover
@@ -577,7 +597,7 @@ export function EventPopover({
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
         e.stopPropagation();
-        onClose();
+        closeAndReturnFocus();
       }
     };
     document.addEventListener("keydown", handleKeyDown);
@@ -594,6 +614,8 @@ export function EventPopover({
       <div
         ref={popoverRef}
         data-event-popover
+        role="dialog"
+        aria-labelledby="eventkoi-event-popover-title"
         className="absolute z-50 rounded-lg border bg-white shadow-[0_0_4px_#bbb] text-sm overflow-hidden w-[370px] max-w-full"
         style={{
           left: `${popoverPos.x}px`,
@@ -619,18 +641,24 @@ export function EventPopover({
         <div className="px-4 py-4 pb-0 relative">
           <div className="flex absolute right-1 top-1 gap-1">
             <Button
+              asChild
               size="icon"
               variant="ghost"
-              className="h-8 w-8 p-0 shadow-none border-none bg-transparent hover:bg-muted/20 cursor-pointer"
-              onClick={() => window.open(eventPageUrl || event.url, "_self")}
+              className="h-8 w-8 p-0 shadow-none border-none bg-transparent hover:bg-muted/20 cursor-pointer text-foreground"
             >
-              <Maximize2 className="h-4 w-4" />
+              <a
+                href={eventPageUrl || event.url}
+                aria-label={__("Open event page", "eventkoi-lite")}
+              >
+                <Maximize2 className="h-4 w-4" />
+              </a>
             </Button>
             <Button
               size="icon"
               variant="ghost"
               className="h-8 w-8 p-0 shadow-none border-none bg-transparent hover:bg-muted/20 cursor-pointer"
-              onClick={onClose}
+              onClick={closeAndReturnFocus}
+              aria-label={__("Close popover", "eventkoi-lite")}
             >
               <X className="h-4 w-4" />
             </Button>
@@ -638,6 +666,8 @@ export function EventPopover({
 
           <div className="flex flex-col gap-2 pe-[58px]">
             <a
+              id="eventkoi-event-popover-title"
+              data-event-popover-title
               href={eventPageUrl || event.url}
               className="text-base font-semibold leading-snug text-foreground no-underline hover:underline line-clamp-2 block"
             >

@@ -22,7 +22,8 @@
     --accent-foreground: 0 1% 22%;
 
     --border: 0 0% 90%;
-    --input: 0 0% 90%;
+    /* Field borders: 55% grey is #8c8c8c, 3.4:1 on white (3:1 needed). */
+    --input: 0 0% 55%;
     --ring: 0 0% 50%;
     --muted-foreground: 0 0% 43%;
 
@@ -194,4 +195,22 @@
   display: block;
   height: auto;
   max-width: 100%;
+}
+
+/* Visitors who ask their system for less motion get none of ours: no spin,
+   pulse or sliding transitions. */
+@media (prefers-reduced-motion: reduce) {
+  .eventkoi-front,
+  .eventkoi-front *,
+  .fc,
+  .fc *,
+  [data-event-popover],
+  [data-event-popover] *,
+  .ek-live-indicator,
+  .ek-live-indicator * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

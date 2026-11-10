@@ -5,19 +5,13 @@
  */
 
 import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { normalizeTimeZone, wpToLuxonFormat } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
 import { __, _n, sprintf } from "@wordpress/i18n";
 import { Loader2, Search } from "lucide-react";
 import { DateTime } from "luxon";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 function isTruthy(value) {
   return value === true || value === 1 || value === "1" || value === "true";
@@ -223,6 +217,34 @@ export function SearchBox({
   const isLoading = events === undefined || events === null;
   const isEmpty = !isLoading && events.length === 0;
   const containerRef = useRef(null);
+  // Which result the arrow keys are on. -1 means none: focus stays in the
+  // input the whole time and aria-activedescendant points at the option.
+  const [activeIndex, setActiveIndex] = useState(-1);
+  // The parent passes null until a search has run.
+  const results = Array.isArray(paginatedResults) ? paginatedResults : [];
+  const resultKey = results.map((event) => event.id).join(",");
+  useEffect(() => {
+    setActiveIndex(-1);
+  }, [resultKey, open]);
+  const optionId = (event) => `event-search-option-${event.id}`;
+  const activeEvent =
+    open && search && activeIndex >= 0 ? results[activeIndex] || null : null;
+  useEffect(() => {
+    if (activeEvent) {
+      document
+        .getElementById(`event-search-option-${activeEvent.id}`)
+        ?.scrollIntoView({ block: "nearest" });
+    }
+  }, [activeEvent]);
+  const openEventInNewTab = (event) => {
+    if (!event?.url) {
+      return;
+    }
+
+    window.open(getEventPageUrl(event, timezone), "_blank", "noopener,noreferrer");
+    setOpen(false);
+    setSearchOpen?.(false);
+  };
 
   // Close the results popover on Escape or any click outside it. These are
   // document-level so they fire even when focus has moved onto a result item
@@ -280,6 +302,7 @@ export function SearchBox({
         aria-expanded={open}
         aria-controls="event-search-listbox"
         aria-autocomplete="list"
+        aria-activedescendant={activeEvent ? optionId(activeEvent) : undefined}
         value={search}
         onFocus={() => setOpen(true)}
         onBlur={(e) => {
@@ -299,6 +322,28 @@ export function SearchBox({
             setOpen(false);
             setSearchOpen?.(false);
             e.currentTarget.blur();
+            return;
+          }
+
+          const count = results.length;
+
+          if (e.key === "ArrowDown" && search && count > 0) {
+            e.preventDefault();
+            setOpen(true);
+            setActiveIndex((index) => (index + 1) % count);
+            return;
+          }
+
+          if (e.key === "ArrowUp" && search && count > 0) {
+            e.preventDefault();
+            setOpen(true);
+            setActiveIndex((index) => (index <= 0 ? count - 1 : index - 1));
+            return;
+          }
+
+          if (e.key === "Enter" && open && search && activeEvent) {
+            e.preventDefault();
+            openEventInNewTab(activeEvent);
           }
         }}
         onChange={(e) => setSearch(e.target.value)}
@@ -341,17 +386,13 @@ export function SearchBox({
       </div>
 
       {open && search && (
-        <Command
+        <div
           className={cn(
-            "absolute z-50 left-0 top-12 w-full rounded-md border bg-popover text-popover-foreground shadow-md border-border border-solid",
+            "absolute z-50 left-0 top-12 w-full flex flex-col overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md border-border border-solid",
             "max-h-[400px] h-auto"
           )}
         >
-          <CommandList
-            id="event-search-listbox"
-            role="listbox"
-            className="p-2 max-h-[400px] overflow-y-auto overscroll-contain"
-          >
+          <div className="p-2 max-h-[400px] overflow-x-hidden overflow-y-auto overscroll-contain">
             {searchScope ? (
               <div className="px-2 pb-2 text-xs text-muted-foreground">
                 {searchScope}
@@ -363,29 +404,36 @@ export function SearchBox({
                 {__("Searching...", "eventkoi-lite")}
               </div>
             ) : filteredResults.length === 0 ? (
-              <CommandEmpty className="p-4 text-muted-foreground text-sm">
+              <div className="p-4 text-center text-muted-foreground text-sm">
                 {__("No events found.", "eventkoi-lite")}
-              </CommandEmpty>
+              </div>
             ) : (
-              paginatedResults.map((event) => {
+              // The listbox holds the options and nothing else, and carries
+              // the id the input points at with aria-controls.
+              <div
+                id="event-search-listbox"
+                role="listbox"
+                aria-label={__("Search results", "eventkoi-lite")}
+              >
+              {results.map((event, index) => {
                 const formatted = formatSearchDate(event, timezone, timeFormat);
+                const isActive = index === activeIndex;
 
                 return (
-                  <CommandItem
+                  <div
                     key={event.id}
+                    id={optionId(event)}
                     role="option"
-                    aria-selected="false"
-                    value={event.title}
-                    onClick={() => {
-                      window.open(
-                        getEventPageUrl(event, timezone),
-                        "_blank",
-                        "noopener,noreferrer"
-                      );
-                      setOpen(false);
-                      setSearchOpen?.(false);
-                    }}
-                    className="grid gap-1 p-2 cursor-pointer text-sm text-foreground rounded-md hover:!bg-accent"
+                    aria-selected={isActive}
+                    // Keep focus in the input: a mousedown would blur it and
+                    // close the list before the click lands.
+                    onMouseDown={(e) => e.preventDefault()}
+                    onMouseEnter={() => setActiveIndex(index)}
+                    onClick={() => openEventInNewTab(event)}
+                    className={cn(
+                      "grid gap-1 p-2 cursor-pointer text-sm text-foreground rounded-md hover:!bg-accent",
+                      isActive && "!bg-accent"
+                    )}
                   >
                     <span className="font-normal block">
                       {formatted.visible}
@@ -393,9 +441,13 @@ export function SearchBox({
                     <span className="font-medium">{event.title}</span>
                     {/* Hidden full date for screen readers */}
                     <span className="sr-only">{formatted.screenReader}</span>
-                  </CommandItem>
+                    <span className="sr-only">
+                      {__("Opens in a new tab", "eventkoi-lite")}
+                    </span>
+                  </div>
                 );
-              })
+              })}
+              </div>
             )}
 
             {/* Pagination footer: page navigation plus month navigation. Kept
@@ -469,8 +521,8 @@ export function SearchBox({
                 ) : null}
               </div>
             ) : null}
-          </CommandList>
-        </Command>
+          </div>
+        </div>
       )}
     </div>
   );

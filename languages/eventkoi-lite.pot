@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-09T15:46:51+00:00\n"
+"POT-Creation-Date: 2026-11-10T20:53:41+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -5322,6 +5322,10 @@ msgstr ""
 msgid "Let us know you're coming."
 msgstr ""
 
+#: scripts/frontend/build/index.js:1
+msgid "Fields marked with an asterisk (*) are required."
+msgstr ""
+
 #. translators: %d: maximum guests
 #. translators: %d: maximum count
 #: scripts/frontend/build/index.js:1
@@ -5400,6 +5404,14 @@ msgid "Go to next year"
 msgstr ""
 
 #: scripts/frontend/build/index.js:1
+msgid "Open event page"
+msgstr ""
+
+#: scripts/frontend/build/index.js:1
+msgid "Close popover"
+msgstr ""
+
+#: scripts/frontend/build/index.js:1
 msgid "Copy event link to clipboard"
 msgstr ""
 
@@ -5430,6 +5442,14 @@ msgid "%d event found."
 msgid_plural "%d events found."
 msgstr[0] ""
 msgstr[1] ""
+
+#: scripts/frontend/build/index.js:1
+msgid "Search results"
+msgstr ""
+
+#: scripts/frontend/build/index.js:1
+msgid "Opens in a new tab"
+msgstr ""
 
 #: scripts/frontend/build/index.js:1
 msgid "Previous page"
@@ -5464,15 +5484,15 @@ msgid "Calendar view mode"
 msgstr ""
 
 #: scripts/frontend/build/index.js:1
+msgid "Select week"
+msgstr ""
+
+#: scripts/frontend/build/index.js:1
 msgid "Close week picker"
 msgstr ""
 
 #: scripts/frontend/build/index.js:1
 msgid "Open week picker"
-msgstr ""
-
-#: scripts/frontend/build/index.js:1
-msgid "Select week"
 msgstr ""
 
 #: scripts/frontend/build/index.js:1

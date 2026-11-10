@@ -123,6 +123,15 @@
     color: #2d2d2d;
     background: transparent;
   }
+  // Days from the previous or next month stay readable: FullCalendar fades
+  // them to 30%, which is 1.8:1. A solid grey keeps them 5:1 and still
+  // clearly lighter than the current month.
+  .fc-day-other .fc-daygrid-day-top {
+    opacity: 1;
+  }
+  .fc-day-other .fc-daygrid-day-number {
+    color: #6b6b6b;
+  }
   .fc-day-today .fc-daygrid-day-number {
     background: var(--ek-calendar-accent, var(--wp-admin-theme-color, #2563eb));
     font-weight: 600;

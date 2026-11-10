@@ -945,10 +945,14 @@ export function CalendarGridMode({
         eventClick={(info) => {
           info.jsEvent.preventDefault();
           info.jsEvent.stopPropagation();
+          // Safari does not focus a link on click. The popover returns focus
+          // to whatever is focused when it opens, so make that this event.
+          info.el.focus?.({ preventScroll: true });
           openEventPopover(info.el, info.event, info.jsEvent);
         }}
         eventDidMount={(info) => {
-          info.el.setAttribute("aria-label", `${info.event.title}`);
+          // No aria-label here: the visible time and title are the name a
+          // screen reader should read.
           if (info.view?.type?.startsWith("timeGrid")) {
             scheduleCascade();
           }
