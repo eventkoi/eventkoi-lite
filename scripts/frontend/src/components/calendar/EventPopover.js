@@ -881,7 +881,7 @@ export function EventPopover({
                   variant="secondary"
                   type="button"
                   aria-label={__("Copy event link to clipboard", "eventkoi-lite")}
-                  className="absolute h-12 right-[9px] top-[9px] border-none cursor-pointer hover:bg-input"
+                  className="absolute h-12 right-[9px] top-[9px] border-none cursor-pointer hover:bg-muted"
                   onMouseDown={(e) => e.stopPropagation()}
                   onClick={() => {
                     requestAnimationFrame(() => {
