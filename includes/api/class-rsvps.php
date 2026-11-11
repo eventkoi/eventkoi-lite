@@ -119,7 +119,12 @@ class Rsvps {
 		if ( isset( $data['guest_details'] ) && is_array( $data['guest_details'] ) ) {
 			$payload['guest_details'] = $data['guest_details'];
 		}
-		$payload['email_guests'] = rest_sanitize_boolean( $data['email_guests'] ?? false );
+		// A form that does not show these (the check-in page's edit form) leaves
+		// them out, and the stored choice and answers stay as they are.
+		if ( array_key_exists( 'email_guests', $data ) ) {
+			$payload['email_guests'] = rest_sanitize_boolean( $data['email_guests'] );
+		}
+		$payload['fields_sent'] = array_key_exists( 'fields', $data );
 
 		// When the built-in Name input is replaced by custom fields (e.g. a
 		// first/last name split), compose the stored name from those values.
@@ -666,6 +671,8 @@ class Rsvps {
 				'allow_guests'    => Event::get_rsvp_allow_guests(),
 				'max_guests'      => Event::get_rsvp_max_guests(),
 				'guest_details'   => Event::get_rsvp_guest_details(),
+				// The form asks this event's questions wherever it is opened from.
+				'fields'          => Core_Rsvps::get_custom_fields( $event_id ),
 				'allow_edit'      => Event::get_rsvp_allow_edit(),
 				'rsvp_enabled'    => Event::get_rsvp_enabled(),
 				'sale_start'      => $sale_start,

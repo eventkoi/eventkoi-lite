@@ -46,22 +46,32 @@ function getInstanceTsFromDom(el) {
 function RsvpWidget({ eventId, instanceTs, mountEl }) {
   const prefillName = window.eventkoi_params?.rsvp_user?.name || "";
   const prefillEmail = window.eventkoi_params?.rsvp_user?.email || "";
-  const customFields = Array.isArray(window.eventkoi_params?.rsvp_fields)
-    ? window.eventkoi_params.rsvp_fields
-    : [];
-  const showNameField = window.eventkoi_params?.rsvp_show_name !== false;
-  const [fieldValues, setFieldValues] = useState(() => {
-    const initial = {};
-    const user = window.eventkoi_params?.rsvp_user || {};
-    customFields.forEach((field) => {
-      initial[field.key] =
-        field.key === "first_name" || field.key === "last_name"
-          ? user[field.key] || ""
-          : "";
-    });
-    return initial;
-  });
   const [summary, setSummary] = useState(null);
+  // The event's own questions come with its RSVP data. The page-level list is
+  // only right on the event's own page, so it is the fallback.
+  const customFields = Array.isArray(summary?.fields)
+    ? summary.fields
+    : Array.isArray(window.eventkoi_params?.rsvp_fields)
+      ? window.eventkoi_params.rsvp_fields
+      : [];
+  const showNameField = window.eventkoi_params?.rsvp_show_name !== false;
+  const [fieldValues, setFieldValues] = useState({});
+  const customFieldKeys = customFields.map((field) => field.key).join("|");
+  useEffect(() => {
+    const user = window.eventkoi_params?.rsvp_user || {};
+    setFieldValues((prev) => {
+      const next = { ...prev };
+      customFields.forEach((field) => {
+        if (next[field.key] === undefined) {
+          next[field.key] =
+            field.key === "first_name" || field.key === "last_name"
+              ? user[field.key] || ""
+              : "";
+        }
+      });
+      return next;
+    });
+  }, [customFieldKeys]);
   const [status, setStatus] = useState("going");
   const [name, setName] = useState(prefillName);
   const [email, setEmail] = useState(prefillEmail);

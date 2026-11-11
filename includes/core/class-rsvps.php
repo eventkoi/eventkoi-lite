@@ -344,6 +344,28 @@ class Rsvps {
 				return new \WP_Error( 'eventkoi_rsvp_exists', __( 'RSVP already exists.', 'eventkoi-lite' ), array( 'status' => 409 ) );
 			}
 
+			// An edit only replaces what its form showed. Answers to questions
+			// the event no longer asks stay on the RSVP, and a form without
+			// the questions or the "email each guest" box changes neither.
+			$stored_meta   = json_decode( (string) ( $existing->meta ?? '' ), true );
+			$stored_meta   = is_array( $stored_meta ) ? $stored_meta : array();
+			$stored_fields = isset( $stored_meta['fields'] ) && is_array( $stored_meta['fields'] ) ? $stored_meta['fields'] : array();
+			$fields_sent   = isset( $args['fields_sent'] ) ? (bool) $args['fields_sent'] : array_key_exists( 'fields', $args );
+			if ( $fields_sent ) {
+				foreach ( self::get_custom_fields( $event_id ) as $asked_field ) {
+					unset( $stored_fields[ (string) ( $asked_field['key'] ?? '' ) ] );
+				}
+			}
+			$merged_fields = array_merge( $stored_fields, $fields );
+			if ( $merged_fields ) {
+				$meta['fields'] = $merged_fields;
+			}
+			if ( ! array_key_exists( 'email_guests', $args ) && ! empty( $stored_meta['email_guests'] ) && 'off' !== Event::get_rsvp_guest_details() ) {
+				$meta['email_guests'] = true;
+				$email_each           = true;
+			}
+			$meta_json = $meta ? wp_json_encode( $meta ) : null;
+
 			$updated_token = $existing->checkin_token ?? '';
 			if ( empty( $updated_token ) ) {
 				$updated_token = self::generate_checkin_token();
