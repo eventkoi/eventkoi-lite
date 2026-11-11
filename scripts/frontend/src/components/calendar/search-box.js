@@ -283,7 +283,7 @@ export function SearchBox({
   return (
     <div
       ref={containerRef}
-      className="relative w-full min-w-0 lg:w-[350px] lg:max-w-full"
+      className="eventkoi-calendar-search relative w-full min-w-0 lg:w-[350px] lg:max-w-full"
       aria-busy={isLoading || searching}
       aria-live="polite"
     >
@@ -347,7 +347,7 @@ export function SearchBox({
           }
         }}
         onChange={(e) => setSearch(e.target.value)}
-        className="pl-9 h-10 w-full min-w-0 shadow-none border border-solid box-border rounded disabled:bg-background"
+        className="eventkoi-calendar-search-input pl-9 h-10 w-full min-w-0 shadow-none border border-solid box-border rounded disabled:bg-background"
         autoComplete="off"
         // Only disable while the calendar is still loading. Never disable for an
         // empty result set: before any term is typed `events` is just the visible

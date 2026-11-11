@@ -47,7 +47,7 @@ export function TimezonePicker({
             ),
             formatTimezoneLabel(timezone, timeFormat)
           )}
-          className="inline-flex bg-transparent border-none cursor-pointer w-auto h-auto p-0 font-normal text-foreground underline"
+          className="eventkoi-calendar-timezone inline-flex bg-transparent border-none cursor-pointer w-auto h-auto p-0 font-normal text-foreground underline"
         >
           {formatTimezoneLabel(timezone, timeFormat)}
         </Button>

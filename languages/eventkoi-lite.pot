@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-10T20:53:41+00:00\n"
+"POT-Creation-Date: 2026-11-11T11:54:05+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -2396,7 +2396,7 @@ msgid "List"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/elementor-widgets/class-widget-calendar.php:509
+#: includes/core/elementor-widgets/class-widget-calendar.php:1097
 msgid "Accent"
 msgstr ""
 
@@ -2448,91 +2448,91 @@ msgid "Default month to display"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/elementor-widgets/class-widget-calendar.php:643
+#: includes/core/elementor-widgets/class-widget-calendar.php:1231
 #: includes/helpers/instance.php:133
 msgid "Current month"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6328
-#: includes/core/elementor-widgets/class-widget-calendar.php:644
+#: includes/core/class-event.php:6348
+#: includes/core/elementor-widgets/class-widget-calendar.php:1232
 #: includes/helpers/instance.php:134
 msgid "January"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6329
-#: includes/core/elementor-widgets/class-widget-calendar.php:645
+#: includes/core/class-event.php:6349
+#: includes/core/elementor-widgets/class-widget-calendar.php:1233
 #: includes/helpers/instance.php:135
 msgid "February"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6330
-#: includes/core/elementor-widgets/class-widget-calendar.php:646
+#: includes/core/class-event.php:6350
+#: includes/core/elementor-widgets/class-widget-calendar.php:1234
 #: includes/helpers/instance.php:136
 msgid "March"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6331
-#: includes/core/elementor-widgets/class-widget-calendar.php:647
+#: includes/core/class-event.php:6351
+#: includes/core/elementor-widgets/class-widget-calendar.php:1235
 #: includes/helpers/instance.php:137
 msgid "April"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6332
-#: includes/core/elementor-widgets/class-widget-calendar.php:648
+#: includes/core/class-event.php:6352
+#: includes/core/elementor-widgets/class-widget-calendar.php:1236
 #: includes/helpers/instance.php:138
 msgid "May"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6333
-#: includes/core/elementor-widgets/class-widget-calendar.php:649
+#: includes/core/class-event.php:6353
+#: includes/core/elementor-widgets/class-widget-calendar.php:1237
 #: includes/helpers/instance.php:139
 msgid "June"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6334
-#: includes/core/elementor-widgets/class-widget-calendar.php:650
+#: includes/core/class-event.php:6354
+#: includes/core/elementor-widgets/class-widget-calendar.php:1238
 #: includes/helpers/instance.php:140
 msgid "July"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6335
-#: includes/core/elementor-widgets/class-widget-calendar.php:651
+#: includes/core/class-event.php:6355
+#: includes/core/elementor-widgets/class-widget-calendar.php:1239
 #: includes/helpers/instance.php:141
 msgid "August"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6336
-#: includes/core/elementor-widgets/class-widget-calendar.php:652
+#: includes/core/class-event.php:6356
+#: includes/core/elementor-widgets/class-widget-calendar.php:1240
 #: includes/helpers/instance.php:142
 msgid "September"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6337
-#: includes/core/elementor-widgets/class-widget-calendar.php:653
+#: includes/core/class-event.php:6357
+#: includes/core/elementor-widgets/class-widget-calendar.php:1241
 #: includes/helpers/instance.php:143
 msgid "October"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6338
-#: includes/core/elementor-widgets/class-widget-calendar.php:654
+#: includes/core/class-event.php:6358
+#: includes/core/elementor-widgets/class-widget-calendar.php:1242
 #: includes/helpers/instance.php:144
 msgid "November"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6339
-#: includes/core/elementor-widgets/class-widget-calendar.php:655
+#: includes/core/class-event.php:6359
+#: includes/core/elementor-widgets/class-widget-calendar.php:1243
 #: includes/helpers/instance.php:145
 msgid "December"
 msgstr ""
@@ -2722,6 +2722,7 @@ msgid "Time only"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
+#: includes/core/elementor-widgets/class-widget-calendar.php:492
 msgid "Timezone"
 msgstr ""
 
@@ -3189,63 +3190,63 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-divi5-modules.php:355
-#: includes/core/class-event.php:6246
+#: includes/core/class-event.php:6266
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:110
-#: includes/core/elementor-widgets/class-widget-calendar.php:666
+#: includes/core/elementor-widgets/class-widget-calendar.php:1254
 #: includes/helpers/instance.php:158
 msgid "Monday"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-divi5-modules.php:356
-#: includes/core/class-event.php:6247
+#: includes/core/class-event.php:6267
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:111
-#: includes/core/elementor-widgets/class-widget-calendar.php:667
+#: includes/core/elementor-widgets/class-widget-calendar.php:1255
 #: includes/helpers/instance.php:159
 msgid "Tuesday"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-divi5-modules.php:357
-#: includes/core/class-event.php:6248
+#: includes/core/class-event.php:6268
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:112
-#: includes/core/elementor-widgets/class-widget-calendar.php:668
+#: includes/core/elementor-widgets/class-widget-calendar.php:1256
 #: includes/helpers/instance.php:160
 msgid "Wednesday"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-divi5-modules.php:358
-#: includes/core/class-event.php:6249
+#: includes/core/class-event.php:6269
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:113
-#: includes/core/elementor-widgets/class-widget-calendar.php:669
+#: includes/core/elementor-widgets/class-widget-calendar.php:1257
 #: includes/helpers/instance.php:161
 msgid "Thursday"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-divi5-modules.php:359
-#: includes/core/class-event.php:6250
+#: includes/core/class-event.php:6270
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:114
-#: includes/core/elementor-widgets/class-widget-calendar.php:670
+#: includes/core/elementor-widgets/class-widget-calendar.php:1258
 #: includes/helpers/instance.php:162
 msgid "Friday"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-divi5-modules.php:360
-#: includes/core/class-event.php:6251
+#: includes/core/class-event.php:6271
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:115
-#: includes/core/elementor-widgets/class-widget-calendar.php:671
+#: includes/core/elementor-widgets/class-widget-calendar.php:1259
 #: includes/helpers/instance.php:163
 msgid "Saturday"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-divi5-modules.php:354
-#: includes/core/class-event.php:6245
+#: includes/core/class-event.php:6265
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:109
-#: includes/core/elementor-widgets/class-widget-calendar.php:672
+#: includes/core/elementor-widgets/class-widget-calendar.php:1260
 #: includes/helpers/instance.php:164
 msgid "Sunday"
 msgstr ""
@@ -3367,6 +3368,8 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
+#: includes/core/elementor-widgets/class-widget-calendar.php:509
+#: includes/core/elementor-widgets/class-widget-calendar.php:530
 msgid "Today"
 msgstr ""
 
@@ -3615,27 +3618,27 @@ msgid "Attendees purchase one ticket that covers the whole event, instead of one
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6255
+#: includes/core/class-event.php:6275
 msgid "first"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6256
+#: includes/core/class-event.php:6276
 msgid "second"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6257
+#: includes/core/class-event.php:6277
 msgid "third"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6258
+#: includes/core/class-event.php:6278
 msgid "fourth"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6259
+#: includes/core/class-event.php:6279
 msgid "fifth"
 msgstr ""
 
@@ -6573,6 +6576,7 @@ msgstr ""
 #: includes/core/class-beaver-modules.php:198
 #: includes/core/class-beaver-modules.php:296
 #: includes/core/elementor-widgets/class-widget-calendar.php:217
+#: includes/core/elementor-widgets/class-widget-calendar.php:315
 #: includes/core/elementor-widgets/class-widget-event.php:156
 msgid "Typography"
 msgstr ""
@@ -6581,6 +6585,7 @@ msgstr ""
 #: includes/core/class-beaver-modules.php:315
 #: includes/core/elementor-widgets/class-widget-calendar.php:248
 #: includes/core/elementor-widgets/class-widget-calendar.php:279
+#: includes/core/elementor-widgets/class-widget-calendar.php:424
 #: includes/core/elementor-widgets/class-widget-event.php:178
 msgid "Background Color"
 msgstr ""
@@ -6604,6 +6609,7 @@ msgid "Event Data Items"
 msgstr ""
 
 #: includes/core/class-beaver-modules.php:305
+#: includes/core/elementor-widgets/class-widget-calendar.php:423
 #: includes/core/elementor-widgets/class-widget-event.php:165
 msgid "Text Color"
 msgstr ""
@@ -6834,11 +6840,11 @@ msgstr ""
 msgid "Pagination"
 msgstr ""
 
-#: includes/core/class-blocks.php:2337
+#: includes/core/class-blocks.php:2412
 msgid "No calendar is available to display."
 msgstr ""
 
-#: includes/core/class-blocks.php:2341
+#: includes/core/class-blocks.php:2416
 msgid "Create a calendar"
 msgstr ""
 
@@ -7164,76 +7170,76 @@ msgstr ""
 msgid "Low stock"
 msgstr ""
 
-#: includes/core/class-event.php:6271
+#: includes/core/class-event.php:6291
 msgid "days"
 msgstr ""
 
-#: includes/core/class-event.php:6272
+#: includes/core/class-event.php:6292
 msgid "weeks"
 msgstr ""
 
-#: includes/core/class-event.php:6273
+#: includes/core/class-event.php:6293
 msgid "months"
 msgstr ""
 
-#: includes/core/class-event.php:6274
+#: includes/core/class-event.php:6294
 msgid "years"
 msgstr ""
 
 #. translators: %1$d: interval number (e.g., 2). %2$s: period plural (e.g., "months").
-#: includes/core/class-event.php:6278
+#: includes/core/class-event.php:6298
 #, php-format
 msgid "Every %1$d %2$s"
 msgstr ""
 
-#: includes/core/class-event.php:6280
+#: includes/core/class-event.php:6300
 msgid "Daily"
 msgstr ""
 
-#: includes/core/class-event.php:6282
+#: includes/core/class-event.php:6302
 msgid "Weekly"
 msgstr ""
 
-#: includes/core/class-event.php:6284
+#: includes/core/class-event.php:6304
 msgid "Monthly"
 msgstr ""
 
-#: includes/core/class-event.php:6286
+#: includes/core/class-event.php:6306
 msgid "Yearly"
 msgstr ""
 
 #. translators: 1: ordinal week in the month, 2: weekday name.
-#: includes/core/class-event.php:6303
+#: includes/core/class-event.php:6323
 #, php-format
 msgid ", on the %1$s %2$s"
 msgstr ""
 
 #. translators: %d: day number in the month.
-#: includes/core/class-event.php:6319
+#: includes/core/class-event.php:6339
 #, php-format
 msgid ", on day %d"
 msgstr ""
 
 #. translators: %s: comma-separated month names.
-#: includes/core/class-event.php:6353
+#: includes/core/class-event.php:6373
 #, php-format
 msgid ", in %s"
 msgstr ""
 
 #. translators: %s: comma-separated weekday names.
-#: includes/core/class-event.php:6384
+#: includes/core/class-event.php:6404
 #, php-format
 msgid ", on %s"
 msgstr ""
 
-#: includes/core/class-event.php:6476
-#: includes/core/class-event.php:6508
+#: includes/core/class-event.php:6504
+#: includes/core/class-event.php:6537
 msgid ", forever"
 msgstr ""
 
 #. translators: %d: total completed events.
-#: includes/core/class-event.php:6481
-#: includes/core/class-event.php:6496
+#: includes/core/class-event.php:6510
+#: includes/core/class-event.php:6525
 #, php-format
 msgid ", all %d event completed"
 msgid_plural ", all %d events completed"
@@ -7241,8 +7247,8 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: remaining events, 2: total events.
-#: includes/core/class-event.php:6487
-#: includes/core/class-event.php:6502
+#: includes/core/class-event.php:6516
+#: includes/core/class-event.php:6531
 #, php-format
 msgid ", %1$d of %2$d event left"
 msgid_plural ", %1$d of %2$d events left"
@@ -8064,30 +8070,137 @@ msgid "Leave empty to follow the current year or enter a four-digit year (e.g. 2
 msgstr ""
 
 #: includes/core/elementor-widgets/class-widget-calendar.php:230
+#: includes/core/elementor-widgets/class-widget-calendar.php:349
 msgid "Normal"
 msgstr ""
 
 #: includes/core/elementor-widgets/class-widget-calendar.php:261
+#: includes/core/elementor-widgets/class-widget-calendar.php:356
 msgid "Hover"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-calendar.php:505
+#: includes/core/elementor-widgets/class-widget-calendar.php:332
+msgid "Corner radius"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:425
+msgid "Border Color"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:459
+msgid "Toolbar: Previous and next"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:460
+msgid "Toolbar: Month picker"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:461
+msgid "Toolbar: Today button"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:463
+msgid "Toolbar: Search box"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:467
+msgid "Placeholder Color"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:472
+msgid "Toolbar: Subscribe button"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:474
+msgid "Toolbar: View switcher"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:483
+msgid "Selected view"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:502
+msgid "Grid: Day cells"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:515
+msgid "Non-working days"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:523
+msgid "Grid: Day numbers"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:537
+msgid "Other months"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:545
+msgid "Grid: Events"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:548
+#: includes/core/elementor-widgets/class-widget-calendar.php:553
+msgid "Title Color"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:549
+msgid "Time Color"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:557
+msgid "Grid: More link"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:558
+msgid "Grid: Week time labels"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:560
+msgid "List: Rows"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:567
+msgid "List: Image"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:570
+msgid "List: Calendar name"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:572
+msgid "List: Title"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:581
+msgid "List: Summary"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:582
+msgid "List: Location"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:583
+msgid "List: Date"
+msgstr ""
+
+#: includes/core/elementor-widgets/class-widget-calendar.php:1093
 msgid "Calendar background"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-calendar.php:506
+#: includes/core/elementor-widgets/class-widget-calendar.php:1094
 msgid "Text"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-calendar.php:507
+#: includes/core/elementor-widgets/class-widget-calendar.php:1095
 msgid "Buttons"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-calendar.php:508
+#: includes/core/elementor-widgets/class-widget-calendar.php:1096
 msgid "Button text"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-calendar.php:631
+#: includes/core/elementor-widgets/class-widget-calendar.php:1219
 msgid "Current calendar"
 msgstr ""
 

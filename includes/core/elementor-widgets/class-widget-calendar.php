@@ -289,6 +289,592 @@ class Calendar_Widget extends Widget_Base {
 		$this->end_controls_tabs();
 
 		$this->end_controls_section();
+
+		$this->register_element_style_sections();
+	}
+
+	/**
+	 * One Style section per calendar element, so each can be styled alone.
+	 *
+	 * @return void
+	 */
+	private function register_element_style_sections() {
+		foreach ( self::style_elements() as $element_id => $element ) {
+			$this->start_controls_section(
+				'ek_style_' . $element_id,
+				array(
+					'label' => $element['label'],
+					'tab'   => Controls_Manager::TAB_STYLE,
+				)
+			);
+
+			if ( ! empty( $element['typography'] ) ) {
+				$this->add_group_control(
+					\Elementor\Group_Control_Typography::get_type(),
+					array(
+						'label'          => __( 'Typography', 'eventkoi-lite' ),
+						'name'           => 'ek_' . $element_id . '_typography',
+						'selector'       => self::typography_selector( $element['typography'] ),
+						// The calendar's own text sizes are fixed, so these are
+						// written by the widget and need a fresh render.
+						'fields_options' => array_fill_keys(
+							array_merge( array( 'typography' ), array_keys( self::typography_fields() ) ),
+							array( 'render_type' => 'template' )
+						),
+					)
+				);
+			}
+
+			if ( ! empty( $element['radius'] ) ) {
+				$this->add_control(
+					'ek_' . $element_id . '_radius',
+					array(
+						'label'      => __( 'Corner radius', 'eventkoi-lite' ),
+						'type'       => Controls_Manager::SLIDER,
+						'size_units' => array( 'px' ),
+						'range'      => array(
+							'px' => array(
+								'min' => 0,
+								'max' => 60,
+							),
+						),
+					)
+				);
+			}
+
+			$has_hover = ! empty( $element['hover'] );
+
+			if ( $has_hover ) {
+				$this->start_controls_tabs( 'ek_' . $element_id . '_tabs' );
+				$this->start_controls_tab( 'ek_' . $element_id . '_tab_normal', array( 'label' => __( 'Normal', 'eventkoi-lite' ) ) );
+			}
+
+			$this->add_element_color_controls( $element_id, $element['normal'] ?? array() );
+
+			if ( $has_hover ) {
+				$this->end_controls_tab();
+				$this->start_controls_tab( 'ek_' . $element_id . '_tab_hover', array( 'label' => __( 'Hover', 'eventkoi-lite' ) ) );
+				$this->add_element_color_controls( $element_id, $element['hover'] );
+				$this->end_controls_tab();
+				$this->end_controls_tabs();
+			}
+
+			foreach ( $element['states'] ?? array() as $state_id => $state ) {
+				$this->add_control(
+					'ek_' . $element_id . '_' . $state_id . '_heading',
+					array(
+						'label'     => $state['label'],
+						'type'      => Controls_Manager::HEADING,
+						'separator' => 'before',
+					)
+				);
+				$this->add_element_color_controls( $element_id, $state['colors'] );
+			}
+
+			$this->end_controls_section();
+		}
+	}
+
+	/**
+	 * Add the colour pickers of one element state.
+	 *
+	 * @param string $element_id Element key.
+	 * @param array  $colors     Pickers keyed by control suffix.
+	 * @return void
+	 */
+	private function add_element_color_controls( $element_id, array $colors ) {
+		foreach ( $colors as $suffix => $color ) {
+			$this->add_control(
+				'ek_' . $element_id . '_' . $suffix,
+				array(
+					'label' => $color[0],
+					'type'  => Controls_Manager::COLOR,
+					'alpha' => false,
+				)
+			);
+		}
+	}
+
+	/**
+	 * Selector Elementor writes typography and radius rules to.
+	 *
+	 * @param string $selectors Comma separated selectors inside the calendar.
+	 * @return string
+	 */
+	private static function typography_selector( $selectors ) {
+		$out = array();
+
+		foreach ( explode( ',', $selectors ) as $selector ) {
+			$out[] = '{{WRAPPER}} .eventkoi-front ' . trim( $selector );
+		}
+
+		return implode( ', ', $out );
+	}
+
+	/**
+	 * The calendar elements that get their own Style section.
+	 *
+	 * Each colour is array( label, CSS property, selectors ). Selectors are
+	 * the classes the calendar prints on its elements.
+	 *
+	 * @return array<string, array>
+	 */
+	private static function style_elements() {
+		$text       = __( 'Text Color', 'eventkoi-lite' );
+		$background = __( 'Background Color', 'eventkoi-lite' );
+		$border     = __( 'Border Color', 'eventkoi-lite' );
+
+		$button = static function ( $label, $selector, $typography = true ) use ( $text, $background, $border ) {
+			return array(
+				'label'      => $label,
+				'typography' => $typography ? $selector : '',
+				'normal'     => array(
+					'color'  => array( $text, 'color', $selector . ', ' . $selector . ' *' ),
+					'bg'     => array( $background, 'background-color', $selector ),
+					'border' => array( $border, 'border-color', $selector ),
+				),
+				'hover'      => array(
+					'hover_color'  => array( $text, 'color', $selector . ':hover, ' . $selector . ':hover *' ),
+					'hover_bg'     => array( $background, 'background-color', $selector . ':hover' ),
+					'hover_border' => array( $border, 'border-color', $selector . ':hover' ),
+				),
+			);
+		};
+
+		$plain = static function ( $label, $selector ) use ( $text ) {
+			return array(
+				'label'      => $label,
+				'typography' => $selector,
+				'normal'     => array(
+					'color' => array( $text, 'color', $selector . ', ' . $selector . ' *' ),
+				),
+			);
+		};
+
+		$day    = '.fc .eventkoi-calendar-day';
+		$number = '.eventkoi-calendar-day-number';
+		$event  = '.fc .eventkoi-calendar-event';
+
+		return array(
+			'nav'           => $button( __( 'Toolbar: Previous and next', 'eventkoi-lite' ), '.eventkoi-calendar-nav-button', false ),
+			'period'        => $button( __( 'Toolbar: Month picker', 'eventkoi-lite' ), '.eventkoi-calendar-period' ),
+			'today'         => $button( __( 'Toolbar: Today button', 'eventkoi-lite' ), '.eventkoi-calendar-today' ),
+			'search'        => array(
+				'label'      => __( 'Toolbar: Search box', 'eventkoi-lite' ),
+				'typography' => '.eventkoi-calendar-search-input',
+				'normal'     => array(
+					'color'       => array( $text, 'color', '.eventkoi-calendar-search-input' ),
+					'placeholder' => array( __( 'Placeholder Color', 'eventkoi-lite' ), 'color', '.eventkoi-calendar-search-input::placeholder' ),
+					'bg'          => array( $background, 'background-color', '.eventkoi-calendar-search-input' ),
+					'border'      => array( $border, 'border-color', '.eventkoi-calendar-search-input' ),
+				),
+			),
+			'subscribe'     => $button( __( 'Toolbar: Subscribe button', 'eventkoi-lite' ), '.eventkoi-calendar-subscribe' ),
+			'views'         => array(
+				'label'      => __( 'Toolbar: View switcher', 'eventkoi-lite' ),
+				'typography' => '.eventkoi-calendar-view',
+				'normal'     => array(
+					'color'  => array( $text, 'color', '.eventkoi-calendar-view:not([data-state="on"])' ),
+					'bg'     => array( $background, 'background-color', '.eventkoi-calendar-views' ),
+					'border' => array( $border, 'border-color', '.eventkoi-calendar-views' ),
+				),
+				'states'     => array(
+					'active' => array(
+						'label'  => __( 'Selected view', 'eventkoi-lite' ),
+						'colors' => array(
+							'active_color' => array( $text, 'color', '.eventkoi-calendar-view[data-state="on"]' ),
+							'active_bg'    => array( $background, 'background-color', '.eventkoi-calendar-view[data-state="on"]' ),
+						),
+					),
+				),
+			),
+			'timezone'      => array(
+				'label'      => __( 'Timezone', 'eventkoi-lite' ),
+				'typography' => '.eventkoi-calendar-timezone',
+				'normal'     => array(
+					'color' => array( $text, 'color', '.eventkoi-calendar-timezone' ),
+				),
+				'hover'      => array(
+					'hover_color' => array( $text, 'color', '.eventkoi-calendar-timezone:hover' ),
+				),
+			),
+			'day'           => array(
+				'label'  => __( 'Grid: Day cells', 'eventkoi-lite' ),
+				'normal' => array(
+					'bg'     => array( $background, 'background-color', $day . ':not(.ek-non-working-day):not(.eventkoi-calendar-day-today)' ),
+					'border' => array( $border, 'border-color', $day . ', .fc .eventkoi-calendar-day-header, .fc .fc-scrollgrid' ),
+				),
+				'states' => array(
+					'today'   => array(
+						'label'  => __( 'Today', 'eventkoi-lite' ),
+						'colors' => array(
+							'today_bg' => array( $background, 'background-color', $day . '.eventkoi-calendar-day-today' ),
+						),
+					),
+					'weekend' => array(
+						'label'  => __( 'Non-working days', 'eventkoi-lite' ),
+						'colors' => array(
+							'weekend_bg' => array( $background, 'background-color', $day . '.ek-non-working-day:not(.eventkoi-calendar-day-today)' ),
+						),
+					),
+				),
+			),
+			'day_number'    => array(
+				'label'      => __( 'Grid: Day numbers', 'eventkoi-lite' ),
+				'typography' => $number,
+				'normal'     => array(
+					'color' => array( $text, 'color', '.eventkoi-calendar-day:not(.eventkoi-calendar-day-today):not(.eventkoi-calendar-day-other) ' . $number ),
+				),
+				'states'     => array(
+					'today' => array(
+						'label'  => __( 'Today', 'eventkoi-lite' ),
+						'colors' => array(
+							'today_color' => array( $text, 'color', '.eventkoi-calendar-day-today ' . $number ),
+							'today_bg'    => array( $background, 'background-color', '.eventkoi-calendar-day-today ' . $number ),
+						),
+					),
+					'other' => array(
+						'label'  => __( 'Other months', 'eventkoi-lite' ),
+						'colors' => array(
+							'other_color' => array( $text, 'color', '.eventkoi-calendar-day-other ' . $number ),
+						),
+					),
+				),
+			),
+			'event'         => array(
+				'label'      => __( 'Grid: Events', 'eventkoi-lite' ),
+				'typography' => $event . ', ' . $event . ' .fc-event-main',
+				'normal'     => array(
+					'color' => array( __( 'Title Color', 'eventkoi-lite' ), 'color', $event . ', ' . $event . ' .fc-event-main, ' . $event . ' .eventkoi-calendar-event-title' ),
+					'time'  => array( __( 'Time Color', 'eventkoi-lite' ), 'color', $event . ' .eventkoi-calendar-event-time' ),
+					'bg'    => array( $background, 'background-color', $event ),
+				),
+				'hover'      => array(
+					'hover_color' => array( __( 'Title Color', 'eventkoi-lite' ), 'color', $event . ':hover, ' . $event . ':hover .fc-event-main, ' . $event . ':hover .eventkoi-calendar-event-title' ),
+					'hover_bg'    => array( $background, 'background-color', $event . ':hover' ),
+				),
+			),
+			'more'          => $plain( __( 'Grid: More link', 'eventkoi-lite' ), '.fc .eventkoi-calendar-more' ),
+			'slot'          => $plain( __( 'Grid: Week time labels', 'eventkoi-lite' ), '.fc .eventkoi-calendar-slot-label' ),
+			'list_item'     => array(
+				'label'  => __( 'List: Rows', 'eventkoi-lite' ),
+				'normal' => array(
+					'bg'     => array( $background, 'background-color', '.eventkoi-calendar-list-item' ),
+					'border' => array( $border, 'border-color', '.eventkoi-calendar-list-item' ),
+				),
+			),
+			'list_image'    => array(
+				'label'  => __( 'List: Image', 'eventkoi-lite' ),
+				'radius' => '.eventkoi-calendar-list-image, .eventkoi-calendar-list-image a, .eventkoi-calendar-list-image img, .eventkoi-calendar-list-image div',
+			),
+			'list_calendar' => $plain( __( 'List: Calendar name', 'eventkoi-lite' ), '.eventkoi-calendar-list-calendar' ),
+			'list_title'    => array(
+				'label'      => __( 'List: Title', 'eventkoi-lite' ),
+				'typography' => '.eventkoi-calendar-list-title, .eventkoi-calendar-list-title a',
+				'normal'     => array(
+					'color' => array( $text, 'color', '.eventkoi-calendar-list-title, .eventkoi-calendar-list-title a' ),
+				),
+				'hover'      => array(
+					'hover_color' => array( $text, 'color', '.eventkoi-calendar-list-title a:hover' ),
+				),
+			),
+			'list_summary'  => $plain( __( 'List: Summary', 'eventkoi-lite' ), '.eventkoi-calendar-list-summary' ),
+			'list_location' => $plain( __( 'List: Location', 'eventkoi-lite' ), '.eventkoi-calendar-list-location' ),
+			'list_date'     => $plain( __( 'List: Date', 'eventkoi-lite' ), '.eventkoi-calendar-list-date' ),
+		);
+	}
+
+	/**
+	 * Every per-element colour picker: control id => array( property, selectors ).
+	 *
+	 * @return array<string, array>
+	 */
+	private static function element_colors() {
+		$colors = array();
+
+		foreach ( self::style_elements() as $element_id => $element ) {
+			$groups = array( $element['normal'] ?? array(), $element['hover'] ?? array() );
+
+			foreach ( $element['states'] ?? array() as $state ) {
+				$groups[] = $state['colors'];
+			}
+
+			foreach ( $groups as $group ) {
+				foreach ( $group as $suffix => $color ) {
+					$colors[ 'ek_' . $element_id . '_' . $suffix ] = array( $color[1], $color[2] );
+				}
+			}
+		}
+
+		return $colors;
+	}
+
+	/**
+	 * Rules for the per-element colour pickers.
+	 *
+	 * The calendar stylesheet fixes many of its colours, and the widget's
+	 * general Text and Buttons colours are written against the wrapper id.
+	 * A single element's own colour has to win over both, so its rule names
+	 * the wrapper id twice.
+	 *
+	 * @param string $wrapper_id Id of the widget wrapper.
+	 * @param array  $settings   Widget settings.
+	 * @return string CSS, or an empty string when no element colour is set.
+	 */
+	private static function element_css( $wrapper_id, array $settings ) {
+		$id   = '#' . sanitize_html_class( $wrapper_id );
+		$root = $id . $id . ' .eventkoi-front ';
+		$css  = '';
+
+		foreach ( self::element_colors() as $control_id => $color ) {
+			$value = sanitize_hex_color( (string) ( $settings[ $control_id ] ?? '' ) );
+
+			if ( ! $value ) {
+				continue;
+			}
+
+			$selectors = array();
+			foreach ( explode( ',', $color[1] ) as $selector ) {
+				$selectors[] = $root . trim( $selector );
+			}
+
+			$css .= implode( ',', $selectors ) . '{' . $color[0] . ':' . $value . '!important}';
+		}
+
+		foreach ( self::style_elements() as $element_id => $element ) {
+			if ( ! empty( $element['typography'] ) ) {
+				$css .= self::typography_css( $root, $element['typography'], 'ek_' . $element_id . '_typography', $settings );
+			}
+
+			if ( ! empty( $element['radius'] ) ) {
+				$radius = self::css_size( $settings[ 'ek_' . $element_id . '_radius' ] ?? null );
+				if ( '' !== $radius ) {
+					$css .= self::prefix_selectors( $root, $element['radius'] ) . '{border-radius:' . $radius . '!important}';
+				}
+			}
+		}
+
+		return $css;
+	}
+
+	/**
+	 * Typography fields the widget writes: field => CSS property.
+	 *
+	 * @return array<string, string>
+	 */
+	private static function typography_fields() {
+		return array(
+			'font_family'     => 'font-family',
+			'font_size'       => 'font-size',
+			'font_weight'     => 'font-weight',
+			'text_transform'  => 'text-transform',
+			'font_style'      => 'font-style',
+			'text_decoration' => 'text-decoration',
+			'line_height'     => 'line-height',
+			'letter_spacing'  => 'letter-spacing',
+			'word_spacing'    => 'word-spacing',
+		);
+	}
+
+	/**
+	 * Put the calendar root in front of each selector of a list.
+	 *
+	 * @param string $root      Root selector, with a trailing space.
+	 * @param string $selectors Comma separated selectors.
+	 * @return string
+	 */
+	private static function prefix_selectors( $root, $selectors ) {
+		$out = array();
+
+		foreach ( explode( ',', $selectors ) as $selector ) {
+			$out[] = $root . trim( $selector );
+		}
+
+		return implode( ',', $out );
+	}
+
+	/**
+	 * A slider value as a CSS length.
+	 *
+	 * @param mixed $value Slider value: size and unit.
+	 * @return string Length such as 12px, or an empty string.
+	 */
+	private static function css_size( $value ) {
+		if ( ! is_array( $value ) || ! isset( $value['size'] ) || '' === $value['size'] || ! is_numeric( $value['size'] ) ) {
+			return '';
+		}
+
+		$unit = (string) ( $value['unit'] ?? 'px' );
+		if ( ! in_array( $unit, array( 'px', 'em', 'rem', 'vw', 'vh', '%', '' ), true ) ) {
+			$unit = 'px';
+		}
+
+		return ( 0 + $value['size'] ) . $unit;
+	}
+
+	/**
+	 * Declarations for one set of typography values.
+	 *
+	 * @param array  $values Typography values keyed by field.
+	 * @param string $suffix Device suffix, such as _tablet, or empty.
+	 * @return string
+	 */
+	private static function typography_declarations( array $values, $suffix = '' ) {
+		$out = '';
+
+		foreach ( self::typography_fields() as $field => $property ) {
+			$value = $values[ $field . $suffix ] ?? '';
+
+			if ( is_array( $value ) ) {
+				$value = self::css_size( $value );
+			} elseif ( '' !== $suffix ) {
+				// Only the sizes change per device.
+				continue;
+			} elseif ( 'font_family' === $field ) {
+				$value = trim( (string) preg_replace( '/[^\p{L}\p{N} _-]/u', '', (string) $value ) );
+				$value = '' !== $value ? '"' . $value . '",sans-serif' : '';
+			} else {
+				$value = (string) preg_replace( '/[^a-z0-9-]/', '', strtolower( (string) $value ) );
+			}
+
+			if ( '' !== $value ) {
+				$out .= $property . ':' . $value . '!important;';
+			}
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Rules for one element's Typography control.
+	 *
+	 * @param string $root      Root selector, with a trailing space.
+	 * @param string $selectors Comma separated selectors of the element.
+	 * @param string $prefix    Control name of the typography group.
+	 * @param array  $settings  Widget settings.
+	 * @return string
+	 */
+	private static function typography_css( $root, $selectors, $prefix, array $settings ) {
+		$values = array();
+
+		if ( ! empty( $settings['__ek_global_typography'][ $prefix ] ) ) {
+			$values = (array) $settings['__ek_global_typography'][ $prefix ];
+		} elseif ( 'custom' === ( $settings[ $prefix . '_typography' ] ?? '' ) ) {
+			$length = strlen( $prefix ) + 1;
+			foreach ( $settings as $key => $value ) {
+				if ( 0 === strpos( (string) $key, $prefix . '_' ) ) {
+					$values[ substr( (string) $key, $length ) ] = $value;
+				}
+			}
+		}
+
+		if ( empty( $values ) ) {
+			return '';
+		}
+
+		$selector = self::prefix_selectors( $root, $selectors );
+		$base     = self::typography_declarations( $values );
+		$css      = '' !== $base ? $selector . '{' . $base . '}' : '';
+
+		foreach ( self::breakpoints() as $name => $query ) {
+			$device = self::typography_declarations( $values, '_' . $name );
+			if ( '' !== $device ) {
+				$css .= '@media(' . $query . '){' . $selector . '{' . $device . '}}';
+			}
+		}
+
+		return $css;
+	}
+
+	/**
+	 * Elementor's active breakpoints as media conditions, widest first.
+	 *
+	 * @return array<string, string> Device name => condition.
+	 */
+	private static function breakpoints() {
+		if ( ! class_exists( '\Elementor\Plugin' ) || empty( \Elementor\Plugin::$instance->breakpoints ) ) {
+			return array();
+		}
+
+		$max = array();
+		$min = array();
+
+		foreach ( \Elementor\Plugin::$instance->breakpoints->get_active_breakpoints() as $name => $breakpoint ) {
+			$value = absint( $breakpoint->get_value() );
+			if ( 'min' === $breakpoint->get_direction() ) {
+				$min[ sanitize_key( $name ) ] = 'min-width:' . $value . 'px';
+			} else {
+				$max[ $value ] = array( sanitize_key( $name ), 'max-width:' . $value . 'px' );
+			}
+		}
+
+		krsort( $max );
+
+		$out = $min;
+		foreach ( $max as $entry ) {
+			$out[ $entry[0] ] = $entry[1];
+		}
+
+		return $out;
+	}
+
+	/**
+	 * Look up the site typography presets picked for the element controls.
+	 *
+	 * A preset is stored as a reference, like a global colour, so the render
+	 * reads its values from the active kit.
+	 *
+	 * @param array $globals Global references keyed by control id.
+	 * @return array<string, array> Typography values keyed by control name.
+	 */
+	private static function global_typography( array $globals ) {
+		$found = array();
+
+		if ( empty( $globals ) || ! class_exists( '\Elementor\Plugin' ) || empty( \Elementor\Plugin::$instance->kits_manager ) ) {
+			return $found;
+		}
+
+		$kit = \Elementor\Plugin::$instance->kits_manager->get_active_kit_for_frontend();
+		if ( ! $kit || ! method_exists( $kit, 'get_settings_for_display' ) ) {
+			return $found;
+		}
+
+		$presets = array();
+		foreach ( array( 'system_typography', 'custom_typography' ) as $group ) {
+			foreach ( (array) $kit->get_settings_for_display( $group ) as $item ) {
+				$id = sanitize_key( (string) ( $item['_id'] ?? '' ) );
+				if ( '' !== $id ) {
+					$presets[ $id ] = $item;
+				}
+			}
+		}
+
+		foreach ( array_keys( self::style_elements() ) as $element_id ) {
+			$prefix    = 'ek_' . $element_id . '_typography';
+			$reference = (string) ( $globals[ $prefix . '_typography' ] ?? '' );
+
+			if ( '' === $reference ) {
+				continue;
+			}
+
+			parse_str( (string) wp_parse_url( $reference, PHP_URL_QUERY ), $parts );
+			$preset_id = sanitize_key( (string) ( $parts['id'] ?? '' ) );
+
+			if ( '' === $preset_id || empty( $presets[ $preset_id ] ) ) {
+				continue;
+			}
+
+			$values = array();
+			foreach ( $presets[ $preset_id ] as $key => $value ) {
+				if ( 0 === strpos( (string) $key, 'typography_' ) ) {
+					$values[ substr( (string) $key, 11 ) ] = $value;
+				}
+			}
+
+			$found[ $prefix ] = $values;
+		}
+
+		return $found;
 	}
 
 	/**
@@ -296,6 +882,8 @@ class Calendar_Widget extends Widget_Base {
 	 */
 	protected function render() {
 		$settings = self::resolve_global_colors( $this->get_settings_for_display(), (array) $this->get_settings( '__globals__' ) );
+
+		$settings['__ek_global_typography'] = self::global_typography( (array) $this->get_settings( '__globals__' ) );
 
 		$selection = $settings['calendars'] ?? array();
 		// "Current calendar" only means something on a calendar page; anywhere
@@ -342,7 +930,7 @@ class Calendar_Widget extends Widget_Base {
 		// editor preview and on the page alike.
 		$style      = self::color_style( $settings );
 		$wrapper_id = 'eventkoi-elementor-calendar-' . uniqid();
-		$extra_css  = self::text_css( $wrapper_id, $settings ) . self::button_css( $wrapper_id, $settings );
+		$extra_css  = self::text_css( $wrapper_id, $settings ) . self::button_css( $wrapper_id, $settings ) . self::element_css( $wrapper_id, $settings );
 
 		if ( '' !== $extra_css ) {
 			// The grid's day numbers, headings and event titles, and the
@@ -376,7 +964,7 @@ class Calendar_Widget extends Widget_Base {
 
 		$palette = self::kit_colors();
 
-		foreach ( array_keys( self::color_controls() ) as $control_id ) {
+		foreach ( array_merge( array_keys( self::color_controls() ), array_keys( self::element_colors() ) ) as $control_id ) {
 			$reference = (string) ( $globals[ $control_id ] ?? '' );
 
 			if ( '' === $reference || ! empty( $settings[ $control_id ] ) ) {

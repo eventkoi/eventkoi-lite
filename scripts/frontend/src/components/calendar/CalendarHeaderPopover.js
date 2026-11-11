@@ -98,7 +98,7 @@ export function CalendarHeaderPopover({
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          className="text-sm box-border text-foreground bg-background shadow-none rounded border-[1px] border-border border-solid px-3 py-1 pr-2 gap-2 h-10 justify-between hover:bg-muted cursor-pointer font-normal min-w-0 overflow-hidden"
+          className="eventkoi-calendar-period text-sm box-border text-foreground bg-background shadow-none rounded border-[1px] border-border border-solid px-3 py-1 pr-2 gap-2 h-10 justify-between hover:bg-muted cursor-pointer font-normal min-w-0 overflow-hidden"
           // The spoken name starts with the visible month, so voice control
           // users can say what they see.
           aria-label={`${MONTHS[selectedMonth]} ${yearView}, ${__(

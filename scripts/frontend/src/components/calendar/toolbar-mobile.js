@@ -53,7 +53,7 @@ export function ToolbarMobile(props) {
 
   if (isEmpty) {
     return (
-      <div className="ek-mobile-only flex-col w-full gap-4">
+      <div className="eventkoi-calendar-toolbar ek-mobile-only flex-col w-full gap-4">
         {/* Row 1 skeletons */}
         <div className="flex justify-between items-center">
           <Skeleton className="h-10 w-20 rounded-md" /> {/* Today */}
@@ -74,7 +74,7 @@ export function ToolbarMobile(props) {
   }
 
   return (
-    <div className="ek-mobile-only flex-col w-full gap-4">
+    <div className="eventkoi-calendar-toolbar ek-mobile-only flex-col w-full gap-4">
       {/* Row 1: Today + toggle. Wraps so Subscribe + the three-option view
           toggle never overflow narrow phones. */}
       <div className="flex flex-wrap justify-between items-center gap-2">
@@ -141,7 +141,7 @@ export function ToolbarMobile(props) {
           <Button
             variant="outline"
             size="icon"
-            className="rounded shadow-sm border border-solid border-border cursor-pointer"
+            className="eventkoi-calendar-search-button rounded shadow-sm border border-solid border-border cursor-pointer"
             onClick={() => {
               setSearchOpen(true);
               setTimeout(() => inputRef.current?.focus(), 50);

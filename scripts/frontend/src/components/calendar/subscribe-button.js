@@ -45,7 +45,7 @@ export function SubscribeButton({ feedUrl, feedWebcal }) {
         <Button
           variant="outline"
           size="sm"
-          className="h-10 rounded shadow-sm border border-solid border-border cursor-pointer"
+          className="eventkoi-calendar-subscribe h-10 rounded shadow-sm border border-solid border-border cursor-pointer"
         >
           <CalendarPlus className="mr-2 h-4 w-4" aria-hidden="true" />
           {__("Subscribe", "eventkoi-lite")}

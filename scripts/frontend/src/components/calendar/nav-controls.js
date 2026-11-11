@@ -45,11 +45,11 @@ export function NavControls({ calendarApi, currentDate, setCurrentDate, timezone
   };
 
   return (
-    <div className="flex items-center gap-2 shrink-0">
+    <div className="eventkoi-calendar-nav flex items-center gap-2 shrink-0">
       <Button
         variant="outline"
         size="icon"
-        className="text-[1px] box-border p-0 w-10 h-10 border-solid shadow-none cursor-pointer rounded"
+        className="eventkoi-calendar-nav-button eventkoi-calendar-nav-prev text-[1px] box-border p-0 w-10 h-10 border-solid shadow-none cursor-pointer rounded"
         onClick={() => move("prev")}
         aria-label={__("Go to previous period", "eventkoi-lite")}
       >
@@ -59,7 +59,7 @@ export function NavControls({ calendarApi, currentDate, setCurrentDate, timezone
       <Button
         variant="outline"
         size="icon"
-        className="text-[1px] box-border p-0 w-10 h-10 border-solid shadow-none cursor-pointer rounded"
+        className="eventkoi-calendar-nav-button eventkoi-calendar-nav-next text-[1px] box-border p-0 w-10 h-10 border-solid shadow-none cursor-pointer rounded"
         onClick={() => move("next")}
         aria-label={__("Go to next period", "eventkoi-lite")}
       >

@@ -416,7 +416,7 @@ export function CalendarGridMode({
     const dot =
       !isTimeGrid && dotColor ? (
         <div
-          className="fc-daygrid-event-dot"
+          className="fc-daygrid-event-dot eventkoi-calendar-event-dot"
           style={{ borderColor: dotColor }}
         />
       ) : null;
@@ -432,10 +432,10 @@ export function CalendarGridMode({
     const parts = (
       <>
         {gridContent?.show_dot !== false ? dot : null}
-        {showTime ? <span className="fc-event-time">{timeText}</span> : null}
+        {showTime ? <span className="fc-event-time eventkoi-calendar-event-time">{timeText}</span> : null}
         {showTime ? " " : null}
         {gridContent?.show_title !== false ? (
-          <span className="fc-event-title">{title}</span>
+          <span className="fc-event-title eventkoi-calendar-event-title">{title}</span>
         ) : null}
       </>
     );
@@ -847,8 +847,23 @@ export function CalendarGridMode({
           const isWorking = Array.isArray(wd)
             ? wd.map((n) => Number(n)).includes(monFirst)
             : monFirst < 5;
-          return isWorking ? "" : "ek-non-working-day";
+          const names = ["eventkoi-calendar-day"];
+          if (arg.isToday) names.push("eventkoi-calendar-day-today");
+          if (arg.isOther) names.push("eventkoi-calendar-day-other");
+          if (!isWorking) names.push("ek-non-working-day");
+          return names;
         }}
+        dayCellDidMount={(arg) => {
+          // FullCalendar draws the day number itself, so its class is
+          // added once the cell exists.
+          arg.el
+            .querySelector(".fc-daygrid-day-number")
+            ?.classList.add("eventkoi-calendar-day-number");
+        }}
+        dayHeaderClassNames="eventkoi-calendar-day-header"
+        eventClassNames="eventkoi-calendar-event"
+        moreLinkClassNames="eventkoi-calendar-more"
+        slotLabelClassNames="eventkoi-calendar-slot-label"
         eventsSet={() => scheduleCascade()}
         windowResize={() => scheduleCascade()}
         contentHeight={isTimeGridView ? timeGridHeight : "auto"}

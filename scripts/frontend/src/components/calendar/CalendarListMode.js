@@ -21,7 +21,7 @@ export function CalendarListMode({
   return (
     <>
       {showTimezone && (
-        <div className="flex justify-end pt-4 text-sm text-foreground">
+        <div className="eventkoi-calendar-list-meta flex justify-end pt-4 text-sm text-foreground">
           <TimezonePicker
             timezone={timezone}
             setTimezone={setTimezone}

@@ -145,7 +145,7 @@ export function ListView({
   };
 
   return (
-    <ul className="grid list-none m-0 p-0" role="list">
+    <ul className="eventkoi-calendar-list-items grid list-none m-0 p-0" role="list">
       {events.map((event) => {
         const wpTz = tzFromQuery
           ? safeNormalizeTimeZone(tzFromQuery)
@@ -184,7 +184,7 @@ export function ListView({
             return (
               <a
                 href={virtualUrl}
-                className="flex gap-2 text-muted-foreground text-sm underline underline-offset-4 truncate"
+                className="eventkoi-calendar-list-location flex gap-2 text-muted-foreground text-sm underline underline-offset-4 truncate"
                 title={label}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -197,7 +197,7 @@ export function ListView({
 
           if (hasPhysical) {
             return (
-              <span className="flex text-muted-foreground text-sm gap-2">
+              <span className="eventkoi-calendar-list-location flex text-muted-foreground text-sm gap-2">
                 <MapPin className="w-4 h-4 min-w-4 text-muted-foreground" />
                 {locationLine}
               </span>
@@ -213,7 +213,7 @@ export function ListView({
               );
 
             return (
-              <span className="flex text-muted-foreground text-sm gap-2">
+              <span className="eventkoi-calendar-list-location flex text-muted-foreground text-sm gap-2">
                 {icon}
                 {locationLine}
               </span>
@@ -226,7 +226,7 @@ export function ListView({
         return (
           <li
             key={`event-${event.id}`}
-            className="flex gap-8 py-8 border-border min-w-0"
+            className="eventkoi-calendar-list-item flex gap-8 py-8 border-border min-w-0"
             style={{
               borderBottomWidth: borderSize,
               borderBottomStyle: borderStyle,
@@ -235,7 +235,7 @@ export function ListView({
             {showImage === "yes" && event.thumbnail && (
               <div
                 className={cn(
-                  "ek-image w-full sm:w-auto sm:shrink-0",
+                  "eventkoi-calendar-list-image ek-image w-full sm:w-auto sm:shrink-0",
                   !event.thumbnail && "hidden md:flex"
                 )}
                 style={{ width: "220px", flexBasis: "220px", flexShrink: 0, maxWidth: "220px" }}
@@ -273,9 +273,9 @@ export function ListView({
               </div>
             )}
 
-            <div className="ek-meta flex flex-col gap-2 grow min-w-0">
+            <div className="eventkoi-calendar-list-content ek-meta flex flex-col gap-2 grow min-w-0">
               <div
-                className="ek-date-sm text-muted-foreground whitespace-pre-line"
+                className="eventkoi-calendar-list-date ek-date-sm text-muted-foreground whitespace-pre-line"
                 role="group"
                 aria-hidden="true"
                 aria-label={`Event time: ${timeline}`}
@@ -284,7 +284,7 @@ export function ListView({
               </div>
 
               {event.calendar_name && (
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground m-0">
+                <div className="eventkoi-calendar-list-calendar flex items-center gap-1.5 text-xs text-muted-foreground m-0">
                   <span
                     className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
                     style={{
@@ -296,7 +296,7 @@ export function ListView({
                 </div>
               )}
 
-              <h3 className="m-0 text-lg font-semibold leading-snug">
+              <h3 className="eventkoi-calendar-list-title m-0 text-lg font-semibold leading-snug">
                 <a href={getEventUrl(event, wpTz)} className="no-underline">
                   {event.title}
                   <span className="sr-only"> — View event details</span>
@@ -304,7 +304,7 @@ export function ListView({
               </h3>
 
               {showDescription === "yes" && summaryText(event) && (
-                <p className="text-base text-muted-foreground line-clamp-2 m-0">
+                <p className="eventkoi-calendar-list-summary text-base text-muted-foreground line-clamp-2 m-0">
                   {summaryText(event)}
                 </p>
               )}
@@ -313,7 +313,7 @@ export function ListView({
             </div>
 
             <div
-              className="ek-date-md ml-auto text-[14px] text-muted-foreground min-w-[200px] text-right whitespace-pre-line"
+              className="eventkoi-calendar-list-date ek-date-md ml-auto text-[14px] text-muted-foreground min-w-[200px] text-right whitespace-pre-line"
               role="group"
               aria-label={`Event time: ${timeline}`}
             >
