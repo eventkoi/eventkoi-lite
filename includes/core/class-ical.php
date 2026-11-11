@@ -820,6 +820,13 @@ class ICal {
 	 * @return string Location string.
 	 */
 	private function get_location( $event ) {
+		// A password-protected event keeps its location private, like its
+		// description. The feed is shared and cached, so this never depends
+		// on who asked for it.
+		if ( $event::is_password_protected() ) {
+			return '';
+		}
+
 		$locations = $event::get_locations();
 
 		if ( empty( $locations ) || ! is_array( $locations ) ) {

@@ -1219,14 +1219,19 @@ export function EventEditAttendees() {
         checkedInAt !== "0000-00-00 00:00:00" &&
         checkedInAt !== "0" &&
         checkedInAt !== 0;
+      // The stored count covers the whole party, so a guest who arrives
+      // before their host is counted too. Older rows have no count and
+      // fall back to the host's own check-in.
+      const storedCount = row.checked_in_count;
+      if (
+        storedCount !== null &&
+        storedCount !== undefined &&
+        storedCount !== ""
+      ) {
+        return total + (Number(storedCount) || 0);
+      }
       if (status === "checked_in" || hasCheckedInTime) {
-        const storedCount = row.checked_in_count;
-        const defaultCount = 1 + (Number(row.guests) || 0);
-        const count =
-          storedCount !== null && storedCount !== undefined && storedCount !== ""
-            ? Number(storedCount)
-            : defaultCount;
-        return total + count;
+        return total + 1 + (Number(row.guests) || 0);
       }
       return total;
     }, 0);

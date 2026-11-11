@@ -112,7 +112,7 @@ export function MultiSelect({
     >
       <Popover open={disabled ? false : open} onOpenChange={handleOpenChange}>
         {selected.length > 0 && (
-          <div className="absolute top-[0px] left-[0px] px-3 py-2 border-t-0 border-l-0 border-r-0 flex space-x-2">
+          <div className="absolute top-[0px] left-[0px] max-w-full overflow-x-auto px-3 py-2 border-t-0 border-l-0 border-r-0 flex space-x-2 [&>*]:shrink-0">
             {selected.map((option) => (
               <Badge
                 key={`option-${option.id}`}

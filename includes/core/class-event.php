@@ -4520,6 +4520,11 @@ class Event {
 	 * @return string
 	 */
 	public static function rendered_ticket_rsvp() {
+		// A locked event keeps its tickets, RSVP and price box until it is unlocked.
+		if ( self::is_locked_for_visitor() ) {
+			return '';
+		}
+
 		$mode = self::get_attendance_mode();
 
 		if ( 'tickets' === $mode ) {

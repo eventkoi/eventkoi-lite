@@ -540,7 +540,7 @@ export function EventEdit() {
           )}
         >
           {!isEditingInstance && <EventTabs />}
-          <div className="grid">
+          <div className="grid grid-cols-1 min-w-0">
             <Outlet
               context={{
                 instanceData,

@@ -75,12 +75,14 @@ class Schema {
 			$schema['description'] = $description;
 		}
 
-		$organizer = self::get_schema_organizer( $event );
+		// A password-protected event says when it is and nothing more, so its
+		// organizer and its tickets (names, prices, stock) stay out too.
+		$organizer = $event::is_password_protected() ? array() : self::get_schema_organizer( $event );
 		if ( ! empty( $organizer ) ) {
 			$schema['organizer'] = $organizer;
 		}
 
-		$offers = self::get_schema_offers( $event );
+		$offers = $event::is_password_protected() ? array() : self::get_schema_offers( $event );
 		if ( ! empty( $offers ) ) {
 			$schema['offers'] = $offers;
 		}
