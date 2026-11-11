@@ -6224,6 +6224,26 @@ class Event {
 	}
 
 	/**
+	 * Start timestamps of this event's deleted recurring dates.
+	 *
+	 * A deleted date is stored as a `trash` override, so the summary counts
+	 * leave it out the same way the calendar and series list do.
+	 *
+	 * @return array Timestamps as keys.
+	 */
+	private static function get_trashed_instance_timestamps() {
+		$trashed = array();
+
+		foreach ( self::get_recurrence_overrides() as $timestamp => $override ) {
+			if ( is_array( $override ) && 'trash' === ( $override['status'] ?? '' ) ) {
+				$trashed[ (int) $timestamp ] = true;
+			}
+		}
+
+		return $trashed;
+	}
+
+	/**
 	 * Rendered recurring rule summary string.
 	 *
 	 * @return string Recurrence summary.
@@ -6460,9 +6480,15 @@ class Event {
 					if ( ! empty( $rule['start_date'] ) && ! empty( $rule['end_date'] ) ) {
 						$duration = strtotime( $rule['end_date'] ) - strtotime( $rule['start_date'] );
 					}
+					$trashed = self::get_trashed_instance_timestamps();
+					$skipped = 0;
 					foreach ( $rrule as $dt ) {
 						if ( $total >= $max_count ) {
 							break;
+						}
+						if ( isset( $trashed[ $dt->getTimestamp() ] ) ) {
+							++$skipped;
+							continue;
 						}
 						$instances[] = $dt;
 						++$total;
@@ -6473,7 +6499,10 @@ class Event {
 					}
 					$remaining = $total - $completed;
 					if ( 0 === $total ) {
-						$label .= __( ', forever', 'eventkoi-lite' );
+						// Nothing to count when every date was deleted.
+						if ( 0 === $skipped ) {
+							$label .= __( ', forever', 'eventkoi-lite' );
+						}
 					} elseif ( isset( $rule['ends'] ) && 'after' === $rule['ends'] ) {
 						if ( 0 === $remaining ) {
 							$label .= sprintf(
