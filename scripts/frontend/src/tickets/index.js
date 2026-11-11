@@ -357,6 +357,19 @@ function readCheckoutSuccessFromUrl() {
   return wcOrderId ? `wc_${wcOrderId}` : sessionId || "success";
 }
 
+function readCheckoutFreeFromUrl() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const url = new URL(window.location.href);
+  const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
+
+  return (
+    url.searchParams.get("ek_free") === "1" || hashParams.get("ek_free") === "1"
+  );
+}
+
 function clearCheckoutSuccessFromUrl() {
   if (typeof window === "undefined") {
     return;
@@ -367,6 +380,8 @@ function clearCheckoutSuccessFromUrl() {
   url.searchParams.delete("ek_checkout");
   url.searchParams.delete("ek_stripe_session_id");
   url.searchParams.delete("ek_wc_order_id");
+  url.searchParams.delete("ek_free");
+  hashParams.delete("ek_free");
   hashParams.delete("ek_checkout");
   hashParams.delete("ek_stripe_session_id");
   hashParams.delete("ek_wc_order_id");
@@ -485,6 +500,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
   const checkoutConfirmationSentRef = useRef(false);
   const checkoutSuccessFromUrl = readCheckoutSuccessFromUrl();
   const checkoutSuccessValue = checkoutSuccessSessionId || checkoutSuccessFromUrl;
+  const [checkoutWasFree] = useState(() => readCheckoutFreeFromUrl());
   const [quantities, setQuantities] = useState({});
   const checkoutCustomFields = Array.isArray(window.eventkoi_params?.checkout_fields)
     ? window.eventkoi_params.checkout_fields
@@ -910,7 +926,9 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
 
   const priceRange =
     minPrice === maxPrice
-      ? formatTicketCurrency(minPrice)
+      ? minPrice === 0
+        ? __("Free", "eventkoi-lite")
+        : formatTicketCurrency(minPrice)
       : `${formatTicketCurrency(minPrice)}-${formatTicketCurrency(
           maxPrice,
         ).replace(/^[^0-9]+/, "")}`;
@@ -1284,6 +1302,16 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
       if (!hostedUrl) {
         throw new Error(__("Checkout URL is missing.", "eventkoi-lite"));
       }
+      if (payload?.free_order) {
+        try {
+          const freeUrl = new URL(hostedUrl, window.location.href);
+          freeUrl.searchParams.set("ek_free", "1");
+          window.location.href = freeUrl.toString();
+          return;
+        } catch (e) {
+          // Fall through to the plain return URL.
+        }
+      }
       window.location.href = hostedUrl;
     } catch (err) {
       setCheckoutError(
@@ -1305,7 +1333,9 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                 <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
                 <div className="min-w-0">
                   <div className="text-sm font-medium text-emerald-900">
-                    {__("Payment successful", "eventkoi-lite")}
+                    {checkoutWasFree
+                      ? __("You're booked", "eventkoi-lite")
+                      : __("Payment successful", "eventkoi-lite")}
                   </div>
                   <div className="mt-0.5 text-xs text-emerald-800">
                     {__(
@@ -1500,9 +1530,9 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                               <Ticket className="size-5 shrink-0 text-foreground" aria-hidden="true" />
                               <div className="min-w-0">
                                 <div className="text-[20px] font-semibold leading-none text-foreground tabular-nums">
-                                  {formatTicketCurrency(
-                                    Number(ticket.price) || 0,
-                                  )}
+                                  {(Number(ticket.price) || 0) === 0
+                                    ? __("Free", "eventkoi-lite")
+                                    : formatTicketCurrency(Number(ticket.price) || 0)}
                                 </div>
                                 <div className="mt-1 text-sm font-medium leading-tight text-foreground">
                                   {ticket.name}
@@ -1774,6 +1804,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                           className="font-medium text-[13px] text-foreground"
                         >
                           {__("First name", "eventkoi-lite")}
+                          <span aria-hidden="true" className="text-destructive"> *</span>
                         </label>
                         <input
                           id={firstNameId}
@@ -1813,6 +1844,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                           className="font-medium text-[13px] text-foreground"
                         >
                           {__("Last name", "eventkoi-lite")}
+                          <span aria-hidden="true" className="text-destructive"> *</span>
                         </label>
                         <input
                           id={lastNameId}
@@ -1853,6 +1885,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                         className="font-medium text-[13px] text-foreground"
                       >
                         {__("Email address", "eventkoi-lite")}
+                        <span aria-hidden="true" className="text-destructive"> *</span>
                       </label>
                       <input
                         id={emailId}
@@ -1985,6 +2018,9 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                                     className="text-xs font-medium text-foreground"
                                   >
                                     {__("Name", "eventkoi-lite")}
+                                    {attendeeMode === "required" ? (
+                                      <span aria-hidden="true" className="text-destructive"> *</span>
+                                    ) : null}
                                   </label>
                                   <input
                                     id={nameId}

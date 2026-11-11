@@ -743,6 +743,9 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
                       <div className="grid gap-2">
                         <Label htmlFor={`eventkoi-rsvp-guest-${index}-name`}>
                           {__("Name", "eventkoi-lite")}
+                          {guestDetailsMode === "required" ? (
+                            <span aria-hidden="true" className="text-destructive"> *</span>
+                          ) : null}
                         </Label>
                         <Input
                           id={`eventkoi-rsvp-guest-${index}-name`}

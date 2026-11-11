@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-11T16:16:45+00:00\n"
+"POT-Creation-Date: 2026-11-11T18:10:59+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -613,10 +613,6 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: scripts/backend/build/index.js:1
-msgid "Checked-in"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
 msgid "Checked in / party size"
 msgstr ""
 
@@ -680,7 +676,9 @@ msgid "Order ID"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-msgid "Order Status"
+#: includes/api/class-tickets.php:1033
+#: includes/api/class-tickets.php:1164
+msgid "Order status"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
@@ -710,7 +708,7 @@ msgid "Attendees"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-msgid "Checked-in/Total tickets sold"
+msgid "Checked in / Tickets sold"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
@@ -739,10 +737,6 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 msgid "RSVP \"Going\""
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Check-ins"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
@@ -1450,12 +1444,6 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 msgid "Customer full name"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-#: includes/api/class-tickets.php:1033
-#: includes/api/class-tickets.php:1164
-msgid "Order status"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
@@ -5710,6 +5698,10 @@ msgid "This event has ended and is no longer accepting ticket purchases."
 msgstr ""
 
 #: scripts/frontend/build/index.js:1
+msgid "Free"
+msgstr ""
+
+#: scripts/frontend/build/index.js:1
 msgid "Please complete all required fields."
 msgstr ""
 
@@ -5771,6 +5763,10 @@ msgstr ""
 
 #: scripts/frontend/build/index.js:1
 msgid "Unable to set up checkout."
+msgstr ""
+
+#: scripts/frontend/build/index.js:1
+msgid "You're booked"
 msgstr ""
 
 #: scripts/frontend/build/index.js:1

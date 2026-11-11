@@ -1754,7 +1754,7 @@ export function EventEditAttendees() {
       },
       {
         accessorKey: "checked_in",
-        header: () => <div className="text-sm font-normal">{__("Checked-in", "eventkoi-lite")}</div>,
+        header: () => <div className="text-sm font-normal">{__("Checked in", "eventkoi-lite")}</div>,
         cell: ({ row }) => {
           if (row.original.is_guest) {
             const guestStatus = (row.original.checkin_status || "").toLowerCase();
@@ -2273,7 +2273,7 @@ export function EventEditAttendees() {
         },
         {
           accessorKey: "payment_status",
-          header: ({ column }) => <SortButton title={__("Order Status", "eventkoi-lite")} column={column} />,
+          header: ({ column }) => <SortButton title={__("Order status", "eventkoi-lite")} column={column} />,
           cell: ({ row }) => <OrderStatus order={row.original} />,
           sortingFn: "alphanumeric",
         },
@@ -2374,7 +2374,7 @@ export function EventEditAttendees() {
             <Stat
               className="border-l-0 pl-0"
               labelClassName="normal-case"
-              line1={__("Checked-in/Total tickets sold", "eventkoi-lite")}
+              line1={__("Checked in / Tickets sold", "eventkoi-lite")}
               line2={
                 isLoading ? (
                   <Skeleton className="h-5 w-16" />
@@ -2497,7 +2497,7 @@ export function EventEditAttendees() {
           />
           <Stat
             labelClassName="normal-case"
-            line1={__("Check-ins", "eventkoi-lite")}
+            line1={__("Checked in", "eventkoi-lite")}
             line2={
               isLoading ? (
                 <Skeleton className="h-5 w-16" />

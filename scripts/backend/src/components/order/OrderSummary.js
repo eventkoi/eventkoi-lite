@@ -118,6 +118,8 @@ export function OrderSummary({ order }) {
         order?.metadata?.stripe_fee_cents ??
         0
     ) || 0;
+  const nothingPaid =
+    totalAmountCents === 0 && stripeFeeCents === 0 && platformFeeCents === 0;
   const netAmountCents = totalAmountCents - refundAmountCents - stripeFeeCents;
   const payoutAfterPlatformFeeCents = netAmountCents - platformFeeCents;
   const formatCurrencyExact = (amount, currency) => {
@@ -211,22 +213,26 @@ export function OrderSummary({ order }) {
               {formatCurrencyWithCode(totalAmountCents, order.currency)}
             </span>
           </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">
-              {__("Stripe fee", "eventkoi-lite")}
-            </span>
-            <span className="text-foreground">
-              {formatDeductionCurrencyWithCode(stripeFeeCents, order.currency)}
-            </span>
-          </div>
-          <div className="flex items-center justify-between">
-            <span className="text-muted-foreground">
-              {__("Platform fee", "eventkoi-lite")}
-            </span>
-            <span className="text-foreground">
-              {formatDeductionCurrencyWithCode(platformFeeCents, order.currency)}
-            </span>
-          </div>
+          {nothingPaid ? null : (
+            <>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">
+                  {__("Stripe fee", "eventkoi-lite")}
+                </span>
+                <span className="text-foreground">
+                  {formatDeductionCurrencyWithCode(stripeFeeCents, order.currency)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">
+                  {__("Platform fee", "eventkoi-lite")}
+                </span>
+                <span className="text-foreground">
+                  {formatDeductionCurrencyWithCode(platformFeeCents, order.currency)}
+                </span>
+              </div>
+            </>
+          )}
           {refundAmountCents > 0 ? (
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">{__("Refunds", "eventkoi-lite")}</span>
@@ -239,15 +245,17 @@ export function OrderSummary({ order }) {
             <span>{__("Net amount", "eventkoi-lite")}</span>
             <span>{formatSignedCurrencyWithCode(netAmountCents, order.currency)}</span>
           </div>
-          <div className="flex items-center justify-between pt-1 font-medium">
-            <span>{__("Net amount after platform fee", "eventkoi-lite")}</span>
-            <span>
-              {formatSignedCurrencyWithCode(
-                payoutAfterPlatformFeeCents,
-                order.currency
-              )}
-            </span>
-          </div>
+          {nothingPaid ? null : (
+            <div className="flex items-center justify-between pt-1 font-medium">
+              <span>{__("Net amount after platform fee", "eventkoi-lite")}</span>
+              <span>
+                {formatSignedCurrencyWithCode(
+                  payoutAfterPlatformFeeCents,
+                  order.currency
+                )}
+              </span>
+            </div>
+          )}
         </div>
       ) : null}
     </div>

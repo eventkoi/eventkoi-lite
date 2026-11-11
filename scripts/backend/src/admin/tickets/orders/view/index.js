@@ -85,6 +85,11 @@ export function OrderView() {
     return <NotFound type="order" />;
   }
 
+  const nothingPaid =
+    (Number(order?.amount_total ?? order?.total_amount ?? 0) || 0) === 0 &&
+    !order?.payment_method_type &&
+    !order?.stripe_payment_intent_id;
+
   return (
     <>
       <OrderHeader
@@ -123,9 +128,15 @@ export function OrderView() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-stretch">
           <div className="md:col-span-2 space-y-6">
             <OrderSummary order={order} />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div
+              className={
+                nothingPaid
+                  ? "grid grid-cols-1 gap-6"
+                  : "grid grid-cols-1 md:grid-cols-2 gap-6"
+              }
+            >
               <CustomerInfo order={order} onUpdated={refreshOrder} />
-              <PaymentMethod order={order} />
+              {nothingPaid ? null : <PaymentMethod order={order} />}
             </div>
           </div>
 
