@@ -1108,7 +1108,8 @@ class Calendar {
 					return ( 2 === $a_rank ) ? ( $b_ts <=> $a_ts ) : ( $a_ts <=> $b_ts );
 				}
 			);
-		} elseif ( 'upcoming' === $orderby || 'past' === $orderby ) {
+		} elseif ( in_array( $orderby, array( 'event_start', 'upcoming', 'past' ), true ) ) {
+			// Start date order follows the event's start, like the Pro list.
 			usort(
 				$results,
 				static function ( $a, $b ) use ( $order ) {

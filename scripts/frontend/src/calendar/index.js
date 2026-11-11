@@ -147,6 +147,16 @@ export function Calendar(props) {
   }, [activeDisplay, listNavigated, listMonthDate, timezone]);
 
 
+  // A chosen month lists everything in it, earliest first, the same events
+  // the month grid shows. The rolling "upcoming" order would hide the days
+  // already gone, and a past month would look empty. A calendar with its
+  // own list order keeps it.
+  const listMonthSort =
+    listMonthRange.dateStart &&
+    (!props.orderby || props.orderby === "upcoming")
+      ? { orderby: "event_start", order: "asc" }
+      : {};
+
   const {
     calendar,
     events,
@@ -168,6 +178,7 @@ export function Calendar(props) {
   } = useCalendarData({
     ...props,
     ...listMonthRange,
+    ...listMonthSort,
     display: activeDisplay,
     visibleViews,
     searchTerm: trimmedSearch,
