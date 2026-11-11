@@ -94,18 +94,12 @@ class Calendar_Widget extends Widget_Base {
 			'timeframe',
 			array(
 				'label'   => __( 'Timeframe defaults to', 'eventkoi-lite' ),
-				'type'    => Controls_Manager::CHOOSE,
+				'type'    => Controls_Manager::SELECT,
 				'default' => 'month',
-				'toggle'  => true,
 				'options' => array(
-					'month' => array(
-						'title' => __( 'Month', 'eventkoi-lite' ),
-						'icon'  => 'eicon-calendar',
-					),
-					'week'  => array(
-						'title' => __( 'Week', 'eventkoi-lite' ),
-						'icon'  => 'eicon-calendar',
-					),
+					'month' => __( 'Month', 'eventkoi-lite' ),
+					'week'  => __( 'Week', 'eventkoi-lite' ),
+					'list'  => __( 'List', 'eventkoi-lite' ),
 				),
 			)
 		);
@@ -1269,7 +1263,7 @@ class Calendar_Widget extends Widget_Base {
 	private function sanitize_timeframe( $value ) {
 		$value = strtolower( (string) $value );
 
-		return in_array( $value, array( 'month', 'week' ), true ) ? $value : 'month';
+		return in_array( $value, array( 'month', 'week', 'list' ), true ) ? $value : 'month';
 	}
 
 	/**
