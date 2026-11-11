@@ -136,6 +136,12 @@ class Email_Routing {
 			? self::parse_addresses( $default_to, '' )
 			: self::parse_addresses( (string) $stored, $default_to );
 
+		// A saved list with nothing usable in it (a mistyped address) must not
+		// swallow the email: it goes to the person it is normally for.
+		if ( empty( $to ) && ! $personal && null !== $stored && '' !== trim( (string) $stored ) ) {
+			$to = self::parse_addresses( $default_to, '' );
+		}
+
 		if ( empty( $to ) ) {
 			return false;
 		}

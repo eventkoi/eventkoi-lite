@@ -300,10 +300,25 @@ const splitAddresses = (value) =>
     .map((item) => item.trim())
     .filter(Boolean);
 
+// The same rules the sender applies, so an address that saves here is one
+// the email can really go to: plain letters and digits, no double dots, and
+// a domain with at least two parts.
+const isUsableAddress = (item) => {
+  const parts = String(item).split("@");
+  if (parts.length !== 2) return false;
+  const [local, domain] = parts;
+  if (!/^[A-Za-z0-9!#$%&'*+/=?^_`{|}~.-]+$/.test(local)) return false;
+  if (/\.{2,}/.test(domain) || /^\.|\.$/.test(domain)) return false;
+  const labels = domain.split(".");
+  return (
+    labels.length >= 2 &&
+    labels.every((label) => /^[A-Za-z0-9-]+$/.test(label) && !/^-|-$/.test(label))
+  );
+};
+
 const invalidAddresses = (value) =>
   splitAddresses(value).filter(
-    (item) =>
-      !ADDRESS_TOKENS.includes(item) && !/^[^\s@,]+@[^\s@,]+\.[^\s@,]+$/.test(item),
+    (item) => !ADDRESS_TOKENS.includes(item) && !isUsableAddress(item),
   );
 
 // An email that had its own sender before the global default keeps it.

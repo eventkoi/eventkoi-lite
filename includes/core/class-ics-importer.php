@@ -33,6 +33,14 @@ class ICS_Importer {
 	const IMAGE_URL_META = '_ics_import_image_url';
 
 	/**
+	 * Source URL of a picture that could not be imported, so a feed does not
+	 * download it again on every sync.
+	 *
+	 * @var string
+	 */
+	const IMAGE_FAILED_META = '_ics_import_image_failed';
+
+	/**
 	 * Event meta: an image URL waiting for the background job.
 	 *
 	 * @var string
@@ -483,6 +491,14 @@ class ICS_Importer {
 			return;
 		}
 
+		// This exact picture could not be imported a moment ago (too large,
+		// not an image, or the server did not answer). Try again tomorrow,
+		// not on every sync.
+		$failed = (array) get_post_meta( $post_id, self::IMAGE_FAILED_META, true );
+		if ( ( $failed['url'] ?? '' ) === $image_url && ( time() - absint( $failed['time'] ?? 0 ) ) < DAY_IN_SECONDS ) {
+			return;
+		}
+
 		// Big calendars carry on in the background rather than timing out.
 		if ( ! self::has_image_time_left() ) {
 			update_post_meta( $post_id, self::PENDING_IMAGE_META, $image_url );
@@ -494,9 +510,18 @@ class ICS_Importer {
 
 		$attachment_id = self::attachment_for_image( $image_url, $post_id );
 		if ( ! $attachment_id ) {
+			update_post_meta(
+				$post_id,
+				self::IMAGE_FAILED_META,
+				array(
+					'url'  => $image_url,
+					'time' => time(),
+				)
+			);
 			return;
 		}
 
+		delete_post_meta( $post_id, self::IMAGE_FAILED_META );
 		set_post_thumbnail( $post_id, $attachment_id );
 		update_post_meta( $post_id, 'image', (string) wp_get_attachment_url( $attachment_id ) );
 		update_post_meta( $post_id, 'image_id', $attachment_id );
@@ -625,6 +650,22 @@ class ICS_Importer {
 
 		foreach ( $pending as $post_id ) {
 			self::apply_event_image( (int) $post_id, (string) get_post_meta( (int) $post_id, self::PENDING_IMAGE_META, true ) );
+		}
+
+		// A batch that finished in time still leaves the rest of a large
+		// import waiting, so the job comes back until nothing is pending.
+		$left = get_posts(
+			array(
+				'post_type'      => 'eventkoi_event',
+				'post_status'    => 'any',
+				'posts_per_page' => 1,
+				'fields'         => 'ids',
+				'meta_key'       => self::PENDING_IMAGE_META, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Background job, runs only while images are pending.
+			)
+		);
+
+		if ( ! empty( $left ) && ! wp_next_scheduled( self::PENDING_IMAGES_HOOK ) ) {
+			wp_schedule_single_event( time() + MINUTE_IN_SECONDS, self::PENDING_IMAGES_HOOK );
 		}
 	}
 
