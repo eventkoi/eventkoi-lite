@@ -469,6 +469,9 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // What had focus when the dialog opened (the button that opened it), so
+  // closing can hand focus back to it.
+  const dialogReturnFocusRef = useRef(null);
   const [dialogStep, setDialogStep] = useState("tickets");
   const [checkoutError, setCheckoutError] = useState("");
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
@@ -1422,8 +1425,30 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent
-            className="eventkoi-front w-[95vw] max-w-[900px] gap-0 overflow-hidden p-0"
-            onOpenAutoFocus={(event) => event.preventDefault()}
+            className="eventkoi-front w-[95vw] max-w-[900px] gap-0 overflow-hidden p-0 focus:outline-none"
+            // Do not jump to the first quantity button (on a phone that
+            // scrolls the sheet), but do move focus into the dialog. Left on
+            // the page behind, Tab walked the page under the overlay and
+            // Escape could not hand focus back to the Get tickets button.
+            onOpenAutoFocus={(event) => {
+              event.preventDefault();
+              const active = document.activeElement;
+              dialogReturnFocusRef.current =
+                active instanceof HTMLElement && active !== document.body
+                  ? active
+                  : null;
+              event.currentTarget.focus({ preventScroll: true });
+            }}
+            // The dialog is opened from a plain button (and from #buy-tickets
+            // links), not a Radix trigger, so Radix has nothing to return
+            // focus to on its own.
+            onCloseAutoFocus={(event) => {
+              const opener = dialogReturnFocusRef.current;
+              if (opener && document.contains(opener)) {
+                event.preventDefault();
+                opener.focus({ preventScroll: true });
+              }
+            }}
           >
             <DialogHeader className="sr-only">
               <DialogTitle>{__("Ticket checkout", "eventkoi-lite")}</DialogTitle>
