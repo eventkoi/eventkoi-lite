@@ -1,3 +1,4 @@
+import { __ } from "@wordpress/i18n";
 import { BulkActions } from "@/components/bulk-actions";
 import { Filters } from "@/components/filters";
 import { Pagination } from "@/components/pagination";
@@ -26,6 +27,12 @@ import {
 } from "@tanstack/react-table";
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
+
+// Columns whose header shows no text still need a name for screen readers.
+const emptyHeaderNames = {
+  select: __("Select", "eventkoi-lite"),
+  actions: __("Actions", "eventkoi-lite"),
+};
 
 export function DataTable({
   data,
@@ -233,6 +240,7 @@ export function DataTable({
                   return (
                     <TableHead
                       key={header.id}
+                      aria-label={emptyHeaderNames[header.id]}
                       style={
                         isTitleColumn && titleColumnWidth
                           ? {
