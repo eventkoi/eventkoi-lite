@@ -127,6 +127,8 @@ class Elementor_Templates {
 				// The pickers list templates from a page-load snapshot; hand back
 				// the current list so freshly imported templates show up at once.
 				'custom_templates' => Scripts::get_custom_templates(),
+				// Applying one builder's templates takes the others out of use.
+				'builder_templates' => Scripts::get_builder_template_statuses(),
 			)
 		);
 	}

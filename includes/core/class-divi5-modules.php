@@ -253,6 +253,7 @@ class Divi5_Modules {
 				return array(
 					'eventkoi_event_id' => self::attr_value( $attrs, 'event', 'current' ),
 					'eventkoi_data'     => self::attr_value( $attrs, 'data', 'full' ),
+					'eventkoi_label'    => self::attr_value( $attrs, 'label', '' ),
 				);
 
 		}
@@ -328,6 +329,10 @@ class Divi5_Modules {
 					'description' => __( 'Select an event to display. Use the current event when placed on an event template.', 'eventkoi-lite' ),
 				),
 				'data'  => array( 'label' => __( 'Data to render', 'eventkoi-lite' ) ),
+				'label' => array(
+					'label'       => __( 'Label', 'eventkoi-lite' ),
+					'description' => __( 'Optional text shown before the value, such as "Starts on".', 'eventkoi-lite' ),
+				),
 			),
 		);
 	}
@@ -341,7 +346,7 @@ class Divi5_Modules {
 	public static function field_options() {
 		return array(
 			'calendar' => array(
-				'calendar'  => self::option_list( Divi_Renderers::calendar_options( __( '— Default calendar —', 'eventkoi-lite' ) ) ),
+				'calendar'  => self::option_list( Divi_Renderers::calendar_options( __( '— Default calendar —', 'eventkoi-lite' ), true ) ),
 				'timeframe' => self::option_list(
 					array(
 						'month' => __( 'Month', 'eventkoi-lite' ),

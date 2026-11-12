@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-12T11:33:13+00:00\n"
+"POT-Creation-Date: 2026-11-12T12:34:19+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -141,7 +141,7 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/admin/class-menus.php:155
-#: includes/core/class-beaver-modules.php:96
+#: includes/core/class-beaver-modules.php:102
 #: includes/core/class-permissions.php:75
 #: includes/core/class-post-types.php:58
 msgid "Calendars"
@@ -1211,8 +1211,8 @@ msgid "Ends"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-divi5-modules.php:311
-#: includes/core/class-divi5-modules.php:313
+#: includes/core/class-divi5-modules.php:312
+#: includes/core/class-divi5-modules.php:314
 #: includes/core/class-post-types.php:61
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:27
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:41
@@ -1328,7 +1328,7 @@ msgid "Ticket sales"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-template.php:1150
+#: includes/core/class-template.php:1293
 msgid "Custom fields"
 msgstr ""
 
@@ -1383,7 +1383,7 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-bindings.php:184
-#: includes/core/class-divi-renderers.php:200
+#: includes/core/class-divi-renderers.php:239
 msgid "Event URL"
 msgstr ""
 
@@ -1915,7 +1915,7 @@ msgid "Supports structured data & OG tags"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/admin/class-scripts.php:174
+#: includes/admin/class-scripts.php:216
 msgid "Block"
 msgstr ""
 
@@ -1954,8 +1954,8 @@ msgid "These settings are applied at a global level. They can also be adjusted a
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-beaver-modules.php:182
-#: includes/core/class-divi5-modules.php:322
+#: includes/core/class-beaver-modules.php:189
+#: includes/core/class-divi5-modules.php:323
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:105
 #: includes/core/elementor-widgets/class-widget-calendar.php:163
 msgid "Week starts on"
@@ -2361,8 +2361,8 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-beaver-modules.php:125
-#: includes/core/class-divi5-modules.php:347
+#: includes/core/class-beaver-modules.php:132
+#: includes/core/class-divi5-modules.php:352
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:54
 #: includes/core/elementor-widgets/class-widget-calendar.php:100
 msgid "Month"
@@ -2370,8 +2370,8 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-beaver-modules.php:126
-#: includes/core/class-divi5-modules.php:348
+#: includes/core/class-beaver-modules.php:133
+#: includes/core/class-divi5-modules.php:353
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:55
 #: includes/core/elementor-widgets/class-widget-calendar.php:101
 msgid "Week"
@@ -2379,7 +2379,7 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-divi5-modules.php:349
+#: includes/core/class-divi5-modules.php:354
 #: includes/core/elementor-widgets/class-widget-calendar.php:102
 msgid "List"
 msgstr ""
@@ -2412,8 +2412,8 @@ msgid "Show %s view"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-beaver-modules.php:157
-#: includes/core/class-divi5-modules.php:318
+#: includes/core/class-beaver-modules.php:164
+#: includes/core/class-divi5-modules.php:319
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:94
 #: includes/core/elementor-widgets/class-widget-calendar.php:128
 msgid "Show timezone"
@@ -2425,13 +2425,13 @@ msgid "Show the timezone label above the calendar."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-beaver-modules.php:122
+#: includes/core/class-beaver-modules.php:129
 #: includes/core/elementor-widgets/class-widget-calendar.php:96
 msgid "Timeframe defaults to"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-beaver-modules.php:167
+#: includes/core/class-beaver-modules.php:174
 #: includes/core/elementor-widgets/class-widget-calendar.php:141
 msgid "Default month to display"
 msgstr ""
@@ -2527,7 +2527,7 @@ msgid "December"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-beaver-modules.php:174
+#: includes/core/class-beaver-modules.php:181
 #: includes/core/elementor-widgets/class-widget-calendar.php:152
 msgid "Default year to display"
 msgstr ""
@@ -2633,7 +2633,7 @@ msgid "Event Source"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-beaver-modules.php:268
+#: includes/core/class-beaver-modules.php:275
 #: includes/core/elementor-widgets/class-widget-event.php:83
 msgid "Select Event"
 msgstr ""
@@ -2664,12 +2664,12 @@ msgid "— Primary —"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-divi-renderers.php:181
+#: includes/core/class-divi-renderers.php:216
 msgid "Title"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-divi-renderers.php:183
+#: includes/core/class-divi-renderers.php:218
 msgid "Excerpt"
 msgstr ""
 
@@ -2679,12 +2679,12 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-divi-renderers.php:189
+#: includes/core/class-divi-renderers.php:225
 msgid "Location"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-divi-renderers.php:184
+#: includes/core/class-divi-renderers.php:219
 msgid "Image"
 msgstr ""
 
@@ -2701,16 +2701,17 @@ msgid "Datetime with summary"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-divi-renderers.php:186
+#: includes/core/class-divi-renderers.php:221
 msgid "Date only"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-divi-renderers.php:187
+#: includes/core/class-divi-renderers.php:222
 msgid "Time only"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
+#: includes/core/class-divi-renderers.php:224
 #: includes/core/elementor-widgets/class-widget-calendar.php:486
 msgid "Timezone"
 msgstr ""
@@ -2792,7 +2793,7 @@ msgid "Location post code"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-divi-renderers.php:197
+#: includes/core/class-divi-renderers.php:233
 msgid "Google map"
 msgstr ""
 
@@ -2801,7 +2802,7 @@ msgid "Image URL"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-divi-renderers.php:182
+#: includes/core/class-divi-renderers.php:217
 msgid "Details"
 msgstr ""
 
@@ -2814,12 +2815,12 @@ msgid "Capacity (total)"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-divi-renderers.php:202
+#: includes/core/class-divi-renderers.php:241
 msgid "Capacity remaining"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-divi-renderers.php:203
+#: includes/core/class-divi-renderers.php:242
 msgid "Capacity sold"
 msgstr ""
 
@@ -2836,7 +2837,7 @@ msgid "Ticket count (types)"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-divi-renderers.php:207
+#: includes/core/class-divi-renderers.php:246
 msgid "Ticket summary"
 msgstr ""
 
@@ -2853,12 +2854,12 @@ msgid "Price range"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-divi-renderers.php:208
+#: includes/core/class-divi-renderers.php:247
 msgid "Sales start"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-divi-renderers.php:209
+#: includes/core/class-divi-renderers.php:248
 msgid "Sales end"
 msgstr ""
 
@@ -2867,17 +2868,17 @@ msgid "— RSVP —"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-divi-renderers.php:219
+#: includes/core/class-divi-renderers.php:258
 msgid "RSVP capacity"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-divi-renderers.php:220
+#: includes/core/class-divi-renderers.php:259
 msgid "RSVP remaining"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-divi-renderers.php:221
+#: includes/core/class-divi-renderers.php:260
 msgid "RSVP going"
 msgstr ""
 
@@ -3062,7 +3063,7 @@ msgid "Transparent"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-beaver-modules.php:207
+#: includes/core/class-beaver-modules.php:214
 #: includes/core/elementor-widgets/class-widget-calendar.php:231
 #: includes/core/elementor-widgets/class-widget-calendar.php:262
 msgid "Color"
@@ -3129,6 +3130,7 @@ msgid "Subscribe"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
+#: includes/core/class-divi-renderers.php:236
 msgid "Calendar link"
 msgstr ""
 
@@ -3183,7 +3185,7 @@ msgid "(e.g. %1$s%2$s)"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-divi5-modules.php:355
+#: includes/core/class-divi5-modules.php:360
 #: includes/core/class-event.php:6290
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:110
 #: includes/core/elementor-widgets/class-widget-calendar.php:1248
@@ -3192,7 +3194,7 @@ msgid "Monday"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-divi5-modules.php:356
+#: includes/core/class-divi5-modules.php:361
 #: includes/core/class-event.php:6291
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:111
 #: includes/core/elementor-widgets/class-widget-calendar.php:1249
@@ -3201,7 +3203,7 @@ msgid "Tuesday"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-divi5-modules.php:357
+#: includes/core/class-divi5-modules.php:362
 #: includes/core/class-event.php:6292
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:112
 #: includes/core/elementor-widgets/class-widget-calendar.php:1250
@@ -3210,7 +3212,7 @@ msgid "Wednesday"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-divi5-modules.php:358
+#: includes/core/class-divi5-modules.php:363
 #: includes/core/class-event.php:6293
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:113
 #: includes/core/elementor-widgets/class-widget-calendar.php:1251
@@ -3219,7 +3221,7 @@ msgid "Thursday"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-divi5-modules.php:359
+#: includes/core/class-divi5-modules.php:364
 #: includes/core/class-event.php:6294
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:114
 #: includes/core/elementor-widgets/class-widget-calendar.php:1252
@@ -3228,7 +3230,7 @@ msgid "Friday"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-divi5-modules.php:360
+#: includes/core/class-divi5-modules.php:365
 #: includes/core/class-event.php:6295
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:115
 #: includes/core/elementor-widgets/class-widget-calendar.php:1253
@@ -3237,7 +3239,7 @@ msgid "Saturday"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-divi5-modules.php:354
+#: includes/core/class-divi5-modules.php:359
 #: includes/core/class-event.php:6289
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:109
 #: includes/core/elementor-widgets/class-widget-calendar.php:1254
@@ -3288,6 +3290,8 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
+#: includes/core/class-beaver-layouts.php:213
+#: includes/core/class-divi-layouts.php:220
 #: includes/core/class-elementor-layouts.php:193
 msgid "Share"
 msgstr ""
@@ -3510,11 +3514,11 @@ msgstr ""
 #: scripts/backend/build/index.js:1
 #: includes/api/class-rsvps.php:1084
 #: includes/api/class-tickets.php:1161
-#: includes/core/class-divi5-modules.php:325
-#: includes/core/class-divi5-modules.php:327
+#: includes/core/class-divi5-modules.php:326
+#: includes/core/class-divi5-modules.php:328
 #: includes/core/class-post-types.php:116
 #: includes/core/class-rsvps.php:2015
-#: includes/core/class-template.php:151
+#: includes/core/class-template.php:158
 #: includes/core/class-ticket-emails.php:1343
 #: includes/core/class-woocommerce-checkout.php:482
 #: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:27
@@ -4014,7 +4018,7 @@ msgid "RSVP closes"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-divi-renderers.php:201
+#: includes/core/class-divi-renderers.php:240
 msgid "Capacity"
 msgstr ""
 
@@ -4313,39 +4317,63 @@ msgid "opens in new tab"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-msgid "Elementor templates are now in use."
+msgid "Default templates are back in use."
 msgstr ""
 
+#. translators: %s: page builder name.
 #: scripts/backend/build/index.js:1
-msgid "Default templates are back in use."
+#, js-format
+msgid "%s templates are now in use."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
 msgid "The templates could not be updated."
 msgstr ""
 
+#. translators: %s: page builder name.
 #: scripts/backend/build/index.js:1
-msgid "Yes, use Elementor templates"
+#, js-format
+msgid "Yes, use %s templates"
 msgstr ""
 
+#. translators: %s: page builder name.
 #: scripts/backend/build/index.js:1
-msgid "Event, event series and calendar pages open on templates built for Elementor. Edit them in Elementor like any other template."
+#, js-format
+msgid "Event, event series and calendar pages open on templates built for %1$s. Edit them in %1$s like any other template."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
 msgid "No, keep the default templates"
 msgstr ""
 
+#. translators: %s: page builder name.
 #: scripts/backend/build/index.js:1
-msgid "Pages keep EventKoi's built-in templates. You can switch to the Elementor templates later from Settings."
+#, js-format
+msgid "Pages keep EventKoi's built-in templates. You can switch to the %s templates later from Settings."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-msgid "Would you like to use Elementor templates for your events?"
+msgid "Pages keep EventKoi's built-in templates. You can switch to page builder templates later from Settings."
+msgstr ""
+
+#. translators: %s: page builder name.
+#: scripts/backend/build/index.js:1
+#, js-format
+msgid "Would you like to use %s templates for your events?"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-msgid "Elementor is active on this site, so your event pages can be designed in Elementor from the start."
+msgid "Would you like to use page builder templates for your events?"
+msgstr ""
+
+#. translators: %s: page builder name.
+#: scripts/backend/build/index.js:1
+#, js-format
+msgid "%1$s is active on this site, so your event pages can be designed in %1$s from the start."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "More than one page builder is active on this site. Pick the one your event pages should be designed in."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
@@ -4425,11 +4453,11 @@ msgstr ""
 #: scripts/backend/build/index.js:1
 #: includes/api/class-rsvps.php:464
 #: includes/api/class-tickets.php:1052
-#: includes/core/class-beaver-modules.php:63
-#: includes/core/class-beaver-modules.php:133
-#: includes/core/class-beaver-modules.php:142
-#: includes/core/class-beaver-modules.php:151
-#: includes/core/class-beaver-modules.php:160
+#: includes/core/class-beaver-modules.php:69
+#: includes/core/class-beaver-modules.php:140
+#: includes/core/class-beaver-modules.php:149
+#: includes/core/class-beaver-modules.php:158
+#: includes/core/class-beaver-modules.php:167
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:65
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:76
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:87
@@ -6038,16 +6066,39 @@ msgstr ""
 msgid "Thank you for using %1$s! Please consider leaving a %2$s review."
 msgstr ""
 
-#: includes/admin/class-scripts.php:223
+#: includes/admin/class-scripts.php:146
+#: includes/admin/class-scripts.php:265
 msgid "Elementor"
 msgstr ""
 
-#: includes/admin/class-scripts.php:249
+#: includes/admin/class-scripts.php:291
 msgid "Bricks"
 msgstr ""
 
-#: includes/admin/class-scripts.php:302
+#: includes/admin/class-scripts.php:337
+#: includes/core/class-divi-templates.php:38
+msgid "Divi"
+msgstr ""
+
+#: includes/admin/class-scripts.php:390
+#: includes/core/class-beaver-templates.php:38
 msgid "Beaver Builder"
+msgstr ""
+
+#: includes/api/class-builder-templates.php:118
+#: includes/api/class-builder-templates.php:134
+msgid "Unknown page builder."
+msgstr ""
+
+#. translators: %s: page builder name.
+#: includes/api/class-builder-templates.php:145
+#, php-format
+msgid "%s needs to be active before its templates can be used."
+msgstr ""
+
+#: includes/api/class-builder-templates.php:156
+#: includes/api/class-elementor-templates.php:110
+msgid "Unknown action."
 msgstr ""
 
 #: includes/api/class-calendar.php:108
@@ -6080,10 +6131,6 @@ msgstr ""
 
 #: includes/api/class-elementor-templates.php:101
 msgid "Elementor needs to be active before its templates can be used."
-msgstr ""
-
-#: includes/api/class-elementor-templates.php:110
-msgid "Unknown action."
 msgstr ""
 
 #: includes/api/class-event.php:147
@@ -6234,11 +6281,11 @@ msgstr ""
 
 #: includes/api/class-rsvps.php:464
 #: includes/api/class-tickets.php:1052
-#: includes/core/class-beaver-modules.php:64
-#: includes/core/class-beaver-modules.php:134
-#: includes/core/class-beaver-modules.php:143
-#: includes/core/class-beaver-modules.php:152
-#: includes/core/class-beaver-modules.php:161
+#: includes/core/class-beaver-modules.php:70
+#: includes/core/class-beaver-modules.php:141
+#: includes/core/class-beaver-modules.php:150
+#: includes/core/class-beaver-modules.php:159
+#: includes/core/class-beaver-modules.php:168
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:66
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:77
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:88
@@ -6494,6 +6541,39 @@ msgstr ""
 msgid "Please select an event to display data."
 msgstr ""
 
+#: includes/core/class-beaver-layouts.php:82
+#: includes/core/class-beaver-layouts.php:125
+#: includes/core/class-divi-layouts.php:60
+#: includes/core/class-divi-layouts.php:92
+#: includes/core/class-elementor-layouts.php:87
+#: includes/core/class-elementor-layouts.php:143
+msgid "← See all events in"
+msgstr ""
+
+#: includes/core/class-beaver-layouts.php:126
+#: includes/core/class-divi-layouts.php:93
+#: includes/core/class-elementor-layouts.php:144
+msgid "Series:"
+msgstr ""
+
+#: includes/core/class-beaver-layouts.php:127
+#: includes/core/class-divi-layouts.php:94
+#: includes/core/class-elementor-layouts.php:145
+msgid "Starts on"
+msgstr ""
+
+#: includes/core/class-beaver-layouts.php:128
+#: includes/core/class-divi-layouts.php:95
+#: includes/core/class-elementor-layouts.php:146
+msgid "Runs"
+msgstr ""
+
+#: includes/core/class-beaver-layouts.php:212
+#: includes/core/class-divi-layouts.php:209
+#: includes/core/class-elementor-layouts.php:192
+msgid "+ Add to calendar"
+msgstr ""
+
 #: includes/core/class-beaver-modules.php:46
 msgid "Event Data Item Settings"
 msgstr ""
@@ -6508,90 +6588,108 @@ msgid "Data Type"
 msgstr ""
 
 #: includes/core/class-beaver-modules.php:61
+#: includes/core/class-divi5-modules.php:333
+#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:59
+#: includes/core/elementor-widgets/class-widget-event.php:109
+msgid "Label"
+msgstr ""
+
+#: includes/core/class-beaver-modules.php:62
+#: includes/core/class-divi5-modules.php:334
+#: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:63
+msgid "Optional text shown before the value, such as \"Starts on\"."
+msgstr ""
+
+#: includes/core/class-beaver-modules.php:67
 #: includes/core/elementor-widgets/class-widget-event.php:117
 #: includes/core/elementor-widgets/class-widget-event.php:119
 msgid "Show"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:89
+#: includes/core/class-beaver-modules.php:95
 #: includes/core/elementor-widgets/class-widget-calendar.php:76
 msgid "Calendar Options"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:99
+#: includes/core/class-beaver-modules.php:105
 msgid "Default calendar"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:100
+#: includes/core/class-beaver-modules.php:106
+#: includes/core/elementor-widgets/class-widget-calendar.php:1213
+msgid "Current calendar"
+msgstr ""
+
+#: includes/core/class-beaver-modules.php:107
 #: includes/core/class-post-types.php:64
 msgid "All calendars"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:101
-#: includes/core/class-beaver-modules.php:112
+#: includes/core/class-beaver-modules.php:108
+#: includes/core/class-beaver-modules.php:119
 msgid "Specific calendar(s)"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:103
+#: includes/core/class-beaver-modules.php:110
 msgid "Choose “Specific calendar(s)” to select one or more calendars."
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:114
+#: includes/core/class-beaver-modules.php:121
 msgid "Check one or more calendars to show in this calendar."
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:130
-#: includes/core/class-divi5-modules.php:319
+#: includes/core/class-beaver-modules.php:137
+#: includes/core/class-divi5-modules.php:320
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:61
 #: includes/core/elementor-widgets/class-widget-calendar.php:108
 msgid "Show Month view"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:139
-#: includes/core/class-divi5-modules.php:320
+#: includes/core/class-beaver-modules.php:146
+#: includes/core/class-divi5-modules.php:321
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:72
 #: includes/core/elementor-widgets/class-widget-calendar.php:109
 msgid "Show Week view"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:148
-#: includes/core/class-divi5-modules.php:321
+#: includes/core/class-beaver-modules.php:155
+#: includes/core/class-divi5-modules.php:322
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:83
 #: includes/core/elementor-widgets/class-widget-calendar.php:110
 msgid "Show List view"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:170
+#: includes/core/class-beaver-modules.php:177
 #: includes/core/elementor-widgets/class-widget-calendar.php:145
 msgid "Choose a fixed month or use the current month."
 msgstr ""
 
 #. translators: %s: example year value.
-#: includes/core/class-beaver-modules.php:177
+#: includes/core/class-beaver-modules.php:184
 #, php-format
 msgid "Leave empty to follow the current year or enter a four-digit year (e.g. %s)."
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:191
-#: includes/core/class-beaver-modules.php:285
+#: includes/core/class-beaver-modules.php:198
+#: includes/core/class-beaver-modules.php:292
 msgid "Style"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:194
+#: includes/core/class-beaver-modules.php:201
 #: includes/core/elementor-widgets/class-widget-calendar.php:203
 msgid "Day's Labels"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:198
-#: includes/core/class-beaver-modules.php:296
+#: includes/core/class-beaver-modules.php:205
+#: includes/core/class-beaver-modules.php:303
 #: includes/core/elementor-widgets/class-widget-calendar.php:211
 #: includes/core/elementor-widgets/class-widget-calendar.php:309
 #: includes/core/elementor-widgets/class-widget-event.php:156
 msgid "Typography"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:217
-#: includes/core/class-beaver-modules.php:315
+#: includes/core/class-beaver-modules.php:224
+#: includes/core/class-beaver-modules.php:322
 #: includes/core/elementor-widgets/class-widget-calendar.php:242
 #: includes/core/elementor-widgets/class-widget-calendar.php:273
 #: includes/core/elementor-widgets/class-widget-calendar.php:418
@@ -6599,62 +6697,74 @@ msgstr ""
 msgid "Background Color"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:227
+#: includes/core/class-beaver-modules.php:234
 msgid "Hover Color"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:237
+#: includes/core/class-beaver-modules.php:244
 msgid "Hover Background Color"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:261
+#: includes/core/class-beaver-modules.php:268
 #: includes/core/elementor-widgets/class-widget-event.php:76
 msgid "Event Options"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:274
+#: includes/core/class-beaver-modules.php:281
 #: includes/core/elementor-widgets/class-widget-event.php:96
 msgid "Event Data Items"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:305
+#: includes/core/class-beaver-modules.php:312
 #: includes/core/elementor-widgets/class-widget-calendar.php:417
 #: includes/core/elementor-widgets/class-widget-event.php:165
 msgid "Text Color"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:325
+#: includes/core/class-beaver-modules.php:332
 #: includes/core/elementor-widgets/class-widget-event.php:191
 msgid "Alignment"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:327
+#: includes/core/class-beaver-modules.php:334
 msgid "Default"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:328
+#: includes/core/class-beaver-modules.php:335
 #: includes/core/elementor-widgets/class-widget-event.php:195
 msgid "Left"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:329
+#: includes/core/class-beaver-modules.php:336
 #: includes/core/elementor-widgets/class-widget-event.php:199
 msgid "Center"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:330
+#: includes/core/class-beaver-modules.php:337
 #: includes/core/elementor-widgets/class-widget-event.php:203
 msgid "Right"
 msgstr ""
 
-#: includes/core/class-beaver-modules.php:361
+#: includes/core/class-beaver-modules.php:368
 msgid "Use current event context"
 msgstr ""
 
 #. translators: %d: event post ID used as fallback event label.
-#: includes/core/class-beaver-modules.php:381
+#: includes/core/class-beaver-modules.php:388
 #, php-format
 msgid "Event #%d"
+msgstr ""
+
+#: includes/core/class-beaver-templates.php:83
+#: includes/core/class-divi-templates.php:115
+#: includes/core/class-elementor-templates.php:219
+msgid "The template layout is empty."
+msgstr ""
+
+#: includes/core/class-beaver-templates.php:105
+#: includes/core/class-divi-templates.php:169
+#: includes/core/class-elementor-templates.php:238
+msgid "The template could not be created."
 msgstr ""
 
 #: includes/core/class-bindings.php:178
@@ -6857,6 +6967,48 @@ msgstr ""
 msgid "Create a calendar"
 msgstr ""
 
+#: includes/core/class-builder-templates.php:117
+#: includes/core/class-elementor-templates.php:67
+msgid "EventKoi Event Page"
+msgstr ""
+
+#: includes/core/class-builder-templates.php:119
+#: includes/core/class-elementor-templates.php:69
+msgid "The page a single event opens on."
+msgstr ""
+
+#: includes/core/class-builder-templates.php:122
+#: includes/core/class-elementor-templates.php:72
+msgid "EventKoi Event Series Page"
+msgstr ""
+
+#: includes/core/class-builder-templates.php:124
+#: includes/core/class-elementor-templates.php:74
+msgid "The overview page of a recurring event, listing its dates."
+msgstr ""
+
+#: includes/core/class-builder-templates.php:127
+#: includes/core/class-elementor-templates.php:77
+msgid "EventKoi Calendar Page"
+msgstr ""
+
+#: includes/core/class-builder-templates.php:129
+#: includes/core/class-elementor-templates.php:79
+msgid "The page each calendar opens on."
+msgstr ""
+
+#. translators: %s: page builder name.
+#: includes/core/class-builder-templates.php:251
+#, php-format
+msgid "%s is not active."
+msgstr ""
+
+#. translators: %s: page builder name.
+#: includes/core/class-builder-templates.php:259
+#, php-format
+msgid "%s has not finished loading, so its templates cannot be created yet."
+msgstr ""
+
 #: includes/core/class-calendar.php:437
 msgid "Calendar created."
 msgstr ""
@@ -6885,107 +7037,119 @@ msgid_plural "Calendars removed permanently."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/core/class-divi-renderers.php:152
+#: includes/core/class-divi-renderers.php:160
+msgid "— Current calendar —"
+msgstr ""
+
+#: includes/core/class-divi-renderers.php:187
 msgid "— Current event —"
 msgstr ""
 
-#: includes/core/class-divi-renderers.php:180
+#: includes/core/class-divi-renderers.php:215
 msgid "Full event"
 msgstr ""
 
-#: includes/core/class-divi-renderers.php:185
+#: includes/core/class-divi-renderers.php:220
 msgid "Date & time"
 msgstr ""
 
-#: includes/core/class-divi-renderers.php:188
+#: includes/core/class-divi-renderers.php:223
 msgid "Date, time & recurring summary"
 msgstr ""
 
-#: includes/core/class-divi-renderers.php:190
+#: includes/core/class-divi-renderers.php:226
 msgid "Location Name"
 msgstr ""
 
-#: includes/core/class-divi-renderers.php:191
+#: includes/core/class-divi-renderers.php:227
 msgid "Location Address"
 msgstr ""
 
-#: includes/core/class-divi-renderers.php:192
+#: includes/core/class-divi-renderers.php:228
 msgid "Location Apartment/Unit"
 msgstr ""
 
-#: includes/core/class-divi-renderers.php:193
+#: includes/core/class-divi-renderers.php:229
 msgid "Location City"
 msgstr ""
 
-#: includes/core/class-divi-renderers.php:194
+#: includes/core/class-divi-renderers.php:230
 msgid "Location State"
 msgstr ""
 
-#: includes/core/class-divi-renderers.php:195
+#: includes/core/class-divi-renderers.php:231
 msgid "Location Country"
 msgstr ""
 
-#: includes/core/class-divi-renderers.php:196
+#: includes/core/class-divi-renderers.php:232
 msgid "Location Post Code"
 msgstr ""
 
-#: includes/core/class-divi-renderers.php:198
+#: includes/core/class-divi-renderers.php:234
 msgid "Recurring summary"
 msgstr ""
 
-#: includes/core/class-divi-renderers.php:199
+#: includes/core/class-divi-renderers.php:235
+msgid "Series dates"
+msgstr ""
+
+#: includes/core/class-divi-renderers.php:237
+msgid "Custom fields with names"
+msgstr ""
+
+#: includes/core/class-divi-renderers.php:238
 msgid "Ticket / RSVP"
 msgstr ""
 
-#: includes/core/class-divi-renderers.php:204
+#: includes/core/class-divi-renderers.php:243
 msgid "Sold out label"
 msgstr ""
 
-#: includes/core/class-divi-renderers.php:205
+#: includes/core/class-divi-renderers.php:244
 msgid "Low stock label"
 msgstr ""
 
-#: includes/core/class-divi-renderers.php:206
+#: includes/core/class-divi-renderers.php:245
 msgid "Ticket count"
 msgstr ""
 
-#: includes/core/class-divi-renderers.php:210
+#: includes/core/class-divi-renderers.php:249
 msgid "Ticket price from"
 msgstr ""
 
-#: includes/core/class-divi-renderers.php:211
+#: includes/core/class-divi-renderers.php:250
 msgid "Ticket price to"
 msgstr ""
 
-#: includes/core/class-divi-renderers.php:212
+#: includes/core/class-divi-renderers.php:251
 msgid "Ticket price range"
 msgstr ""
 
-#: includes/core/class-divi-renderers.php:213
+#: includes/core/class-divi-renderers.php:252
 msgid "Date — year"
 msgstr ""
 
-#: includes/core/class-divi-renderers.php:214
+#: includes/core/class-divi-renderers.php:253
 msgid "Date — month"
 msgstr ""
 
-#: includes/core/class-divi-renderers.php:215
+#: includes/core/class-divi-renderers.php:254
 msgid "Date — month short"
 msgstr ""
 
-#: includes/core/class-divi-renderers.php:216
+#: includes/core/class-divi-renderers.php:255
 msgid "Date — day"
 msgstr ""
 
-#: includes/core/class-divi-renderers.php:217
+#: includes/core/class-divi-renderers.php:256
 msgid "Date — day name"
 msgstr ""
 
-#: includes/core/class-divi-renderers.php:218
+#: includes/core/class-divi-renderers.php:257
 msgid "Date — ISO"
 msgstr ""
 
-#: includes/core/class-divi-renderers.php:222
+#: includes/core/class-divi-renderers.php:261
 msgid "RSVP full label"
 msgstr ""
 
@@ -6999,103 +7163,50 @@ msgstr ""
 msgid "Leave empty to show every event."
 msgstr ""
 
-#: includes/core/class-divi5-modules.php:314
+#: includes/core/class-divi5-modules.php:315
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:46
 #: includes/core/elementor-widgets/class-widget-calendar.php:89
 msgid "Leave empty to use the default calendar."
 msgstr ""
 
-#: includes/core/class-divi5-modules.php:316
+#: includes/core/class-divi5-modules.php:317
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:50
 msgid "Default timeframe"
 msgstr ""
 
-#: includes/core/class-divi5-modules.php:317
+#: includes/core/class-divi5-modules.php:318
 msgid "Show calendar filter"
 msgstr ""
 
-#: includes/core/class-divi5-modules.php:328
+#: includes/core/class-divi5-modules.php:329
 #: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:47
 msgid "Select an event to display. Use the current event when placed on an event template."
 msgstr ""
 
-#: includes/core/class-divi5-modules.php:330
+#: includes/core/class-divi5-modules.php:331
 #: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:51
 msgid "Data to render"
 msgstr ""
 
-#: includes/core/class-divi5-modules.php:344
+#: includes/core/class-divi5-modules.php:349
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:143
 msgid "— Default calendar —"
 msgstr ""
 
-#: includes/core/class-divi5-modules.php:386
+#: includes/core/class-divi5-modules.php:391
 msgid "Loading…"
 msgstr ""
 
-#: includes/core/class-divi5-modules.php:387
+#: includes/core/class-divi5-modules.php:392
 msgid "Nothing to show yet. Check the module settings."
 msgstr ""
 
-#: includes/core/class-divi5-modules.php:388
+#: includes/core/class-divi5-modules.php:393
 msgid "The preview could not be loaded."
-msgstr ""
-
-#: includes/core/class-elementor-layouts.php:87
-#: includes/core/class-elementor-layouts.php:143
-msgid "← See all events in"
-msgstr ""
-
-#: includes/core/class-elementor-layouts.php:144
-msgid "Series:"
-msgstr ""
-
-#: includes/core/class-elementor-layouts.php:145
-msgid "Starts on"
-msgstr ""
-
-#: includes/core/class-elementor-layouts.php:146
-msgid "Runs"
-msgstr ""
-
-#: includes/core/class-elementor-layouts.php:192
-msgid "+ Add to calendar"
-msgstr ""
-
-#: includes/core/class-elementor-templates.php:67
-msgid "EventKoi Event Page"
-msgstr ""
-
-#: includes/core/class-elementor-templates.php:69
-msgid "The page a single event opens on."
-msgstr ""
-
-#: includes/core/class-elementor-templates.php:72
-msgid "EventKoi Event Series Page"
-msgstr ""
-
-#: includes/core/class-elementor-templates.php:74
-msgid "The overview page of a recurring event, listing its dates."
-msgstr ""
-
-#: includes/core/class-elementor-templates.php:77
-msgid "EventKoi Calendar Page"
-msgstr ""
-
-#: includes/core/class-elementor-templates.php:79
-msgid "The page each calendar opens on."
 msgstr ""
 
 #: includes/core/class-elementor-templates.php:178
 msgid "Elementor is not active."
-msgstr ""
-
-#: includes/core/class-elementor-templates.php:219
-msgid "The template layout is empty."
-msgstr ""
-
-#: includes/core/class-elementor-templates.php:238
-msgid "The template could not be created."
 msgstr ""
 
 #: includes/core/class-event.php:484
@@ -7825,23 +7936,23 @@ msgid_plural "%d previously sold tickets were deducted from the imported capacit
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/core/class-template.php:152
+#: includes/core/class-template.php:159
 msgid "Default template for a single event view."
 msgstr ""
 
-#: includes/core/class-template.php:160
+#: includes/core/class-template.php:167
 msgid "Event Series"
 msgstr ""
 
-#: includes/core/class-template.php:161
+#: includes/core/class-template.php:168
 msgid "Template used when viewing a recurring event series."
 msgstr ""
 
-#: includes/core/class-template.php:1142
+#: includes/core/class-template.php:1285
 msgid "Event Field Group"
 msgstr ""
 
-#: includes/core/class-template.php:1146
+#: includes/core/class-template.php:1289
 msgid "Event Field"
 msgstr ""
 
@@ -8209,20 +8320,12 @@ msgstr ""
 msgid "Button text"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-calendar.php:1213
-msgid "Current calendar"
-msgstr ""
-
 #: includes/core/elementor-widgets/class-widget-event.php:85
 msgid "Current event"
 msgstr ""
 
 #: includes/core/elementor-widgets/class-widget-event.php:89
 msgid "Current event shows the event being viewed, so one template works for every event."
-msgstr ""
-
-#: includes/core/elementor-widgets/class-widget-event.php:109
-msgid "Label"
 msgstr ""
 
 #: includes/core/elementor-widgets/class-widget-event.php:112

@@ -34,7 +34,7 @@ class Scripts {
 		add_action( 'enqueue_block_assets', array( $this, 'enqueue_block_assets' ) );
 
 		// Invalidate cached template list when relevant templates change.
-		foreach ( array( 'elementor_library', 'bricks_template', 'fl-builder-template', 'fl-theme-layout' ) as $pt ) {
+		foreach ( array( 'elementor_library', 'bricks_template', 'fl-builder-template', 'fl-theme-layout', 'et_pb_layout' ) as $pt ) {
 			add_action( "save_post_{$pt}", array( self::class, 'flush_template_cache' ) );
 		}
 		add_action( 'delete_post', array( self::class, 'flush_template_cache' ) );
@@ -131,6 +131,34 @@ class Scripts {
 	}
 
 	/**
+	 * Where each page builder's ready-made templates stand, for the builders
+	 * active on this site, in the order they are offered.
+	 *
+	 * @return array<int, array>
+	 */
+	public static function get_builder_template_statuses() {
+		$statuses = array();
+
+		if ( \EventKoi\Core\Elementor_Templates::is_available() ) {
+			$statuses[] = array_merge(
+				array(
+					'builder' => 'elementor',
+					'label'   => __( 'Elementor', 'eventkoi-lite' ),
+				),
+				\EventKoi\Core\Elementor_Templates::status()
+			);
+		}
+
+		foreach ( array( \EventKoi\Core\Beaver_Templates::class, \EventKoi\Core\Divi_Templates::class ) as $builder_templates ) {
+			if ( $builder_templates::is_available() ) {
+				$statuses[] = $builder_templates::status();
+			}
+		}
+
+		return $statuses;
+	}
+
+	/**
 	 * Get custom templates with transient caching.
 	 *
 	 * @return array
@@ -147,6 +175,20 @@ class Scripts {
 			$status = \EventKoi\Core\Elementor_Templates::status();
 			if ( empty( $status['imported'] ) ) {
 				\EventKoi\Core\Elementor_Templates::import();
+			}
+		}
+
+		// The same goes for the Beaver Builder and Divi templates.
+		if ( current_user_can( 'manage_options' ) ) {
+			foreach ( array( \EventKoi\Core\Beaver_Templates::class, \EventKoi\Core\Divi_Templates::class ) as $builder_templates ) {
+				if ( ! class_exists( $builder_templates ) || ! $builder_templates::is_available() ) {
+					continue;
+				}
+
+				$status = $builder_templates::status();
+				if ( empty( $status['imported'] ) ) {
+					$builder_templates::import();
+				}
 			}
 		}
 
@@ -252,6 +294,52 @@ class Scripts {
 			}
 		}
 
+		if ( \EventKoi\Core\Divi_Templates::is_available() ) {
+			$divi_templates = array();
+			$divi_layouts   = get_posts(
+				array(
+					'post_type'      => 'et_pb_layout',
+					'post_status'    => 'publish',
+					'posts_per_page' => -1,
+					'orderby'        => 'title',
+					'order'          => 'ASC',
+				)
+			);
+
+			foreach ( $divi_layouts as $template_post ) {
+				if ( ! ( $template_post instanceof \WP_Post ) || '' === $template_post->post_name ) {
+					continue;
+				}
+
+				// Only whole layouts make sense as a page body; saved rows,
+				// sections and modules stay out.
+				if ( taxonomy_exists( 'layout_type' ) ) {
+					$layout_types = wp_get_object_terms( $template_post->ID, 'layout_type', array( 'fields' => 'slugs' ) );
+					if ( is_array( $layout_types ) && ! empty( $layout_types ) && ! in_array( 'layout', $layout_types, true ) ) {
+						continue;
+					}
+				}
+
+				$permalink = (string) get_permalink( $template_post->ID );
+
+				$divi_templates[] = array(
+					'slug'     => 'divi__' . $template_post->post_name,
+					'title'    => $template_post->post_title,
+					'edit_url' => ( function_exists( 'et_fb_get_vb_url' ) && '' !== $permalink )
+						? (string) et_fb_get_vb_url( $permalink )
+						: admin_url( 'post.php?post=' . absint( $template_post->ID ) . '&action=edit' ),
+				);
+			}
+
+			if ( ! empty( $divi_templates ) ) {
+				$custom_templates[] = array(
+					'type'      => 'divi',
+					'label'     => __( 'Divi', 'eventkoi-lite' ),
+					'templates' => $divi_templates,
+				);
+			}
+		}
+
 		if ( post_type_exists( 'fl-builder-template' ) ) {
 			$beaver_templates = array();
 			$all_templates    = get_posts(
@@ -353,6 +441,8 @@ class Scripts {
 			'admin_post_url'      => admin_url( 'post.php' ),
 			'elementor_active'    => defined( 'ELEMENTOR_VERSION' ),
 			'elementor_templates' => 'toplevel_page_eventkoi' === $screen->base ? \EventKoi\Core\Elementor_Templates::status() : null,
+			'page_builder_active' => defined( 'ELEMENTOR_VERSION' ) || \EventKoi\Core\Beaver_Templates::is_available() || \EventKoi\Core\Divi_Templates::is_available(),
+			'builder_templates'   => 'toplevel_page_eventkoi' === $screen->base ? self::get_builder_template_statuses() : array(),
 			'api_key'             => REST::get_api_key(),
 			'has_seo_plugin'      => self::has_seo_plugin(),
 			'is_admin'            => current_user_can( 'manage_options' ),

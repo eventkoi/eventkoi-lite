@@ -48,6 +48,13 @@ class Template {
 		add_filter( 'single_template', array( __CLASS__, 'maybe_force_bb_layout_editor_template' ), 40 );
 		add_filter( 'singular_template', array( __CLASS__, 'maybe_force_bb_layout_editor_template' ), 40 );
 		add_filter( 'template_include', array( __CLASS__, 'capture_initial_template_include' ), 1 );
+
+		// A Divi Library layout shown on an event or calendar page is not part
+		// of that page's own content, so Divi's per-page stylesheet would
+		// leave out what the layout needs (the column grid first of all).
+		add_filter( 'divi_frontend_assets_dynamic_assets_utils_use_dynamic_assets', array( __CLASS__, 'maybe_load_full_divi_styles' ) );
+		add_filter( 'et_use_dynamic_css', array( __CLASS__, 'maybe_load_full_divi_styles' ) );
+		add_filter( 'et_builder_should_load_framework', array( Divi_Templates::class, 'load_builder_on_eventkoi_screen' ) );
 		add_filter( 'template_include', array( __CLASS__, 'enforce_explicit_default_template' ), 9999 );
 		add_filter( 'template_include', array( __CLASS__, 'maybe_force_elementor_preview_template' ), 10000 );
 		add_filter( 'fl_builder_render_module_content', array( __CLASS__, 'maybe_replace_tokens_in_beaver_module_output' ), 20, 2 );
@@ -851,6 +858,21 @@ class Template {
 			self::render_builder_template_content( $output, $context );
 		}
 
+		if ( 0 === strpos( $slug, 'divi__' ) ) {
+			$divi_slug = substr( $slug, 6 );
+
+			if ( '' === $divi_slug || ! defined( 'ET_BUILDER_VERSION' ) ) {
+				return false;
+			}
+
+			$template_obj = get_page_by_path( $divi_slug, OBJECT, 'et_pb_layout' );
+			if ( ! $template_obj instanceof \WP_Post || 'publish' !== $template_obj->post_status ) {
+				return false;
+			}
+
+			self::render_builder_template_content( self::render_divi_layout( $template_obj ), $context );
+		}
+
 		if ( class_exists( '\Elementor\Plugin' ) ) {
 			$template_obj = get_page_by_path( $slug, OBJECT, 'elementor_library' );
 
@@ -870,6 +892,127 @@ class Template {
 		}
 
 		return false;
+	}
+
+	/**
+	 * Turn off Divi's per-page stylesheet on pages that open on a Divi
+	 * Library layout, so the full stylesheet is served there.
+	 *
+	 * @param bool $use_dynamic Whether Divi builds a per-page stylesheet.
+	 * @return bool
+	 */
+	public static function maybe_load_full_divi_styles( $use_dynamic ) {
+		return self::divi_layout_in_use() ? false : $use_dynamic;
+	}
+
+	/**
+	 * Whether the page being viewed opens on a Divi Library layout.
+	 *
+	 * @return bool
+	 */
+	private static function divi_layout_in_use() {
+		$settings = Settings::get();
+		$slugs    = array();
+
+		if ( is_tax( 'event_cal' ) ) {
+			$slugs[] = (string) ( $settings['default_calendar_template'] ?? '' );
+		} elseif ( is_singular( 'eventkoi_event' ) ) {
+			$slugs[] = (string) ( $settings['default_event_template'] ?? '' );
+			$slugs[] = (string) ( $settings['default_series_template'] ?? '' );
+			$slugs[] = (string) get_post_meta( (int) get_queried_object_id(), 'eventkoi_template', true );
+		}
+
+		foreach ( $slugs as $slug ) {
+			if ( 0 === strpos( $slug, 'divi__' ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Render a Divi Library layout for the page being viewed.
+	 *
+	 * The layout goes through the content filters Divi itself hooks, so
+	 * Divi 4 shortcodes and Divi 5 blocks both render with their styles, and
+	 * the event or calendar in view stays the current object throughout.
+	 *
+	 * @param \WP_Post $layout Library layout.
+	 * @return string
+	 */
+	private static function render_divi_layout( \WP_Post $layout ) {
+		$content = (string) $layout->post_content;
+
+		if ( '' === trim( $content ) ) {
+			return '';
+		}
+
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core hook, so the builder renders the layout.
+		$output = apply_filters( 'the_content', $content );
+
+		self::print_divi_layout_styles( $layout );
+
+		// Divi scopes its module styles to this wrapper. Its own filter only
+		// adds it on singular posts built with Divi, which an event is not.
+		if ( false === strpos( $output, 'et-boc' ) && function_exists( 'et_builder_get_builder_content_opening_wrapper' ) ) {
+			$output = et_builder_get_builder_content_opening_wrapper()
+				. ( function_exists( 'et_builder_get_layout_opening_wrapper' ) ? et_builder_get_layout_opening_wrapper() : '' )
+				. $output
+				. ( function_exists( 'et_builder_get_layout_closing_wrapper' ) ? et_builder_get_layout_closing_wrapper() : '' )
+				. et_builder_get_builder_content_closing_wrapper();
+		}
+
+		return $output;
+	}
+
+	/**
+	 * Hand the styles of a rendered Divi 5 layout to Divi's page stylesheet.
+	 *
+	 * Divi 5 gathers each module's styles while a layout renders and prints
+	 * them for pages built with Divi. An event or calendar page is not one,
+	 * so the styles gathered for it are passed on here, inline, the way Divi
+	 * does for a layout it embeds itself.
+	 *
+	 * @param \WP_Post $layout Library layout that was just rendered.
+	 */
+	private static function print_divi_layout_styles( \WP_Post $layout ) {
+		$static_css = '\ET\Builder\FrontEnd\Assets\StaticCSS';
+
+		if ( ! class_exists( $static_css )
+			|| ! method_exists( $static_css, 'setup_styles_manager' )
+			|| ! method_exists( $static_css, 'style_output' ) ) {
+			return;
+		}
+
+		// Styles are filed under the page being viewed, not under the layout.
+		$owner_id = class_exists( '\ET_Post_Stack' ) ? (int) \ET_Post_Stack::get_main_post_id() : 0;
+		if ( $owner_id <= 0 ) {
+			$owner_id = (int) get_queried_object_id();
+		}
+
+		$result  = $static_css::setup_styles_manager( $owner_id );
+		$manager = is_array( $result ) ? ( $result['manager'] ?? null ) : null;
+
+		if ( ! is_object( $manager ) ) {
+			return;
+		}
+
+		// A cached file for this page would not hold a library layout's
+		// styles, so they always go out inline.
+		$manager->forced_inline = true;
+
+		$page_class = '\ET\Builder\FrontEnd\Page';
+
+		$static_css::style_output(
+			array(
+				'styles_manager' => $manager,
+				'custom'         => ( class_exists( $page_class ) && method_exists( $page_class, 'custom_css' ) ) ? (string) $page_class::custom_css( (int) $layout->ID ) : '',
+				// Styles of content rendered outside a Theme Builder layout
+				// are filed under no layout at all, which Divi counts as 0.
+				'element_id'     => 0,
+			)
+		);
 	}
 
 	/**

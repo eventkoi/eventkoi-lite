@@ -31,7 +31,7 @@ export function DashboardOnboarding() {
   const location = useLocation();
 
   const ticketsEnabled = !!window?.eventkoi_params?.tickets_feature_enabled;
-  const elementorActive = !!window?.eventkoi_params?.elementor_active;
+  const builderActive = !!window?.eventkoi_params?.page_builder_active;
 
   const steps = useMemo(
     () => [
@@ -47,8 +47,9 @@ export function DashboardOnboarding() {
         sidebarHidden: true,
         sidebarKey: "calendar",
       },
-      // Only Elementor sites get asked; everyone else keeps the block templates.
-      ...(elementorActive
+      // Only sites running Elementor, Beaver Builder or Divi get asked;
+      // everyone else keeps the block templates.
+      ...(builderActive
         ? [
             {
               key: "templates",
@@ -68,7 +69,7 @@ export function DashboardOnboarding() {
       //     ]
       //   : []),
     ],
-    [ticketsEnabled, elementorActive]
+    [ticketsEnabled, builderActive]
   );
 
   const initialStepIndex = useMemo(() => {

@@ -82,11 +82,30 @@ foreach ( $event_data_items as $item ) {
 		);
 	}
 
-	$output[] = $shortcode_output;
+	// An optional label sits inline before the value, the way the block
+	// templates put text around a token ("Starts on", "Series:").
+	$item_label = sanitize_text_field( (string) ( $item->label ?? '' ) );
+	if ( '' !== $item_label && '' !== trim( (string) $shortcode_output ) ) {
+		$item_wrapper  = '<div class="eventkoi-data eventkoi-data-' . esc_attr( $data_type ) . '">';
+		$item_labelled = $item_wrapper . '<span class="eventkoi-label">' . esc_html( $item_label ) . '</span> ';
+
+		$shortcode_output = false !== strpos( $shortcode_output, $item_wrapper )
+			? preg_replace( '/' . preg_quote( $item_wrapper, '/' ) . '/', $item_labelled, $shortcode_output, 1 )
+			: $item_labelled . $shortcode_output . '</div>';
+	}
+
+	// Rows the plugin renders itself (the ticket and RSVP box with its
+	// no-script form, the map mount, the series dates loop) carry forms and
+	// data attributes the description filter would strip, and are already
+	// escaped at the source. Everything else goes through the same allowed
+	// set the event description uses.
+	$output[] = in_array( $data_type, array( 'event_ticket_rsvp', 'event_gmap', 'event_series_dates' ), true )
+		? $shortcode_output
+		: wp_kses( $shortcode_output, \EventKoi\Core\Event::get_description_allowed_html() );
 }
 
 if ( ! empty( $output ) ) {
 	echo '<div class="eventkoi-beaver-module">';
-	echo wp_kses_post( implode( '', $output ) );
+	echo implode( '', $output ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Each row is escaped above or rendered by the plugin itself.
 	echo '</div>';
 }

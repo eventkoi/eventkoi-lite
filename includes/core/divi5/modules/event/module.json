@@ -136,6 +136,38 @@
           }
         }
       }
+    },
+    "label": {
+      "type": "object",
+      "settings": {
+        "innerContent": {
+          "groupType": "group-item",
+          "item": {
+            "groupSlug": "content",
+            "priority": 30,
+            "render": true,
+            "attrName": "label.innerContent",
+            "label": "Label",
+            "features": {
+              "sticky": false,
+              "responsive": false,
+              "hover": false,
+              "dynamicContent": false
+            },
+            "component": {
+              "name": "divi/text",
+              "type": "field"
+            }
+          }
+        }
+      },
+      "default": {
+        "innerContent": {
+          "desktop": {
+            "value": ""
+          }
+        }
+      }
     }
   },
   "customCssFields": {},

@@ -140,6 +140,6 @@ class ET_Builder_Module_EventkoiCalendar extends ET_Builder_Module {
 	 * @return array
 	 */
 	protected function calendar_options() {
-		return \EventKoi\Core\Divi_Renderers::calendar_options( esc_html__( '— Default calendar —', 'eventkoi-lite' ) );
+		return \EventKoi\Core\Divi_Renderers::calendar_options( esc_html__( '— Default calendar —', 'eventkoi-lite' ), true );
 	}
 }

@@ -28,6 +28,12 @@ class Divi_Renderers {
 	 * @return string
 	 */
 	public static function calendar( array $props ) {
+		// "Current calendar" only means something on a calendar page: there the
+		// viewed calendar is shown with its own display, timeframe, week start
+		// and views, exactly as the built-in page does. Anywhere else the
+		// default calendar is shown.
+		$current = 'current' === ( $props['eventkoi_calendar'] ?? '' ) && is_tax( 'event_cal' );
+
 		$calendar_id = absint( $props['eventkoi_calendar'] ?? 0 );
 		if ( ! $calendar_id ) {
 			$calendar_id = eventkoi_resolve_calendar_id( (int) get_option( 'eventkoi_default_event_cal', 0 ) );
@@ -71,9 +77,17 @@ class Divi_Renderers {
 			return '';
 		}
 
+		$display = 'calendar';
+		if ( $current ) {
+			$calendar_id       = 0;
+			$display           = '';
+			$args['calendars'] = array();
+			unset( $args['startday'], $args['timeframe'], $args['views'] );
+		}
+
 		return sprintf(
 			'<div class="eventkoi-divi-calendar eventkoi-calendar-wrapper">%s</div>',
-			eventkoi_get_calendar_content( $calendar_id, 'calendar', $args )
+			eventkoi_get_calendar_content( $calendar_id, $display, $args )
 		);
 	}
 
@@ -113,6 +127,22 @@ class Divi_Renderers {
 			return '';
 		}
 
+		// An optional label sits inline before the value, the way the block
+		// templates put text around a token ("Starts on", "Series:").
+		$label = sanitize_text_field( (string) ( $props['eventkoi_label'] ?? '' ) );
+		if ( '' !== $label && 'full' !== $data ) {
+			$labelled = '<span class="eventkoi-label">' . esc_html( $label ) . '</span> ';
+
+			// The label goes inside the value's own wrapper so the two read
+			// as one line; a bare value gets a wrapper of its own.
+			if ( preg_match( '/<div class="eventkoi-data[^"]*">/', $output, $wrapper, PREG_OFFSET_CAPTURE ) ) {
+				$insert_at = $wrapper[0][1] + strlen( $wrapper[0][0] );
+				$output    = substr( $output, 0, $insert_at ) . $labelled . substr( $output, $insert_at );
+			} else {
+				$output = '<div class="eventkoi-data eventkoi-data-' . esc_attr( $data ) . '">' . $labelled . $output . '</div>';
+			}
+		}
+
 		return sprintf( '<div class="eventkoi-divi-event">%s</div>', $output );
 	}
 
@@ -120,10 +150,15 @@ class Divi_Renderers {
 	 * Calendar picker options, keyed by term ID.
 	 *
 	 * @param string $empty_label Label for the empty choice.
+	 * @param bool   $with_current Whether to offer the calendar being viewed.
 	 * @return array<string,string>
 	 */
-	public static function calendar_options( $empty_label ) {
+	public static function calendar_options( $empty_label, $with_current = false ) {
 		$options = array( '' => $empty_label );
+
+		if ( $with_current ) {
+			$options['current'] = esc_html__( '— Current calendar —', 'eventkoi-lite' );
+		}
 
 		$terms = get_terms(
 			array(
@@ -186,6 +221,7 @@ class Divi_Renderers {
 			'event_date'                  => esc_html__( 'Date only', 'eventkoi-lite' ),
 			'event_time'                  => esc_html__( 'Time only', 'eventkoi-lite' ),
 			'event_datetime_with_summary' => esc_html__( 'Date, time & recurring summary', 'eventkoi-lite' ),
+			'event_timezone'              => esc_html__( 'Timezone', 'eventkoi-lite' ),
 			'event_location'              => esc_html__( 'Location', 'eventkoi-lite' ),
 			'event_location_name'         => esc_html__( 'Location Name', 'eventkoi-lite' ),
 			'event_location_address'      => esc_html__( 'Location Address', 'eventkoi-lite' ),
@@ -196,6 +232,9 @@ class Divi_Renderers {
 			'event_location_zip'          => esc_html__( 'Location Post Code', 'eventkoi-lite' ),
 			'event_gmap'                  => esc_html__( 'Google map', 'eventkoi-lite' ),
 			'event_rulesummary'           => esc_html__( 'Recurring summary', 'eventkoi-lite' ),
+			'event_series_dates'          => esc_html__( 'Series dates', 'eventkoi-lite' ),
+			'event_calendar_link'         => esc_html__( 'Calendar link', 'eventkoi-lite' ),
+			'event_custom_fields_with_name' => esc_html__( 'Custom fields with names', 'eventkoi-lite' ),
 			'event_ticket_rsvp'           => esc_html__( 'Ticket / RSVP', 'eventkoi-lite' ),
 			'event_url'                   => esc_html__( 'Event URL', 'eventkoi-lite' ),
 			'event_capacity'              => esc_html__( 'Capacity', 'eventkoi-lite' ),

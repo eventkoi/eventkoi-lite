@@ -55,6 +55,14 @@ class ET_Builder_Module_EventkoiEvent extends ET_Builder_Module {
 				'default_on_front' => 'full',
 				'toggle_slug'      => 'main_content',
 			),
+			'eventkoi_label'    => array(
+				'label'           => esc_html__( 'Label', 'eventkoi-lite' ),
+				'type'            => 'text',
+				'option_category' => 'basic_option',
+				'default'         => '',
+				'description'     => esc_html__( 'Optional text shown before the value, such as "Starts on".', 'eventkoi-lite' ),
+				'toggle_slug'     => 'main_content',
+			),
 		);
 	}
 

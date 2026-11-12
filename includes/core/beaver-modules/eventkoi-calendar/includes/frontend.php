@@ -23,7 +23,7 @@ $selected_ids = eventkoi_sanitize_calendar_selection( $settings->calendars ?? ''
 // existing single-calendar modules keep working. The picker clears `calendars`
 // when the source leaves "specific", so a deliberate "default"/"all" choice never
 // carries a stale selection into this branch.
-if ( 'all' !== $source && 'specific' !== $source && ! empty( $selected_ids ) ) {
+if ( 'all' !== $source && 'specific' !== $source && 'current' !== $source && ! empty( $selected_ids ) ) {
 	$source = 'specific';
 }
 
@@ -74,9 +74,20 @@ $calendar_id = ! empty( $calendars )
 	? (int) $calendars[0]
 	: eventkoi_resolve_calendar_id( (int) get_option( 'eventkoi_default_event_cal', 0 ) );
 
+// "Current calendar" only means something on a calendar page: there the
+// viewed calendar is shown with its own display, timeframe, week start and
+// views, exactly as the built-in page does. Anywhere else the default
+// calendar is shown.
+$ek_display = 'calendar';
+if ( 'current' === $source && is_tax( 'event_cal' ) ) {
+	$calendar_id = 0;
+	$ek_display  = '';
+	unset( $args['startday'], $args['timeframe'], $args['views'] );
+}
+
 echo '<div class="eventkoi-calendar-wrapper">';
 echo wp_kses_post(
-	eventkoi_get_calendar_content( $calendar_id, 'calendar', $args )
+	eventkoi_get_calendar_content( $calendar_id, $ek_display, $args )
 );
 echo '</div>';
 ?>

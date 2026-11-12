@@ -38,6 +38,7 @@
   },
   "module": {
     "eventkoi_event_id": "event.innerContent.*",
-    "eventkoi_data": "data.innerContent.*"
+    "eventkoi_data": "data.innerContent.*",
+    "eventkoi_label": "label.innerContent.*"
   }
 }

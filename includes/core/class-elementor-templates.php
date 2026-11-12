@@ -334,6 +334,10 @@ class Elementor_Templates {
 			}
 		}
 
+		// Another builder's ready-made templates are not a choice to go back
+		// to either: "default" has to mean the built-in templates.
+		$ours = array_merge( $ours, Builder_Templates::ready_made_setting_values() );
+
 		foreach ( self::setting_keys() as $setting ) {
 			$restore = sanitize_key( (string) ( $previous[ $setting ] ?? '' ) );
 			// The previous value is only worth restoring when it was a real

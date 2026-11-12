@@ -1,5 +1,5 @@
 import apiRequest from "@wordpress/api-fetch";
-import { __ } from "@wordpress/i18n";
+import { __, sprintf } from "@wordpress/i18n";
 import { CircleCheck, Loader2 } from "lucide-react";
 import { useState } from "react";
 
@@ -8,35 +8,57 @@ import { useSettings } from "@/hooks/SettingsContext";
 import { showToast, showToastError } from "@/lib/toast";
 import { cn } from "@/lib/utils";
 
-const initialStatus = () => window?.eventkoi_params?.elementor_templates ?? null;
+const initialStatuses = () => {
+  const statuses = window?.eventkoi_params?.builder_templates;
+  return Array.isArray(statuses) ? statuses : [];
+};
 
 /**
- * Ask Elementor users whether their event pages should open on the
- * ready-made Elementor templates instead of the block templates.
+ * Ask sites running a page builder (Elementor, Beaver Builder, Divi) whether
+ * their event pages should open on the ready-made templates for that builder
+ * instead of the block templates.
  */
 export function ChooseTemplatesStep() {
   const { setSettings } = useSettings();
-  const [status, setStatus] = useState(initialStatus);
-  const [choice, setChoice] = useState(() =>
-    status?.active ? "elementor" : "default",
-  );
+  const [statuses, setStatuses] = useState(initialStatuses);
+  const activeBuilder = (list) =>
+    list.find((status) => status?.active)?.builder ?? "default";
+  const [choice, setChoice] = useState(() => activeBuilder(statuses));
   const [pending, setPending] = useState("");
+
+  const single = statuses.length === 1 ? statuses[0] : null;
 
   const applyChoice = async (value) => {
     if (pending) return;
+
+    // Going back to the default templates undoes whichever builder is in use.
+    const builder =
+      value === "default"
+        ? statuses.find((status) => status?.active)?.builder ??
+          statuses[0]?.builder
+        : value;
+
+    if (!builder) return;
+
+    const label =
+      statuses.find((status) => status?.builder === value)?.label ?? "";
 
     setChoice(value);
     setPending(value);
 
     try {
       const response = await apiRequest({
-        path: `${eventkoi_params.api}/elementor-templates`,
+        path: `${eventkoi_params.api}/${builder}-templates`,
         method: "POST",
-        data: { action: value === "elementor" ? "apply" : "reset" },
+        data: { action: value === "default" ? "reset" : "apply" },
       });
 
-      if (response?.status) {
-        setStatus(response.status);
+      if (Array.isArray(response?.builder_templates)) {
+        setStatuses(response.builder_templates);
+        setChoice(activeBuilder(response.builder_templates));
+        window.eventkoi_params.builder_templates = response.builder_templates;
+      }
+      if (builder === "elementor" && response?.status) {
         window.eventkoi_params.elementor_templates = response.status;
       }
       if (Array.isArray(response?.custom_templates)) {
@@ -51,12 +73,16 @@ export function ChooseTemplatesStep() {
       showToast({
         ...response,
         message:
-          value === "elementor"
-            ? __("Elementor templates are now in use.", "eventkoi-lite")
-            : __("Default templates are back in use.", "eventkoi-lite"),
+          value === "default"
+            ? __("Default templates are back in use.", "eventkoi-lite")
+            : sprintf(
+                /* translators: %s: page builder name. */
+                __("%s templates are now in use.", "eventkoi-lite"),
+                label,
+              ),
       });
     } catch (error) {
-      setChoice(status?.active ? "elementor" : "default");
+      setChoice(activeBuilder(statuses));
       showToastError(
         error?.message ?? __("The templates could not be updated.", "eventkoi-lite"),
       );
@@ -65,39 +91,79 @@ export function ChooseTemplatesStep() {
     }
   };
 
-  const templates = Object.values(status?.templates ?? {});
-  const showLinks = choice === "elementor" && status?.active && !pending;
+  const chosen = statuses.find((status) => status?.builder === choice);
+  const templates = Object.values(chosen?.templates ?? {});
+  const showLinks = !!chosen?.active && !pending;
 
   const options = [
-    {
-      value: "elementor",
-      title: __("Yes, use Elementor templates", "eventkoi-lite"),
-      description: __(
-        "Event, event series and calendar pages open on templates built for Elementor. Edit them in Elementor like any other template.",
-        "eventkoi-lite",
+    ...statuses.map((status) => ({
+      value: status.builder,
+      title: sprintf(
+        /* translators: %s: page builder name. */
+        __("Yes, use %s templates", "eventkoi-lite"),
+        status.label,
       ),
-    },
+      description: sprintf(
+        /* translators: %s: page builder name. */
+        __(
+          "Event, event series and calendar pages open on templates built for %1$s. Edit them in %1$s like any other template.",
+          "eventkoi-lite",
+        ),
+        status.label,
+      ),
+    })),
     {
       value: "default",
       title: __("No, keep the default templates", "eventkoi-lite"),
-      description: __(
-        "Pages keep EventKoi's built-in templates. You can switch to the Elementor templates later from Settings.",
-        "eventkoi-lite",
-      ),
+      description: single
+        ? sprintf(
+            /* translators: %s: page builder name. */
+            __(
+              "Pages keep EventKoi's built-in templates. You can switch to the %s templates later from Settings.",
+              "eventkoi-lite",
+            ),
+            single.label,
+          )
+        : __(
+            "Pages keep EventKoi's built-in templates. You can switch to page builder templates later from Settings.",
+            "eventkoi-lite",
+          ),
     },
   ];
+
+  const heading = single
+    ? sprintf(
+        /* translators: %s: page builder name. */
+        __("Would you like to use %s templates for your events?", "eventkoi-lite"),
+        single.label,
+      )
+    : __(
+        "Would you like to use page builder templates for your events?",
+        "eventkoi-lite",
+      );
+
+  const intro = single
+    ? sprintf(
+        /* translators: %s: page builder name. */
+        __(
+          "%1$s is active on this site, so your event pages can be designed in %1$s from the start.",
+          "eventkoi-lite",
+        ),
+        single.label,
+      )
+    : __(
+        "More than one page builder is active on this site. Pick the one your event pages should be designed in.",
+        "eventkoi-lite",
+      );
 
   return (
     <div className="grid gap-8">
       <div className="grid gap-1.5">
         <h3 className="font-medium text-[24px] leading-7 text-black m-0">
-          {__("Would you like to use Elementor templates for your events?", "eventkoi-lite")}
+          {heading}
         </h3>
         <div className="text-muted-foreground leading-5 text-[14px]">
-          {__(
-            "Elementor is active on this site, so your event pages can be designed in Elementor from the start.",
-            "eventkoi-lite",
-          )}
+          {intro}
         </div>
       </div>
 

@@ -56,6 +56,12 @@ class Beaver_Modules {
 									'label'   => __( 'Data Type', 'eventkoi-lite' ),
 									'options' => eventkoi_get_event_data_options(),
 								),
+								'label'     => array(
+									'type'    => 'text',
+									'label'   => __( 'Label', 'eventkoi-lite' ),
+									'help'    => __( 'Optional text shown before the value, such as "Starts on".', 'eventkoi-lite' ),
+									'default' => '',
+								),
 								'show'      => array(
 									'type'    => 'select',
 									'label'   => __( 'Show', 'eventkoi-lite' ),
@@ -97,6 +103,7 @@ class Beaver_Modules {
 								'default' => 'default',
 								'options' => array(
 									'default'  => __( 'Default calendar', 'eventkoi-lite' ),
+									'current'  => __( 'Current calendar', 'eventkoi-lite' ),
 									'all'      => __( 'All calendars', 'eventkoi-lite' ),
 									'specific' => __( 'Specific calendar(s)', 'eventkoi-lite' ),
 								),
