@@ -1,6 +1,7 @@
 "use client";
 
 import { EventPopover } from "@/components/calendar/EventPopover";
+import { watchPlainCalendarLinks } from "@/lib/calendar-plain-links";
 import { Skeleton } from "@/components/ui/skeleton";
 import { wpToLuxonFormat } from "@/lib/date-utils";
 import { formatDate } from "@fullcalendar/core";
@@ -191,6 +192,9 @@ export function CalendarGridMode({
   const displayTimezoneKey = calendarTimeZone || timezone || "UTC";
   const previousTimezoneRef = useRef(displayTimezoneKey);
   const cascadeScheduledRef = useRef(false);
+  const gridWrapRef = useRef(null);
+
+  useEffect(() => watchPlainCalendarLinks(gridWrapRef.current), [isEmpty]);
 
   // A page builder's phone column can be under 300px wide, which leaves each
   // day under 45px: "MON" and "TUE" then run into each other. Below 360px the
@@ -812,6 +816,7 @@ export function CalendarGridMode({
   return (
     <>
       <div
+        ref={gridWrapRef}
         className="relative"
         style={calendarAccent ? { "--ek-calendar-accent": calendarAccent } : undefined}
       >
