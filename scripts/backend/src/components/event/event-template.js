@@ -1,3 +1,4 @@
+import { NewTabNote } from "@/components/new-tab-note";
 import { __ } from "@wordpress/i18n";
 import { Panel } from "@/components/panel";
 import { ProBadge } from "@/components/pro-badge";
@@ -125,7 +126,7 @@ export function EventTemplate({
             {isManuallyAssigned
               ? __("Edit in Site Editor", "eventkoi-lite")
               : __("View/edit template", "eventkoi-lite")}
-          </a>
+          <NewTabNote /></a>
         )}
       </div>
     </Panel>

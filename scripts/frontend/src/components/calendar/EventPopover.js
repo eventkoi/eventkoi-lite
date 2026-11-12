@@ -701,7 +701,7 @@ export function EventPopover({
           {event.thumbnail && (
             <img
               src={event.thumbnail}
-              alt=""
+              alt={event.thumbnail_alt || ""}
               className="w-full h-auto rounded-none border object-cover max-h-48"
             />
           )}

@@ -1,3 +1,4 @@
+import { NewTabNote } from "@/components/new-tab-note";
 import { Separator } from "@/components/ui/separator";
 import { dateI18n } from "@wordpress/date";
 import { __ } from "@wordpress/i18n";
@@ -114,7 +115,7 @@ export function ConfirmTimezoneFormatStep() {
               className="no-underline"
             >
               {__("Go to General Settings and change", "eventkoi-lite")}
-            </a>
+            <NewTabNote /></a>
           </Button>
         </div>
       </div>

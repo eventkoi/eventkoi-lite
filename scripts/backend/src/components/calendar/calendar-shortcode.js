@@ -18,6 +18,7 @@ export function CalendarShortcode({ calendar, setCalendar }) {
       <div className="relative max-w-[260px]">
         <Input
           type="text"
+          aria-label={__("Shortcode", "eventkoi-lite")}
           value={calendar?.shortcode}
           className="w-full"
           readOnly

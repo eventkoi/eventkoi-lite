@@ -1,3 +1,4 @@
+import { NewTabNote } from "@/components/new-tab-note";
 import { useEvent } from "@/blocks/event-query-loop/context";
 import apiRequest from "@wordpress/api-fetch";
 import { cn } from "@/lib/utils";
@@ -449,7 +450,7 @@ export default function Edit({ attributes, setAttributes, clientId }) {
             rel="noopener noreferrer"
           >
             {label}
-          </a>
+          <NewTabNote /></a>
         );
       } else if (locationLine) {
         locationContent = <span>{locationLine}</span>;

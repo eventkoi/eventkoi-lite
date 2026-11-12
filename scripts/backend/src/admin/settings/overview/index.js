@@ -1,3 +1,4 @@
+import { NewTabNote } from "@/components/new-tab-note";
 import { __ } from "@wordpress/i18n";
 import apiRequest from "@wordpress/api-fetch";
 import { useEffect, useMemo, useState } from "react";
@@ -621,6 +622,7 @@ export function SettingsOverview() {
             <div className="grid gap-2">
               <Label className="text-sm font-medium">{__("Time format (custom)", "eventkoi-lite")}</Label>
               <Input
+                aria-label={__("Time format (custom)", "eventkoi-lite")}
                 value={timeFormatString}
                 onChange={(e) => setTimeFormatString(e.target.value)}
                 onBlur={commitTimeFormatString}
@@ -638,6 +640,7 @@ export function SettingsOverview() {
             <div className="grid gap-2">
               <Label className="text-sm font-medium">{__("Date format", "eventkoi-lite")}</Label>
               <Input
+                aria-label={__("Date format", "eventkoi-lite")}
                 value={dateFormat}
                 onChange={(e) => setDateFormat(e.target.value)}
                 onBlur={commitDateFormat}
@@ -657,7 +660,7 @@ export function SettingsOverview() {
                   className="underline hover:text-foreground"
                 >
                   {__("Format reference", "eventkoi-lite")}
-                </a>
+                <NewTabNote /></a>
               </div>
             </div>
 

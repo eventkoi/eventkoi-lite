@@ -73,6 +73,7 @@ export function EventName({
         <Textarea
           ref={textareaRef}
           id="event-name"
+          aria-label={__("Event name", "eventkoi-lite")}
           className={cn(
             "inline-flex sm:w-full resize-none overflow-hidden bg-transparent focus:outline-none border-2 border-transparent hover:border-input focus:border-input active:border-input rounded-md p-2 font-medium text-2xl leading-tight min-h-0 w-full max-w-full",
             showBlankError && "border-red-500",

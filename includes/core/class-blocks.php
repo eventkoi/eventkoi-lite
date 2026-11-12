@@ -47,6 +47,7 @@ class Blocks {
 		add_filter( 'render_block', array( __CLASS__, 'seed_visibility_wrapper' ), 7, 2 );
 		add_filter( 'render_block', array( __CLASS__, 'render_eventkoi_image' ), 9, 2 );
 		add_filter( 'render_block', array( __CLASS__, 'render_shortcodes_in_image_src' ), 8, 2 );
+		add_filter( 'render_block', array( __CLASS__, 'fill_bound_event_image_alt' ), 9, 2 );
 		add_filter( 'render_block', array( __CLASS__, 'render_eventkoi_query_loop' ), 10, 2 );
 
 		add_filter( 'block_categories_all', array( __CLASS__, 'register_block_category' ), 99, 2 );
@@ -802,6 +803,55 @@ JS;
 	}
 
 	/**
+	 * Give an image block bound to the event image the alt text saved with
+	 * that picture in the Media Library. With none saved it stays empty.
+	 *
+	 * @param string $block_content Original content.
+	 * @param array  $block         Parsed block.
+	 * @return string Modified content.
+	 */
+	public static function fill_bound_event_image_alt( $block_content, $block ) {
+		if ( ( $block['blockName'] ?? '' ) !== 'core/image' ) {
+			return $block_content;
+		}
+
+		$key = $block['attrs']['metadata']['bindings']['url']['args']['key'] ?? '';
+
+		if ( ! in_array( $key, array( 'event_image_url', 'image_url' ), true ) ) {
+			return $block_content;
+		}
+
+		$alt_position = strpos( $block_content, 'alt=""' );
+		$event_id     = get_the_ID();
+
+		if ( false === $alt_position || ! $event_id || 'eventkoi_event' !== get_post_type( $event_id ) ) {
+			return $block_content;
+		}
+
+		$image_id = absint( get_post_meta( $event_id, 'image_id', true ) );
+
+		if ( ! $image_id ) {
+			$image_id = (int) get_post_thumbnail_id( $event_id );
+		}
+
+		$file = $image_id ? wp_basename( (string) wp_get_attachment_url( $image_id ) ) : '';
+
+		// A date with its own picture shows a different file, so the alt text
+		// of the event picture would not describe it.
+		if ( '' === $file || false === strpos( $block_content, '/' . $file ) ) {
+			return $block_content;
+		}
+
+		$alt = trim( (string) get_post_meta( $image_id, '_wp_attachment_image_alt', true ) );
+
+		if ( '' === $alt ) {
+			return $block_content;
+		}
+
+		return substr_replace( $block_content, 'alt="' . esc_attr( $alt ) . '"', $alt_position, 6 );
+	}
+
+	/**
 	 * Resolve shortcodes used inside core/image src|href attributes.
 	 *
 	 * This lets users drop [eventkoi id=... data=event_image_url] into the URL
@@ -871,6 +921,19 @@ JS;
 			$block_content,
 			1
 		);
+
+		// An image left without alt text takes the one saved with the picture
+		// in the Media Library. With none saved it stays empty.
+		$alt_position = strpos( $block_content, 'alt=""' );
+
+		if ( false !== $alt_position ) {
+			$attachment_id = attachment_url_to_postid( $resolved );
+			$alt           = $attachment_id ? trim( (string) get_post_meta( $attachment_id, '_wp_attachment_image_alt', true ) ) : '';
+
+			if ( '' !== $alt ) {
+				$block_content = substr_replace( $block_content, 'alt="' . esc_attr( $alt ) . '"', $alt_position, 6 );
+			}
+		}
 
 		return $block_content;
 	}

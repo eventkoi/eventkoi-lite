@@ -1,3 +1,4 @@
+import { NewTabNote } from "@/components/new-tab-note";
 import { useState } from "react";
 
 import { Box } from "@/components/box";
@@ -122,7 +123,7 @@ export function SettingsGoogleMaps({ settings, setSettings }) {
                 className="no-underline"
               >
                 {__("View docs", "eventkoi-lite")}
-              </a>
+              <NewTabNote /></a>
             </Button>
           </Alert>
 

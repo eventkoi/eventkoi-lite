@@ -312,6 +312,7 @@ export function TimeInput({
         type="text"
         value={inputValue}
         placeholder={__("Set time", "eventkoi-lite")}
+        aria-label={__("Time", "eventkoi-lite")}
         onChange={handleChange}
         onBlur={handleBlur}
         onFocus={handleFocus}

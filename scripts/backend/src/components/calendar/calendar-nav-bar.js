@@ -89,6 +89,7 @@ export function CalendarNavBar({ loading, setLoading, calendar, setCalendar }) {
               size="icon"
               className="rounded-l-none"
               disabled={disabled}
+              aria-label={__("More actions", "eventkoi-lite")}
             >
               <ChevronDown className="w-4 h-4" />
             </Button>

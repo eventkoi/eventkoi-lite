@@ -33,7 +33,14 @@ export const watchPlainCalendarLinks = (root) => {
     return () => {};
   }
 
-  const settle = () => root.querySelectorAll(PLAIN_LINKS).forEach(settlePlainLink);
+  const settle = () => {
+    root.querySelectorAll(PLAIN_LINKS).forEach(settlePlainLink);
+    // The hours table in week view is hidden from screen readers and holds
+    // no data, so it is marked as layout only.
+    root
+      .querySelectorAll('table[aria-hidden="true"]:not([role])')
+      .forEach((table) => table.setAttribute("role", "presentation"));
+  };
 
   settle();
 

@@ -1,3 +1,4 @@
+import { NewTabNote } from "@/components/new-tab-note";
 import { useState, useEffect, useCallback, useRef } from "react";
 import { __, _n, sprintf } from "@wordpress/i18n";
 import apiRequest from "@wordpress/api-fetch";
@@ -483,7 +484,7 @@ function IntegrationCard({
             className="mt-3 inline-flex h-8 items-center rounded-md border border-amber-300 bg-white px-3 text-xs font-medium text-amber-900 no-underline hover:bg-amber-100 dark:border-amber-800 dark:bg-transparent dark:text-amber-100"
           >
             {__("Upgrade to Pro to import recurring events", "eventkoi-lite")}
-          </a>
+          <NewTabNote /></a>
         </div>
       )}
     </div>

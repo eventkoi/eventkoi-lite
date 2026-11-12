@@ -296,7 +296,7 @@ export function ListView({
                 </div>
               )}
 
-              <h3 className="eventkoi-calendar-list-title m-0 text-lg font-semibold leading-snug">
+              <h3 aria-level="2" className="eventkoi-calendar-list-title m-0 text-lg font-semibold leading-snug">
                 <a href={getEventUrl(event, wpTz)} className="no-underline">
                   {event.title}
                   <span className="sr-only"> — View event details</span>

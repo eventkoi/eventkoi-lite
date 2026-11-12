@@ -1,3 +1,4 @@
+import { NewTabNote } from "@/components/new-tab-note";
 import { Button } from "@/components/ui/button";
 import { __ } from "@wordpress/i18n";
 import { ExternalLink, Pencil } from "lucide-react";
@@ -29,7 +30,7 @@ export function SeoPluginEditorLink({ url }) {
           <Pencil className="mr-2 h-4 w-4" aria-hidden="true" />
           {__("Edit SEO in the WordPress editor", "eventkoi-lite")}
           <ExternalLink className="ml-2 h-4 w-4" aria-hidden="true" />
-        </a>
+        <NewTabNote /></a>
       </Button>
     </div>
   );

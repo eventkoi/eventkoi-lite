@@ -1,3 +1,4 @@
+import { NewTabNote } from "@/components/new-tab-note";
 import { __ } from "@wordpress/i18n";
 import apiRequest from "@wordpress/api-fetch";
 import { useState } from "react";
@@ -140,7 +141,7 @@ export function SettingsCheckoutMethod({ settings, setSettings }) {
               <p className="text-xs text-muted-foreground text-center">
                 {__("Accept credit cards, Apple Pay, and Google Pay directly on your event pages.", "eventkoi-lite")}
               </p>
-            </a>
+            <NewTabNote /></a>
 
             <div
               className="flex flex-col items-center gap-3 py-6 px-4 bg-white border rounded-2xl shadow-[inset_0_0_0_1px_black] border-primary"
@@ -166,7 +167,7 @@ export function SettingsCheckoutMethod({ settings, setSettings }) {
               <p className="text-xs text-muted-foreground text-center">
                 {__("Check out with SureCart on your event pages.", "eventkoi-lite")}
               </p>
-            </a>
+            <NewTabNote /></a>
           </div>
         </Panel>
       </div>

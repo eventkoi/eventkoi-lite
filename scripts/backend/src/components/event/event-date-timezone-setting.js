@@ -1,3 +1,4 @@
+import { NewTabNote } from "@/components/new-tab-note";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -66,7 +67,7 @@ export function EventDateTimezoneSetting({ event, setEvent, className }) {
                 className="underline font-normal"
               >
                 {siteTimezone}
-              </a>
+              <NewTabNote /></a>
               .
             </p>
           ) : (
@@ -79,7 +80,7 @@ export function EventDateTimezoneSetting({ event, setEvent, className }) {
                 className="underline font-normal"
               >
                 {siteTimezone}
-              </a>
+              <NewTabNote /></a>
               .{" "}
               {timezones.length > 0 && (
                 <button
@@ -119,6 +120,7 @@ export function EventDateTimezoneSetting({ event, setEvent, className }) {
         </div>
         <Switch
           id="timezone_display"
+          aria-label={__("Display timezone in event page", "eventkoi-lite")}
           checked={event?.timezone_display}
           onCheckedChange={(bool) =>
             setEvent((prevState) => ({

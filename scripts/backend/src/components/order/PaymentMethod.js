@@ -1,4 +1,5 @@
 // components/order/PaymentMethod.jsx
+import { NewTabNote } from "@/components/new-tab-note";
 import { getCountryName } from "@/lib/utils";
 import { __, sprintf } from "@wordpress/i18n";
 import { SquareArrowOutUpRight } from "lucide-react";
@@ -121,7 +122,7 @@ export function PaymentMethod({ order }) {
             >
               <span className="truncate">{order.stripe_payment_intent_id}</span>
               <SquareArrowOutUpRight className="w-4 h-4 flex-shrink-0" />
-            </a>
+            <NewTabNote /></a>
           )}
         </div>
 

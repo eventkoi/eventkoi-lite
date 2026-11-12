@@ -1,3 +1,4 @@
+import { NewTabNote } from "@/components/new-tab-note";
 import {
   ComboboxControl,
   PanelBody,
@@ -170,7 +171,7 @@ export function EventDataControls({
                 rel="noreferrer"
               >
                 {__("Format reference", "eventkoi-lite")}
-              </a>
+              <NewTabNote /></a>
             </p>
           </div>
         )}
@@ -180,7 +181,7 @@ export function EventDataControls({
             {__("This field uses the formats configured in", "eventkoi-lite")}{" "}
             <a href={settingsUrl} target="_blank" rel="noreferrer">
               {__("EventKoi settings", "eventkoi-lite")}
-            </a>
+            <NewTabNote /></a>
             .
           </p>
         )}

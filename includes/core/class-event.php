@@ -1744,6 +1744,25 @@ class Event {
 	}
 
 	/**
+	 * Get the alt text saved with the event image in the Media Library.
+	 *
+	 * @return string Empty when the image has no alt text of its own.
+	 */
+	public static function get_image_alt() {
+		$image_id = self::get_image_id();
+
+		if ( empty( $image_id ) ) {
+			$image_id = get_post_thumbnail_id( self::$event_id );
+		}
+
+		if ( empty( $image_id ) ) {
+			return '';
+		}
+
+		return trim( (string) get_post_meta( (int) $image_id, '_wp_attachment_image_alt', true ) );
+	}
+
+	/**
 	 * Get event locations (multiple).
 	 *
 	 * @return array

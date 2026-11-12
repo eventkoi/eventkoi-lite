@@ -1,3 +1,4 @@
+import { NewTabNote } from "@/components/new-tab-note";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { buildTimeline, safeNormalizeTimeZone } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
@@ -181,7 +182,7 @@ export function ListView({
               >
                 <Globe className="w-4 h-4 min-w-4 text-muted-foreground/90" />
                 {label}
-              </a>
+              <NewTabNote /></a>
             );
           }
 

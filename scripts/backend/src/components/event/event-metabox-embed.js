@@ -1,3 +1,4 @@
+import { NewTabNote } from "@/components/new-tab-note";
 import { Box } from "@/components/box";
 import { Heading } from "@/components/heading";
 import { Button } from "@/components/ui/button";
@@ -214,7 +215,7 @@ export function EventMetaboxEmbed() {
             >
               <i className="eicon-elementor-square" aria-hidden="true" />
               {__("Edit with Elementor", "eventkoi-lite")}
-            </a>
+            <NewTabNote /></a>
           )}
           {ready && (
             <Button type="button" disabled={saving} onClick={submitEmbed}>

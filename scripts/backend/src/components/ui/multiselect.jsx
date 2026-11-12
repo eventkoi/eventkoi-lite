@@ -149,6 +149,7 @@ export function MultiSelect({
             }
             onChange={(e) => setInputValue(e.target.value)}
             placeholder={placeholder}
+            aria-label={placeholder}
             className={cn(
               "flex-1 text-left leading-none bg-transparent outline-none border-none focus:shadow-none text-muted-foreground px-3 py-3",
               inputClassName

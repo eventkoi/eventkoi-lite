@@ -1,5 +1,6 @@
 "use client";
 
+import { NewTabNote } from "@/components/new-tab-note";
 import { Box } from "@/components/box";
 import { Button } from "@/components/ui/button";
 import { upgradeUrl } from "@/lib/upgrade-url";
@@ -76,7 +77,7 @@ export function ProLaunch({
               rel="noopener noreferrer"
             >
               {__("Claim discount", "eventkoi-lite")}
-            </a>
+            <NewTabNote /></a>
           </Button>
         </div>
         {/* Right: 10% Discount */}

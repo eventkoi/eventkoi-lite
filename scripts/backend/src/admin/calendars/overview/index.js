@@ -1,3 +1,4 @@
+import { NewTabNote } from "@/components/new-tab-note";
 import apiRequest from "@wordpress/api-fetch";
 import { __, sprintf } from "@wordpress/i18n";
 import {
@@ -113,7 +114,13 @@ function ShortcodeCell({ row }) {
 
   return (
     <div className="relative text-foreground w-full max-w-[220px]">
-      <Input type="text" value={value} readOnly className="w-full pr-10" />
+      <Input
+        type="text"
+        aria-label={__("Shortcode", "eventkoi-lite")}
+        value={value}
+        readOnly
+        className="w-full pr-10"
+      />
       <TooltipProvider delayDuration={0}>
         <Tooltip key={tooltipKey}>
           <TooltipTrigger asChild>
@@ -226,7 +233,7 @@ function CalendarLinkIcon({
       rel="noopener noreferrer"
       className="ms-2 text-muted-foreground hover:text-foreground shrink-0 eventkoi-calendar-link-icon"
       data-default-cal-link={isDefaultCal ? "true" : undefined}
-      aria-label={__("View public calendar", "eventkoi-lite")}
+      aria-label={__("View public calendar (opens in new tab)", "eventkoi-lite")}
       data-calendar-id={calendarId}
       onClick={(event) => {
         onLinkClick?.();
@@ -565,7 +572,7 @@ export function CalendarsOverview() {
                 rel="noopener noreferrer"
               >
                 {__("Learn how to customize an Event Template", "eventkoi-lite")}
-              </a>
+              <NewTabNote /></a>
             </Button>
           </div>
           <div className="h-[1px] w-full bg-border" />

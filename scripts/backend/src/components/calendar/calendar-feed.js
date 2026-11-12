@@ -26,6 +26,7 @@ export function CalendarFeed({ calendar }) {
       <div className="relative max-w-[422px]">
         <Input
           type="text"
+          aria-label={__("Calendar subscription (iCal)", "eventkoi-lite")}
           value={feedUrl}
           className="w-full"
           readOnly

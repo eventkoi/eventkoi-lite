@@ -1,3 +1,4 @@
+import { NewTabNote } from "@/components/new-tab-note";
 import { AddButton } from "@/components/add-button";
 import { DataTable } from "@/components/data-table";
 import { Heading } from "@/components/heading";
@@ -536,7 +537,7 @@ export function EventsOverview() {
                     onClick={(e) => e.stopPropagation()}
                   >
                     <Link2 className="w-5 h-5 inline-block" />
-                  </a>
+                  <NewTabNote /></a>
                 )}
 
                 {/* Status badges inline with title */}

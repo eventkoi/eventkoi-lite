@@ -18,6 +18,7 @@ export function CalendarLink({ calendar, setCalendar }) {
       <div className="relative max-w-[422px]">
         <Input
           type="text"
+          aria-label={__("Calendar link", "eventkoi-lite")}
           value={calendar?.url}
           className="w-full"
           readOnly

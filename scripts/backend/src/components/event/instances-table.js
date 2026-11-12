@@ -1,3 +1,4 @@
+import { NewTabNote } from "@/components/new-tab-note";
 import { DataTable } from "@/components/data-table";
 import { SortButton } from "@/components/sort-button";
 import { Badge } from "@/components/ui/badge";
@@ -257,7 +258,7 @@ export function EventInstancesTable({
                   title={__("View instance", "eventkoi-lite")}
                 >
                   <Link2 className="w-full h-full" />
-                </a>
+                <NewTabNote /></a>
               )}
             </div>
           );
