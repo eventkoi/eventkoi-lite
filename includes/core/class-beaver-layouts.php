@@ -547,6 +547,8 @@ class Beaver_Layouts {
 	 * @return string
 	 */
 	public static function id( $counter = 0 ) {
-		return substr( md5( uniqid( 'ek' . $counter, true ) ), 0, 13 );
+		// The leading letter keeps an id from ever being all digits, which
+		// PHP would turn into an integer when the id is used as an array key.
+		return 'e' . substr( md5( uniqid( 'ek' . $counter, true ) ), 0, 12 );
 	}
 }
