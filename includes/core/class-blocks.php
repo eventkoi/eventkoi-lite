@@ -644,6 +644,21 @@ JS;
 		// tokens embedded in class names or slugs intact even on event pages.
 		$is_event_context = 'eventkoi_event' === get_post_type( get_the_ID() );
 
+		// The EventKoi Divi modules name event fields in their own settings
+		// ("event_title"). Those must reach the module as written, so the
+		// module shortcodes sit out the sweep below.
+		$divi_modules  = array();
+		$block_content = preg_replace_callback(
+			'/\[et_pb_eventkoi_[a-z0-9_]+\b[^\[\]]*\]/i',
+			function ( $matches ) use ( &$divi_modules ) {
+				$key                  = '__EK_DIVI_MODULE_' . count( $divi_modules ) . '__';
+				$divi_modules[ $key ] = $matches[0];
+
+				return $key;
+			},
+			(string) $block_content
+		);
+
 		if ( ! $has_eventkoi_shortcode && $is_event_context ) {
 			foreach ( $allowed_keys as $base_key ) {
 				$pattern = '/(?<![\w-])' . preg_quote( $base_key, '/' ) . '(_\d+)?(?![\w-])/';
@@ -656,6 +671,10 @@ JS;
 					$block_content
 				);
 			}
+		}
+
+		if ( ! empty( $divi_modules ) ) {
+			$block_content = strtr( $block_content, $divi_modules );
 		}
 
 		$block_content = str_replace(

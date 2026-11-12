@@ -70,7 +70,7 @@ class Divi_Layouts {
 						. $this->event_data( 'event_details' )
 						. $this->event_data( 'event_custom_fields_with_name' ),
 					$this->info_box( array( 'event_datetime_with_summary', 'event_timezone', 'event_location' ) )
-						. $this->event_data( 'event_ticket_rsvp', '', array( 'custom_margin' => '20px||||false|false' ) )
+						. $this->event_data( 'event_ticket_rsvp', '', array( 'custom_css_main_element' => 'margin-top: 20px;' ) )
 						. $this->event_data( 'event_gmap' ),
 				)
 			)
@@ -155,24 +155,29 @@ class Divi_Layouts {
 			$first = 0 === $index;
 			$final = $last === $index;
 
-			$settings = array(
-				'background_color'    => '#f3f3f3',
-				'custom_margin'       => '||0px||false|false',
-				'custom_padding'      => ( $first ? '30px' : '0px' ) . '|30px|' . ( $final ? '30px' : '0px' ) . '|30px|false|false',
-				'border_radii'        => 'on|' . ( $first ? '10px|10px' : '0px|0px' ) . '|' . ( $final ? '10px|10px' : '0px|0px' ),
-				'border_width_left'   => '1px',
-				'border_color_left'   => '#eeeeee',
-				'border_width_right'  => '1px',
-				'border_color_right'  => '#eeeeee',
-				'border_width_top'    => $first ? '1px' : '0px',
-				'border_color_top'    => '#eeeeee',
-				'border_width_bottom' => $final ? '1px' : '0px',
-				'border_color_bottom' => '#eeeeee',
+			// Written as the module's custom CSS, which Divi 4 and Divi 5
+			// both apply to any module the same way.
+			$css = array(
+				'background-color: #f3f3f3;',
+				'border: 1px solid #eeeeee;',
+				'margin-bottom: 0 !important;',
+				'padding: ' . ( $first ? '30px' : '4px' ) . ' 30px ' . ( $final ? '30px' : '0' ) . ' 30px;',
+				'border-radius: ' . ( $first ? '10px 10px' : '0 0' ) . ' ' . ( $final ? '10px 10px' : '0 0' ) . ';',
 			);
 
-			if ( 'event_timezone' === $type ) {
-				$settings['custom_css_main_element'] = 'color: #999999;';
+			if ( ! $first ) {
+				$css[] = 'border-top: 0;';
 			}
+
+			if ( ! $final ) {
+				$css[] = 'border-bottom: 0;';
+			}
+
+			if ( 'event_timezone' === $type ) {
+				$css[] = 'color: #999999;';
+			}
+
+			$settings = array( 'custom_css_main_element' => implode( '||', $css ) );
 
 			$output .= $this->event_data( $type, '', $settings );
 		}

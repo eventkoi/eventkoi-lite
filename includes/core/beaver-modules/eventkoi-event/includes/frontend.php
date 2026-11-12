@@ -33,7 +33,9 @@ if ( 0 === $event_id ) {
 if ( 0 === $event_id ) {
 	if ( class_exists( 'FLBuilderModel' ) && FLBuilderModel::is_builder_active() ) {
 		echo '<div class="eventkoi-beaver-module-placeholder" style="text-align:center; padding: 20px; background: #f0f0f1; border: 1px dashed #ccc;">';
-		esc_html_e( 'Please select an event to display data.', 'eventkoi-lite' );
+		// A module set to follow the page's event has nothing to show in
+		// the editor; say so, as the Elementor widget does.
+		esc_html_e( 'Current event data will display here on event pages.', 'eventkoi-lite' );
 		echo '</div>';
 	}
 	return;

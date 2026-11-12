@@ -129,9 +129,22 @@ class ET_Builder_Module_EventkoiCalendar extends ET_Builder_Module {
 	 * @return string
 	 */
 	public function render( $attrs, $content, $render_slug ) {
-		unset( $attrs, $content, $render_slug );
+		unset( $attrs, $content );
 
-		return \EventKoi\Core\Divi_Renderers::calendar( (array) $this->props );
+		$output = \EventKoi\Core\Divi_Renderers::calendar( (array) $this->props );
+
+		if ( '' === trim( (string) $output ) ) {
+			return '';
+		}
+
+		// Divi's own module wrapper: its class is what the module's design
+		// settings (background, border, spacing, custom CSS) are written for.
+		return sprintf(
+			'<div%1$s class="%2$s">%3$s</div>',
+			$this->module_id(),
+			esc_attr( $this->module_classname( $render_slug ) ),
+			$output
+		);
 	}
 
 	/**
