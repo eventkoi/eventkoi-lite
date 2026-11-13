@@ -68,7 +68,7 @@ export function UpcomingEvents() {
 
   return (
     <Box container>
-      <Heading level={3}>{__("Events", "eventkoi-lite")}</Heading>
+      <Heading level={3} ariaLevel={2}>{__("Events", "eventkoi-lite")}</Heading>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-10">
         {!events && (
           <>

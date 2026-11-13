@@ -228,8 +228,11 @@ export function EventInstancesTable({
             <div className="group flex items-center gap-2 text-foreground">
               {/* Title link */}
               <a
-                href="#"
+                href={`#/events/${eventId}/instances/edit/${ts}`}
                 onClick={(e) => {
+                  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) {
+                    return;
+                  }
                   e.preventDefault();
                   navigate(`/events/${eventId}/instances/edit/${ts}`);
                 }}
