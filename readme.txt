@@ -309,9 +309,6 @@ The latest releases are listed here. See changelog.txt in the plugin folder for 
 * Fix: The ticket form and map inside the Elementor Event widget were stripped by output filtering and could not render.
 * Fix: A Stripe webhook saved by an earlier version could come back unreadable and log warnings. It is now read safely.
 
-= 1.4.5.1 – Calendar settings clarity – 2026-09-21 =
-* Improvement: The Calendar & week settings now explain that they apply globally and can also be adjusted per calendar, and the divider lines between settings sections were removed for a cleaner layout.
-
 == Upgrade Notice ==
 
 = 1.5.0.0 =
