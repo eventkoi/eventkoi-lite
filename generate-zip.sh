@@ -76,6 +76,7 @@ cp -r \
   license.txt \
   uninstall.php \
   readme.txt \
+  changelog.txt \
   "$PLUGIN_SLUG/"
 
 # Copy entire scripts folder but exclude node_modules

@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.4.9.1
+Stable tag: 1.5.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -226,6 +226,36 @@ This service is provided by Google LLC: [Terms of Service](https://cloud.google.
 
 The latest releases are listed here. See changelog.txt in the plugin folder for older versions.
 
+= 1.5.0.0 – Attendee details, guest check-in, Beaver Builder and Divi templates and accessibility – 2026-11-13 =
+* New: Ticket buyers can enter a name and email for each ticket at checkout. Attendees are listed one per ticket with edit, check-in and export, and appear on ticket emails, QR check-in and WooCommerce orders.
+* New: RSVP guests are saved with their own names and emails. They show under their host and can be checked in, edited or removed one by one or as a party, also from the QR check-in screen.
+* New: Ready-made Beaver Builder and Divi templates for event, series and calendar pages, offered in onboarding and in the template pickers like the Elementor ones. Works with Divi 4 and Divi 5.
+* New: Admins can correct the customer name, email and billing address on a ticket order, and edit the custom field answers saved with it.
+* New: Settings > Emails has a default sender and default recipients, with Cc and Bcc for every email.
+* New: A setting turns off the See all events in calendar link on event pages.
+* New: Calendar lists can show the post excerpt, and the excerpt is available in the Elementor, Beaver Builder and Divi data lists.
+* New: Every calendar element has its own CSS class, and the Elementor calendar widget has a style section for each one. The widget can also open in List view.
+* New: ICS imports bring in event images.
+* New: Developers can filter what each event shows in the calendar grid.
+* Improvement: Accessibility work towards WCAG 2.1 AA. Form errors are announced, the date picker, event popover and search work from the keyboard, focus stays inside the ticket dialog, contrast is higher, and switches, icon buttons, table columns and images have names screen readers can read.
+* Improvement: Standard events with several dates are sold as one ticket, and every date is listed in date fields, at checkout and in emails.
+* Improvement: Event lists, Query Loop rows, calendar popovers and search show the excerpt first, then the description when there is no excerpt.
+* Improvement: Password-protected events show only the title, dates and password form until they are unlocked. The description, location, tickets and custom fields stay private everywhere, including page builders and feeds.
+* Improvement: Free orders say Free, confirm the booking without payment wording, and hide the fee and payment box. Required fields are starred on the ticket and RSVP forms.
+* Improvement: The Event Data max words setting also applies to the Excerpt field.
+* Improvement: Choosing a month in a calendar list shows the whole month, including days that have passed.
+* Improvement: The selected option in switches is black in the admin and on public calendars, so it is clear which one is on.
+* Improvement: The event schema splits a one-line address into city, region, postal code and country.
+* Improvement: CSV exports open in Excel with accented characters intact.
+* Improvement: Upgrade banners list the current Pro features.
+* Fix: Elementor opens event pages again when the site default is an Elementor template.
+* Fix: Event links no longer repeat the date segment in the URL.
+* Fix: Online locations show their name when no URL is set, the event popup no longer repeats the date, and emails show the correct order number.
+* Fix: A Cover block inside the event query loop shows the image of the event in that row.
+* Fix: Deleted recurring dates no longer count towards the events left number.
+* Fix: An email is no longer lost because of one bad address, and the settings screen refuses invalid addresses.
+* Fix: Check-in totals count guests, the order page and event editor no longer overflow on phones, and wide admin tables scroll inside their card.
+
 = 1.4.9.1 – Event Data word limit and week view default month – 2026-10-25 =
 * New: The Event Data block has a Max number of words setting for the Description field, like the core Excerpt block. Leave it at 0 to keep showing the summary as before.
 * Fix: Calendars set to the Week view now open on the default month and year from the calendar settings instead of always on the current week.
@@ -284,5 +314,5 @@ The latest releases are listed here. See changelog.txt in the plugin folder for 
 
 == Upgrade Notice ==
 
-= 1.4.9.1 =
-Adds a max words setting to the Event Data block, and fixes Week view calendars so they open on the default month and year.
+= 1.5.0.0 =
+Adds attendee details per ticket, RSVP guest rows with check-in, Beaver Builder and Divi templates, order corrections, email defaults and a round of accessibility improvements.
