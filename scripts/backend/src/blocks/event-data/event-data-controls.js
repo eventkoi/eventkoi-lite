@@ -6,6 +6,7 @@ import {
   SelectControl,
   Spinner,
   TextControl,
+  ToggleControl,
 } from "@wordpress/components";
 import { useEffect, useState } from "@wordpress/element";
 import { __ } from "@wordpress/i18n";
@@ -37,6 +38,12 @@ const FORMATTABLE_DATE_FIELDS = new Set([
   "event_date",
 ]);
 
+// Fields that can list every date of a Selected Days event.
+const ALL_DATES_FIELDS = new Set(["event_date", "event_time", "event_datetime"]);
+
+// Fields that can show a Consecutive Days event as dates, then daily times.
+const DAILY_TIMES_FIELDS = new Set(["event_time", "event_datetime"]);
+
 // Fields whose output a custom PHP "time format" string applies to.
 const FORMATTABLE_TIME_FIELDS = new Set([
   "event_datetime",
@@ -63,6 +70,8 @@ export function EventDataControls({
     eventId,
     dateFormat,
     timeFormat,
+    showAllDates = false,
+    showDailyTimes = false,
     excerptLength = 0,
   } = attributes;
   const [searchValue, setSearchValue] = useState("");
@@ -173,6 +182,43 @@ export function EventDataControls({
                 {__("Format reference", "eventkoi-lite")}
               <NewTabNote /></a>
             </p>
+          </div>
+        )}
+
+        {ALL_DATES_FIELDS.has(field) && (
+          <div style={{ paddingTop: "12px" }}>
+            <ToggleControl
+              label={__("Show all dates", "eventkoi-lite")}
+              help={__(
+                "For events on Selected Days, list every date instead of only the next one in a query loop.",
+                "eventkoi-lite"
+              )}
+              checked={!!showAllDates}
+              __nextHasNoMarginBottom={true}
+              onChange={(val) => setAttributes({ showAllDates: !!val })}
+            />
+          </div>
+        )}
+
+        {DAILY_TIMES_FIELDS.has(field) && (
+          <div style={{ paddingTop: "12px" }}>
+            <ToggleControl
+              label={__("Show start and end time for multi-day events", "eventkoi-lite")}
+              help={
+                field === "event_time"
+                  ? __(
+                      "For events on Consecutive Days, show the start and end time, e.g. 19:30 — 20:00.",
+                      "eventkoi-lite"
+                    )
+                  : __(
+                      "For events on Consecutive Days, show the dates first, then the start and end time.",
+                      "eventkoi-lite"
+                    )
+              }
+              checked={!!showDailyTimes}
+              __nextHasNoMarginBottom={true}
+              onChange={(val) => setAttributes({ showDailyTimes: !!val })}
+            />
           </div>
         )}
 

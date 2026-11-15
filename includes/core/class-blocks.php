@@ -128,9 +128,11 @@ class Blocks {
 			$field,
 			$event,
 			array(
-				'dateFormat'    => $attributes['dateFormat'] ?? '',
-				'timeFormat'    => $attributes['timeFormat'] ?? '',
-				'excerptLength' => $attributes['excerptLength'] ?? 0,
+				'dateFormat'     => $attributes['dateFormat'] ?? '',
+				'timeFormat'     => $attributes['timeFormat'] ?? '',
+				'excerptLength'  => $attributes['excerptLength'] ?? 0,
+				'showAllDates'   => $attributes['showAllDates'] ?? false,
+				'showDailyTimes' => $attributes['showDailyTimes'] ?? false,
 			),
 			! empty( $context_event )
 		);
@@ -2226,10 +2228,24 @@ JS;
 							add_filter( 'eventkoi_resolved_time_format', $ek_time_cb );
 						}
 
+						// Per-block date display switches (Event Data block), off unless
+						// the block turns them on.
+						$ek_display_options = array(
+							'all_dates'   => in_array( $field, array( 'event_date', 'event_time', 'event_datetime' ), true )
+								&& array_key_exists( 'showAllDates', $attributes )
+								&& self::parse_boolean_attribute( $attributes['showAllDates'] ),
+							'daily_times' => in_array( $field, array( 'event_time', 'event_datetime' ), true )
+								&& array_key_exists( 'showDailyTimes', $attributes )
+								&& self::parse_boolean_attribute( $attributes['showDailyTimes'] ),
+						);
+						$ek_previous_display = Event::set_display_options( $ek_display_options );
+
 						try {
 							$event_obj = new Event( $event_id );
 							$value     = (string) $event_obj::render_meta( $field );
 						} finally {
+							Event::set_display_options( $ek_previous_display );
+
 							if ( null !== $event_day_override && is_array( $event_day_context_container ) ) {
 								if ( $had_event_day_context ) {
 									$event_day_context_container[ $event_id ] = $previous_event_day_context;
