@@ -1,3 +1,4 @@
+import { __ } from "@wordpress/i18n";
 import { Box } from "@/components/box";
 import { ProLaunch } from "@/components/dashboard/pro-launch";
 import { EventInstancesTable } from "@/components/event/instances-table";
@@ -411,7 +412,7 @@ export function EventEditInstances() {
 
   return (
     <>
-      <ProLaunch className="mb-8" />
+      <ProLaunch className="mb-8" source="event-instances" />
       <div className="flex flex-col w-full gap-8">
         <Box container>
           <Panel className="flex gap-2 p-0">
@@ -419,6 +420,7 @@ export function EventEditInstances() {
               <Textarea
                 ref={textareaRef}
                 id="event-name-readonly"
+              aria-label={__("Event name", "eventkoi-lite")}
                 className={cn(
                   "inline-flex flex-1 resize-none overflow-hidden bg-transparent border-2 border-transparent rounded-md p-2 font-medium text-2xl leading-tight min-h-0 w-auto max-w-full",
                   "text-foreground",

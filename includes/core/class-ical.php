@@ -23,6 +23,178 @@ class ICal {
 	 */
 	public function __construct() {
 		add_action( 'template_redirect', array( $this, 'generate_ics_download' ) );
+		add_action( 'template_redirect', array( $this, 'generate_calendar_feed' ) );
+	}
+
+	/**
+	 * Output a subscribable iCal feed for one or more calendars.
+	 *
+	 * Triggered by `?eventkoi_calendar_feed={term_id|csv|all}` on any URL. The
+	 * feed is rebuilt from current data (cached briefly), so calendar apps that
+	 * poll the subscription stay up to date as events change.
+	 *
+	 * @return void
+	 */
+	public function generate_calendar_feed() {
+		$raw = filter_input( INPUT_GET, 'eventkoi_calendar_feed', FILTER_DEFAULT );
+		if ( null === $raw && isset( $_GET['eventkoi_calendar_feed'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only public feed selector.
+			$raw = wp_unslash( $_GET['eventkoi_calendar_feed'] ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended,WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below.
+		}
+
+		if ( null === $raw || is_array( $raw ) ) {
+			return;
+		}
+
+		$raw = sanitize_text_field( (string) $raw );
+		if ( '' === $raw ) {
+			return;
+		}
+
+		// Resolve event_cal term IDs. "all" exports every calendar.
+		if ( 'all' === strtolower( $raw ) ) {
+			$term_ids = get_terms(
+				array(
+					'taxonomy'   => 'event_cal',
+					'hide_empty' => false,
+					'fields'     => 'ids',
+				)
+			);
+			$term_ids = is_array( $term_ids ) ? array_map( 'absint', $term_ids ) : array();
+		} else {
+			$term_ids = array();
+			foreach ( explode( ',', $raw ) as $piece ) {
+				$piece = trim( $piece );
+				if ( ctype_digit( $piece ) ) {
+					$term_ids[] = absint( $piece );
+				}
+			}
+		}
+
+		$term_ids = array_values( array_unique( array_filter( $term_ids ) ) );
+		if ( empty( $term_ids ) ) {
+			wp_die( esc_html__( 'Invalid calendar feed.', 'eventkoi-lite' ), '', array( 'response' => 404 ) );
+		}
+
+		$valid_terms = array();
+		foreach ( $term_ids as $tid ) {
+			$term = get_term( $tid, 'event_cal' );
+			if ( $term instanceof \WP_Term ) {
+				$valid_terms[] = $term;
+			}
+		}
+
+		if ( empty( $valid_terms ) ) {
+			wp_die( esc_html__( 'Calendar not found.', 'eventkoi-lite' ), '', array( 'response' => 404 ) );
+		}
+
+		$valid_ids = array_map( 'absint', wp_list_pluck( $valid_terms, 'term_id' ) );
+		sort( $valid_ids );
+
+		$cache_key = 'ek_calfeed_' . md5( implode( ',', $valid_ids ) . '|v' . absint( get_option( 'eventkoi_events_cache_version', 1 ) ) );
+		$cached    = get_transient( $cache_key );
+
+		if ( is_string( $cached ) && '' !== $cached ) {
+			$this->send_feed_headers();
+			echo $cached; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- RFC 5545-escaped + folded when cached.
+			exit;
+		}
+
+		$limit = (int) apply_filters( 'eventkoi_calendar_feed_max_events', 1000, $valid_ids );
+
+		$query = new \WP_Query(
+			array(
+				'post_type'           => 'eventkoi_event',
+				'post_status'         => 'publish',
+				'posts_per_page'      => $limit,
+				'no_found_rows'       => true,
+				'ignore_sticky_posts' => true,
+				'orderby'             => 'date',
+				'order'               => 'DESC',
+				'fields'              => 'ids',
+				'tax_query'           => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_tax_query -- Feed is scoped to a calendar by design.
+					array(
+						'taxonomy' => 'event_cal',
+						'field'    => 'term_id',
+						'terms'    => $valid_ids,
+					),
+				),
+			)
+		);
+
+		$vevents = array();
+		foreach ( (array) $query->posts as $event_id ) {
+			$event_id = absint( $event_id );
+			if ( ! $event_id ) {
+				continue;
+			}
+
+			if ( 'cancelled' === get_post_meta( $event_id, 'status', true ) ) {
+				continue;
+			}
+
+			$event    = new Event( $event_id );
+			$timezone = $this->get_event_timezone( $event );
+
+			if ( 'recurring' === $event::get_date_type() ) {
+				$rules = $event::get_recurrence_rules();
+
+				foreach ( $rules as $rule ) {
+					$vevent = $this->build_instance_vevent( $event, $rule, $timezone );
+					if ( '' !== $vevent ) {
+						$rrule = $this->build_rrule_line( $rule );
+						if ( '' !== $rrule ) {
+							$vevent = preg_replace( "/(\nEND:VEVENT)$/", "\n" . $rrule . '$1', $vevent, 1 );
+						}
+						$vevents[] = $vevent;
+					}
+				}
+			} else {
+				$vevents = array_merge( $vevents, $this->build_standard_vevents( $event, $timezone ) );
+			}
+		}
+
+		$calendar_name = 1 === count( $valid_terms ) ? $valid_terms[0]->name : get_bloginfo( 'name' );
+
+		$payload = $this->inject_calendar_name( $this->build_vcalendar( $vevents ), $calendar_name );
+
+		set_transient( $cache_key, $payload, (int) apply_filters( 'eventkoi_calendar_feed_cache_ttl', 10 * MINUTE_IN_SECONDS ) );
+
+		$this->send_feed_headers();
+		echo $payload; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- RFC 5545-escaped + folded by build_vcalendar.
+		exit;
+	}
+
+	/**
+	 * Inject the calendar display name (X-WR-CALNAME / NAME) into a VCALENDAR so
+	 * the subscription shows a friendly title in Apple/Google Calendar.
+	 *
+	 * @param string $payload Assembled VCALENDAR payload.
+	 * @param string $name    Calendar name.
+	 * @return string
+	 */
+	private function inject_calendar_name( $payload, $name ) {
+		$name = $this->clean_description( wp_strip_all_tags( (string) $name ) );
+		if ( '' === $name ) {
+			return $payload;
+		}
+
+		$inject = $this->fold_ical_line( 'X-WR-CALNAME:' . $name ) . "\r\n"
+			. $this->fold_ical_line( 'NAME:' . $name ) . "\r\n";
+
+		return preg_replace( '/(METHOD:PUBLISH\r\n)/', '${1}' . $inject, $payload, 1 );
+	}
+
+	/**
+	 * Headers for a subscribable feed: inline (not a forced download) so calendar
+	 * apps can poll it, with a short public cache window.
+	 *
+	 * @return void
+	 */
+	private function send_feed_headers() {
+		header( 'Content-Type: text/calendar; charset=utf-8' );
+		header( 'Content-Disposition: inline; filename="eventkoi-calendar.ics"' );
+		header( 'Cache-Control: max-age=3600, public' );
+		header( 'Connection: close' );
 	}
 
 	/**
@@ -39,6 +211,13 @@ class ICal {
 		$event_id = absint( get_the_ID() );
 		if ( ! $event_id ) {
 			wp_die( esc_html__( 'Invalid event ID.', 'eventkoi-lite' ), 400 );
+		}
+
+		if (
+			( 'publish' !== get_post_status( $event_id ) || post_password_required( $event_id ) )
+			&& ! current_user_can( 'edit_post', $event_id )
+		) {
+			wp_die( esc_html__( 'Invalid event ID.', 'eventkoi-lite' ), 404 );
 		}
 
 		$event    = new Event( $event_id );
@@ -307,8 +486,41 @@ class ICal {
 			$parts[] = 'BYDAY=' . implode( ',', array_values( array_unique( $byday ) ) );
 		}
 
+		// A bare FREQ=MONTHLY repeats on the day number in DTSTART, so "the
+		// second Friday" was handed to subscribers as "the 12th of every
+		// month". Carry the monthly pattern the same way the event's own
+		// expander does. The weekday is taken from the instant DTSTART already
+		// carries, so the two can never disagree.
+		if ( 'month' === (string) $rule['frequency'] ) {
+			$month_rule = (string) ( $rule['month_day_rule'] ?? '' );
+			$start_ts   = ! empty( $rule['start_date'] ) ? strtotime( (string) $rule['start_date'] ) : false;
+
+			if ( 'weekday-of-month' === $month_rule && false !== $start_ts && empty( $byday ) ) {
+				$weekday_code = $byday_codes[ (int) gmdate( 'w', $start_ts ) ];
+				$position     = (int) ceil( (int) gmdate( 'j', $start_ts ) / 7 );
+
+				// RFC 5545 §3.3.10: an ordinal prefix on BYDAY ("2FR") is the
+				// widest supported way to say "the second Friday".
+				$parts[] = 'BYDAY=' . $position . $weekday_code;
+			} elseif ( 'day-of-month' === $month_rule && ! empty( $rule['month_day_value'] ) ) {
+				$parts[] = 'BYMONTHDAY=' . absint( $rule['month_day_value'] );
+			}
+		}
+
 		if ( ! empty( $rule['months'] ) && is_array( $rule['months'] ) ) {
-			$months = array_values( array_filter( array_map( 'absint', $rule['months'] ) ) );
+			// months is 0 indexed, the way the expander and the calendar both
+			// read it. Passing it through untouched shifted every month back
+			// by one and dropped January entirely, because absint() turned its
+			// 0 into a value array_filter then discarded.
+			$months = array_values(
+				array_map(
+					static function ( $month ) {
+						return (int) $month + 1;
+					},
+					array_filter( $rule['months'], 'is_numeric' )
+				)
+			);
+
 			if ( ! empty( $months ) ) {
 				$parts[] = 'BYMONTH=' . implode( ',', $months );
 			}
@@ -608,6 +820,13 @@ class ICal {
 	 * @return string Location string.
 	 */
 	private function get_location( $event ) {
+		// A password-protected event keeps its location private, like its
+		// description. The feed is shared and cached, so this never depends
+		// on who asked for it.
+		if ( $event::is_password_protected() ) {
+			return '';
+		}
+
 		$locations = $event::get_locations();
 
 		if ( empty( $locations ) || ! is_array( $locations ) ) {

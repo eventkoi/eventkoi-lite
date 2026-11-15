@@ -316,6 +316,7 @@ if ( ! function_exists( 'eventkoi_get_event_data_options' ) ) {
 		return array(
 			'event_title'                 => __( 'Event Title', 'eventkoi-lite' ),
 			'event_details'               => __( 'Event Details', 'eventkoi-lite' ),
+			'event_excerpt'               => __( 'Event Excerpt', 'eventkoi-lite' ),
 			'event_timezone'              => __( 'Event Timezone', 'eventkoi-lite' ),
 			'event_gmap'                  => __( 'Event Google Map', 'eventkoi-lite' ),
 			'event_image'                 => __( 'Event Image', 'eventkoi-lite' ),
@@ -324,6 +325,13 @@ if ( ! function_exists( 'eventkoi_get_event_data_options' ) ) {
 			'event_calendar'              => __( 'Event Calendar', 'eventkoi-lite' ),
 			'event_calendar_link'         => __( 'Event Calendar Link', 'eventkoi-lite' ),
 			'event_location'              => __( 'Event Location', 'eventkoi-lite' ),
+			'event_location_name'         => __( 'Event Location Name', 'eventkoi-lite' ),
+			'event_location_address'      => __( 'Event Location Address', 'eventkoi-lite' ),
+			'event_location_unit'         => __( 'Event Location Apartment/Unit', 'eventkoi-lite' ),
+			'event_location_city'         => __( 'Event Location City', 'eventkoi-lite' ),
+			'event_location_state'        => __( 'Event Location State', 'eventkoi-lite' ),
+			'event_location_country'      => __( 'Event Location Country', 'eventkoi-lite' ),
+			'event_location_zip'          => __( 'Event Location Post Code', 'eventkoi-lite' ),
 			'event_datetime_with_summary' => __( 'Event Datetime with Summary', 'eventkoi-lite' ),
 			'event_datetime'              => __( 'Event Datetime', 'eventkoi-lite' ),
 			'event_date'                  => __( 'Event Date', 'eventkoi-lite' ),
@@ -352,6 +360,10 @@ if ( ! function_exists( 'eventkoi_get_event_data_options' ) ) {
 			'event_rsvp_remaining'        => __( 'Event RSVP Remaining', 'eventkoi-lite' ),
 			'event_rsvp_going'            => __( 'Event RSVP Going', 'eventkoi-lite' ),
 			'event_rsvp_full'             => __( 'Event RSVP Full', 'eventkoi-lite' ),
+			'event_ticket_rsvp'           => __( 'Event Tickets / RSVP', 'eventkoi-lite' ),
+			'event_custom_fields'         => __( 'Event Custom Fields', 'eventkoi-lite' ),
+			'event_custom_fields_with_name' => __( 'Event Custom Fields with Names', 'eventkoi-lite' ),
+			'event_series_dates'          => __( 'Event Series Dates', 'eventkoi-lite' ),
 		);
 	}
 }

@@ -1,3 +1,4 @@
+import { NewTabNote } from "@/components/new-tab-note";
 import { Box } from "@/components/box";
 import { EventBadge } from "@/components/event-badge";
 import { Heading } from "@/components/heading";
@@ -67,7 +68,7 @@ export function UpcomingEvents() {
 
   return (
     <Box container>
-      <Heading level={3}>{__("Events", "eventkoi-lite")}</Heading>
+      <Heading level={3} ariaLevel={2}>{__("Events", "eventkoi-lite")}</Heading>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8 lg:gap-10">
         {!events && (
           <>
@@ -163,7 +164,7 @@ export function UpcomingEvents() {
             >
               <Calendar className="w-5 h-5" />
               {__("View default calendar", "eventkoi-lite")}
-            </a>
+            <NewTabNote /></a>
           </Button>
         </div>
       </div>

@@ -12,12 +12,18 @@ export function CalendarToolbar({
   setCurrentDate,
   view,
   setView,
+  display,
+  setDisplay,
+  visibleViews,
   search,
   setSearch,
   events,
   globalSearch = false,
+  searching = false,
   timezone,
   timeFormat,
+  feedUrl,
+  feedWebcal,
 }) {
   const [open, setOpen] = useState(false);
   const [page, setPage] = useState(0);
@@ -33,6 +39,7 @@ export function CalendarToolbar({
           const q = search.toLowerCase();
           return (
             event.title?.toLowerCase().includes(q) ||
+            event.excerpt?.toLowerCase().includes(q) ||
             event.description?.toLowerCase().includes(q) ||
             event.location?.toLowerCase().includes(q)
           );
@@ -53,7 +60,7 @@ export function CalendarToolbar({
       ? currentDate
       : calendarApi?.getDate?.() || new Date();
   const searchScopeMonth = new Intl.DateTimeFormat(
-    (eventkoi_params?.locale || "en").replace("_", "-"),
+    (window.eventkoi_params?.locale || "en").replace("_", "-"),
     {
       month: "long",
       year: "numeric",
@@ -92,12 +99,16 @@ export function CalendarToolbar({
   })();
 
   const props = {
+    searching,
     calendar,
     calendarApi,
     currentDate,
     setCurrentDate,
     view,
     setView,
+    display,
+    setDisplay,
+    visibleViews,
     isTodayInRange,
     search,
     setSearch,
@@ -119,6 +130,8 @@ export function CalendarToolbar({
       ? () => moveSearchScopeMonth(1)
       : undefined,
     inputRef,
+    feedUrl,
+    feedWebcal,
   };
 
   return (

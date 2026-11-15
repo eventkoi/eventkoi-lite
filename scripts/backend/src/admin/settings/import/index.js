@@ -1,7 +1,8 @@
+import { NewTabNote } from "@/components/new-tab-note";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { __ } from "@wordpress/i18n";
+import { __, _n, sprintf } from "@wordpress/i18n";
 import apiRequest from "@wordpress/api-fetch";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Heading } from "@/components/heading";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +16,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { showToast, showToastError } from "@/lib/toast";
+import { upgradeUrl } from "@/lib/upgrade-url";
 import { Loader2, Download, ArrowRight, CalendarDays, Upload, Link2 } from "lucide-react";
 import { URLImportDialog } from "@/components/url-import-dialog";
 
@@ -71,16 +73,67 @@ export function SettingsImport() {
       setTecState((s) => ({ ...s, importing: false, result: response }));
       if (response?.imported > 0) {
         showToast({
-          message: `${response.imported} event${response.imported !== 1 ? "s" : ""} imported.`,
+          message: sprintf(
+            /* translators: %d: number of imported events */
+            _n(
+              "%d event imported.",
+              "%d events imported.",
+              response.imported,
+              "eventkoi-lite"
+            ),
+            response.imported
+          ),
         });
       }
+      if (!response?.imported && response?.skipped > 0 && response?.notice) {
+        showToast({ message: response.notice });
+      }
       if (response?.errors > 0) {
-        showToastError(`${response.errors} event(s) failed.`);
+        showToastError(
+          sprintf(
+            /* translators: %d: number of failed events */
+            _n(
+              "%d event failed.",
+              "%d events failed.",
+              response.errors,
+              "eventkoi-lite"
+            ),
+            response.errors
+          )
+        );
       }
     } catch (err) {
-      showToastError(err?.message ?? "Import failed.");
+      showToastError(err?.message ?? __("Import failed.", "eventkoi-lite"));
       setTecState((s) => ({ ...s, importing: false }));
     }
+  };
+
+  // Reassign this import's non-default-calendar events to the default calendar
+  // so they show on Lite's default-calendar front end.
+  const moveTecToDefault = async () => {
+    const ids = tecState.result?.non_default_ids || [];
+    if (!ids.length) return;
+    const response = await apiRequest({
+      path: `${eventkoi_params.api}/tec-import/move-to-default`,
+      method: "POST",
+      data: { event_ids: ids },
+      headers: { "EVENTKOI-API-KEY": eventkoi_params.api_key },
+    });
+    setTecState((s) => ({
+      ...s,
+      result: { ...s.result, non_default_count: 0, non_default_ids: [] },
+    }));
+    showToast({
+      message: sprintf(
+        _n(
+          "%d event moved to the default calendar.",
+          "%d events moved to the default calendar.",
+          response?.moved || 0,
+          "eventkoi-lite",
+        ),
+        response?.moved || 0,
+      ),
+    });
   };
 
   // ICS handlers.
@@ -121,11 +174,31 @@ export function SettingsImport() {
       setIcsState((s) => ({ ...s, importing: false, result: response, parsed: null }));
       if (response?.imported > 0) {
         showToast({
-          message: `${response.imported} event${response.imported !== 1 ? "s" : ""} imported.`,
+          message: sprintf(
+            /* translators: %d: number of imported events */
+            _n(
+              "%d event imported.",
+              "%d events imported.",
+              response.imported,
+              "eventkoi-lite"
+            ),
+            response.imported
+          ),
         });
       }
       if (response?.errors > 0) {
-        showToastError(`${response.errors} event(s) failed.`);
+        showToastError(
+          sprintf(
+            /* translators: %d: number of failed events */
+            _n(
+              "%d event failed.",
+              "%d events failed.",
+              response.errors,
+              "eventkoi-lite"
+            ),
+            response.errors
+          )
+        );
       }
     } catch {
       showToastError(__("Import failed.", "eventkoi-lite"));
@@ -150,7 +223,10 @@ export function SettingsImport() {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <IntegrationCard
           name="The Events Calendar"
-          description="Import events, venues, organizers, and categories from TEC."
+          description={__(
+            "Import events, venues, organizers, and categories from TEC.",
+            "eventkoi-lite",
+          )}
           icon={<img src={TEC_ICON_URL} alt="The Events Calendar" className="h-10 w-10 rounded-lg flex-shrink-0" />}
           loading={tecLoading}
           installed={tecInstalled}
@@ -160,7 +236,9 @@ export function SettingsImport() {
           count={tec?.events_count || 0}
           totalCount={tec?.total_events || 0}
           result={tecResult}
+          data={tec}
           onImport={importTEC}
+          onMoveToDefault={moveTecToDefault}
           onViewEvents={() => navigate("/events")}
         />
 
@@ -194,6 +272,7 @@ export function SettingsImport() {
 }
 
 function IntegrationCard({
+  data,
   name,
   description,
   icon,
@@ -206,9 +285,23 @@ function IntegrationCard({
   totalCount,
   result,
   onImport,
+  onMoveToDefault,
   onViewEvents,
 }) {
   const inactive = !loading && !installed;
+  const [movingToDefault, setMovingToDefault] = useState(false);
+
+  const handleMoveToDefault = async () => {
+    if (!onMoveToDefault) return;
+    setMovingToDefault(true);
+    try {
+      await onMoveToDefault();
+    } catch (err) {
+      showToastError(err?.message ?? __("Could not move events.", "eventkoi-lite"));
+    } finally {
+      setMovingToDefault(false);
+    }
+  };
 
   return (
     <div className="group flex flex-col rounded-xl border bg-card shadow-sm transition-all duration-200 hover:shadow-md">
@@ -249,7 +342,10 @@ function IntegrationCard({
         {!loading && available && !done && !importing && (
           <>
             <span className="text-xs text-muted-foreground">
-              {count} {count === 1 ? __("event", "eventkoi-lite") : __("events", "eventkoi-lite")} {__("available", "eventkoi-lite")}
+              {sprintf(
+                _n("%d event available", "%d events available", count, "eventkoi-lite"),
+                count,
+              )}
             </span>
             <Dialog>
               <DialogTrigger asChild>
@@ -279,8 +375,28 @@ function IntegrationCard({
                     </li>
                   </ul>
                   <p className="text-xs text-muted-foreground/70 mt-3">
-                    {__("Previously imported events will be skipped.", "eventkoi-lite")}
+                    {__("Previously imported events are skipped, not updated. Delete an event\u2019s EventKoi copy to re-import it.", "eventkoi-lite")}
                   </p>
+                  {data?.currency_mismatch && (
+                    <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900">
+                      <p className="font-medium">
+                        {sprintf(
+                          /* translators: 1: TEC currency code, 2: EventKoi currency code. */
+                          __("Currency mismatch: Event Tickets charges %1$s, but your checkout currency is %2$s.", "eventkoi-lite"),
+                          data.currency_mismatch.tec,
+                          data.currency_mismatch.eventkoi
+                        )}
+                      </p>
+                      <p className="mt-1.5">
+                        {__("To keep ticket prices, change your currency first in", "eventkoi-lite")}{" "}
+                        <Link to="/settings/payments" className="underline font-medium">
+                          {__("Settings \u2192 Payments", "eventkoi-lite")}
+                        </Link>
+                        {". "}
+                        {__("If you import as is, paid ticket types are added without pricing.", "eventkoi-lite")}
+                      </p>
+                    </div>
+                  )}
                 </DialogHeader>
                 <DialogFooter className="mt-2">
                   <DialogClose asChild>
@@ -308,7 +424,10 @@ function IntegrationCard({
         {!loading && done && (
           <>
             <span className="inline-flex items-center gap-1.5 text-xs text-green-600 font-medium">
-              {result?.imported} {result?.imported === 1 ? __("event", "eventkoi-lite") : __("events", "eventkoi-lite")} {__("imported", "eventkoi-lite")}
+              {sprintf(
+                _n("%d event imported", "%d events imported", result?.imported || 0, "eventkoi-lite"),
+                result?.imported || 0,
+              )}
             </span>
             <Button
               variant="ghost"
@@ -322,6 +441,52 @@ function IntegrationCard({
           </>
         )}
       </div>
+
+      {!loading && done && result?.non_default_count > 0 && (
+        <div className="px-5 py-4 border-t bg-amber-50 dark:bg-amber-950/30">
+          <p className="text-xs leading-relaxed text-amber-900 dark:text-amber-200">
+            {__(
+              "This import includes events across multiple calendars, but EventKoi Lite only displays the default calendar. You can move everything into the default calendar now, or upgrade to Pro to keep them separated.",
+              "eventkoi-lite",
+            )}
+          </p>
+          <Button
+            size="sm"
+            variant="outline"
+            className="mt-3 h-8 text-xs"
+            onClick={handleMoveToDefault}
+            disabled={movingToDefault}
+          >
+            {movingToDefault && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+            {__("Move all events into default calendar", "eventkoi-lite")}
+          </Button>
+        </div>
+      )}
+
+      {!loading && done && result?.recurring_flattened > 0 && (
+        <div className="px-5 py-4 border-t bg-amber-50 dark:bg-amber-950/30">
+          <p className="text-xs leading-relaxed text-amber-900 dark:text-amber-200">
+            {sprintf(
+              /* translators: %d: number of recurring events flattened. */
+              _n(
+                "This import includes %d recurring event. EventKoi Lite doesn't support recurring events, so only its first occurrence was imported as a standard event.",
+                "This import includes %d recurring events. EventKoi Lite doesn't support recurring events, so only the first occurrence of each was imported as a standard event.",
+                result.recurring_flattened,
+                "eventkoi-lite",
+              ),
+              result.recurring_flattened,
+            )}
+          </p>
+          <a
+            href={upgradeUrl("import-recurring", "import")}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 inline-flex h-8 items-center rounded-md border border-amber-300 bg-white px-3 text-xs font-medium text-amber-900 no-underline hover:bg-amber-100 dark:border-amber-800 dark:bg-transparent dark:text-amber-100"
+          >
+            {__("Upgrade to Pro to import recurring events", "eventkoi-lite")}
+          <NewTabNote /></a>
+        </div>
+      )}
     </div>
   );
 }
@@ -374,7 +539,10 @@ function ICSImportCard({
         {!importing && done && (
           <>
             <span className="inline-flex items-center gap-1.5 text-xs text-green-600 font-medium">
-              {result?.imported} {result?.imported === 1 ? __("event", "eventkoi-lite") : __("events", "eventkoi-lite")} {__("imported", "eventkoi-lite")}
+              {sprintf(
+                _n("%d event imported", "%d events imported", result?.imported || 0, "eventkoi-lite"),
+                result?.imported || 0,
+              )}
             </span>
             <Button
               variant="ghost"

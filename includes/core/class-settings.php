@@ -35,6 +35,20 @@ class Settings {
 			? eventkoi_get_permalink_structure()
 			: array();
 
+		// Back-compat: the activator seeds the REST API key into the legacy
+		// standalone `eventkoi_api_key` option, but Rest::get_api_key() (the only
+		// consumer that matters for private_api authentication) reads from
+		// $settings['api_key']. Without this sync the activator-issued key
+		// authenticates nothing, so every private endpoint 403s on a fresh
+		// install until someone presses "Regenerate" by hand.
+		if ( empty( $settings['api_key'] ) ) {
+			$legacy_api_key = (string) get_option( 'eventkoi_api_key', '' );
+
+			if ( '' !== $legacy_api_key ) {
+				$settings['api_key'] = $legacy_api_key;
+			}
+		}
+
 		return apply_filters( 'eventkoi_get_settings', $settings );
 	}
 
@@ -64,6 +78,12 @@ class Settings {
 			'rsvp_email_template',
 			'ticket_email_template',
 			'refund_email_template',
+			'reminder_email_template',
+			// Admin notification templates are rich HTML too; keep their
+			// formatting instead of stripping to plain text on save.
+			'admin_sale_email_template',
+			'admin_rsvp_email_template',
+			'admin_ticket_email_template',
 		);
 
 		if ( is_array( $data ) ) {
@@ -104,6 +124,7 @@ class Settings {
 				'rsvp_email_enabled',
 				'ticket_email_enabled',
 				'refund_email_enabled',
+				'reminder_email_enabled',
 				'admin_email_enabled',
 				'admin_rsvp_email_enabled',
 				'admin_sale_email_enabled',

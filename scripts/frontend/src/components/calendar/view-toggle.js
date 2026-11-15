@@ -7,14 +7,34 @@
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { __ } from "@wordpress/i18n";
 
-export function ViewToggle({ calendarApi, view, setView }) {
+export function ViewToggle({ calendarApi, view, setView, display, setDisplay, visibleViews }) {
+  const isList = display === "list";
+  // Hidden views drop their button; a single remaining view needs no toggle
+  // at all (PROD-556). No prop means every view stays visible.
+  const allViews = ["month", "week", "list"];
+  const shown =
+    Array.isArray(visibleViews) && visibleViews.length
+      ? allViews.filter((v) => visibleViews.includes(v))
+      : allViews;
+
+  if (shown.length < 2) {
+    return null;
+  }
+
   return (
     <ToggleGroup
       type="single"
-      className="bg-muted text-foreground gap-2 border border-solid border-border p-[4px] h-10 box-border rounded shadow-none"
-      value={view}
+      className="eventkoi-calendar-views bg-muted text-foreground gap-2 border border-solid border-border p-[4px] h-10 box-border rounded shadow-none"
+      value={isList ? "list" : view}
       onValueChange={(val) => {
         if (!val) return;
+
+        if (val === "list") {
+          setDisplay?.("list");
+          return;
+        }
+
+        setDisplay?.("calendar");
 
         // When switching to week view, jump to today's week if today falls
         // within the currently-displayed month; otherwise FullCalendar would
@@ -38,25 +58,41 @@ export function ViewToggle({ calendarApi, view, setView }) {
       aria-label={__("Calendar view mode", "eventkoi-lite")}
       role="radiogroup"
     >
+{shown.includes("month") && (
       <ToggleGroupItem
         value="dayGridMonth"
         role="radio"
-        aria-checked={view === "dayGridMonth"}
+        aria-checked={!isList && view === "dayGridMonth"}
         aria-label={__("Month view", "eventkoi-lite")}
-        className="border-none transition-none cursor-pointer shadow-none h-full rounded-sm text-foreground hover:text-foreground data-[state=on]:bg-white data-[state=on]:font-semibold"
+        className="eventkoi-calendar-view eventkoi-calendar-view-month border-none transition-none cursor-pointer shadow-none h-full rounded-sm text-foreground hover:text-foreground data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:text-primary-foreground data-[state=on]:font-semibold"
       >
         {__("Month", "eventkoi-lite")}
       </ToggleGroupItem>
+      )}
 
+{shown.includes("week") && (
       <ToggleGroupItem
         value="timeGridWeek"
         role="radio"
-        aria-checked={view === "timeGridWeek"}
+        aria-checked={!isList && view === "timeGridWeek"}
         aria-label={__("Week view", "eventkoi-lite")}
-        className="border-none transition-none cursor-pointer shadow-none h-full rounded-sm text-foreground hover:text-foreground data-[state=on]:bg-white data-[state=on]:font-semibold"
+        className="eventkoi-calendar-view eventkoi-calendar-view-week border-none transition-none cursor-pointer shadow-none h-full rounded-sm text-foreground hover:text-foreground data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:text-primary-foreground data-[state=on]:font-semibold"
       >
         {__("Week", "eventkoi-lite")}
       </ToggleGroupItem>
+      )}
+
+{shown.includes("list") && (
+      <ToggleGroupItem
+        value="list"
+        role="radio"
+        aria-checked={isList}
+        aria-label={__("List view", "eventkoi-lite")}
+        className="eventkoi-calendar-view eventkoi-calendar-view-list border-none transition-none cursor-pointer shadow-none h-full rounded-sm text-foreground hover:text-foreground data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:text-primary-foreground data-[state=on]:font-semibold"
+      >
+        {__("List", "eventkoi-lite")}
+      </ToggleGroupItem>
+      )}
     </ToggleGroup>
   );
 }

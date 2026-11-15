@@ -4,14 +4,15 @@ import {
   getSideTabClasses,
 } from "@/components/ui/side-tabs";
 import { ProBadge } from "@/components/pro-badge";
+import { __ } from "@wordpress/i18n";
 
 const tabs = [
-  { key: "default", label: "Default settings", to: "default", cap: "eventkoi_settings_defaults" },
+  { key: "default", label: __("Default settings", "eventkoi-lite"), to: "default", cap: "eventkoi_settings_defaults" },
   {
     key: "fields",
     label: (
       <span className="inline-flex items-center gap-2">
-        Custom fields
+        {__("Custom fields", "eventkoi-lite")}
         <ProBadge />
       </span>
     ),
@@ -22,18 +23,18 @@ const tabs = [
     key: "submissions",
     label: (
       <span className="inline-flex items-center gap-2">
-        Frontend submissions
+        {__("Frontend submissions", "eventkoi-lite")}
         <ProBadge />
       </span>
     ),
     to: "submissions",
     cap: "eventkoi_settings_fields",
   },
-  { key: "emails", label: "Emails", to: "emails", cap: "eventkoi_settings_emails" },
-  { key: "payments", label: "Payments", to: "payments", cap: "eventkoi_settings_payments" },
-  { key: "integrations", label: "API & integrations", to: "integrations", cap: "eventkoi_settings_integrations" },
-  { key: "import", label: "Import", to: "import", cap: "eventkoi_settings_import" },
-  { key: "permissions", label: "User permissions", to: "permissions", cap: "eventkoi_settings_defaults" },
+  { key: "emails", label: __("Emails", "eventkoi-lite"), to: "emails", cap: "eventkoi_settings_emails" },
+  { key: "payments", label: __("Payments", "eventkoi-lite"), to: "payments", cap: "eventkoi_settings_payments" },
+  { key: "integrations", label: __("API & integrations", "eventkoi-lite"), to: "integrations", cap: "eventkoi_settings_integrations" },
+  { key: "import", label: __("Import", "eventkoi-lite"), to: "import", cap: "eventkoi_settings_import" },
+  { key: "permissions", label: __("User permissions", "eventkoi-lite"), to: "permissions", cap: "eventkoi_settings_defaults" },
 ];
 
 export function SettingsTabs({ settings, setSettings, location }) {

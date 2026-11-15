@@ -1,3 +1,4 @@
+import { __, sprintf } from "@wordpress/i18n";
 import { DateTime } from "luxon";
 
 /**
@@ -90,7 +91,7 @@ export function buildTimeline(event, wpTz, timeFormat = "12") {
     return event.tbc_note || "Date and time to be confirmed";
   }
 
-  const params = typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
+  const params = typeof eventkoi_params !== "undefined" ? window.eventkoi_params : {};
   const normalizeZone = (zone, fallback = "UTC") => {
     const normalized = normalizeTimeZone(zone || fallback);
     return DateTime.now().setZone(normalized).isValid ? normalized : fallback;
@@ -342,13 +343,19 @@ export function buildTimeline(event, wpTz, timeFormat = "12") {
 }
 
 export function formatTimezoneLabel(tz, timeFormat = "24", withFormat = true) {
-  if (!tz) return timeFormat === "12" ? "UTC, AM/PM" : "UTC, 24hr";
+  const formatLabel =
+    timeFormat === "custom"
+      ? __("custom time", "eventkoi-lite")
+      : timeFormat === "12"
+      ? __("AM/PM", "eventkoi-lite")
+      : __("24hr", "eventkoi-lite");
+  /* translators: %s: time format label, for example 24hr. */
+  if (!tz) return sprintf(__("UTC, %s", "eventkoi-lite"), formatLabel);
 
   const appendSuffix = (label) =>
+    /* translators: %1$s: timezone label. %2$s: time format label. */
     withFormat
-      ? timeFormat === "12"
-        ? `${label}, AM/PM`
-        : `${label}, 24hr`
+      ? sprintf(__("%1$s, %2$s", "eventkoi-lite"), label, formatLabel)
       : label;
 
   // Handle ISO-style offset like +02:00 or -0530
@@ -524,7 +531,7 @@ export function formatTimeCompact(
   const tz = normalizeTimeZone(timeZone);
   const use24h =
     typeof eventkoi_params !== "undefined" &&
-    eventkoi_params?.time_format === "24";
+    window.eventkoi_params?.time_format === "24";
 
   if (use24h) {
     return date.toLocaleTimeString(locale || undefined, {
@@ -624,11 +631,15 @@ export function getInitialCalendarDate({
 }) {
   const now = DateTime.utc(); // use UTC baseline, not local tz
 
-  // Week view always lands on the week containing today, regardless of
-  // default month/year. Month view uses the default-month logic below.
-  if (timeframe === "week") {
-    return now.toISODate();
-  }
+  // Week view: the default month and year still decide where the calendar
+  // opens. When they point at a month other than the current one, open on
+  // the week that holds the 1st of that month; otherwise land on this week.
+  const weekStart = (year, month) => {
+    if (year === now.year && month === now.month) {
+      return now.toISODate();
+    }
+    return DateTime.utc(year, month, 1).toISODate();
+  };
 
   const safeParseYear = (value, fallback) => {
     const num = parseInt(value, 10);
@@ -661,6 +672,9 @@ export function getInitialCalendarDate({
         ? safeParseYear(defaultYear, now.year)
         : now.year;
 
+    if (timeframe === "week") {
+      return weekStart(yearNum, monthNum || now.month);
+    }
     if (monthNum) {
       return DateTime.utc(yearNum, monthNum, 1).toISODate();
     }
@@ -678,6 +692,9 @@ export function getInitialCalendarDate({
       ? safeParseYear(calendar.default_year, now.year)
       : now.year;
 
+  if (timeframe === "week") {
+    return weekStart(yearNum, monthNum || now.month);
+  }
   if (monthNum) {
     return DateTime.utc(yearNum, monthNum, 1).toISODate();
   }

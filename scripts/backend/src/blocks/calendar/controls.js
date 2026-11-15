@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
 import apiRequest from "@wordpress/api-fetch";
-import { __ } from "@wordpress/i18n";
+import { __, sprintf } from "@wordpress/i18n";
 
 import {
   PanelBody,
@@ -28,6 +28,40 @@ export const Controls = (props) => {
   const timeframe = attributes?.timeframe
     ? attributes.timeframe
     : calendar?.timeframe;
+
+  const ALL_VIEWS = ["month", "week", "list"];
+  const visibleViews = (() => {
+    if (!attributes.views) return ALL_VIEWS;
+    const parsed = String(attributes.views)
+      .split(",")
+      .filter((v) => ALL_VIEWS.includes(v));
+    return parsed.length ? parsed : ALL_VIEWS;
+  })();
+
+  const setViewVisible = (key, visible) => {
+    const next = ALL_VIEWS.filter((v) =>
+      v === key ? visible : visibleViews.includes(v)
+    );
+    // Store "" for the default (all views) so existing blocks stay untouched.
+    setAttributes({ views: next.length === ALL_VIEWS.length ? "" : next.join(",") });
+    // The default view can't be a hidden one; move it to the first view left.
+    if (!visible && timeframe === key && next.length) {
+      setAttributes({ timeframe: next[0] });
+      setView(
+        next[0] === "week"
+          ? "timeGridWeek"
+          : next[0] === "list"
+          ? "list"
+          : "dayGridMonth"
+      );
+    }
+  };
+
+  const viewLabels = {
+    month: __("Month", "eventkoi-lite"),
+    week: __("Week", "eventkoi-lite"),
+    list: __("List", "eventkoi-lite"),
+  };
 
   const resetColors = () => {
     setAttributes({
@@ -102,6 +136,29 @@ export const Controls = (props) => {
             __nextHasNoMarginBottom
           />
         )}
+        {ALL_VIEWS.map((key) => (
+          <ToggleControl
+            key={key}
+            label={sprintf(
+              /* translators: %s: calendar view name (Month, Week or List). */
+              __("Show %s view", "eventkoi-lite"),
+              viewLabels[key]
+            )}
+            checked={visibleViews.includes(key)}
+            disabled={
+              visibleViews.includes(key) && visibleViews.length === 1
+            }
+            onChange={(value) => setViewVisible(key, value)}
+            __nextHasNoMarginBottom
+          />
+        ))}
+        <ToggleControl
+          label={__("Show timezone", "eventkoi-lite")}
+          help={__("Show the timezone label above the calendar.", "eventkoi-lite")}
+          checked={attributes.showTimezone !== false}
+          onChange={(value) => setAttributes({ showTimezone: value })}
+          __nextHasNoMarginBottom
+        />
         <ToggleGroupControl
           label={__("Timeframe defaults to", "eventkoi-lite")}
           value={timeframe}
@@ -110,14 +167,18 @@ export const Controls = (props) => {
             setAttributes({ timeframe: newValue });
             if (newValue === "week") {
               setView("timeGridWeek");
+            } else if (newValue === "list") {
+              setView("list");
             } else {
               setView("dayGridMonth");
             }
           }}
+          __next40pxDefaultSize
           __nextHasNoMarginBottom
         >
-          <ToggleGroupControlOption value="month" label="Month" />
-          <ToggleGroupControlOption value="week" label="Week" />
+          {visibleViews.map((key) => (
+            <ToggleGroupControlOption key={key} value={key} label={viewLabels[key]} />
+          ))}
         </ToggleGroupControl>
 
         <SelectControl
@@ -139,6 +200,7 @@ export const Controls = (props) => {
             { label: __("December", "eventkoi-lite"), value: "december" },
           ]}
           onChange={(newMonth) => setAttributes({ default_month: newMonth })}
+          __next40pxDefaultSize
           __nextHasNoMarginBottom
         />
 
@@ -153,6 +215,7 @@ export const Controls = (props) => {
             }),
           ]}
           onChange={(newYear) => setAttributes({ default_year: newYear })}
+          __next40pxDefaultSize
           __nextHasNoMarginBottom
         />
 
@@ -169,11 +232,12 @@ export const Controls = (props) => {
             { label: "Sunday", value: "sunday" },
           ]}
           onChange={(newStartday) => setAttributes({ startday: newStartday })}
+          __next40pxDefaultSize
           __nextHasNoMarginBottom
         />
       </PanelBody>
       <ToolsPanel
-        label={__("Colors")}
+        label={__("Colors", "eventkoi-lite")}
         resetAll={resetColors}
         hasInnerWrapper={true}
         className="color-block-support-panel"

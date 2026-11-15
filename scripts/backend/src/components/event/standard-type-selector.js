@@ -2,11 +2,12 @@
 
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { __ } from "@wordpress/i18n";
 
 export function StandardTypeSelector({ value, onChange }) {
   return (
     <div className="flex flex-col gap-2">
-      <Label className="font-medium text-sm">Event Type:</Label>
+      <Label className="font-medium text-sm">{__("Event Type:", "eventkoi-lite")}</Label>
       <RadioGroup
         value={value || "selected"}
         onValueChange={onChange}
@@ -18,7 +19,7 @@ export function StandardTypeSelector({ value, onChange }) {
             htmlFor="continuous"
             className="text-sm font-medium cursor-pointer"
           >
-            Consecutive Days
+            {__("Consecutive Days", "eventkoi-lite")}
           </Label>
         </div>
 
@@ -28,9 +29,9 @@ export function StandardTypeSelector({ value, onChange }) {
             htmlFor="selected"
             className="text-sm font-medium cursor-pointer"
           >
-            Selected Days{" "}
+            {__("Selected Days", "eventkoi-lite")}{" "}
             <span className="font-normal">
-              (non-consecutive or varied times)
+              {__("(non-consecutive or varied times)", "eventkoi-lite")}
             </span>
           </Label>
         </div>

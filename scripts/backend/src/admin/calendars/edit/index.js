@@ -4,6 +4,7 @@ import { NotFound } from "@/components/empty-state/NotFound";
 import { Wrapper } from "@/components/wrapper";
 import { useSettings } from "@/hooks/SettingsContext";
 import { cn } from "@/lib/utils";
+import { __ } from "@wordpress/i18n";
 import apiRequest from "@wordpress/api-fetch";
 import { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
@@ -37,7 +38,7 @@ export function CalendarEdit() {
             onClick={() => window.open(response.url, "_blank")}
             className="underline underline-offset-2 hover:no-underline"
           >
-            View event
+            {__("View event", "eventkoi-lite")}
           </div>
         )}
       </div>,

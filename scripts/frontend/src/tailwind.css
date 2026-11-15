@@ -22,7 +22,9 @@
     --accent-foreground: 0 1% 22%;
 
     --border: 0 0% 90%;
-    --input: 0 0% 90%;
+    /* Field borders only: 55% grey is #8c8c8c, 3.4:1 on white (3:1 needed).
+       Never use it as a background; --muted is the light grey fill. */
+    --input: 0 0% 55%;
     --ring: 0 0% 50%;
     --muted-foreground: 0 0% 43%;
 
@@ -31,6 +33,47 @@
     --warning: 38 92% 50%;
     --warning-foreground: 48 96% 89%;
     --success: 158 48% 45%;
+  }
+
+  /* Page builders and themes style bare buttons with class-scoped rules that
+     outrank a plain `button` reset: Hello Elementor's [type=button] reset
+     crushes icon buttons, and Elementor's global kit
+     (.elementor-kit-N button { background: var(--e-global-color-primary);
+     padding: 15px 30px }) repaints our radios and link buttons, hiding their
+     text. Re-assert the preflight button reset with a real `.eventkoi-front`
+     class so it beats those (0,1,1) rules, while our own !important utilities
+     (bg-*, h-*, px-*) still override it on real buttons. WordPress block
+     buttons and page builder buttons (Elementor, Beaver, Bricks) are skipped
+     so they keep their own styling, also when our scripts re-render one. */
+  .eventkoi-front
+    :is(button, [type='button'], [type='reset'], [type='submit']):not(
+      .wp-block-button__link
+    ):not(.wp-element-button):not(.elementor-button):not(.fl-button):not(.bricks-button) {
+    margin: 0;
+    padding: 0;
+    border: 0 solid;
+    background-color: transparent;
+    background-image: none;
+    color: inherit;
+    font: inherit;
+    line-height: inherit;
+    letter-spacing: inherit;
+    text-transform: none;
+    text-decoration: none;
+  }
+
+  /* Beaver Builder's Global Styles give every element inside a button the
+     button text color (`.fl-page .fl-builder-content button:hover *` is
+     0,4,1) but paint the background on the button only, so our month picker
+     label came out white on white. Children inherit the button's color; the
+     repeated class lifts this to 0,5,0, and our !important text utilities on
+     inner elements still win. */
+  .eventkoi-front.eventkoi-front
+    :is(button, [type='button'], [type='reset'], [type='submit']):not(
+      .wp-block-button__link
+    ):not(.wp-element-button):not(.elementor-button):not(.fl-button):not(.bricks-button)
+    * {
+    color: inherit;
   }
 }
 
@@ -53,5 +96,122 @@
     outline: 2px solid hsl(var(--primary)) !important;
     outline-offset: 2px;
     box-shadow: none !important;
+  }
+}
+
+/* Page builders load their own utility CSS after ours (Beaver Builder's theme
+   ships Bootstrap with `.hidden { display: none !important }`), which outranks
+   the responsive display utilities by source order and hides list-view dates.
+   Re-declare the display utilities the frontend uses under the .eventkoi-front
+   scope so they win on specificity regardless of stylesheet order. */
+.eventkoi-front .hidden {
+  display: none !important;
+}
+
+@media (min-width: 640px) {
+  .eventkoi-front .sm\:flex {
+    display: flex !important;
+  }
+  .eventkoi-front .sm\:grid {
+    display: grid !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .eventkoi-front .md\:block {
+    display: block !important;
+  }
+  .eventkoi-front .md\:flex {
+    display: flex !important;
+  }
+  .eventkoi-front .md\:grid {
+    display: grid !important;
+  }
+  .eventkoi-front .md\:hidden {
+    display: none !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .eventkoi-front .lg\:flex {
+    display: flex !important;
+  }
+}
+
+/* Beaver Builder paints every element inside a button with its global button
+   text color, which turns icon strokes white on our white toolbar buttons.
+   Icons draw with currentColor, so pin them to the button's own text color. */
+.eventkoi-front button svg.lucide,
+.eventkoi-front button svg.lucide * {
+  color: inherit !important;
+  stroke: currentColor !important;
+}
+
+/* List row date/time. Own class names, so page-builder utility CSS
+   (Bootstrap's .hidden and friends) can never toggle these off. */
+.eventkoi-front .ek-date-sm {
+  display: flex;
+}
+
+.eventkoi-front .ek-date-md {
+  display: none;
+}
+
+/* Below 900px a 220px image column plus a 200px-minimum date column leave the
+   middle column too narrow to hold a title, excerpt and address without every
+   line wrapping. In that band the date stays inline above the title and the
+   image gives back some room. The inline width on the image element is why
+   these need !important. */
+@media (max-width: 899px) {
+  .eventkoi-front .ek-image {
+    width: 160px !important;
+    flex-basis: 160px !important;
+    max-width: 160px !important;
+  }
+}
+
+@media (min-width: 900px) {
+  .eventkoi-front .ek-date-sm {
+    display: none;
+  }
+
+  .eventkoi-front .ek-date-md {
+    display: block;
+  }
+}
+
+/* Content added through the eventkoi_calendar_grid_event_content filter. */
+.eventkoi-grid-event {
+  min-width: 0;
+  width: 100%;
+}
+
+.eventkoi-grid-event__main {
+  align-items: center;
+  display: flex;
+  min-width: 0;
+}
+
+.eventkoi-grid-event img {
+  display: block;
+  height: auto;
+  max-width: 100%;
+}
+
+/* Visitors who ask their system for less motion get none of ours: no spin,
+   pulse or sliding transitions. */
+@media (prefers-reduced-motion: reduce) {
+  .eventkoi-front,
+  .eventkoi-front *,
+  .fc,
+  .fc *,
+  [data-event-popover],
+  [data-event-popover] *,
+  .ek-live-indicator,
+  .ek-live-indicator * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

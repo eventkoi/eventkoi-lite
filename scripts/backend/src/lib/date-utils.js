@@ -1217,13 +1217,6 @@ export function safeNormalizeTimeZone(tz) {
 export function getInitialDate(attributes) {
   const now = DateTime.utc();
 
-  // Week view always lands on the week containing today, regardless of
-  // default month/year — matches the frontend so editor preview mirrors
-  // what visitors actually see.
-  if (attributes?.timeframe === "week") {
-    return now.toISODate();
-  }
-
   let year = now.year;
   let month = now.month;
 
@@ -1238,6 +1231,17 @@ export function getInitialDate(attributes) {
   // Parse month
   if (attributes?.default_month && attributes.default_month !== "") {
     month = monthMap[attributes.default_month.toLowerCase()] ?? now.month;
+  }
+
+  // Week view: open on this week when the defaults point at the current
+  // month, otherwise on the week holding the 1st of the chosen month. Matches
+  // the frontend (date-utils.getInitialCalendarDate) so the editor preview
+  // reflects what visitors actually see.
+  if (attributes?.timeframe === "week") {
+    if (year === now.year && month === now.month) {
+      return now.toISODate();
+    }
+    return DateTime.utc(year, month, 1).toISODate();
   }
 
   // Always return explicit first-of-month in UTC

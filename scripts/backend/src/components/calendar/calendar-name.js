@@ -78,7 +78,7 @@ export function CalendarName({ calendar, setCalendar }) {
       </div>
       {error && (
         <p className="w-full text-xs text-[#d13d3d]">
-          Calendar name cannot be blank
+          {__("Calendar name cannot be blank", "eventkoi-lite")}
         </p>
       )}
     </Panel>

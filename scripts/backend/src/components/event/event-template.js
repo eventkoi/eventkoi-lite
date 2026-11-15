@@ -1,3 +1,4 @@
+import { NewTabNote } from "@/components/new-tab-note";
 import { __ } from "@wordpress/i18n";
 import { Panel } from "@/components/panel";
 import { ProBadge } from "@/components/pro-badge";
@@ -40,9 +41,13 @@ export function EventTemplate({
     `/wp_template/${themeSlug}//${template}`
   );
 
-  const templateEditorUrl = isManuallyAssigned
-    ? `${eventkoi_params.site_url}/wp-admin/site-editor.php?p=${encodedTemplatePath}&canvas=edit`
-    : `${eventkoi_params.site_url}/wp-admin/site-editor.php?p=/template&activeView=eventkoi`;
+  // Classic themes have no Site Editor template screens.
+  const isBlockTheme = !!eventkoi_params?.block_theme;
+  const templateEditorUrl = isBlockTheme
+    ? isManuallyAssigned
+      ? `${eventkoi_params.site_url}/wp-admin/site-editor.php?p=${encodedTemplatePath}&canvas=edit`
+      : `${eventkoi_params.site_url}/wp-admin/site-editor.php?p=/template&activeView=eventkoi`
+    : "";
 
   const handleChange = (value) => {
     if (isDisabled) return;
@@ -56,11 +61,11 @@ export function EventTemplate({
   return (
     <Panel className="p-0">
       <Label htmlFor="template" className="inline-flex items-center">
-        Event template
+        {__("Event template", "eventkoi-lite")}
         <ProBadge />
       </Label>
       <div className="text-muted-foreground">
-        Select or edit the design template of your event page.
+        {__("Select or edit the design template of your event page.", "eventkoi-lite")}
       </div>
 
       <div className="flex items-center gap-4 mt-2">
@@ -85,7 +90,7 @@ export function EventTemplate({
                     <SelectGroup
                       key={group.type || group.label || "templates"}
                     >
-                      <SelectLabel>{group.label || "Templates"}</SelectLabel>
+                      <SelectLabel>{group.label || __("Templates", "eventkoi-lite")}</SelectLabel>
                       {group.templates
                         .filter((tpl) => tpl?.slug || tpl?.id)
                         .map((tpl) => (
@@ -111,14 +116,18 @@ export function EventTemplate({
           </SelectContent>
         </Select>
 
-        <a
-          href={templateEditorUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm text-primary underline hover:text-primary/80 transition"
-        >
-          {isManuallyAssigned ? "Edit in Site Editor" : "View/edit template"}
-        </a>
+        {templateEditorUrl && (
+          <a
+            href={templateEditorUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-primary underline hover:text-primary/80 transition"
+          >
+            {isManuallyAssigned
+              ? __("Edit in Site Editor", "eventkoi-lite")
+              : __("View/edit template", "eventkoi-lite")}
+          <NewTabNote /></a>
+        )}
       </div>
     </Panel>
   );

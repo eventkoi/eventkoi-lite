@@ -1,6 +1,7 @@
 // components/order/PaymentMethod.jsx
+import { NewTabNote } from "@/components/new-tab-note";
 import { getCountryName } from "@/lib/utils";
-import { __ } from "@wordpress/i18n";
+import { __, sprintf } from "@wordpress/i18n";
 import { SquareArrowOutUpRight } from "lucide-react";
 
 function LinkBrandLogo() {
@@ -83,10 +84,13 @@ export function PaymentMethod({ order }) {
     if (!type) return "";
 
     if (type === "card" && brand && last4) {
-      return `${brand.charAt(0).toUpperCase() + brand.slice(1)} ${__(
-        "ending in",
-        "eventkoi-lite"
-      )} ${last4}`;
+      const brandName = brand.charAt(0).toUpperCase() + brand.slice(1);
+      return sprintf(
+        // translators: %1$s: card brand (e.g. Visa). %2$s: last 4 digits.
+        __("%1$s ending in %2$s", "eventkoi-lite"),
+        brandName,
+        last4
+      );
     }
 
     if (brand && last4) {
@@ -118,7 +122,7 @@ export function PaymentMethod({ order }) {
             >
               <span className="truncate">{order.stripe_payment_intent_id}</span>
               <SquareArrowOutUpRight className="w-4 h-4 flex-shrink-0" />
-            </a>
+            <NewTabNote /></a>
           )}
         </div>
 

@@ -11,26 +11,31 @@ export function CalendarListMode({
   setTimeFormat,
   showImage,
   showDescription,
+  descriptionSource,
   showLocation,
+  showTimezone = true,
   borderStyle,
   borderSize,
   loading,
 }) {
   return (
     <>
-      <div className="flex justify-end pt-4 text-sm text-foreground">
-        <TimezonePicker
-          timezone={timezone}
-          setTimezone={setTimezone}
-          timeFormat={timeFormat}
-          setTimeFormat={setTimeFormat}
-        />
-      </div>
+      {showTimezone && (
+        <div className="eventkoi-calendar-list-meta flex justify-end pt-4 text-sm text-foreground">
+          <TimezonePicker
+            timezone={timezone}
+            setTimezone={setTimezone}
+            timeFormat={timeFormat}
+            setTimeFormat={setTimeFormat}
+          />
+        </div>
+      )}
       <ListView
         events={events}
         timezone={timezone}
         showImage={showImage}
         showDescription={showDescription}
+        descriptionSource={descriptionSource}
         showLocation={showLocation}
         borderStyle={borderStyle}
         borderSize={borderSize}

@@ -57,6 +57,50 @@ class ET_Builder_Module_EventkoiCalendar extends ET_Builder_Module {
 				'default_on_front' => 'month',
 				'toggle_slug'      => 'main_content',
 			),
+			'eventkoi_show_month_view' => array(
+				'label'            => esc_html__( 'Show Month view', 'eventkoi-lite' ),
+				'type'             => 'yes_no_button',
+				'option_category'  => 'configuration',
+				'options'          => array(
+					'on'  => esc_html__( 'Yes', 'eventkoi-lite' ),
+					'off' => esc_html__( 'No', 'eventkoi-lite' ),
+				),
+				'default_on_front' => 'on',
+				'toggle_slug'      => 'main_content',
+			),
+			'eventkoi_show_week_view' => array(
+				'label'            => esc_html__( 'Show Week view', 'eventkoi-lite' ),
+				'type'             => 'yes_no_button',
+				'option_category'  => 'configuration',
+				'options'          => array(
+					'on'  => esc_html__( 'Yes', 'eventkoi-lite' ),
+					'off' => esc_html__( 'No', 'eventkoi-lite' ),
+				),
+				'default_on_front' => 'on',
+				'toggle_slug'      => 'main_content',
+			),
+			'eventkoi_show_list_view' => array(
+				'label'            => esc_html__( 'Show List view', 'eventkoi-lite' ),
+				'type'             => 'yes_no_button',
+				'option_category'  => 'configuration',
+				'options'          => array(
+					'on'  => esc_html__( 'Yes', 'eventkoi-lite' ),
+					'off' => esc_html__( 'No', 'eventkoi-lite' ),
+				),
+				'default_on_front' => 'on',
+				'toggle_slug'      => 'main_content',
+			),
+			'eventkoi_show_timezone' => array(
+				'label'            => esc_html__( 'Show timezone', 'eventkoi-lite' ),
+				'type'             => 'yes_no_button',
+				'option_category'  => 'configuration',
+				'options'          => array(
+					'on'  => esc_html__( 'Yes', 'eventkoi-lite' ),
+					'off' => esc_html__( 'No', 'eventkoi-lite' ),
+				),
+				'default_on_front' => 'on',
+				'toggle_slug'      => 'main_content',
+			),
 			'eventkoi_week_start' => array(
 				'label'            => esc_html__( 'Week starts on', 'eventkoi-lite' ),
 				'type'             => 'select',
@@ -85,29 +129,21 @@ class ET_Builder_Module_EventkoiCalendar extends ET_Builder_Module {
 	 * @return string
 	 */
 	public function render( $attrs, $content, $render_slug ) {
-		unset( $attrs, $content, $render_slug );
+		unset( $attrs, $content );
 
-		$calendar_id = absint( $this->props['eventkoi_calendar'] ?? 0 );
-		if ( ! $calendar_id ) {
-			$calendar_id = eventkoi_resolve_calendar_id( (int) get_option( 'eventkoi_default_event_cal', 0 ) );
-		}
+		$output = \EventKoi\Core\Divi_Renderers::calendar( (array) $this->props );
 
-		$args = array(
-			'calendars'     => $calendar_id ? array( $calendar_id ) : array(),
-			'startday'      => in_array( ( $this->props['eventkoi_week_start'] ?? 'monday' ), array( 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday' ), true ) ? $this->props['eventkoi_week_start'] : 'monday',
-			'timeframe'     => in_array( ( $this->props['eventkoi_timeframe'] ?? 'month' ), array( 'month', 'week' ), true ) ? $this->props['eventkoi_timeframe'] : 'month',
-			'default_month' => '',
-			'default_year'  => '',
-			'context'       => 'block',
-		);
-
-		if ( ! function_exists( 'eventkoi_get_calendar_content' ) ) {
+		if ( '' === trim( (string) $output ) ) {
 			return '';
 		}
 
+		// Divi's own module wrapper: its class is what the module's design
+		// settings (background, border, spacing, custom CSS) are written for.
 		return sprintf(
-			'<div class="eventkoi-divi-calendar eventkoi-calendar-wrapper">%s</div>',
-			eventkoi_get_calendar_content( $calendar_id, 'calendar', $args )
+			'<div%1$s class="%2$s">%3$s</div>',
+			$this->module_id(),
+			esc_attr( $this->module_classname( $render_slug ) ),
+			$output
 		);
 	}
 
@@ -117,23 +153,6 @@ class ET_Builder_Module_EventkoiCalendar extends ET_Builder_Module {
 	 * @return array
 	 */
 	protected function calendar_options() {
-		$options = array( '' => esc_html__( '— Default calendar —', 'eventkoi-lite' ) );
-
-		$terms = get_terms(
-			array(
-				'taxonomy'   => 'event_cal',
-				'hide_empty' => false,
-			)
-		);
-
-		if ( is_wp_error( $terms ) || empty( $terms ) ) {
-			return $options;
-		}
-
-		foreach ( $terms as $term ) {
-			$options[ (string) $term->term_id ] = eventkoi_decode_term_name( $term->name );
-		}
-
-		return $options;
+		return \EventKoi\Core\Divi_Renderers::calendar_options( esc_html__( '— Default calendar —', 'eventkoi-lite' ), true );
 	}
 }

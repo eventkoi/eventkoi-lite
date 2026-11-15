@@ -39,8 +39,17 @@ class Ticket_Order_Sync {
 		}
 
 		$order_id       = sanitize_text_field( (string) ( $order['order_id'] ?? $order['id'] ?? '' ) );
+		$hold_id        = sanitize_text_field( (string) ( $order['hold_id'] ?? ( is_array( $order['metadata'] ?? null ) ? ( $order['metadata']['hold_id'] ?? '' ) : '' ) ) );
 		$customer_name  = sanitize_text_field( (string) ( $order['customer_name'] ?? '' ) );
 		$customer_email = sanitize_email( (string) ( $order['customer_email'] ?? $order['billing_email'] ?? '' ) );
+
+		// An admin's correction stands over what a later payment event carries.
+		$corrected = '' !== $order_id ? Order_Customer::corrected_details( $order_id ) : null;
+		if ( $corrected ) {
+			$customer_name  = $corrected['name'];
+			$customer_email = $corrected['email'];
+		}
+
 		$payment_status = sanitize_key( (string) ( $order['status'] ?? $order['payment_status'] ?? 'pending' ) );
 		$payment_intent = sanitize_text_field( (string) ( $order['stripe_payment_intent_id'] ?? $order['payment_intent_id'] ?? '' ) );
 		$charge_id      = sanitize_text_field( (string) ( $order['charge_id'] ?? '' ) );
@@ -69,6 +78,21 @@ class Ticket_Order_Sync {
 			return 0;
 		}
 
+		// Attendee details the buyer typed at checkout, keyed by the hold.
+		$stashed_attendees = '' !== $hold_id
+			? Attendees::get_stashed_checkout_attendees( $hold_id )['attendees']
+			: array();
+
+		// A WooCommerce order can complete long after the hold stash expired,
+		// so fall back to the copy saved on the order itself.
+		if ( empty( $stashed_attendees ) && function_exists( 'wc_get_order' ) && preg_match( '/^wc_(\d+)/', (string) $order_id, $wc_match ) ) {
+			$wc_order = wc_get_order( (int) $wc_match[1] );
+			$wc_copy  = $wc_order ? $wc_order->get_meta( '_eventkoi_attendees' ) : null;
+			if ( is_array( $wc_copy ) && ! empty( $wc_copy ) ) {
+				$stashed_attendees = $wc_copy;
+			}
+		}
+
 		foreach ( $items as $item ) {
 			if ( ! is_array( $item ) ) {
 				continue;
@@ -80,53 +104,58 @@ class Ticket_Order_Sync {
 			$ticket_codes = isset( $item['ticket_codes'] ) && is_array( $item['ticket_codes'] ) ? $item['ticket_codes'] : array();
 
 			if ( ! empty( $ticket_codes ) ) {
-				foreach ( $ticket_codes as $code ) {
+				foreach ( array_values( $ticket_codes ) as $seat_index => $code ) {
 					$code          = sanitize_text_field( (string) $code );
 					$composite_key = $order_id . ':' . $ticket_id . ':' . $code;
-					$count        += self::upsert_row(
-						$table,
-						array(
-							'event_id'          => $event_id,
-							'ticket_id'         => $ticket_id,
-							'order_id'          => $composite_key,
-							'customer_name'     => $customer_name,
-							'customer_email'    => $customer_email,
-							'quantity'          => 1,
-							'unit_price'        => $unit_price,
-							'total_amount'      => $unit_price,
-							'currency'          => $currency,
-							'payment_status'    => $payment_status,
-							'payment_intent_id' => $payment_intent,
-							'charge_id'         => $charge_id,
-							'checkin_token'     => $code,
-							'created_at'        => $created_at,
-						)
-					);
-				}
-			} else {
-				$composite_key = $order_id . ':' . $ticket_id;
-				$total_amount  = $unit_price * $quantity;
-				$token         = self::generate_checkin_token();
-
-				$count += self::upsert_row(
-					$table,
-					array(
+					$row           = array(
 						'event_id'          => $event_id,
 						'ticket_id'         => $ticket_id,
 						'order_id'          => $composite_key,
 						'customer_name'     => $customer_name,
 						'customer_email'    => $customer_email,
-						'quantity'          => $quantity,
+						'quantity'          => 1,
 						'unit_price'        => $unit_price,
-						'total_amount'      => $total_amount,
+						'total_amount'      => $unit_price,
 						'currency'          => $currency,
 						'payment_status'    => $payment_status,
 						'payment_intent_id' => $payment_intent,
 						'charge_id'         => $charge_id,
-						'checkin_token'     => $token,
+						'checkin_token'     => $code,
 						'created_at'        => $created_at,
-					)
+					);
+					$attendee      = Attendees::resolve_seat_attendee( $item, $seat_index, $stashed_attendees );
+					if ( $attendee ) {
+						$row['attendee_name']  = $attendee['name'];
+						$row['attendee_email'] = $attendee['email'];
+					}
+					$count += self::upsert_row( $table, $row );
+				}
+			} else {
+				$composite_key = $order_id . ':' . $ticket_id;
+				$total_amount  = $unit_price * $quantity;
+				$token         = self::generate_checkin_token();
+				$row           = array(
+					'event_id'          => $event_id,
+					'ticket_id'         => $ticket_id,
+					'order_id'          => $composite_key,
+					'customer_name'     => $customer_name,
+					'customer_email'    => $customer_email,
+					'quantity'          => $quantity,
+					'unit_price'        => $unit_price,
+					'total_amount'      => $total_amount,
+					'currency'          => $currency,
+					'payment_status'    => $payment_status,
+					'payment_intent_id' => $payment_intent,
+					'charge_id'         => $charge_id,
+					'checkin_token'     => $token,
+					'created_at'        => $created_at,
 				);
+				$attendee      = Attendees::resolve_seat_attendee( $item, 0, $stashed_attendees );
+				if ( $attendee ) {
+					$row['attendee_name']  = $attendee['name'];
+					$row['attendee_email'] = $attendee['email'];
+				}
+				$count += self::upsert_row( $table, $row );
 			}
 		}
 
@@ -402,6 +431,132 @@ class Ticket_Order_Sync {
 	}
 
 	/**
+	 * Create a manual (complimentary) order for an attendee added by an admin.
+	 *
+	 * Mirrors the checkout row model: one row per seat, each with its own
+	 * check-in token, so QR check-in, attendee lists, and availability counts
+	 * treat the attendee exactly like a paying customer. Rows are free
+	 * (zero amounts) and complete immediately.
+	 *
+	 * @param int    $event_id       EventKoi event post ID.
+	 * @param int    $ticket_id      Ticket row ID.
+	 * @param string $customer_name  Attendee name.
+	 * @param string $customer_email Attendee email (may be empty).
+	 * @param int    $quantity       Seats to add.
+	 * @param string $currency       Three-letter ISO currency code.
+	 * @param int    $instance_ts    Selected-date instance timestamp, 0 otherwise.
+	 * @return array order_id (base ID) and rows (seats created).
+	 */
+	public static function create_manual_order( $event_id, $ticket_id, $customer_name, $customer_email, $quantity, $currency, $instance_ts = 0 ) {
+		global $wpdb;
+
+		$table     = $wpdb->prefix . 'eventkoi_ticket_orders';
+		$event_id  = absint( $event_id );
+		$ticket_id = absint( $ticket_id );
+		$quantity  = max( 1, absint( $quantity ) );
+		$base_id   = 'manual_' . strtolower( substr( str_replace( array( '.', ',' ), '', uniqid( '', true ) ), -12 ) );
+		$created   = gmdate( 'Y-m-d H:i:s' );
+		$rows      = 0;
+		$tokens    = array();
+
+		for ( $seat = 1; $seat <= $quantity; $seat++ ) {
+			$seat_order_id = $base_id . ':' . $ticket_id . ( 1 === $seat ? '' : ':seat_' . $seat );
+			$token         = self::generate_checkin_token();
+			$inserted      = self::upsert_row(
+				$table,
+				array(
+					'event_id'       => $event_id,
+					'instance_ts'    => absint( $instance_ts ),
+					'ticket_id'      => $ticket_id,
+					'order_id'       => $seat_order_id,
+					'customer_name'  => sanitize_text_field( $customer_name ),
+					'customer_email' => sanitize_email( $customer_email ),
+					'quantity'       => 1,
+					'unit_price'     => 0,
+					'total_amount'   => 0,
+					'currency'       => strtoupper( sanitize_text_field( $currency ) ),
+					'payment_status' => 'complete',
+					'checkin_token'  => $token,
+					'created_at'     => $created,
+				)
+			);
+
+			$rows += $inserted;
+			if ( $inserted ) {
+				$tokens[] = $token;
+			}
+		}
+
+		if ( $rows > 0 ) {
+			self::sync_quantity_sold( $event_id, array( array( 'ticket_id' => $ticket_id ) ) );
+			self::create_manual_order_parent( $base_id, $ticket_id, $quantity, $customer_name, $customer_email, $currency, $tokens );
+		}
+
+		return array(
+			'order_id' => $base_id,
+			'rows'     => $rows,
+		);
+	}
+
+	/**
+	 * Create the parent eventkoi_orders row for a manual order.
+	 *
+	 * Seat rows alone leave the order without notes support or an orders-list
+	 * entry: the single-order view falls back to the rows-only shape, which
+	 * renders an empty Activity panel with no way to add notes. Mirrors the
+	 * parent row the free-checkout flow writes, keyed on checkout_id so the
+	 * existing base-id lookups resolve it.
+	 *
+	 * @param string $base_id        Manual order base ID (manual_xxx).
+	 * @param int    $ticket_id      Ticket ID.
+	 * @param int    $quantity       Seats created.
+	 * @param string $customer_name  Customer name.
+	 * @param string $customer_email Customer email.
+	 * @param string $currency       Three-letter ISO currency code.
+	 * @param array  $tokens         Per-seat check-in tokens written for this order.
+	 * @return void
+	 */
+	private static function create_manual_order_parent( $base_id, $ticket_id, $quantity, $customer_name, $customer_email, $currency, $tokens = array() ) {
+		$now = time();
+
+		\EKLIB\StellarWP\DB\DB::table( 'eventkoi_orders' )->upsert(
+			array(
+				'checkout_id'    => (string) $base_id,
+				'ticket_id'      => absint( $ticket_id ),
+				'quantity'       => absint( $quantity ),
+				'subtotal'       => 0,
+				'total'          => 0,
+				'item_price'     => 0,
+				'currency'       => strtolower( sanitize_text_field( $currency ) ),
+				'payment_status' => 'complete',
+				'status'         => 'complete',
+				'created'        => $now,
+				'expires'        => $now,
+				'last_updated'   => $now,
+				'live'           => eventkoi_live_mode_enabled() ? 1 : 0,
+				'billing_name'   => sanitize_text_field( $customer_name ),
+				'billing_email'  => sanitize_email( $customer_email ),
+				'gateway'        => 'manual',
+			),
+			array( 'checkout_id' )
+		);
+
+		$order_row = \EKLIB\StellarWP\DB\DB::table( 'eventkoi_orders' )->where( 'checkout_id', (string) $base_id )->get();
+
+		if ( $order_row && ! empty( $order_row->id ) ) {
+			$orders = new Orders();
+			$orders->add_note( absint( $order_row->id ), 'order_completed' );
+
+			// The confirmation email embeds one QR code per order. Like the
+			// checkout flows, a single seat reuses its own token so the emailed
+			// code and the attendees row match; more seats get a group code.
+			$tokens      = array_values( array_filter( array_map( 'strval', (array) $tokens ) ) );
+			$master_code = 1 === count( $tokens ) ? $tokens[0] : self::generate_checkin_token();
+			$orders->add_note( absint( $order_row->id ), 'master_checkin_code', $master_code );
+		}
+	}
+
+	/**
 	 * Update quantity_sold on local tickets table from order items.
 	 *
 	 * @param int   $event_id Event ID.
@@ -486,7 +641,9 @@ class Ticket_Order_Sync {
 
 		if ( $existing ) {
 			$update_data = $data;
-			unset( $update_data['order_id'], $update_data['created_at'], $update_data['checkin_token'] );
+			// Attendee details are captured on the first write and may be edited
+			// by an admin afterwards; a later re-sync must not undo either.
+			unset( $update_data['order_id'], $update_data['created_at'], $update_data['checkin_token'], $update_data['attendee_name'], $update_data['attendee_email'], $update_data['attendee_meta'] );
 			$update_data['updated_at'] = gmdate( 'Y-m-d H:i:s' );
 
 			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching -- Updates local cache row from edge data.

@@ -27,13 +27,13 @@ export function EventNavBar({ loading, setLoading, event, setEvent }) {
   const trashEvent = async () => {
     setLoading(true);
     await apiRequest({
-      path: `${eventkoi_params.api}/delete_event`,
+      path: `${window.eventkoi_params.api}/delete_event`,
       method: "post",
       data: {
         event_id: event?.id,
       },
       headers: {
-        "EVENTKOI-API-KEY": eventkoi_params.api_key,
+        "EVENTKOI-API-KEY": window.eventkoi_params.api_key,
       },
     })
       .then((response) => {
@@ -51,13 +51,13 @@ export function EventNavBar({ loading, setLoading, event, setEvent }) {
     setLoading(true);
     const originalId = event?.id;
     await apiRequest({
-      path: `${eventkoi_params.api}/duplicate_event`,
+      path: `${window.eventkoi_params.api}/duplicate_event`,
       method: "post",
       data: {
         event_id: event?.id,
       },
       headers: {
-        "EVENTKOI-API-KEY": eventkoi_params.api_key,
+        "EVENTKOI-API-KEY": window.eventkoi_params.api_key,
       },
     })
       .then((response) => {
@@ -82,14 +82,14 @@ export function EventNavBar({ loading, setLoading, event, setEvent }) {
   const saveEvent = async (status) => {
     setSaving(true);
     await apiRequest({
-      path: `${eventkoi_params.api}/update_event`,
+      path: `${window.eventkoi_params.api}/update_event`,
       method: "post",
       data: {
         event: event,
         status: status,
       },
       headers: {
-        "EVENTKOI-API-KEY": eventkoi_params.api_key,
+        "EVENTKOI-API-KEY": window.eventkoi_params.api_key,
       },
     })
       .then((response) => {

@@ -15,7 +15,8 @@
     ],
     "post-autoload-dump": [
       "@php bin/strauss.phar include-autoloader"
-    ]
+    ],
+    "test:phpstan": "phpstan analyse --memory-limit=6G"
   },
   "extra": {
     "strauss": {
@@ -29,5 +30,9 @@
     "stellarwp/container-contract": "*",
     "lucatume/di52": "*",
     "rlanvin/php-rrule": "*"
+  },
+  "require-dev": {
+    "phpstan/phpstan": "^2.2",
+    "szepeviktor/phpstan-wordpress": "^2.0"
   }
 }

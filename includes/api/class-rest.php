@@ -21,6 +21,8 @@ use EventKoi\API\Onboarding;
 use EventKoi\API\Shortcode;
 use EventKoi\API\Rsvps;
 use EventKoi\API\Tickets;
+use EventKoi\API\Elementor_Templates;
+use EventKoi\API\Builder_Templates;
 use EventKoi\Core\Settings as CoreSettings;
 use WP_REST_Request;
 
@@ -137,6 +139,9 @@ class REST {
 			Shortcode::class,
 			Rsvps::class,
 			Tickets::class,
+			Elementor_Templates::class,
+			Builder_Templates::class,
+			Divi::class,
 		);
 
 		foreach ( $api_classes as $api_class ) {

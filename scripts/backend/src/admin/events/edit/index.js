@@ -69,6 +69,7 @@ export function EventEdit() {
 
   const [isPublishing, setIsPublishing] = useState(false);
   const [disableAutoSave, setDisableAutoSave] = useState(false);
+  const [nameError, setNameError] = useState(false);
   const [instanceData, setInstanceData] = useState({});
   const [showOnboardingToast, setShowOnboardingToast] = useState(false);
   const [showOnboardingHint, setShowOnboardingHint] = useState(false);
@@ -539,7 +540,7 @@ export function EventEdit() {
           )}
         >
           {!isEditingInstance && <EventTabs />}
-          <div className="grid">
+          <div className="grid grid-cols-1 min-w-0">
             <Outlet
               context={{
                 instanceData,
@@ -815,6 +816,8 @@ export function EventEdit() {
         setIsPublishing,
         disableAutoSave,
         setDisableAutoSave,
+        nameError,
+        setNameError,
         registerBeforeSave,
         runBeforeSave,
       }}

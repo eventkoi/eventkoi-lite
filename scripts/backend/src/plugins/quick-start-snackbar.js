@@ -81,7 +81,10 @@ const createSnackbar = () => {
               "Launch EventKoi Onboarding Wizard?",
               "eventkoi-lite"
             )}</div>
-            <button type="button" aria-label="Dismiss" data-role="close"
+            <button type="button" aria-label="${__(
+              "Dismiss",
+              "eventkoi-lite"
+            )}" data-role="close"
               style="margin-left:auto;margin-top:-8px;background:none;border:0;color:#9ca3af;cursor:pointer;padding:4px;font-size:20px;line-height:1;border-radius:8px;">
               ×
             </button>

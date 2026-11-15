@@ -85,7 +85,16 @@ export function MultiSelect({
       return v;
     });
 
-    setSelected(merged);
+    // A parent that stores what onSelectionChange hands it passes a new
+    // array back on every render. Without this check that array would be
+    // copied into state, reported back, and so on forever, which stalls
+    // React and freezes navigation.
+    setSelected((prev) => {
+      const same =
+        prev.length === merged.length &&
+        prev.every((item, index) => item.id === merged[index]?.id && item.name === merged[index]?.name);
+      return same ? prev : merged;
+    });
   }, [value, options]);
 
   const handleOpenChange = (nextOpen) => {
@@ -103,7 +112,7 @@ export function MultiSelect({
     >
       <Popover open={disabled ? false : open} onOpenChange={handleOpenChange}>
         {selected.length > 0 && (
-          <div className="absolute top-[0px] left-[0px] px-3 py-2 border-t-0 border-l-0 border-r-0 flex space-x-2">
+          <div className="absolute top-[0px] left-[0px] max-w-full overflow-x-auto px-3 py-2 border-t-0 border-l-0 border-r-0 flex space-x-2 [&>*]:shrink-0">
             {selected.map((option) => (
               <Badge
                 key={`option-${option.id}`}
@@ -140,6 +149,7 @@ export function MultiSelect({
             }
             onChange={(e) => setInputValue(e.target.value)}
             placeholder={placeholder}
+            aria-label={placeholder}
             className={cn(
               "flex-1 text-left leading-none bg-transparent outline-none border-none focus:shadow-none text-muted-foreground px-3 py-3",
               inputClassName
@@ -174,7 +184,18 @@ export function MultiSelect({
                     }}
                     className="cursor-pointer"
                   >
-                    <span>{option.name}</span>
+                    {/* The list applies px-2 to every row with !important, so
+                        a padding on the row itself cannot carry the tree
+                        depth. Indent the label instead. */}
+                    <span
+                      style={
+                        option.depth
+                          ? { paddingLeft: `${option.depth * 16}px` }
+                          : undefined
+                      }
+                    >
+                      {option.name}
+                    </span>
                   </CommandItem>
                 ))}
               </CommandGroup>

@@ -181,6 +181,7 @@ class Calendar {
 			'count'           => self::get_count(),
 			'display'         => self::get_display(),
 			'timeframe'       => self::get_timeframe(),
+			'show_timezone'   => self::get_show_timezone(),
 			'startday'        => self::get_startday(),
 			'day_start_time'  => self::get_day_start_time(),
 			'shortcode'       => self::get_shortcode(),
@@ -337,6 +338,20 @@ class Calendar {
 	}
 
 	/**
+	 * Whether the frontend timezone label shows. Defaults to true so existing
+	 * calendars keep showing it; a stored '0' hides it (Kim, GHGUBXLR).
+	 *
+	 * @return bool
+	 */
+	public static function get_show_timezone() {
+		$stored = get_term_meta( self::$calendar_id, 'show_timezone', true );
+
+		$show = ( '' === $stored ) ? true : rest_sanitize_boolean( $stored );
+
+		return (bool) apply_filters( 'eventkoi_get_calendar_show_timezone', $show, self::$calendar_id, self::$calendar );
+	}
+
+	/**
 	 * Get week start day.
 	 *
 	 * @return string Start day key (e.g. 'monday', 'sunday', etc.).
@@ -476,6 +491,7 @@ class Calendar {
 
 		update_term_meta( self::$calendar_id, 'display', (string) $display );
 		update_term_meta( self::$calendar_id, 'timeframe', (string) $timeframe );
+		update_term_meta( self::$calendar_id, 'show_timezone', ( array_key_exists( 'show_timezone', $meta ) && ! rest_sanitize_boolean( $meta['show_timezone'] ) ) ? '0' : '1' );
 		update_term_meta( self::$calendar_id, 'startday', (string) $startday );
 		if ( '' !== $day_start_time ) {
 			update_term_meta( self::$calendar_id, 'day_start_time', (string) $day_start_time );
@@ -650,6 +666,11 @@ class Calendar {
 		$display_context = sanitize_key( (string) $args['display'] );
 		$post_status = isset( $args['post_status'] ) ? (array) $args['post_status'] : array( 'publish' );
 
+		// When set (the calendar search box), completed events are kept in the
+		// upcoming result set and sorted after live/upcoming ones, so a search
+		// finds an event by name whether it has already happened or not.
+		$include_completed = ! empty( $args['include_completed'] );
+
 		$allowed_orderby = array( 'modified', 'date_modified', 'date', 'publish_date', 'title', 'start_date', 'event_start', 'upcoming', 'past', 'past_events' );
 		if ( ! in_array( $orderby, $allowed_orderby, true ) ) {
 			$orderby = 'modified';
@@ -715,6 +736,19 @@ class Calendar {
 			}
 		}
 
+		/**
+		 * Filter the WP_Query arguments used to fetch events.
+		 *
+		 * Lets developers inject custom constraints (for example a tax_query on
+		 * their own taxonomy) into every event listing driven by get_events,
+		 * including the Query Loop block render.
+		 *
+		 * @param array $query_args WP_Query arguments about to run.
+		 * @param array $args       The get_events args (per_page, orderby, dates, ...).
+		 * @param array $ids        Calendar term IDs the listing is scoped to.
+		 */
+		$query_args = apply_filters( 'eventkoi_events_query_args', $query_args, $args, (array) $ids );
+
 		$events = get_posts( $query_args );
 
 		foreach ( $events as $item ) {
@@ -775,23 +809,29 @@ class Calendar {
 						$cal_uses_24h    = ! empty( $cal_settings['time_format'] ) && '24' === $cal_settings['time_format'];
 						$full_fmt        = $cal_uses_24h ? 'H:i' : 'g:ia';
 						$round_fmt       = $cal_uses_24h ? 'H' : 'ga';
-						$start_time_full = gmdate( $full_fmt, $start_dt_utc->getTimestamp() );
-						$end_time_full   = gmdate( $full_fmt, $end_dt_utc->getTimestamp() );
+						// Labels are wall-clock text, so they follow the site
+						// timezone like every other rendered date. The minute
+						// check has to run in that same zone: half-hour offset
+						// zones (Kolkata, Kathmandu) turn a round UTC hour into
+						// a :30 or :45 local time.
+						$start_time_full = wp_date( $full_fmt, $start_dt_utc->getTimestamp() );
+						$end_time_full   = wp_date( $full_fmt, $end_dt_utc->getTimestamp() );
 
-						$start_minutes = gmdate( 'i', $start_dt_utc->getTimestamp() );
-						$end_minutes   = gmdate( 'i', $end_dt_utc->getTimestamp() );
+						$start_minutes = wp_date( 'i', $start_dt_utc->getTimestamp() );
+						$end_minutes   = wp_date( 'i', $end_dt_utc->getTimestamp() );
 
 						$start_time = ( '00' === $start_minutes )
-							? gmdate( $round_fmt, $start_dt_utc->getTimestamp() )
+							? wp_date( $round_fmt, $start_dt_utc->getTimestamp() )
 							: $start_time_full;
 
 						$end_time = ( '00' === $end_minutes )
-							? gmdate( $round_fmt, $end_dt_utc->getTimestamp() )
+							? wp_date( $round_fmt, $end_dt_utc->getTimestamp() )
 							: $end_time_full;
 
 					$record = array(
 						'id'            => $event::get_id() . '-span',
 						'event_id'      => $event::get_id(),
+						'is_package'    => $event::is_package(),
 						'title'         => $event::get_title(),
 						'date_type'     => $event::get_date_type(),
 						'standard_type' => $event::get_standard_type(),
@@ -804,6 +844,7 @@ class Calendar {
 						'allDay'        => $is_all_day,
 						'url'           => self::append_frontend_timezone_arg( $event::get_url() ),
 						'description'   => $event::get_summary(),
+						'excerpt'       => $event::get_excerpt_text(),
 						'address1'      => $primary['address1'] ?? '',
 						'address2'      => $primary['address2'] ?? '',
 						'latitude'      => $event::get_latitude(),
@@ -811,6 +852,7 @@ class Calendar {
 						'embed_gmap'    => $event::get_embed_gmap(),
 						'gmap_link'     => $event::get_gmap_link(),
 						'thumbnail'     => $event::get_image(),
+						'thumbnail_alt' => $event::get_image_alt(),
 						'type'          => ! empty( $primary_type ) ? $primary_type : $event::get_type(),
 						'virtual_url'   => $virtual_url,
 						'link_text'     => $link_text,
@@ -830,9 +872,16 @@ class Calendar {
 						$results[]           = $record;
 					}
 				} elseif ( 'selected' === $event::get_standard_type() && false === $expand_instances && ! empty( $days ) ) {
-					// Use the first day's start and the last day's end.
-					$first = reset( $days );
-					$last  = end( $days );
+					// Packages collapse to an order-independent start..end span; other
+					// selected events use the first day's start and the last day's end.
+					if ( $event::is_package() ) {
+						$package_span = $event::collapse_package_days( $days );
+						$first        = $package_span;
+						$last         = $package_span;
+					} else {
+						$first = reset( $days );
+						$last  = end( $days );
+					}
 
 					$start    = '';
 					$end      = '';
@@ -857,6 +906,7 @@ class Calendar {
 					$record = array(
 						'id'            => $event::get_id() . '-span',
 						'event_id'      => $event::get_id(),
+						'is_package'    => $event::is_package(),
 						'title'         => $event::get_title(),
 						'date_type'     => $event::get_date_type(),
 						'standard_type' => $event::get_standard_type(),
@@ -867,6 +917,7 @@ class Calendar {
 						'allDay'        => ! empty( $first['all_day'] ),
 						'url'           => self::append_frontend_timezone_arg( $event::get_url() ),
 						'description'   => $event::get_summary(),
+						'excerpt'       => $event::get_excerpt_text(),
 						'address1'      => $primary['address1'] ?? '',
 						'address2'      => $primary['address2'] ?? '',
 						'address3'      => '',
@@ -875,6 +926,7 @@ class Calendar {
 						'embed_gmap'    => $event::get_embed_gmap(),
 						'gmap_link'     => $event::get_gmap_link(),
 						'thumbnail'     => $event::get_image(),
+						'thumbnail_alt' => $event::get_image_alt(),
 						'type'          => ! empty( $primary_type ) ? $primary_type : $event::get_type(),
 						'virtual_url'   => $virtual_url,
 						'link_text'     => $link_text,
@@ -917,7 +969,8 @@ class Calendar {
 						$record = array(
 							'id'            => $event::get_id() . '-day' . $i,
 							'event_id'      => $event::get_id(),
-							'event_day'     => (int) $i,
+							'is_package'    => $event::is_package(),
+							'event_day'     => $event::is_package() ? null : (int) $i,
 							'title'         => $event::get_title(),
 							'date_type'     => $event::get_date_type(),
 							'standard_type' => $event::get_standard_type(),
@@ -926,8 +979,11 @@ class Calendar {
 							'end_real'      => $end_real,
 							'end_all_day'   => ! empty( $instance['all_day'] ),
 							'allDay'        => ! empty( $instance['all_day'] ),
-							'url'           => self::append_event_day_arg( self::append_frontend_timezone_arg( $event::get_url() ), $i ),
+							'url'           => $event::is_package() || 'selected' === $event::get_standard_type()
+								? self::append_frontend_timezone_arg( $event::get_url() )
+								: self::append_event_day_arg( self::append_frontend_timezone_arg( $event::get_url() ), $i ),
 							'description'   => $event::get_summary(),
+							'excerpt'       => $event::get_excerpt_text(),
 							'address1'      => $primary['address1'] ?? '',
 							'address2'      => $primary['address2'] ?? '',
 							'address3'      => '',
@@ -936,6 +992,7 @@ class Calendar {
 							'embed_gmap'    => $event::get_embed_gmap(),
 							'gmap_link'     => $event::get_gmap_link(),
 							'thumbnail'     => $event::get_image(),
+							'thumbnail_alt' => $event::get_image_alt(),
 							'type'          => ! empty( $primary_type ) ? $primary_type : $event::get_type(),
 							'virtual_url'   => $virtual_url,
 							'link_text'     => $link_text,
@@ -983,14 +1040,27 @@ class Calendar {
 
 		$results = array_values( $results );
 
-		if ( 'upcoming' === $orderby ) {
-			$now     = time();
-			$results = array_filter(
+		if ( 'upcoming' === $orderby && ! $include_completed ) {
+			$now          = time();
+			$include_live = (bool) apply_filters( 'eventkoi_upcoming_includes_live', true );
+			$results      = array_filter(
 				$results,
-				static function ( $item ) use ( $now ) {
+				static function ( $item ) use ( $now, $include_live ) {
 					$start_ts = ! empty( $item['start'] ) ? strtotime( (string) $item['start'] ) : 0;
 
-					return $start_ts >= $now;
+					if ( $start_ts >= $now ) {
+						return true;
+					}
+
+					// Keep an in-progress occurrence visible until it ends, so an
+					// attendee can still find a happening-now event.
+					if ( $include_live ) {
+						$end_ts = ! empty( $item['end'] ) ? strtotime( (string) $item['end'] ) : 0;
+
+						return $end_ts > 0 && $end_ts >= $now;
+					}
+
+					return false;
 				}
 			);
 			$results = array_values( $results );
@@ -1009,7 +1079,40 @@ class Calendar {
 			$results = array_values( $results );
 		}
 
-		if ( 'upcoming' === $orderby || 'past' === $orderby ) {
+		if ( 'upcoming' === $orderby && $include_completed ) {
+			// Completed-inclusive search: live first, then upcoming (soonest
+			// first), then completed (most recent first), so the nearest match
+			// stays on top while past events remain findable below.
+			$now = time();
+			usort(
+				$results,
+				static function ( $a, $b ) use ( $now ) {
+					$rank = static function ( $item ) use ( $now ) {
+						$start_ts = ! empty( $item['start'] ) ? strtotime( (string) $item['start'] ) : 0;
+						$end_ts   = ! empty( $item['end'] ) ? strtotime( (string) $item['end'] ) : 0;
+						if ( $end_ts && $end_ts < $now ) {
+							return 2;
+						}
+						if ( $start_ts && $start_ts <= $now && ( ! $end_ts || $end_ts >= $now ) ) {
+							return 0;
+						}
+						return 1;
+					};
+
+					$a_rank = $rank( $a );
+					$b_rank = $rank( $b );
+					if ( $a_rank !== $b_rank ) {
+						return $a_rank <=> $b_rank;
+					}
+
+					$a_ts = ! empty( $a['start'] ) ? strtotime( (string) $a['start'] ) : 0;
+					$b_ts = ! empty( $b['start'] ) ? strtotime( (string) $b['start'] ) : 0;
+
+					return ( 2 === $a_rank ) ? ( $b_ts <=> $a_ts ) : ( $a_ts <=> $b_ts );
+				}
+			);
+		} elseif ( in_array( $orderby, array( 'event_start', 'upcoming', 'past' ), true ) ) {
+			// Start date order follows the event's start, like the Pro list.
 			usort(
 				$results,
 				static function ( $a, $b ) use ( $order ) {
@@ -1049,6 +1152,133 @@ class Calendar {
 				}
 			}
 			unset( $evt );
+		}
+
+		/**
+		 * Inject calendar_id, calendar_color and calendar_name into each event item.
+		 *
+		 * Performance optimization:
+		 * - Fast-path when a single calendar context is requested.
+		 * - Otherwise resolve terms in bulk instead of per-event wp_get_post_terms().
+		 */
+		$requested_calendar_ids = array_values(
+			array_filter(
+				array_map( 'absint', (array) $ids )
+			)
+		);
+
+		if ( 1 === count( $requested_calendar_ids ) ) {
+			$single_calendar_id    = $requested_calendar_ids[0];
+			$single_calendar_color = eventkoi_default_calendar_color();
+			$single_calendar_name  = '';
+
+			if ( $single_calendar_id > 0 ) {
+				// Save/restore the singleton so the REST caller can still
+				// read ::get_meta() for its own context after we return.
+				$prev_calendar         = self::$calendar;
+				$prev_calendar_id      = self::$calendar_id;
+				$single_cal_obj        = new \EventKoi\Core\Calendar( $single_calendar_id );
+				$single_calendar_color = $single_cal_obj::get_color();
+				$single_calendar_name  = $single_cal_obj::get_name();
+				self::$calendar        = $prev_calendar;
+				self::$calendar_id     = $prev_calendar_id;
+			}
+
+			foreach ( $results as &$evt ) {
+				$evt['calendar_id']    = $single_calendar_id;
+				$evt['calendar_color'] = $single_calendar_color;
+				$evt['calendar_name']  = $single_calendar_name;
+			}
+			unset( $evt );
+		} elseif ( ! empty( $results ) ) {
+			$event_ids = array_values(
+				array_unique(
+					array_filter(
+						array_map(
+							static function ( $evt ) {
+								return isset( $evt['event_id'] ) ? absint( $evt['event_id'] ) : 0;
+							},
+							$results
+						)
+					)
+				)
+			);
+
+			$event_primary_calendar = array();
+			$prev_calendar          = self::$calendar;
+			$prev_calendar_id       = self::$calendar_id;
+			$calendar_color_cache   = array();
+			$calendar_name_cache    = array();
+
+			if ( ! empty( $event_ids ) ) {
+				$object_terms = wp_get_object_terms(
+					$event_ids,
+					'event_cal',
+					array( 'fields' => 'all_with_object_id' )
+				);
+
+				if ( ! is_wp_error( $object_terms ) && ! empty( $object_terms ) ) {
+					foreach ( $object_terms as $term ) {
+						$object_id = isset( $term->object_id ) ? absint( $term->object_id ) : 0;
+						$term_id   = isset( $term->term_id ) ? absint( $term->term_id ) : 0;
+
+						if ( $object_id <= 0 || $term_id <= 0 ) {
+							continue;
+						}
+
+						// Keep first term encountered as primary calendar.
+						if ( ! isset( $event_primary_calendar[ $object_id ] ) ) {
+							$event_primary_calendar[ $object_id ] = $term_id;
+						}
+					}
+				}
+			}
+
+			foreach ( $results as &$evt ) {
+				$event_id = isset( $evt['event_id'] ) ? absint( $evt['event_id'] ) : 0;
+				if ( $event_id <= 0 ) {
+					$evt['calendar_id']    = 0;
+					$evt['calendar_color'] = eventkoi_default_calendar_color();
+					continue;
+				}
+
+				$primary_cal_id = isset( $event_primary_calendar[ $event_id ] )
+					? absint( $event_primary_calendar[ $event_id ] )
+					: 0;
+
+				if ( $primary_cal_id <= 0 ) {
+					$evt['calendar_id']    = 0;
+					$evt['calendar_color'] = eventkoi_default_calendar_color();
+					continue;
+				}
+
+				if ( ! isset( $calendar_color_cache[ $primary_cal_id ] ) ) {
+					$cal_obj                                 = new \EventKoi\Core\Calendar( $primary_cal_id );
+					$calendar_color_cache[ $primary_cal_id ] = $cal_obj::get_color();
+					$calendar_name_cache[ $primary_cal_id ]  = $cal_obj::get_name();
+				}
+
+				$evt['calendar_id']    = $primary_cal_id;
+				$evt['calendar_color'] = $calendar_color_cache[ $primary_cal_id ];
+				$evt['calendar_name']  = isset( $calendar_name_cache[ $primary_cal_id ] ) ? $calendar_name_cache[ $primary_cal_id ] : '';
+			}
+			unset( $evt );
+
+			// Restore so the REST caller's ::get_meta() reads its own context.
+			self::$calendar    = $prev_calendar;
+			self::$calendar_id = $prev_calendar_id;
+		}
+
+		// Lists are cached and shared between visitors, so a protected event's
+		// private details never go in them. A single event page asks to keep them
+		// once it knows this visitor may see them.
+		if ( empty( $args['keep_locked_fields'] ) ) {
+			foreach ( $results as $index => $row ) {
+				$row_event_id = absint( $row['event_id'] ?? ( $row['id'] ?? 0 ) );
+				if ( $row_event_id && Event::is_password_protected( $row_event_id ) ) {
+					$results[ $index ] = Event::strip_locked_fields( $row );
+				}
+			}
 		}
 
 		return array(
@@ -1597,6 +1827,7 @@ class Calendar {
 			'allDay'        => ! empty( $event::get_first_instance()['all_day'] ),
 			'url'           => $url,
 			'description'   => $event::get_summary(),
+			'excerpt'       => $event::get_excerpt_text(),
 			'address1'      => $override_primary['address1'] ?? '',
 			'address2'      => $override_primary['address2'] ?? '',
 			'address3'      => '',
@@ -1605,6 +1836,7 @@ class Calendar {
 			'embed_gmap'    => $override_primary['embed_gmap'] ?? $event::get_embed_gmap(),
 			'gmap_link'     => $override_primary['gmap_link'] ?? $event::get_gmap_link(),
 			'thumbnail'     => ! empty( $override['image'] ) ? esc_url_raw( $override['image'] ) : $event::get_image(),
+			'thumbnail_alt' => ! empty( $override['image'] ) ? '' : $event::get_image_alt(),
 			'type'          => ! empty( $override_primary_type ) ? $override_primary_type : $event::get_type(),
 			'virtual_url'   => $override_virtual_url,
 			'link_text'     => $override_link_text,

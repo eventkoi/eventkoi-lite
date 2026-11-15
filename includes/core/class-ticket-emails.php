@@ -80,7 +80,7 @@ class Ticket_Emails {
 			return $order;
 		}
 
-		$sent = self::send_for_order( $order, false );
+		$sent = self::send_for_order( $order, false, true );
 		if ( ! $sent ) {
 			return new WP_Error( 'ticket_email_not_sent', __( 'Ticket confirmation email was not sent.', 'eventkoi-lite' ), array( 'status' => 500 ) );
 		}
@@ -89,6 +89,35 @@ class Ticket_Emails {
 			'success' => true,
 			'sent'    => true,
 		);
+	}
+
+	/**
+	 * Send the ticket confirmation email for an order that already exists locally.
+	 *
+	 * Used when an admin adds an attendee by hand and asks for the confirmation
+	 * to go out. The order rows are already in place, so the post-send local
+	 * sync is skipped rather than rewriting the same seat rows.
+	 *
+	 * @param string $order_id Order ID (manual_xxx, checkout id or wc_xxx).
+	 * @return bool Whether the email was sent.
+	 */
+	public static function send_for_order_id( $order_id ) {
+		$order_id = sanitize_text_field( (string) $order_id );
+		if ( '' === $order_id ) {
+			return false;
+		}
+
+		if ( preg_match( '/^wc_(\d+)/', $order_id, $m ) ) {
+			$order = self::build_order_from_wc( (int) $m[1] );
+		} else {
+			$order = self::get_order_by_id( $order_id );
+		}
+
+		if ( is_wp_error( $order ) ) {
+			return false;
+		}
+
+		return self::send_for_order( $order, false, false, false );
 	}
 
 	/**
@@ -203,13 +232,130 @@ class Ticket_Emails {
 	}
 
 	/**
+	 * Default reminder subject, shared with the Settings > Emails screen.
+	 *
+	 * @return string
+	 */
+	public static function get_reminder_default_subject() {
+		return __( 'Reminder: [event_name] is tomorrow', 'eventkoi-lite' );
+	}
+
+	/**
+	 * Default reminder body, shared with the Settings > Emails screen.
+	 *
+	 * @return string
+	 */
+	public static function get_reminder_default_template() {
+		return implode(
+			"\n",
+			array(
+				'<p>' . esc_html__( 'Hi [attendee_name],', 'eventkoi-lite' ) . '</p>',
+				'<p>' . esc_html__( 'This is a reminder that [event_name] is happening tomorrow.', 'eventkoi-lite' ) . '</p>',
+				'<p>' . esc_html__( 'Schedule ([event_timezone]):', 'eventkoi-lite' ) . '<br />[event_datetime]</p>',
+				'<p>' . esc_html__( 'Location:', 'eventkoi-lite' ) . '<br />[event_location]</p>',
+				'<p>' . esc_html__( 'Event page:', 'eventkoi-lite' ) . '<br />[event_url]</p>',
+				'<p>&mdash;<br />[site_name]</p>',
+			)
+		);
+	}
+
+	/**
+	 * Send the day-before reminder to one attendee.
+	 *
+	 * @param array $attendee {
+	 *     Attendee resolved by Reminder_Emails.
+	 *
+	 *     @type string $type        'rsvp' or 'ticket'.
+	 *     @type int    $event_id    Event ID.
+	 *     @type int    $instance_ts Instance timestamp, 0 for single events.
+	 *     @type string $name        Attendee name.
+	 *     @type string $email       Attendee email.
+	 *     @type string $token       RSVP check-in token, used for the manage link.
+	 * }
+	 * @return bool
+	 */
+	public static function send_reminder( array $attendee ) {
+		if ( ! Reminder_Emails::is_enabled() ) {
+			return false;
+		}
+
+		$settings = Settings::get();
+
+		$recipient_email = sanitize_email( (string) ( $attendee['email'] ?? '' ) );
+		$event_id        = absint( $attendee['event_id'] ?? 0 );
+		$instance_ts     = absint( $attendee['instance_ts'] ?? 0 );
+		$type            = (string) ( $attendee['type'] ?? 'rsvp' );
+
+		if ( ! is_email( $recipient_email ) || ! $event_id || ! get_post( $event_id ) ) {
+			return false;
+		}
+
+		$event_name = self::get_event_title( $event_id, $instance_ts );
+		$event_url  = self::get_event_url( $event_id, $instance_ts );
+		$token      = sanitize_text_field( (string) ( $attendee['token'] ?? '' ) );
+
+		if ( 'rsvp' === $type && '' !== $token && $event_url && Event::get_rsvp_allow_edit() ) {
+			$event_url = add_query_arg( 'eventkoi_rsvp', $token, $event_url );
+		}
+
+		list( $event_datetime, $event_timezone ) = self::get_event_datetime_parts( $event_id, $instance_ts );
+		$event_location                          = self::get_primary_physical_location( $event_id, $instance_ts );
+		$name                                    = sanitize_text_field( (string) ( $attendee['name'] ?? '' ) );
+		$first_name                              = $name ? trim( strtok( $name, ' ' ) ) : '';
+
+		$tags = array(
+			'[attendee_name]'       => $first_name ? $first_name : __( 'there', 'eventkoi-lite' ),
+			'[attendee_email]'      => $recipient_email,
+			'[event_title]'         => $event_name,
+			'[event_name]'          => $event_name,
+			'[event_datetime]'      => $event_datetime,
+			'[event_timezone]'      => $event_timezone,
+			'[event_location]'      => $event_location,
+			'[event_url]'           => $event_url,
+			// Pro-only tag; blank it so a template saved under Pro does not print it.
+			'[event_email_message]' => '',
+			'[site_name]'           => get_bloginfo( 'name' ),
+		);
+
+		$tags = apply_filters( 'eventkoi_reminder_email_tags', $tags, $attendee );
+
+		$subject = trim( (string) ( $settings['reminder_email_subject'] ?? '' ) );
+		$subject = '' !== $subject ? $subject : self::get_reminder_default_subject();
+		$subject = apply_filters( 'eventkoi_reminder_email_subject', $subject, $tags, $attendee );
+		$subject = self::replace_subject_tags( $subject, $tags );
+
+		$body = trim( (string) ( $settings['reminder_email_template'] ?? '' ) );
+		$body = '' !== wp_strip_all_tags( $body ) ? $body : self::get_reminder_default_template();
+		$body = apply_filters( 'eventkoi_reminder_email_template', $body, $tags, $attendee );
+
+		$body = self::replace_email_tags( (string) $body, $tags );
+
+		// A reminder with no address to show should not carry an empty label.
+		if ( '' === $event_location ) {
+			$body = preg_replace( '#<p>\s*' . preg_quote( esc_html__( 'Location:', 'eventkoi-lite' ), '#' ) . '\s*(<br\s*/?>)?\s*</p>#i', '', $body );
+		}
+
+		$body     = preg_replace( "/\n{3,}/", "\n\n", trim( (string) $body ) );
+		$has_html = (bool) preg_match( '/<[^>]+>/', (string) $body );
+		$body     = $has_html
+			? wp_kses( wpautop( (string) $body ), Settings::get_email_template_allowed_tags() )
+			: wpautop( esc_html( (string) $body ) );
+
+		$sent = Email_Routing::send( 'reminder', $recipient_email, $subject, $body, $settings );
+
+		return (bool) $sent;
+	}
+
+	/**
 	 * Send ticket confirmation email for order payload.
 	 *
 	 * @param array $order Order payload from edge.
 	 * @param bool  $skip_if_note_exists Skip if confirmation note already exists.
+	 * @param bool  $is_resend Whether this is a manual resend from the admin.
+	 * @param bool  $sync_local Whether to sync the order rows locally after sending.
 	 * @return bool
 	 */
-	private static function send_for_order( $order, $skip_if_note_exists = false ) {
+	private static function send_for_order( $order, $skip_if_note_exists = false, $is_resend = false, $sync_local = true ) {
 		if ( ! is_array( $order ) ) {
 			return false;
 		}
@@ -243,7 +389,9 @@ class Ticket_Emails {
 		$items         = isset( $order['items'] ) && is_array( $order['items'] ) ? $order['items'] : array();
 		$event_id      = absint( $order['event_id'] ?? 0 );
 		$instance_ts   = absint( $order['event_instance_ts'] ?? 0 );
-		$event_name    = sanitize_text_field( (string) ( $metadata['event_instance_title'] ?? $metadata['event_title'] ?? '' ) );
+		// Orders placed before titles were stored as plain text carry texturized
+		// entities in their metadata, so decode on the way out.
+		$event_name    = sanitize_text_field( html_entity_decode( (string) ( $metadata['event_instance_title'] ?? $metadata['event_title'] ?? '' ), ENT_QUOTES, 'UTF-8' ) );
 		$customer_name = sanitize_text_field( (string) ( $order['customer_name'] ?? '' ) );
 
 		if ( ! $event_id && ! empty( $items ) && is_array( $items[0] ?? null ) ) {
@@ -310,13 +458,16 @@ class Ticket_Emails {
 			)
 			: '';
 
-		$ticket_codes_line = self::render_ticket_codes_for_email( $items, $ticket_name_contexts );
+		$seat_attendees    = self::get_seat_attendees( $items );
+		$ticket_codes_line = self::render_ticket_codes_for_email( $items, $ticket_name_contexts, $seat_attendees );
+		// One block per ticket with the attendee's name, email and code.
+		$attendee_tickets = self::render_attendee_tickets_for_email( $items, $seat_attendees, $ticket_name_contexts );
 
 		$tags = array(
 			'[attendee_name]'  => $first_name ? $first_name : __( 'there', 'eventkoi-lite' ),
 			'[attendee_email]' => $recipient_email,
 			'[customer_name]'  => $customer_name,
-			'[order_id]'       => $order_id,
+			'[order_id]'       => self::get_order_number( $order, $order_id ),
 			'[order_status]'   => $formatted_status,
 			'[event_title]'    => $event_name,
 			'[event_name]'     => $event_name,
@@ -328,6 +479,7 @@ class Ticket_Emails {
 			'[checkin_line]'   => $checkin_line,
 			'[ticket_codes]'   => $ticket_codes_line,
 			'[ticket_lines]'   => $tickets_line,
+			'[attendee_tickets]' => $attendee_tickets,
 			'[site_name]'      => get_bloginfo( 'name' ),
 		);
 
@@ -335,7 +487,7 @@ class Ticket_Emails {
 
 		$subject_default = __( '[event_name]: Ticket details', 'eventkoi-lite' );
 		$subject         = apply_filters( 'eventkoi_ticket_email_subject', $subject_default, $tags, $order, $items );
-		$subject         = self::replace_email_tags( (string) $subject, $tags );
+		$subject         = self::replace_subject_tags( $subject, $tags );
 
 		$default_body = implode(
 			"\n",
@@ -345,7 +497,7 @@ class Ticket_Emails {
 				'<p>' . esc_html__( 'Order ID:', 'eventkoi-lite' ) . ' <br />[order_id]</p>',
 				'[checkin_line]',
 				'<p><strong>' . esc_html__( 'Tickets', 'eventkoi-lite' ) . '</strong><br />[ticket_lines]</p>',
-				'' !== $ticket_codes_line ? '<p><strong>' . esc_html__( 'Ticket Codes', 'eventkoi-lite' ) . '</strong><br />[ticket_codes]</p>' : '',
+				'' !== $attendee_tickets ? '<p><strong>' . esc_html__( 'Your tickets', 'eventkoi-lite' ) . '</strong></p>' . "\n" . '[attendee_tickets]' : '',
 				$event_datetime ? '<p>' . esc_html__( 'Schedule ([event_timezone]):', 'eventkoi-lite' ) . '<br />[event_datetime]</p>' : '',
 				$event_location ? '<p>' . esc_html__( 'Location:', 'eventkoi-lite' ) . '<br />[event_location]</p>' : '',
 				$event_url ? '<p>' . esc_html__( 'Event page:', 'eventkoi-lite' ) . '<br />[event_url]</p>' : '',
@@ -354,54 +506,277 @@ class Ticket_Emails {
 		);
 
 		$body = apply_filters( 'eventkoi_ticket_email_template', $default_body, $tags, $order, $items );
-		$body = self::replace_email_tags( (string) $body, $tags );
+		$body_template = (string) $body;
+		$body          = self::finalize_email_body( self::replace_email_tags( $body_template, $tags ) );
 
-		$body     = preg_replace( "/\n{3,}/", "\n\n", trim( (string) $body ) );
-		$has_html = (bool) preg_match( '/<[^>]+>/', (string) $body );
-		$body     = $has_html
-			? wp_kses( wpautop( (string) $body ), Settings::get_email_template_allowed_tags() )
-			: wpautop( esc_html( (string) $body ) );
-
-		$headers         = array( 'Content-Type: text/html; charset=UTF-8' );
-		$sender_email    = sanitize_email( (string) ( $settings['ticket_email_sender_email'] ?? '' ) );
-		$sender_name     = sanitize_text_field( (string) ( $settings['ticket_email_sender_name'] ?? '' ) );
-		$from_email_hook = null;
-		$from_name_hook  = null;
-
-		if ( $sender_email ) {
-			$from = $sender_email;
-			if ( $sender_name ) {
-				$from = sprintf( '%s <%s>', $sender_name, $sender_email );
-			}
-			$headers[]       = 'From: ' . $from;
-			$from_email_hook = static function () use ( $sender_email ) {
-				return $sender_email;
-			};
-			add_filter( 'wp_mail_from', $from_email_hook );
-		}
-
-		if ( $sender_name ) {
-			$from_name_hook = static function () use ( $sender_name ) {
-				return $sender_name;
-			};
-			add_filter( 'wp_mail_from_name', $from_name_hook );
-		}
-
-		$sent = wp_mail( $recipient_email, $subject, $body, $headers );
-
-		if ( $from_email_hook ) {
-			remove_filter( 'wp_mail_from', $from_email_hook );
-		}
-		if ( $from_name_hook ) {
-			remove_filter( 'wp_mail_from_name', $from_name_hook );
-		}
+		$sent = self::deliver_ticket_email( $recipient_email, $subject, $body, $settings );
 
 		if ( $sent && '' !== $order_id ) {
-			self::add_confirmation_note( $order_id );
-			Ticket_Order_Sync::sync_order_to_local( $order );
+			if ( $is_resend ) {
+				self::add_resend_note( $order_id );
+			} else {
+				self::add_confirmation_note( $order_id );
+				if ( $sync_local ) {
+					Ticket_Order_Sync::sync_order_to_local( $order );
+				}
+			}
+		}
+
+		// The buyer asked for every attendee to get their own ticket. Only on
+		// the first send: an admin resend goes to the buyer alone.
+		if ( $sent && ! $is_resend && self::order_wants_attendee_emails( $order ) ) {
+			self::send_attendee_ticket_emails( $order, $items, $seat_attendees, $tags, $subject, $body_template, $settings, $recipient_email, $ticket_name_contexts );
 		}
 
 		return (bool) $sent;
+	}
+
+	/**
+	 * Clean an email body the way the ticket email always has.
+	 *
+	 * @param string $body Body with tags already replaced.
+	 * @return string
+	 */
+	private static function finalize_email_body( $body ) {
+		$body     = preg_replace( "/\n{3,}/", "\n\n", trim( (string) $body ) );
+		$has_html = (bool) preg_match( '/<[^>]+>/', (string) $body );
+
+		return $has_html
+			? wp_kses( wpautop( (string) $body ), Settings::get_email_template_allowed_tags() )
+			: wpautop( esc_html( (string) $body ) );
+	}
+
+	/**
+	 * Send one ticket email with the configured sender.
+	 *
+	 * @param string $to       Recipient.
+	 * @param string $subject  Subject.
+	 * @param string $body     Final HTML body.
+	 * @param array  $settings Plugin settings.
+	 * @param bool   $personal One attendee's own ticket: only they get it.
+	 * @return bool
+	 */
+	private static function deliver_ticket_email( $to, $subject, $body, $settings, $personal = false ) {
+		return Email_Routing::send( 'ticket', $to, $subject, $body, $settings, array( 'personal' => $personal ) );
+
+		return (bool) $sent;
+	}
+
+	/**
+	 * Whether the buyer ticked "Email each attendee their own ticket".
+	 *
+	 * The choice lives in the attendee stash keyed by the checkout hold, and
+	 * WooCommerce orders also carry it as order meta.
+	 *
+	 * @param array $order Order payload.
+	 * @return bool
+	 */
+	private static function order_wants_attendee_emails( $order ) {
+		$hold_id = sanitize_text_field( (string) ( $order['hold_id'] ?? ( is_array( $order['metadata'] ?? null ) ? ( $order['metadata']['hold_id'] ?? '' ) : '' ) ) );
+		if ( '' !== $hold_id && Attendees::get_stashed_checkout_attendees( $hold_id )['email_each'] ) {
+			return true;
+		}
+
+		$order_id = (string) ( $order['order_id'] ?? $order['id'] ?? '' );
+		if ( preg_match( '/^wc_(\d+)/', $order_id, $m ) && function_exists( 'wc_get_order' ) ) {
+			$wc_order = wc_get_order( (int) $m[1] );
+			return $wc_order && 'yes' === (string) $wc_order->get_meta( '_eventkoi_email_attendees' );
+		}
+
+		return false;
+	}
+
+	/**
+	 * Send each attendee their own ticket.
+	 *
+	 * Seats sharing an address get one email together; the buyer's own
+	 * address is skipped because the buyer already has every ticket.
+	 *
+	 * @param array  $order          Order payload.
+	 * @param array  $items          Order items with ticket_codes.
+	 * @param array  $seat_attendees Map code => attendee from get_seat_attendees().
+	 * @param array  $tags           Buyer email tags, used as the base.
+	 * @param string $subject        Buyer email subject, already resolved.
+	 * @param string $body_template  Body template with tags still in place.
+	 * @param array  $settings       Plugin settings.
+	 * @param string $buyer_email    Buyer address to skip.
+	 * @param array  $contexts       Event-title contexts stripped from ticket names.
+	 * @return int Emails sent.
+	 */
+	private static function send_attendee_ticket_emails( $order, $items, $seat_attendees, $tags, $subject, $body_template, $settings, $buyer_email, $contexts ) {
+		$by_email = array();
+		foreach ( $items as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+			foreach ( (array) ( $item['ticket_codes'] ?? array() ) as $code ) {
+				$code     = sanitize_text_field( (string) $code );
+				$attendee = $seat_attendees[ $code ] ?? null;
+				$email    = $attendee ? sanitize_email( (string) $attendee['email'] ) : '';
+				if ( '' === $email || ! is_email( $email ) || strtolower( $email ) === strtolower( (string) $buyer_email ) ) {
+					continue;
+				}
+				$by_email[ strtolower( $email ) ]['email']   = $email;
+				$by_email[ strtolower( $email ) ]['name']    = (string) $attendee['name'];
+				$by_email[ strtolower( $email ) ]['items'][] = array_merge(
+					$item,
+					array(
+						'quantity'     => 1,
+						'ticket_codes' => array( $code ),
+						'codes'        => array( $code ),
+					)
+				);
+			}
+		}
+
+		if ( empty( $by_email ) ) {
+			return 0;
+		}
+
+		$sent = 0;
+
+		// A public free checkout could otherwise turn one request into a mail
+		// blast; no real order names more attendees than this.
+		$by_email = array_slice( $by_email, 0, 10, true );
+
+		$order_id = sanitize_text_field( (string) ( $order['id'] ?? $order['order_id'] ?? '' ) );
+
+		foreach ( $by_email as $recipient ) {
+			$own_items = $recipient['items'];
+			$own_codes = array();
+			foreach ( $own_items as $own_item ) {
+				$own_codes = array_merge( $own_codes, (array) $own_item['ticket_codes'] );
+			}
+			$single_code = 1 === count( $own_codes ) ? (string) $own_codes[0] : '';
+			$first_name  = '' !== trim( (string) $recipient['name'] ) ? trim( strtok( (string) $recipient['name'], ' ' ) ) : '';
+
+			$own_tags = array_merge(
+				$tags,
+				array(
+					'[attendee_name]'    => $first_name ? $first_name : __( 'there', 'eventkoi-lite' ),
+					'[attendee_email]'   => $recipient['email'],
+					'[checkin_code]'     => $single_code,
+					'[checkin_line]'     => '' !== $single_code
+						? sprintf( '<p>%1$s<br />%2$s</p>', esc_html__( 'Check-in code:', 'eventkoi-lite' ), esc_html( $single_code ) )
+						: '',
+					'[ticket_lines]'     => self::render_ticket_lines_for_email( $own_items, (string) ( $order['currency'] ?? '' ), $contexts ),
+					'[ticket_codes]'     => self::render_ticket_codes_for_email( $own_items, $contexts, $seat_attendees ),
+					'[attendee_tickets]' => self::render_attendee_tickets_for_email( $own_items, $seat_attendees, $contexts ),
+				)
+			);
+
+			$own_body = self::finalize_email_body( self::replace_email_tags( $body_template, $own_tags ) );
+			if ( self::deliver_ticket_email( $recipient['email'], self::replace_email_tags( $subject, $own_tags ), $own_body, $settings, true ) ) {
+				++$sent;
+				if ( ctype_digit( $order_id ) ) {
+					( new \EventKoi\Core\Orders() )->add_note( (int) $order_id, 'attendee_ticket_sent', $recipient['email'], 'system' );
+				}
+			}
+		}
+
+		return $sent;
+	}
+
+	/**
+	 * Attendee details per check-in code for the given items.
+	 *
+	 * @param array $items Order items with ticket_codes.
+	 * @return array Map code => { name, email }.
+	 */
+	private static function get_seat_attendees( $items ) {
+		global $wpdb;
+
+		$codes = array();
+		foreach ( (array) $items as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+			foreach ( (array) ( $item['ticket_codes'] ?? array() ) as $code ) {
+				$code = sanitize_text_field( (string) $code );
+				if ( '' !== $code ) {
+					$codes[] = $code;
+				}
+			}
+		}
+		$codes = array_values( array_unique( $codes ) );
+		if ( empty( $codes ) ) {
+			return array();
+		}
+
+		$table        = $wpdb->prefix . 'eventkoi_ticket_orders';
+		$placeholders = implode( ',', array_fill( 0, count( $codes ), '%s' ) );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT checkin_token, attendee_name, attendee_email FROM {$table} WHERE checkin_token IN ({$placeholders})", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+				$codes
+			)
+		);
+
+		$map = array();
+		foreach ( (array) $rows as $row ) {
+			$name  = trim( (string) ( $row->attendee_name ?? '' ) );
+			$email = sanitize_email( (string) ( $row->attendee_email ?? '' ) );
+			if ( '' === $name && '' === $email ) {
+				continue;
+			}
+			$map[ (string) $row->checkin_token ] = array(
+				'name'  => $name,
+				'email' => $email,
+			);
+		}
+
+		return $map;
+	}
+
+	/**
+	 * One block per ticket: ticket name, attendee and code.
+	 *
+	 * @param array $items          Order items with ticket_codes.
+	 * @param array $seat_attendees Map code => attendee.
+	 * @param array $contexts       Event-title contexts stripped from ticket names.
+	 * @return string
+	 */
+	private static function render_attendee_tickets_for_email( $items, $seat_attendees, $contexts ) {
+		$blocks = array();
+
+		foreach ( (array) $items as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+			$codes = isset( $item['ticket_codes'] ) && is_array( $item['ticket_codes'] ) ? $item['ticket_codes'] : array();
+			if ( empty( $codes ) ) {
+				continue;
+			}
+
+			$name = sanitize_text_field( (string) ( $item['ticket_name'] ?? ( $item['name'] ?? '' ) ) );
+			$name = self::strip_ticket_context_suffix( $name, $contexts );
+			if ( '' === $name ) {
+				$name = __( 'Ticket', 'eventkoi-lite' );
+			}
+
+			foreach ( $codes as $code ) {
+				$code = sanitize_text_field( (string) $code );
+				if ( '' === $code ) {
+					continue;
+				}
+				$attendee = $seat_attendees[ $code ] ?? null;
+				$lines    = array( '<strong>' . esc_html( $name ) . '</strong>' );
+				if ( $attendee ) {
+					$who = trim( (string) $attendee['name'] );
+					if ( '' !== (string) $attendee['email'] ) {
+						$who = '' !== $who ? $who . ' (' . $attendee['email'] . ')' : (string) $attendee['email'];
+					}
+					if ( '' !== $who ) {
+						$lines[] = esc_html( $who );
+					}
+				}
+				$lines[]  = esc_html__( 'Check-in code:', 'eventkoi-lite' ) . ' ' . esc_html( $code );
+				$blocks[] = '<p>' . implode( '<br />', $lines ) . '</p>';
+			}
+		}
+
+		return implode( "\n", $blocks );
 	}
 
 	/**
@@ -428,7 +803,9 @@ class Ticket_Emails {
 		$items         = isset( $order['items'] ) && is_array( $order['items'] ) ? $order['items'] : array();
 		$event_id      = absint( $order['event_id'] ?? 0 );
 		$instance_ts   = absint( $order['event_instance_ts'] ?? 0 );
-		$event_name    = sanitize_text_field( (string) ( $metadata['event_instance_title'] ?? $metadata['event_title'] ?? '' ) );
+		// Orders placed before titles were stored as plain text carry texturized
+		// entities in their metadata, so decode on the way out.
+		$event_name    = sanitize_text_field( html_entity_decode( (string) ( $metadata['event_instance_title'] ?? $metadata['event_title'] ?? '' ), ENT_QUOTES, 'UTF-8' ) );
 		$customer_name = sanitize_text_field( (string) ( $order['customer_name'] ?? '' ) );
 		$currency      = strtoupper( sanitize_text_field( (string) ( $order['currency'] ?? 'USD' ) ) );
 
@@ -459,7 +836,7 @@ class Ticket_Emails {
 			'[attendee_name]'  => $first_name ? $first_name : __( 'there', 'eventkoi-lite' ),
 			'[attendee_email]' => $recipient_email,
 			'[customer_name]'  => $customer_name,
-			'[order_id]'       => $order_id,
+			'[order_id]'       => self::get_order_number( $order, $order_id ),
 			'[event_title]'    => $event_name,
 			'[event_name]'     => $event_name,
 			'[event_datetime]' => $event_datetime,
@@ -477,7 +854,7 @@ class Ticket_Emails {
 			? (string) $settings['refund_email_subject']
 			: $subject_default;
 		$subject         = apply_filters( 'eventkoi_refund_email_subject', $subject_raw, $tags, $order );
-		$subject         = self::replace_email_tags( (string) $subject, $tags );
+		$subject         = self::replace_subject_tags( $subject, $tags );
 
 		$default_body = implode(
 			"\n",
@@ -507,39 +884,7 @@ class Ticket_Emails {
 			? wp_kses( wpautop( (string) $body ), Settings::get_email_template_allowed_tags() )
 			: wpautop( esc_html( (string) $body ) );
 
-		$headers         = array( 'Content-Type: text/html; charset=UTF-8' );
-		$sender_email    = sanitize_email( (string) ( $settings['refund_email_sender_email'] ?? $settings['ticket_email_sender_email'] ?? '' ) );
-		$sender_name     = sanitize_text_field( (string) ( $settings['refund_email_sender_name'] ?? $settings['ticket_email_sender_name'] ?? '' ) );
-		$from_email_hook = null;
-		$from_name_hook  = null;
-
-		if ( $sender_email ) {
-			$from = $sender_email;
-			if ( $sender_name ) {
-				$from = sprintf( '%s <%s>', $sender_name, $sender_email );
-			}
-			$headers[]       = 'From: ' . $from;
-			$from_email_hook = static function () use ( $sender_email ) {
-				return $sender_email;
-			};
-			add_filter( 'wp_mail_from', $from_email_hook );
-		}
-
-		if ( $sender_name ) {
-			$from_name_hook = static function () use ( $sender_name ) {
-				return $sender_name;
-			};
-			add_filter( 'wp_mail_from_name', $from_name_hook );
-		}
-
-		$sent = wp_mail( $recipient_email, $subject, $body, $headers );
-
-		if ( $from_email_hook ) {
-			remove_filter( 'wp_mail_from', $from_email_hook );
-		}
-		if ( $from_name_hook ) {
-			remove_filter( 'wp_mail_from_name', $from_name_hook );
-		}
+		$sent = Email_Routing::send( 'refund', $recipient_email, $subject, $body, $settings, array( 'fallback_prefix' => 'ticket' ) );
 
 		if ( $sent && '' !== $order_id ) {
 			self::add_refund_confirmation_note( $order_id );
@@ -660,11 +1005,12 @@ class Ticket_Emails {
 	/**
 	 * Render individual ticket codes grouped by ticket type.
 	 *
-	 * @param array $items    Order items with ticket_codes arrays.
-	 * @param array $contexts Optional event-title contexts to strip from ticket names.
+	 * @param array $items          Order items with ticket_codes arrays.
+	 * @param array $contexts       Optional event-title contexts to strip from ticket names.
+	 * @param array $seat_attendees Optional map code => attendee, to name each code.
 	 * @return string HTML string of ticket codes, empty if none present.
 	 */
-	private static function render_ticket_codes_for_email( $items, $contexts = array() ) {
+	private static function render_ticket_codes_for_email( $items, $contexts = array(), $seat_attendees = array() ) {
 		if ( empty( $items ) || ! is_array( $items ) ) {
 			return '';
 		}
@@ -690,8 +1036,14 @@ class Ticket_Emails {
 			$codes = array_map( 'sanitize_text_field', $ticket_codes );
 			$codes = array_filter( $codes );
 
-			if ( ! empty( $codes ) ) {
-				$lines[] = esc_html( $name ) . ': ' . esc_html( implode( ', ', $codes ) );
+			$labels = array();
+			foreach ( $codes as $code ) {
+				$attendee_name = trim( (string) ( $seat_attendees[ $code ]['name'] ?? '' ) );
+				$labels[]      = '' !== $attendee_name ? $code . ' (' . $attendee_name . ')' : $code;
+			}
+
+			if ( ! empty( $labels ) ) {
+				$lines[] = esc_html( $name ) . ': ' . esc_html( implode( ', ', $labels ) );
 			}
 		}
 
@@ -773,6 +1125,17 @@ class Ticket_Emails {
 	}
 
 	/**
+	 * Replace tags in a subject line, which has to stay on one line.
+	 *
+	 * @param string $subject Subject.
+	 * @param array  $tags Tags map.
+	 * @return string
+	 */
+	private static function replace_subject_tags( $subject, $tags ) {
+		return str_replace( "\n", ', ', self::replace_email_tags( (string) $subject, $tags ) );
+	}
+
+	/**
 	 * Check whether confirmation note already exists.
 	 *
 	 * @param array $order Order payload.
@@ -795,19 +1158,54 @@ class Ticket_Emails {
 	}
 
 	/**
-	 * Add order note after sending confirmation.
+	 * Add order note after an admin resend.
 	 *
 	 * @param string $order_id Order ID.
 	 * @return void
 	 */
-	private static function add_confirmation_note( $order_id ) {
-		$wc_id = 0;
-		if ( preg_match( '/^wc_(\d+)/', (string) $order_id, $m ) ) {
-			$wc_id = (int) $m[1];
-		}
-		if ( $wc_id > 0 ) {
+	private static function add_resend_note( $order_id ) {
+		$local_id = self::resolve_local_order_id( $order_id );
+
+		if ( $local_id > 0 ) {
 			$orders = new \EventKoi\Core\Orders();
-			$orders->add_note( $wc_id, 'ticket_confirmation_sent', __( 'Ticket confirmation sent.', 'eventkoi-lite' ), 'system' );
+			$orders->add_note( $local_id, 'ticket_confirmation_resent', __( 'Ticket confirmation resent.', 'eventkoi-lite' ), 'system' );
+		}
+	}
+
+	/**
+	 * Resolve the local order row id for a wc_, numeric or checkout order id.
+	 *
+	 * @param string $order_id Order ID.
+	 * @return int
+	 */
+	private static function resolve_local_order_id( $order_id ) {
+		$order_id = (string) $order_id;
+		$local_id = 0;
+
+		if ( preg_match( '/^wc_(\d+)/', $order_id, $m ) ) {
+			$local_id = (int) $m[1];
+		} elseif ( ctype_digit( $order_id ) ) {
+			$local_id = (int) $order_id;
+		} elseif ( '' !== $order_id ) {
+			// Free and manual checkouts pass their checkout_id; resolve the local order row.
+			$row      = \EKLIB\StellarWP\DB\DB::table( 'eventkoi_orders' )->where( 'checkout_id', $order_id )->get();
+			$local_id = ( $row && ! empty( $row->id ) ) ? (int) $row->id : 0;
+		}
+
+		return $local_id;
+	}
+
+	/**
+	 * Add a confirmation-sent note to the order.
+	 *
+	 * @param string $order_id Order ID.
+	 */
+	private static function add_confirmation_note( $order_id ) {
+		$local_id = self::resolve_local_order_id( $order_id );
+
+		if ( $local_id > 0 ) {
+			$orders = new \EventKoi\Core\Orders();
+			$orders->add_note( $local_id, 'ticket_confirmation_sent', __( 'Ticket confirmation sent.', 'eventkoi-lite' ), 'system' );
 		}
 	}
 
@@ -838,13 +1236,16 @@ class Ticket_Emails {
 			return self::build_order_from_wc( (int) $m[1] );
 		}
 
-		// Non-WC orders: query local ticket_orders table.
+		// Non-WC orders: query local ticket_orders table. Seat rows are keyed
+		// by the base order id plus ":ticket" and ":seat_n" suffixes.
 		global $wpdb;
 		$table = $wpdb->prefix . 'eventkoi_ticket_orders';
-		$rows  = $wpdb->get_results(
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT * FROM {$table} WHERE order_id = %s LIMIT 10",
-				$order_id
+				"SELECT * FROM {$table} WHERE order_id = %s OR order_id LIKE %s ORDER BY id ASC LIMIT 100", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$order_id,
+				$wpdb->esc_like( $order_id ) . ':%'
 			),
 			ARRAY_A
 		);
@@ -853,34 +1254,78 @@ class Ticket_Emails {
 			return new WP_Error( 'order_not_found', __( 'Order not found.', 'eventkoi-lite' ), array( 'status' => 404 ) );
 		}
 
-		$first = $rows[0];
-		$items = array();
+		$tickets_tbl  = $wpdb->prefix . 'eventkoi_tickets';
+		$ticket_names = array();
+		$first        = $rows[0];
+		$items        = array();
+		$all_codes    = array();
+		$instance_ts  = 0;
 		foreach ( $rows as $row ) {
-			$tid  = absint( $row['ticket_id'] ?? 0 );
-			$name = $tid ? get_the_title( $tid ) : '';
+			$tid = absint( $row['ticket_id'] ?? 0 );
+			if ( $tid && ! isset( $ticket_names[ $tid ] ) ) {
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+				$ticket_names[ $tid ] = (string) $wpdb->get_var(
+					$wpdb->prepare(
+						"SELECT name FROM {$tickets_tbl} WHERE id = %d LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+						$tid
+					)
+				);
+			}
+			if ( ! $instance_ts && ! empty( $row['instance_ts'] ) ) {
+				$instance_ts = absint( $row['instance_ts'] );
+			}
+
+			$token = sanitize_text_field( (string) ( $row['checkin_token'] ?? '' ) );
+			if ( '' !== $token ) {
+				$all_codes[] = $token;
+			}
+
 			$items[] = array(
-				'ticket_id' => $tid,
-				'name'      => $name,
-				'quantity'  => absint( $row['quantity'] ?? 1 ),
-				'price'     => (int) round( floatval( $row['unit_price'] ?? 0 ) * 100 ),
+				'ticket_id'    => $tid,
+				'ticket_name'  => $ticket_names[ $tid ] ?? '',
+				'name'         => $ticket_names[ $tid ] ?? '',
+				'quantity'     => absint( $row['quantity'] ?? 1 ),
+				'price'        => (int) round( floatval( $row['unit_price'] ?? 0 ) * 100 ),
+				'ticket_codes' => '' !== $token ? array( $token ) : array(),
 			);
 		}
 
+		// The emailed QR carries the order's group code when one was stored on
+		// the parent order; a single seat falls back to its own token.
+		$master_checkin_code = '';
+		$parent              = \EKLIB\StellarWP\DB\DB::table( 'eventkoi_orders' )->where( 'checkout_id', $order_id )->get();
+		if ( $parent && ! empty( $parent->id ) ) {
+			$notes_tbl = $wpdb->prefix . 'eventkoi_order_notes';
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$master_checkin_code = (string) $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT note_value FROM {$notes_tbl} WHERE order_id = %d AND note_key = %s ORDER BY id DESC LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					(int) $parent->id,
+					'master_checkin_code'
+				)
+			);
+		}
+		if ( '' === $master_checkin_code && 1 === count( $all_codes ) ) {
+			$master_checkin_code = $all_codes[0];
+		}
+
 		return array(
-			'id'             => $order_id,
-			'order_id'       => $order_id,
-			'status'         => (string) ( $first['payment_status'] ?? '' ),
-			'payment_status' => (string) ( $first['payment_status'] ?? '' ),
-			'customer_email' => (string) ( $first['customer_email'] ?? '' ),
-			'customer_name'  => (string) ( $first['customer_name'] ?? '' ),
-			'event_id'       => absint( $first['event_id'] ?? 0 ),
-			'event_instance_ts' => 0,
-			'currency'       => strtolower( (string) ( $first['currency'] ?? 'usd' ) ),
-			'items'          => $items,
-			'metadata'       => array(
-				'event_id'    => (string) absint( $first['event_id'] ?? 0 ),
-				'event_title' => get_the_title( absint( $first['event_id'] ?? 0 ) ),
-				'instance_ts' => (string) 0,
+			'id'                  => $order_id,
+			'order_id'            => $order_id,
+			'status'              => (string) ( $first['payment_status'] ?? '' ),
+			'payment_status'      => (string) ( $first['payment_status'] ?? '' ),
+			'customer_email'      => (string) ( $first['customer_email'] ?? '' ),
+			'customer_name'       => (string) ( $first['customer_name'] ?? '' ),
+			'event_id'            => absint( $first['event_id'] ?? 0 ),
+			'event_instance_ts'   => $instance_ts,
+			'master_checkin_code' => $master_checkin_code,
+			'currency'            => strtolower( (string) ( $first['currency'] ?? 'usd' ) ),
+			'items'               => $items,
+			'metadata'            => array(
+				'event_id'          => (string) absint( $first['event_id'] ?? 0 ),
+				'event_title'       => eventkoi_event_title_text( absint( $first['event_id'] ?? 0 ) ),
+				'instance_ts'       => (string) $instance_ts,
+				'event_instance_ts' => (string) $instance_ts,
 			),
 		);
 	}
@@ -959,6 +1404,30 @@ class Ticket_Emails {
 		}
 
 		new Event( $event_id );
+
+		// One ticket covers every date, so list them one per line.
+		if ( Event::is_package() ) {
+			$lines = array();
+			foreach ( Event::get_event_days() as $day ) {
+				$day_start = is_array( $day ) && ! empty( $day['start_date'] ) ? (int) strtotime( (string) $day['start_date'] ) : 0;
+				if ( ! $day_start ) {
+					continue;
+				}
+
+				$day_end = ! empty( $day['end_date'] ) ? (int) strtotime( (string) $day['end_date'] ) : 0;
+				if ( ! empty( $day['all_day'] ) ) {
+					$lines[ $day_start ] = eventkoi_format_datetime_range( $day_start, $day_end, true, array( 'timezone' => wp_timezone() ) );
+				} else {
+					$lines[ $day_start ] = $day_end
+						? eventkoi_date( 'datetime', $day_start ) . ' — ' . eventkoi_date( 'datetime', $day_end )
+						: eventkoi_date( 'datetime', $day_start );
+				}
+			}
+			ksort( $lines );
+
+			return array( implode( "\n", $lines ), eventkoi_timezone() );
+		}
+
 		$date_type      = Event::get_date_type();
 		$standard_type  = Event::get_standard_type();
 		$current_start  = absint( get_post_meta( $event_id, 'start_timestamp', true ) );
@@ -1181,7 +1650,62 @@ class Ticket_Emails {
 	 * @return string
 	 */
 	private static function get_order_display_id( $order ) {
-		return sanitize_text_field( (string) ( $order['id'] ?? $order['order_id'] ?? '' ) );
+		$display_id = self::resolve_display_id( $order );
+
+		return $display_id > 0 ? (string) $display_id : sanitize_text_field( (string) ( $order['id'] ?? $order['order_id'] ?? '' ) );
+	}
+
+	/**
+	 * The order number shown to a buyer.
+	 *
+	 * @param array  $order    Order payload.
+	 * @param string $fallback Order ID to show when there is no number.
+	 * @return string
+	 */
+	private static function get_order_number( $order, $fallback ) {
+		$display_id = self::resolve_display_id( $order );
+
+		return $display_id > 0 ? '#' . $display_id : $fallback;
+	}
+
+	/**
+	 * Resolve the human-readable numeric order ID for an order payload.
+	 *
+	 * WC orders use the WC post ID; other orders use eventkoi_orders.id.
+	 *
+	 * @param array $order Order payload.
+	 * @return int Numeric display ID, or 0 if not resolvable.
+	 */
+	private static function resolve_display_id( $order ) {
+		if ( ! is_array( $order ) ) {
+			return 0;
+		}
+
+		$existing = absint( $order['display_id'] ?? 0 );
+		if ( $existing > 0 ) {
+			return $existing;
+		}
+
+		$candidate = (string) ( $order['checkout_id'] ?? $order['id'] ?? $order['order_id'] ?? '' );
+		if ( '' === $candidate ) {
+			return 0;
+		}
+
+		if ( preg_match( '/^wc_(\d+)/', $candidate, $m ) ) {
+			return (int) $m[1];
+		}
+
+		global $wpdb;
+		$orders_tbl = $wpdb->prefix . 'eventkoi_orders';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$row = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT id FROM {$orders_tbl} WHERE checkout_id = %s LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$candidate
+			)
+		);
+
+		return $row ? absint( $row->id ) : 0;
 	}
 
 	/**
@@ -1207,7 +1731,7 @@ class Ticket_Emails {
 
 		$event_id    = absint( $order['event_id'] ?? 0 );
 		$instance_ts = $order['event_instance_ts'] ?? '';
-		$event_name  = get_the_title( $event_id );
+		$event_name  = eventkoi_event_title_text( $event_id );
 		$items       = $order['items'] ?? array();
 
 		$customer_name  = sanitize_text_field( (string) ( $order['customer_name'] ?? '' ) );
@@ -1230,15 +1754,51 @@ class Ticket_Emails {
 
 		list( $event_datetime ) = self::get_event_datetime_parts( $event_id, $instance_ts );
 
+		// Document the terms-and-conditions consent captured at checkout: when
+		// the customer accepted, include the acceptance time and the exact
+		// terms text they consented to (snapshotted at checkout).
+		$terms_section = '';
+		$consent       = is_array( $order['terms_consent'] ?? null ) ? $order['terms_consent'] : null;
+		$has_consent   = $consent && ! empty( $consent['accepted_at'] )
+			&& ( ! empty( $consent['terms_text'] ) || ! empty( $consent['agreements'] ) );
+		if ( $has_consent ) {
+			$section_parts = array(
+				'<p><strong>' . esc_html__( 'Terms and conditions:', 'eventkoi-lite' ) . '</strong> '
+					. sprintf(
+						/* translators: %s: date/time the customer accepted the terms. */
+						esc_html__( 'Accepted by the customer at checkout on %s.', 'eventkoi-lite' ),
+						esc_html( wp_date( 'Y-m-d H:i:s T', (int) $consent['accepted_at'] ) )
+					)
+					. '</p>',
+			);
+
+			if ( ! empty( $consent['terms_text'] ) ) {
+				$section_parts[] = '<div>' . wp_kses_post( $consent['terms_text'] ) . '</div>';
+			}
+
+			$agreement_texts = array_filter( array_map( 'trim', (array) ( $consent['agreements'] ?? array() ) ) );
+			if ( ! empty( $agreement_texts ) ) {
+				$agreement_items = array();
+				foreach ( $agreement_texts as $agreement_text ) {
+					$agreement_items[] = '<li>' . wp_kses_post( $agreement_text ) . '</li>';
+				}
+				$section_parts[] = '<p><strong>' . esc_html__( 'Agreements accepted:', 'eventkoi-lite' ) . '</strong></p>';
+				$section_parts[] = '<ul>' . implode( '', $agreement_items ) . '</ul>';
+			}
+
+			$terms_section = implode( "\n", $section_parts );
+		}
+
 		$tags = array(
-			'[customer_name]'  => esc_html( $customer_name ),
-			'[attendee_email]' => esc_html( $customer_email ),
-			'[order_id]'       => esc_html( (string) $order_id ),
-			'[ticket_lines]'   => implode( '<br />', array_map( 'esc_html', $lines ) ),
-			'[order_total]'    => esc_html( $formatted_total ),
-			'[event_name]'     => esc_html( $event_name ),
-			'[event_datetime]' => esc_html( (string) $event_datetime ),
-			'[site_name]'      => esc_html( get_bloginfo( 'name' ) ),
+			'[customer_name]'    => esc_html( $customer_name ),
+			'[attendee_email]'   => esc_html( $customer_email ),
+			'[order_id]'         => esc_html( (string) $order_id ),
+			'[ticket_lines]'     => implode( '<br />', array_map( 'esc_html', $lines ) ),
+			'[order_total]'      => esc_html( $formatted_total ),
+			'[event_name]'       => esc_html( $event_name ),
+			'[event_datetime]'   => esc_html( (string) $event_datetime ),
+			'[terms_acceptance]' => $terms_section,
+			'[site_name]'        => esc_html( get_bloginfo( 'name' ) ),
 		);
 
 		$default_subject  = __( 'New ticket sale: [event_name]', 'eventkoi-lite' );
@@ -1252,6 +1812,7 @@ class Ticket_Emails {
 				'<p><strong>' . esc_html__( 'Total:', 'eventkoi-lite' ) . '</strong> [order_total]</p>',
 				'<p><strong>' . esc_html__( 'Event:', 'eventkoi-lite' ) . '</strong> [event_name]</p>',
 				'<p><strong>' . esc_html__( 'Date:', 'eventkoi-lite' ) . '</strong> [event_datetime]</p>',
+				'[terms_acceptance]',
 				'<p>&mdash;<br />[site_name]</p>',
 			)
 		);
@@ -1261,42 +1822,12 @@ class Ticket_Emails {
 		$subject  = '' !== $subject ? $subject : $default_subject;
 		$template = '' !== $template ? $template : $default_template;
 
-		$subject = strtr( $subject, $tags );
+		// The tag values are escaped for the HTML body. The subject line is
+		// plain text, so entities there would show up literally in the inbox.
+		$subject = wp_specialchars_decode( self::replace_subject_tags( $subject, $tags ), ENT_QUOTES );
 		$body    = strtr( $template, $tags );
 		$body    = wp_kses( wpautop( trim( $body ) ), Settings::get_email_template_allowed_tags() );
 
-		$headers         = array( 'Content-Type: text/html; charset=UTF-8' );
-		$sender_email    = sanitize_email( (string) ( $settings['admin_sale_email_sender_email'] ?? '' ) );
-		$sender_name     = sanitize_text_field( (string) ( $settings['admin_sale_email_sender_name'] ?? '' ) );
-		$from_email_hook = null;
-		$from_name_hook  = null;
-
-		if ( $sender_email ) {
-			$from = $sender_email;
-			if ( $sender_name ) {
-				$from = sprintf( '%s <%s>', $sender_name, $sender_email );
-			}
-			$headers[]       = 'From: ' . $from;
-			$from_email_hook = static function () use ( $sender_email ) {
-				return $sender_email;
-			};
-			add_filter( 'wp_mail_from', $from_email_hook );
-		}
-
-		if ( $sender_name ) {
-			$from_name_hook = static function () use ( $sender_name ) {
-				return $sender_name;
-			};
-			add_filter( 'wp_mail_from_name', $from_name_hook );
-		}
-
-		wp_mail( $admin_email, $subject, $body, $headers );
-
-		if ( $from_email_hook ) {
-			remove_filter( 'wp_mail_from', $from_email_hook );
-		}
-		if ( $from_name_hook ) {
-			remove_filter( 'wp_mail_from_name', $from_name_hook );
-		}
+		Email_Routing::send( 'admin_sale', $admin_email, $subject, $body, $settings );
 	}
 }

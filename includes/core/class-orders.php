@@ -126,6 +126,72 @@ class Orders {
 	}
 
 	/**
+	 * Read the custom checkout field values captured for an order.
+	 *
+	 * Prefers the machine-readable `checkout_fields` note. Orders placed
+	 * before that note existed only have the human-readable per-field notes,
+	 * so those are matched back against the registered labels. WooCommerce
+	 * orders keep their values in order meta instead.
+	 *
+	 * @param int $order_id Local order ID.
+	 * @param int $event_id Event ID used to resolve field definitions.
+	 * @return array Values keyed by field key.
+	 */
+	public static function get_checkout_field_values( $order_id, $event_id = 0 ) {
+		$order_id = absint( $order_id );
+
+		if ( ! $order_id ) {
+			return array();
+		}
+
+		$notes = DB::table( 'eventkoi_order_notes' )
+			->where( 'order_id', $order_id )
+			->orderBy( 'created', 'asc' )
+			->getAll();
+
+		$structured = array();
+		$legacy     = array();
+
+		foreach ( (array) $notes as $note ) {
+			$key = $note->note_key ?? '';
+
+			if ( 'checkout_fields' === $key ) {
+				$decoded = json_decode( (string) ( $note->note_value ?? '' ), true );
+				if ( is_array( $decoded ) ) {
+					$structured = array_merge( $structured, $decoded );
+				}
+				continue;
+			}
+
+			if ( 'checkout_field' === $key ) {
+				$legacy[] = (string) ( $note->note_value ?? '' );
+			}
+		}
+
+		if ( $structured ) {
+			return $structured;
+		}
+
+		if ( ! $legacy ) {
+			return array();
+		}
+
+		$values = array();
+		foreach ( self::get_checkout_fields( absint( $event_id ) ) as $field ) {
+			$prefix = $field['label'] . ': ';
+
+			foreach ( $legacy as $line ) {
+				if ( 0 === strpos( $line, $prefix ) ) {
+					$values[ $field['key'] ] = substr( $line, strlen( $prefix ) );
+					break;
+				}
+			}
+		}
+
+		return $values;
+	}
+
+	/**
 	 * Create order.
 	 *
 	 * @param array  $args An array of args to create an order.

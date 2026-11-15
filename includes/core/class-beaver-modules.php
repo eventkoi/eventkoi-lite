@@ -56,6 +56,12 @@ class Beaver_Modules {
 									'label'   => __( 'Data Type', 'eventkoi-lite' ),
 									'options' => eventkoi_get_event_data_options(),
 								),
+								'label'     => array(
+									'type'    => 'text',
+									'label'   => __( 'Label', 'eventkoi-lite' ),
+									'help'    => __( 'Optional text shown before the value, such as "Starts on".', 'eventkoi-lite' ),
+									'default' => '',
+								),
 								'show'      => array(
 									'type'    => 'select',
 									'label'   => __( 'Show', 'eventkoi-lite' ),
@@ -79,6 +85,11 @@ class Beaver_Modules {
 	 * @return array
 	 */
 	private function get_calendar_module_form() {
+		$calendar_options = eventkoi_get_calendar_options();
+		if ( isset( $calendar_options[''] ) ) {
+			unset( $calendar_options[''] );
+		}
+
 		return array(
 			'general' => array(
 				'title'    => __( 'Calendar Options', 'eventkoi-lite' ),
@@ -86,11 +97,32 @@ class Beaver_Modules {
 					'general' => array(
 						'title'  => '',
 						'fields' => array(
-							'calendars'      => array(
+							'calendars_source' => array(
 								'type'    => 'select',
-								'label'   => __( 'Select Calendar', 'eventkoi-lite' ),
-								'options' => eventkoi_get_calendar_options(),
-								'help'    => __( 'Leave empty to use the default calendar.', 'eventkoi-lite' ),
+								'label'   => __( 'Calendars', 'eventkoi-lite' ),
+								'default' => 'default',
+								'options' => array(
+									'default'  => __( 'Default calendar', 'eventkoi-lite' ),
+									'current'  => __( 'Current calendar', 'eventkoi-lite' ),
+									'all'      => __( 'All calendars', 'eventkoi-lite' ),
+									'specific' => __( 'Specific calendar(s)', 'eventkoi-lite' ),
+								),
+								'help'    => __( 'Choose “Specific calendar(s)” to select one or more calendars.', 'eventkoi-lite' ),
+								'toggle'  => array(
+									'specific' => array(
+										'fields' => array( 'calendars_picker', 'calendars' ),
+									),
+								),
+							),
+							'calendars_picker' => array(
+								'type'    => 'raw',
+								'label'   => __( 'Specific calendar(s)', 'eventkoi-lite' ),
+								'content' => $this->get_calendar_checkbox_picker_html( $calendar_options ),
+								'help'    => __( 'Check one or more calendars to show in this calendar.', 'eventkoi-lite' ),
+							),
+							'calendars'      => array(
+								'type'    => 'hidden',
+								'default' => '',
 							),
 							'timeframe'      => array(
 								'type'    => 'select',
@@ -100,6 +132,42 @@ class Beaver_Modules {
 									'month' => __( 'Month', 'eventkoi-lite' ),
 									'week'  => __( 'Week', 'eventkoi-lite' ),
 								),
+							'show_month_view'  => array(
+								'type'    => 'select',
+								'label'   => __( 'Show Month view', 'eventkoi-lite' ),
+								'default' => 'yes',
+								'options' => array(
+									'yes' => __( 'Yes', 'eventkoi-lite' ),
+									'no'  => __( 'No', 'eventkoi-lite' ),
+								),
+							),
+							'show_week_view'  => array(
+								'type'    => 'select',
+								'label'   => __( 'Show Week view', 'eventkoi-lite' ),
+								'default' => 'yes',
+								'options' => array(
+									'yes' => __( 'Yes', 'eventkoi-lite' ),
+									'no'  => __( 'No', 'eventkoi-lite' ),
+								),
+							),
+							'show_list_view'  => array(
+								'type'    => 'select',
+								'label'   => __( 'Show List view', 'eventkoi-lite' ),
+								'default' => 'yes',
+								'options' => array(
+									'yes' => __( 'Yes', 'eventkoi-lite' ),
+									'no'  => __( 'No', 'eventkoi-lite' ),
+								),
+							),
+							'show_timezone'  => array(
+								'type'    => 'select',
+								'label'   => __( 'Show timezone', 'eventkoi-lite' ),
+								'default' => 'yes',
+								'options' => array(
+									'yes' => __( 'Yes', 'eventkoi-lite' ),
+									'no'  => __( 'No', 'eventkoi-lite' ),
+								),
+							),
 							),
 							'default_month'  => array(
 								'type'    => 'select',
@@ -325,6 +393,105 @@ class Beaver_Modules {
 		}
 
 		return $options;
+	}
+
+	/**
+	 * Build the checkbox picker used to choose specific calendars for a module.
+	 *
+	 * Renders a checkbox list whose state is synced into the hidden `calendars`
+	 * field (comma-separated ids) so the calendar can include multiple calendars.
+	 *
+	 * @param array $calendar_options Calendar id => label map.
+	 * @return string
+	 */
+	private function get_calendar_checkbox_picker_html( $calendar_options ) {
+		$checkboxes = '';
+
+		foreach ( $calendar_options as $calendar_id => $calendar_label ) {
+			$checkboxes .= sprintf(
+				'<label style="display:flex;align-items:center;gap:8px;padding:6px 0;"><input type="checkbox" value="%1$d" data-ek-calendar-id="%1$d" /> <span>%2$s</span></label>',
+				absint( $calendar_id ),
+				esc_html( $calendar_label )
+			);
+		}
+
+		$script = <<<'JS'
+<script>
+(function() {
+	const init = function(root) {
+		if (!root || root.dataset.ekInit === '1') return;
+		root.dataset.ekInit = '1';
+
+		const settingsTable = root.closest('.fl-form-table, .fl-builder-settings');
+		if (!settingsTable) return;
+
+		const hidden = settingsTable.querySelector('input[name="calendars"]');
+		if (!hidden) return;
+
+		const checkboxes = root.querySelectorAll('input[type="checkbox"][data-ek-calendar-id]');
+		const parseIds = (value) => String(value || '')
+			.split(',')
+			.map((v) => v.trim())
+			.filter(Boolean);
+
+		const syncFromHidden = () => {
+			const selected = parseIds(hidden.value);
+			checkboxes.forEach((cb) => {
+				cb.checked = selected.includes(cb.value);
+			});
+		};
+
+		const syncToHidden = () => {
+			const values = Array.from(checkboxes)
+				.filter((cb) => cb.checked)
+				.map((cb) => cb.value);
+			hidden.value = values.join(',');
+			if (window.jQuery) {
+				window.jQuery(hidden).trigger('change');
+			}
+		};
+
+		syncFromHidden();
+		checkboxes.forEach((cb) => cb.addEventListener('change', syncToHidden));
+
+		// Clear the selection when the source leaves "specific" so a deliberate
+		// "default"/"all" choice never leaves a stale id behind (which the render
+		// side would otherwise treat as a legacy single-calendar selection).
+		const sourceSelect = settingsTable.querySelector('select[name="calendars_source"]');
+		if (sourceSelect) {
+			sourceSelect.addEventListener('change', () => {
+				if (sourceSelect.value !== 'specific') {
+					checkboxes.forEach((cb) => { cb.checked = false; });
+					hidden.value = '';
+					if (window.jQuery) {
+						window.jQuery(hidden).trigger('change');
+					}
+				}
+			});
+		}
+	};
+
+	const run = () => {
+		document.querySelectorAll('.eventkoi-bb-calendar-picker').forEach(init);
+	};
+
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', run);
+	} else {
+		run();
+	}
+
+	const observer = new MutationObserver(run);
+	observer.observe(document.documentElement, { childList: true, subtree: true });
+})();
+</script>
+JS;
+
+		return sprintf(
+			'<div class="eventkoi-bb-calendar-picker" style="border:1px solid #dcdcde;border-radius:6px;padding:10px;max-height:220px;overflow:auto;background:#fff;">%1$s</div>%2$s',
+			$checkboxes,
+			$script
+		);
 	}
 
 }

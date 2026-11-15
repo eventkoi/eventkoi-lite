@@ -4,13 +4,16 @@ import * as React from "react"
 import * as MenubarPrimitive from "@radix-ui/react-menubar"
 import { Check, ChevronRight, Circle } from "lucide-react"
 
+import { getEventkoiPortalContainer } from "@/lib/portal"
 import { cn } from "@/lib/utils"
 
 const MenubarMenu = MenubarPrimitive.Menu
 
 const MenubarGroup = MenubarPrimitive.Group
 
-const MenubarPortal = MenubarPrimitive.Portal
+const MenubarPortal = (props) => (
+  <MenubarPrimitive.Portal container={getEventkoiPortalContainer()} {...props} />
+)
 
 const MenubarSub = MenubarPrimitive.Sub
 
@@ -68,7 +71,7 @@ const MenubarContent = React.forwardRef((
   { className, align = "start", alignOffset = -4, sideOffset = 8, ...props },
   ref
 ) => (
-  <MenubarPrimitive.Portal>
+  <MenubarPrimitive.Portal container={getEventkoiPortalContainer()}>
     <MenubarPrimitive.Content
       ref={ref}
       align={align}

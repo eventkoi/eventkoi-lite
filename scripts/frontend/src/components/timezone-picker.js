@@ -47,7 +47,7 @@ export function TimezonePicker({
             ),
             formatTimezoneLabel(timezone, timeFormat)
           )}
-          className="inline-flex bg-transparent border-none cursor-pointer w-auto h-auto p-0 font-normal text-foreground underline"
+          className="eventkoi-calendar-timezone inline-flex bg-transparent border-none cursor-pointer w-auto h-auto p-0 font-normal text-foreground underline"
         >
           {formatTimezoneLabel(timezone, timeFormat)}
         </Button>
@@ -69,13 +69,13 @@ export function TimezonePicker({
               <TabsList className="flex bg-muted px-2 gap-2 shadow-none rounded-none">
                 <TabsTrigger
                   value="12"
-                  className="rounded-sm bg-muted text-foreground hover:text-foreground flex-1 data-[state=active]:font-semibold shadow-none border-none cursor-pointer"
+                  className="rounded-sm bg-muted text-foreground hover:text-foreground flex-1 data-[state=active]:hover:text-primary-foreground data-[state=active]:font-semibold shadow-none border-none cursor-pointer"
                 >
                   {__("12hr (AM/PM)", "eventkoi-lite")}
                 </TabsTrigger>
                 <TabsTrigger
                   value="24"
-                  className="rounded-sm bg-muted text-foreground hover:text-foreground flex-1 data-[state=active]:font-semibold shadow-none border-none cursor-pointer"
+                  className="rounded-sm bg-muted text-foreground hover:text-foreground flex-1 data-[state=active]:hover:text-primary-foreground data-[state=active]:font-semibold shadow-none border-none cursor-pointer"
                 >
                   {__("24hr", "eventkoi-lite")}
                 </TabsTrigger>

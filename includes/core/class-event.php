@@ -36,6 +36,7 @@ class Event {
 	private static $meta_keys = array(
 		'title',
 		'slug',
+		'excerpt',
 		'description',
 		'summary',
 		'image',
@@ -61,6 +62,9 @@ class Event {
 		'ical',
 		'tbc',
 		'tbc_note',
+		'price_from_amount',
+		'price_from_url',
+		'price_from_details',
 		'type',
 		'date_type',
 		'address1',
@@ -74,6 +78,7 @@ class Event {
 		'virtual_url',
 		'template',
 		'timezone_display',
+		'event_timezone',
 		'timezone',
 		'event_days',
 		'locations',
@@ -81,6 +86,7 @@ class Event {
 		'recurrence_overrides',
 		'rulesummary',
 		'standard_type',
+		'event_single_package',
 		'attendance_mode',
 		'rsvp_enabled',
 		'rsvp_capacity',
@@ -90,8 +96,18 @@ class Event {
 		'rsvp_max_guests',
 		'rsvp_allow_edit',
 		'rsvp_auto_account',
+		'rsvp_guest_details',
 		'rsvp_sale_start',
 		'rsvp_sale_end',
+		'tickets_terms_conditions_required',
+		'tickets_agreements',
+		'tickets_event_capacity',
+		'tickets_show_remaining',
+		'tickets_show_unavailable',
+		'tickets_show_sold_out',
+		'tickets_show_upcoming',
+		'tickets_show_ended',
+		'tickets_attendee_details',
 	);
 
 	/**
@@ -124,6 +140,20 @@ class Event {
 
 		self::$event    = $event;
 		self::$event_id = ! empty( $event->ID ) ? $event->ID : 0;
+	}
+
+	/**
+	 * The event the static renderers are currently pointed at.
+	 *
+	 * Constructing an Event repoints every static renderer for the rest of the
+	 * request. Anything that renders a field for a post other than the one
+	 * being displayed has to put the previous event back afterwards, and it
+	 * needs this to know what that was.
+	 *
+	 * @return int Event ID, or 0 when none is set.
+	 */
+	public static function current_id() {
+		return (int) self::$event_id;
 	}
 
 	/**
@@ -166,8 +196,12 @@ class Event {
 
 		$native_edit_url = self::get_native_edit_url();
 		if ( '' !== $native_edit_url ) {
-			$meta['native_edit_url'] = $native_edit_url;
+			$meta['native_edit_url']   = $native_edit_url;
+			$meta['has_plugin_fields'] = self::has_embeddable_plugin_fields();
+			$meta['has_seo_plugin']    = class_exists( '\EventKoi\Admin\Scripts' ) && \EventKoi\Admin\Scripts::has_seo_plugin();
 		}
+
+		$meta['custom_taxonomies'] = self::get_custom_taxonomies();
 
 		// Apply instance-specific overrides, if any.
 		$instance_ts = eventkoi_get_instance_id();
@@ -190,6 +224,11 @@ class Event {
 			}
 		}
 
+		// A locked event's details stay out of the page data until it is unlocked.
+		if ( self::is_locked_for_visitor() ) {
+			$meta = self::strip_locked_fields( $meta );
+		}
+
 		return apply_filters( 'eventkoi_get_event_meta', $meta, self::$event_id, self::$event );
 	}
 
@@ -201,8 +240,31 @@ class Event {
 	 */
 	public static function render_meta( $name ) {
 		$name = str_replace( 'eventkoi/', '', $name );
-		$name = str_replace( '-', '_', $name );
-		$name = str_replace( 'event_', '', $name );
+
+		// A locked event only shows its title, dates and the password form.
+		if ( self::is_locked_for_visitor() ) {
+			if ( self::get_tbc() && preg_match( '/^(?:event[-_])?(?:start|end|date|time(?!zone))/', (string) $name ) ) {
+				return __( 'Date and time to be confirmed', 'eventkoi-lite' );
+			}
+
+			if ( ! preg_match( '/^(?:event[-_])?(?:title|url|slug|start|end|date|time|image|rule|calendar|details|ical)/', (string) $name ) ) {
+				return '';
+			}
+		}
+
+		// A taxonomy slug may contain hyphens, and turning them into
+		// underscores would stop the slug resolving.
+		$is_taxonomy = 0 === strpos( $name, 'event_tax_' ) || 0 === strpos( $name, 'tax_' );
+
+		if ( ! $is_taxonomy ) {
+			$name = str_replace( '-', '_', $name );
+		}
+
+		// For a taxonomy key only the leading prefix goes: a slug such as
+		// event_types must survive, or the taxonomy would never resolve.
+		$name = $is_taxonomy
+			? preg_replace( '/^event_/', '', $name )
+			: str_replace( 'event_', '', $name );
 
 		// Support location_1, location_2, etc.
 		if ( preg_match( '/^location_(\d+)$/', $name, $matches ) ) {
@@ -268,12 +330,53 @@ class Event {
 	}
 
 	/**
+	 * Render the terms this event has in one taxonomy.
+	 *
+	 * Plain comma separated names: every builder can print it, and it carries
+	 * no assumptions about a term having a public archive.
+	 *
+	 * @param string $slug Taxonomy slug.
+	 * @return string Comma separated term names, or an empty string.
+	 */
+	public static function rendered_taxonomy_terms( $slug ) {
+		$slug = sanitize_key( (string) $slug );
+
+		if ( '' === $slug || ! taxonomy_exists( $slug ) ) {
+			// A deleted taxonomy leaves its field behind in saved layouts, so
+			// this has to read as "nothing to show" rather than break the page.
+			return '';
+		}
+
+		$terms = wp_get_object_terms( self::$event_id, $slug, array( 'fields' => 'names' ) );
+
+		if ( is_wp_error( $terms ) || empty( $terms ) ) {
+			return '';
+		}
+
+		$separator = apply_filters( 'eventkoi_taxonomy_terms_separator', ', ', $slug, self::$event_id );
+
+		return apply_filters(
+			'eventkoi_rendered_taxonomy_terms',
+			implode( $separator, array_map( 'sanitize_text_field', $terms ) ),
+			$slug,
+			self::$event_id
+		);
+	}
+
+	/**
 	 * Render a single meta key.
 	 *
 	 * @param string $key A meta key to render.
 	 */
 	public static function rendered_meta( $key = '' ) {
 		$value = '';
+
+		// A site's own taxonomies resolve here the same way custom fields do,
+		// so a taxonomy prints its assigned terms wherever event data is
+		// available.
+		if ( 0 === strpos( $key, 'tax_' ) ) {
+			return self::rendered_taxonomy_terms( substr( $key, 4 ) );
+		}
 
 		if ( 'date_type' === $key ) {
 			$value = self::get_date_type();
@@ -411,9 +514,10 @@ class Event {
 
 		$meta = apply_filters( 'eventkoi_pre_update_event_meta', $meta, $meta['id'] );
 
-		$id    = $meta['id'];
-		$title = $meta['title'];
-		$slug  = ! empty( $meta['slug'] ) ? sanitize_title( $meta['slug'] ) : '';
+		$id      = $meta['id'];
+		$title   = $meta['title'];
+		$slug    = ! empty( $meta['slug'] ) ? sanitize_title( $meta['slug'] ) : '';
+		$excerpt = isset( $meta['excerpt'] ) ? sanitize_textarea_field( $meta['excerpt'] ) : null;
 
 		if ( 0 === $id ) {
 			$args = array(
@@ -423,6 +527,10 @@ class Event {
 				'post_name'   => $slug ? $slug : sanitize_title( $title ),
 				'post_author' => get_current_user_id(),
 			);
+
+			if ( null !== $excerpt ) {
+				$args['post_excerpt'] = $excerpt;
+			}
 
 			$last_id        = wp_insert_post( $args );
 			$event          = get_post( $last_id );
@@ -449,6 +557,12 @@ class Event {
 		// Empty slug regenerates from the title, so clearing the field restores
 		// the default instead of silently keeping the old post_name.
 		$args['post_name'] = '' !== $slug ? $slug : sanitize_title( $title );
+
+		// Only written when the payload carries it, so saves from screens that
+		// never load the field cannot blank an existing excerpt.
+		if ( null !== $excerpt ) {
+			$args['post_excerpt'] = $excerpt;
+		}
 
 		$last_id        = wp_update_post( $args );
 		$event          = get_post( $last_id );
@@ -479,7 +593,17 @@ class Event {
 		// Default ON for new events to match the editor's default toggle.
 		$timezone_display = array_key_exists( 'timezone_display', $meta ) ? self::normalize_boolean_meta( $meta['timezone_display'] ) : true;
 		$tbc              = array_key_exists( 'tbc', $meta ) ? self::normalize_boolean_meta( $meta['tbc'] ) : false;
+		$event_timezone = isset( $meta['event_timezone'] ) ? sanitize_text_field( (string) $meta['event_timezone'] ) : '';
+		if ( '' !== $event_timezone && ! in_array( $event_timezone, timezone_identifiers_list(), true ) ) {
+			$event_timezone = '';
+		}
 		$tbc_note         = ! empty( $meta['tbc_note'] ) ? esc_attr( $meta['tbc_note'] ) : '';
+
+		$price_from_amount  = isset( $meta['price_from_amount'] ) && '' !== $meta['price_from_amount'] && is_numeric( $meta['price_from_amount'] )
+			? (string) max( 0, (float) $meta['price_from_amount'] )
+			: '';
+		$price_from_url     = isset( $meta['price_from_url'] ) ? esc_url_raw( (string) $meta['price_from_url'] ) : '';
+		$price_from_details = isset( $meta['price_from_details'] ) ? wp_kses_post( (string) $meta['price_from_details'] ) : '';
 		$start_date       = array_key_exists( 'start_date', $meta ) ? self::normalize_utc_datetime_iso_string( $meta['start_date'] ) : '';
 		$end_date         = array_key_exists( 'end_date', $meta ) ? self::normalize_utc_datetime_iso_string( $meta['end_date'] ) : '';
 		$type             = ! empty( $meta['type'] ) ? esc_attr( $meta['type'] ) : 'inperson';
@@ -521,6 +645,8 @@ class Event {
 		$rsvp_max_guests     = isset( $meta['rsvp_max_guests'] ) ? absint( $meta['rsvp_max_guests'] ) : 0;
 		$rsvp_allow_edit     = array_key_exists( 'rsvp_allow_edit', $meta ) ? self::normalize_boolean_meta( $meta['rsvp_allow_edit'] ) : true;
 		$rsvp_auto_account   = array_key_exists( 'rsvp_auto_account', $meta ) ? self::normalize_boolean_meta( $meta['rsvp_auto_account'] ) : false;
+		// Whether the RSVP dialog asks for each guest's name: off, optional or required.
+		$rsvp_guest_details = Attendees::normalize_mode( $meta['rsvp_guest_details'] ?? 'off' );
 		$rsvp_sale_start     = isset( $meta['rsvp_sale_start'] ) ? self::normalize_utc_datetime_string( $meta['rsvp_sale_start'] ) : '';
 		$rsvp_sale_end       = isset( $meta['rsvp_sale_end'] ) ? self::normalize_utc_datetime_string( $meta['rsvp_sale_end'] ) : '';
 
@@ -529,7 +655,15 @@ class Event {
 			update_post_meta( self::$event_id, 'timezone', (string) $all_day_timezone );
 		}
 		update_post_meta( self::$event_id, 'tbc', $tbc ? 1 : 0 );
+		if ( '' === $event_timezone ) {
+			delete_post_meta( self::$event_id, 'event_timezone' );
+		} else {
+			update_post_meta( self::$event_id, 'event_timezone', $event_timezone );
+		}
 		update_post_meta( self::$event_id, 'tbc_note', (string) $tbc_note );
+		update_post_meta( self::$event_id, 'price_from_amount', $price_from_amount );
+		update_post_meta( self::$event_id, 'price_from_url', $price_from_url );
+		update_post_meta( self::$event_id, 'price_from_details', $price_from_details );
 		update_post_meta( self::$event_id, 'type', (string) $type );
 		update_post_meta( self::$event_id, 'location', (array) $location );
 		update_post_meta( self::$event_id, 'address1', (string) $address1 );
@@ -543,10 +677,30 @@ class Event {
 		update_post_meta( self::$event_id, 'description', $description );
 		update_post_meta( self::$event_id, 'image', (string) $image );
 		update_post_meta( self::$event_id, 'image_id', $image_id );
+		// Read before anything below overwrites it: an occurrence that moves has
+		// to be paired with where it moved to, or per-instance overrides end up
+		// stranded on a date that no longer exists (helpdesk T9R4IMAW).
+		$instance_ts_migrations = self::get_instance_ts_migrations(
+			(string) get_post_meta( self::$event_id, 'date_type', true ),
+			(string) get_post_meta( self::$event_id, 'standard_type', true ),
+			(array) get_post_meta( self::$event_id, 'event_days', true ),
+			(array) get_post_meta( self::$event_id, 'recurrence_rules', true ),
+			(string) get_post_meta( self::$event_id, 'timezone', true ),
+			(string) $date_type,
+			(string) $standard_type,
+			(array) $event_days,
+			(array) $recurrence_rules,
+			(string) ( $meta['timezone'] ?? get_post_meta( self::$event_id, 'timezone', true ) )
+		);
+
 		update_post_meta( self::$event_id, 'date_type', (string) $date_type );
 		update_post_meta( self::$event_id, 'event_days', (array) $event_days );
 		update_post_meta( self::$event_id, 'locations', (array) $locations );
 		update_post_meta( self::$event_id, 'standard_type', (string) $standard_type );
+		// Absent key keeps the historical per-day behaviour (grandfathering); the
+		// editor sends true for new events via the new-event template default.
+		$event_single_package = array_key_exists( 'event_single_package', $meta ) ? self::normalize_boolean_meta( $meta['event_single_package'] ) : false;
+		update_post_meta( self::$event_id, 'event_single_package', $event_single_package ? 1 : 0 );
 		update_post_meta( self::$event_id, 'recurrence_rules', $recurrence_rules );
 		update_post_meta( self::$event_id, 'rsvp_enabled', $rsvp_enabled ? 1 : 0 );
 		update_post_meta( self::$event_id, 'rsvp_capacity', $rsvp_capacity );
@@ -556,6 +710,7 @@ class Event {
 		update_post_meta( self::$event_id, 'rsvp_max_guests', $rsvp_max_guests );
 		update_post_meta( self::$event_id, 'rsvp_allow_edit', $rsvp_allow_edit ? 1 : 0 );
 		update_post_meta( self::$event_id, 'rsvp_auto_account', $rsvp_auto_account ? 1 : 0 );
+		update_post_meta( self::$event_id, 'rsvp_guest_details', $rsvp_guest_details );
 		update_post_meta( self::$event_id, 'rsvp_sale_start', (string) $rsvp_sale_start );
 		update_post_meta( self::$event_id, 'rsvp_sale_end', (string) $rsvp_sale_end );
 		update_post_meta( self::$event_id, 'attendance_mode', $attendance_mode );
@@ -565,24 +720,50 @@ class Event {
 		$tickets_auto_create_account = array_key_exists( 'tickets_auto_create_account', $meta ) ? self::normalize_boolean_meta( $meta['tickets_auto_create_account'] ) : false;
 		$tickets_show_remaining      = array_key_exists( 'tickets_show_remaining', $meta ) ? self::normalize_boolean_meta( $meta['tickets_show_remaining'] ) : true;
 		$tickets_show_unavailable    = array_key_exists( 'tickets_show_unavailable', $meta ) ? self::normalize_boolean_meta( $meta['tickets_show_unavailable'] ) : false;
+		// The split visibility toggles inherit the legacy catch-all value when
+		// absent, so events saved before the split keep their behavior.
+		$tickets_show_sold_out       = array_key_exists( 'tickets_show_sold_out', $meta ) ? self::normalize_boolean_meta( $meta['tickets_show_sold_out'] ) : $tickets_show_unavailable;
+		$tickets_show_upcoming       = array_key_exists( 'tickets_show_upcoming', $meta ) ? self::normalize_boolean_meta( $meta['tickets_show_upcoming'] ) : $tickets_show_unavailable;
+		$tickets_show_ended          = array_key_exists( 'tickets_show_ended', $meta ) ? self::normalize_boolean_meta( $meta['tickets_show_ended'] ) : $tickets_show_unavailable;
 		$tickets_terms_conditions    = isset( $meta['tickets_terms_conditions'] ) ? wp_kses_post( $meta['tickets_terms_conditions'] ) : '';
+		$tickets_terms_required      = array_key_exists( 'tickets_terms_conditions_required', $meta ) ? self::normalize_boolean_meta( $meta['tickets_terms_conditions_required'] ) : false;
+		$tickets_agreements          = self::sanitize_tickets_agreements( $meta['tickets_agreements'] ?? array() );
+		// Total ticket quantity per event (venue capacity). 0 / empty = unlimited.
+		$tickets_event_capacity      = array_key_exists( 'tickets_event_capacity', $meta ) ? max( 0, absint( $meta['tickets_event_capacity'] ) ) : 0;
 		$tickets_display_mode        = isset( $meta['tickets_display_mode'] ) ? sanitize_key( $meta['tickets_display_mode'] ) : 'cards';
+		// Whether checkout asks who each ticket is for: off, optional or required.
+		$tickets_attendee_details = Attendees::normalize_mode( $meta['tickets_attendee_details'] ?? 'off' );
 
 		update_post_meta( self::$event_id, 'tickets_enabled', $tickets_enabled ? 1 : 0 );
 		update_post_meta( self::$event_id, 'tickets_require_account', $tickets_require_account ? 1 : 0 );
 		update_post_meta( self::$event_id, 'tickets_auto_create_account', $tickets_auto_create_account ? 1 : 0 );
 		update_post_meta( self::$event_id, 'tickets_show_remaining', $tickets_show_remaining ? 1 : 0 );
 		update_post_meta( self::$event_id, 'tickets_show_unavailable', $tickets_show_unavailable ? 1 : 0 );
+		update_post_meta( self::$event_id, 'tickets_show_sold_out', $tickets_show_sold_out ? 1 : 0 );
+		update_post_meta( self::$event_id, 'tickets_show_upcoming', $tickets_show_upcoming ? 1 : 0 );
+		update_post_meta( self::$event_id, 'tickets_show_ended', $tickets_show_ended ? 1 : 0 );
 		update_post_meta( self::$event_id, 'tickets_terms_conditions', $tickets_terms_conditions );
+		update_post_meta( self::$event_id, 'tickets_terms_conditions_required', $tickets_terms_required ? 1 : 0 );
+		update_post_meta( self::$event_id, 'tickets_agreements', $tickets_agreements );
+		update_post_meta( self::$event_id, 'tickets_event_capacity', $tickets_event_capacity );
 		update_post_meta( self::$event_id, 'tickets_display_mode', $tickets_display_mode );
+		update_post_meta( self::$event_id, 'tickets_attendee_details', $tickets_attendee_details );
+
+		if ( isset( $meta['custom_taxonomies'] ) && is_array( $meta['custom_taxonomies'] ) ) {
+			self::update_custom_taxonomies( $meta['custom_taxonomies'] );
+		}
 
 		// Set FSE page template if provided.
 		$template = ! empty( $meta['template'] ) ? sanitize_key( $meta['template'] ) : '';
 
 		if ( 'default' === $template ) {
+			update_post_meta( self::$event_id, 'eventkoi_template', 'default' );
 			delete_post_meta( self::$event_id, '_wp_page_template' );
 		} elseif ( ! empty( $template ) ) {
+			update_post_meta( self::$event_id, 'eventkoi_template', $template );
 			update_post_meta( self::$event_id, '_wp_page_template', $template );
+		} else {
+			delete_post_meta( self::$event_id, 'eventkoi_template' );
 		}
 
 		if ( $image_id ) {
@@ -601,6 +782,8 @@ class Event {
 			delete_post_meta( self::$event_id, 'start_date' );
 			delete_post_meta( self::$event_id, 'start_timestamp' );
 		}
+
+		self::migrate_recurrence_override_timestamps( $instance_ts_migrations );
 
 		if ( $end_date ) {
 			$end_utc_ts = strtotime( $end_date );
@@ -641,6 +824,173 @@ class Event {
 	}
 
 	/**
+	 * Get event excerpt.
+	 *
+	 * @return string
+	 */
+	public static function get_excerpt() {
+		$excerpt = ! empty( self::$event->post_excerpt ) ? self::$event->post_excerpt : '';
+
+		return apply_filters( 'eventkoi_get_event_excerpt', $excerpt, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Whether an event has a WordPress password. Lists never show its text, because
+	 * their results are cached and shared between visitors.
+	 *
+	 * @param int $event_id Event ID, the current event when empty.
+	 * @return bool
+	 */
+	public static function is_password_protected( $event_id = 0 ) {
+		$event_id = $event_id ? absint( $event_id ) : absint( self::$event_id );
+
+		return $event_id > 0 && '' !== (string) get_post_field( 'post_password', $event_id );
+	}
+
+	/**
+	 * Whether this visitor still needs the event's password. People who can edit
+	 * the event always get its full details, so a save never loses anything.
+	 *
+	 * @param int $event_id Event ID, the current event when empty.
+	 * @return bool
+	 */
+	public static function is_locked_for_visitor( $event_id = 0 ) {
+		$event_id = $event_id ? absint( $event_id ) : absint( self::$event_id );
+
+		return $event_id > 0 && post_password_required( $event_id ) && ! current_user_can( 'edit_post', $event_id );
+	}
+
+	/**
+	 * Empty everything a locked event keeps from visitors. Only what says when the
+	 * event is stays, so people can tell what they are unlocking, and a field added
+	 * later is private by default. Keys stay in place so page scripts keep working.
+	 *
+	 * @param array $data Event data.
+	 * @return array
+	 */
+	public static function strip_locked_fields( $data ) {
+		$visible = array(
+			'id',
+			'event_id',
+			'title',
+			'slug',
+			'url',
+			'ical',
+			'status',
+			'wp_status',
+			'date_type',
+			'standard_type',
+			'tbc',
+			'start',
+			'end',
+			'allDay',
+			'all_day',
+			'start_date',
+			'start_date_gmt',
+			'start_date_iso',
+			'start_date_g',
+			'end_date',
+			'end_date_gmt',
+			'end_date_iso',
+			'end_date_g',
+			'start_ts',
+			'end_ts',
+			'wp_start_ts',
+			'wp_end_ts',
+			'instance_ts',
+			'start_timestamp',
+			'end_timestamp',
+			'start_date_override',
+			'end_date_override',
+			'all_day_override',
+			'datetime',
+			'timeline',
+			'timezone',
+			'timezone_display',
+			'event_timezone',
+			'modified_date',
+			'modified_date_gmt',
+			'modified_at',
+			'event_days',
+			'recurrence_rules',
+			'rulesummary',
+			'event_single_package',
+			'image',
+			'image_thumb',
+			'image_id',
+			'thumbnail',
+			'calendar',
+			'calendar_link',
+			'calendar_id',
+			'calendar_color',
+			'calendar_name',
+			'color',
+			'template',
+			'series_backlink',
+		);
+
+		// A date to be confirmed shows its note as the date, so that text goes too.
+		// List rows carry no flag of their own, so ask the event.
+		$row_event_id = absint( $data['event_id'] ?? ( $data['id'] ?? 0 ) );
+		if ( ! empty( $data['tbc'] ) || ( $row_event_id && self::normalize_boolean_meta( get_post_meta( $row_event_id, 'tbc', true ) ) ) ) {
+			foreach ( array( 'timeline', 'datetime' ) as $key ) {
+				if ( array_key_exists( $key, $data ) ) {
+					$data[ $key ] = __( 'Date and time to be confirmed', 'eventkoi-lite' );
+				}
+			}
+		}
+
+		foreach ( $data as $key => $value ) {
+			if ( 'active_instance' === $key && is_array( $value ) ) {
+				$data[ $key ] = self::strip_locked_fields( $value );
+			} elseif ( 'recurrence_overrides' === $key && is_array( $value ) ) {
+				foreach ( $value as $timestamp => $override ) {
+					$data[ $key ][ $timestamp ] = is_array( $override ) ? self::strip_locked_fields( $override ) : array();
+				}
+			} elseif ( ! in_array( $key, $visible, true ) ) {
+				if ( is_array( $value ) ) {
+					$data[ $key ] = array();
+				} elseif ( is_bool( $value ) ) {
+					$data[ $key ] = false;
+				} elseif ( is_int( $value ) || is_float( $value ) ) {
+					$data[ $key ] = 0;
+				} else {
+					$data[ $key ] = '';
+				}
+			}
+		}
+
+		return $data;
+	}
+
+	/**
+	 * Plain-text excerpt for list rows.
+	 *
+	 * The hand-written excerpt only, cleaned the same way as the description
+	 * summary but never truncated, since excerpts are already short.
+	 *
+	 * @return string
+	 */
+	public static function get_excerpt_text() {
+		if ( self::is_password_protected() ) {
+			return '';
+		}
+
+		$excerpt = (string) self::get_excerpt();
+
+		if ( '' === trim( $excerpt ) ) {
+			return '';
+		}
+
+		$excerpt = html_entity_decode( $excerpt, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+		$excerpt = wp_strip_all_tags( strip_shortcodes( $excerpt ) );
+		$excerpt = str_replace( array( "\xC2\xA0", '&nbsp;' ), ' ', $excerpt );
+		$excerpt = (string) preg_replace( '/\s+/', ' ', trim( $excerpt ) );
+
+		return apply_filters( 'eventkoi_get_event_excerpt_text', $excerpt, self::$event_id, self::$event );
+	}
+
+	/**
 	 * Get event slug.
 	 *
 	 * @return string
@@ -657,9 +1007,44 @@ class Event {
 	 * @return string
 	 */
 	public static function get_timezone() {
-		$timezone = eventkoi_php_timezone( eventkoi_timezone() );
+		$timezone = self::get_event_timezone();
+
+		if ( '' === $timezone ) {
+			$timezone = eventkoi_php_timezone( eventkoi_timezone() );
+		}
 
 		return apply_filters( 'eventkoi_get_event_timezone', (string) $timezone, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Per-event timezone override, or '' when the event follows the site.
+	 *
+	 * Stored under its own key: the legacy `timezone` meta doubles as the
+	 * all-day storage zone and is rewritten on save, so it cannot carry an
+	 * explicit user choice.
+	 *
+	 * @return string Valid timezone identifier or ''.
+	 */
+	public static function get_event_timezone() {
+		$timezone = (string) get_post_meta( self::$event_id, 'event_timezone', true );
+
+		if ( '' === $timezone || ! in_array( $timezone, timezone_identifiers_list(), true ) ) {
+			return '';
+		}
+
+		return $timezone;
+	}
+
+	/**
+	 * Timezone used to display this event's dates.
+	 *
+	 * The event's own override when set, the site timezone otherwise — so
+	 * events without an override render exactly as before.
+	 *
+	 * @return \DateTimeZone
+	 */
+	public static function get_display_timezone() {
+		return new \DateTimeZone( self::get_timezone() );
 	}
 
 	/**
@@ -689,18 +1074,24 @@ class Event {
 	/**
 	 * Get the selected standard event-day index from the frontend request.
 	 *
+	 * @param bool $ignore_loop_context When true, skip the query-loop per-card
+	 *                                  selected-day context and only honor a real
+	 *                                  ?event_day request. Used by the datetime
+	 *                                  summary so a loop card lists every day.
 	 * @return int|null
 	 */
-	protected static function get_selected_event_day_index_from_request() {
+	protected static function get_selected_event_day_index_from_request( $ignore_loop_context = false ) {
 		if ( is_admin() ) {
 			return null;
 		}
 
-		$context = $GLOBALS['eventkoi_selected_event_day_context'][ self::$event_id ] ?? null;
-		if ( null !== $context && is_scalar( $context ) ) {
-			$context = (string) $context;
-			if ( ctype_digit( $context ) ) {
-				return (int) $context;
+		if ( ! $ignore_loop_context ) {
+			$context = $GLOBALS['eventkoi_selected_event_day_context'][ self::$event_id ] ?? null;
+			if ( null !== $context && is_scalar( $context ) ) {
+				$context = (string) $context;
+				if ( ctype_digit( $context ) ) {
+					return (int) $context;
+				}
 			}
 		}
 
@@ -725,14 +1116,24 @@ class Event {
 	/**
 	 * Get the selected standard event-day row for frontend occurrence URLs.
 	 *
+	 * @param bool $ignore_loop_context When true, skip the query-loop per-card
+	 *                                  selected-day context (real ?event_day still
+	 *                                  applies).
 	 * @return array|null
 	 */
-	protected static function get_selected_event_day_from_request() {
+	protected static function get_selected_event_day_from_request( $ignore_loop_context = false ) {
+		// A single-package event is rendered and sold as one unit; never resolve a
+		// per-day occurrence from the request, so no single day is shown, held, or
+		// purchased even if a stale ?event_day arg is present in the URL.
+		if ( self::is_package() ) {
+			return null;
+		}
+
 		if ( 'standard' !== self::get_date_type() || 'selected' !== self::get_standard_type() ) {
 			return null;
 		}
 
-		$index = self::get_selected_event_day_index_from_request();
+		$index = self::get_selected_event_day_index_from_request( $ignore_loop_context );
 		if ( null === $index ) {
 			return null;
 		}
@@ -748,16 +1149,49 @@ class Event {
 	/**
 	 * Get event days scoped to a selected frontend occurrence when requested.
 	 *
+	 * @param bool $ignore_loop_context When true, skip the query-loop per-card
+	 *                                  selected-day context so every day is kept
+	 *                                  (real ?event_day still scopes the result).
 	 * @return array
 	 */
-	protected static function get_event_days_for_rendering() {
-		$selected_day = self::get_selected_event_day_from_request();
+	protected static function get_event_days_for_rendering( $ignore_loop_context = false ) {
+		$selected_day = self::get_selected_event_day_from_request( $ignore_loop_context );
 
 		if ( is_array( $selected_day ) ) {
 			return array( $selected_day );
 		}
 
 		return self::get_event_days();
+	}
+
+	/**
+	 * The dates a selected-dates standard event is showing, in date order: every
+	 * date, or just one when a loop row or the URL has picked it.
+	 *
+	 * @return array
+	 */
+	private static function get_listed_event_days() {
+		if ( 'standard' !== self::get_date_type() || 'selected' !== self::get_standard_type() ) {
+			return array();
+		}
+
+		$days = array_values(
+			array_filter(
+				self::get_event_days_for_rendering(),
+				static function ( $day ) {
+					return is_array( $day ) && ! empty( $day['start_date'] );
+				}
+			)
+		);
+
+		usort(
+			$days,
+			static function ( $a, $b ) {
+				return strtotime( $a['start_date'] ) <=> strtotime( $b['start_date'] );
+			}
+		);
+
+		return $days;
 	}
 
 	/**
@@ -968,6 +1402,41 @@ class Event {
 	}
 
 	/**
+	 * Recurrence rules ordered by their first start, earliest first, for
+	 * listings that print one line per rule. Rules are stored in the order
+	 * the author added them, which is not a date order.
+	 *
+	 * @return array
+	 */
+	public static function get_recurrence_rules_by_start() {
+		$rules = self::get_recurrence_rules();
+
+		if ( ! is_array( $rules ) || count( $rules ) < 2 ) {
+			return $rules;
+		}
+
+		$keyed = array();
+		foreach ( array_values( $rules ) as $index => $rule ) {
+			$ts      = is_array( $rule ) && ! empty( $rule['start_date'] ) ? strtotime( (string) $rule['start_date'] ) : false;
+			$keyed[] = array( $ts ? $ts : PHP_INT_MAX, $index, $rule );
+		}
+
+		usort(
+			$keyed,
+			static function ( $x, $y ) {
+				return $x[0] === $y[0] ? $x[1] <=> $y[1] : $x[0] <=> $y[0];
+			}
+		);
+
+		return array_map(
+			static function ( $row ) {
+				return $row[2];
+			},
+			$keyed
+		);
+	}
+
+	/**
 	 * Get event recurrence rules.
 	 *
 	 * @return array
@@ -988,10 +1457,20 @@ class Event {
 	 * @return array
 	 */
 	public static function get_recurrence_overrides() {
-		$rows = DB::table( 'eventkoi_recurrence_overrides' )
-		->where( 'event_id', self::$event_id )
-		->orderBy( 'timestamp', 'asc' )
-		->getAll();
+		try {
+			$rows = DB::table( 'eventkoi_recurrence_overrides' )
+			->where( 'event_id', self::$event_id )
+			->orderBy( 'timestamp', 'asc' )
+			->getAll();
+		} catch ( \Exception $e ) {
+			// This runs while enqueueing front end assets, so an unreadable
+			// table used to throw straight through wp_enqueue_scripts and white
+			// screen the whole site. An event without its overrides still
+			// renders, so degrade and try to rebuild the table (XVSZTDGT).
+			Activator::maybe_repair_tables();
+
+			return apply_filters( 'eventkoi_get_event_recurrence_overrides', array(), self::$event_id, self::$event );
+		}
 
 		$overrides = array();
 
@@ -1071,7 +1550,7 @@ class Event {
 	 *
 	 * @return array
 	 */
-	private static function get_description_allowed_html() {
+	public static function get_description_allowed_html() {
 		$allowed = wp_kses_allowed_html( 'post' );
 
 		$allowed['iframe'] = array(
@@ -1088,6 +1567,60 @@ class Event {
 		);
 
 		return $allowed;
+	}
+
+	/**
+	 * Keep the password form usable for the rest of this request.
+	 *
+	 * Builders, shortcodes and block bindings pass rendered details through
+	 * the post kses context, which has no form or input, so visitors got a
+	 * password prompt with nothing to type in. REST responses skip kses.
+	 */
+	private static function keep_password_form_fields() {
+		if ( ! defined( 'REST_REQUEST' ) || ! REST_REQUEST ) {
+			add_filter( 'wp_kses_allowed_html', array( __CLASS__, 'allow_password_form_fields' ), 10, 2 );
+		}
+	}
+
+	/**
+	 * Add the password form's tags to the post kses context.
+	 *
+	 * @param array  $tags    Allowed tags.
+	 * @param string $context Kses context.
+	 * @return array
+	 */
+	public static function allow_password_form_fields( $tags, $context ) {
+		if ( 'post' !== $context ) {
+			return $tags;
+		}
+
+		$tags['form']  = array_merge(
+			$tags['form'] ?? array(),
+			array(
+				'action' => true,
+				'class'  => true,
+				'id'     => true,
+				'method' => true,
+			)
+		);
+		$tags['input'] = array_merge(
+			$tags['input'] ?? array(),
+			array(
+				'aria-describedby' => true,
+				'autocomplete'     => true,
+				'class'            => true,
+				'id'               => true,
+				'name'             => true,
+				'placeholder'      => true,
+				'required'         => true,
+				'size'             => true,
+				'spellcheck'       => true,
+				'type'             => true,
+				'value'            => true,
+			)
+		);
+
+		return $tags;
 	}
 
 	/**
@@ -1211,6 +1744,25 @@ class Event {
 	}
 
 	/**
+	 * Get the alt text saved with the event image in the Media Library.
+	 *
+	 * @return string Empty when the image has no alt text of its own.
+	 */
+	public static function get_image_alt() {
+		$image_id = self::get_image_id();
+
+		if ( empty( $image_id ) ) {
+			$image_id = get_post_thumbnail_id( self::$event_id );
+		}
+
+		if ( empty( $image_id ) ) {
+			return '';
+		}
+
+		return trim( (string) get_post_meta( (int) $image_id, '_wp_attachment_image_alt', true ) );
+	}
+
+	/**
 	 * Get event locations (multiple).
 	 *
 	 * @return array
@@ -1263,7 +1815,17 @@ class Event {
 			return '';
 		}
 
-		if ( 'recurring' === self::get_date_type() && $instance ) {
+		// Loop integrations already hand back the instance URL from get_permalink();
+		// only append the instance when the URL does not carry it yet.
+		$query_instance = '';
+		$query_string   = (string) wp_parse_url( $url, PHP_URL_QUERY );
+		if ( '' !== $query_string ) {
+			wp_parse_str( $query_string, $query_vars );
+			$query_instance = (string) ( $query_vars['instance'] ?? '' );
+		}
+		$has_instance = $instance && ( false !== strpos( $url, '/' . $instance . '/' ) || (string) $instance === $query_instance );
+
+		if ( 'recurring' === self::get_date_type() && $instance && ! $has_instance ) {
 			if ( get_option( 'permalink_structure' ) ) {
 				// Pretty permalinks — append instance timestamp as path segment.
 				$url = trailingslashit( $url ) . $instance . '/';
@@ -1284,6 +1846,37 @@ class Event {
 		$url = eventkoi_append_frontend_timezone_arg( $url );
 
 		return apply_filters( 'eventkoi_get_event_url', $url, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Whether a plugin that registers editor metaboxes is active.
+	 *
+	 * Gates the embedded "Other plugin fields" panel. Filterable so sites can
+	 * force it on or off.
+	 *
+	 * @return bool
+	 */
+	public static function has_embeddable_plugin_fields() {
+		// Any plugin besides EventKoi may register a classic metabox, so the
+		// gate only rules out sites with no other plugins at all. The embedded
+		// screen reports how many third-party boxes actually rendered and the
+		// panel stays hidden when there are none. Gutenberg-only sidebars
+		// (Rank Math) cannot appear here; that is a known, accepted limitation.
+		$plugins = (array) get_option( 'active_plugins', array() );
+
+		if ( is_multisite() ) {
+			$plugins = array_merge( $plugins, array_keys( (array) get_site_option( 'active_sitewide_plugins', array() ) ) );
+		}
+
+		$active = false;
+		foreach ( $plugins as $plugin_file ) {
+			if ( 0 !== strpos( (string) $plugin_file, 'eventkoi' ) ) {
+				$active = true;
+				break;
+			}
+		}
+
+		return (bool) apply_filters( 'eventkoi_has_plugin_fields', $active, self::$event_id );
 	}
 
 	/**
@@ -1662,7 +2255,7 @@ class Event {
 	 */
 	public static function get_timeline() {
 		if ( self::get_tbc() ) {
-			$tbc_note = self::get_tbc_note();
+			$tbc_note = self::get_visible_tbc_note();
 			return $tbc_note ? $tbc_note : __( 'Date and time to be confirmed', 'eventkoi-lite' );
 		}
 
@@ -1735,6 +2328,97 @@ class Event {
 	}
 
 	/**
+	 * Third-party taxonomies registered for events, with their terms and the
+	 * terms assigned to this event. EventKoi's own calendar taxonomy is
+	 * excluded; it has a dedicated picker.
+	 *
+	 * @return array[]
+	 */
+	public static function get_custom_taxonomies() {
+		$taxonomies = get_object_taxonomies( 'eventkoi_event', 'objects' );
+		$payload    = array();
+
+		foreach ( $taxonomies as $taxonomy ) {
+			if ( in_array( $taxonomy->name, array( 'event_cal' ), true ) ) {
+				continue;
+			}
+
+			if ( empty( $taxonomy->show_ui ) ) {
+				continue;
+			}
+
+			$terms = get_terms(
+				array(
+					'taxonomy'   => $taxonomy->name,
+					'hide_empty' => false,
+					'number'     => 500,
+				)
+			);
+			if ( is_wp_error( $terms ) ) {
+				$terms = array();
+			}
+
+			$assigned = wp_get_object_terms( self::$event_id, $taxonomy->name, array( 'fields' => 'ids' ) );
+			if ( is_wp_error( $assigned ) ) {
+				$assigned = array();
+			}
+
+			$payload[] = array(
+				'taxonomy'     => $taxonomy->name,
+				'label'        => (string) ( $taxonomy->labels->name ?? $taxonomy->label ),
+				'hierarchical' => (bool) $taxonomy->hierarchical,
+				'terms'        => array_map(
+					static function ( $term ) {
+						return array(
+							'id'     => (int) $term->term_id,
+							'name'   => $term->name,
+							'parent' => (int) $term->parent,
+						);
+					},
+					$terms
+				),
+				'assigned'     => array_map( 'intval', $assigned ),
+			);
+		}
+
+		return apply_filters( 'eventkoi_get_event_custom_taxonomies', $payload, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Persist third-party taxonomy assignments sent back by the event editor.
+	 *
+	 * @param array $items Items shaped as array{ taxonomy: string, assigned: int[] }.
+	 * @return void
+	 */
+	public static function update_custom_taxonomies( $items ) {
+		if ( ! is_array( $items ) ) {
+			return;
+		}
+
+		foreach ( $items as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+
+			$taxonomy = sanitize_key( (string) ( $item['taxonomy'] ?? '' ) );
+			if ( '' === $taxonomy || 'event_cal' === $taxonomy ) {
+				continue;
+			}
+
+			if ( ! taxonomy_exists( $taxonomy ) || ! is_object_in_taxonomy( 'eventkoi_event', $taxonomy ) ) {
+				continue;
+			}
+
+			if ( ! array_key_exists( 'assigned', $item ) ) {
+				continue;
+			}
+
+			$term_ids = array_values( array_filter( array_map( 'absint', (array) $item['assigned'] ) ) );
+			wp_set_object_terms( self::$event_id, $term_ids, $taxonomy, false );
+		}
+	}
+
+	/**
 	 * Get event to be confirmed status.
 	 */
 	public static function get_tbc() {
@@ -1758,6 +2442,49 @@ class Event {
 	}
 
 	/**
+	 * Get the "Price from" starting amount.
+	 *
+	 * @return string Numeric string, empty when unset.
+	 */
+	public static function get_price_from_amount() {
+		$amount = get_post_meta( self::$event_id, 'price_from_amount', true );
+
+		return apply_filters( 'eventkoi_get_event_price_from_amount', (string) $amount, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Get the "Price from" external ticket site URL.
+	 *
+	 * @return string
+	 */
+	public static function get_price_from_url() {
+		$url = get_post_meta( self::$event_id, 'price_from_url', true );
+
+		return apply_filters( 'eventkoi_get_event_price_from_url', (string) $url, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Get the "Price from" pricing details text.
+	 *
+	 * @return string
+	 */
+	public static function get_price_from_details() {
+		$details = get_post_meta( self::$event_id, 'price_from_details', true );
+
+		return apply_filters( 'eventkoi_get_event_price_from_details', (string) $details, self::$event_id, self::$event );
+	}
+
+	/**
+	 * The note to show in place of a date to be confirmed. A locked event keeps it
+	 * from visitors, so they see the generic text.
+	 *
+	 * @return string
+	 */
+	public static function get_visible_tbc_note() {
+		return self::is_locked_for_visitor() ? '' : self::get_tbc_note();
+	}
+
+	/**
 	 * Get to be confirmed notification.
 	 */
 	public static function get_tbc_note() {
@@ -1776,7 +2503,7 @@ class Event {
 	public static function get_datetime() {
 		// Handle TBC.
 		if ( self::get_tbc() ) {
-			$tbc_note = self::get_tbc_note();
+			$tbc_note = self::get_visible_tbc_note();
 
 			if ( ! empty( $tbc_note ) ) {
 				return $tbc_note;
@@ -1787,7 +2514,7 @@ class Event {
 
 		// Context / formatting settings.
 		$settings    = Settings::get();
-		$wp_timezone = wp_timezone();
+		$wp_timezone = self::get_display_timezone();
 		$date_format = \eventkoi_resolved_date_format();
 		$time_format = \eventkoi_resolved_time_format();
 		$time_pref   = isset( $settings['time_format'] ) ? $settings['time_format'] : '12';
@@ -2074,6 +2801,134 @@ class Event {
 	}
 
 	/**
+	 * Whether a multi-day selected-dates event should be treated as one package.
+	 *
+	 * Tickets on a standard event always cover the whole event. New events default
+	 * ON; other existing events without the meta default OFF so the historical
+	 * per-day behaviour is preserved on update (grandfathering).
+	 *
+	 * @return bool
+	 */
+	public static function get_event_single_package() {
+		// New, unsaved events (the editor template runs with event id 0): default ON.
+		if ( empty( self::$event_id ) ) {
+			return apply_filters( 'eventkoi_get_event_single_package', true, self::$event_id, self::$event );
+		}
+
+		// Selling a day at a time is what recurring events are for.
+		if ( 'tickets' === self::get_attendance_mode() && 'standard' === self::get_date_type() ) {
+			return apply_filters( 'eventkoi_get_event_single_package', true, self::$event_id, self::$event );
+		}
+
+		// Existing events that predate this setting keep their current per-day
+		// behaviour until the toggle is explicitly saved.
+		if ( ! metadata_exists( 'post', self::$event_id, 'event_single_package' ) ) {
+			return apply_filters( 'eventkoi_get_event_single_package', false, self::$event_id, self::$event );
+		}
+
+		$enabled = get_post_meta( self::$event_id, 'event_single_package', true );
+
+		return apply_filters( 'eventkoi_get_event_single_package', self::normalize_boolean_meta( $enabled ), self::$event_id, self::$event );
+	}
+
+	/**
+	 * Whether the current event behaves as a single multi-day package.
+	 *
+	 * True only for a standard, selected-dates event that has more than one date
+	 * row AND has the single-package toggle enabled. When true, the event links to
+	 * its bare permalink (no per-day ?event_day arg) and is sold as one unit.
+	 *
+	 * @return bool
+	 */
+	public static function is_package() {
+		if ( 'standard' !== self::get_date_type() || 'selected' !== self::get_standard_type() ) {
+			return false;
+		}
+
+		$days = self::get_event_days();
+		if ( ! is_array( $days ) || count( $days ) <= 1 ) {
+			return false;
+		}
+
+		return (bool) self::get_event_single_package();
+	}
+
+	/**
+	 * Collapse a package's day rows into one continuous span row.
+	 *
+	 * Order-independent: the span starts at the earliest day start and ends at the
+	 * latest day end (so unsorted event_days, or a day with a blank end, still
+	 * yield a correct start..end window).
+	 *
+	 * @param array $days Event day rows.
+	 * @return array Single row with start_date/end_date/all_day.
+	 */
+	public static function collapse_package_days( $days ) {
+		$min_start    = '';
+		$min_start_ts = 0;
+		$max_end      = '';
+		$max_end_ts   = 0;
+		$all_day      = false;
+
+		if ( is_array( $days ) ) {
+			foreach ( $days as $row ) {
+				if ( ! is_array( $row ) || empty( $row['start_date'] ) ) {
+					continue;
+				}
+
+				$start_ts = strtotime( (string) $row['start_date'] );
+				if ( $start_ts && ( '' === $min_start || $start_ts < $min_start_ts ) ) {
+					$min_start_ts = $start_ts;
+					$min_start    = $row['start_date'];
+					$all_day      = ! empty( $row['all_day'] );
+				}
+
+				$end    = ! empty( $row['end_date'] ) ? $row['end_date'] : $row['start_date'];
+				$end_ts = strtotime( (string) $end );
+				if ( $end_ts && $end_ts > $max_end_ts ) {
+					$max_end_ts = $end_ts;
+					$max_end    = $end;
+				}
+			}
+		}
+
+		return array(
+			'start_date' => $min_start,
+			'end_date'   => '' !== $max_end ? $max_end : $min_start,
+			'all_day'    => $all_day,
+		);
+	}
+
+	/**
+	 * Context-safe check for whether a given event id is a single-day package.
+	 *
+	 * Saves and restores the static event context so callers that pass an
+	 * arbitrary id (e.g. checkout) do not disturb the event currently loaded.
+	 *
+	 * @param int $event_id Event ID.
+	 * @return bool
+	 */
+	public static function is_package_event( $event_id ) {
+		$event_id = absint( $event_id );
+		if ( ! $event_id ) {
+			return false;
+		}
+
+		$prev_event    = self::$event;
+		$prev_event_id = self::$event_id;
+
+		self::$event    = get_post( $event_id );
+		self::$event_id = $event_id;
+
+		$result = self::is_package();
+
+		self::$event    = $prev_event;
+		self::$event_id = $prev_event_id;
+
+		return $result;
+	}
+
+	/**
 	 * Get event location.
 	 */
 	public static function get_location() {
@@ -2204,6 +3059,90 @@ class Event {
 	}
 
 	/**
+	 * Whether buyers must tick a checkbox agreeing to the ticket terms.
+	 *
+	 * @return bool
+	 */
+	public static function get_tickets_terms_conditions_required() {
+		$required = self::normalize_boolean_meta( get_post_meta( self::$event_id, 'tickets_terms_conditions_required', true ) );
+
+		return (bool) apply_filters( 'eventkoi_get_event_tickets_terms_conditions_required', $required, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Additional agreement checkboxes shown at ticket checkout.
+	 *
+	 * Each item is a separate consent (e.g. privacy statement, refund policy)
+	 * with its own checkbox, on top of the main terms & conditions field.
+	 *
+	 * @return array[] Items shaped as array{ id: string, text: string, required: bool }.
+	 */
+	public static function get_tickets_agreements() {
+		$items = self::sanitize_tickets_agreements( get_post_meta( self::$event_id, 'tickets_agreements', true ) );
+
+		return apply_filters( 'eventkoi_get_event_tickets_agreements', $items, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Sanitize a raw agreements list into the canonical shape.
+	 *
+	 * Empty-text items are dropped; missing IDs are generated so the checkout
+	 * can reference each agreement stably.
+	 *
+	 * @param mixed $raw Raw agreements value (from meta or a REST payload).
+	 * @return array[]
+	 */
+	public static function sanitize_tickets_agreements( $raw ) {
+		$items = array();
+		$seen  = array();
+
+		if ( ! is_array( $raw ) ) {
+			return $items;
+		}
+
+		foreach ( $raw as $item ) {
+			if ( ! is_array( $item ) ) {
+				continue;
+			}
+
+			$text = trim( wp_kses_post( (string) ( $item['text'] ?? '' ) ) );
+			if ( '' === $text ) {
+				continue;
+			}
+
+			// A missing or duplicate id would make two checkboxes share one
+			// checkout state, so mint a fresh unique one in either case.
+			$id = sanitize_key( (string) ( $item['id'] ?? '' ) );
+			if ( '' === $id || isset( $seen[ $id ] ) ) {
+				$id = 'agr_' . substr( md5( $text . wp_rand() ), 0, 8 );
+			}
+			$seen[ $id ] = true;
+
+			$items[] = array(
+				'id'       => $id,
+				'text'     => $text,
+				'required' => self::normalize_boolean_meta( $item['required'] ?? false ),
+			);
+		}
+
+		return $items;
+	}
+
+	/**
+	 * Total ticket quantity allowed for the whole event (venue capacity).
+	 *
+	 * Applies across every ticket type combined, on top of each ticket's own
+	 * "Quantity available". 0 means unlimited (no event-wide cap).
+	 *
+	 * @return int
+	 */
+	public static function get_tickets_event_capacity() {
+		$capacity = absint( get_post_meta( self::$event_id, 'tickets_event_capacity', true ) );
+
+		return (int) apply_filters( 'eventkoi_get_event_tickets_event_capacity', $capacity, self::$event_id, self::$event );
+	}
+
+	/**
 	 * Rendered ticket terms and conditions, for the data shortcode and dynamic tags.
 	 *
 	 * @return string
@@ -2268,6 +3207,50 @@ class Event {
 	}
 
 	/**
+	 * Read one of the split unavailable-ticket visibility toggles.
+	 *
+	 * Falls back to the legacy catch-all tickets_show_unavailable value for
+	 * events saved before the toggle was split.
+	 *
+	 * @param string $meta_key Meta key of the split toggle.
+	 * @return bool
+	 */
+	private static function get_tickets_show_flag( $meta_key ) {
+		if ( metadata_exists( 'post', self::$event_id, $meta_key ) ) {
+			return self::normalize_boolean_meta( get_post_meta( self::$event_id, $meta_key, true ) );
+		}
+
+		return self::get_tickets_show_unavailable();
+	}
+
+	/**
+	 * Whether sold out ticket types stay visible on the event page.
+	 *
+	 * @return bool
+	 */
+	public static function get_tickets_show_sold_out() {
+		return self::get_tickets_show_flag( 'tickets_show_sold_out' );
+	}
+
+	/**
+	 * Whether not-yet-on-sale ticket types stay visible on the event page.
+	 *
+	 * @return bool
+	 */
+	public static function get_tickets_show_upcoming() {
+		return self::get_tickets_show_flag( 'tickets_show_upcoming' );
+	}
+
+	/**
+	 * Whether ended ticket types stay visible on the event page.
+	 *
+	 * @return bool
+	 */
+	public static function get_tickets_show_ended() {
+		return self::get_tickets_show_flag( 'tickets_show_ended' );
+	}
+
+	/**
 	 * Get tickets display mode.
 	 *
 	 * @return string
@@ -2279,6 +3262,17 @@ class Event {
 		}
 
 		return apply_filters( 'eventkoi_get_event_tickets_display_mode', $mode, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Whether checkout collects a name and email per ticket.
+	 *
+	 * @return string off|optional|required
+	 */
+	public static function get_tickets_attendee_details() {
+		$mode = Attendees::normalize_mode( get_post_meta( self::$event_id, 'tickets_attendee_details', true ) );
+
+		return apply_filters( 'eventkoi_get_event_tickets_attendee_details', $mode, self::$event_id, self::$event );
 	}
 
 	/**
@@ -2381,6 +3375,17 @@ class Event {
 		$auto_account = get_post_meta( self::$event_id, 'rsvp_auto_account', true );
 
 		return apply_filters( 'eventkoi_get_event_rsvp_auto_account', self::normalize_boolean_meta( $auto_account ), self::$event_id, self::$event );
+	}
+
+	/**
+	 * Whether the RSVP dialog asks for each guest's name and email.
+	 *
+	 * @return string off|optional|required
+	 */
+	public static function get_rsvp_guest_details() {
+		$mode = Attendees::normalize_mode( get_post_meta( self::$event_id, 'rsvp_guest_details', true ) );
+
+		return apply_filters( 'eventkoi_get_event_rsvp_guest_details', $mode, self::$event_id, self::$event );
 	}
 
 	/**
@@ -2509,6 +3514,13 @@ class Event {
 			}
 		}
 
+		// Nothing else to show, so fall back to an online location with only a name.
+		foreach ( $locations as $loc ) {
+			if ( is_array( $loc ) && 'online' === self::get_location_type( $loc ) && '' !== self::location_text_value( $loc, 'name' ) ) {
+				return $loc;
+			}
+		}
+
 		return null;
 	}
 
@@ -2549,7 +3561,9 @@ class Event {
 		}
 
 		if ( 'online' === $type ) {
-			return esc_url_raw( self::get_location_virtual_url( $loc ) );
+			$virtual_url = self::get_location_virtual_url( $loc );
+
+			return '' !== $virtual_url ? esc_url_raw( $virtual_url ) : self::location_text_value( $loc, 'name' );
 		}
 
 		return '';
@@ -2604,6 +3618,131 @@ class Event {
 		}
 
 		return implode( ', ', array_unique( array_filter( $parts ) ) );
+	}
+
+	/**
+	 * Read a single text field from the primary physical location.
+	 *
+	 * Falls back to the schema.org address sub-object so imported events (which
+	 * may store the value under streetAddress/addressLocality/etc.) resolve too.
+	 *
+	 * @param string $key        Location array key (e.g. "city").
+	 * @param string $schema_key Optional schema.org address key (e.g. "addressLocality").
+	 * @return string
+	 */
+	protected static function location_field_text( $key, $schema_key = '' ) {
+		$location = self::get_primary_location();
+
+		if ( ! is_array( $location ) || empty( $location ) ) {
+			return '';
+		}
+
+		$address = isset( $location['address'] ) && is_array( $location['address'] ) ? $location['address'] : array();
+
+		return self::first_location_text(
+			self::location_text_value( $location, $key ),
+			'' !== $schema_key ? self::location_text_value( $address, $schema_key ) : ''
+		);
+	}
+
+	/**
+	 * Render the primary location's venue name.
+	 *
+	 * @return string
+	 */
+	public static function rendered_location_name() {
+		return esc_html( self::location_field_text( 'name' ) );
+	}
+
+	/**
+	 * Render the primary location's street address (line 1).
+	 *
+	 * @return string
+	 */
+	public static function rendered_location_address() {
+		return esc_html( self::location_field_text( 'address1', 'streetAddress' ) );
+	}
+
+	/**
+	 * Render the primary location's apartment / unit (address line 2).
+	 *
+	 * @return string
+	 */
+	public static function rendered_location_unit() {
+		return esc_html( self::location_field_text( 'address2' ) );
+	}
+
+	/**
+	 * Render the primary location's city.
+	 *
+	 * @return string
+	 */
+	public static function rendered_location_city() {
+		return esc_html( self::location_field_text( 'city', 'addressLocality' ) );
+	}
+
+	/**
+	 * Render the primary location's state / region.
+	 *
+	 * @return string
+	 */
+	public static function rendered_location_state() {
+		return esc_html( self::location_field_text( 'state', 'addressRegion' ) );
+	}
+
+	/**
+	 * Render the primary location's country.
+	 *
+	 * @return string
+	 */
+	public static function rendered_location_country() {
+		return esc_html( self::location_field_text( 'country', 'addressCountry' ) );
+	}
+
+	/**
+	 * Render the primary location's post code / zip.
+	 *
+	 * @return string
+	 */
+	public static function rendered_location_zip() {
+		return esc_html( self::location_field_text( 'zip', 'postalCode' ) );
+	}
+
+	/**
+	 * Whether a locations array holds at least one physical location with details.
+	 *
+	 * Pure helper (no event context) that powers the `_eventkoi_has_location`
+	 * flag, which page builders read in conditional logic to show/hide a row
+	 * depending on whether an event has a venue.
+	 *
+	 * @param mixed $locations Locations array (or its serialized form).
+	 * @return bool
+	 */
+	public static function locations_have_physical( $locations ) {
+		if ( ! is_array( $locations ) ) {
+			$locations = maybe_unserialize( $locations );
+		}
+
+		if ( ! is_array( $locations ) ) {
+			return false;
+		}
+
+		foreach ( $locations as $location ) {
+			if ( ! is_array( $location ) ) {
+				continue;
+			}
+
+			$type = self::get_location_type( $location, 'inperson' );
+			if ( ! in_array( $type, array( 'physical', 'inperson' ), true ) ) {
+				continue;
+			}
+
+			if ( '' !== trim( self::format_physical_location_line( $location, true ) ) ) {
+				return true;
+			}
+		}
+
+		return false;
 	}
 
 	/**
@@ -2724,16 +3863,33 @@ class Event {
 		$post_id = self::get_id();
 
 		if ( empty( $post_id ) ) {
-			return 'default';
+			return '';
+		}
+
+		$selected = get_post_meta( $post_id, 'eventkoi_template', true );
+
+		if ( ! empty( $selected ) ) {
+			return sanitize_key( $selected );
 		}
 
 		$template = get_post_meta( $post_id, '_wp_page_template', true );
 
-		if ( ! empty( $template ) ) {
+		// Ignore page builder-owned template values (e.g. elementor_canvas,
+		// elementor_header_footer): these are set by the builder's editor and
+		// are not valid event template selections.
+		if ( ! empty( $template ) && 0 !== strpos( $template, 'elementor' ) ) {
 			return sanitize_key( $template );
 		}
 
-		return 'default';
+		// Backward compatibility: older events stored selected template in
+		// "template" post meta before eventkoi_template was introduced.
+		$legacy_template = get_post_meta( $post_id, 'template', true );
+
+		if ( ! empty( $legacy_template ) ) {
+			return sanitize_key( $legacy_template );
+		}
+
+		return '';
 	}
 
 	/**
@@ -2787,6 +3943,13 @@ class Event {
 			'post_author' => get_current_user_id(),
 		);
 
+		// The excerpt lives on the post row rather than in post meta, so
+		// update_meta() below cannot carry it over the way it does the rest of
+		// the event. It has to be copied here or the duplicate loses it.
+		if ( isset( $meta['excerpt'] ) && '' !== $meta['excerpt'] ) {
+			$args['post_excerpt'] = $meta['excerpt'];
+		}
+
 		$last_id        = wp_insert_post( $args );
 		$event          = get_post( $last_id );
 		self::$event    = $event;
@@ -2814,6 +3977,10 @@ class Event {
 	 * @return string
 	 */
 	public static function get_summary( $max_chars = 160 ) {
+		if ( self::is_password_protected() ) {
+			return '';
+		}
+
 		$content = self::get_instance_field( 'description' );
 
 		// Decode HTML entities like &nbsp; and &amp;.
@@ -2911,6 +4078,38 @@ class Event {
 	 * @return string Rendered HTML-safe description.
 	 */
 	public static function rendered_details() {
+		// A locked event shows the password form in place of its details.
+		if ( self::$event_id && post_password_required( self::$event_id ) ) {
+			self::keep_password_form_fields();
+
+			return apply_filters( 'eventkoi_rendered_event_details', get_the_password_form( self::$event_id ), self::$event_id, self::$event );
+		}
+
+		// An event designed with Elementor shows that design as its details:
+		// Elementor content only reaches pages through the_content, which the
+		// event templates never print, so this is where "the layout saves
+		// with the event" actually surfaces. The static stack breaks recursion
+		// when the design itself embeds a widget asking for the details again.
+		static $rendering_builder = array();
+		if ( did_action( 'elementor/loaded' ) && class_exists( '\Elementor\Plugin' ) && empty( $rendering_builder[ self::$event_id ] ) ) {
+			$document = \Elementor\Plugin::$instance->documents->get( self::$event_id );
+			if ( $document && $document->is_built_with_elementor() ) {
+				$rendering_builder[ self::$event_id ] = true;
+				try {
+					// get_builder_content, not the *_for_display wrapper: the
+					// wrapper refuses to render the currently queried post,
+					// which is exactly the post whose details these are.
+					$built = (string) \Elementor\Plugin::$instance->frontend->get_builder_content( self::$event_id );
+				} finally {
+					unset( $rendering_builder[ self::$event_id ] );
+				}
+
+				if ( '' !== trim( $built ) ) {
+					return apply_filters( 'eventkoi_rendered_event_details', $built, self::$event_id, self::$event );
+				}
+			}
+		}
+
 		$details = self::get_instance_field( 'description' );
 
 		$has_content = ! empty( $details ) && ( trim( wp_strip_all_tags( $details ) ) || preg_match( '/<[a-z][a-z0-9]*[\s\/>]/i', $details ) );
@@ -2922,6 +4121,33 @@ class Event {
 		}
 
 		return apply_filters( 'eventkoi_rendered_event_details', $details, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Rendered event excerpt.
+	 *
+	 * The hand-written post excerpt first, then the description when there is none.
+	 *
+	 * @return string
+	 */
+	public static function rendered_excerpt() {
+		if ( self::is_password_protected() ) {
+			return '';
+		}
+
+		$excerpt = trim( (string) get_post_field( 'post_excerpt', self::$event_id ) );
+
+		// Events without an excerpt fall back to their description.
+		if ( '' === $excerpt ) {
+			$excerpt = trim( (string) self::get_summary() );
+		}
+
+		return apply_filters(
+			'eventkoi_rendered_event_excerpt',
+			'' !== $excerpt ? wp_kses_post( $excerpt ) : '',
+			self::$event_id,
+			self::$event
+		);
 	}
 
 	/**
@@ -3003,11 +4229,27 @@ class Event {
 	}
 
 	/**
+	 * Whether the "See all events in" calendar link shows. On for sites that never
+	 * saved the setting.
+	 *
+	 * @return bool
+	 */
+	public static function is_calendar_backlink_enabled() {
+		$settings = Settings::get();
+
+		return ! isset( $settings['show_calendar_backlink'] ) || in_array( $settings['show_calendar_backlink'], array( '1', 1, true ), true );
+	}
+
+	/**
 	 * Render linked calendar names for the current event.
 	 *
 	 * @return string HTML string with anchor tags for each calendar.
 	 */
 	public static function rendered_calendar_link() {
+		if ( ! self::is_calendar_backlink_enabled() ) {
+			return '';
+		}
+
 		$calendars = self::get_calendar();
 
 		if ( empty( $calendars ) ) {
@@ -3029,6 +4271,63 @@ class Event {
 		}
 
 		return implode( ', ', $links );
+	}
+
+	/**
+	 * Rendered link back to the series from one of its occurrences.
+	 *
+	 * Empty on the series page itself, on non-recurring events, and when the
+	 * backlink is switched off globally or for this event, so a bound block
+	 * can sit in the template without leaving a stray element behind.
+	 *
+	 * @return string
+	 */
+	public static function rendered_series_link() {
+		$post_id = absint( self::get_id() );
+
+		if ( ! $post_id || 'recurring' !== self::get_date_type() ) {
+			return '';
+		}
+
+		$instance_ts = function_exists( 'eventkoi_get_instance_id' ) ? eventkoi_get_instance_id() : null;
+		if ( empty( $instance_ts ) ) {
+			return '';
+		}
+
+		// A per-event override ('show'/'hide') wins over the global toggle, whose
+		// default is on for sites that never saved the option.
+		$override = sanitize_key( (string) get_post_meta( $post_id, 'series_backlink', true ) );
+		if ( 'hide' === $override ) {
+			return '';
+		}
+		if ( 'show' !== $override ) {
+			$settings = Settings::get();
+			$enabled  = ! isset( $settings['show_series_backlink'] )
+				|| '1' === (string) $settings['show_series_backlink']
+				|| 1 === $settings['show_series_backlink']
+				|| true === $settings['show_series_backlink'];
+			if ( ! $enabled ) {
+				return '';
+			}
+		}
+
+		$parent_link = sprintf(
+			'<a href="%1$s" rel="bookmark">%2$s</a>',
+			esc_url( get_permalink( $post_id ) ),
+			esc_html( self::get_title() )
+		);
+
+		// One translatable sentence with the linked title as the only placeholder,
+		// so translators can position "series" for their grammar.
+		return apply_filters(
+			'eventkoi_rendered_event_series_link',
+			sprintf(
+				/* translators: %s: linked event title. */
+				esc_html__( '← See all events in the %s series', 'eventkoi-lite' ),
+				$parent_link
+			),
+			$post_id
+		);
 	}
 
 	/**
@@ -3077,6 +4376,10 @@ class Event {
 	 * @return string Rendered HTML-safe locations list.
 	 */
 	public static function rendered_location() {
+		if ( self::is_locked_for_visitor() ) {
+			return esc_html__( 'Enter the password to see the location.', 'eventkoi-lite' );
+		}
+
 		$locations = self::get_instance_field( 'locations' );
 
 		if ( ! is_array( $locations ) || empty( $locations ) ) {
@@ -3151,6 +4454,9 @@ class Event {
 					$lines[] = '<a href="' . esc_url( $url ) . '" target="_blank" rel="noopener noreferrer">'
 					. esc_html( $online_label ) .
 					'</a>';
+				} elseif ( 'online' === $type && ! empty( $name ) ) {
+					// The link can stay private, for example when it comes with the ticket.
+					$lines[] = '<strong>' . esc_html( $name ) . '</strong>';
 				}
 
 				if ( empty( $lines ) ) {
@@ -3181,7 +4487,10 @@ class Event {
 	 * Rendered Google Map.
 	 */
 	public static function rendered_gmap() {
-		return ''; // Legacy fallback — no longer used in block rendering.
+		// The same mount point the event template's map block emits; the
+		// frontend script hydrates it from the current event page's data and
+		// hides it when the event has no embeddable location.
+		return '<div class="eventkoi-gmap"></div>';
 	}
 
 	/**
@@ -3207,7 +4516,7 @@ class Event {
 			return '';
 		}
 
-		$timezone = wp_kses_post( eventkoi_timezone() );
+		$timezone = wp_kses_post( self::get_timezone() );
 		$output   = sprintf(
 			'<span class="ek-timezone" data-source-tz="%1$s">%2$s</span>',
 			esc_attr( $timezone ),
@@ -3230,6 +4539,11 @@ class Event {
 	 * @return string
 	 */
 	public static function rendered_ticket_rsvp() {
+		// A locked event keeps its tickets, RSVP and price box until it is unlocked.
+		if ( self::is_locked_for_visitor() ) {
+			return '';
+		}
+
 		$mode = self::get_attendance_mode();
 
 		if ( 'tickets' === $mode ) {
@@ -3253,10 +4567,16 @@ class Event {
 				(int) $instance_ts
 			);
 
+			// The mount node carries a server-rendered no-JS fallback form. React
+			// replaces it on mount (modal stays primary); if the script never
+			// runs, the form remains and can still complete a purchase.
+			$fallback = \EventKoi\Core\Ticket_Fallback::render_form( $event_id, $instance_ts );
+
 			$output = sprintf(
-				'<div class="eventkoi-front"><div id="eventkoi-tickets-%1$d" class="eventkoi-tickets" %2$s></div></div>',
+				'<div class="eventkoi-front"><div id="eventkoi-tickets-%1$d" class="eventkoi-tickets" %2$s>%3$s</div></div>',
 				(int) $event_id,
-				$attrs
+				$attrs,
+				$fallback
 			);
 
 			return apply_filters( 'eventkoi_rendered_event_tickets', $output, self::$event_id, self::$event );
@@ -3267,7 +4587,155 @@ class Event {
 			return apply_filters( 'eventkoi_rendered_event_rsvp', $output, self::$event_id, self::$event );
 		}
 
+		if ( 'price_from' === $mode ) {
+			return apply_filters( 'eventkoi_rendered_event_price_from', self::rendered_price_from_box(), self::$event_id, self::$event );
+		}
+
 		return '';
+	}
+
+	/**
+	 * Format a "Price from" amount in the store currency.
+	 *
+	 * @param string $amount Numeric amount string.
+	 * @return string
+	 */
+	protected static function format_price_from_amount( $amount ) {
+		if ( '' === $amount || ! is_numeric( $amount ) ) {
+			return '';
+		}
+
+		$value = (float) $amount;
+
+		// A starting price of zero (or a stray negative) is not a price to show;
+		// leave it blank so no "From 0" line appears.
+		if ( $value <= 0 ) {
+			return '';
+		}
+
+		$settings = Settings::get();
+		$currency = strtoupper( (string) ( $settings['currency'] ?? 'USD' ) );
+
+		if ( class_exists( '\NumberFormatter' ) ) {
+			$formatter = new \NumberFormatter( get_locale(), \NumberFormatter::CURRENCY );
+			// Show whole amounts with no decimals ("$25") but keep each currency's
+			// own minor units for fractional amounts ("$25.50", "KWD 25.500"). Floor
+			// so a "from" price never reads higher than the real minimum.
+			if ( 0.0 === fmod( $value, 1 ) ) {
+				$formatter->setAttribute( \NumberFormatter::MIN_FRACTION_DIGITS, 0 );
+				$formatter->setAttribute( \NumberFormatter::MAX_FRACTION_DIGITS, 0 );
+			}
+			$formatter->setAttribute( \NumberFormatter::ROUNDING_MODE, \NumberFormatter::ROUND_FLOOR );
+			$formatted = $formatter->formatCurrency( $value, $currency );
+			if ( false !== $formatted ) {
+				return $formatted;
+			}
+		}
+
+		$symbols  = array(
+			'USD' => '$',
+			'EUR' => '€',
+			'GBP' => '£',
+			'JPY' => '¥',
+			'AUD' => 'A$',
+			'CAD' => 'C$',
+			'CHF' => 'CHF ',
+			'SEK' => 'kr ',
+			'NOK' => 'kr ',
+			'DKK' => 'kr ',
+		);
+		$symbol   = $symbols[ $currency ] ?? $currency . ' ';
+		$decimals = fmod( $value, 1 ) ? 2 : 0;
+
+		return $symbol . number_format_i18n( $value, $decimals );
+	}
+
+	/**
+	 * "Price from" formatted string, e.g. "From $25".
+	 *
+	 * @return string
+	 */
+	public static function rendered_price_from() {
+		$formatted = self::format_price_from_amount( self::get_price_from_amount() );
+		if ( '' === $formatted ) {
+			return '';
+		}
+
+		/* translators: %s: formatted starting price. */
+		return sprintf( __( 'From %s', 'eventkoi-lite' ), $formatted );
+	}
+
+	/**
+	 * "Price from" external ticket site URL.
+	 *
+	 * @return string
+	 */
+	public static function rendered_price_from_url() {
+		return esc_url( self::get_price_from_url() );
+	}
+
+	/**
+	 * "Price from" details text.
+	 *
+	 * @return string
+	 */
+	public static function rendered_price_from_details() {
+		$details = self::get_price_from_details();
+
+		if ( '' === trim( $details ) ) {
+			return '';
+		}
+
+		// Rich-text value: opt out of the frontend Tailwind preflight (which strips
+		// list markers) via `no-eventkoi`, mirroring the rich-text description.
+		return sprintf(
+			'<div class="eventkoi-richtext no-eventkoi">%s</div>',
+			wp_kses_post( $details )
+		);
+	}
+
+	/**
+	 * Server-rendered "Price from" box for the event page tickets slot.
+	 *
+	 * Reuses the ticket widget's utility classes so it inherits the exact
+	 * styling of the React tickets box without loading that bundle.
+	 *
+	 * @return string
+	 */
+	protected static function rendered_price_from_box() {
+		$price_line = self::rendered_price_from();
+		$url        = self::get_price_from_url();
+		$details    = self::get_price_from_details();
+
+		if ( '' === $price_line && '' === $url && '' === $details ) {
+			return '';
+		}
+
+		Scripts::enqueue_frontend_assets();
+
+		$parts   = array();
+		$parts[] = '<div class="flex items-center justify-between gap-4">';
+		$parts[] = '<div class="text-base font-semibold uppercase tracking-normal text-foreground">' . esc_html__( 'Tickets', 'eventkoi-lite' ) . '</div>';
+		if ( '' !== $price_line ) {
+			$parts[] = '<div class="text-3xl font-semibold leading-none text-foreground tabular-nums">' . esc_html( $price_line ) . '</div>';
+		}
+		$parts[] = '</div>';
+
+		if ( '' !== trim( $details ) ) {
+			$parts[] = '<div class="eventkoi-richtext no-eventkoi text-base text-muted-foreground">' . wp_kses_post( $details ) . '</div>';
+		}
+
+		if ( '' !== $url ) {
+			$parts[] = sprintf(
+				'<a class="inline-flex h-14 w-full items-center justify-center gap-2 rounded-md bg-primary text-base font-semibold text-primary-foreground no-underline transition-colors hover:bg-primary/90" href="%1$s" target="_blank" rel="noopener noreferrer">%2$s</a>',
+				esc_url( $url ),
+				esc_html__( 'Get tickets', 'eventkoi-lite' )
+			);
+		}
+
+		return '<div class="eventkoi-front"><div class="eventkoi-price-from"><div class="eventkoi-tickets__widget w-full max-w-[450px] rounded-[10px] border p-6" style="background-color:#f3f3f3;border-color:#eeeeee"><div class="flex flex-col gap-6">'
+			. implode( '', $parts )
+			. '</div></div></div></div>';
 	}
 
 	/**
@@ -3556,7 +5024,7 @@ class Event {
 		$event_tz    = self::get_timezone();
 
 		if ( self::get_tbc() ) {
-			$tbc_note = self::get_tbc_note();
+			$tbc_note = self::get_visible_tbc_note();
 
 			$message = ! empty( $tbc_note )
 			? esc_html( $tbc_note )
@@ -3573,7 +5041,7 @@ class Event {
 				$rule       = $instance_context['rule'];
 				$end_ts     = $instance_context['end_ts'];
 				$is_all_day = (bool) $instance_context['all_day'];
-				$args       = array();
+				$args       = array( 'timezone' => self::get_display_timezone() );
 				if ( $is_all_day ) {
 					$args['timezone'] = self::get_all_day_datetime_timezone(
 						$event_tz,
@@ -3598,8 +5066,12 @@ class Event {
 			}
 		}
 
-		// Fallback: full set of standard dates or recurring rules.
-		$data = ( 'recurring' === $type ) ? self::get_recurrence_rules() : self::get_event_days_for_rendering();
+		// Fallback: full set of standard dates or recurring rules. The "with
+		// summary" field always lists the full schedule, so ignore the query-loop
+		// per-card selected-day context that anchors single-date fields to the
+		// upcoming day. A real ?event_day request on a single event page still
+		// scopes the result.
+		$data = ( 'recurring' === $type ) ? self::get_recurrence_rules_by_start() : self::get_event_days_for_rendering( true );
 
 		// Standard + continuous events read directly from start_date/end_date meta
 		// and don't require event_days to be populated. Only short-circuit when
@@ -3627,7 +5099,7 @@ class Event {
 				: self::normalize_boolean_meta( get_post_meta( self::$event_id, 'all_day', true ) );
 
 			if ( $start_ts ) {
-				$args = array();
+				$args = array( 'timezone' => self::get_display_timezone() );
 				if ( $is_all_day ) {
 					$args['timezone'] = self::get_all_day_datetime_timezone( $event_tz, $first_day );
 				}
@@ -3645,7 +5117,7 @@ class Event {
 				$end_ts     = ! empty( $item['end_date'] ) ? strtotime( $item['end_date'] ) : null;
 				$is_all_day = ! empty( $item['all_day'] );
 
-					$args = array();
+					$args = array( 'timezone' => self::get_display_timezone() );
 					if ( $is_all_day ) {
 						$args['timezone'] = self::get_all_day_datetime_timezone( $event_tz, $item );
 					}
@@ -3709,6 +5181,27 @@ class Event {
 					self::$event
 				);
 			}
+		}
+
+		$listed_days = self::get_listed_event_days();
+		if ( count( $listed_days ) > 1 ) {
+			$lines = array();
+			foreach ( $listed_days as $day ) {
+				$start_ts = strtotime( $day['start_date'] );
+				$end_ts   = ! empty( $day['end_date'] ) ? strtotime( $day['end_date'] ) : null;
+				$args     = ! empty( $day['all_day'] )
+					? array( 'timezone' => self::get_all_day_datetime_timezone( self::get_timezone(), $day ) )
+					: array();
+
+				$lines[] = eventkoi_format_datetime_range( $start_ts, $end_ts && $end_ts >= $start_ts ? $end_ts : null, true, $args );
+			}
+
+			return apply_filters(
+				'eventkoi_rendered_event_date',
+				implode( '<br>', $lines ),
+				self::$event_id,
+				self::$event
+			);
 		}
 
 		$first = self::get_first_instance();
@@ -3777,38 +5270,44 @@ class Event {
 			}
 		}
 
-		$first = self::get_first_instance();
-
-		if ( ! empty( $first['all_day'] ) ) {
-			return apply_filters( 'eventkoi_rendered_event_time', '', self::$event_id, self::$event );
-		}
-
-		$start_ts = ! empty( $first['start_date'] ) ? strtotime( $first['start_date'] ) : null;
-		$end_ts   = ! empty( $first['end_date'] ) ? strtotime( $first['end_date'] ) : null;
-
-		if ( ! $start_ts ) {
-			return apply_filters( 'eventkoi_rendered_event_time', '', self::$event_id, self::$event );
-		}
-
-		if ( $end_ts && $end_ts < $start_ts ) {
-			$end_ts = null;
-		}
-
-		$start_str = wp_date( $time_format, $start_ts );
-
-		$same_day = $end_ts && wp_date( 'Y-m-d', $start_ts ) === wp_date( 'Y-m-d', $end_ts );
-		if ( $end_ts && $same_day ) {
-			$output = $start_str . ' — ' . wp_date( $time_format, $end_ts );
-		} else {
-			$output = $start_str;
+		// Dates sharing a time show it once; different times are each listed.
+		$listed_days = self::get_listed_event_days();
+		$rows        = count( $listed_days ) > 1 ? $listed_days : array( self::get_first_instance() );
+		$lines       = array();
+		foreach ( $rows as $row ) {
+			$lines[] = self::format_day_time_range( $row, $time_format );
 		}
 
 		return apply_filters(
 			'eventkoi_rendered_event_time',
-			$output,
+			implode( '<br>', array_unique( array_filter( $lines ) ) ),
 			self::$event_id,
 			self::$event
 		);
+	}
+
+	/**
+	 * Format one date row's time range. Empty for an all-day row.
+	 *
+	 * @param array  $day         Date row.
+	 * @param string $time_format PHP time format.
+	 * @return string
+	 */
+	private static function format_day_time_range( $day, $time_format ) {
+		$start_ts = ! empty( $day['start_date'] ) ? strtotime( $day['start_date'] ) : null;
+		$end_ts   = ! empty( $day['end_date'] ) ? strtotime( $day['end_date'] ) : null;
+
+		if ( ! empty( $day['all_day'] ) || ! $start_ts ) {
+			return '';
+		}
+
+		$start_str = wp_date( $time_format, $start_ts );
+
+		if ( $end_ts && $end_ts >= $start_ts && wp_date( 'Y-m-d', $start_ts ) === wp_date( 'Y-m-d', $end_ts ) ) {
+			return $start_str . ' — ' . wp_date( $time_format, $end_ts );
+		}
+
+		return $start_str;
 	}
 
 	/**
@@ -3822,7 +5321,7 @@ class Event {
 		$instance_ts = eventkoi_get_instance_id();
 
 		if ( self::get_tbc() ) {
-			$tbc_note = self::get_tbc_note();
+			$tbc_note = self::get_visible_tbc_note();
 
 			$message = ! empty( $tbc_note )
 			? esc_html( $tbc_note )
@@ -3838,7 +5337,7 @@ class Event {
 			if ( $instance_context ) {
 				$end_ts     = $instance_context['end_ts'];
 				$is_all_day = (bool) $instance_context['all_day'];
-				$args       = array();
+				$args       = array( 'timezone' => self::get_display_timezone() );
 				if ( $is_all_day ) {
 					$args['timezone'] = self::get_all_day_datetime_timezone(
 						$event_tz,
@@ -3862,7 +5361,7 @@ class Event {
 		}
 
 		if ( 'recurring' === $type ) {
-			$data = self::get_recurrence_rules();
+			$data = self::get_recurrence_rules_by_start();
 		} else {
 			$data = self::get_event_days_for_rendering();
 		}
@@ -3903,7 +5402,7 @@ class Event {
 				$end_ts = null;
 			}
 
-			$args = array();
+			$args = array( 'timezone' => self::get_display_timezone() );
 			if ( $is_all_day ) {
 				$args['timezone'] = self::get_all_day_datetime_timezone( $event_tz, $item );
 			}
@@ -4012,7 +5511,7 @@ class Event {
 			}
 		}
 
-		return wp_timezone();
+		return self::get_display_timezone();
 	}
 
 	/**
@@ -4595,7 +6094,7 @@ class Event {
 		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
 		$rows = $wpdb->get_results(
 			$wpdb->prepare(
-				"SELECT status, COALESCE(SUM(1 + guests),0) AS cnt FROM {$table} WHERE event_id = %d AND status IN ('going','maybe') GROUP BY status", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				"SELECT status, COALESCE(SUM(1 + guests),0) AS cnt FROM {$table} WHERE event_id = %d AND parent_id = 0 AND status IN ('going','maybe') GROUP BY status", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
 				$event_id
 			)
 		);
@@ -4671,6 +6170,104 @@ class Event {
 	}
 
 	/**
+	 * The upcoming dates of a recurring event, as the series block template
+	 * lists them.
+	 *
+	 * Renders the same event query loop the block template carries, so page
+	 * builders show the identical list (upcoming first, paginated) without a
+	 * loop widget of their own. Empty for anything but a recurring event.
+	 *
+	 * @return string Rendered list, or an empty string.
+	 */
+	public static function rendered_series_dates() {
+		if ( 'recurring' !== self::get_date_type() ) {
+			return '';
+		}
+
+		$parent_id = absint( self::get_id() );
+		if ( $parent_id <= 0 ) {
+			return '';
+		}
+
+		$query = array(
+			'perPage'     => 6,
+			'pages'       => 0,
+			'offset'      => 0,
+			'postType'    => 'eventkoi_event',
+			'order'       => 'asc',
+			'orderBy'     => 'start_date',
+			'author'      => '',
+			'search'      => '',
+			'sticky'      => '',
+			'inherit'     => false,
+			'eventkoiSig' => '|||1|1|0|asc|start_date|6|1',
+		);
+
+		$attributes = array(
+			'queryId'               => 197,
+			'query'                 => $query,
+			'namespace'             => 'eventkoi/event-query-loop',
+			'includeInstances'      => true,
+			'showInstancesForEvent' => true,
+			'instanceParentId'      => $parent_id,
+			'className'             => 'eventkoi-query-loop',
+			'listLayoutStyle'       => 'image-left',
+		);
+
+		$markup = '<!-- wp:query ' . wp_json_encode( $attributes ) . ' -->'
+			. '<div class="wp-block-query eventkoi-query-loop"><!-- wp:post-template {"layout":{"type":"default"}} -->'
+			. '<!-- wp:eventkoi/event-query-item -->'
+			. '<!-- wp:group {"className":"eventkoi-event-loop-card","layout":{"type":"default"}} -->'
+			. '<div class="wp-block-group eventkoi-event-loop-card"><!-- wp:columns -->'
+			. '<div class="wp-block-columns"><!-- wp:column {"width":"30%"} -->'
+			. '<div class="wp-block-column" style="flex-basis:30%"><!-- wp:post-featured-image {"className":"eventkoi-event-image-default"} /--></div>'
+			. '<!-- /wp:column -->'
+			. '<!-- wp:column {"width":"70%"} -->'
+			. '<div class="wp-block-column" style="flex-basis:70%"><!-- wp:eventkoi/event-data {"className":"ek-event-title-default"} /-->'
+			. '<!-- wp:eventkoi/event-data {"field":"timeline","className":"ek-event-timeline-default"} /-->'
+			. '<!-- wp:eventkoi/event-data {"field":"excerpt"} /-->'
+			. '<!-- wp:eventkoi/event-data {"field":"location","className":"ek-event-location-default"} /--></div>'
+			. '<!-- /wp:column --></div>'
+			. '<!-- /wp:columns --></div>'
+			. '<!-- /wp:group -->'
+			. '<!-- /wp:eventkoi/event-query-item -->'
+			. '<!-- /wp:post-template -->'
+			. '<!-- wp:query-pagination {"paginationArrow":"arrow","layout":{"type":"flex","justifyContent":"space-between"}} -->'
+			. '<!-- wp:query-pagination-previous /-->'
+			. '<!-- wp:query-pagination-numbers /-->'
+			. '<!-- wp:query-pagination-next /-->'
+			. '<!-- /wp:query-pagination -->'
+			. '<!-- wp:query-no-results -->'
+			. '<!-- wp:paragraph {"placeholder":"No events found."} --><p></p><!-- /wp:paragraph -->'
+			. '<!-- /wp:query-no-results --></div>'
+			. '<!-- /wp:query -->';
+
+		$output = do_blocks( $markup );
+
+		return apply_filters( 'eventkoi_rendered_event_series_dates', $output, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Start timestamps of this event's deleted recurring dates.
+	 *
+	 * A deleted date is stored as a `trash` override, so the summary counts
+	 * leave it out the same way the calendar and series list do.
+	 *
+	 * @return array Timestamps as keys.
+	 */
+	private static function get_trashed_instance_timestamps() {
+		$trashed = array();
+
+		foreach ( self::get_recurrence_overrides() as $timestamp => $override ) {
+			if ( is_array( $override ) && 'trash' === ( $override['status'] ?? '' ) ) {
+				$trashed[ (int) $timestamp ] = true;
+			}
+		}
+
+		return $trashed;
+	}
+
+	/**
 	 * Rendered recurring rule summary string.
 	 *
 	 * @return string Recurrence summary.
@@ -4689,13 +6286,13 @@ class Event {
 		$outputs = array();
 
 		$weekday_names = array(
-			0 => __( 'Monday', 'eventkoi-lite' ),
-			1 => __( 'Tuesday', 'eventkoi-lite' ),
-			2 => __( 'Wednesday', 'eventkoi-lite' ),
-			3 => __( 'Thursday', 'eventkoi-lite' ),
-			4 => __( 'Friday', 'eventkoi-lite' ),
-			5 => __( 'Saturday', 'eventkoi-lite' ),
-			6 => __( 'Sunday', 'eventkoi-lite' ),
+			0 => __( 'Sunday', 'eventkoi-lite' ),
+			1 => __( 'Monday', 'eventkoi-lite' ),
+			2 => __( 'Tuesday', 'eventkoi-lite' ),
+			3 => __( 'Wednesday', 'eventkoi-lite' ),
+			4 => __( 'Thursday', 'eventkoi-lite' ),
+			5 => __( 'Friday', 'eventkoi-lite' ),
+			6 => __( 'Saturday', 'eventkoi-lite' ),
 		);
 
 		$ordinals = array(
@@ -4806,7 +6403,21 @@ class Event {
 			// 5. Weekly day names
 			if ( 'week' === $frequency && ! empty( $rule['weekdays'] ) ) {
 				$days = array();
-				foreach ( $rule['weekdays'] as $i ) {
+
+				// Order the days in calendar order (from the site's first day of
+				// the week) instead of the order they were selected in. Weekdays
+				// are stored 0=Sunday..6=Saturday, matching WordPress's
+				// start_of_week convention.
+				$summary_weekdays = array_values( array_map( 'intval', (array) $rule['weekdays'] ) );
+				$start_of_week    = (int) get_option( 'start_of_week', 0 );
+				usort(
+					$summary_weekdays,
+					static function ( $a, $b ) use ( $start_of_week ) {
+						return ( ( $a - $start_of_week + 7 ) % 7 ) <=> ( ( $b - $start_of_week + 7 ) % 7 );
+					}
+				);
+
+				foreach ( $summary_weekdays as $i ) {
 					if ( isset( $weekday_names[ $i ] ) ) {
 						$days[] = $weekday_names[ $i ];
 					}
@@ -4846,7 +6457,7 @@ class Event {
 						}
 					}
 					if ( 'week' === $frequency && ! empty( $rule['weekdays'] ) ) {
-						$map   = array( 'MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU' );
+						$map   = array( 'SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA' );
 						$byday = array();
 						foreach ( $rule['weekdays'] as $i ) {
 							if ( isset( $map[ $i ] ) ) {
@@ -4893,9 +6504,15 @@ class Event {
 					if ( ! empty( $rule['start_date'] ) && ! empty( $rule['end_date'] ) ) {
 						$duration = strtotime( $rule['end_date'] ) - strtotime( $rule['start_date'] );
 					}
+					$trashed = self::get_trashed_instance_timestamps();
+					$skipped = 0;
 					foreach ( $rrule as $dt ) {
 						if ( $total >= $max_count ) {
 							break;
+						}
+						if ( isset( $trashed[ $dt->getTimestamp() ] ) ) {
+							++$skipped;
+							continue;
 						}
 						$instances[] = $dt;
 						++$total;
@@ -4906,7 +6523,10 @@ class Event {
 					}
 					$remaining = $total - $completed;
 					if ( 0 === $total ) {
-						$label .= __( ', forever', 'eventkoi-lite' );
+						// Nothing to count when every date was deleted.
+						if ( 0 === $skipped ) {
+							$label .= __( ', forever', 'eventkoi-lite' );
+						}
 					} elseif ( isset( $rule['ends'] ) && 'after' === $rule['ends'] ) {
 						if ( 0 === $remaining ) {
 							$label .= sprintf(
@@ -5010,7 +6630,7 @@ class Event {
 
 				// 4. Weekly BYDAY
 				if ( 'week' === $freq && ! empty( $rule['weekdays'] ) ) {
-					$map   = array( 'MO', 'TU', 'WE', 'TH', 'FR', 'SA', 'SU' );
+					$map   = array( 'SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA' );
 					$byday = array();
 					foreach ( $rule['weekdays'] as $i ) {
 						if ( isset( $map[ $i ] ) ) {
@@ -5082,6 +6702,373 @@ class Event {
 			'start' => null,
 			'end'   => null,
 		);
+	}
+
+	/**
+	 * Work out where each occurrence moved to when an event's dates changed.
+	 *
+	 * Occurrences are matched by ordinal within a rule, or by row order for a
+	 * selected-dates event, which is what lets anything keyed to an occurrence
+	 * follow it to its new time.
+	 *
+	 * @param string $old_date_type     Previous date type.
+	 * @param string $old_standard_type Previous standard type.
+	 * @param array  $old_event_days    Previous event_days rows.
+	 * @param array  $old_rules         Previous recurrence rules.
+	 * @param string $old_timezone      Previous timezone.
+	 * @param string $new_date_type     New date type.
+	 * @param string $new_standard_type New standard type.
+	 * @param array  $new_event_days    New event_days rows.
+	 * @param array  $new_rules         New recurrence rules.
+	 * @param string $new_timezone      New timezone.
+	 * @return array<int,int> Old timestamp => new timestamp.
+	 */
+	private static function get_instance_ts_migrations( $old_date_type, $old_standard_type, array $old_event_days, array $old_rules, $old_timezone, $new_date_type, $new_standard_type, array $new_event_days, array $new_rules, $new_timezone ) {
+		$migrations = array();
+
+		if ( 'standard' === $old_date_type && 'standard' === $new_date_type && ( 'selected' === $old_standard_type || 'selected' === $new_standard_type ) ) {
+			$migrations = self::merge_instance_ts_migrations(
+				$migrations,
+				self::get_event_day_instance_ts_migrations( $old_event_days, $new_event_days )
+			);
+		}
+
+		if ( 'recurring' === $old_date_type && 'recurring' === $new_date_type ) {
+			$migrations = self::merge_instance_ts_migrations(
+				$migrations,
+				self::get_recurring_rule_instance_ts_migrations( $old_rules, $new_rules, $old_timezone, $new_timezone )
+			);
+		}
+
+		return $migrations;
+	}
+
+	/**
+	 * Pair selected event days by row order.
+	 *
+	 * @param array $old_event_days Previous event_days rows.
+	 * @param array $new_event_days New event_days rows.
+	 * @return array<int,int>
+	 */
+	private static function get_event_day_instance_ts_migrations( array $old_event_days, array $new_event_days ) {
+		$old_starts = self::get_event_day_start_timestamps( $old_event_days );
+		$new_starts = self::get_event_day_start_timestamps( $new_event_days );
+
+		if ( empty( $old_starts ) || empty( $new_starts ) || count( $old_starts ) !== count( $new_starts ) ) {
+			return array();
+		}
+
+		$migrations = array();
+		foreach ( $old_starts as $index => $old_ts ) {
+			$new_ts = isset( $new_starts[ $index ] ) ? (int) $new_starts[ $index ] : 0;
+
+			if ( $old_ts <= 0 || $new_ts <= 0 || $old_ts === $new_ts ) {
+				continue;
+			}
+
+			// The day still exists elsewhere in the list, so it was reordered
+			// rather than moved and whatever is keyed to it should stay put.
+			if ( in_array( $old_ts, $new_starts, true ) ) {
+				continue;
+			}
+
+			$migrations[ $old_ts ] = $new_ts;
+		}
+
+		return $migrations;
+	}
+
+	/**
+	 * Start timestamps of stored event_days rows, in row order.
+	 *
+	 * @param array $event_days Event day rows.
+	 * @return int[]
+	 */
+	private static function get_event_day_start_timestamps( array $event_days ) {
+		$starts = array();
+
+		foreach ( array_values( $event_days ) as $day ) {
+			if ( ! is_array( $day ) || empty( $day['start_date'] ) ) {
+				continue;
+			}
+
+			$start_ts = strtotime( (string) self::normalize_utc_datetime_iso_string( $day['start_date'] ) );
+
+			if ( $start_ts ) {
+				$starts[] = (int) $start_ts;
+			}
+		}
+
+		return $starts;
+	}
+
+	/**
+	 * Pair recurring occurrences by rule index and ordinal.
+	 *
+	 * @param array  $old_rules    Previous recurrence rules.
+	 * @param array  $new_rules    New recurrence rules.
+	 * @param string $old_timezone Previous timezone.
+	 * @param string $new_timezone New timezone.
+	 * @return array<int,int>
+	 */
+	private static function get_recurring_rule_instance_ts_migrations( array $old_rules, array $new_rules, $old_timezone, $new_timezone ) {
+		$old_rules = array_values( array_filter( $old_rules, 'is_array' ) );
+		$new_rules = array_values( array_filter( $new_rules, 'is_array' ) );
+
+		if ( empty( $old_rules ) || empty( $new_rules ) || count( $old_rules ) !== count( $new_rules ) ) {
+			return array();
+		}
+
+		$migrations = array();
+		foreach ( $old_rules as $index => $old_rule ) {
+			// Both lists were filtered to arrays above, so presence is enough.
+			$new_rule = $new_rules[ $index ] ?? array();
+
+			if ( ! self::rules_are_instance_migration_compatible( $old_rule, $new_rule ) ) {
+				continue;
+			}
+
+			$old_starts = self::get_rule_instance_starts_for_migration( $old_rule, $old_timezone );
+			$new_starts = self::get_rule_instance_starts_for_migration( $new_rule, $new_timezone );
+			$limit      = min( count( $old_starts ), count( $new_starts ) );
+
+			for ( $i = 0; $i < $limit; ++$i ) {
+				$old_ts = (int) $old_starts[ $i ];
+				$new_ts = (int) $new_starts[ $i ];
+
+				if ( $old_ts > 0 && $new_ts > 0 && $old_ts !== $new_ts ) {
+					$migrations[ $old_ts ] = $new_ts;
+				}
+			}
+		}
+
+		return $migrations;
+	}
+
+	/**
+	 * Whether two versions of a rule are similar enough to pair by ordinal.
+	 *
+	 * Deliberately strict. Anything that could change how many occurrences a
+	 * rule produces, or which days they land on, makes ordinal pairing a guess,
+	 * and a wrong guess would move a customisation onto the wrong date. Bailing
+	 * out leaves the old behaviour for that rule, which is merely unhelpful.
+	 *
+	 * @param array $old_rule Previous rule.
+	 * @param array $new_rule New rule.
+	 * @return bool
+	 */
+	private static function rules_are_instance_migration_compatible( array $old_rule, array $new_rule ) {
+		$old_frequency = (string) ( $old_rule['frequency'] ?? '' );
+		$new_frequency = (string) ( $new_rule['frequency'] ?? '' );
+
+		if ( '' === $old_frequency || $old_frequency !== $new_frequency ) {
+			return false;
+		}
+
+		if ( max( 1, absint( $old_rule['every'] ?? 1 ) ) !== max( 1, absint( $new_rule['every'] ?? 1 ) ) ) {
+			return false;
+		}
+
+		if ( ! empty( $old_rule['all_day'] ) !== ! empty( $new_rule['all_day'] ) ) {
+			return false;
+		}
+
+		if ( (string) ( $old_rule['ends'] ?? 'never' ) !== (string) ( $new_rule['ends'] ?? 'never' ) ) {
+			return false;
+		}
+
+		$old_weekdays = is_array( $old_rule['weekdays'] ?? null ) ? $old_rule['weekdays'] : array();
+		$new_weekdays = is_array( $new_rule['weekdays'] ?? null ) ? $new_rule['weekdays'] : array();
+
+		if ( 'week' === $old_frequency && count( $old_weekdays ) !== count( $new_weekdays ) ) {
+			return false;
+		}
+
+		if ( 'month' === $old_frequency && (string) ( $old_rule['month_day_rule'] ?? 'day-of-month' ) !== (string) ( $new_rule['month_day_rule'] ?? 'day-of-month' ) ) {
+			return false;
+		}
+
+		if ( 'year' === $old_frequency ) {
+			$old_months = is_array( $old_rule['months'] ?? null ) ? $old_rule['months'] : array();
+			$new_months = is_array( $new_rule['months'] ?? null ) ? $new_rule['months'] : array();
+
+			if ( count( $old_months ) !== count( $new_months ) ) {
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+	 * Expand a rule to occurrence start timestamps, using the same RRule path
+	 * the rest of the plugin renders from.
+	 *
+	 * @param array  $rule           Recurrence rule.
+	 * @param string $event_timezone Event timezone.
+	 * @return int[]
+	 */
+	private static function get_rule_instance_starts_for_migration( array $rule, $event_timezone ) {
+		$starts = array();
+
+		if ( empty( $rule['start_date'] ) || empty( $rule['frequency'] ) ) {
+			return $starts;
+		}
+
+		$timezone = self::get_rule_timezone_for_migration( $rule, $event_timezone );
+		$limit    = max( 50, (int) apply_filters( 'eventkoi_max_recurrence_iterations', 500 ) );
+
+		try {
+			$options = self::build_recurring_rule_options( $rule, $timezone );
+
+			if ( empty( $options ) ) {
+				return array();
+			}
+
+			$rrule = new \EKLIB\RRule\RRule( $options );
+			$count = 0;
+
+			foreach ( $rrule as $occurrence ) {
+				if ( $count++ >= $limit ) {
+					break;
+				}
+
+				if ( $occurrence instanceof \DateTimeInterface ) {
+					$starts[] = (int) $occurrence->getTimestamp();
+				}
+			}
+		} catch ( \Exception $e ) {
+			return array();
+		}
+
+		$starts = array_values( array_unique( array_filter( array_map( 'intval', $starts ) ) ) );
+		sort( $starts, SORT_NUMERIC );
+
+		return $starts;
+	}
+
+	/**
+	 * Timezone a rule's occurrences are generated in.
+	 *
+	 * @param array  $rule           Recurrence rule.
+	 * @param string $event_timezone Event timezone.
+	 * @return \DateTimeZone
+	 */
+	private static function get_rule_timezone_for_migration( array $rule, $event_timezone ) {
+		$event_timezone = (string) $event_timezone;
+
+		if ( '' === $event_timezone ) {
+			$event_timezone = self::get_timezone();
+		}
+
+		if ( ! empty( $rule['all_day'] ) ) {
+			try {
+				return self::get_all_day_datetime_timezone( $event_timezone, $rule );
+			} catch ( \Exception $e ) {
+				unset( $e );
+			}
+		}
+
+		try {
+			return new \DateTimeZone( eventkoi_php_timezone( $event_timezone ) );
+		} catch ( \Exception $e ) {
+			return new \DateTimeZone( 'UTC' );
+		}
+	}
+
+	/**
+	 * Merge migration maps without letting a later rule claim a slot already
+	 * taken, in either direction.
+	 *
+	 * @param array $base  Base migrations.
+	 * @param array $extra Extra migrations.
+	 * @return array<int,int>
+	 */
+	private static function merge_instance_ts_migrations( array $base, array $extra ) {
+		foreach ( $extra as $old_ts => $new_ts ) {
+			$old_ts = (int) $old_ts;
+			$new_ts = (int) $new_ts;
+
+			if ( $old_ts <= 0 || $new_ts <= 0 || $old_ts === $new_ts || isset( $base[ $old_ts ] ) || in_array( $new_ts, $base, true ) ) {
+				continue;
+			}
+
+			$base[ $old_ts ] = $new_ts;
+		}
+
+		return $base;
+	}
+
+	/**
+	 * Move per-instance overrides onto the timestamps their occurrences now have.
+	 *
+	 * Overrides are keyed by the occurrence's start timestamp, so a master edit
+	 * that shifts those times used to strand every customised occurrence on a
+	 * timestamp that no longer existed, and the occurrence silently fell back
+	 * to the master's title and description (helpdesk T9R4IMAW).
+	 *
+	 * Done in three passes because the moves can collide with each other: a
+	 * series shifted by exactly its own interval maps each occurrence onto the
+	 * slot the next one is still occupying. Rows are parked above any real epoch
+	 * value first, then landed, and anything that still cannot land goes back
+	 * where it started. Nothing is deleted and nothing is left parked, so the
+	 * worst case is the old behaviour for that one row rather than a lost
+	 * override.
+	 *
+	 * @param array<int,int> $migrations Old timestamp => new timestamp.
+	 * @return void
+	 */
+	private static function migrate_recurrence_override_timestamps( array $migrations ) {
+		if ( ! self::$event_id || empty( $migrations ) ) {
+			return;
+		}
+
+		$pairs = array();
+		foreach ( $migrations as $old_ts => $new_ts ) {
+			$old_ts = (int) $old_ts;
+			$new_ts = (int) $new_ts;
+
+			if ( $old_ts <= 0 || $new_ts <= 0 || $old_ts === $new_ts ) {
+				continue;
+			}
+
+			$pairs[ $old_ts ] = $new_ts;
+		}
+
+		if ( empty( $pairs ) ) {
+			return;
+		}
+
+		global $wpdb;
+		$table    = $wpdb->prefix . 'eventkoi_recurrence_overrides';
+		$event_id = (int) self::$event_id;
+
+		// Far above any real epoch second, and well inside BIGINT UNSIGNED.
+		$parking = 1000000000000000;
+
+		foreach ( array( 'park', 'land', 'restore' ) as $pass ) {
+			foreach ( $pairs as $old_ts => $new_ts ) {
+				if ( 'park' === $pass ) {
+					$from = $old_ts;
+					$to   = $parking + $new_ts;
+				} elseif ( 'land' === $pass ) {
+					$from = $parking + $new_ts;
+					$to   = $new_ts;
+				} else {
+					$from = $parking + $new_ts;
+					$to   = $old_ts;
+				}
+
+				$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching
+					$wpdb->prepare(
+						"UPDATE IGNORE {$table} SET timestamp = %d WHERE event_id = %d AND timestamp = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+						$to,
+						$event_id,
+						$from
+					)
+				);
+			}
+		}
 	}
 
 	/**

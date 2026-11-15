@@ -28,6 +28,28 @@ function eventkoi_decode_term_name( $name ) {
 }
 
 /**
+ * Plain-text event title for places that print text rather than HTML.
+ *
+ * WordPress runs get_the_title() through wptexturize, which turns "&" into
+ * "&#038;". That is right inside HTML, but it shows up literally in the React
+ * admin, in email subjects and in payment gateway metadata. This returns the
+ * title the way it was typed, without tags or leftover entities.
+ *
+ * @param int $event_id Event ID.
+ * @return string
+ */
+function eventkoi_event_title_text( $event_id ) {
+	$event_id = absint( $event_id );
+	if ( ! $event_id ) {
+		return '';
+	}
+
+	$title = get_post_field( 'post_title', $event_id, 'raw' );
+
+	return trim( html_entity_decode( wp_strip_all_tags( (string) $title ), ENT_QUOTES, 'UTF-8' ) );
+}
+
+/**
  * Resolve a usable event_cal term_id with validation and fallbacks.
  *
  * Tries (in order): caller-preferred ids, the eventkoi_default_event_cal
@@ -116,9 +138,10 @@ function eventkoi_get_event( $event_id ) {
 		array(),
 		false,
 		array(
-			'include'  => array( $event_id ),
-			'per_page' => 1,
-			'post_status' => $post_status,
+			'include'            => array( $event_id ),
+			'per_page'           => 1,
+			'post_status'        => $post_status,
+			'keep_locked_fields' => ! \EventKoi\Core\Event::is_locked_for_visitor( $event_id ),
 		)
 	);
 
@@ -319,6 +342,32 @@ function eventkoi_get_content() {
 }
 
 /**
+ * Sanitize the visible calendar views for a block, shortcode, or module.
+ *
+ * Accepts a CSV string or array of view keys. Unknown keys are dropped and an
+ * empty result falls back to every view, so existing embeds keep the full
+ * Month/Week/List toggle unless one was explicitly hidden.
+ *
+ * @param mixed $value Raw views value.
+ * @return string[] Ordered subset of month, week, list — never empty.
+ */
+function eventkoi_sanitize_calendar_views( $value ) {
+	$all = array( 'month', 'week', 'list' );
+
+	if ( is_string( $value ) ) {
+		$value = explode( ',', $value );
+	}
+
+	if ( ! is_array( $value ) ) {
+		return $all;
+	}
+
+	$views = array_values( array_intersect( $all, array_map( 'sanitize_key', array_map( 'trim', array_filter( $value, 'is_scalar' ) ) ) ) );
+
+	return empty( $views ) ? $all : $views;
+}
+
+/**
  * Get calendar template content.
  *
  * @param int    $calendar_id Calendar ID.
@@ -369,9 +418,21 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 	$date_start       = isset( $args['date_start'] ) ? sanitize_text_field( $args['date_start'] ) : '';
 	$date_end         = isset( $args['date_end'] ) ? sanitize_text_field( $args['date_end'] ) : '';
 	$expand_instances = isset( $args['expand_instances'] ) ? (bool) $args['expand_instances'] : false;
+	$visible_views    = eventkoi_sanitize_calendar_views( $args['views'] ?? '' );
+	$show_timezone    = isset( $args['show_timezone'] )
+		? (bool) filter_var( $args['show_timezone'], FILTER_VALIDATE_BOOLEAN )
+		: (bool) $calendar::get_show_timezone();
 	$container_id     = 'eventkoi-calendar-' . uniqid();
 	$content_size     = ! empty( $args['layout']['contentSize'] ) ? sanitize_text_field( $args['layout']['contentSize'] ) : '';
 	$wide_size        = ! empty( $args['layout']['wideSize'] ) ? sanitize_text_field( $args['layout']['wideSize'] ) : '';
+
+	// Which text the list prints under each event title: the description
+	// summary or the hand-written excerpt. An embed argument wins over the
+	// calendar setting.
+	$description_source = isset( $args['description_source'] ) ? sanitize_key( (string) $args['description_source'] ) : 'details';
+	if ( ! in_array( $description_source, array( 'description', 'excerpt' ), true ) ) {
+		$description_source = 'excerpt';
+	}
 
 	if ( empty( $content_size ) && is_tax( 'event_cal' ) ) {
 		$content_size = '1100px';
@@ -430,6 +491,13 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 	}
 	$style = ! empty( $style_parts ) ? implode( ';', $style_parts ) . ';' : '';
 
+	// Subscribable iCal feed for exactly the calendar set this instance shows
+	// (single, multi, or all), so visitors can add it to Apple/Google/Outlook
+	// and have events appear and update automatically.
+	$feed_calendar_ids = ! empty( $args['calendars'] ) ? array_map( 'absint', (array) $args['calendars'] ) : array( absint( $calendar::get_id() ) );
+	$feed_url          = function_exists( 'eventkoi_get_calendar_feed_url' ) ? eventkoi_get_calendar_feed_url( $feed_calendar_ids ) : '';
+	$feed_webcal_url   = function_exists( 'eventkoi_get_calendar_feed_url' ) ? eventkoi_get_calendar_feed_url( $feed_calendar_ids, 'webcal' ) : '';
+
 	$calendar_template = sprintf(
 		'<!-- wp:group {"className":"eventkoi-front"} -->
 		<div class="wp-block-group eventkoi-front" style="%13$s">
@@ -454,7 +522,12 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 				data-max-results="%20$s"
 				data-date-start="%21$s"
 				data-date-end="%22$s"
-				data-expand-instances="%23$s">
+				data-expand-instances="%23$s"
+				data-feed-url="%24$s"
+				data-feed-webcal="%25$s"
+				data-visible-views="%26$s"
+				data-show-timezone="%27$s"
+				data-description-source="%28$s">
 			</div>
 		</div>
 	<!-- /wp:group -->',
@@ -480,21 +553,23 @@ function eventkoi_get_calendar_content( $calendar_id = 0, $display = '', $args =
 		esc_attr( $max_results ),                   // %20$s
 		esc_attr( $date_start ),                    // %21$s
 		esc_attr( $date_end ),                      // %22$s
-		$expand_instances ? '1' : '0'               // %23$s
+		$expand_instances ? '1' : '0',              // %23$s
+		esc_url( $feed_url ),                        // %24$s
+		esc_url( $feed_webcal_url, array( 'https', 'http', 'webcal' ) ), // %25$s
+		esc_attr( implode( ',', $visible_views ) ), // %26$s
+		esc_attr( $show_timezone ? '1' : '0' ), // %27$s
+		esc_attr( $description_source )          // %28$s
 	);
 
 	$output = do_blocks( apply_filters( 'eventkoi_get_calendar_content', $calendar_template ) );
 
 	// Only wrap when viewing a calendar term page.
+	// Plain markup on purpose: a page builder re-parses its widget output as
+	// blocks, and a post-title block there would print whichever post is
+	// global instead of the calendar's name.
 	if ( is_tax( 'event_cal' ) ) {
 		$title = sprintf(
-			'<!-- wp:group {"className":"eventkoi-title"} -->
-		<div class="wp-block-group eventkoi-title" style="%2$s">
-			<!-- wp:post-title {"level":1} -->
-			<h1 class="wp-block-post-title">%1$s</h1>
-			<!-- /wp:post-title -->
-		</div>
-		<!-- /wp:group -->',
+			'<div class="wp-block-group eventkoi-title" style="%2$s"><h1 class="wp-block-post-title">%1$s</h1></div>',
 			esc_html( eventkoi_decode_term_name( $term->name ) ),
 			esc_attr( $style )
 		);
@@ -535,8 +610,14 @@ function eventkoi_get_permalink_structure() {
 	);
 	$permalinks       = wp_parse_args( $saved_permalinks, $defaults );
 
+	// Sanitize per path segment so nested bases like "agenda/calendar"
+	// keep their slashes instead of collapsing to "agendacalendar".
+	$sanitize_base_path = static function ( $base ) {
+		return implode( '/', array_filter( array_map( 'sanitize_title_with_dashes', explode( '/', (string) $base ) ) ) );
+	};
+
 	foreach ( array( 'event_base', 'category_base' ) as $key ) {
-		$base = untrailingslashit( sanitize_title_with_dashes( (string) ( $permalinks[ $key ] ?? '' ) ) );
+		$base = untrailingslashit( $sanitize_base_path( $permalinks[ $key ] ?? '' ) );
 		if ( '' === $base ) {
 			$base = untrailingslashit( sanitize_title_with_dashes( (string) $defaults[ $key ] ) );
 		}
@@ -555,9 +636,9 @@ function eventkoi_get_permalink_structure() {
 		update_option( 'eventkoi_permalinks', $stored );
 	}
 
-	// Sanitize and set rewrite slugs.
-	$permalinks['event_rewrite_slug']    = untrailingslashit( sanitize_title_with_dashes( $permalinks['event_base'] ) );
-	$permalinks['category_rewrite_slug'] = untrailingslashit( sanitize_title_with_dashes( $permalinks['category_base'] ) );
+	// Rewrite slugs reuse the same per-segment sanitizer.
+	$permalinks['event_rewrite_slug']    = untrailingslashit( $sanitize_base_path( $permalinks['event_base'] ) );
+	$permalinks['category_rewrite_slug'] = untrailingslashit( $sanitize_base_path( $permalinks['category_base'] ) );
 
 	return $permalinks;
 }
@@ -1734,6 +1815,46 @@ function eventkoi_format_datetime_range( $start_ts, $end_ts = null, $all_day = f
 }
 
 /**
+ * Normalise a stored Stripe webhook slot into a plain array.
+ *
+ * Pro saved the SDK's WebhookEndpoint object straight into the settings
+ * option in earlier versions. That option is autoloaded, so WordPress
+ * unserializes it before any SDK is loaded (Lite ships none) and PHP hands
+ * back a __PHP_Incomplete_Class whose every property read warns and returns
+ * null. Dig the values out of whatever shape is stored.
+ *
+ * @param mixed $slot Stored slot: array, StripeObject, incomplete class or scalar.
+ * @return array<string, mixed> Webhook values (id, secret, url, ...) or an empty array.
+ */
+function eventkoi_stripe_webhook_slot_values( $slot ) {
+	if ( is_array( $slot ) ) {
+		return $slot;
+	}
+
+	if ( ! is_object( $slot ) ) {
+		return array();
+	}
+
+	if ( '__PHP_Incomplete_Class' === get_class( $slot ) ) {
+		// StripeObject keeps its data in the protected $_values property, which
+		// an array cast exposes under a mangled "\0*\0_values" key.
+		foreach ( (array) $slot as $property => $value ) {
+			if ( is_array( $value ) && '_values' === substr( (string) $property, -7 ) ) {
+				return $value;
+			}
+		}
+
+		return array();
+	}
+
+	if ( class_exists( '\Stripe\StripeObject', false ) && $slot instanceof \Stripe\StripeObject ) {
+		return (array) $slot->toArray();
+	}
+
+	return get_object_vars( $slot );
+}
+
+/**
  * Retrieves Stripe's webhook secret.
  *
  * @return string The Stripe webhook secret.
@@ -1745,12 +1866,22 @@ function eventkoi_get_stripe_webhook_secret() {
 	} else {
 		$settings       = \EventKoi\Core\Settings::get();
 		$webhook        = $settings['stripe_webhook'] ?? null;
+		$mode           = isset( $settings['stripe']['mode'] ) ? (string) $settings['stripe']['mode'] : ( $settings['mode'] ?? 'test' );
 		$webhook_secret = '';
 
-		if ( is_object( $webhook ) && ! empty( $webhook->secret ) ) {
-			$webhook_secret = sanitize_text_field( (string) $webhook->secret );
-		} elseif ( is_array( $webhook ) && ! empty( $webhook['secret'] ) ) {
-			$webhook_secret = sanitize_text_field( (string) $webhook['secret'] );
+		// Prefer the mode-specific webhook stored under stripe_webhook[mode].
+		if ( is_array( $webhook ) && isset( $webhook[ $mode ] ) ) {
+			$slot = eventkoi_stripe_webhook_slot_values( $webhook[ $mode ] );
+			if ( ! empty( $slot['secret'] ) ) {
+				$webhook_secret = sanitize_text_field( (string) $slot['secret'] );
+			}
+		}
+
+		if ( '' === $webhook_secret ) {
+			$legacy = eventkoi_stripe_webhook_slot_values( $webhook );
+			if ( ! empty( $legacy['secret'] ) ) {
+				$webhook_secret = sanitize_text_field( (string) $legacy['secret'] );
+			}
 		}
 	}
 
@@ -1760,4 +1891,38 @@ function eventkoi_get_stripe_webhook_secret() {
 	 * @param string $webhook_secret The Stripe webhook secret.
 	 */
 	return apply_filters( 'eventkoi_get_stripe_webhook_secret', $webhook_secret );
+}
+
+/**
+ * Build a subscribable iCal feed URL for one or more calendars.
+ *
+ * Pass a single event_cal term ID, an array of IDs, or nothing/"all" to export
+ * every calendar. The returned URL serves a live text/calendar feed that Apple
+ * and Google Calendar can subscribe to.
+ *
+ * @param int|int[]|string $calendar_ids Calendar term ID(s), or 'all'.
+ * @param string           $scheme       'https' (default) or 'webcal' for a one-click subscribe link.
+ * @return string Feed URL.
+ */
+function eventkoi_get_calendar_feed_url( $calendar_ids = array(), $scheme = 'https' ) {
+	if ( 'all' === $calendar_ids ) {
+		$value = 'all';
+	} else {
+		$ids = array();
+		foreach ( (array) $calendar_ids as $id ) {
+			$id = absint( $id );
+			if ( $id ) {
+				$ids[] = $id;
+			}
+		}
+		$value = empty( $ids ) ? 'all' : implode( ',', array_values( array_unique( $ids ) ) );
+	}
+
+	$url = add_query_arg( 'eventkoi_calendar_feed', $value, home_url( '/' ) );
+
+	if ( 'webcal' === $scheme ) {
+		$url = preg_replace( '#^https?://#', 'webcal://', $url );
+	}
+
+	return apply_filters( 'eventkoi_calendar_feed_url', $url, $calendar_ids, $scheme );
 }

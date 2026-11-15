@@ -8,6 +8,7 @@ import {
 import { useSettings } from "@/hooks/SettingsContext";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
+import { __ } from "@wordpress/i18n";
 import { format } from "date-fns";
 import { Calendar as CalendarIcon } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -33,7 +34,7 @@ export function DateWithRange() {
     to: to ? to : null,
   });
 
-  const placeholder = "Date range";
+  const placeholder = __("Date range", "eventkoi-lite");
 
   const isMobile = useMediaQuery("(max-width: 768px)");
 
@@ -190,7 +191,7 @@ export function DateWithRange() {
                 className="p-0"
                 onClick={() => resetDateRange()}
               >
-                Clear date filter
+                {__("Clear date filter", "eventkoi-lite")}
               </Button>
             </div>
           )}

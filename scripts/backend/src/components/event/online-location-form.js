@@ -7,15 +7,15 @@ export function OnlineLocationForm({ location, onChange }) {
     <div className="flex flex-col gap-6">
       {/* Location Name */}
       <div className="flex flex-col gap-2">
-        <Label htmlFor={`name-${location.id}`}>Location name (optional)</Label>
+        <Label htmlFor={`name-${location.id}`}>{__("Location name (optional)", "eventkoi-lite")}</Label>
         <Input
           id={`name-${location.id}`}
           value={location.name}
-          placeholder="e.g., Zoom, Google Meet, or Webinar Host"
+          placeholder={__("e.g., Zoom, Google Meet, or Webinar Host", "eventkoi-lite")}
           onChange={(e) => onChange({ name: e.target.value })}
         />
         <p className="text-muted-foreground text-sm">
-          Give your location a name to help attendees identify it more easily.
+          {__("Give your location a name to help attendees identify it more easily.", "eventkoi-lite")}
         </p>
       </div>
 
@@ -26,7 +26,7 @@ export function OnlineLocationForm({ location, onChange }) {
           <Input
             id={`link_text-${location.id}`}
             value={location.link_text}
-            placeholder="e.g., Join on Zoom"
+            placeholder={__("e.g., Join on Zoom", "eventkoi-lite")}
             onChange={(e) => onChange({ link_text: e.target.value })}
           />
         </div>

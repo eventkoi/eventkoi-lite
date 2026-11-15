@@ -65,39 +65,39 @@ class Permissions {
 	public static function all_caps(): array {
 		return array(
 			'events'    => array(
-				'label' => __( 'Events', 'eventkoi' ),
+				'label' => __( 'Events', 'eventkoi-lite' ),
 				'caps'  => array(
-					'eventkoi_events_add'  => __( 'Add new events', 'eventkoi' ),
-					'eventkoi_events_edit' => __( 'Edit existing events', 'eventkoi' ),
+					'eventkoi_events_add'  => __( 'Add new events', 'eventkoi-lite' ),
+					'eventkoi_events_edit' => __( 'Edit existing events', 'eventkoi-lite' ),
 				),
 			),
 			'calendars' => array(
-				'label' => __( 'Calendars', 'eventkoi' ),
+				'label' => __( 'Calendars', 'eventkoi-lite' ),
 				'caps'  => array(
-					'eventkoi_calendars_add'  => __( 'Add new calendars', 'eventkoi' ),
-					'eventkoi_calendars_edit' => __( 'Edit existing calendars', 'eventkoi' ),
+					'eventkoi_calendars_add'  => __( 'Add new calendars', 'eventkoi-lite' ),
+					'eventkoi_calendars_edit' => __( 'Edit existing calendars', 'eventkoi-lite' ),
 				),
 			),
 			'attendees' => array(
-				'label' => __( 'Tickets & RSVP', 'eventkoi' ),
+				'label' => __( 'Tickets & RSVP', 'eventkoi-lite' ),
 				'caps'  => array(
-					'eventkoi_attendees_checkin' => __( 'Check-in attendees', 'eventkoi' ),
-					'eventkoi_attendees_view'    => __( 'View attendees', 'eventkoi' ),
-					'eventkoi_attendees_manage'  => __( 'Manage attendees', 'eventkoi' ),
-					'eventkoi_orders_view'       => __( 'View ticket sales and orders', 'eventkoi' ),
-					'eventkoi_orders_manage'     => __( 'Manage ticket sales and orders (including refunds)', 'eventkoi' ),
+					'eventkoi_attendees_checkin' => __( 'Check-in attendees', 'eventkoi-lite' ),
+					'eventkoi_attendees_view'    => __( 'View attendees', 'eventkoi-lite' ),
+					'eventkoi_attendees_manage'  => __( 'Manage attendees', 'eventkoi-lite' ),
+					'eventkoi_orders_view'       => __( 'View ticket sales and orders', 'eventkoi-lite' ),
+					'eventkoi_orders_manage'     => __( 'Manage ticket sales and orders (including refunds)', 'eventkoi-lite' ),
 				),
 			),
 			'settings'  => array(
-				'label' => __( 'EventKoi settings', 'eventkoi' ),
+				'label' => __( 'EventKoi settings', 'eventkoi-lite' ),
 				'caps'  => array(
-					'eventkoi_settings_defaults'     => __( 'View & manage default settings', 'eventkoi' ),
-					'eventkoi_settings_fields'       => __( 'View & manage custom fields', 'eventkoi' ),
-					'eventkoi_settings_emails'       => __( 'View & manage emails', 'eventkoi' ),
-					'eventkoi_settings_payments'     => __( 'View & manage payments', 'eventkoi' ),
-					'eventkoi_settings_integrations' => __( 'View & manage API & integrations', 'eventkoi' ),
-					'eventkoi_settings_import'       => __( 'View & manage import', 'eventkoi' ),
-					'eventkoi_settings_license'      => __( 'View & manage license activation', 'eventkoi' ),
+					'eventkoi_settings_defaults'     => __( 'View & manage default settings', 'eventkoi-lite' ),
+					'eventkoi_settings_fields'       => __( 'View & manage custom fields', 'eventkoi-lite' ),
+					'eventkoi_settings_emails'       => __( 'View & manage emails', 'eventkoi-lite' ),
+					'eventkoi_settings_payments'     => __( 'View & manage payments', 'eventkoi-lite' ),
+					'eventkoi_settings_integrations' => __( 'View & manage API & integrations', 'eventkoi-lite' ),
+					'eventkoi_settings_import'       => __( 'View & manage import', 'eventkoi-lite' ),
+					'eventkoi_settings_license'      => __( 'View & manage license activation', 'eventkoi-lite' ),
 				),
 			),
 		);
@@ -140,49 +140,57 @@ class Permissions {
 	 * @return array<string,string>
 	 */
 	public static function settings_key_caps(): array {
-		return array(
-			// Payments.
-			'ticket_checkout_method'     => 'eventkoi_settings_payments',
-			'stripe'                     => 'eventkoi_settings_payments',
-			'currency'                   => 'eventkoi_settings_payments',
+		return array_merge(
+			array(
+				// Payments.
+				'ticket_checkout_method'     => 'eventkoi_settings_payments',
+				'stripe'                     => 'eventkoi_settings_payments',
+				'currency'                   => 'eventkoi_settings_payments',
 
-			// Emails — templates + per-email sender + enable toggles.
-			'rsvp_email_template'        => 'eventkoi_settings_emails',
-			'ticket_email_template'      => 'eventkoi_settings_emails',
-			'refund_email_template'      => 'eventkoi_settings_emails',
-			'rsvp_email_enabled'         => 'eventkoi_settings_emails',
-			'ticket_email_enabled'       => 'eventkoi_settings_emails',
-			'refund_email_enabled'       => 'eventkoi_settings_emails',
-			'rsvp_email_sender_email'    => 'eventkoi_settings_emails',
-			'rsvp_email_sender_name'     => 'eventkoi_settings_emails',
-			'ticket_email_sender_email'  => 'eventkoi_settings_emails',
-			'ticket_email_sender_name'   => 'eventkoi_settings_emails',
-			'refund_email_sender_email'  => 'eventkoi_settings_emails',
-			'refund_email_sender_name'   => 'eventkoi_settings_emails',
-			'admin_email_enabled'        => 'eventkoi_settings_emails',
-			'admin_email_recipient'      => 'eventkoi_settings_emails',
-			'admin_rsvp_email_enabled'   => 'eventkoi_settings_emails',
-			'admin_rsvp_email_recipient' => 'eventkoi_settings_emails',
+				// Emails — templates + per-email sender + enable toggles.
+				'rsvp_email_template'        => 'eventkoi_settings_emails',
+				'ticket_email_template'      => 'eventkoi_settings_emails',
+				'refund_email_template'      => 'eventkoi_settings_emails',
+				'rsvp_email_enabled'         => 'eventkoi_settings_emails',
+				'ticket_email_enabled'       => 'eventkoi_settings_emails',
+				'refund_email_enabled'       => 'eventkoi_settings_emails',
+				'rsvp_email_sender_email'    => 'eventkoi_settings_emails',
+				'rsvp_email_sender_name'     => 'eventkoi_settings_emails',
+				'ticket_email_sender_email'  => 'eventkoi_settings_emails',
+				'ticket_email_sender_name'   => 'eventkoi_settings_emails',
+				'refund_email_sender_email'  => 'eventkoi_settings_emails',
+				'refund_email_sender_name'   => 'eventkoi_settings_emails',
+				'reminder_email_enabled'     => 'eventkoi_settings_emails',
+				'reminder_email_subject'     => 'eventkoi_settings_emails',
+				'reminder_email_template'    => 'eventkoi_settings_emails',
+				'reminder_email_sender_name' => 'eventkoi_settings_emails',
+				'reminder_email_sender_email' => 'eventkoi_settings_emails',
+				'admin_email_enabled'        => 'eventkoi_settings_emails',
+				'admin_email_recipient'      => 'eventkoi_settings_emails',
+				'admin_rsvp_email_enabled'   => 'eventkoi_settings_emails',
+				'admin_rsvp_email_recipient' => 'eventkoi_settings_emails',
 
-			// Integrations.
-			'api_key'                    => 'eventkoi_settings_integrations',
-			'gmap_api_key'               => 'eventkoi_settings_integrations',
-			'gmap_connection_status'     => 'eventkoi_settings_integrations',
+				// Integrations.
+				'api_key'                    => 'eventkoi_settings_integrations',
+				'gmap_api_key'               => 'eventkoi_settings_integrations',
+				'gmap_connection_status'     => 'eventkoi_settings_integrations',
 
-			// License (kept here for completeness; license fields live in
-			// dedicated options and are written via class-license.php anyway).
-			'license_key'                => 'eventkoi_settings_license',
-			'license_status'             => 'eventkoi_settings_license',
-			'license_expires'            => 'eventkoi_settings_license',
+				// License (kept here for completeness; license fields live in
+				// dedicated options and are written via class-license.php anyway).
+				'license_key'                => 'eventkoi_settings_license',
+				'license_status'             => 'eventkoi_settings_license',
+				'license_expires'            => 'eventkoi_settings_license',
 
-			// Permissions panel itself — the master switch needs admin-level
-			// settings access.
-			self::SETTINGS_KEY           => 'eventkoi_settings_defaults',
+				// Permissions panel itself — the master switch needs admin-level
+				// settings access.
+				self::SETTINGS_KEY           => 'eventkoi_settings_defaults',
 
-			// Custom PHP date/time formats — live in the Default settings tab.
-			'date_format'                => 'eventkoi_settings_defaults',
-			'time_format_string'         => 'eventkoi_settings_defaults',
-			'permalinks'                 => 'eventkoi_settings_defaults',
+				// Custom PHP date/time formats — live in the Default settings tab.
+				'date_format'                => 'eventkoi_settings_defaults',
+				'time_format_string'         => 'eventkoi_settings_defaults',
+				'permalinks'                 => 'eventkoi_settings_defaults',
+			),
+			Email_Routing::settings_key_caps()
 		);
 	}
 

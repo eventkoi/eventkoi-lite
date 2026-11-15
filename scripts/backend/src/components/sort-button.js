@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { __ } from "@wordpress/i18n";
 import { ArrowDown, ArrowUp } from "lucide-react";
 
 export function SortButton({ title, column }) {
@@ -10,7 +11,7 @@ export function SortButton({ title, column }) {
       variant="ghost"
       className="group p-0 hover:bg-[transparent] font-normal"
       onClick={() => column.toggleSorting(sortState === "asc")}
-      aria-label={`${title}, ${sortState === "asc" ? "sorted ascending" : sortState === "desc" ? "sorted descending" : "not sorted"}`}
+      aria-label={`${title}, ${sortState === "asc" ? __("sorted ascending", "eventkoi-lite") : sortState === "desc" ? __("sorted descending", "eventkoi-lite") : __("not sorted", "eventkoi-lite")}`}
     >
       {title}
       {sortState === "asc" && <ArrowUp className="ml-1 h-3.5 w-3.5" aria-hidden="true" />}

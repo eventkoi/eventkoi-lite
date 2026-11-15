@@ -6,12 +6,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { __ } from "@wordpress/i18n";
 
 export function RowsPerPage({ table }) {
   return (
     <div className="flex items-center space-x-2">
       <Label htmlFor="rows_per_page" className="text-sm font-normal">
-        Rows per page
+        {__("Rows per page", "eventkoi-lite")}
       </Label>
       <Select
         value={`${table.getState().pagination.pageSize}`}

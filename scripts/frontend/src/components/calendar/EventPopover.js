@@ -1,5 +1,6 @@
 "use client";
 
+import { getEventkoiPortalContainer } from "@/lib/portal";
 import { ShareLink } from "@/components/share-link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,17 +39,17 @@ import {
   X,
 } from "lucide-react";
 import { DateTime } from "luxon";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { __ } from "@wordpress/i18n";
 
 function formatTime(iso, tz = "utc", locale, timeFormatPref) {
   const effectiveLocale =
-    locale || eventkoi_params?.locale?.replace("_", "-") || "en";
+    locale || window.eventkoi_params?.locale?.replace("_", "-") || "en";
 
-  const pref = timeFormatPref || eventkoi_params?.time_format || "12";
+  const pref = timeFormatPref || window.eventkoi_params?.time_format || "12";
   const wpTimeFormatRaw =
-    eventkoi_params?.time_format_string || (pref === "24" ? "H:i" : "g:i a");
+    window.eventkoi_params?.time_format_string || (pref === "24" ? "H:i" : "g:i a");
   const luxonTimeFormat = wpToLuxonFormat(wpTimeFormatRaw);
 
   const dt = DateTime.fromISO(iso, {
@@ -72,8 +73,8 @@ function formatTime(iso, tz = "utc", locale, timeFormatPref) {
 
 function formatDate(iso, tz = "utc", locale) {
   const effectiveLocale =
-    locale || eventkoi_params?.locale?.replace("_", "-") || "en";
-  const dateFormat = wpToLuxonFormat(eventkoi_params?.date_format || "F j, Y");
+    locale || window.eventkoi_params?.locale?.replace("_", "-") || "en";
+  const dateFormat = wpToLuxonFormat(window.eventkoi_params?.date_format || "F j, Y");
 
   const dt = DateTime.fromISO(iso, {
     zone: tz === "utc" ? "UTC" : normalizeTimeZone(tz),
@@ -84,8 +85,8 @@ function formatDate(iso, tz = "utc", locale) {
 
 function formatDateTime(dt, locale) {
   const effectiveLocale =
-    locale || eventkoi_params?.locale?.replace("_", "-") || "en";
-  const dateFormat = wpToLuxonFormat(eventkoi_params?.date_format || "F j, Y");
+    locale || window.eventkoi_params?.locale?.replace("_", "-") || "en";
+  const dateFormat = wpToLuxonFormat(window.eventkoi_params?.date_format || "F j, Y");
 
   return dt?.isValid ? dt.setLocale(effectiveLocale).toFormat(dateFormat) : "";
 }
@@ -116,7 +117,7 @@ function parsePopoverDate(iso, tz = "utc", locale) {
   }
 
   const effectiveLocale =
-    locale || eventkoi_params?.locale?.replace("_", "-") || "en";
+    locale || window.eventkoi_params?.locale?.replace("_", "-") || "en";
   const dt = DateTime.fromISO(iso, {
     zone: tz === "utc" ? "UTC" : normalizeTimeZone(tz),
   }).setLocale(effectiveLocale);
@@ -280,11 +281,11 @@ const formatOutlookCalendarDates = (event, timezone = "UTC") => {
 const openWindow = (url) => window.open(url, "_blank", "noopener,noreferrer");
 
 const getCalendarExportTimezone = (timezone) => {
-  return normalizeTimeZone(timezone || eventkoi_params?.timezone || "UTC");
+  return normalizeTimeZone(timezone || window.eventkoi_params?.timezone || "UTC");
 };
 
 const getEventIcalUrl = (event, timezone = "UTC") => {
-  const source = event?.url || eventkoi_params?.ical || "";
+  const source = event?.url || window.eventkoi_params?.ical || "";
 
   if (!source) {
     return "";
@@ -306,6 +307,7 @@ const getEventIcalUrl = (event, timezone = "UTC") => {
     if (
       event?.date_type === "standard" &&
       event?.standard_type === "selected" &&
+      !event?.is_package &&
       /^\d+$/.test(eventDay)
     ) {
       url.searchParams.set("event_day", String(parseInt(eventDay, 10)));
@@ -313,7 +315,7 @@ const getEventIcalUrl = (event, timezone = "UTC") => {
 
     return url.toString().replace(/^https?:/i, "webcal:");
   } catch {
-    return eventkoi_params?.ical || "";
+    return window.eventkoi_params?.ical || "";
   }
 };
 
@@ -340,18 +342,98 @@ export function EventPopover({
   onClose,
   ignoreNextOutsideClick,
   timezone = "UTC",
+  descriptionSource = "excerpt",
 }) {
+  // Same order as event lists: the excerpt, then the description.
+  const summaryText =
+    descriptionSource === "description"
+      ? event.description || ""
+      : event.excerpt || event.description || "";
   const [shareOpen, setShareOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [calendarMenuOpen, setCalendarMenuOpen] = useState(false);
   const [fixedAnchor] = useState(anchor);
+  const popoverRef = useRef(null);
+  const [clampedPos, setClampedPos] = useState(null);
+  const returnFocusRef = useRef(null);
+
+  // Move keyboard focus into the popover when it opens, and remember what had
+  // it (the event that was clicked) so closing can hand it back.
+  useEffect(() => {
+    const active = document.activeElement;
+    returnFocusRef.current =
+      active instanceof HTMLElement && active !== document.body ? active : null;
+    popoverRef.current
+      ?.querySelector("[data-event-popover-title]")
+      ?.focus({ preventScroll: true });
+  }, []);
+
+  const closeAndReturnFocus = () => {
+    const trigger = returnFocusRef.current;
+    onClose();
+    if (trigger && document.contains(trigger)) {
+      trigger.focus({ preventScroll: true });
+    }
+  };
+
+  // Keep the popover inside the calendar container: a chip in the grid's
+  // last row (next month's trailing days included) used to push the popover
+  // past the bottom edge, off the visible area (wp.org report).
+  useLayoutEffect(() => {
+    const el = popoverRef.current;
+    const container = document.querySelector(".fc");
+
+    if (!el || !container || !fixedAnchor) {
+      return;
+    }
+
+    const applyClamp = () => {
+      const containerRect = container.getBoundingClientRect();
+      const height = el.offsetHeight;
+      const width = el.offsetWidth;
+
+      let x = fixedAnchor.x;
+      let y = fixedAnchor.y;
+
+      if (y + height > containerRect.height) {
+        y = Math.max(8, containerRect.height - height - 8);
+      }
+
+      if (x + width > containerRect.width) {
+        x = Math.max(0, containerRect.width - width);
+      }
+
+      setClampedPos((prev) => {
+        if (x === fixedAnchor.x && y === fixedAnchor.y) {
+          return null;
+        }
+        if (prev && prev.x === x && prev.y === y) {
+          return prev;
+        }
+        return { x, y };
+      });
+    };
+
+    applyClamp();
+
+    // Images and lazy content grow the popover after mount; re-clamp as it
+    // resizes so it never outgrows the calendar (PROD-583: the live popover
+    // carried an image and long description that loaded past the grid).
+    const observer =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(applyClamp) : null;
+    observer?.observe(el);
+
+    return () => observer?.disconnect();
+  }, [fixedAnchor, event]);
+
+  const popoverPos = clampedPos || fixedAnchor;
 
   const location = event.location_line;
 
   const formattedDate = (() => {
     const tz = normalizeTimeZone(timezone);
-    const locale = eventkoi_params?.locale?.replace("_", "-") || "en";
-    const timeFormat = eventkoi_params?.time_format || "12";
+    const locale = window.eventkoi_params?.locale?.replace("_", "-") || "en";
+    const timeFormat = window.eventkoi_params?.time_format || "12";
 
     const isContinuous =
       event.date_type === "standard" && event.standard_type === "continuous";
@@ -515,7 +597,7 @@ export function EventPopover({
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
         e.stopPropagation();
-        onClose();
+        closeAndReturnFocus();
       }
     };
     document.addEventListener("keydown", handleKeyDown);
@@ -530,11 +612,14 @@ export function EventPopover({
   return createPortal(
     <>
       <div
+        ref={popoverRef}
         data-event-popover
+        role="dialog"
+        aria-labelledby="eventkoi-event-popover-title"
         className="absolute z-50 rounded-lg border bg-white shadow-[0_0_4px_#bbb] text-sm overflow-hidden w-[370px] max-w-full"
         style={{
-          left: `${fixedAnchor.x}px`,
-          top: `${fixedAnchor.y}px`,
+          left: `${popoverPos.x}px`,
+          top: `${popoverPos.y}px`,
         }}
         onMouseDown={(e) => {
           if (e.target.closest("[data-event-popover]")) {
@@ -556,18 +641,24 @@ export function EventPopover({
         <div className="px-4 py-4 pb-0 relative">
           <div className="flex absolute right-1 top-1 gap-1">
             <Button
+              asChild
               size="icon"
               variant="ghost"
-              className="h-8 w-8 p-0 shadow-none border-none bg-transparent hover:bg-muted/20 cursor-pointer"
-              onClick={() => window.open(eventPageUrl || event.url, "_self")}
+              className="h-8 w-8 p-0 shadow-none border-none bg-transparent hover:bg-muted/20 cursor-pointer text-foreground"
             >
-              <Maximize2 className="h-4 w-4" />
+              <a
+                href={eventPageUrl || event.url}
+                aria-label={__("Open event page", "eventkoi-lite")}
+              >
+                <Maximize2 className="h-4 w-4" />
+              </a>
             </Button>
             <Button
               size="icon"
               variant="ghost"
               className="h-8 w-8 p-0 shadow-none border-none bg-transparent hover:bg-muted/20 cursor-pointer"
-              onClick={onClose}
+              onClick={closeAndReturnFocus}
+              aria-label={__("Close popover", "eventkoi-lite")}
             >
               <X className="h-4 w-4" />
             </Button>
@@ -575,6 +666,8 @@ export function EventPopover({
 
           <div className="flex flex-col gap-2 pe-[58px]">
             <a
+              id="eventkoi-event-popover-title"
+              data-event-popover-title
               href={eventPageUrl || event.url}
               className="text-base font-semibold leading-snug text-foreground no-underline hover:underline line-clamp-2 block"
             >
@@ -608,14 +701,14 @@ export function EventPopover({
           {event.thumbnail && (
             <img
               src={event.thumbnail}
-              alt=""
+              alt={event.thumbnail_alt || ""}
               className="w-full h-auto rounded-none border object-cover max-h-48"
             />
           )}
 
-          {event.description && (
+          {summaryText && (
             <div className="text-sm text-muted-foreground leading-snug line-clamp-3">
-              {event.description}
+              {summaryText}
             </div>
           )}
         </div>
@@ -788,7 +881,7 @@ export function EventPopover({
                   variant="secondary"
                   type="button"
                   aria-label={__("Copy event link to clipboard", "eventkoi-lite")}
-                  className="absolute h-12 right-[9px] top-[9px] border-none cursor-pointer hover:bg-input"
+                  className="absolute h-12 right-[9px] top-[9px] border-none cursor-pointer hover:bg-muted"
                   onMouseDown={(e) => e.stopPropagation()}
                   onClick={() => {
                     requestAnimationFrame(() => {
@@ -821,6 +914,6 @@ export function EventPopover({
         </DialogContent>
       </Dialog>
     </>,
-    calendarContainer || document.body
+    calendarContainer || getEventkoiPortalContainer() || document.body
   );
 }

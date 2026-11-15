@@ -132,13 +132,13 @@ export function OrderHeader({ loading, setLoading, order, setOrder }) {
     <header
       style={{ top: "var(--wp-admin--admin-bar--height, 32px)" }}
       className={cn(
-        "flex text-sm h-12 items-center border-b gap-6 px-8",
-        "sticky z-10 bg-muted h-20 shadow-sm border-b"
+        "flex flex-wrap text-sm items-center border-b gap-x-6 gap-y-2 px-4 py-3 sm:px-8",
+        "sticky z-10 bg-muted min-h-20 shadow-sm border-b"
       )}
     >
       <Logo />
       <OrderNavBack order={order} setOrder={setOrder} />
-      <div className="flex w-full justify-end items-center gap-6">
+      <div className="flex w-full min-w-0 flex-wrap justify-end items-center gap-x-6 gap-y-2 sm:w-auto sm:flex-1">
         {!isRefundView ? (
           <>
         <DropdownMenu>

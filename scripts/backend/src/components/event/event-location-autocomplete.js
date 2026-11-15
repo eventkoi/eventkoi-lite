@@ -1,3 +1,4 @@
+import { __ } from "@wordpress/i18n";
 import { Input } from "@/components/ui/input";
 import { useMapsLibrary } from "@vis.gl/react-google-maps";
 import { useEffect, useRef, useState } from "react";
@@ -117,7 +118,7 @@ const PlaceAutocomplete = ({ onPlaceSelect, location, onChange }) => {
       id="address1"
       type="text"
       value={location?.address1 || ""}
-      placeholder="Search address here..."
+      placeholder={__("Search address here...", "eventkoi-lite")}
       onChange={(e) => onChange({ address1: e.target.value })}
       autoComplete="off"
     />

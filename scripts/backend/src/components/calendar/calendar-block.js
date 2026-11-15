@@ -1,3 +1,4 @@
+import { createInterpolateElement } from "@wordpress/element";
 import { __ } from "@wordpress/i18n";
 import { Label } from "@/components/ui/label";
 
@@ -9,11 +10,16 @@ export function CalendarBlock({ calendar, setCalendar }) {
       <Label>{__("Block", "eventkoi-lite")}</Label>
       <div className="relative max-w-[422px] space-y-4">
         <div className="text-base text-muted-foreground">
-          {__("1. In the block editor, add", "eventkoi-lite")}{" "}
-          <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] text-sm font-mono font-semibold">
-            /EK Calendar
-          </code>{" "}
-          {__("block.", "eventkoi-lite")}
+          {createInterpolateElement(
+            __("1. In the block editor, add <code /> block.", "eventkoi-lite"),
+            {
+              code: (
+                <code className="relative rounded bg-muted px-[0.3rem] py-[0.2rem] text-sm font-mono font-semibold">
+                  /EK Calendar
+                </code>
+              ),
+            },
+          )}
         </div>
         <div className="text-base text-muted-foreground">
           {__(

@@ -2,10 +2,11 @@ import { Panel } from "@/components/panel";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useEventEditContext } from "@/hooks/EventEditContext";
-import { __, sprintf } from "@wordpress/i18n";
+import { foldAccents } from "@/lib/slug";
+import { __ } from "@wordpress/i18n";
 
 const cleanSlug = (value) =>
-  String(value || "")
+  foldAccents(value)
     .trim()
     .toLowerCase()
     .replace(/['"]/g, "")
@@ -33,8 +34,8 @@ export function EventSlug() {
         type="text"
         id="event-slug"
         value={slugPath}
-        placeholder={__("Address", "eventkoi-lite")}
-        className="max-w-[422px]"
+        placeholder={__("event-name", "eventkoi-lite")}
+        className="w-full"
         onChange={(e) => {
           setEvent((prevState) => ({
             ...prevState,
@@ -42,14 +43,8 @@ export function EventSlug() {
           }));
         }}
       />
-      <div className="text-muted-foreground">
-        {__("Define the URL of your event", "eventkoi-lite")}
-        <br />
-        {sprintf(
-          /* translators: %s: example event URL. */
-          __("(e.g. %s)", "eventkoi-lite"),
-          exampleUrl
-        )}
+      <div className="text-muted-foreground break-words">
+        {exampleUrl}
       </div>
     </Panel>
   );

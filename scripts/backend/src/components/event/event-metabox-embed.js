@@ -1,0 +1,253 @@
+import { NewTabNote } from "@/components/new-tab-note";
+import { Box } from "@/components/box";
+import { Heading } from "@/components/heading";
+import { Button } from "@/components/ui/button";
+import { useEventEditContext } from "@/hooks/EventEditContext";
+import { showToast, showToastError } from "@/lib/toast";
+import { __ } from "@wordpress/i18n";
+import { useEffect, useRef, useState } from "react";
+
+// Renders the real WordPress editor for this event, stripped down to only the
+// fields other plugins add (ACF, Pods, Meta Box, Rank Math, ...), flattened
+// into one panel. It is the genuine post.php form; the Save buttons here
+// submit that form, so it saves those fields without touching the event or
+// blanking anything.
+export function EventMetaboxEmbed() {
+  const { event } = useEventEditContext();
+  const iframeRef = useRef(null);
+  const [height, setHeight] = useState(320);
+  const [boxCount, setBoxCount] = useState(null);
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Saving a new event fires a follow-up request that answers without the
+  // embed URL, and using that answer directly would tear the panel back down
+  // straight after it appeared. Keep the last good values for the open event.
+  const latch = useRef({ id: null, url: "", fields: false });
+  const eventId = event?.id || null;
+  if (latch.current.id !== eventId) {
+    latch.current = { id: eventId, url: "", fields: false };
+  }
+  if (event?.native_edit_url) {
+    latch.current.url = event.native_edit_url;
+  }
+  if (event?.has_plugin_fields === true) {
+    latch.current.fields = true;
+  }
+
+  const baseUrl = event?.native_edit_url || latch.current.url;
+  const hasFields = event?.has_plugin_fields === true || latch.current.fields;
+
+  useEffect(() => {
+    if (!baseUrl) return undefined;
+
+    const onMessage = (e) => {
+      // Only trust messages from our own admin origin.
+      if (e.origin !== window.location.origin) return;
+      const data = e.data;
+      if (!data || !data.eventkoiMetaboxEmbed) return;
+
+      if (data.type === "height") {
+        const next = Math.max(120, Math.min(6000, Number(data.height) || 0));
+        if (next) {
+          setHeight((prev) => (Math.abs(prev - next) > 2 ? next : prev));
+        }
+        if (typeof data.boxes === "number") {
+          setBoxCount(data.boxes);
+        }
+        return;
+      }
+
+      if (data.type === "dirty") {
+        setDirty(true);
+        return;
+      }
+
+      if (data.type === "loaded") {
+        setSaving(false);
+        if (data.saved) {
+          setDirty(false);
+          showToast({
+            message: __("Plugin fields updated.", "eventkoi-lite"),
+          });
+        }
+        return;
+      }
+
+      if (data.type === "blocked") {
+        setSaving(false);
+        showToastError(
+          data.validation
+            ? __("Some plugin fields need fixing before saving.", "eventkoi-lite")
+            : __("The plugin fields could not be saved.", "eventkoi-lite")
+        );
+      }
+    };
+
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [baseUrl]);
+
+  // Leaving with edits still in the panel would drop them: they live in the
+  // embedded form until its own Save runs.
+  useEffect(() => {
+    if (!dirty) return undefined;
+
+    const onBeforeUnload = (e) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [dirty]);
+
+  // Moving to another tab unmounts the panel, taking the embedded form with
+  // it, and that never reaches beforeunload. Catch the click before the
+  // router acts on it.
+  useEffect(() => {
+    if (!dirty) return undefined;
+
+    const onLinkCapture = (e) => {
+      const link = e.target?.closest?.("a[href]");
+      if (!link) return;
+
+      const href = link.getAttribute("href") || "";
+      const hashAt = href.indexOf("#/");
+      if (hashAt < 0) return;
+      if (href.slice(hashAt) === window.location.hash) return;
+
+      const leave = window.confirm(
+        __(
+          "The plugin fields have unsaved changes. Leave this tab and lose them?",
+          "eventkoi-lite"
+        )
+      );
+      if (!leave) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    };
+
+    document.addEventListener("click", onLinkCapture, true);
+    return () => document.removeEventListener("click", onLinkCapture, true);
+  }, [dirty]);
+
+  const src = baseUrl
+    ? baseUrl + (baseUrl.includes("?") ? "&" : "?") + "ek_embed=1"
+    : "";
+
+  const elementorEditUrl =
+    eventkoi_params?.elementor_active && event?.id
+      ? `${eventkoi_params?.admin_post_url}?post=${event.id}&action=elementor`
+      : "";
+
+  // The embed reports how many third-party boxes it rendered. Nothing to show
+  // on sites where no plugin adds any, so the panel takes itself away — unless
+  // Elementor is active, whose edit button lives in this container too.
+  if (boxCount === 0 && !elementorEditUrl) {
+    return null;
+  }
+
+  const showEmbed = boxCount !== 0;
+
+  // Until that count arrives the container still renders, with a line saying
+  // what is happening, so the area never sits blank or looks broken.
+  const ready = !!src && hasFields && boxCount > 0;
+  const waitingText = src
+    ? __("Loading fields from other plugins…", "eventkoi-lite")
+    : __(
+        "Save this event as draft to display metaboxes from other plugins.",
+        "eventkoi-lite"
+      );
+
+  const submitEmbed = () => {
+    if (saving) return;
+    setSaving(true);
+    iframeRef.current?.contentWindow?.postMessage(
+      { eventkoiMetaboxEmbed: true, type: "submit" },
+      window.location.origin
+    );
+  };
+
+  const saveLabel = saving ? __("Saving…", "eventkoi-lite") : __("Save", "eventkoi-lite");
+
+  return (
+    <Box container className="gap-4">
+      <div className="flex items-start justify-between gap-4">
+        <div className="grid gap-1">
+          <div className="flex items-center gap-2">
+            <Heading level={3}>
+              {__("Fields from other plugins", "eventkoi-lite")}
+            </Heading>
+            {dirty && (
+              <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-900">
+                {__("Unsaved changes", "eventkoi-lite")}
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {ready
+              ? __(
+                  "Changes made here must be saved separately, using the Save button on the right.",
+                  "eventkoi-lite"
+                )
+              : showEmbed
+              ? waitingText
+              : __(
+                  "Design this event with Elementor. The layout saves with the event.",
+                  "eventkoi-lite"
+                )}
+          </p>
+        </div>
+        <div className="flex shrink-0 items-center gap-2">
+          {/* Deliberately WordPress's own button-primary rather than our
+              Button component, because that is exactly what Elementor's real
+              "Edit with Elementor" button is. Its blue comes from the admin
+              colour scheme, so matching by class keeps the two identical on
+              every install instead of pinning a hex that is right on one. */}
+          {!!elementorEditUrl && (
+            <a
+              href={elementorEditUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="button button-primary button-large eventkoi-elementor-edit"
+            >
+              <i className="eicon-elementor-square" aria-hidden="true" />
+              {__("Edit with Elementor", "eventkoi-lite")}
+            <NewTabNote /></a>
+          )}
+          {ready && (
+            <Button type="button" disabled={saving} onClick={submitEmbed}>
+              {saveLabel}
+            </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Mounted as soon as there is a post to embed, hidden until it reports
+          its boxes, so the count arrives without the frame flashing in. */}
+      {showEmbed && !!src && (
+        <iframe
+          ref={iframeRef}
+          title={__("Fields from other plugins", "eventkoi-lite")}
+          src={src}
+          className="w-full"
+          style={{
+            height: ready ? `${height}px` : 0,
+            border: "0",
+            visibility: ready ? "visible" : "hidden",
+          }}
+        />
+      )}
+
+      {ready && (
+        <div className="flex justify-end">
+          <Button type="button" disabled={saving} onClick={submitEmbed}>
+            {saveLabel}
+          </Button>
+        </div>
+      )}
+    </Box>
+  );
+}

@@ -8,8 +8,8 @@ import apiFetch from "@wordpress/api-fetch";
 
 const apiBase =
   (typeof eventkoi_params !== "undefined" &&
-    eventkoi_params.rest_url &&
-    eventkoi_params.rest_url.replace(/\/$/, "")) ||
+    window.eventkoi_params.rest_url &&
+    window.eventkoi_params.rest_url.replace(/\/$/, "")) ||
   "/wp-json/eventkoi/v1";
 
 const ensurePath = (path = "") => {

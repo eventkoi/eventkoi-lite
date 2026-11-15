@@ -1,18 +1,21 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 
 import { CalendarToolbar } from "@/components/calendar/calendar-toolbar";
 import { TimezonePicker } from "@/components/timezone-picker";
 import { Skeleton } from "@/components/ui/skeleton";
 import { safeNormalizeTimeZone } from "@/lib/date-utils";
+import { __ } from "@wordpress/i18n";
+import { DateTime } from "luxon";
 
 import { CalendarGridMode } from "@/components/calendar/CalendarGridMode";
 import { CalendarListMode } from "@/components/calendar/CalendarListMode";
 import { useCalendarData } from "@/components/calendar/useCalendarData";
 import { useEventPopover } from "@/components/calendar/useEventPopover";
 import publicApi from "@/lib/public-api";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 /**
  * Main EventKoi Calendar component.
@@ -27,41 +30,74 @@ export function Calendar(props) {
     calendars,
     showImage,
     showDescription,
+    descriptionSource,
     showLocation,
     borderStyle,
     borderSize,
     startday,
+    feedUrl,
+    feedWebcal,
   } = props;
 
   const calendarRef = useRef(null);
+  // Held in state, not read off the ref during render: a ref assignment does
+  // not re-render, so reading it inline left the toolbar with a stale (or
+  // missing) API for the first render after the grid mounted.
+  const [calendarApi, setCalendarApi] = useState(null);
 
-  const {
-    calendar,
-    events,
-    allEvents,
-    view,
-    setView,
-    currentDate,
-    setCurrentDate,
-    initialDate,
-    loading,
-    listTotal,
-    listHasMore,
-    listLoadingMore,
-    loadMoreListEvents,
-    loadEventsForView,
-    lastRangeRef,
-  } = useCalendarData({ ...props, calendarRef });
+  // Active display is stateful so the view toggle can switch between the
+  // calendar grid and the list in place. Initialised from the block's
+  // `display` attribute (which also acts as the default view). Sites can opt
+  // phones into starting on the list via the
+  // eventkoi_calendar_mobile_list_default filter (no UI).
+  const mobileListDefault =
+    !!window.eventkoi_params?.mobile_list_default &&
+    window.matchMedia?.("(max-width: 767px)")?.matches;
+  // A block or page-builder module set to the List timeframe opens on the
+  // list but keeps the full toolbar (same behavior as Pro).
+  const listTimeframeDefault = props.timeframe === "list";
+  // Views this embed shows (PROD-556). Empty/missing means all three, so
+  // existing blocks and modules keep the full Month/Week/List toggle. Only
+  // applies to the calendar embed; the standalone list (display="list") has
+  // no view toggle to restrict.
+  const visibleViews = (() => {
+    const all = ["month", "week", "list"];
+    if (display === "list" || !props.visibleViews) return all;
+    const parsed = String(props.visibleViews)
+      .split(",")
+      .map((v) => v.trim())
+      .filter((v) => all.includes(v));
+    return parsed.length ? parsed : all;
+  })();
+  const gridViewsVisible = visibleViews.some((v) => v !== "list");
 
-  const {
-    selectedEvent,
-    setSelectedEvent,
-    anchorPos,
-    setAnchorPos,
-    ignoreNextOutsideClick,
-  } = useEventPopover();
-
+  // Timezone label shows by default; only an explicit "0"/"false" hides it.
+  const showTimezone = !["0", "false", "no"].includes(
+    String(props.showTimezone ?? "").toLowerCase()
+  );
+  const listVisible = visibleViews.includes("list");
+  const [activeDisplay, setActiveDisplay] = useState(
+    display === "list" ||
+      !gridViewsVisible ||
+      (listVisible && (listTimeframeDefault || mobileListDefault))
+      ? "list"
+      : "calendar"
+  );
+  // The list opens as a rolling upcoming feed. Once the visitor uses the month
+  // navigation it scopes to the month they picked, which is what makes those
+  // controls meaningful in the list (previously they moved a grid that is not
+  // mounted, so nothing happened).
+  const [listNavigated, setListNavigated] = useState(false);
+  // The list reads the same date the toolbar label shows; see the effect
+  // below that mirrors currentDate into it.
+  const [listMonthDate, setListMonthDate] = useState(null);
   const [search, setSearch] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchPending, setSearchPending] = useState(false);
+
+  const effectiveId = calendars || id;
+  const trimmedSearch = (search || "").trim();
+  const isGlobalSearch = trimmedSearch.length > 0;
 
   /**
    * Determine initial timezone from URL (?tz=), override, or site default.
@@ -77,19 +113,107 @@ export function Calendar(props) {
       }
     }
 
-    if (eventkoi_params?.auto_detect_timezone) {
+    if (window.eventkoi_params?.auto_detect_timezone) {
       return "local";
     }
 
     return safeNormalizeTimeZone(
-      eventkoi_params?.timezone_override || eventkoi_params?.timezone || "UTC"
+      window.eventkoi_params?.timezone_override || window.eventkoi_params?.timezone || "UTC"
     );
   };
 
   const [timezone, setTimezone] = useState(() => getInitialTimezone());
   const [timeFormat, setTimeFormat] = useState(
-    eventkoi_params?.time_format === "24" ? "24" : "12"
+    window.eventkoi_params?.time_format === "24" ? "24" : "12"
   );
+
+  // While the visitor is browsing months in the list, bound the query to that
+  // month. Untouched, the list keeps its default rolling-upcoming behaviour.
+  const listMonthRange = useMemo(() => {
+    if (activeDisplay !== "list" || !listNavigated || !listMonthDate) {
+      return {};
+    }
+    // Same zone as the picker label and the nav stepping: the display
+    // timezone (site by default, visitor-local with auto-detect or ?tz=).
+    const zone =
+      timezone === "local"
+        ? Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
+        : timezone || window.eventkoi_params?.timezone || "UTC";
+    const dt = DateTime.fromJSDate(listMonthDate).setZone(zone);
+    return {
+      dateStart: dt.startOf("month").toISODate(),
+      dateEnd: dt.endOf("month").toISODate(),
+    };
+  }, [activeDisplay, listNavigated, listMonthDate, timezone]);
+
+
+  // A chosen month lists everything in it, earliest first, the same events
+  // the month grid shows. The rolling "upcoming" order would hide the days
+  // already gone, and a past month would look empty. A calendar with its
+  // own list order keeps it.
+  const listMonthSort =
+    listMonthRange.dateStart &&
+    (!props.orderby || props.orderby === "upcoming")
+      ? { orderby: "event_start", order: "asc" }
+      : {};
+
+  const {
+    calendar,
+    events,
+    allEvents,
+    view,
+    setView,
+    currentDate,
+    setCurrentDate,
+    initialDate,
+    loading,
+    loadError,
+    retry,
+    listTotal,
+    listHasMore,
+    listLoadingMore,
+    loadMoreListEvents,
+    loadEventsForView,
+    lastRangeRef,
+  } = useCalendarData({
+    ...props,
+    ...listMonthRange,
+    ...listMonthSort,
+    display: activeDisplay,
+    visibleViews,
+    searchTerm: trimmedSearch,
+    calendarRef,
+  });
+
+  // currentDate is owned by the data hook (the grid writes it as it moves),
+  // so mirror it into the state the list's month range depends on. That way
+  // months stepped in the grid carry over to the list, and the label and the
+  // list can never disagree on which month is open.
+  useEffect(() => {
+    setListMonthDate(currentDate instanceof Date ? currentDate : null);
+  }, [currentDate]);
+
+  // Toolbar date changes double as the list's month selector: a prev/next/
+  // Today/month-picker click, in the list or in the grid, scopes the list to
+  // that month from then on.
+  const handleToolbarDate = (next) => {
+    setListNavigated(true);
+    // Seed the mirrored date in the same batch, so the first render after a
+    // click already queries the new month instead of the previous one.
+    if (next instanceof Date) {
+      setListMonthDate(next);
+    }
+    setCurrentDate?.(next);
+  };
+
+  const {
+    selectedEvent,
+    setSelectedEvent,
+    anchorPos,
+    setAnchorPos,
+    ignoreNextOutsideClick,
+  } = useEventPopover();
+
 
   /**
    * Keep timezone in sync when navigating via browser back/forward buttons.
@@ -107,22 +231,21 @@ export function Calendar(props) {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  const [searchResults, setSearchResults] = useState([]);
-  const effectiveId = calendars || id;
-  const trimmedSearch = (search || "").trim();
-  const isGlobalSearch = trimmedSearch.length > 0;
-
   /**
    * Global calendar search: fetch matching events across all dates (not just the
    * visible month) so a search in one month surfaces events in any other month.
    * Debounced; clears when the box is emptied.
    */
   useEffect(() => {
-    if (!isGlobalSearch || display === "list") {
+    if (!isGlobalSearch || activeDisplay === "list") {
       setSearchResults([]);
+      setSearchPending(false);
       return undefined;
     }
 
+    // The popover must not say "No events found" while the request is still
+    // on its way, so it knows a search is pending until the response lands.
+    setSearchPending(true);
     let active = true;
     const handle = setTimeout(async () => {
       try {
@@ -138,10 +261,12 @@ export function Calendar(props) {
         });
         if (active) {
           setSearchResults(Array.isArray(res?.events) ? res.events : []);
+          setSearchPending(false);
         }
       } catch {
         if (active) {
           setSearchResults([]);
+          setSearchPending(false);
         }
       }
     }, 250);
@@ -150,7 +275,7 @@ export function Calendar(props) {
       active = false;
       clearTimeout(handle);
     };
-  }, [isGlobalSearch, trimmedSearch, effectiveId, display, timezone]);
+  }, [isGlobalSearch, trimmedSearch, effectiveId, activeDisplay, timezone]);
 
   const isEmpty =
     !calendar ||
@@ -159,78 +284,112 @@ export function Calendar(props) {
 
   const eventColor = props.color || calendar?.color;
 
-  if (display === "list") {
-    return (
-      <CalendarListMode
-        events={allEvents}
-        timezone={timezone}
-        setTimezone={setTimezone}
-        timeFormat={timeFormat}
-        setTimeFormat={setTimeFormat}
-        showImage={showImage}
-        showDescription={showDescription}
-        showLocation={showLocation}
-        borderStyle={borderStyle}
-        borderSize={borderSize}
-        loading={loading}
-        total={listTotal}
-        hasMore={listHasMore}
-        loadingMore={listLoadingMore}
-        onLoadMore={loadMoreListEvents}
-      />
-    );
-  }
+  // display="list" used to short-circuit into a separate, stripped-down list
+  // with its own search box and no calendar chrome. It now falls through to
+  // the normal render with activeDisplay set to "list", so the setting simply
+  // opens the List tab and keeps the toolbar, view toggle and Subscribe.
+
 
   return (
     <div className="relative">
+      {activeDisplay === "calendar" && showTimezone && (
+        <div className="flex justify-start md:justify-end py-4 text-sm text-foreground">
+          {isEmpty ? (
+            <Skeleton className="h-5 w-40 rounded-md" />
+          ) : (
+            <TimezonePicker
+              timezone={timezone}
+              setTimezone={setTimezone}
+              timeFormat={timeFormat}
+              setTimeFormat={setTimeFormat}
+            />
+          )}
+        </div>
+      )}
+
+
       <CalendarToolbar
         calendar={calendar}
-        calendarApi={calendarRef.current?.getApi()}
+        calendarApi={calendarApi}
         currentDate={currentDate}
-        setCurrentDate={setCurrentDate}
+        setCurrentDate={handleToolbarDate}
         view={view}
         setView={setView}
-        events={isGlobalSearch ? searchResults : allEvents}
+        display={activeDisplay}
+        setDisplay={setActiveDisplay}
+        visibleViews={visibleViews}
+        // A search in list view is answered by the list request itself
+        // (searchResults stays empty there), so the toolbar keeps reading
+        // allEvents; in grid view a typed term switches to the global results.
+        events={
+          isGlobalSearch && activeDisplay !== "list" ? searchResults : allEvents
+        }
         globalSearch={isGlobalSearch}
+        searching={isGlobalSearch && activeDisplay !== "list" && searchPending}
         timezone={timezone}
         timeFormat={timeFormat}
         search={search}
         setSearch={setSearch}
+        feedUrl={feedUrl}
+        feedWebcal={feedWebcal}
       />
 
-      <div className="flex justify-start md:justify-end py-4 text-sm text-foreground">
-        {isEmpty ? (
-          <Skeleton className="h-5 w-40 rounded-md" />
-        ) : (
-          <TimezonePicker
-            timezone={timezone}
-            setTimezone={setTimezone}
-            timeFormat={timeFormat}
-            setTimeFormat={setTimeFormat}
-          />
-        )}
-      </div>
 
-      <CalendarGridMode
-        calendarRef={calendarRef}
-        events={events}
-        view={view}
-        timezone={timezone}
-        setCurrentDate={setCurrentDate}
-        lastRangeRef={lastRangeRef}
-        loadEventsForView={loadEventsForView}
-        selectedEvent={selectedEvent}
-        setSelectedEvent={setSelectedEvent}
-        anchorPos={anchorPos}
-        setAnchorPos={setAnchorPos}
-        ignoreNextOutsideClick={ignoreNextOutsideClick}
-        calendar={calendar}
-        isEmpty={isEmpty}
-        eventColor={eventColor}
-        timeFormat={timeFormat}
-        startday={startday}
-        initialDate={currentDate || initialDate}
-      />
+      {activeDisplay === "list" ? (
+        <CalendarListMode
+          events={allEvents}
+          timezone={timezone}
+          setTimezone={setTimezone}
+          timeFormat={timeFormat}
+          setTimeFormat={setTimeFormat}
+          showImage={showImage}
+          showDescription={showDescription}
+          descriptionSource={descriptionSource}
+          showLocation={showLocation}
+          showTimezone={showTimezone}
+          borderStyle={borderStyle}
+          borderSize={borderSize}
+          loading={loading}
+          total={listTotal}
+          hasMore={listHasMore}
+          loadingMore={listLoadingMore}
+          onLoadMore={loadMoreListEvents}
+        />
+      ) : loadError && events.length === 0 ? (
+        <div className="ek-calendar-error">
+          <p>{__("The calendar could not be loaded.", "eventkoi-lite")}</p>
+          <button
+            type="button"
+            className="ek-calendar-error__retry"
+            onClick={retry}
+          >
+            {__("Try again", "eventkoi-lite")}
+          </button>
+        </div>
+      ) : (
+        <CalendarGridMode
+          descriptionSource={descriptionSource}
+          calendarRef={calendarRef}
+          events={events}
+          view={view}
+          timezone={timezone}
+          setCurrentDate={setCurrentDate}
+          lastRangeRef={lastRangeRef}
+          loadEventsForView={loadEventsForView}
+          selectedEvent={selectedEvent}
+          setSelectedEvent={setSelectedEvent}
+          anchorPos={anchorPos}
+          setAnchorPos={setAnchorPos}
+          ignoreNextOutsideClick={ignoreNextOutsideClick}
+          calendar={calendar}
+          isEmpty={isEmpty}
+          eventColor={eventColor}
+          timeFormat={timeFormat}
+          startday={startday}
+          initialDate={currentDate || initialDate}
+          onApiChange={setCalendarApi}
+        />
+      )}
     </div>
   );
 }
@@ -253,28 +412,35 @@ export function mountEventKoiCalendars(rootElement = document) {
 
     const root = createRoot(el);
     root.render(
-      <Calendar
-        id={el.getAttribute("data-calendar-id")}
-        calendars={el.getAttribute("data-calendars")}
-        display={el.getAttribute("data-display")}
-        startday={el.getAttribute("data-startday")}
-        timeframe={el.getAttribute("data-timeframe")}
-        color={el.getAttribute("data-color")}
-        showImage={el.getAttribute("data-show-image")}
-        showLocation={el.getAttribute("data-show-location")}
-        showDescription={el.getAttribute("data-show-description")}
-        borderStyle={el.getAttribute("data-border-style")}
-        borderSize={el.getAttribute("data-border-size")}
-        context={el.getAttribute("data-context")}
-        defaultMonth={el.getAttribute("data-default-month")}
-        defaultYear={el.getAttribute("data-default-year")}
-        orderby={el.getAttribute("data-orderby")}
-        order={el.getAttribute("data-order")}
-        perPage={el.getAttribute("data-per-page")}
-        maxResults={el.getAttribute("data-max-results")}
-        dateStart={el.getAttribute("data-date-start")}
-        dateEnd={el.getAttribute("data-date-end")}
-      />
+      <ErrorBoundary>
+        <Calendar
+          id={el.getAttribute("data-calendar-id")}
+          calendars={el.getAttribute("data-calendars")}
+          display={el.getAttribute("data-display")}
+          startday={el.getAttribute("data-startday")}
+          timeframe={el.getAttribute("data-timeframe")}
+          color={el.getAttribute("data-color")}
+          showImage={el.getAttribute("data-show-image")}
+          showLocation={el.getAttribute("data-show-location")}
+          showDescription={el.getAttribute("data-show-description")}
+          descriptionSource={el.getAttribute("data-description-source")}
+          borderStyle={el.getAttribute("data-border-style")}
+          borderSize={el.getAttribute("data-border-size")}
+          context={el.getAttribute("data-context")}
+          defaultMonth={el.getAttribute("data-default-month")}
+          defaultYear={el.getAttribute("data-default-year")}
+          orderby={el.getAttribute("data-orderby")}
+          order={el.getAttribute("data-order")}
+          perPage={el.getAttribute("data-per-page")}
+          maxResults={el.getAttribute("data-max-results")}
+          dateStart={el.getAttribute("data-date-start")}
+          dateEnd={el.getAttribute("data-date-end")}
+          feedUrl={el.getAttribute("data-feed-url")}
+          feedWebcal={el.getAttribute("data-feed-webcal")}
+          visibleViews={el.getAttribute("data-visible-views")}
+          showTimezone={el.getAttribute("data-show-timezone")}
+        />
+      </ErrorBoundary>
     );
 
     // Mark as mounted.

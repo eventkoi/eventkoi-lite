@@ -13,10 +13,43 @@ $selected_week   = strtolower( sanitize_text_field( $settings->week_starts_on ??
 $selected_frame  = strtolower( sanitize_text_field( $settings->timeframe ?? 'month' ) );
 $selected_month  = strtolower( sanitize_text_field( $settings->default_month ?? 'current' ) );
 $selected_year   = trim( (string) ( $settings->default_year ?? '' ) );
-$selected_cal    = absint( $settings->calendars ?? 0 );
+$source       = isset( $settings->calendars_source ) ? sanitize_key( (string) $settings->calendars_source ) : '';
+$selected_ids = eventkoi_sanitize_calendar_selection( $settings->calendars ?? '' );
+
+// Backward compatibility: modules saved before the source control stored a single
+// calendar id in `calendars` and Beaver fills the new control with its 'default'
+// value on re-save, orphaning that id. Whenever a saved selection exists but the
+// source is not an explicit "all"/"specific" choice, honour the selection so
+// existing single-calendar modules keep working. The picker clears `calendars`
+// when the source leaves "specific", so a deliberate "default"/"all" choice never
+// carries a stale selection into this branch.
+if ( 'all' !== $source && 'specific' !== $source && 'current' !== $source && ! empty( $selected_ids ) ) {
+	$source = 'specific';
+}
+
+if ( '' === $source ) {
+	$source = 'default';
+}
+
+$calendars = array();
+if ( 'all' === $source ) {
+	$term_ids = get_terms(
+		array(
+			'taxonomy'   => 'event_cal',
+			'hide_empty' => false,
+			'fields'     => 'ids',
+		)
+	);
+
+	if ( ! is_wp_error( $term_ids ) ) {
+		$calendars = array_values( array_filter( array_map( 'absint', (array) $term_ids ) ) );
+	}
+} elseif ( 'specific' === $source ) {
+	$calendars = $selected_ids;
+}
 
 $args = array(
-	'calendars'     => $selected_cal > 0 ? array( $selected_cal ) : array(),
+	'calendars'     => $calendars,
 	'startday'      => in_array( $selected_week, $weekdays, true ) ? $selected_week : 'monday',
 	'timeframe'     => in_array( $selected_frame, array( 'month', 'week' ), true ) ? $selected_frame : 'month',
 	'default_month' => ( ! empty( $selected_month ) && 'current' !== $selected_month && in_array( $selected_month, $month_options, true ) ) ? $selected_month : '',
@@ -24,11 +57,37 @@ $args = array(
 	'context'       => 'block',
 );
 
-$calendar_id = eventkoi_resolve_calendar_id( (int) get_option( 'eventkoi_default_event_cal', 0 ) );
+$args['show_timezone'] = ( 'no' === ( $settings->show_timezone ?? 'yes' ) ) ? false : true;
+
+$module_views = array();
+foreach ( array( 'month', 'week', 'list' ) as $ek_view_key ) {
+	$ek_view_prop = 'show_' . $ek_view_key . '_view';
+	if ( 'no' !== ( $settings->{$ek_view_prop} ?? 'yes' ) ) {
+		$module_views[] = $ek_view_key;
+	}
+}
+if ( count( $module_views ) < 3 && ! empty( $module_views ) ) {
+	$args['views'] = implode( ',', $module_views );
+}
+
+$calendar_id = ! empty( $calendars )
+	? (int) $calendars[0]
+	: eventkoi_resolve_calendar_id( (int) get_option( 'eventkoi_default_event_cal', 0 ) );
+
+// "Current calendar" only means something on a calendar page: there the
+// viewed calendar is shown with its own display, timeframe, week start and
+// views, exactly as the built-in page does. Anywhere else the default
+// calendar is shown.
+$ek_display = 'calendar';
+if ( 'current' === $source && is_tax( 'event_cal' ) ) {
+	$calendar_id = 0;
+	$ek_display  = '';
+	unset( $args['startday'], $args['timeframe'], $args['views'] );
+}
 
 echo '<div class="eventkoi-calendar-wrapper">';
 echo wp_kses_post(
-	eventkoi_get_calendar_content( $calendar_id, 'calendar', $args )
+	eventkoi_get_calendar_content( $calendar_id, $ek_display, $args )
 );
 echo '</div>';
 ?>

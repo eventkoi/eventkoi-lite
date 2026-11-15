@@ -1,4 +1,5 @@
 import { __ } from "@wordpress/i18n";
+import { createInterpolateElement } from "@wordpress/element";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -61,11 +62,14 @@ export function PhysicalLocationForm({ location, onChange, settings }) {
         <Input
           id={`name-${location.id}`}
           value={location.name}
-          placeholder="e.g., Main Hall, Room A"
+          placeholder={__("e.g., Main Hall, Room A", "eventkoi-lite")}
           onChange={(e) => onChange({ name: e.target.value })}
         />
         <p className="text-muted-foreground text-sm">
-          Give your location a name to help attendees identify it more easily.
+          {__(
+            "Give your location a name to help attendees identify it more easily.",
+            "eventkoi-lite",
+          )}
         </p>
       </div>
 
@@ -144,7 +148,7 @@ export function PhysicalLocationForm({ location, onChange, settings }) {
           onCheckedChange={(checked) => onChange({ embed_gmap: checked })}
         />
         <label htmlFor={`embed_gmap-${location.id}`} className="text-sm">
-          Embed Google Map on page.
+          {__("Embed Google Map on page.", "eventkoi-lite")}
         </label>
       </div>
 
@@ -152,7 +156,7 @@ export function PhysicalLocationForm({ location, onChange, settings }) {
         <div className="flex flex-col gap-3">
           <div className="flex flex-col gap-2 max-w-[422px]">
             <Label htmlFor={`gmap_link-${location.id}`}>
-              Google Maps Embed Link
+              {__("Google Maps Embed Link", "eventkoi-lite")}
             </Label>
             <Input
               ref={mapLinkRef}
@@ -165,8 +169,10 @@ export function PhysicalLocationForm({ location, onChange, settings }) {
             />
             {error && (
               <p className="w-full text-xs text-[#d13d3d]">
-                Wrong embed URL. Follow the instructions below to get the
-                correct URL.
+                {__(
+                  "Wrong embed URL. Follow the instructions below to get the correct URL.",
+                  "eventkoi-lite",
+                )}
               </p>
             )}
           </div>
@@ -179,10 +185,16 @@ export function PhysicalLocationForm({ location, onChange, settings }) {
               <ol className="text-sm list-decimal pl-4 mb-4">
                 <li>{__("Find your address in Google Maps.", "eventkoi-lite")}</li>
                 <li>
-                  {__("Click on the", "eventkoi-lite")} <strong>{__("Share", "eventkoi-lite")}</strong> {__("button.", "eventkoi-lite")}
+                  {createInterpolateElement(
+                    __("Click on the <b>Share</b> button.", "eventkoi-lite"),
+                    { b: <strong /> },
+                  )}
                 </li>
                 <li>
-                  {__("Go to", "eventkoi-lite")} <strong>{__("Embed a map", "eventkoi-lite")}</strong> {__("tab.", "eventkoi-lite")}
+                  {createInterpolateElement(
+                    __("Go to <b>Embed a map</b> tab.", "eventkoi-lite"),
+                    { b: <strong /> },
+                  )}
                 </li>
                 <li>{__("Copy the entire iframe html code.", "eventkoi-lite")}</li>
                 <li>{__("Paste it above. We’ll extract the correct embed URL.", "eventkoi-lite")}</li>
@@ -194,7 +206,10 @@ export function PhysicalLocationForm({ location, onChange, settings }) {
                 </li>
               </ol>
               <p className="text-sm">
-                {__("Do", "eventkoi-lite")} <strong>NOT</strong> {__("paste:", "eventkoi-lite")}
+                {createInterpolateElement(
+                  __("Do <b>NOT</b> paste:", "eventkoi-lite"),
+                  { b: <strong /> },
+                )}
                 <code className="text-inherit ml-1">
                   https://maps.app.goo.gl/
                 </code>

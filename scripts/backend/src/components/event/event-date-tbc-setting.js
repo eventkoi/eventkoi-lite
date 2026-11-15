@@ -16,6 +16,7 @@ export function EventDateTBCSetting({ event, setEvent, className }) {
         </div>
         <Switch
           id="tbc"
+          aria-label={__("Date and time not confirmed", "eventkoi-lite")}
           checked={event?.tbc}
           onCheckedChange={(bool) =>
             setEvent((prevState) => ({

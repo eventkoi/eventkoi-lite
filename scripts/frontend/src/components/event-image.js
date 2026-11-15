@@ -53,11 +53,11 @@ export function EventImage({ event, setEvent }) {
     formData.append("uploadedfile", uploadedFile);
 
     apiRequest({
-      path: `${eventkoi_params.api}/upload_image`,
+      path: `${window.eventkoi_params.api}/upload_image`,
       method: "post",
       body: formData,
       headers: {
-        "EVENTKOI-API-KEY": eventkoi_params.api_key,
+        "EVENTKOI-API-KEY": window.eventkoi_params.api_key,
       },
     })
       .then((response) => {

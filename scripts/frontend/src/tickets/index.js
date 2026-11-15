@@ -1,6 +1,6 @@
 "use client";
 
-import { __, sprintf } from "@wordpress/i18n";
+import { __, _n, sprintf } from "@wordpress/i18n";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
@@ -31,9 +31,10 @@ import {
   wpToLuxonFormat,
 } from "@/lib/date-utils";
 import publicApi, { resolvePublicRestUrl } from "@/lib/public-api";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 function getSiteTimezone() {
-  const params = typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
+  const params = typeof eventkoi_params !== "undefined" ? window.eventkoi_params : {};
   const normalized = normalizeTimeZone(
     params?.timezone_string ||
       params?.timezone_override ||
@@ -45,7 +46,7 @@ function getSiteTimezone() {
 }
 
 function getEventDisplayTimezone(event = {}) {
-  const params = typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
+  const params = typeof eventkoi_params !== "undefined" ? window.eventkoi_params : {};
 
   if (
     params?.auto_detect_timezone === true ||
@@ -84,7 +85,7 @@ function parseUtcDateTime(value) {
 }
 
 function formatTicketSaleDateTime(value) {
-  const params = typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
+  const params = typeof eventkoi_params !== "undefined" ? window.eventkoi_params : {};
   const locale = (params.locale || "en").replace("_", "-");
   const timePreference = params.time_format || "12";
   const wpDateFormat = params.date_format || "F j, Y";
@@ -148,8 +149,13 @@ function getActiveInstance(event = {}, instanceTs = 0) {
       const start = new Date(Number(instanceTs) * 1000);
       const startBase = new Date(rule.start_date);
       const endBase = new Date(rule.end_date || rule.start_date);
-      const duration = endBase.getTime() - startBase.getTime();
-      const end = new Date(start.getTime() + Math.max(duration, 0));
+      const rawDuration = endBase.getTime() - startBase.getTime();
+      // A malformed rule date yields NaN here, which would make the derived
+      // end date invalid and throw when serialized below.
+      const duration = Number.isFinite(rawDuration)
+        ? Math.max(rawDuration, 0)
+        : 0;
+      const end = new Date(start.getTime() + duration);
       return {
         start_date: start.toISOString(),
         end_date: end.toISOString(),
@@ -182,7 +188,23 @@ function getActiveInstance(event = {}, instanceTs = 0) {
 }
 
 function formatEventDateLine(event = {}, instanceTs = 0) {
-  const instance = getActiveInstance(event, instanceTs);
+  // One ticket covers every date, so the buyer sees all of them.
+  if (event.is_package && Array.isArray(event.event_days)) {
+    return [...event.event_days]
+      .sort(
+        (a, b) =>
+          getDateStartSeconds(a?.start_date) -
+          getDateStartSeconds(b?.start_date),
+      )
+      .map((day) => formatInstanceDateLine(event, day))
+      .filter(Boolean)
+      .join("\n");
+  }
+
+  return formatInstanceDateLine(event, getActiveInstance(event, instanceTs));
+}
+
+function formatInstanceDateLine(event, instance) {
   if (!instance?.start_date) return "";
 
   const displayEvent = {
@@ -200,7 +222,7 @@ function formatEventDateLine(event = {}, instanceTs = 0) {
     buildTimeline(
       displayEvent,
       getEventDisplayTimezone(event),
-      eventkoi_params?.time_format || "12",
+      window.eventkoi_params?.time_format || "12",
     ) || ""
   );
 }
@@ -248,7 +270,7 @@ function getRenderedEventDatetimeText(mountEl = null, instanceTs = 0) {
         .forEach((n) => n.remove());
 
       const text = clone.textContent?.replace(/\s+/g, " ").trim() || "";
-      if (text) {
+      if (text && !rendered.includes(text)) {
         rendered.push(text);
       }
     }
@@ -335,6 +357,19 @@ function readCheckoutSuccessFromUrl() {
   return wcOrderId ? `wc_${wcOrderId}` : sessionId || "success";
 }
 
+function readCheckoutFreeFromUrl() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  const url = new URL(window.location.href);
+  const hashParams = new URLSearchParams(url.hash.replace(/^#/, ""));
+
+  return (
+    url.searchParams.get("ek_free") === "1" || hashParams.get("ek_free") === "1"
+  );
+}
+
 function clearCheckoutSuccessFromUrl() {
   if (typeof window === "undefined") {
     return;
@@ -345,6 +380,8 @@ function clearCheckoutSuccessFromUrl() {
   url.searchParams.delete("ek_checkout");
   url.searchParams.delete("ek_stripe_session_id");
   url.searchParams.delete("ek_wc_order_id");
+  url.searchParams.delete("ek_free");
+  hashParams.delete("ek_free");
   hashParams.delete("ek_checkout");
   hashParams.delete("ek_stripe_session_id");
   hashParams.delete("ek_wc_order_id");
@@ -370,6 +407,18 @@ const formatPrice = (value, currency = "USD") => {
     return `${currency} ${amount}`;
   }
 };
+
+function isSettingEnabled(value, defaultValue = false) {
+  if (value === true || value === 1 || value === "1" || value === "true") {
+    return true;
+  }
+
+  if (value === false || value === 0 || value === "0" || value === "false") {
+    return false;
+  }
+
+  return defaultValue;
+}
 
 function getTicketLimits(ticket) {
   const remainingCount =
@@ -435,10 +484,15 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  // What had focus when the dialog opened (the button that opened it), so
+  // closing can hand focus back to it.
+  const dialogReturnFocusRef = useRef(null);
   const [dialogStep, setDialogStep] = useState("tickets");
   const [checkoutError, setCheckoutError] = useState("");
   const [isCheckoutLoading, setIsCheckoutLoading] = useState(false);
   const [checkoutAttempted, setCheckoutAttempted] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [agreementsAccepted, setAgreementsAccepted] = useState({});
   const [emailTouched, setEmailTouched] = useState(false);
   const [checkoutSuccessSessionId, setCheckoutSuccessSessionId] = useState(
     () => readCheckoutSuccessFromUrl(),
@@ -446,15 +500,20 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
   const checkoutConfirmationSentRef = useRef(false);
   const checkoutSuccessFromUrl = readCheckoutSuccessFromUrl();
   const checkoutSuccessValue = checkoutSuccessSessionId || checkoutSuccessFromUrl;
+  const [checkoutWasFree] = useState(() => readCheckoutFreeFromUrl());
   const [quantities, setQuantities] = useState({});
-  const checkoutCustomFields = Array.isArray(eventkoi_params?.checkout_fields)
-    ? eventkoi_params.checkout_fields
+  const checkoutCustomFields = Array.isArray(window.eventkoi_params?.checkout_fields)
+    ? window.eventkoi_params.checkout_fields
     : [];
   const [checkoutFieldValues, setCheckoutFieldValues] = useState({});
+  // Who each ticket is for, keyed "ticketId:seatNumber".
+  const [attendees, setAttendees] = useState({});
+  const [firstTicketIsBuyer, setFirstTicketIsBuyer] = useState(false);
+  const [emailEachAttendee, setEmailEachAttendee] = useState(false);
   const [billing, setBilling] = useState(() => ({
-    first_name: String(eventkoi_params?.rsvp_user?.first_name || "").trim(),
-    last_name: String(eventkoi_params?.rsvp_user?.last_name || "").trim(),
-    email: String(eventkoi_params?.rsvp_user?.email || "").trim(),
+    first_name: String(window.eventkoi_params?.rsvp_user?.first_name || "").trim(),
+    last_name: String(window.eventkoi_params?.rsvp_user?.last_name || "").trim(),
+    email: String(window.eventkoi_params?.rsvp_user?.email || "").trim(),
   }));
 
   useEffect(() => {
@@ -476,7 +535,9 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
         setData(res);
       } catch (err) {
         setError(
-          err?.message || err?.response?.message || "Unable to load tickets.",
+          err?.message ||
+            err?.response?.message ||
+            __("Unable to load tickets.", "eventkoi-lite"),
         );
       } finally {
         setLoading(false);
@@ -507,13 +568,42 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
   const eventTermsConditions = String(
     data?.tickets_terms_conditions || ""
   ).trim();
-  const showUnavailableTickets = true;
+  const eventTermsRequired =
+    eventTermsConditions !== "" && !!data?.tickets_terms_conditions_required;
+  const eventAgreements = Array.isArray(data?.tickets_agreements)
+    ? data.tickets_agreements.filter((item) =>
+        String(item?.text || "").trim(),
+      )
+    : [];
+  const allRequiredAgreementsAccepted = eventAgreements.every(
+    (item) => item.required === false || !!agreementsAccepted[item.id],
+  );
+  // Split visibility flags; each falls back to the legacy catch-all value
+  // for events saved before the toggle became three switches.
+  const legacyShowUnavailable = data?.tickets_show_unavailable;
+  const showSoldOutTickets = isSettingEnabled(
+    data?.tickets_show_sold_out ?? legacyShowUnavailable,
+    false,
+  );
+  const showUpcomingTickets = isSettingEnabled(
+    data?.tickets_show_upcoming ?? legacyShowUnavailable,
+    false,
+  );
+  const showEndedTickets = isSettingEnabled(
+    data?.tickets_show_ended ?? legacyShowUnavailable,
+    false,
+  );
   const visibleTickets = useMemo(
     () =>
-      showUnavailableTickets
-        ? tickets
-        : tickets.filter((ticket) => !getTicketLimits(ticket).unavailable),
-    [tickets, showUnavailableTickets],
+      tickets.filter((ticket) => {
+        const { soldOut, saleNotStarted, saleEnded, unavailable } =
+          getTicketLimits(ticket);
+        if (!unavailable) return true;
+        if (soldOut) return showSoldOutTickets;
+        if (saleNotStarted) return showUpcomingTickets;
+        return showEndedTickets;
+      }),
+    [tickets, showSoldOutTickets, showUpcomingTickets, showEndedTickets],
   );
   const soldOutTickets = useMemo(
     () => tickets.filter((ticket) => getTicketLimits(ticket).soldOut),
@@ -546,11 +636,32 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
   }, [displayTickets]);
 
   useEffect(() => {
+    if (!mountEl) return undefined;
+    const openFromOutside = () => {
+      const soldOut =
+        displayTickets.length > 0 &&
+        displayTickets.every((ticket) => getTicketLimits(ticket).soldOut);
+      if (!soldOut) {
+        setIsDialogOpen(true);
+      }
+    };
+    mountEl.addEventListener("eventkoi:open-tickets", openFromOutside);
+    if (mountEl.dataset.eventkoiAutoOpen) {
+      // Mounted on demand by a #buy-tickets link: open straight away.
+      delete mountEl.dataset.eventkoiAutoOpen;
+      openFromOutside();
+    }
+    return () =>
+      mountEl.removeEventListener("eventkoi:open-tickets", openFromOutside);
+  }, [mountEl, displayTickets]);
+
+  useEffect(() => {
     if (!isDialogOpen) {
       setDialogStep("tickets");
       setCheckoutError("");
       setIsCheckoutLoading(false);
       setCheckoutAttempted(false);
+      setTermsAccepted(false);
       setEmailTouched(false);
     }
   }, [isDialogOpen]);
@@ -630,15 +741,17 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
   const eventInstanceTitle = decodeEntities(
     data?.event_instance_title ||
       data?.instance_title ||
-      eventkoi_params?.event?.instance_title ||
+      window.eventkoi_params?.event?.instance_title ||
       "",
   );
-  const eventMeta = data?.event || eventkoi_params?.event || {};
+  const eventMeta = data?.event || window.eventkoi_params?.event || {};
   const footerEventTitle = decodeEntities(eventMeta?.title || eventTitle || "");
   const checkoutEventTitle = footerEventTitle || eventTitle || eventInstanceTitle;
   const checkoutEventInstanceTitle = eventInstanceTitle || checkoutEventTitle;
   const footerEventLocation = formatEventLocationLine(eventMeta);
-  const renderedEventDate = getRenderedEventDatetimeText(mountEl, instanceTs);
+  const renderedEventDate = eventMeta?.is_package
+    ? ""
+    : getRenderedEventDatetimeText(mountEl, instanceTs);
   const footerEventDate =
     renderedEventDate ||
     formatEventDateLine(eventMeta, instanceTs);
@@ -662,6 +775,64 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
         .filter(Boolean),
     [displayTickets, quantities],
   );
+
+  const attendeeMode = ["optional", "required"].includes(
+    data?.tickets_attendee_details,
+  )
+    ? data.tickets_attendee_details
+    : "off";
+  const collectAttendees = attendeeMode !== "off";
+
+  // One card per seat: "[ticket] - Ticket 2 of 3".
+  const attendeeSeats = useMemo(() => {
+    if (!collectAttendees) return [];
+    const seats = [];
+    selectedTicketItems.forEach((item) => {
+      for (let seat = 1; seat <= item.quantity; seat += 1) {
+        seats.push({
+          key: `${item.ticket_id}:${seat}`,
+          ticket_id: item.ticket_id,
+          ticket_name: item.name,
+          seat,
+          count: item.quantity,
+        });
+      }
+    });
+    return seats;
+  }, [collectAttendees, selectedTicketItems]);
+
+  const buyerFullName = [billing.first_name, billing.last_name]
+    .map((part) => String(part || "").trim())
+    .filter(Boolean)
+    .join(" ");
+
+  const getSeatAttendee = (seat, index) => {
+    if (index === 0 && firstTicketIsBuyer) {
+      return { name: buyerFullName, email: String(billing.email || "").trim() };
+    }
+    const entry = attendees[seat.key] || {};
+    return {
+      name: String(entry.name || "").trim(),
+      email: String(entry.email || "").trim(),
+    };
+  };
+
+  const attendeeEntries = attendeeSeats.map((seat, index) => ({
+    ...seat,
+    ...getSeatAttendee(seat, index),
+  }));
+  const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  const missingAttendeeNames =
+    attendeeMode === "required" &&
+    attendeeEntries.some((entry) => entry.name === "");
+  const invalidAttendeeEmails = attendeeEntries.some(
+    (entry) => entry.email !== "" && !isValidEmail(entry.email),
+  );
+  const missingAttendeeEmails =
+    emailEachAttendee && attendeeEntries.some((entry) => entry.email === "");
+  const hasValidAttendees =
+    !collectAttendees ||
+    (!missingAttendeeNames && !invalidAttendeeEmails && !missingAttendeeEmails);
 
   const summaryDate =
     renderedEventDate ||
@@ -708,7 +879,10 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
   if (data.event_ended) {
     return (
       <div className="eventkoi-tickets__ended text-sm text-muted-foreground">
-        This event has ended and is no longer accepting ticket purchases.
+        {__(
+          "This event has ended and is no longer accepting ticket purchases.",
+          "eventkoi-lite",
+        )}
       </div>
     );
   }
@@ -752,7 +926,9 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
 
   const priceRange =
     minPrice === maxPrice
-      ? formatTicketCurrency(minPrice)
+      ? minPrice === 0
+        ? __("Free", "eventkoi-lite")
+        : formatTicketCurrency(minPrice)
       : `${formatTicketCurrency(minPrice)}-${formatTicketCurrency(
           maxPrice,
         ).replace(/^[^0-9]+/, "")}`;
@@ -766,8 +942,19 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
     return latest;
   }, null);
 
+  // A shared sales window only makes sense when every ticket shares that
+  // bound. If any ticket is open-ended, sales never collectively start/end,
+  // so the aggregate "starts/ends on" line is suppressed.
+  const allHaveSaleStart =
+    displayTickets.length > 0 &&
+    displayTickets.every((ticket) => Boolean(ticket?.sale_start));
+
+  const allHaveSaleEnd =
+    displayTickets.length > 0 &&
+    displayTickets.every((ticket) => Boolean(ticket?.sale_end));
+
   const saleEndLabel =
-    latestSaleEndTs !== null
+    allHaveSaleEnd && latestSaleEndTs !== null
       ? formatTicketSaleDateTime(latestSaleEndTs)
       : null;
 
@@ -797,7 +984,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
   }, null);
 
   const saleStartLabel =
-    earliestSaleStartTs !== null
+    allHaveSaleStart && earliestSaleStartTs !== null
       ? formatTicketSaleDateTime(earliestSaleStartTs)
       : null;
 
@@ -806,6 +993,55 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
     return sum + (Number(ticket.price) || 0) * qty;
   }, 0);
   const canCheckout = selectedTicketItems.length > 0;
+
+  // Per-event total capacity (venue cap). null = unlimited. Caps the combined
+  // quantity across all ticket types; the server enforces the same limit.
+  const eventTicketsRemaining =
+    data?.tickets_event_remaining === null ||
+    data?.tickets_event_remaining === undefined
+      ? null
+      : Math.max(0, Number(data.tickets_event_remaining) || 0);
+  const totalSelectedQty = displayTickets.reduce(
+    (sum, ticket) =>
+      sum + Math.max(0, Number(quantities[String(ticket.id)] || 0)),
+    0,
+  );
+  const eventCapReached =
+    eventTicketsRemaining !== null && totalSelectedQty >= eventTicketsRemaining;
+
+  // Remaining tickets shown on the event page box: the number a buyer can
+  // actually still purchase. Uses the event capacity remaining and the sum
+  // of per-ticket remaining counts; unlimited (null) when either source is
+  // unlimited and the other is absent.
+  const eventPageRemaining = (() => {
+    if (!showRemainingTickets || !displayTickets.length) return null;
+    const candidates = [];
+    if (eventTicketsRemaining !== null) candidates.push(eventTicketsRemaining);
+    let perTicketSum = 0;
+    let allFinite = true;
+    for (const ticket of displayTickets) {
+      const raw = ticket?.remaining;
+      if (raw === null || raw === undefined || !Number.isFinite(Number(raw))) {
+        allFinite = false;
+        break;
+      }
+      perTicketSum += Math.max(0, Number(raw));
+    }
+    if (allFinite) candidates.push(perTicketSum);
+    return candidates.length ? Math.min(...candidates) : null;
+  })();
+
+  const clampToEventCap = (ticketId, nextValue, prev) => {
+    if (eventTicketsRemaining === null) return nextValue;
+    const otherTotal = displayTickets.reduce(
+      (sum, t) =>
+        String(t.id) === String(ticketId)
+          ? sum
+          : sum + Math.max(0, Number(prev[String(t.id)] || 0)),
+      0,
+    );
+    return Math.min(nextValue, Math.max(0, eventTicketsRemaining - otherTotal));
+  };
 
   const saleEndByTicket = (saleEnd) => {
     return formatTicketSaleDateTime(saleEnd);
@@ -846,7 +1082,10 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
       nextValue = remainingCount;
     }
 
-    setQuantities((prev) => ({ ...prev, [id]: nextValue }));
+    setQuantities((prev) => ({
+      ...prev,
+      [id]: clampToEventCap(id, nextValue, prev),
+    }));
   };
 
   const incrementQty = (ticket) => {
@@ -867,7 +1106,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
       ) {
         nextValue = remainingCount;
       }
-      return { ...prev, [id]: Math.max(0, nextValue) };
+      return { ...prev, [id]: Math.max(0, clampToEventCap(id, nextValue, prev)) };
     });
   };
 
@@ -891,7 +1130,10 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
     firstNameValue !== "" &&
     lastNameValue !== "" &&
     hasValidBillingEmail &&
-    hasRequiredCheckoutFields;
+    hasRequiredCheckoutFields &&
+    hasValidAttendees &&
+    (!eventTermsRequired || termsAccepted) &&
+    allRequiredAgreementsAccepted;
 
   const startHostedCheckout = async () => {
     if (!canContinueCheckout || isCheckoutLoading) return;
@@ -904,6 +1146,37 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
     }
     if (!hasValidBillingEmail) {
       setCheckoutError(__("Please enter a valid email address.", "eventkoi-lite"));
+      return;
+    }
+    if (missingAttendeeNames) {
+      setCheckoutError(__("Please enter a name for each ticket.", "eventkoi-lite"));
+      return;
+    }
+    if (invalidAttendeeEmails) {
+      setCheckoutError(
+        __("Please enter a valid email address for each attendee.", "eventkoi-lite")
+      );
+      return;
+    }
+    if (missingAttendeeEmails) {
+      setCheckoutError(
+        __(
+          "Add an email address for each attendee to send them their own ticket.",
+          "eventkoi-lite"
+        )
+      );
+      return;
+    }
+    if (eventTermsRequired && !termsAccepted) {
+      setCheckoutError(
+        __("Please agree to the terms & conditions to continue.", "eventkoi-lite")
+      );
+      return;
+    }
+    if (!allRequiredAgreementsAccepted) {
+      setCheckoutError(
+        __("Please agree to all required terms to continue.", "eventkoi-lite")
+      );
       return;
     }
 
@@ -965,7 +1238,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
         ) {
           throw new Error(
             sprintf(
-              __("Only %d left for “%s”.", "eventkoi-lite"),
+              _n("Only %d left for “%s”.", "Only %d left for “%s”.", Number(limits.remainingCount), "eventkoi-lite"),
               Number(limits.remainingCount),
               latestTicket.name || __("Selected ticket", "eventkoi-lite"),
             ),
@@ -988,18 +1261,32 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
           checkout_attempt_id: checkoutAttemptId,
           return_url: returnUrl.toString(),
           checkout_note: checkoutNote,
-          wp_user_id: Number(eventkoi_params?.rsvp_user?.id) || 0,
+          wp_user_id: Number(window.eventkoi_params?.rsvp_user?.id) || 0,
           wp_user_label:
             String(
-              eventkoi_params?.rsvp_user?.username ||
-                eventkoi_params?.rsvp_user?.user_login ||
-                eventkoi_params?.rsvp_user?.name ||
+              window.eventkoi_params?.rsvp_user?.username ||
+                window.eventkoi_params?.rsvp_user?.user_login ||
+                window.eventkoi_params?.rsvp_user?.name ||
                 ""
             ).trim() || "",
           first_name: String(billing.first_name || "").trim(),
           last_name: String(billing.last_name || "").trim(),
           email,
           fields: checkoutFieldValues,
+          ...(collectAttendees
+            ? {
+                attendees: attendeeEntries.map((entry) => ({
+                  ticket_id: entry.ticket_id,
+                  name: entry.name,
+                  email: entry.email,
+                })),
+                email_attendees: emailEachAttendee ? "1" : "",
+              }
+            : {}),
+          terms_accepted: termsAccepted ? "1" : "",
+          agreements_accepted: eventAgreements
+            .filter((item) => !!agreementsAccepted[item.id])
+            .map((item) => item.id),
           items: selectedTicketItems.map((item) => ({
             ticket_id: item.ticket_id,
             name: String(item.name || ""),
@@ -1014,6 +1301,16 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
         payload?.hosted_url || payload?.checkout_url || payload?.url;
       if (!hostedUrl) {
         throw new Error(__("Checkout URL is missing.", "eventkoi-lite"));
+      }
+      if (payload?.free_order) {
+        try {
+          const freeUrl = new URL(hostedUrl, window.location.href);
+          freeUrl.searchParams.set("ek_free", "1");
+          window.location.href = freeUrl.toString();
+          return;
+        } catch (e) {
+          // Fall through to the plain return URL.
+        }
       }
       window.location.href = hostedUrl;
     } catch (err) {
@@ -1036,7 +1333,9 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                 <CheckCircle2 className="mt-0.5 size-4 shrink-0 text-emerald-600" />
                 <div className="min-w-0">
                   <div className="text-sm font-medium text-emerald-900">
-                    {__("Payment successful", "eventkoi-lite")}
+                    {checkoutWasFree
+                      ? __("You're booked", "eventkoi-lite")
+                      : __("Payment successful", "eventkoi-lite")}
                   </div>
                   <div className="mt-0.5 text-xs text-emerald-800">
                     {__(
@@ -1102,11 +1401,11 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
         </div>
 
         {allDisplayedSaleEnded && saleEndLabel ? (
-          <div className="text-base text-muted-foreground">
+          <div className="eventkoi-tickets__sale-window text-base text-muted-foreground">
             {sprintf(__("Ticket sales ended on %s.", "eventkoi-lite"), saleEndLabel)}
           </div>
         ) : saleStartLabel && saleEndLabel ? (
-          <div className="text-base text-muted-foreground">
+          <div className="eventkoi-tickets__sale-window text-base text-muted-foreground">
             {sprintf(
               __("Ticket sales starts on %1$s and ends on %2$s.", "eventkoi-lite"),
               saleStartLabel,
@@ -1114,8 +1413,23 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
             )}
           </div>
         ) : saleEndLabel ? (
-          <div className="text-base text-muted-foreground">
+          <div className="eventkoi-tickets__sale-window text-base text-muted-foreground">
             {sprintf(__("Ticket sales end on %s.", "eventkoi-lite"), saleEndLabel)}
+          </div>
+        ) : null}
+
+        {eventPageRemaining !== null && eventPageRemaining > 0 ? (
+          <div className="text-base text-muted-foreground">
+            {sprintf(
+              /* translators: %s: number of tickets still available. */
+              _n(
+                "%s ticket left",
+                "%s tickets left",
+                eventPageRemaining,
+                "eventkoi-lite",
+              ),
+              new Intl.NumberFormat().format(eventPageRemaining),
+            )}
           </div>
         ) : null}
 
@@ -1141,8 +1455,30 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent
-            className="eventkoi-front w-[95vw] max-w-[900px] gap-0 overflow-hidden p-0"
-            onOpenAutoFocus={(event) => event.preventDefault()}
+            className="eventkoi-front w-[95vw] max-w-[900px] gap-0 overflow-hidden p-0 focus:outline-none"
+            // Do not jump to the first quantity button (on a phone that
+            // scrolls the sheet), but do move focus into the dialog. Left on
+            // the page behind, Tab walked the page under the overlay and
+            // Escape could not hand focus back to the Get tickets button.
+            onOpenAutoFocus={(event) => {
+              event.preventDefault();
+              const active = document.activeElement;
+              dialogReturnFocusRef.current =
+                active instanceof HTMLElement && active !== document.body
+                  ? active
+                  : null;
+              event.currentTarget.focus({ preventScroll: true });
+            }}
+            // The dialog is opened from a plain button (and from #buy-tickets
+            // links), not a Radix trigger, so Radix has nothing to return
+            // focus to on its own.
+            onCloseAutoFocus={(event) => {
+              const opener = dialogReturnFocusRef.current;
+              if (opener && document.contains(opener)) {
+                event.preventDefault();
+                opener.focus({ preventScroll: true });
+              }
+            }}
           >
             <DialogHeader className="sr-only">
               <DialogTitle>{__("Ticket checkout", "eventkoi-lite")}</DialogTitle>
@@ -1194,9 +1530,9 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                               <Ticket className="size-5 shrink-0 text-foreground" aria-hidden="true" />
                               <div className="min-w-0">
                                 <div className="text-[20px] font-semibold leading-none text-foreground tabular-nums">
-                                  {formatTicketCurrency(
-                                    Number(ticket.price) || 0,
-                                  )}
+                                  {(Number(ticket.price) || 0) === 0
+                                    ? __("Free", "eventkoi-lite")
+                                    : formatTicketCurrency(Number(ticket.price) || 0)}
                                 </div>
                                 <div className="mt-1 text-sm font-medium leading-tight text-foreground">
                                   {ticket.name}
@@ -1223,6 +1559,13 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                                       ),
                                       ticketSaleStart,
                                       ticketSaleEnd,
+                                    )}
+                                  </div>
+                                ) : saleNotStarted && ticketSaleStart ? (
+                                  <div className="mt-2 text-xs font-semibold text-muted-foreground">
+                                    {sprintf(
+                                      __("Ticket sales starts on %s.", "eventkoi-lite"),
+                                      ticketSaleStart,
                                     )}
                                   </div>
                                 ) : saleEnded && ticketSaleEnd ? (
@@ -1319,7 +1662,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                                 liveTicketsLeft !== null ? (
                                 <div className="mt-2 text-center text-xs text-muted-foreground">
                                   {sprintf(
-                                    __("%d tickets left.", "eventkoi-lite"),
+                                    _n("%d ticket left.", "%d tickets left.", liveTicketsLeft, "eventkoi-lite"),
                                     liveTicketsLeft,
                                   )}
                                 </div>
@@ -1332,11 +1675,21 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                   })}
                 </div>
 
-                {eventTermsConditions ? (
-                  <div
-                    className="eventkoi-ticket-terms px-5 pb-4 text-xs leading-relaxed text-muted-foreground sm:px-6"
-                    dangerouslySetInnerHTML={{ __html: eventTermsConditions }}
-                  />
+                {eventTicketsRemaining !== null && showRemainingTickets ? (
+                  <div className="px-5 pb-3 text-xs font-medium text-muted-foreground sm:px-6">
+                    {eventTicketsRemaining > 0
+                      ? sprintf(
+                          /* translators: %d: number of tickets left for the whole event. */
+                          _n(
+                            "%d ticket left for this event",
+                            "%d tickets left for this event",
+                            eventTicketsRemaining,
+                            "eventkoi-lite",
+                          ),
+                          eventTicketsRemaining,
+                        )
+                      : __("This event is sold out.", "eventkoi-lite")}
+                  </div>
                 ) : null}
 
                 <div className="border-t border-border bg-muted/30 px-5 py-5 sm:px-6 sm:py-6">
@@ -1346,15 +1699,15 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                         {footerEventTitle}
                       </div>
                       {footerEventLocation ? (
-                        <div className="mt-1 flex items-center gap-2 text-sm text-foreground">
-                          <MapPin className="size-4" />
+                        <div className="mt-1 flex items-start gap-2 text-sm text-foreground">
+                          <MapPin className="mt-0.5 size-4 shrink-0" />
                           <span>{footerEventLocation}</span>
                         </div>
                       ) : null}
                       {footerEventDate ? (
-                        <div className="mt-1 flex items-center gap-2 text-sm text-foreground">
-                          <Calendar className="size-4" />
-                          <span>{footerEventDate}</span>
+                        <div className="mt-1 flex items-start gap-2 text-sm text-foreground">
+                          <Calendar className="mt-0.5 size-4 shrink-0" />
+                          <span className="whitespace-pre-line">{footerEventDate}</span>
                         </div>
                       ) : null}
                     </div>
@@ -1451,6 +1804,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                           className="font-medium text-[13px] text-foreground"
                         >
                           {__("First name", "eventkoi-lite")}
+                          <span aria-hidden="true" className="text-destructive"> *</span>
                         </label>
                         <input
                           id={firstNameId}
@@ -1490,6 +1844,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                           className="font-medium text-[13px] text-foreground"
                         >
                           {__("Last name", "eventkoi-lite")}
+                          <span aria-hidden="true" className="text-destructive"> *</span>
                         </label>
                         <input
                           id={lastNameId}
@@ -1530,6 +1885,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                         className="font-medium text-[13px] text-foreground"
                       >
                         {__("Email address", "eventkoi-lite")}
+                        <span aria-hidden="true" className="text-destructive"> *</span>
                       </label>
                       <input
                         id={emailId}
@@ -1577,6 +1933,156 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                         )}
                       </p>
                     </div>
+
+                    {collectAttendees && attendeeSeats.length > 0 ? (
+                      <div className="space-y-3 pt-2">
+                        <div className="space-y-1">
+                          <div className="font-medium text-[13px] text-foreground">
+                            {__("Attendees", "eventkoi-lite")}
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {attendeeMode === "required"
+                              ? __(
+                                  "Enter the name of the person using each ticket.",
+                                  "eventkoi-lite",
+                                )
+                              : __(
+                                  "Optional. Tell us who each ticket is for.",
+                                  "eventkoi-lite",
+                                )}
+                          </p>
+                        </div>
+
+                        {attendeeSeats.map((seat, index) => {
+                          const isBuyerSeat = index === 0 && firstTicketIsBuyer;
+                          const entry = getSeatAttendee(seat, index);
+                          const nameId = `${idPrefix}-attendee-${seat.key}-name`;
+                          const emailId = `${idPrefix}-attendee-${seat.key}-email`;
+                          const nameInvalid =
+                            checkoutAttempted &&
+                            attendeeMode === "required" &&
+                            entry.name === "";
+                          const emailInvalid =
+                            checkoutAttempted &&
+                            ((entry.email !== "" && !isValidEmail(entry.email)) ||
+                              (emailEachAttendee && entry.email === ""));
+                          const setSeatValue = (field, value) =>
+                            setAttendees((prev) => ({
+                              ...prev,
+                              [seat.key]: { ...(prev[seat.key] || {}), [field]: value },
+                            }));
+                          const inputClass = (invalid) =>
+                            `h-10 w-full rounded-md border bg-background px-3 text-sm text-foreground outline-none focus-visible:ring-2 disabled:bg-muted/40 disabled:text-muted-foreground ${
+                              invalid
+                                ? "border-destructive focus-visible:ring-destructive"
+                                : "border-input focus-visible:ring-ring"
+                            }`;
+
+                          return (
+                            <div
+                              key={seat.key}
+                              className="space-y-3 rounded-md border border-border p-4"
+                            >
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <div className="text-[13px] font-medium text-foreground">
+                                  {sprintf(
+                                    /* translators: 1: ticket name, 2: seat number, 3: seats of this ticket type */
+                                    __("%1$s - Ticket %2$d of %3$d", "eventkoi-lite"),
+                                    seat.ticket_name,
+                                    seat.seat,
+                                    seat.count,
+                                  )}
+                                </div>
+                                {index === 0 ? (
+                                  <label
+                                    htmlFor={`${idPrefix}-attendee-self`}
+                                    className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer"
+                                  >
+                                    <input
+                                      id={`${idPrefix}-attendee-self`}
+                                      type="checkbox"
+                                      checked={firstTicketIsBuyer}
+                                      onChange={(event) =>
+                                        setFirstTicketIsBuyer(event.target.checked)
+                                      }
+                                      className="size-4 rounded border-input"
+                                    />
+                                    {__("This ticket is for me", "eventkoi-lite")}
+                                  </label>
+                                ) : null}
+                              </div>
+                              <div className="grid gap-3 sm:grid-cols-2">
+                                <div className="space-y-1.5">
+                                  <label
+                                    htmlFor={nameId}
+                                    className="text-xs font-medium text-foreground"
+                                  >
+                                    {__("Name", "eventkoi-lite")}
+                                    {attendeeMode === "required" ? (
+                                      <span aria-hidden="true" className="text-destructive"> *</span>
+                                    ) : null}
+                                  </label>
+                                  <input
+                                    id={nameId}
+                                    type="text"
+                                    autoComplete="off"
+                                    value={entry.name}
+                                    disabled={isBuyerSeat}
+                                    required={attendeeMode === "required"}
+                                    aria-invalid={nameInvalid ? "true" : "false"}
+                                    onChange={(event) =>
+                                      setSeatValue("name", event.target.value)
+                                    }
+                                    className={inputClass(nameInvalid)}
+                                  />
+                                </div>
+                                <div className="space-y-1.5">
+                                  <label
+                                    htmlFor={emailId}
+                                    className="text-xs font-medium text-foreground"
+                                  >
+                                    {__("Email", "eventkoi-lite")}
+                                  </label>
+                                  <input
+                                    id={emailId}
+                                    type="email"
+                                    autoComplete="off"
+                                    value={entry.email}
+                                    disabled={isBuyerSeat}
+                                    aria-invalid={emailInvalid ? "true" : "false"}
+                                    onChange={(event) =>
+                                      setSeatValue("email", event.target.value)
+                                    }
+                                    className={inputClass(emailInvalid)}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+
+                        <label
+                          htmlFor={`${idPrefix}-attendee-emails`}
+                          className="flex items-start gap-2.5 text-xs leading-relaxed text-muted-foreground cursor-pointer"
+                        >
+                          <input
+                            id={`${idPrefix}-attendee-emails`}
+                            type="checkbox"
+                            checked={emailEachAttendee}
+                            onChange={(event) =>
+                              setEmailEachAttendee(event.target.checked)
+                            }
+                            className="mt-0.5 size-4 shrink-0 rounded border-input"
+                          />
+                          <span>
+                            {__(
+                              "Email each attendee their own ticket. You still receive all of them.",
+                              "eventkoi-lite",
+                            )}
+                          </span>
+                        </label>
+                      </div>
+                    ) : null}
 
                     {checkoutCustomFields.map((field) => {
                       const fieldId = `eventkoi-checkout-field-${field.key}`;
@@ -1688,6 +2194,75 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                       </div>
                     ) : null}
 
+                    {eventTermsConditions || eventAgreements.length > 0 ? (
+                      <div className="space-y-2.5">
+                        {eventTermsConditions ? (
+                          <>
+                            <div
+                              className="eventkoi-ticket-terms min-h-[6rem] max-h-[70vh] resize-y overflow-y-auto rounded-md border border-border bg-muted/20 p-3 text-xs leading-relaxed text-muted-foreground [&_a]:underline"
+                              style={{ height: "12rem" }}
+                              dangerouslySetInnerHTML={{
+                                __html: eventTermsConditions,
+                              }}
+                            />
+                            {eventTermsRequired ? (
+                              <label
+                                htmlFor={`${idPrefix}-terms-accept`}
+                                className="flex items-start gap-2.5 text-xs leading-relaxed text-muted-foreground"
+                              >
+                                <input
+                                  id={`${idPrefix}-terms-accept`}
+                                  type="checkbox"
+                                  checked={termsAccepted}
+                                  onChange={(event) => {
+                                    setTermsAccepted(event.target.checked);
+                                    if (event.target.checked) setCheckoutError("");
+                                  }}
+                                  className="mt-0.5 size-4 shrink-0 rounded border-input"
+                                />
+                                <span>
+                                  {__(
+                                    "I have read and agree to the terms & conditions.",
+                                    "eventkoi-lite"
+                                  )}
+                                </span>
+                              </label>
+                            ) : null}
+                          </>
+                        ) : null}
+                        {eventAgreements.map((agreement) => (
+                          <label
+                            key={agreement.id}
+                            htmlFor={`${idPrefix}-agreement-${agreement.id}`}
+                            className="flex items-start gap-2.5 text-xs leading-relaxed text-muted-foreground"
+                          >
+                            <input
+                              id={`${idPrefix}-agreement-${agreement.id}`}
+                              type="checkbox"
+                              checked={!!agreementsAccepted[agreement.id]}
+                              onChange={(event) => {
+                                setAgreementsAccepted((prev) => ({
+                                  ...prev,
+                                  [agreement.id]: event.target.checked,
+                                }));
+                                if (event.target.checked) setCheckoutError("");
+                              }}
+                              className="mt-0.5 size-4 shrink-0 rounded border-input"
+                            />
+                            <span
+                              className="min-w-0 flex-1 [&_a]:underline"
+                              dangerouslySetInnerHTML={{ __html: agreement.text }}
+                            />
+                            {agreement.required !== false ? (
+                              <span aria-hidden="true" className="text-destructive">
+                                *
+                              </span>
+                            ) : null}
+                          </label>
+                        ))}
+                      </div>
+                    ) : null}
+
                     <div className="flex items-center gap-10 pt-2">
                       <Button
                         type="submit"
@@ -1747,7 +2322,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                       {footerEventDate ? (
                         <div className="mt-2.5 flex items-start gap-2 text-sm text-foreground">
                           <Calendar className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                          <span>{footerEventDate}</span>
+                          <span className="whitespace-pre-line">{footerEventDate}</span>
                         </div>
                       ) : null}
                     </div>
@@ -1791,6 +2366,62 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
   );
 }
 
+// Any link to #buy-tickets (a Button block, for example) opens the ticket
+// dialog, like #event-share and #add-to-cal do for their overlays. The event
+// comes from the link's data-event-id, from a #buy-tickets-123 style URL, or
+// from the query loop row around the link; with none of those the first
+// ticket widget on the page is used. When no widget is mounted for that
+// event, one is created off-screen so the dialog still opens, for example
+// from a button on the front page.
+function openTicketsFromLink(event) {
+  const link =
+    event.target && event.target.closest
+      ? event.target.closest('a[href*="#buy-tickets"]')
+      : null;
+  if (!link) return;
+  const hash = String(link.hash || link.getAttribute("href") || "");
+  if (!/^#buy-tickets(?:[-_=]\d+)?$/.test(hash)) return;
+  const hashId = (hash.match(/[-_=](\d+)$/) || [])[1];
+  const row = link.closest("[data-event-id]");
+  const wantedId =
+    Number(link.getAttribute("data-event-id")) ||
+    Number(hashId) ||
+    (row ? Number(row.getAttribute("data-event-id")) : 0) ||
+    0;
+  const wantedInstance =
+    Number(link.getAttribute("data-instance-ts")) ||
+    (row ? Number(row.getAttribute("data-instance-ts")) : 0) ||
+    0;
+  const widgets = Array.from(document.querySelectorAll(".eventkoi-tickets"));
+  let target = wantedId
+    ? widgets.find(
+        (el) =>
+          Number(el.getAttribute("data-event-id")) === wantedId &&
+          (!wantedInstance ||
+            Number(el.getAttribute("data-instance-ts") || 0) === wantedInstance),
+      )
+    : widgets[0];
+  if (!target && !wantedId) return;
+  event.preventDefault();
+  if (target) {
+    target.dispatchEvent(new CustomEvent("eventkoi:open-tickets"));
+    return;
+  }
+  const wrapper = document.createElement("div");
+  wrapper.className = "eventkoi-front";
+  wrapper.hidden = true;
+  target = document.createElement("div");
+  target.className = "eventkoi-tickets";
+  target.setAttribute("data-event-id", String(wantedId));
+  target.setAttribute("data-instance-ts", String(wantedInstance));
+  target.dataset.eventkoiAutoOpen = "1";
+  wrapper.appendChild(target);
+  document.body.appendChild(wrapper);
+  mountTicketsWidgets();
+}
+
+document.addEventListener("click", openTicketsFromLink);
+
 function mountTicketsWidgets() {
   document.querySelectorAll(".eventkoi-tickets").forEach((el) => {
     if (el.dataset.eventkoiMounted) return;
@@ -1798,7 +2429,9 @@ function mountTicketsWidgets() {
     const instanceTs = getInstanceTsFromDom(el);
     const root = createRoot(el);
     root.render(
-      <TicketsWidget eventId={eventId} instanceTs={instanceTs} mountEl={el} />,
+      <ErrorBoundary>
+        <TicketsWidget eventId={eventId} instanceTs={instanceTs} mountEl={el} />
+      </ErrorBoundary>,
     );
     el.dataset.eventkoiMounted = "true";
   });

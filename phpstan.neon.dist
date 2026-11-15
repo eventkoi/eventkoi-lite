@@ -1,0 +1,27 @@
+includes:
+	- vendor/szepeviktor/phpstan-wordpress/extension.neon
+	# Pre-existing findings, so the suite passes today and only newly written
+	# code has to clear the bar. Chip at this file when you are already editing
+	# the code it covers, and raise the level once it is thin enough.
+	- phpstan-baseline.neon
+
+parameters:
+	level: 5
+
+	paths:
+		- eventkoi.php
+		- bootstrap.php
+		- autoload.php
+		- uninstall.php
+		- includes
+		- templates
+
+	scanDirectories:
+		- vendor-prefixed
+
+	# Builder base classes we extend but do not depend on via composer.
+	scanFiles:
+		- tests/phpstan-stubs.php
+
+	bootstrapFiles:
+		- tests/phpstan-bootstrap.php

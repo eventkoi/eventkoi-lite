@@ -81,6 +81,16 @@ class Tickets {
 
 		register_rest_route(
 			'eventkoi/v1',
+			'/tickets/orders/update-customer',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'update_order_customer' ),
+				'permission_callback' => REST::cap( 'eventkoi_orders_manage' ),
+			)
+		);
+
+		register_rest_route(
+			'eventkoi/v1',
 			'/tickets/orders/resend-confirmation',
 			array(
 				'methods'             => 'POST',
@@ -121,6 +131,36 @@ class Tickets {
 
 		register_rest_route(
 			'eventkoi/v1',
+			'/tickets/attendees',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( __CLASS__, 'get_ticket_attendees' ),
+				'permission_callback' => REST::any_cap( 'eventkoi_orders_view', 'eventkoi_attendees_view' ),
+			)
+		);
+
+		register_rest_route(
+			'eventkoi/v1',
+			'/tickets/attendees/update',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'update_ticket_attendee' ),
+				'permission_callback' => REST::cap( 'eventkoi_attendees_manage' ),
+			)
+		);
+
+		register_rest_route(
+			'eventkoi/v1',
+			'/tickets/attendees/checkin',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'update_attendee_checkin' ),
+				'permission_callback' => REST::cap( 'eventkoi_attendees_manage' ),
+			)
+		);
+
+		register_rest_route(
+			'eventkoi/v1',
 			'/tickets/orders/send-confirmation',
 			array(
 				'methods'             => 'POST',
@@ -142,6 +182,33 @@ class Tickets {
 						'validate_callback' => function ( $param ) {
 							return is_numeric( $param );
 						},
+					),
+				),
+			)
+		);
+
+		register_rest_route(
+			'eventkoi/v1',
+			'/tickets/attendees/export',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( __CLASS__, 'export_ticket_attendees' ),
+				'permission_callback' => REST::any_cap( 'eventkoi_orders_view', 'eventkoi_attendees_view' ),
+				'args'                => array(
+					'event_id'    => array(
+						'required'          => true,
+						'sanitize_callback' => 'absint',
+						'validate_callback' => function ( $param ) {
+							return is_numeric( $param ) && (int) $param > 0;
+						},
+					),
+					'instance_ts' => array(
+						'required'          => false,
+						'sanitize_callback' => 'absint',
+					),
+					'search'      => array(
+						'required'          => false,
+						'sanitize_callback' => 'sanitize_text_field',
 					),
 				),
 			)
@@ -240,6 +307,26 @@ class Tickets {
 				'permission_callback' => REST::cap( 'eventkoi_orders_view' ),
 			)
 		);
+
+		register_rest_route(
+			'eventkoi/v1',
+			'/tickets/orders/export',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'export_orders' ),
+				'permission_callback' => REST::cap( 'eventkoi_orders_view' ),
+			)
+		);
+
+		register_rest_route(
+			'eventkoi/v1',
+			'/tickets/orders/add-attendee',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( __CLASS__, 'add_manual_attendee' ),
+				'permission_callback' => REST::cap( 'eventkoi_orders_manage' ),
+			)
+		);
 	}
 
 	/**
@@ -272,8 +359,11 @@ class Tickets {
 
 		$currency = function_exists( 'get_woocommerce_currency' ) ? strtoupper( get_woocommerce_currency() ) : '';
 
-		$parts   = array();
-		$parts[] = "order_id LIKE 'wc\\_%'";
+		$parts = array();
+		// Woo orders (wc_), manual orders (manual_) and free checkouts, whose
+		// base id is the numeric local order id. Free orders never touch Woo,
+		// so without the numeric match they were missing from every list.
+		$parts[] = "( order_id LIKE 'wc\\_%' OR order_id LIKE 'manual\\_%' OR order_id REGEXP '^[0-9]+(:|$)' )";
 		$parts[] = "payment_status != 'hold'";
 
 		if ( ! empty( $args['only_archived'] ) ) {
@@ -440,6 +530,809 @@ class Tickets {
 	}
 
 	/**
+	 * Determine whether a ticket order is currently archived.
+	 *
+	 * @param string $order_id Base order ID, checkout ID, or numeric local ID.
+	 * @return bool
+	 */
+	private static function is_ticket_order_archived( $order_id ) {
+		global $wpdb;
+
+		$order_id = sanitize_text_field( (string) $order_id );
+		if ( '' === $order_id ) {
+			return false;
+		}
+
+		if ( 0 === strpos( $order_id, 'wc_' ) && function_exists( 'wc_get_order' ) ) {
+			$wc_id    = absint( substr( $order_id, 3 ) );
+			$wc_order = $wc_id ? wc_get_order( $wc_id ) : null;
+			if ( $wc_order && '1' === (string) $wc_order->get_meta( '_eventkoi_is_archived' ) ) {
+				return true;
+			}
+		}
+
+		$orders_tbl = $wpdb->prefix . 'eventkoi_orders';
+		if ( ctype_digit( $order_id ) ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$is_archived = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT is_archived FROM {$orders_tbl} WHERE id = %d LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					absint( $order_id )
+				)
+			);
+		} else {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$is_archived = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT is_archived FROM {$orders_tbl} WHERE checkout_id = %s LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$order_id
+				)
+			);
+		}
+		if ( null !== $is_archived && absint( $is_archived ) > 0 ) {
+			return true;
+		}
+
+		$items_tbl = $wpdb->prefix . 'eventkoi_ticket_orders';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$row_state = $wpdb->get_row(
+			$wpdb->prepare(
+				"SELECT COUNT(*) AS total_rows, SUM(CASE WHEN payment_status = 'archived' THEN 1 ELSE 0 END) AS archived_rows FROM {$items_tbl} WHERE order_id = %s OR order_id LIKE %s", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$order_id,
+				$wpdb->esc_like( $order_id ) . ':%'
+			)
+		);
+
+		return $row_state && absint( $row_state->total_rows ?? 0 ) > 0 && absint( $row_state->total_rows ?? 0 ) === absint( $row_state->archived_rows ?? 0 );
+	}
+
+	/**
+	 * Error for actions on an archived order.
+	 *
+	 * @return WP_Error
+	 */
+	private static function archived_order_error() {
+		return new WP_Error(
+			'order_archived',
+			__( 'This order is archived. Unarchive it before making changes.', 'eventkoi-lite' ),
+			array( 'status' => 409 )
+		);
+	}
+
+	/**
+	 * Whether a ticket row's payment status allows check-in.
+	 *
+	 * @param string $status Ticket payment status.
+	 * @return bool
+	 */
+	private static function is_ticket_checkin_eligible_status( $status ) {
+		return in_array(
+			sanitize_key( (string) $status ),
+			array( 'complete', 'completed', 'succeeded', 'paid', 'partially_refunded' ),
+			true
+		);
+	}
+
+	/**
+	 * Normalize a stored datetime to an ISO 8601 UTC string.
+	 *
+	 * @param string $value MySQL datetime or ISO string.
+	 * @return string
+	 */
+	private static function to_iso_utc( $value ) {
+		$value = trim( (string) $value );
+		if ( '' === $value || '0000-00-00 00:00:00' === $value ) {
+			return '';
+		}
+		if ( preg_match( '/Z$|[+-]\d{2}:?\d{2}$/', $value ) ) {
+			return $value;
+		}
+
+		$timestamp = strtotime( $value . ' UTC' );
+
+		return false === $timestamp ? $value : gmdate( 'Y-m-d\TH:i:s\Z', $timestamp );
+	}
+
+	/**
+	 * Which checkout produced an order, from its base id.
+	 *
+	 * @param string $base_id Base order id.
+	 * @return string woocommerce|manual|free
+	 */
+	private static function detect_order_gateway( $base_id ) {
+		$base_id = (string) $base_id;
+
+		if ( 0 === strpos( $base_id, 'wc_' ) ) {
+			return 'woocommerce';
+		}
+		if ( 0 === strpos( $base_id, 'manual_' ) ) {
+			return 'manual';
+		}
+
+		return 'free';
+	}
+
+	/**
+	 * Master check-in codes for a set of base order ids.
+	 *
+	 * WooCommerce orders keep the code in order meta, every other gateway in
+	 * an order note. Base ids without a code are left out of the result.
+	 *
+	 * @param array $base_ids Base order ids ("wc_12", "8135", "manual_x").
+	 * @return array Map base_id => master code.
+	 */
+	private static function resolve_master_checkin_codes( array $base_ids ) {
+		global $wpdb;
+
+		$codes   = array();
+		$pending = array();
+
+		foreach ( array_unique( array_map( 'strval', $base_ids ) ) as $base_id ) {
+			if ( preg_match( '/^wc_(\d+)/', $base_id, $wc_match ) && function_exists( 'wc_get_order' ) ) {
+				$wc_order = wc_get_order( (int) $wc_match[1] );
+				$code     = $wc_order ? (string) $wc_order->get_meta( '_eventkoi_master_checkin_code' ) : '';
+				if ( '' !== $code ) {
+					$codes[ $base_id ] = $code;
+				}
+				continue;
+			}
+			if ( preg_match( '/^(\d+)(?::|$)/', $base_id, $m ) && (int) $m[1] > 0 ) {
+				$pending[ (int) $m[1] ] = $base_id;
+			}
+		}
+
+		if ( empty( $pending ) ) {
+			return $codes;
+		}
+
+		$notes_tbl  = $wpdb->prefix . 'eventkoi_order_notes';
+		$ids        = array_keys( $pending );
+		$placehold  = implode( ',', array_fill( 0, count( $ids ), '%d' ) );
+		$query_args = array_merge( array( 'master_checkin_code' ), $ids );
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT order_id, note_value FROM {$notes_tbl} WHERE note_key = %s AND order_id IN ({$placehold}) ORDER BY id DESC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$query_args
+			)
+		);
+		foreach ( (array) $rows as $row ) {
+			$id = (int) $row->order_id;
+			if ( isset( $pending[ $id ] ) && ! isset( $codes[ $pending[ $id ] ] ) ) {
+				$codes[ $pending[ $id ] ] = (string) $row->note_value;
+			}
+		}
+
+		return $codes;
+	}
+
+	/**
+	 * Ticket names keyed by ticket id for an event.
+	 *
+	 * @param int $event_id Event ID.
+	 * @return array Map ticket_id => name.
+	 */
+	private static function get_ticket_names( $event_id ) {
+		global $wpdb;
+
+		$table = $wpdb->prefix . 'eventkoi_tickets';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT id, name FROM {$table} WHERE event_id = %d", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				absint( $event_id )
+			)
+		);
+
+		$names = array();
+		foreach ( (array) $rows as $row ) {
+			$names[ (int) $row->id ] = (string) $row->name;
+		}
+
+		return $names;
+	}
+
+	/**
+	 * Shape one per-seat row for the attendees list.
+	 *
+	 * The attendee falls back to the buyer when checkout did not collect a
+	 * separate name, which is also what the check-in screen and emails show.
+	 *
+	 * @param object $row          Ticket orders row.
+	 * @param array  $ticket_names Map ticket_id => name.
+	 * @param array  $master_codes Map base order id => master code.
+	 * @return array
+	 */
+	private static function format_ticket_attendee_row( $row, array $ticket_names, array $master_codes ) {
+		$full_id = (string) ( $row->order_id ?? '' );
+		$parts   = explode( ':', $full_id, 2 );
+		$base_id = $parts[0];
+
+		$row_status       = (string) ( $row->payment_status ?? '' );
+		$effective_status = ( 'archived' === $row_status ) ? (string) ( $row->archived_prev_status ?? '' ) : $row_status;
+		if ( in_array( $effective_status, array( 'completed', 'succeeded', 'paid' ), true ) ) {
+			$effective_status = 'complete';
+		}
+
+		$attendee_name  = trim( (string) ( $row->attendee_name ?? '' ) );
+		$attendee_email = trim( (string) ( $row->attendee_email ?? '' ) );
+		$buyer_name     = (string) ( $row->customer_name ?? '' );
+		$buyer_email    = (string) ( $row->customer_email ?? '' );
+		$has_attendee   = '' !== $attendee_name || '' !== $attendee_email;
+		$shown_email    = '' !== $attendee_email ? $attendee_email : ( $has_attendee ? '' : $buyer_email );
+		$avatar_email   = '' !== $shown_email ? $shown_email : $buyer_email;
+		$checked_in_at  = (string) ( $row->checked_in_at ?? '' );
+
+		return array(
+			'id'                  => absint( $row->id ?? 0 ),
+			'order_id'            => $base_id,
+			'row_order_id'        => $full_id,
+			'event_id'            => absint( $row->event_id ?? 0 ),
+			'instance_ts'         => absint( $row->instance_ts ?? 0 ),
+			'ticket_id'           => absint( $row->ticket_id ?? 0 ),
+			'ticket_name'         => (string) ( $ticket_names[ absint( $row->ticket_id ?? 0 ) ] ?? '' ),
+			'attendee_name'       => '' !== $attendee_name ? $attendee_name : $buyer_name,
+			'attendee_email'      => $shown_email,
+			'has_attendee'        => $has_attendee,
+			'customer_name'       => $buyer_name,
+			'customer_email'      => $buyer_email,
+			'avatar_url'          => $avatar_email ? esc_url_raw(
+				(string) get_avatar_url(
+					$avatar_email,
+					array(
+						'size'    => 64,
+						'default' => 'identicon',
+					)
+				)
+			) : '',
+			'payment_status'      => $effective_status,
+			'is_archived'         => 'archived' === $row_status,
+			'checkin_code'        => (string) ( $row->checkin_token ?? '' ),
+			'master_checkin_code' => (string) ( $master_codes[ $base_id ] ?? '' ),
+			'checked_in'          => absint( $row->checked_in ?? 0 ) > 0 ? 1 : 0,
+			'checked_in_at'       => ( '' !== $checked_in_at && '0000-00-00 00:00:00' !== $checked_in_at ) ? self::to_iso_utc( $checked_in_at ) : '',
+			'checkin_eligible'    => self::is_ticket_checkin_eligible_status( $effective_status ),
+			'currency'            => strtolower( (string) ( $row->currency ?? 'usd' ) ),
+			'gateway'             => self::detect_order_gateway( $base_id ),
+			'created_at'          => self::to_iso_utc( $row->created_at ?? '' ),
+		);
+	}
+
+	/**
+	 * List ticket attendees for an event, one row per ticket.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function get_ticket_attendees( WP_REST_Request $request ) {
+		global $wpdb;
+
+		$event_id = absint( $request->get_param( 'event_id' ) );
+		if ( ! $event_id ) {
+			return new WP_Error( 'invalid_event_id', __( 'Invalid event ID.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
+		$table_name  = $wpdb->prefix . 'eventkoi_ticket_orders';
+		$instance_ts = $request->get_param( 'instance_ts' );
+		$where       = self::build_ticket_orders_where(
+			array(
+				'event_id'         => $event_id,
+				'instance_ts'      => ( null !== $instance_ts && '' !== $instance_ts ) ? absint( $instance_ts ) : null,
+				'include_archived' => rest_sanitize_boolean( $request->get_param( 'include_archived' ) ),
+				'only_archived'    => rest_sanitize_boolean( $request->get_param( 'only_archived' ) ),
+			)
+		);
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			"SELECT * FROM {$table_name} WHERE {$where} ORDER BY created_at DESC, id ASC" // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		);
+
+		if ( null === $rows ) {
+			return new WP_Error( 'database_error', __( 'Database error occurred.', 'eventkoi-lite' ), array( 'status' => 500 ) );
+		}
+
+		$base_ids = array();
+		foreach ( $rows as $row ) {
+			$parts      = explode( ':', (string) ( $row->order_id ?? '' ), 2 );
+			$base_ids[] = $parts[0];
+		}
+
+		$ticket_names = self::get_ticket_names( $event_id );
+		$master_codes = self::resolve_master_checkin_codes( $base_ids );
+
+		$result = array();
+		foreach ( $rows as $row ) {
+			$result[] = self::format_ticket_attendee_row( $row, $ticket_names, $master_codes );
+		}
+
+		return new WP_REST_Response( $result, 200 );
+	}
+
+	/**
+	 * Edit the attendee name and email on one ticket.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function update_ticket_attendee( WP_REST_Request $request ) {
+		global $wpdb;
+
+		$row_id = absint( $request->get_param( 'id' ) );
+		if ( ! $row_id ) {
+			return new WP_Error( 'missing_attendee', __( 'Missing attendee.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
+		$table = $wpdb->prefix . 'eventkoi_ticket_orders';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $row_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		if ( ! $row ) {
+			return new WP_Error( 'not_found', __( 'Attendee not found.', 'eventkoi-lite' ), array( 'status' => 404 ) );
+		}
+		if ( 'archived' === (string) ( $row->payment_status ?? '' ) ) {
+			return self::archived_order_error();
+		}
+
+		$name  = sanitize_text_field( (string) $request->get_param( 'attendee_name' ) );
+		$typed = trim( (string) $request->get_param( 'attendee_email' ) );
+		$email = sanitize_email( $typed );
+		if ( '' !== $typed && ! is_email( $email ) ) {
+			return new WP_Error( 'invalid_attendee_email', __( 'Please enter a valid email address.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->update(
+			$table,
+			array(
+				'attendee_name'  => $name,
+				'attendee_email' => $email,
+				'updated_at'     => gmdate( 'Y-m-d H:i:s' ),
+			),
+			array( 'id' => $row_id ),
+			array( '%s', '%s', '%s' ),
+			array( '%d' )
+		);
+
+		self::invalidate_order_caches( absint( $row->event_id ?? 0 ) );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$fresh = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $row_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$base  = explode( ':', (string) ( $fresh->order_id ?? '' ), 2 )[0];
+
+		return rest_ensure_response(
+			array(
+				'success'  => true,
+				'attendee' => self::format_ticket_attendee_row(
+					$fresh,
+					self::get_ticket_names( absint( $fresh->event_id ?? 0 ) ),
+					self::resolve_master_checkin_codes( array( $base ) )
+				),
+			)
+		);
+	}
+
+	/**
+	 * Check one ticket in or out.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function update_attendee_checkin( WP_REST_Request $request ) {
+		global $wpdb;
+
+		$row_id = absint( $request->get_param( 'id' ) );
+		$action = sanitize_key( (string) $request->get_param( 'action' ) );
+		if ( ! $row_id || ! in_array( $action, array( 'check_in', 'checked_in' ), true ) ) {
+			return new WP_Error( 'invalid_checkin_action', __( 'Invalid check-in action.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
+		$table = $wpdb->prefix . 'eventkoi_ticket_orders';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$row = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $row_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		if ( ! $row ) {
+			return new WP_Error( 'not_found', __( 'Attendee not found.', 'eventkoi-lite' ), array( 'status' => 404 ) );
+		}
+		if ( 'archived' === (string) ( $row->payment_status ?? '' ) ) {
+			return self::archived_order_error();
+		}
+		if ( 'checked_in' === $action && ! self::is_ticket_checkin_eligible_status( (string) $row->payment_status ) ) {
+			return new WP_Error( 'checkin_not_eligible', __( 'Ticket payment is not complete.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
+		$checked = 'checked_in' === $action;
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$wpdb->update(
+			$table,
+			array(
+				'checked_in'    => $checked ? 1 : 0,
+				'checked_in_at' => $checked ? current_time( 'mysql', true ) : null,
+			),
+			array( 'id' => $row_id ),
+			array( '%d', '%s' ),
+			array( '%d' )
+		);
+
+		self::invalidate_order_caches( absint( $row->event_id ?? 0 ) );
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$fresh = $wpdb->get_row( $wpdb->prepare( "SELECT * FROM {$table} WHERE id = %d", $row_id ) ); // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+		$base  = explode( ':', (string) ( $fresh->order_id ?? '' ), 2 )[0];
+
+		return rest_ensure_response(
+			array(
+				'success'  => true,
+				'attendee' => self::format_ticket_attendee_row(
+					$fresh,
+					self::get_ticket_names( absint( $fresh->event_id ?? 0 ) ),
+					self::resolve_master_checkin_codes( array( $base ) )
+				),
+			)
+		);
+	}
+
+	/**
+	 * Export ticket attendees as CSV, one row per ticket, including any custom
+	 * checkout fields.
+	 *
+	 * Rows come from get_ticket_attendees() so the file always matches what
+	 * the attendees table shows. Custom checkout fields registered for the
+	 * event via the `eventkoi_checkout_fields` filter are appended as extra
+	 * columns; they belong to the order, so every ticket of an order repeats
+	 * them.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function export_ticket_attendees( WP_REST_Request $request ) {
+		$event_id = absint( $request->get_param( 'event_id' ) );
+
+		$event_post = get_post( $event_id );
+		if ( empty( $event_post ) || 'eventkoi_event' !== $event_post->post_type ) {
+			return new WP_Error(
+				'eventkoi_attendees_invalid_event',
+				__( 'Invalid event.', 'eventkoi-lite' ),
+				array( 'status' => 404 )
+			);
+		}
+
+		$attendees = self::get_ticket_attendees( $request );
+
+		if ( is_wp_error( $attendees ) ) {
+			return $attendees;
+		}
+
+		$rows   = (array) $attendees->get_data();
+		$search = (string) $request->get_param( 'search' );
+
+		if ( '' !== $search ) {
+			$needle = function_exists( 'mb_strtolower' ) ? mb_strtolower( $search ) : strtolower( $search );
+			$rows   = array_values(
+				array_filter(
+					$rows,
+					static function ( $row ) use ( $needle ) {
+						$haystack = trim( ( $row['attendee_name'] ?? '' ) . ' ' . ( $row['attendee_email'] ?? '' ) . ' ' . ( $row['customer_name'] ?? '' ) . ' ' . ( $row['customer_email'] ?? '' ) );
+						$haystack = function_exists( 'mb_strtolower' ) ? mb_strtolower( $haystack ) : strtolower( $haystack );
+
+						return false !== strpos( $haystack, $needle );
+					}
+				)
+			);
+		}
+
+		$fields = \EventKoi\Core\Orders::get_checkout_fields( $event_id );
+
+		$headers = array(
+			__( 'Attendee name', 'eventkoi-lite' ),
+			__( 'Attendee email', 'eventkoi-lite' ),
+			__( 'Ticket', 'eventkoi-lite' ),
+			__( 'Check-in code', 'eventkoi-lite' ),
+			__( 'Checked in', 'eventkoi-lite' ),
+			__( 'Buyer name', 'eventkoi-lite' ),
+			__( 'Buyer email', 'eventkoi-lite' ),
+			__( 'Order ID', 'eventkoi-lite' ),
+			__( 'Order status', 'eventkoi-lite' ),
+			__( 'Order date', 'eventkoi-lite' ),
+		);
+
+		foreach ( $fields as $field ) {
+			$headers[] = $field['label'];
+		}
+
+		$handle = fopen( 'php://temp', 'r+' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- In-memory handle for CSV generation.
+		fputcsv( $handle, $headers, ',', '"', '\\' );
+
+		$field_values_cache = array();
+
+		foreach ( $rows as $row ) {
+			$line = array(
+				(string) ( $row['attendee_name'] ?? '' ),
+				(string) ( $row['attendee_email'] ?? '' ),
+				(string) ( $row['ticket_name'] ?? '' ),
+				(string) ( $row['checkin_code'] ?? '' ),
+				! empty( $row['checked_in'] ) ? __( 'Yes', 'eventkoi-lite' ) : __( 'No', 'eventkoi-lite' ),
+				(string) ( $row['customer_name'] ?? '' ),
+				(string) ( $row['customer_email'] ?? '' ),
+				(string) ( $row['order_id'] ?? '' ),
+				(string) ( $row['payment_status'] ?? '' ),
+				(string) ( $row['created_at'] ?? '' ),
+			);
+
+			if ( $fields ) {
+				$order_key = (string) ( $row['order_id'] ?? '' );
+				if ( ! isset( $field_values_cache[ $order_key ] ) ) {
+					$field_values_cache[ $order_key ] = self::get_order_checkout_field_values( $order_key, $event_id );
+				}
+
+				foreach ( $fields as $field ) {
+					$line[] = (string) ( $field_values_cache[ $order_key ][ $field['key'] ] ?? '' );
+				}
+			}
+
+			fputcsv( $handle, array_map( array( __CLASS__, 'escape_csv_formula' ), $line ), ',', '"', '\\' );
+		}
+
+		rewind( $handle );
+		// The byte order mark tells Excel the file is UTF-8, so accents survive.
+		$csv = "\xEF\xBB\xBF" . stream_get_contents( $handle );
+		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Closing the in-memory temp handle after CSV generation.
+
+		$event_name = eventkoi_event_title_text( $event_id );
+		$filename   = sprintf(
+			'%1$s-attendees.csv',
+			$event_name ? sanitize_title( $event_name ) : 'eventkoi-event-' . $event_id
+		);
+
+		$response = new WP_REST_Response( $csv, 200 );
+		$response->header( 'Content-Type', 'text/csv; charset=utf-8' );
+		$response->header( 'Content-Disposition', 'attachment; filename="' . $filename . '"' );
+
+		add_filter(
+			'rest_pre_serve_request',
+			static function ( $served, $result, $request, $_server ) use ( $csv, $filename ) {
+				unset( $result, $_server );
+
+				if ( '/' . EVENTKOI_API . '/tickets/attendees/export' !== $request->get_route() ) {
+					return $served;
+				}
+
+				nocache_headers();
+				header( 'Content-Type: text/csv; charset=utf-8' );
+				header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+				echo $csv; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Raw CSV payload for file download response.
+				return true;
+			},
+			10,
+			4
+		);
+
+		return $response;
+	}
+
+	/**
+	 * Export the Ticket sales list as CSV, including custom checkout fields.
+	 *
+	 * The admin sends the IDs of the rows it is showing so the file matches
+	 * the filtered table. Checkout fields registered for the events in those
+	 * orders (via the `eventkoi_checkout_fields` filter) become extra columns,
+	 * one per distinct label.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function export_orders( WP_REST_Request $request ) {
+		$wanted = $request->get_param( 'order_ids' );
+		$wanted = is_array( $wanted )
+			? array_values( array_filter( array_map( 'sanitize_text_field', array_map( 'strval', $wanted ) ) ) )
+			: array();
+
+		$all  = self::get_all_orders( $request );
+		$rows = $all instanceof WP_REST_Response ? (array) $all->get_data() : array();
+
+		if ( $wanted ) {
+			$lookup = array_flip( $wanted );
+			$rows   = array_values(
+				array_filter(
+					$rows,
+					static function ( $row ) use ( $lookup ) {
+						return isset( $lookup[ (string) ( $row['order_id'] ?? ( $row['id'] ?? '' ) ) ] );
+					}
+				)
+			);
+		}
+
+		// One column per distinct field label across every event in the file;
+		// the same label on two events shares a column.
+		$field_columns = array();
+		$fields_cache  = array();
+		foreach ( $rows as $row ) {
+			foreach ( (array) ( $row['event_ids'] ?? array() ) as $eid ) {
+				$eid = absint( $eid );
+				if ( ! isset( $fields_cache[ $eid ] ) ) {
+					$fields_cache[ $eid ] = \EventKoi\Core\Orders::get_checkout_fields( $eid );
+				}
+				foreach ( $fields_cache[ $eid ] as $field ) {
+					$field_columns[ (string) $field['label'] ][ $eid ] = (string) $field['key'];
+				}
+			}
+		}
+
+		$headers = array(
+			__( 'Order ID', 'eventkoi-lite' ),
+			__( 'Event', 'eventkoi-lite' ),
+			__( 'Customer name', 'eventkoi-lite' ),
+			__( 'Customer email', 'eventkoi-lite' ),
+			__( 'Order status', 'eventkoi-lite' ),
+			__( 'Quantity', 'eventkoi-lite' ),
+			__( 'Amount', 'eventkoi-lite' ),
+			__( 'Currency', 'eventkoi-lite' ),
+			__( 'Date', 'eventkoi-lite' ),
+		);
+		foreach ( array_keys( $field_columns ) as $label ) {
+			$headers[] = $label;
+		}
+
+		$handle = fopen( 'php://temp', 'r+' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen -- In-memory handle for CSV generation.
+		fputcsv( $handle, $headers, ',', '"', '\\' );
+
+		foreach ( $rows as $row ) {
+			$order_id  = (string) ( $row['order_id'] ?? ( $row['id'] ?? '' ) );
+			$event_ids = array_map( 'absint', (array) ( $row['event_ids'] ?? array() ) );
+			$names     = (array) ( $row['event_names'] ?? array() );
+			$labels    = array();
+			foreach ( $event_ids as $eid ) {
+				$labels[] = (string) ( $names[ (string) $eid ] ?? $eid );
+			}
+			$cents    = (int) round( (float) ( $row['amount_total'] ?? 0 ) );
+			$currency = strtoupper( (string) ( $row['currency'] ?? 'usd' ) );
+
+			$line = array(
+				$order_id,
+				implode( '; ', $labels ),
+				(string) ( $row['customer_name'] ?? '' ),
+				(string) ( $row['customer_email'] ?? '' ),
+				(string) ( $row['payment_status'] ?? ( $row['status'] ?? '' ) ),
+				(string) absint( $row['quantity'] ?? 0 ),
+				number_format( $cents / 100, 2, '.', '' ),
+				$currency,
+				(string) ( $row['created_at'] ?? '' ),
+			);
+
+			if ( $field_columns ) {
+				$values = array();
+				foreach ( $event_ids as $eid ) {
+					$values[ $eid ] = self::get_order_checkout_field_values( $order_id, $eid );
+				}
+				foreach ( $field_columns as $keys_by_event ) {
+					$cell = '';
+					foreach ( $keys_by_event as $eid => $key ) {
+						if ( isset( $values[ $eid ][ $key ] ) && '' !== (string) $values[ $eid ][ $key ] ) {
+							$cell = (string) $values[ $eid ][ $key ];
+							break;
+						}
+					}
+					$line[] = $cell;
+				}
+			}
+
+			fputcsv( $handle, array_map( array( __CLASS__, 'escape_csv_formula' ), $line ), ',', '"', '\\' );
+		}
+
+		rewind( $handle );
+		// The byte order mark tells Excel the file is UTF-8, so accents survive.
+		$csv = "\xEF\xBB\xBF" . stream_get_contents( $handle );
+		fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose -- Closing the in-memory temp handle after CSV generation.
+
+		$filename = 'eventkoi-orders-' . gmdate( 'Y-m-d' ) . '.csv';
+		$response = new WP_REST_Response( $csv, 200 );
+		$response->header( 'Content-Type', 'text/csv; charset=utf-8' );
+		$response->header( 'Content-Disposition', 'attachment; filename="' . $filename . '"' );
+
+		add_filter(
+			'rest_pre_serve_request',
+			static function ( $served, $result, $request, $_server ) use ( $csv, $filename ) {
+				unset( $result, $_server );
+
+				if ( '/' . EVENTKOI_API . '/tickets/orders/export' !== $request->get_route() ) {
+					return $served;
+				}
+
+				nocache_headers();
+				header( 'Content-Type: text/csv; charset=utf-8' );
+				header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
+				echo $csv; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Raw CSV payload for file download response.
+				return true;
+			},
+			10,
+			4
+		);
+
+		return $response;
+	}
+
+	/**
+	 * Neutralise spreadsheet formulas in a CSV cell.
+	 *
+	 * Attendee names and custom checkout field values are supplied by whoever
+	 * buys a ticket. Excel and LibreOffice execute any cell that opens with
+	 * =, +, -, @ or a control character, so a buyer could otherwise put a
+	 * formula in front of an admin downloading the attendee list. Prefixing a
+	 * single quote makes the cell literal text.
+	 *
+	 * @param string $value Cell value.
+	 * @return string Safe cell value.
+	 */
+	private static function escape_csv_formula( $value ) {
+		$value = (string) $value;
+
+		if ( '' === $value ) {
+			return $value;
+		}
+
+		return false !== strpbrk( $value[0], "=+-@\t\r" ) ? "'" . $value : $value;
+	}
+
+	/**
+	 * Resolve custom checkout field values for a ticket order row.
+	 *
+	 * Lite sells tickets through WooCommerce, so the values live in order meta.
+	 *
+	 * @param string $order_id Base order ID (`wc_123`).
+	 * @return array Values keyed by field key.
+	 */
+	private static function get_order_checkout_field_values( $order_id, $event_id = 0 ) {
+		$order_id = trim( (string) $order_id );
+
+		if ( '' === $order_id ) {
+			return array();
+		}
+
+		// Free orders never touch WooCommerce; their values are order notes.
+		if ( 0 !== strpos( $order_id, 'wc_' ) ) {
+			return \EventKoi\Core\Orders::get_checkout_field_values( absint( $order_id ), $event_id );
+		}
+
+		if ( ! function_exists( 'wc_get_order' ) ) {
+			return array();
+		}
+
+		$wc_order = wc_get_order( absint( substr( $order_id, 3 ) ) );
+
+		if ( ! $wc_order ) {
+			return array();
+		}
+
+		$values = $wc_order->get_meta( '_eventkoi_checkout_fields' );
+
+		return is_array( $values ) ? $values : array();
+	}
+
+	/**
+	 * Billing address of a WooCommerce order, in the parts the order screen reads.
+	 *
+	 * @param string $base_id Base order ID.
+	 * @return array|null Address parts, or null when this is not a WooCommerce order.
+	 */
+	private static function wc_order_address( $base_id ) {
+		if ( ! preg_match( '/^wc_(\d+)$/', (string) $base_id, $match ) || ! function_exists( 'wc_get_order' ) ) {
+			return null;
+		}
+
+		$order = wc_get_order( (int) $match[1] );
+		if ( ! $order ) {
+			return null;
+		}
+
+		return array(
+			'line1'       => (string) $order->get_billing_address_1(),
+			'line2'       => (string) $order->get_billing_address_2(),
+			'city'        => (string) $order->get_billing_city(),
+			'state'       => (string) $order->get_billing_state(),
+			'postal_code' => (string) $order->get_billing_postcode(),
+			'country'     => (string) $order->get_billing_country(),
+		);
+	}
+
+	/**
 	 * Return local WC ticket orders (order_id starts with 'wc_').
 	 *
 	 * @param WP_REST_Request $request Request object.
@@ -502,7 +1395,7 @@ class Tickets {
 					'amount_total'   => 0,
 					'currency'       => strtolower( (string) ( $row->currency ?? 'usd' ) ),
 					'created_at'     => (string) ( $row->created_at ?? '' ),
-					'gateway'        => 'woocommerce',
+					'gateway'        => self::detect_local_order_gateway( $base_id ),
 					'items'          => array(),
 				);
 			}
@@ -518,7 +1411,7 @@ class Tickets {
 		// Resolve event names from post titles.
 		$name_map = array();
 		foreach ( array_keys( $event_ids ) as $eid ) {
-			$title = get_the_title( $eid );
+			$title = eventkoi_event_title_text( $eid );
 			if ( $title ) {
 				$name_map[ $eid ] = $title;
 			}
@@ -680,6 +1573,7 @@ class Tickets {
 						'event_names'           => array(),
 						'customer_name'         => (string) ( $row->customer_name ?? '' ),
 						'customer_email'        => (string) ( $row->customer_email ?? '' ),
+						'customer_address'      => self::wc_order_address( $base_id ),
 						'payment_status'        => 'pending',
 						'status'                => 'pending',
 						'is_archived'           => false,
@@ -687,7 +1581,7 @@ class Tickets {
 						'amount_total'          => 0,
 						'currency'              => strtolower( (string) ( $row->currency ?? 'usd' ) ),
 						'created_at'            => (string) ( $row->created_at ?? '' ),
-						'gateway'               => 'woocommerce',
+						'gateway'               => self::detect_local_order_gateway( $base_id ),
 						'items'                 => array(),
 						'_completed_count'      => 0,
 						'_refunded_count'       => 0,
@@ -721,6 +1615,19 @@ class Tickets {
 				$grouped[ $base_id ]['amount_total'] += (float) ( $row->total_amount ?? 0 ) * 100;
 			}
 
+			$local_ids = array_values( array_filter( array_map( 'absint', array_filter( array_keys( $grouped ), 'is_numeric' ) ) ) );
+			if ( ! empty( $local_ids ) ) {
+				$placeholders = implode( ',', array_fill( 0, count( $local_ids ), '%d' ) );
+				// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQLPlaceholders.UnfinishedPrepare
+				$address_rows = $wpdb->get_results( $wpdb->prepare( "SELECT id, billing_address FROM {$wpdb->prefix}eventkoi_orders WHERE id IN ({$placeholders})", $local_ids ) );
+				foreach ( (array) $address_rows as $address_row ) {
+					$decoded = json_decode( (string) $address_row->billing_address, true );
+					if ( is_array( $decoded ) && isset( $grouped[ (string) $address_row->id ] ) ) {
+						$grouped[ (string) $address_row->id ]['customer_address'] = $decoded;
+					}
+				}
+			}
+
 			// Derive aggregate status from per-seat row mix.
 			foreach ( $grouped as &$entry ) {
 				$completed = (int) ( $entry['_completed_count'] ?? 0 );
@@ -748,7 +1655,7 @@ class Tickets {
 			// Resolve event names.
 			$name_map = array();
 			foreach ( array_keys( $event_ids ) as $eid ) {
-				$title = get_the_title( $eid );
+				$title = eventkoi_event_title_text( $eid );
 				if ( $title ) {
 					$name_map[ $eid ] = $title;
 				}
@@ -760,7 +1667,8 @@ class Tickets {
 					}
 				}
 				if ( ! empty( $order['event_ids'] ) ) {
-					$order['event_id'] = $order['event_ids'][0];
+					$order['event_id']        = $order['event_ids'][0];
+					$order['checkout_fields'] = \EventKoi\Core\Order_Customer::checkout_fields( (string) $order['id'], (int) $order['event_id'] );
 				}
 			}
 			unset( $order );
@@ -858,13 +1766,342 @@ class Tickets {
 		}
 
 		$payload['id']    = absint( $event_id );
-		$payload['title'] = get_the_title( $event_id );
+		$payload['title'] = eventkoi_event_title_text( $event_id );
+
+		$payload['is_package'] = Event::is_package();
 
 		if ( empty( $payload['timezone'] ) ) {
 			$payload['timezone'] = wp_timezone_string() ? wp_timezone_string() : 'UTC';
 		}
 
 		return $payload;
+	}
+
+	/**
+	 * Resolve the gateway label for a grouped local order base ID.
+	 *
+	 * WooCommerce orders use a wc_ prefix and manual attendees a manual_
+	 * prefix; free checkout stores seats under the numeric local order ID.
+	 *
+	 * @param string $base_id Base order ID from the ticket_orders composite key.
+	 * @return string
+	 */
+	private static function detect_local_order_gateway( $base_id ) {
+		$base_id = (string) $base_id;
+
+		if ( 0 === strpos( $base_id, 'manual_' ) ) {
+			return 'manual';
+		}
+
+		if ( 0 === strpos( $base_id, 'free_' ) || ctype_digit( $base_id ) ) {
+			return 'free';
+		}
+
+		return 'woocommerce';
+	}
+
+	/**
+	 * Complete a free (zero-total) checkout without a payment gateway.
+	 *
+	 * Creates the order record, per-seat ticket rows with check-in codes,
+	 * terms/checkout-field notes, and the buyer + admin confirmation emails,
+	 * so free tickets work without WooCommerce. Inventory holds created by
+	 * the checkout endpoint are released once the seats are recorded.
+	 *
+	 * @param array $args Order args: event_id, instance_ts, email, customer_name, currency, items, hold_id, metadata, checkout_fields, terms_consent.
+	 * @return array|WP_Error Array with order_id and checkout_id on success.
+	 */
+	private static function complete_free_order( $args ) {
+		$event_id        = absint( $args['event_id'] ?? 0 );
+		$instance_ts     = absint( $args['instance_ts'] ?? 0 );
+		$customer_email  = sanitize_email( (string) ( $args['email'] ?? '' ) );
+		$customer_name   = sanitize_text_field( (string) ( $args['customer_name'] ?? '' ) );
+		$currency        = strtoupper( sanitize_text_field( (string) ( $args['currency'] ?? 'USD' ) ) );
+		$items           = isset( $args['items'] ) && is_array( $args['items'] ) ? $args['items'] : array();
+		$hold_id         = sanitize_text_field( (string) ( $args['hold_id'] ?? '' ) );
+		$metadata        = isset( $args['metadata'] ) && is_array( $args['metadata'] ) ? $args['metadata'] : array();
+		$checkout_fields = isset( $args['checkout_fields'] ) && is_array( $args['checkout_fields'] ) ? $args['checkout_fields'] : array();
+		$terms_consent   = isset( $args['terms_consent'] ) && is_array( $args['terms_consent'] ) ? $args['terms_consent'] : null;
+
+		if ( ! $event_id || empty( $items ) ) {
+			return new WP_Error( 'invalid_free_order', __( 'Invalid checkout total.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
+		$checkout_id    = 'free_' . str_replace( '-', '', wp_generate_uuid4() );
+		$now            = time();
+		$total_quantity = 0;
+		$primary_ticket = 0;
+
+		foreach ( $items as $item ) {
+			$total_quantity += max( 1, absint( $item['quantity'] ?? 1 ) );
+			if ( 0 === $primary_ticket ) {
+				$primary_ticket = absint( $item['ticket_id'] ?? 0 );
+			}
+		}
+
+		\EKLIB\StellarWP\DB\DB::table( 'eventkoi_orders' )->upsert(
+			array(
+				'checkout_id'    => $checkout_id,
+				'ticket_id'      => $primary_ticket,
+				'quantity'       => $total_quantity,
+				'subtotal'       => 0,
+				'total'          => 0,
+				'item_price'     => 0,
+				'currency'       => strtolower( $currency ),
+				'payment_status' => 'complete',
+				'status'         => 'complete',
+				'created'        => $now,
+				'expires'        => $now,
+				'last_updated'   => $now,
+				'live'           => eventkoi_live_mode_enabled() ? 1 : 0,
+				'billing_name'   => $customer_name,
+				'billing_email'  => $customer_email,
+				'gateway'        => 'free',
+			),
+			array( 'checkout_id' )
+		);
+
+		$order_row = \EKLIB\StellarWP\DB\DB::table( 'eventkoi_orders' )->where( 'checkout_id', $checkout_id )->get();
+
+		if ( ! $order_row || empty( $order_row->id ) ) {
+			return new WP_Error( 'free_order_failed', __( 'The order could not be created.', 'eventkoi-lite' ), array( 'status' => 500 ) );
+		}
+
+		$order_id = absint( $order_row->id );
+		$orders   = new \EventKoi\Core\Orders();
+
+		// Terms consent snapshot + custom checkout field values as order notes.
+		if ( $terms_consent ) {
+			$consent_parts = array();
+			if ( '' !== trim( (string) ( $terms_consent['terms_text'] ?? '' ) ) ) {
+				$consent_parts[] = wp_strip_all_tags( (string) $terms_consent['terms_text'] );
+			}
+			foreach ( (array) ( $terms_consent['agreements'] ?? array() ) as $agreement_text ) {
+				$consent_parts[] = wp_strip_all_tags( (string) $agreement_text );
+			}
+			$orders->add_note(
+				$order_id,
+				'terms_consent',
+				sprintf(
+					/* translators: 1: acceptance date/time, 2: the terms text the customer accepted. */
+					__( 'Accepted at %1$s. Terms: %2$s', 'eventkoi-lite' ),
+					wp_date( 'Y-m-d H:i:s T', (int) ( $terms_consent['accepted_at'] ?? $now ) ),
+					implode( ' | ', $consent_parts )
+				),
+				'user'
+			);
+		}
+
+		if ( $checkout_fields ) {
+			$definitions = array();
+			foreach ( \EventKoi\Core\Orders::get_checkout_fields( $event_id ) as $field ) {
+				$definitions[ $field['key'] ] = $field;
+			}
+			foreach ( $checkout_fields as $key => $value ) {
+				$label = $definitions[ $key ]['label'] ?? $key;
+				$orders->add_note( $order_id, 'checkout_field', $label . ': ' . $value, 'user' );
+			}
+
+			// The per-field notes are what the order timeline shows; keep a
+			// machine-readable copy so exports can resolve values by key.
+			$orders->add_note( $order_id, 'checkout_fields', $checkout_fields, 'system' );
+		}
+
+		// Per-seat check-in codes, same alphabet and length as the paid flow.
+		$code_alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+		$generate_code = static function () use ( $code_alphabet ) {
+			$code  = '';
+			$bytes = random_bytes( 12 );
+			for ( $i = 0; $i < 12; $i++ ) {
+				$code .= $code_alphabet[ ord( $bytes[ $i ] ) % strlen( $code_alphabet ) ];
+			}
+			return $code;
+		};
+
+		$master_checkin_code = $generate_code();
+		$order_items         = array();
+		$total_seats         = 0;
+		$last_seat_code      = '';
+
+		foreach ( $items as $item ) {
+			$quantity     = max( 1, absint( $item['quantity'] ?? 1 ) );
+			$ticket_codes = array();
+			for ( $i = 0; $i < $quantity; $i++ ) {
+				$ticket_codes[] = $generate_code();
+			}
+
+			$total_seats   += $quantity;
+			$last_seat_code = end( $ticket_codes );
+
+			$order_items[] = array(
+				'ticket_id'    => absint( $item['ticket_id'] ?? 0 ),
+				'ticket_name'  => sanitize_text_field( (string) ( $item['name'] ?? '' ) ),
+				'name'         => sanitize_text_field( (string) ( $item['name'] ?? '' ) ),
+				'description'  => sanitize_text_field( (string) ( $item['description'] ?? '' ) ),
+				'quantity'     => $quantity,
+				'price'        => 0,
+				'unit_amount'  => 0,
+				'ticket_codes' => $ticket_codes,
+				'codes'        => $ticket_codes,
+			);
+		}
+
+		// Single-seat orders: collapse master code into the per-seat code so the
+		// emailed QR and the admin attendees row show the same value.
+		if ( 1 === $total_seats && '' !== $last_seat_code ) {
+			$master_checkin_code = $last_seat_code;
+		}
+
+		$local_order = array(
+			'order_id'       => (string) $order_id,
+			'customer_name'  => $customer_name,
+			'customer_email' => $customer_email,
+			'status'         => 'completed',
+			'payment_status' => 'complete',
+			'event_id'       => $event_id,
+			'instance_ts'    => $instance_ts,
+			'currency'       => $currency,
+			'hold_id'        => $hold_id,
+			'items'          => $order_items,
+			'metadata'       => $metadata,
+		);
+
+		\EventKoi\Core\Ticket_Order_Sync::sync_order_to_local( $local_order );
+
+		// The seats are recorded as sold, so the checkout hold can go.
+		if ( '' !== $hold_id ) {
+			self::release_inventory_holds( $hold_id );
+		}
+
+		$orders->add_note( $order_id, 'order_completed' );
+		$orders->add_note( $order_id, 'master_checkin_code', $master_checkin_code );
+
+		$email_order = array_merge(
+			$local_order,
+			array(
+				'id'                  => $checkout_id,
+				'display_id'          => $order_id,
+				'master_checkin_code' => $master_checkin_code,
+				'event_instance_ts'   => $instance_ts,
+				'terms_consent'       => $terms_consent,
+			)
+		);
+
+		\EventKoi\Core\Ticket_Emails::send_for_order_public( $email_order );
+		\EventKoi\Core\Ticket_Emails::send_admin_sale_notification( $email_order );
+
+		self::invalidate_order_caches( $event_id );
+
+		return array(
+			'order_id'    => $order_id,
+			'checkout_id' => $checkout_id,
+		);
+	}
+
+	/**
+	 * Manually add an attendee: create a free, complete order for a ticket type.
+	 *
+	 * Lets an admin put someone on the attendee list without checkout (ticket
+	 * transfers, competition winners). Availability is validated through the
+	 * same logic the storefront uses, so a manual attendee can never oversell.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function add_manual_attendee( WP_REST_Request $request ) {
+		$event_id    = absint( $request->get_param( 'event_id' ) );
+		$ticket_id   = absint( $request->get_param( 'ticket_id' ) );
+		$name        = sanitize_text_field( (string) $request->get_param( 'name' ) );
+		$email       = sanitize_email( (string) $request->get_param( 'email' ) );
+		$quantity    = absint( $request->get_param( 'quantity' ) );
+		$quantity    = max( 1, min( $quantity ? $quantity : 1, 100 ) );
+		$instance_ts = absint( $request->get_param( 'instance_ts' ) );
+		$send_email  = filter_var( $request->get_param( 'send_email' ), FILTER_VALIDATE_BOOLEAN );
+
+		if ( '' === $name ) {
+			return new WP_Error( 'missing_name', __( 'An attendee name is required.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
+		$raw_email = trim( (string) $request->get_param( 'email' ) );
+		if ( '' !== $raw_email && '' === $email ) {
+			return new WP_Error( 'invalid_email', __( 'The email address is not valid.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
+		$event_post = get_post( $event_id );
+		if ( ! $event_post || 'eventkoi_event' !== $event_post->post_type ) {
+			return new WP_Error( 'invalid_event', __( 'Invalid event.', 'eventkoi-lite' ), array( 'status' => 404 ) );
+		}
+
+		// Validate the ticket and its availability through the storefront view,
+		// so remaining counts, holds, and the per-event cap all apply here too.
+		$public_request = new WP_REST_Request( 'GET', '/eventkoi/v1/events/' . $event_id . '/tickets/public' );
+		$public_request->set_param( 'event_id', $event_id );
+		if ( $instance_ts > 0 ) {
+			$public_request->set_param( 'instance_ts', $instance_ts );
+		}
+
+		$public = self::get_public_tickets( $public_request );
+		if ( is_wp_error( $public ) ) {
+			return $public;
+		}
+
+		$payload = $public->get_data();
+		$ticket  = null;
+		foreach ( (array) ( $payload['tickets'] ?? array() ) as $entry ) {
+			if ( absint( $entry['id'] ?? 0 ) === $ticket_id ) {
+				$ticket = $entry;
+				break;
+			}
+		}
+
+		if ( null === $ticket ) {
+			return new WP_Error( 'invalid_ticket', __( 'This ticket type does not belong to the selected event.', 'eventkoi-lite' ), array( 'status' => 404 ) );
+		}
+
+		$remaining = $ticket['remaining'] ?? null;
+		if ( null !== $remaining && $quantity > (int) $remaining ) {
+			return new WP_Error(
+				'insufficient_capacity',
+				sprintf(
+					/* translators: %d: number of seats left. */
+					_n( 'Only %d seat is left for this ticket type.', 'Only %d seats are left for this ticket type.', (int) $remaining, 'eventkoi-lite' ),
+					(int) $remaining
+				),
+				array( 'status' => 400 )
+			);
+		}
+
+		$result = \EventKoi\Core\Ticket_Order_Sync::create_manual_order(
+			$event_id,
+			$ticket_id,
+			$name,
+			$email,
+			$quantity,
+			self::get_global_currency(),
+			$instance_ts
+		);
+
+		if ( empty( $result['rows'] ) ) {
+			return new WP_Error( 'insert_failed', __( 'The attendee could not be added.', 'eventkoi-lite' ), array( 'status' => 500 ) );
+		}
+
+		// Optional: email the purchase confirmation (with the QR check-in code)
+		// the same way a checkout would. Needs an address to send to.
+		$email_requested = $send_email && '' !== $email;
+		$email_sent      = $email_requested
+			? \EventKoi\Core\Ticket_Emails::send_for_order_id( (string) $result['order_id'] )
+			: false;
+
+		return new WP_REST_Response(
+			array(
+				'success'         => true,
+				'order_id'        => (string) $result['order_id'],
+				'quantity'        => (int) $result['rows'],
+				'email_requested' => $email_requested,
+				'email_sent'      => (bool) $email_sent,
+			),
+			200
+		);
 	}
 
 	/**
@@ -897,6 +2134,13 @@ class Tickets {
 
 		$event_post = get_post( $event_id );
 		if ( ! $event_post || 'eventkoi_event' !== $event_post->post_type ) {
+			return new WP_Error( 'invalid_event', __( 'Invalid event.', 'eventkoi-lite' ), array( 'status' => 404 ) );
+		}
+
+		if (
+			( 'publish' !== $event_post->post_status || post_password_required( $event_post ) )
+			&& ! current_user_can( 'edit_post', $event_id )
+		) {
 			return new WP_Error( 'invalid_event', __( 'Invalid event.', 'eventkoi-lite' ), array( 'status' => 404 ) );
 		}
 
@@ -938,6 +2182,13 @@ class Tickets {
 		$tickets         = array();
 		$global_currency = self::get_global_currency();
 
+		// Per-event total capacity (venue cap). null = unlimited. The storefront
+		// uses this to cap the combined quantity across all ticket types.
+		$event_capacity  = (int) $event::get_tickets_event_capacity();
+		$event_remaining = $event_capacity > 0
+			? max( $event_capacity - self::get_event_committed_quantity( $event_id, $instance_ts ), 0 )
+			: null;
+
 		foreach ( $rows as $ticket ) {
 			$sale_start_ts = ! empty( $ticket->sale_start ) ? strtotime( $ticket->sale_start ) : 0;
 			$sale_end_ts   = ! empty( $ticket->sale_end ) ? strtotime( $ticket->sale_end ) : 0;
@@ -964,6 +2215,16 @@ class Tickets {
 				$remaining = max( $quantity_available - $quantity_sold - $held_qty, 0 );
 			}
 
+			// A single type can never sell more than the event's shared capacity
+			// still allows, so clamp the displayed per-type count to what remains
+			// overall (and cap an otherwise-unlimited type to it as well).
+			// Checkout enforces the same event cap server-side.
+			if ( null !== $event_remaining ) {
+				$remaining = ( null === $remaining )
+					? $event_remaining
+					: min( $remaining, $event_remaining );
+			}
+
 			$tickets[] = array(
 				'id'                 => (int) $ticket->id,
 				'name'               => sanitize_text_field( $ticket->name ),
@@ -985,15 +2246,23 @@ class Tickets {
 			array(
 				'success'                     => true,
 				'event_id'                    => $event_id,
-				'event_title'                 => get_the_title( $event_id ),
+				'event_title'                 => eventkoi_event_title_text( $event_id ),
 				'event'                       => self::get_public_event_payload( $event_id ),
 				'attendance_mode'             => $event::get_attendance_mode(),
 				'tickets_enabled'             => $event::get_tickets_enabled(),
 				'tickets_auto_create_account' => $event::get_tickets_auto_create_account(),
 				'tickets_show_remaining'      => $event::get_tickets_show_remaining(),
 				'tickets_show_unavailable'    => $event::get_tickets_show_unavailable(),
+				'tickets_show_sold_out'       => $event::get_tickets_show_sold_out(),
+				'tickets_show_upcoming'       => $event::get_tickets_show_upcoming(),
+				'tickets_show_ended'          => $event::get_tickets_show_ended(),
 				'tickets_terms_conditions'    => wp_kses_post( $event::get_tickets_terms_conditions() ),
+				'tickets_terms_conditions_required' => $event::get_tickets_terms_conditions_required(),
+				'tickets_agreements'          => $event::get_tickets_agreements(),
+				'tickets_event_capacity'      => $event_capacity,
+				'tickets_event_remaining'     => $event_remaining,
 				'tickets_display_mode'        => $event::get_tickets_display_mode(),
+				'tickets_attendee_details'    => $event::get_tickets_attendee_details(),
 				'event_ended'                 => $event_ended,
 				'tickets'                     => $tickets,
 			),
@@ -1112,6 +2381,25 @@ class Tickets {
 			}
 		}
 
+		// Enforce ticket terms agreement when the event requires it. The frontend
+		// also gates this, but the server must reject direct API calls.
+		if (
+			$event::get_tickets_terms_conditions_required()
+			&& '' !== trim( (string) $event::get_tickets_terms_conditions() )
+			&& ! rest_sanitize_boolean( $request->get_param( 'terms_accepted' ) )
+		) {
+			return new WP_Error( 'terms_not_accepted', __( 'Please agree to the terms & conditions to continue.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
+		// Enforce every required agreement checkbox the same way.
+		$agreements          = $event::get_tickets_agreements();
+		$accepted_agreements = array_map( 'sanitize_key', (array) $request->get_param( 'agreements_accepted' ) );
+		foreach ( $agreements as $agreement ) {
+			if ( ! empty( $agreement['required'] ) && ! in_array( $agreement['id'], $accepted_agreements, true ) ) {
+				return new WP_Error( 'terms_not_accepted', __( 'Please agree to all required terms to continue.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+			}
+		}
+
 		if ( empty( $return_url ) ) {
 			$return_url = wp_get_referer();
 			$return_url = $return_url ? esc_url_raw( $return_url ) : esc_url_raw( get_permalink( $event_id ) );
@@ -1129,7 +2417,7 @@ class Tickets {
 			$instance_ts = self::extract_instance_ts_from_url( $return_url );
 		}
 
-		$event_title          = wp_strip_all_tags( get_the_title( $event_id ) );
+		$event_title          = eventkoi_event_title_text( $event_id );
 		$event_instance_title = $event_title;
 		if ( $instance_ts > 0 && function_exists( 'eventkoi_get_instance_override' ) ) {
 			$instance_override = eventkoi_get_instance_override( $event_id, $instance_ts );
@@ -1286,6 +2574,32 @@ class Tickets {
 			return new WP_Error( 'invalid_total', __( 'Invalid checkout total.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
+		// Who each ticket is for, when the event asks. Validated against the
+		// quantities above so a payload can never name more seats than it buys.
+		$email_attendees = rest_sanitize_boolean( $request->get_param( 'email_attendees' ) );
+		$attendees       = \EventKoi\Core\Attendees::sanitize_checkout_attendees(
+			$request->get_param( 'attendees' ),
+			$sanitized_items,
+			$event::get_tickets_attendee_details(),
+			$email_attendees
+		);
+		if ( is_wp_error( $attendees ) ) {
+			return $attendees;
+		}
+		if ( empty( $attendees ) ) {
+			$email_attendees = false;
+		}
+
+		// Enforce the per-event total ticket capacity (venue cap) across all ticket
+		// types, on top of each ticket's own availability validated above.
+		$event_capacity = (int) $event::get_tickets_event_capacity();
+		if ( $event_capacity > 0 ) {
+			$event_remaining = max( $event_capacity - self::get_event_committed_quantity( $event_id, $instance_ts ), 0 );
+			if ( $total_quantity > $event_remaining ) {
+				return new WP_Error( 'event_capacity_reached', __( 'Not enough tickets remaining for this event.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+			}
+		}
+
 		$metadata = array(
 			'event_id'             => (string) $event_id,
 			'event_title'          => (string) $event_title,
@@ -1344,6 +2658,49 @@ class Tickets {
 			return $hold_result;
 		}
 
+		// Who each ticket is for, kept under the hold until the order confirms.
+		\EventKoi\Core\Attendees::stash_checkout_attendees( $hold_id, $attendees, $email_attendees );
+
+		// Free orders: there is nothing to charge, so skip the payment gateway
+		// entirely and complete the order right away (order record, per-seat
+		// tickets, confirmation emails). Free tickets work without WooCommerce.
+		if ( 0 === $total_cents ) {
+			$free_order = self::complete_free_order(
+				array(
+					'event_id'        => $event_id,
+					'instance_ts'     => $instance_ts,
+					'email'           => $email,
+					'customer_name'   => $customer_name,
+					'currency'        => $currency,
+					'items'           => $edge_items,
+					'hold_id'         => $hold_id,
+					'metadata'        => $metadata,
+					'checkout_fields' => $checkout_fields,
+					'terms_consent'   => self::build_terms_consent( $event, $request, $agreements, $accepted_agreements ),
+				)
+			);
+
+			if ( is_wp_error( $free_order ) ) {
+				self::release_inventory_holds( $hold_id );
+				return $free_order;
+			}
+
+			return new WP_REST_Response(
+				array(
+					'success'     => true,
+					'free_order'  => true,
+					'hosted_url'  => $return_url ? $return_url : get_permalink( $event_id ),
+					'checkout_id' => $free_order['checkout_id'],
+					'order_id'    => $free_order['order_id'],
+					'event_id'    => $event_id,
+					'instance_ts' => $instance_ts,
+					'total_cents' => 0,
+					'currency'    => strtolower( $currency ? $currency : 'usd' ),
+				),
+				200
+			);
+		}
+
 		// Lite requires WooCommerce for checkout.
 		if ( ! class_exists( 'WooCommerce' ) ) {
 			self::release_inventory_holds( $hold_id );
@@ -1368,7 +2725,11 @@ class Tickets {
 				'wp_user_id'    => $wp_user_id,
 				'wp_user_label' => $wp_user_label,
 				'checkout_note' => $checkout_note,
+				'hold_id'       => $hold_id,
 				'checkout_fields' => $checkout_fields,
+				// Snapshot the terms the customer accepted so the order record and
+				// the admin sale email document the exact consented text.
+				'terms_consent' => self::build_terms_consent( $event, $request, $agreements, $accepted_agreements ),
 			)
 		);
 
@@ -1414,6 +2775,43 @@ class Tickets {
 				'sent'    => (bool) ( $result['sent'] ?? false ),
 			)
 		);
+	}
+
+	/**
+	 * Correct the customer details on an order.
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function update_order_customer( WP_REST_Request $request ) {
+		$order_id = sanitize_text_field( (string) $request->get_param( 'order_id' ) );
+
+		if ( '' !== $order_id && self::is_ticket_order_archived( $order_id ) ) {
+			return self::archived_order_error();
+		}
+
+		$address = $request->get_param( 'customer_address' );
+		$result  = \EventKoi\Core\Order_Customer::update(
+			$order_id,
+			(string) $request->get_param( 'customer_name' ),
+			(string) $request->get_param( 'customer_email' ),
+			is_array( $address ) ? $address : null
+		);
+
+		if ( is_wp_error( $result ) ) {
+			return $result;
+		}
+
+		$fields = $request->get_param( 'checkout_fields' );
+		if ( is_array( $fields ) && ! empty( $fields ) ) {
+			$saved = \EventKoi\Core\Order_Customer::update_checkout_fields( $order_id, $fields );
+			if ( is_wp_error( $saved ) ) {
+				return $saved;
+			}
+			$result['checkout_fields'] = $saved;
+		}
+
+		return rest_ensure_response( array_merge( array( 'success' => true ), $result ) );
 	}
 
 	/**
@@ -2201,11 +3599,15 @@ class Tickets {
 	}
 
 	/**
-	 * Hold duration in seconds (30 minutes).
+	 * Hold duration in seconds (35 minutes).
+	 *
+	 * Stripe Checkout sessions are created with expires_at at this horizon and
+	 * Stripe enforces a 30-minute minimum, so this must stay >= 2100 to keep a
+	 * skew margin above that floor.
 	 *
 	 * @var int
 	 */
-	const HOLD_DURATION = 1800;
+	const HOLD_DURATION = 2100;
 
 	/**
 	 * Create inventory hold rows for a checkout attempt.
@@ -2218,6 +3620,46 @@ class Tickets {
 	 * @param string $email         Customer email.
 	 * @param string $customer_name Customer name.
 	 */
+	/**
+	 * Build the consent snapshot passed to the gateway: the accepted terms
+	 * text plus every agreement checkbox the customer ticked.
+	 *
+	 * @param \EventKoi\Core\Event $event               Event instance.
+	 * @param \WP_REST_Request      $request             Checkout request.
+	 * @param array                 $agreements          All agreement items on the event.
+	 * @param array                 $accepted_agreements Accepted agreement IDs.
+	 * @return array|null
+	 */
+	private static function build_terms_consent( $event, $request, $agreements, $accepted_agreements ) {
+		// The terms are always displayed at checkout, so document them whenever
+		// they exist; the required toggle only gates them when the buyer never
+		// ticked the acceptance box it demands.
+		$terms_text = (string) $event::get_tickets_terms_conditions();
+		if (
+			$event::get_tickets_terms_conditions_required()
+			&& ! rest_sanitize_boolean( $request->get_param( 'terms_accepted' ) )
+		) {
+			$terms_text = '';
+		}
+
+		$accepted_texts = array();
+		foreach ( $agreements as $agreement ) {
+			if ( in_array( $agreement['id'], $accepted_agreements, true ) ) {
+				$accepted_texts[] = $agreement['text'];
+			}
+		}
+
+		if ( '' === trim( $terms_text ) && empty( $accepted_texts ) ) {
+			return null;
+		}
+
+		return array(
+			'accepted_at' => time(),
+			'terms_text'  => $terms_text,
+			'agreements'  => $accepted_texts,
+		);
+	}
+
 	private static function create_inventory_holds( $hold_id, $event_id, $items, $tickets_by_id, $currency, $email, $customer_name ) {
 		global $wpdb;
 
@@ -2340,6 +3782,46 @@ class Tickets {
 				$wpdb->esc_like( $hold_id ) . '%'
 			)
 		);
+	}
+
+	/**
+	 * Total tickets committed across the WHOLE event (all ticket types): paid
+	 * sales plus active inventory holds. Used to enforce the per-event capacity.
+	 *
+	 * @param int $event_id    Event ID.
+	 * @param int $instance_ts Optional instance timestamp to scope the count.
+	 * @return int
+	 */
+	private static function get_event_committed_quantity( $event_id, $instance_ts = 0 ) {
+		global $wpdb;
+
+		$table     = $wpdb->prefix . 'eventkoi_ticket_orders';
+		$threshold = gmdate( 'Y-m-d H:i:s', time() - self::HOLD_DURATION );
+		$paid      = "payment_status IN ('complete','completed','succeeded','paid','partially_refunded')";
+		$active    = "( {$paid} OR ( payment_status = 'hold' AND created_at > %s ) )";
+
+		if ( $instance_ts > 0 ) {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$committed = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COALESCE(SUM(quantity), 0) FROM {$table} WHERE event_id = %d AND instance_ts = %d AND {$active}", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$event_id,
+					$instance_ts,
+					$threshold
+				)
+			);
+		} else {
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+			$committed = $wpdb->get_var(
+				$wpdb->prepare(
+					"SELECT COALESCE(SUM(quantity), 0) FROM {$table} WHERE event_id = %d AND {$active}", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+					$event_id,
+					$threshold
+				)
+			);
+		}
+
+		return absint( $committed );
 	}
 
 	/**

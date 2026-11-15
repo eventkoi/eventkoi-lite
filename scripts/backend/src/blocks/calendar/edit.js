@@ -1,5 +1,7 @@
+import { CalendarHeaderPopover } from "@/components/calendar/CalendarHeaderPopover";
 import { CalendarToolbar } from "@/components/calendar/calendar-toolbar";
 import { EventPopover } from "@/components/calendar/EventPopover";
+import { ListView } from "@/components/calendar/list-view";
 import { TimezonePicker } from "@/components/timezone-picker";
 import {
   getInitialDate,
@@ -10,6 +12,7 @@ import apiRequest from "@wordpress/api-fetch";
 import { InspectorControls, useBlockProps } from "@wordpress/block-editor";
 import { __, sprintf } from "@wordpress/i18n";
 import { useEffect, useRef, useState } from "react";
+import { createRoot } from "react-dom/client";
 
 import { formatDate } from "@fullcalendar/core";
 import allLocales from "@fullcalendar/core/locales-all";
@@ -168,10 +171,20 @@ export default function Edit({
           .filter((id) => id && Number(id) > 0)
           .map(String)
       : [];
+  // Mirror the frontend (class-blocks.php) which absint-filters the list, so
+  // non-numeric sentinels like a legacy ["all"] are dropped and we fall back
+  // to the default calendar instead of sending id=all (which returns nothing).
+  const numericCalendars = Array.isArray(attributes.calendars)
+    ? attributes.calendars
+        .map(String)
+        .filter((c) => /^\d+$/.test(c) && Number(c) > 0)
+    : [];
   const calendars = attributes?.selectAllCalendars
-    ? (allCalendarIds.length > 0 ? allCalendarIds.join(",") : null)
-    : attributes.calendars && attributes.calendars.length > 0
-    ? attributes.calendars.map(String).join(",")
+    ? allCalendarIds.length > 0
+      ? allCalendarIds.join(",")
+      : null
+    : numericCalendars.length > 0
+    ? numericCalendars.join(",")
     : null;
 
   let id = attributes.calendar_id;
@@ -379,7 +392,6 @@ export default function Edit({
       meridiem: "short",
     }),
   };
-  const usesMeridiem = /^en/i.test(localeToUse);
   const resolvedLocalTz =
     typeof window !== "undefined"
       ? Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -568,13 +580,28 @@ export default function Edit({
     });
     const withoutZeroMinutes = formatted.replace(/:00\b/, "");
 
-    if (!usesMeridiem) {
+    // Normalize or restore the am/pm suffix for every locale so a bare hour
+    // is never shown (a French "10" is indistinguishable from a count).
+    if (/([ap])\.?m?\.?$/i.test(withoutZeroMinutes)) {
+      return withoutZeroMinutes.replace(/\s?([ap])\.?m?\.?$/i, (match, part) => {
+        return ` ${part.toUpperCase()}M`;
+      });
+    }
+
+    const numeric = withoutZeroMinutes.match(/\d{1,2}/);
+    if (!numeric) {
       return withoutZeroMinutes;
     }
 
-    return withoutZeroMinutes.replace(/\s?([ap])\.?m?$/i, (match, part) => {
-      return ` ${part.toUpperCase()}M`;
-    });
+    const hour24 = parseInt(
+      formatInCalendarTz(date, { hour: "numeric", hour12: false }),
+      10
+    );
+    if (Number.isNaN(hour24)) {
+      return withoutZeroMinutes;
+    }
+
+    return `${withoutZeroMinutes} ${hour24 < 12 ? "AM" : "PM"}`;
   };
 
   const globalDayStart = eventkoi_params?.day_start_time || "00:00";
@@ -653,6 +680,18 @@ export default function Edit({
         }
       >
         <div className="relative">
+          {/* Timezone switcher */}
+          {attributes.showTimezone !== false && (
+            <div className="flex justify-start md:justify-end py-4 text-sm text-foreground">
+              <TimezonePicker
+                timezone={timezone}
+                setTimezone={setTimezone}
+                timeFormat={timeFormat}
+                setTimeFormat={setTimeFormat}
+              />
+            </div>
+          )}
+
           <CalendarToolbar
             calendarApi={calendarApi}
             currentDate={currentDate}
@@ -666,17 +705,31 @@ export default function Edit({
             timeFormat={timeFormat}
           />
 
-          {/* Timezone switcher */}
-          <div className="flex justify-start md:justify-end py-4 text-sm text-foreground">
-            <TimezonePicker
-              timezone={timezone}
-              setTimezone={setTimezone}
-              timeFormat={timeFormat}
-              setTimeFormat={setTimeFormat}
-            />
-          </div>
 
-          <FullCalendar
+          {/*
+            Pre-seed FullCalendar's style root. In WP's iframed block editor,
+            FullCalendar v6 tries to inject its CSS by inserting a <style> before
+            the iframe document's first child — which is the <!doctype>, throwing
+            HierarchyRequestError and crashing the block. Rendering this empty
+            <style data-fullcalendar> first means FullCalendar finds and reuses
+            it instead of running that broken insertBefore.
+          */}
+          <style data-fullcalendar="" suppressHydrationWarning />
+
+          {view === "list" ? (
+            <ListView
+              events={allEvents}
+              timezone={timezone}
+              timeFormat={timeFormat}
+              showImage={attributes.showImage}
+              showDescription={attributes.showDescription}
+              showLocation={attributes.showLocation}
+              borderStyle={attributes.borderStyle}
+              borderSize={attributes.borderSize}
+              loading={false}
+            />
+          ) : (
+            <FullCalendar
             key={timezone}
             ref={calendarRef}
             locales={allLocales}
@@ -837,6 +890,7 @@ export default function Edit({
               setSelectedEvent(enriched);
             }}
           />
+          )}
 
           {selectedEvent && anchorPos && (
             <EventPopover

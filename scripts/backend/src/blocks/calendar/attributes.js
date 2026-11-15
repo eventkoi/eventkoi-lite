@@ -9,8 +9,16 @@ let attrs = {
   startday: {
     type: "string",
   },
+  showTimezone: {
+    type: "boolean",
+    default: true,
+  },
   timeframe: {
     type: "string",
+  },
+  views: {
+    type: "string",
+    default: "",
   },
   default_month: {
     type: "string",

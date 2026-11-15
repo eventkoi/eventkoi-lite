@@ -43,9 +43,11 @@ class Blocks {
 		add_filter( 'pre_render_block', array( __CLASS__, 'mark_eventkoi_query_loop' ), 5, 2 );
 		add_filter( 'query_loop_block_query_vars', array( __CLASS__, 'filter_event_query_loop' ), 10, 2 );
 		add_filter( 'register_block_type_args', array( __CLASS__, 'register_core_query_attributes' ), 10, 2 );
+		add_filter( 'render_block', array( __CLASS__, 'hide_calendar_backlink' ), 1, 2 );
 		add_filter( 'render_block', array( __CLASS__, 'seed_visibility_wrapper' ), 7, 2 );
 		add_filter( 'render_block', array( __CLASS__, 'render_eventkoi_image' ), 9, 2 );
 		add_filter( 'render_block', array( __CLASS__, 'render_shortcodes_in_image_src' ), 8, 2 );
+		add_filter( 'render_block', array( __CLASS__, 'fill_bound_event_image_alt' ), 9, 2 );
 		add_filter( 'render_block', array( __CLASS__, 'render_eventkoi_query_loop' ), 10, 2 );
 
 		add_filter( 'block_categories_all', array( __CLASS__, 'register_block_category' ), 99, 2 );
@@ -53,6 +55,30 @@ class Blocks {
 		add_filter( 'render_block_eventkoi/calendar', array( __CLASS__, 'render_calendar_block' ), 88, 2 );
 		add_filter( 'render_block_eventkoi/list', array( __CLASS__, 'render_list_block' ), 89, 2 );
 		add_filter( 'render_block', array( __CLASS__, 'render_event_block' ), 99, 2 );
+	}
+
+	/**
+	 * Remove the template's whole "See all events in" line when the setting is off,
+	 * so its text is not left behind without the link.
+	 *
+	 * @param string $block_content Block content.
+	 * @param array  $block         Parsed block.
+	 * @return string
+	 */
+	public static function hide_calendar_backlink( $block_content, $block ) {
+		if ( 'core/paragraph' !== ( $block['blockName'] ?? '' ) || false === strpos( (string) $block_content, 'event_calendar_link' ) ) {
+			return $block_content;
+		}
+
+		if ( Event::is_calendar_backlink_enabled() ) {
+			return $block_content;
+		}
+
+		// The line is the link and a few words, in any language. Longer text keeps
+		// its words and only loses the link.
+		$words = preg_split( '/\s+/u', trim( wp_strip_all_tags( (string) $block_content ) ) );
+
+		return count( (array) $words ) <= 12 ? '' : $block_content;
 	}
 
 	/**
@@ -102,8 +128,9 @@ class Blocks {
 			$field,
 			$event,
 			array(
-				'dateFormat' => $attributes['dateFormat'] ?? '',
-				'timeFormat' => $attributes['timeFormat'] ?? '',
+				'dateFormat'    => $attributes['dateFormat'] ?? '',
+				'timeFormat'    => $attributes['timeFormat'] ?? '',
+				'excerptLength' => $attributes['excerptLength'] ?? 0,
 			),
 			! empty( $context_event )
 		);
@@ -265,6 +292,16 @@ class Blocks {
 						'padding' => true,
 					),
 					'align'      => array( 'left', 'center', 'right' ),
+					'__experimentalBorder' => array(
+						'color'                         => true,
+						'radius'                        => true,
+						'style'                         => true,
+						'width'                         => true,
+						'__experimentalDefaultControls' => array(
+							'color'  => true,
+							'radius' => true,
+						),
+					),
 				),
 			)
 		);
@@ -562,7 +599,7 @@ JS;
 				'/<(?P<tag>\w+)(?P<before_class>[^>]*)class="(?P<class>[^"]*eventkoi-front[^"]*)"(?P<after_class>[^>]*)>/',
 				function ( $matches ) use ( $id ) {
 					return sprintf(
-						'<%1$s%2$sclass="%3$s" data-event="%4$d" role="main"%5$s>',
+						'<%1$s%2$sclass="%3$s" data-event="%4$d"%5$s>',
 						$matches['tag'],
 						$matches['before_class'],
 						$matches['class'],
@@ -600,9 +637,31 @@ JS;
 			$block_content = do_shortcode( $block_content );
 		}
 
-		if ( ! $has_eventkoi_shortcode ) {
+		// These literal tokens only exist in the plugin's own single-event
+		// templates, so the pass is limited to event pages: anywhere else a
+		// bare regex sweep rewrites innocent content (page-builder widgets
+		// carry the key names inside class attributes). The lookarounds keep
+		// tokens embedded in class names or slugs intact even on event pages.
+		$is_event_context = 'eventkoi_event' === get_post_type( get_the_ID() );
+
+		// The EventKoi Divi modules name event fields in their own settings
+		// ("event_title"). Those must reach the module as written, so the
+		// module shortcodes sit out the sweep below.
+		$divi_modules  = array();
+		$block_content = preg_replace_callback(
+			'/\[et_pb_eventkoi_[a-z0-9_]+\b[^\[\]]*\]/i',
+			function ( $matches ) use ( &$divi_modules ) {
+				$key                  = '__EK_DIVI_MODULE_' . count( $divi_modules ) . '__';
+				$divi_modules[ $key ] = $matches[0];
+
+				return $key;
+			},
+			(string) $block_content
+		);
+
+		if ( ! $has_eventkoi_shortcode && $is_event_context ) {
 			foreach ( $allowed_keys as $base_key ) {
-				$pattern = '/\b' . preg_quote( $base_key, '/' ) . '(_\d+)?\b/';
+				$pattern = '/(?<![\w-])' . preg_quote( $base_key, '/' ) . '(_\d+)?(?![\w-])/';
 
 				$block_content = preg_replace_callback(
 					$pattern,
@@ -614,20 +673,29 @@ JS;
 			}
 		}
 
+		if ( ! empty( $divi_modules ) ) {
+			$block_content = strtr( $block_content, $divi_modules );
+		}
+
 		$block_content = str_replace(
 			'share.png" alt=""',
 			'share.png" alt="' . esc_attr__( 'Share this event', 'eventkoi-lite' ) . '"',
 			$block_content
 		);
 
-		$block_content = str_replace(
-			'pin.png" alt=""',
-			'pin.png" alt="" role="presentation" aria-hidden="true"',
+		// Only add the presentation attributes once. This filter runs for every
+		// nesting level of the template and the needle also matches the output,
+		// so a plain str_replace stacked a new copy on each pass.
+		$block_content = preg_replace(
+			'/(pin|date)\.png" alt=""(?! role="presentation")/',
+			'$1.png" alt="" role="presentation" aria-hidden="true"',
 			$block_content
 		);
-		$block_content = str_replace(
-			'date.png" alt=""',
-			'date.png" alt="" role="presentation" aria-hidden="true"',
+		// Templates saved while the old replace was stacking copies keep them
+		// in the database, so collapse any repeats back to a single pair.
+		$block_content = preg_replace(
+			'/( role="presentation" aria-hidden="true"){2,}/',
+			'$1',
 			$block_content
 		);
 
@@ -671,12 +739,15 @@ JS;
 			}
 		}
 
-		$style_attr = '';
+		$style_pairs = array();
 		if ( ! empty( $attrs['style'] ) && is_array( $attrs['style'] ) ) {
 			$style_pairs = self::style_array_to_css( $attrs['style'] );
-			if ( ! empty( $style_pairs ) ) {
-				$style_attr = ' style="' . esc_attr( implode( ';', $style_pairs ) ) . '"';
-			}
+		}
+		$style_pairs = array_merge( $style_pairs, self::image_dimension_styles( $attrs ) );
+
+		$style_attr = '';
+		if ( ! empty( $style_pairs ) ) {
+			$style_attr = ' style="' . esc_attr( implode( ';', $style_pairs ) ) . '"';
 		}
 
 		$img_html = sprintf(
@@ -686,11 +757,16 @@ JS;
 			$style_attr
 		);
 
-		// Wrap in link if event URL present.
+		// Wrap in link if event URL present. Like the title, selected-day rows
+		// link to the parent event, not one highlighted date.
 		if ( ! empty( $event['url'] ) ) {
+			$image_url = (string) $event['url'];
+			if ( 'selected' === ( $event['standard_type'] ?? '' ) ) {
+				$image_url = remove_query_arg( 'event_day', $image_url );
+			}
 			$img_html = sprintf(
 				'<a href="%1$s" class="ek-event-image-link" rel="bookmark">%2$s</a>',
-				esc_url( $event['url'] ),
+				esc_url( $image_url ),
 				$img_html
 			);
 		}
@@ -698,6 +774,100 @@ JS;
 		$class_attr = ! empty( $classes ) ? ' class="' . esc_attr( implode( ' ', $classes ) ) . '"' : '';
 
 		return sprintf( '<figure%1$s>%2$s</figure>', $class_attr, $img_html );
+	}
+
+	/**
+	 * Inline styles for the aspect ratio, width, height and scale an Image or
+	 * Post Featured Image block was given in the editor, in the same shape
+	 * core's featured image renderer emits them.
+	 *
+	 * @param array $attrs Block attributes.
+	 * @return array List of css declarations.
+	 */
+	private static function image_dimension_styles( $attrs ) {
+		$pairs = array();
+
+		$width  = isset( $attrs['width'] ) && '' !== $attrs['width'] && null !== $attrs['width'] ? $attrs['width'] : '';
+		$height = isset( $attrs['height'] ) && '' !== $attrs['height'] && null !== $attrs['height'] ? $attrs['height'] : '';
+
+		if ( is_numeric( $width ) ) {
+			$width .= 'px';
+		}
+		if ( is_numeric( $height ) ) {
+			$height .= 'px';
+		}
+
+		if ( ! empty( $attrs['aspectRatio'] ) ) {
+			if ( 'auto' !== $attrs['aspectRatio'] ) {
+				$pairs[] = safecss_filter_attr( 'aspect-ratio:' . $attrs['aspectRatio'] );
+			}
+			$pairs[] = 'width:100%';
+		}
+
+		if ( '' !== $height ) {
+			$pairs[] = safecss_filter_attr( 'height:' . $height );
+		} elseif ( '' !== $width ) {
+			$pairs[] = 'height:auto';
+		}
+
+		if ( '' !== $width ) {
+			$pairs[] = safecss_filter_attr( 'width:' . $width );
+		}
+
+		if ( ! empty( $attrs['scale'] ) ) {
+			$pairs[] = safecss_filter_attr( 'object-fit:' . $attrs['scale'] );
+		}
+
+		return array_values( array_filter( $pairs ) );
+	}
+
+	/**
+	 * Give an image block bound to the event image the alt text saved with
+	 * that picture in the Media Library. With none saved it stays empty.
+	 *
+	 * @param string $block_content Original content.
+	 * @param array  $block         Parsed block.
+	 * @return string Modified content.
+	 */
+	public static function fill_bound_event_image_alt( $block_content, $block ) {
+		if ( ( $block['blockName'] ?? '' ) !== 'core/image' ) {
+			return $block_content;
+		}
+
+		$key = $block['attrs']['metadata']['bindings']['url']['args']['key'] ?? '';
+
+		if ( ! in_array( $key, array( 'event_image_url', 'image_url' ), true ) ) {
+			return $block_content;
+		}
+
+		$alt_position = strpos( $block_content, 'alt=""' );
+		$event_id     = get_the_ID();
+
+		if ( false === $alt_position || ! $event_id || 'eventkoi_event' !== get_post_type( $event_id ) ) {
+			return $block_content;
+		}
+
+		$image_id = absint( get_post_meta( $event_id, 'image_id', true ) );
+
+		if ( ! $image_id ) {
+			$image_id = (int) get_post_thumbnail_id( $event_id );
+		}
+
+		$file = $image_id ? wp_basename( (string) wp_get_attachment_url( $image_id ) ) : '';
+
+		// A date with its own picture shows a different file, so the alt text
+		// of the event picture would not describe it.
+		if ( '' === $file || false === strpos( $block_content, '/' . $file ) ) {
+			return $block_content;
+		}
+
+		$alt = trim( (string) get_post_meta( $image_id, '_wp_attachment_image_alt', true ) );
+
+		if ( '' === $alt ) {
+			return $block_content;
+		}
+
+		return substr_replace( $block_content, 'alt="' . esc_attr( $alt ) . '"', $alt_position, 6 );
 	}
 
 	/**
@@ -770,6 +940,19 @@ JS;
 			$block_content,
 			1
 		);
+
+		// An image left without alt text takes the one saved with the picture
+		// in the Media Library. With none saved it stays empty.
+		$alt_position = strpos( $block_content, 'alt=""' );
+
+		if ( false !== $alt_position ) {
+			$attachment_id = attachment_url_to_postid( $resolved );
+			$alt           = $attachment_id ? trim( (string) get_post_meta( $attachment_id, '_wp_attachment_image_alt', true ) ) : '';
+
+			if ( '' !== $alt ) {
+				$block_content = substr_replace( $block_content, 'alt="' . esc_attr( $alt ) . '"', $alt_position, 6 );
+			}
+		}
 
 		return $block_content;
 	}
@@ -947,7 +1130,19 @@ JS;
 		// Do not enforce tax_query here; frontend render uses Calendar::get_events directly.
 		unset( $query_vars['tax_query'] );
 
-		return $query_vars;
+		/**
+		 * Filter the query vars of the EventKoi Query Loop variation.
+		 *
+		 * Runs after the plugin's own adjustments, so anything set here (for
+		 * example a custom tax_query) survives. Note the frontend render fetches
+		 * events through Calendar::get_events; use the eventkoi_events_query_args
+		 * filter to constrain those results.
+		 *
+		 * @param array        $query_vars WP_Query args generated by the Query Loop block.
+		 * @param array|object $block      Parsed block data or WP_Block instance.
+		 * @param array        $attrs      Resolved block attributes.
+		 */
+		return apply_filters( 'eventkoi_query_loop_query_vars', $query_vars, $block, $attrs );
 	}
 
 	/**
@@ -1029,7 +1224,13 @@ JS;
 		$total_pages  = $per_page > 0 ? (int) ceil( $total_events / $per_page ) : 1;
 
 		if ( empty( $events ) ) {
-			return '<p class="ek-no-events">' . esc_html__( 'No events found.', 'eventkoi-lite' ) . '</p>';
+			$empty_markup = self::render_eventkoi_no_results( $block );
+
+			if ( '' === $empty_markup ) {
+				$empty_markup = '<p class="ek-no-events">' . esc_html__( 'No events found.', 'eventkoi-lite' ) . '</p>';
+			}
+
+			return $empty_markup;
 		}
 
 		$wrapper_class     = ! empty( $attrs['className'] ) ? $attrs['className'] : 'eventkoi-query-loop';
@@ -1057,8 +1258,23 @@ JS;
 					continue;
 				}
 
-				if ( 'core/query-pagination' === $name && $total_pages > 1 ) {
-					$rendered .= self::render_eventkoi_pagination( $inner, $paged, $total_pages );
+				if ( 'core/query-pagination' === $name ) {
+					// Owns pagination outright. The core pagination block runs
+					// its own unfiltered query, so it reports a different total
+					// and emits ?query-page links this loop never reads, which
+					// makes every page repeat page one. Render ours, or nothing
+					// when a single page covers the results.
+					if ( $total_pages > 1 ) {
+						$rendered .= self::render_eventkoi_pagination( $inner, $paged, $total_pages );
+					}
+					continue;
+				}
+
+				if ( 'core/query-no-results' === $name ) {
+					// Rendered standalone, core's no-results block runs its own
+					// context-free query against blog posts, so on sites with no
+					// published posts it prints even while events are listed.
+					// The empty case is handled above; never render it here.
 					continue;
 				}
 
@@ -1250,6 +1466,35 @@ JS;
 		}
 
 		return $pairs;
+	}
+
+	/**
+	 * Render the saved no-results content from a query loop block.
+	 *
+	 * Core's no-results block runs its own query when rendered standalone, so
+	 * its inner content is rendered directly against this loop's result instead.
+	 *
+	 * @param array $block Parsed query block.
+	 * @return string Markup, or an empty string when no usable content is saved.
+	 */
+	protected static function render_eventkoi_no_results( $block ) {
+		foreach ( $block['innerBlocks'] ?? array() as $inner ) {
+			if ( 'core/query-no-results' !== ( $inner['blockName'] ?? '' ) ) {
+				continue;
+			}
+
+			$content = '';
+
+			foreach ( $inner['innerBlocks'] ?? array() as $child ) {
+				$content .= render_block( $child );
+			}
+
+			if ( '' !== trim( wp_strip_all_tags( $content ) ) ) {
+				return '<div class="wp-block-query-no-results">' . $content . '</div>';
+			}
+		}
+
+		return '';
 	}
 
 	/**
@@ -1454,14 +1699,36 @@ JS;
 		ob_start();
 		?>
 		<ul class="<?php echo esc_attr( $template_class_attr ); ?>"<?php echo $template_style ? ' style="' . esc_attr( $template_style ) . '"' : ''; ?>>
-			<?php foreach ( $events as $event ) : ?>
-				<li class="wp-block-post">
+			<?php
+			foreach ( $events as $event ) :
+				// Same classes core's Query Loop gives its rows (post-123, type,
+				// status, terms) so a single event can be styled, plus the ids a
+				// #buy-tickets link inside the row needs to open the right dialog.
+				$row_post_id  = absint( $event['event_id'] ?? ( $event['id'] ?? 0 ) );
+				$row_classes  = $row_post_id ? get_post_class( 'wp-block-post', $row_post_id ) : array( 'wp-block-post' );
+				$row_instance = 'recurring' === ( $event['date_type'] ?? '' ) ? absint( $event['start_ts'] ?? 0 ) : 0;
+				?>
+				<li class="<?php echo esc_attr( implode( ' ', $row_classes ) ); ?>"<?php echo $row_post_id ? ' data-event-id="' . (int) $row_post_id . '"' : ''; ?><?php echo $row_instance ? ' data-instance-ts="' . (int) $row_instance . '"' : ''; ?>>
 					<?php
 					if ( ! empty( $post_template_block['innerBlocks'] ) ) {
+						// Core blocks in a row (Title, Excerpt, Date) read the row's event, not the page.
+						$row_context = static function ( $context ) use ( $row_post_id ) {
+							if ( $row_post_id ) {
+								$context['postId']   = $row_post_id;
+								$context['postType'] = 'eventkoi_event';
+							}
+							return $context;
+						};
+						add_filter( 'render_block_context', $row_context );
+						// Cover with "Use featured image" and other template-tag
+						// blocks ask for the current post, not the block context.
+						$leave_row_post = self::enter_row_post( $row_post_id, $event );
 						foreach ( $post_template_block['innerBlocks'] as $row_block ) {
 							$prepared = self::inject_event_context( $row_block, $event );
 							echo render_block( $prepared ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 						}
+						$leave_row_post();
+						remove_filter( 'render_block_context', $row_context );
 					}
 					?>
 				</li>
@@ -1470,6 +1737,77 @@ JS;
 		<?php
 
 		return ob_get_clean();
+	}
+
+	/**
+	 * Make a loop row's event the current post while the row renders.
+	 *
+	 * Core's own Post Template does this with the_post(). Without it a block
+	 * that calls a template tag, such as Cover set to "Use featured image",
+	 * reads the page the loop sits on and shows the page's image on every row.
+	 * The event's image is also offered as its featured image, since an event
+	 * can hold its image without a WordPress thumbnail being set.
+	 *
+	 * @param int   $row_post_id Event post ID for the row.
+	 * @param array $event       Event data for the row.
+	 * @return callable Call it after the row to put the previous post back.
+	 */
+	protected static function enter_row_post( $row_post_id, array $event ) {
+		global $post;
+
+		$row_post_id = absint( $row_post_id );
+		$row_post    = $row_post_id ? get_post( $row_post_id ) : null;
+		if ( ! $row_post instanceof \WP_Post ) {
+			return static function () {};
+		}
+
+		$previous  = $post;
+		$image_url = isset( $event['thumbnail'] ) && is_string( $event['thumbnail'] ) ? $event['thumbnail'] : '';
+		$title     = isset( $event['title'] ) && is_string( $event['title'] ) ? $event['title'] : '';
+
+		$thumbnail_id = static function ( $thumbnail_id, $candidate ) use ( $row_post_id ) {
+			$candidate_id = $candidate instanceof \WP_Post ? (int) $candidate->ID : absint( $candidate );
+			if ( $thumbnail_id || $candidate_id !== $row_post_id ) {
+				return $thumbnail_id;
+			}
+
+			return absint( get_post_meta( $row_post_id, 'image_id', true ) );
+		};
+
+		// An imported event can have an image URL and no attachment at all.
+		$thumbnail_html = static function ( $html, $post_id, $thumbnail_id, $size, $attr ) use ( $row_post_id, $image_url, $title ) {
+			if ( '' !== $html || absint( $post_id ) !== $row_post_id || '' === $image_url ) {
+				return $html;
+			}
+
+			$attr       = is_array( $attr ) ? $attr : array();
+			$attributes = sprintf( ' src="%s" alt="%s"', esc_url( $image_url ), esc_attr( $attr['alt'] ?? $title ) );
+			foreach ( array( 'class', 'style', 'data-object-fit', 'data-object-position' ) as $name ) {
+				if ( isset( $attr[ $name ] ) && '' !== (string) $attr[ $name ] ) {
+					$attributes .= sprintf( ' %s="%s"', $name, esc_attr( (string) $attr[ $name ] ) );
+				}
+			}
+
+			return '<img' . $attributes . ' loading="lazy" decoding="async" />';
+		};
+
+		add_filter( 'post_thumbnail_id', $thumbnail_id, 10, 2 );
+		add_filter( 'post_thumbnail_html', $thumbnail_html, 10, 5 );
+
+		$post = $row_post; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Same as the_post() in a loop; restored below.
+		setup_postdata( $row_post );
+
+		return static function () use ( $previous, $thumbnail_id, $thumbnail_html ) {
+			global $post;
+
+			remove_filter( 'post_thumbnail_id', $thumbnail_id, 10 );
+			remove_filter( 'post_thumbnail_html', $thumbnail_html, 10 );
+
+			$post = $previous; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Puts back the post from before the row.
+			if ( $previous instanceof \WP_Post ) {
+				setup_postdata( $previous );
+			}
+		};
 	}
 
 	/**
@@ -1589,6 +1927,61 @@ JS;
 		}
 
 		return '';
+	}
+
+	/**
+	 * Description HTML for the Event Data block.
+	 *
+	 * Query Loop rows show the event's excerpt first, like every other event list.
+	 * Otherwise, without a word limit the field keeps showing the event summary.
+	 * With one, the full description is trimmed to that many words, like core's
+	 * Excerpt.
+	 *
+	 * @param array $event      Normalised event array.
+	 * @param array $attributes Block attributes.
+	 * @param bool  $in_loop    Whether this is a Query Loop row.
+	 * @return string
+	 */
+	private static function excerpt_field_html( $event, $attributes, $in_loop = false ) {
+		$summary = isset( $event['description'] ) ? (string) $event['description'] : '';
+		$limit   = isset( $attributes['excerptLength'] ) ? absint( $attributes['excerptLength'] ) : 0;
+		$excerpt = $in_loop && ! empty( $event['excerpt'] ) ? (string) $event['excerpt'] : '';
+
+		if ( '' !== $excerpt ) {
+			return $limit > 0 ? self::trim_words_html( $excerpt, $limit ) : esc_html( $excerpt );
+		}
+
+		if ( $limit < 1 ) {
+			return wp_kses_post( $summary );
+		}
+
+		$event_id = ! empty( $event['event_id'] ) ? absint( $event['event_id'] ) : absint( $event['id'] ?? 0 );
+		$text     = '';
+
+		if ( $event_id ) {
+			$event_obj = new Event( $event_id );
+			$text      = (string) $event_obj::get_instance_field( 'description' );
+		}
+
+		if ( '' === trim( $text ) ) {
+			$text = $summary;
+		}
+
+		return self::trim_words_html( $text, $limit );
+	}
+
+	/**
+	 * Plain-text copy of some HTML, cut to a number of words with an ellipsis.
+	 *
+	 * @param string $html  Source markup.
+	 * @param int    $limit Word limit, 1 or more.
+	 * @return string Escaped text.
+	 */
+	private static function trim_words_html( $html, $limit ) {
+		$text = html_entity_decode( wp_strip_all_tags( (string) $html ), ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+		$text = str_replace( "\xC2\xA0", ' ', $text );
+
+		return esc_html( wp_trim_words( $text, absint( $limit ), '&hellip;' ) );
 	}
 
 	/**
@@ -1762,14 +2155,14 @@ JS;
 				return '<div class="ek-event-timeline--inner">' . $wrapped . '</div>';
 				} )()
 				: '',
-			'excerpt'  => ! empty( $event['description'] )
-				? '<div class="ek-event-excerpt--inner ek-event-excerpt-default">' . wp_kses_post( $event['description'] ) . '</div>'
+			'excerpt'  => ! empty( $event['description'] ) || ( $link_title && ! empty( $event['excerpt'] ) )
+				? '<div class="ek-event-excerpt--inner ek-event-excerpt-default">' . self::excerpt_field_html( $event, $attributes, $link_title ) . '</div>'
 				: '',
 			'location' => self::render_location_field_value( $event ),
 			'image'    => ! empty( $event['thumbnail'] )
 				? sprintf(
 					'<a href="%1$s" class="ek-event-image-link" rel="bookmark"><img src="%2$s" alt="%3$s" class="rounded-xl w-full h-auto object-cover ek-event-image-default" loading="lazy" decoding="async" /></a>',
-					esc_url( $event['url'] ?? '' ),
+					esc_url( $title_url ),
 					esc_url( $event['thumbnail'] ),
 					esc_attr( $event['title'] ?? '' )
 				)
@@ -1853,6 +2246,12 @@ JS;
 							}
 						}
 
+						// The Excerpt field takes the same word limit as Description.
+						$excerpt_limit = isset( $attributes['excerptLength'] ) ? absint( $attributes['excerptLength'] ) : 0;
+						if ( 'event_excerpt' === $field && $excerpt_limit > 0 && '' !== trim( (string) $value ) ) {
+							$value = self::trim_words_html( $value, $excerpt_limit );
+						}
+
 						return $value;
 					}
 				}
@@ -1888,6 +2287,33 @@ JS;
 					parse_str( $query, $params );
 					if ( isset( $params['event_day'] ) && is_scalar( $params['event_day'] ) && ctype_digit( (string) $params['event_day'] ) ) {
 						return absint( $params['event_day'] );
+					}
+				}
+			}
+
+			// The row already resolved which occurrence it represents, so match that
+			// timestamp against the stored days. This needs neither an event_day
+			// argument on the permalink nor a per-row day array, both of which a
+			// site can lose to custom rewrite rules, and an exact match makes it
+			// self-validating. Without it a listing silently falls back to the
+			// event's first day and can print a date that has already passed.
+			$resolved_ts = isset( $event['start_ts'] ) ? (int) $event['start_ts'] : 0;
+			if ( $resolved_ts <= 0 && ! empty( $event['start'] ) && is_scalar( $event['start'] ) ) {
+				$resolved_ts = (int) strtotime( (string) $event['start'] );
+			}
+
+			if ( $resolved_ts > 0 ) {
+				$days = get_post_meta( $event_id, 'event_days', true );
+
+				if ( ! empty( $days ) && is_array( $days ) ) {
+					foreach ( array_values( $days ) as $day_index => $day_row ) {
+						if ( empty( $day_row['start_date'] ) ) {
+							continue;
+						}
+
+						if ( (int) strtotime( (string) $day_row['start_date'] ) === $resolved_ts ) {
+							return $day_index;
+						}
 					}
 				}
 			}
@@ -1936,7 +2362,16 @@ JS;
 		}
 
 		if ( 'event_details' === $key ) {
-			return self::build_div_wrapper( $block['attrs'], 'eventkoi-details', $event::rendered_details() );
+			// `no-eventkoi` exempts the user's rich-text description from Tailwind's
+			// scoped preflight, so the host theme keeps styling its headings (h1-h6)
+			// instead of preflight flattening them to inherited size/weight.
+			return self::build_div_wrapper( $block['attrs'], 'eventkoi-details no-eventkoi', $event::rendered_details() );
+		}
+
+		if ( 'event_series_link' === $key ) {
+			$content = $event::rendered_series_link();
+
+			return '' === $content ? '' : self::build_div_wrapper( $block['attrs'], 'eventkoi-back-to-series', $content );
 		}
 
 		if ( 'event_gmap' === $key ) {
@@ -1955,7 +2390,7 @@ JS;
 					'/<(?P<tag>\w+)(?P<before_class>[^>]*)class="(?P<class>[^"]*eventkoi-front[^"]*)"(?P<after_class>[^>]*)>/',
 					function ( $matches ) use ( $id ) {
 						return sprintf(
-							'<%1$s%2$sclass="%3$s" data-event="%4$d" role="main"%5$s>',
+							'<%1$s%2$sclass="%3$s" data-event="%4$d"%5$s>',
 							$matches['tag'],
 							$matches['before_class'],
 							$matches['class'],
@@ -2000,6 +2435,7 @@ JS;
 				'calendars'     => $attrs['calendars'] ?? '',
 				'startday'      => ! empty( $attrs['startday'] ) ? esc_attr( $attrs['startday'] ) : $calendar::get_startday(),
 				'timeframe'     => ! empty( $attrs['timeframe'] ) ? esc_attr( $attrs['timeframe'] ) : $calendar::get_timeframe(),
+				'views'         => ! empty( $attrs['views'] ) ? sanitize_text_field( (string) $attrs['views'] ) : '',
 				'color'         => ! empty( $attrs['color'] ) ? esc_attr( $attrs['color'] ) : eventkoi_default_calendar_color(),
 				'default_month' => ! empty( $attrs['default_month'] ) ? esc_attr( $attrs['default_month'] ) : '',
 				'default_year'  => ! empty( $attrs['default_year'] ) ? esc_attr( $attrs['default_year'] ) : '',
@@ -2014,6 +2450,10 @@ JS;
 					'border_style'     => $attrs['borderStyle'] ?? 'dotted',
 					'border_size'      => $attrs['borderSize'] ?? '2px',
 				);
+		}
+
+		if ( array_key_exists( 'showTimezone', $attrs ) ) {
+			$args['show_timezone'] = self::parse_boolean_attribute( $attrs['showTimezone'] );
 		}
 
 		$args['layout'] = $attrs['layout'] ?? array();

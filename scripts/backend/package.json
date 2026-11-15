@@ -7,12 +7,19 @@
   "main": "build/index.js",
   "scripts": {
     "dev": "concurrently \"vite\" \"tailwindcss -i ./src/tailwind.css -o ./build/tailwind.css --watch\"",
-    "build": "rm -f build/.vite-hot && vite build && BROWSERSLIST_IGNORE_OLD_DATA=1 tailwindcss -i ./src/tailwind.css -o ./build/tailwind.css --minify"
+    "build": "rm -f build/.vite-hot && vite build && BROWSERSLIST_IGNORE_OLD_DATA=1 tailwindcss -i ./src/tailwind.css -o ./build/tailwind.css --minify",
+    "lint": "eslint src"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
     "autoprefixer": "^10.4.16",
     "concurrently": "^9.2.1",
+    "eslint": "^9.39.5",
+    "eslint-import-resolver-alias": "^1.1.2",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.7.0",
     "postcss": "^8.4.31",
     "postcss-import": "^15.1.0",
     "sass": "^1.45.2",

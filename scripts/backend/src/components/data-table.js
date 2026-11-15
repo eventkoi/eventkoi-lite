@@ -1,3 +1,4 @@
+import { __ } from "@wordpress/i18n";
 import { BulkActions } from "@/components/bulk-actions";
 import { Filters } from "@/components/filters";
 import { Pagination } from "@/components/pagination";
@@ -18,6 +19,7 @@ import { cn } from "@/lib/utils";
 import {
   flexRender,
   getCoreRowModel,
+  getExpandedRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
@@ -25,6 +27,12 @@ import {
 } from "@tanstack/react-table";
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
+
+// Columns whose header shows no text still need a name for screen readers.
+const emptyHeaderNames = {
+  select: __("Select", "eventkoi-lite"),
+  actions: __("Actions", "eventkoi-lite"),
+};
 
 export function DataTable({
   data,
@@ -60,8 +68,12 @@ export function DataTable({
   refreshStatusCounts,
   titleColumnWidth,
   statusFiltersBelowControls = false,
+  getSubRows,
+  rowClassName,
+  enableRowSelection = true,
 }) {
   const [sorting, setSorting] = useState(defaultSort);
+  const [expanded, setExpanded] = useState({});
   const [columnFilters, setColumnFilters] = useState([]);
   const [columnVisibility, setColumnVisibility] = useState({});
   const [rowSelection, setRowSelection] = React.useState({});
@@ -74,20 +86,37 @@ export function DataTable({
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
+    ...(getSubRows
+      ? {
+          getSubRows,
+          getExpandedRowModel: getExpandedRowModel(),
+          onExpandedChange: setExpanded,
+          paginateExpandedRows: false,
+        }
+      : {}),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    enableRowSelection,
     state: {
       sorting,
       columnFilters,
       columnVisibility,
       rowSelection,
+      ...(getSubRows ? { expanded } : {}),
     },
   });
 
   return (
-    <div className={cn("w-full grid self-start", gap ? `gap-${gap}` : "gap-6")}>
+    // One zero-minimum column, so a wide table scrolls inside its card instead
+    // of stretching the page.
+    <div
+      className={cn(
+        "w-full grid grid-cols-1 self-start",
+        gap ? `gap-${gap}` : "gap-6"
+      )}
+    >
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="flex items-center gap-3">
           {customTopLeft ? (
@@ -211,6 +240,7 @@ export function DataTable({
                   return (
                     <TableHead
                       key={header.id}
+                      aria-label={emptyHeaderNames[header.id]}
                       style={
                         isTitleColumn && titleColumnWidth
                           ? {
@@ -280,7 +310,7 @@ export function DataTable({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="group"
+                  className={cn("group", rowClassName ? rowClassName(row) : "")}
                 >
                   {row.getVisibleCells().map((cell) => {
                     const isTitleCell = ["title", "name", "shortcode"].includes(

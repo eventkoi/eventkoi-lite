@@ -27,20 +27,20 @@ if ( eventkoi_current_theme_support() ) : ?>
 
 <div class="wp-site-blocks">
 
-	<?php echo wp_kses_post( $header ); ?>
+	<?php echo $header; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- rendered theme header template part, output as core does. ?>
 
 	<?php do_action( 'eventkoi_before_event_content' ); ?>
 
 	<?php while ( have_posts() ) : ?>
 
-		<?php echo wp_kses_post( $content ); ?>
+		<?php echo $content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- rendered plugin block output. ?>
 		<?php do_action( 'eventkoi_single_event_template', $post ); ?>
 
 	<?php endwhile; ?>
 
 	<?php do_action( 'eventkoi_after_event_content' ); ?>
 
-	<?php echo wp_kses_post( $footer ); ?>
+	<?php echo $footer; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- rendered theme footer template part, output as core does. ?>
 
 </div>
 
@@ -59,7 +59,7 @@ else :
 	while ( have_posts() ) :
 		the_post();
 
-		echo wp_kses_post( eventkoi_get_content() );
+		echo eventkoi_get_content(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- rendered plugin block output.
 
 		do_action( 'eventkoi_single_event_template', get_post() );
 

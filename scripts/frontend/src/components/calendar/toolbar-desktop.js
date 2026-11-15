@@ -2,6 +2,7 @@ import { CalendarHeaderPopover } from "@/components/calendar/CalendarHeaderPopov
 import { NavControls } from "@/components/calendar/nav-controls";
 import { SearchBox } from "@/components/calendar/search-box";
 import { TodayButton } from "@/components/calendar/today-button";
+import { SubscribeButton } from "@/components/calendar/subscribe-button";
 import { ViewToggle } from "@/components/calendar/view-toggle";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useRef, useState } from "react";
@@ -15,6 +16,9 @@ export function ToolbarDesktop(props) {
     setCurrentDate,
     view,
     setView,
+    display,
+    setDisplay,
+    visibleViews,
     isTodayInRange,
     search,
     setSearch,
@@ -29,9 +33,12 @@ export function ToolbarDesktop(props) {
     timezone,
     timeFormat,
     searchScope,
+    searching,
     onSearchScopePrev,
     onSearchScopeNext,
     inputRef,
+    feedUrl,
+    feedWebcal,
   } = props;
   const desktopRef = useRef(null);
   const [isTight, setIsTight] = useState(false);
@@ -65,10 +72,10 @@ export function ToolbarDesktop(props) {
       return (
         <div
           ref={desktopRef}
-          className="ek-desktop-only flex-col gap-3 w-full min-w-0"
+          className="eventkoi-calendar-toolbar ek-desktop-only flex-col gap-3 w-full min-w-0"
         >
-          <div className="flex items-center justify-between gap-2 min-w-0">
-            <div className="flex items-center gap-2 min-w-0 overflow-visible">
+          <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-3 min-w-0">
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-3 min-w-0 overflow-visible">
               <Skeleton className="h-10 w-24 max-w-full rounded-md" />
               <Skeleton className="h-10 w-32 max-w-full rounded-md" />
               <Skeleton className="h-10 w-20 max-w-full rounded-md" />
@@ -83,7 +90,7 @@ export function ToolbarDesktop(props) {
     return (
       <div
         ref={desktopRef}
-        className="ek-desktop-only flex-nowrap items-center justify-between gap-3 w-full min-w-0"
+        className="eventkoi-calendar-toolbar ek-desktop-only flex-nowrap items-center justify-between gap-3 w-full min-w-0"
       >
         {/* Left skeletons: nav + popover + today + search */}
         <div className="flex items-center gap-2 flex-nowrap min-w-0 flex-1 overflow-visible">
@@ -101,15 +108,16 @@ export function ToolbarDesktop(props) {
 
   if (isTight) {
     return (
-      <div ref={desktopRef} className="ek-desktop-only flex-col gap-3 w-full min-w-0">
-        <div className="flex items-center justify-between gap-2 min-w-0">
-          <div className="flex items-center gap-2 min-w-0 overflow-visible">
+      <div ref={desktopRef} className="eventkoi-calendar-toolbar ek-desktop-only flex-col gap-3 w-full min-w-0">
+        <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-3 min-w-0">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-3 min-w-0 overflow-visible">
             <NavControls
               calendarApi={calendarApi}
               currentDate={currentDate}
               setCurrentDate={setCurrentDate}
+              timezone={timezone}
             />
-            {view === "timeGridWeek" || view === "week" ? (
+            {display !== "list" && (view === "timeGridWeek" || view === "week") ? (
               <WeekPopover
                 calendarApi={calendarApi}
                 currentDate={currentDate}
@@ -120,6 +128,7 @@ export function ToolbarDesktop(props) {
                 calendarApi={calendarApi}
                 currentDate={currentDate}
                 setCurrentDate={setCurrentDate}
+                timezone={timezone}
               />
             )}
             <TodayButton
@@ -128,8 +137,9 @@ export function ToolbarDesktop(props) {
               isTodayInRange={isTodayInRange}
             />
           </div>
-          <div className="shrink-0">
-            <ViewToggle calendarApi={calendarApi} view={view} setView={setView} />
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-3 min-w-0">
+            <SubscribeButton feedUrl={feedUrl} feedWebcal={feedWebcal} />
+            <ViewToggle calendarApi={calendarApi} view={view} setView={setView} display={display} setDisplay={setDisplay} visibleViews={visibleViews} />
           </div>
         </div>
         <div className="w-full min-w-0">
@@ -148,6 +158,7 @@ export function ToolbarDesktop(props) {
             timezone={timezone}
             timeFormat={timeFormat}
             searchScope={searchScope}
+            searching={searching}
             onSearchScopePrev={onSearchScopePrev}
             onSearchScopeNext={onSearchScopeNext}
           />
@@ -159,7 +170,7 @@ export function ToolbarDesktop(props) {
   return (
     <div
       ref={desktopRef}
-      className="ek-desktop-only flex-nowrap items-center justify-between text-sm gap-3 w-full min-w-0"
+      className="eventkoi-calendar-toolbar ek-desktop-only flex-nowrap items-center justify-between text-sm gap-3 w-full min-w-0"
     >
       {/* Left: nav + today + popover + search */}
       <div className="flex items-center gap-2 flex-nowrap min-w-0 flex-1 overflow-visible">
@@ -167,8 +178,9 @@ export function ToolbarDesktop(props) {
           calendarApi={calendarApi}
           currentDate={currentDate}
           setCurrentDate={setCurrentDate}
+          timezone={timezone}
         />
-        {view === "timeGridWeek" || view === "week" ? (
+        {display !== "list" && (view === "timeGridWeek" || view === "week") ? (
           <WeekPopover
             calendarApi={calendarApi}
             currentDate={currentDate}
@@ -179,6 +191,7 @@ export function ToolbarDesktop(props) {
             calendarApi={calendarApi}
             currentDate={currentDate}
             setCurrentDate={setCurrentDate}
+            timezone={timezone}
           />
         )}
         <TodayButton
@@ -202,15 +215,17 @@ export function ToolbarDesktop(props) {
             timezone={timezone}
             timeFormat={timeFormat}
             searchScope={searchScope}
+            searching={searching}
             onSearchScopePrev={onSearchScopePrev}
             onSearchScopeNext={onSearchScopeNext}
           />
         </div>
       </div>
 
-      {/* Right: view toggle */}
-      <div className="shrink-0">
-        <ViewToggle calendarApi={calendarApi} view={view} setView={setView} />
+      {/* Right: subscribe + view toggle */}
+      <div className="shrink-0 flex items-center gap-2">
+        <SubscribeButton feedUrl={feedUrl} feedWebcal={feedWebcal} />
+        <ViewToggle calendarApi={calendarApi} view={view} setView={setView} display={display} setDisplay={setDisplay} visibleViews={visibleViews} />
       </div>
     </div>
   );

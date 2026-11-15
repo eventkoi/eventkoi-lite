@@ -19,8 +19,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 <p>← See all events in event_calendar_link</p>
 <!-- /wp:paragraph -->
 
-<!-- wp:heading {"level":1,"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"event_title"}}}},"style":{"typography":{"fontStyle":"normal","fontWeight":"600"},"color":{"text":"#333333"},"elements":{"link":{"color":{"text":"#333333"}}},"spacing":{"margin":{"top":"0","bottom":"0","left":"0","right":"0"}}},"fontFamily":"body"} -->
-<h1 class="wp-block-heading has-text-color has-link-color has-body-font-family" style="color:#333333;margin-top:0;margin-right:0;margin-bottom:0;margin-left:0;font-style:normal;font-weight:600"></h1>
+<!-- wp:heading {"level":1,"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"event_title"}}}},"style":{"spacing":{"margin":{"top":"0","bottom":"0","left":"0","right":"0"}}}} -->
+<h1 class="wp-block-heading" style="margin-top:0;margin-right:0;margin-bottom:0;margin-left:0"></h1>
 <!-- /wp:heading --></div>
 <!-- /wp:column -->
 
@@ -31,7 +31,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 <!-- /wp:button -->
 
 <!-- wp:button {"backgroundColor":"base-2","textColor":"contrast-2","className":"is-style-outline","style":{"border":{"radius":"10px","color":"#dcdcdc","width":"1px"},"spacing":{"padding":{"left":"20px","right":"20px","top":"10px","bottom":"10px"}},"elements":{"link":{"color":{"text":"var:preset|color|contrast-2"}}}},"fontSize":"small"} -->
-<div class="wp-block-button is-style-outline"><a class="wp-block-button__link has-contrast-2-color has-base-2-background-color has-text-color has-background has-link-color has-border-color has-small-font-size has-custom-font-size wp-element-button" href="#event-share" style="border-color:#dcdcdc;border-width:1px;border-radius:10px;padding-top:10px;padding-right:20px;padding-bottom:10px;padding-left:20px"><img class="wp-image-10184" style="width: 13px;" src="<?php echo esc_url( eventkoi_get_template_asset( 'share.png' ) ); ?>" alt="" aria-hidden="true"> Share</a></div>
+<div class="wp-block-button is-style-outline"><a class="wp-block-button__link has-contrast-2-color has-base-2-background-color has-text-color has-background has-link-color has-border-color has-small-font-size has-custom-font-size wp-element-button" href="#event-share" style="border-color:#dcdcdc;border-width:1px;border-radius:10px;padding-top:10px;padding-right:20px;padding-bottom:10px;padding-left:20px"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false" style="vertical-align:-1px"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="8.59" y1="10.49" x2="15.42" y2="6.51"/></svg> Share</a></div>
 <!-- /wp:button --></div>
 <!-- /wp:buttons --></div>
 <!-- /wp:column --></div>
@@ -64,8 +64,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 <p></p>
 <!-- /wp:paragraph -->
 
-<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"event_timezone"}}}},"style":{"elements":{"link":{"color":{"text":"#999999"}}},"color":{"text":"#999999"}}} -->
-<p class="has-text-color has-link-color" style="color:#999999"></p>
+<!-- wp:paragraph {"metadata":{"bindings":{"content":{"source":"core/post-meta","args":{"key":"event_timezone"}}}},"style":{"elements":{"link":{"color":{"text":"#6b6b6b"}}},"color":{"text":"#6b6b6b"}}} -->
+<p class="has-text-color has-link-color" style="color:#6b6b6b"></p>
 <!-- /wp:paragraph --></div>
 <!-- /wp:column --></div>
 <!-- /wp:columns -->

@@ -1,5 +1,6 @@
 import { APIProvider, Map, Marker } from "@vis.gl/react-google-maps";
 import { createRoot } from "react-dom/client";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 const locationText = (location = {}, key, fallbackKey = "") => {
   const value = location?.[key] ?? (fallbackKey ? location?.[fallbackKey] : "");
@@ -155,7 +156,13 @@ const getEmbeddableMapLink = (location = {}) => {
 };
 
 function GoogleMapInstance({ container }) {
-  const { event, gmap } = eventkoi_params;
+  const event = window.eventkoi_params?.event;
+  const gmap = window.eventkoi_params?.gmap;
+
+  if (!event) {
+    container.classList.add("hidden");
+    return null;
+  }
 
   const locations = (event.locations || []).filter(
     (loc) =>
@@ -248,5 +255,9 @@ function GoogleMapInstance({ container }) {
 
 document.querySelectorAll(".eventkoi-gmap").forEach((el) => {
   const root = createRoot(el);
-  root.render(<GoogleMapInstance container={el} />);
+  root.render(
+    <ErrorBoundary>
+      <GoogleMapInstance container={el} />
+    </ErrorBoundary>
+  );
 });

@@ -68,7 +68,7 @@ export function ShareLink({ event, icon, title, name }) {
       }}
       rel="noopener noreferrer"
     >
-      <span className="rounded-full bg-accent group-hover:bg-input flex items-center justify-center w-16 h-16">
+      <span className="rounded-full bg-accent group-hover:bg-muted flex items-center justify-center w-16 h-16">
         {icon}
         <span className="sr-only">{shareLabel}</span>
       </span>

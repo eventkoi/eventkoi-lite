@@ -6,12 +6,13 @@ const sizes = {
   h4: "text-base",
 };
 
-export function Heading({ level = 1, tagline = null, className, children }) {
+export function Heading({ level = 1, ariaLevel, tagline = null, className, children }) {
   const Tag = `h${level}`;
 
   return (
     <div className={cn("grid gap-1", className)}>
       <Tag
+        aria-level={ariaLevel}
         className={cn(
           sizes[Tag],
           "font-medium text-foreground tracking-tight scroll-m-20"

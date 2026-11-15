@@ -1,3 +1,5 @@
+import { NewTabNote } from "@/components/new-tab-note";
+
 export function BigLink({
   href,
   children,
@@ -23,6 +25,7 @@ export function BigLink({
       `}
     >
       {children}
+      {!disabled && target === "_blank" ? <NewTabNote /> : null}
     </a>
   );
 }

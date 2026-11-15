@@ -1,4 +1,5 @@
 import apiRequest from "@wordpress/api-fetch";
+import { createInterpolateElement } from "@wordpress/element";
 import { __, sprintf } from "@wordpress/i18n";
 import { DateTime } from "luxon";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -6,6 +7,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 
 import { DashboardOverview } from "@/admin/dashboard/overview";
 import { LogoIcon } from "@/components/logo-icon";
+import { ChooseTemplatesStep } from "@/components/onboarding/choose-templates";
 import { ConfirmTimezoneFormatStep } from "@/components/onboarding/confirm-timezone-format";
 import { SetCalendarDefaultsStep } from "@/components/onboarding/set-calendar-defaults";
 import { Button } from "@/components/ui/button";
@@ -29,6 +31,7 @@ export function DashboardOnboarding() {
   const location = useLocation();
 
   const ticketsEnabled = !!window?.eventkoi_params?.tickets_feature_enabled;
+  const builderActive = !!window?.eventkoi_params?.page_builder_active;
 
   const steps = useMemo(
     () => [
@@ -44,6 +47,17 @@ export function DashboardOnboarding() {
         sidebarHidden: true,
         sidebarKey: "calendar",
       },
+      // Only sites running Elementor, Beaver Builder or Divi get asked;
+      // everyone else keeps the block templates.
+      ...(builderActive
+        ? [
+            {
+              key: "templates",
+              title: __("Choose event templates", "eventkoi-lite"),
+              component: ChooseTemplatesStep,
+            },
+          ]
+        : []),
       // Ticket setup step hidden while feature is in beta.
       // ...(ticketsEnabled
       //   ? [
@@ -55,7 +69,7 @@ export function DashboardOnboarding() {
       //     ]
       //   : []),
     ],
-    [ticketsEnabled]
+    [ticketsEnabled, builderActive]
   );
 
   const initialStepIndex = useMemo(() => {
@@ -412,12 +426,10 @@ export function DashboardOnboarding() {
             <div className="flex flex-col py-10 max-w-[325px] m-auto">
               <div className="">
                 <div className="text-[24px] font-medium leading-7 text-black">
-                  <span className="block">
-                    {__("You're ready to", "eventkoi-lite")}
-                  </span>
-                  <span className="block">
-                    {__("start using EventKoi!", "eventkoi-lite")}
-                  </span>
+                  {createInterpolateElement(
+                    __("You're ready to<br />start using EventKoi!", "eventkoi-lite"),
+                    { br: <br /> },
+                  )}
                 </div>
                 <div className="text-[14px] text-[#808080] mt-4 font-normal">
                   <span>

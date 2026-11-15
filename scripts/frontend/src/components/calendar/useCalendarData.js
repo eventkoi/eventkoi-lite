@@ -70,7 +70,9 @@ export function useCalendarData({
   id,
   calendars,
   display,
+  searchTerm = "",
   timeframe,
+  visibleViews,
   context,
   defaultMonth,
   defaultYear,
@@ -89,12 +91,18 @@ export function useCalendarData({
   const [currentDate, setCurrentDate] = useState(null);
   const [initialDate, setInitialDate] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [loadError, setLoadError] = useState(false);
   const [listTotal, setListTotal] = useState(0);
   const [listPage, setListPage] = useState(1);
   const [listHasMore, setListHasMore] = useState(false);
   const [listLoadingMore, setListLoadingMore] = useState(false);
 
   const lastRangeRef = useRef(null);
+  // The initial-calendar fetch seeds the default view and date. Seeding is a
+  // first-load concern only: a later re-run must never overwrite the view or
+  // date the visitor has picked in the meantime.
+  const initialRequestIdRef = useRef(0);
+  const calendarSeededRef = useRef(false);
   const hasLoadedView = useRef(false);
   const viewRequestIdRef = useRef(0);
   const rangeCacheRef = useRef(new Map());
@@ -104,6 +112,12 @@ export function useCalendarData({
   // Use calendars if present, otherwise id
   const effectiveId = calendars || id;
   const shouldApplyListSorting = display === "list";
+  // A List with no explicit sort configured should lead with upcoming events
+  // (today onward, ascending), not dump the whole history oldest-first. Sites
+  // that deliberately set an order (e.g. a past-events list) keep their choice.
+  const effectiveOrderby = shouldApplyListSorting
+    ? orderby || "upcoming"
+    : orderby;
   const listPerPage = Math.max(1, Number.parseInt(perPage, 10) || 10);
   const parsedMaxResults = Number.parseInt(maxResults, 10);
   const listMaxResults =
@@ -112,7 +126,7 @@ export function useCalendarData({
       : 0;
   const getRequestTimezone = () => {
     if (typeof window === "undefined") {
-      return eventkoi_params?.timezone || "UTC";
+      return window.eventkoi_params?.timezone || "UTC";
     }
 
     const params = new URLSearchParams(window.location.search);
@@ -124,23 +138,26 @@ export function useCalendarData({
         : requested;
     }
 
-    if (eventkoi_params?.auto_detect_timezone) {
+    if (window.eventkoi_params?.auto_detect_timezone) {
       return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
     }
 
     return (
-      eventkoi_params?.timezone_override || eventkoi_params?.timezone || "UTC"
+      window.eventkoi_params?.timezone_override || window.eventkoi_params?.timezone || "UTC"
     );
   };
 
   const getInitialCalendar = async () => {
+    setLoadError(false);
+    const requestId = initialRequestIdRef.current + 1;
+    initialRequestIdRef.current = requestId;
     try {
       const params = new URLSearchParams({
         id: effectiveId,
         display,
         initial: "true",
       });
-      if (shouldApplyListSorting && orderby) params.set("orderby", orderby);
+      if (shouldApplyListSorting && effectiveOrderby) params.set("orderby", effectiveOrderby);
       if (shouldApplyListSorting && order) params.set("order", order);
 
       const response = await publicApi({
@@ -148,7 +165,16 @@ export function useCalendarData({
         method: "get",
       });
 
+      if (requestId !== initialRequestIdRef.current) {
+        return;
+      }
+
       setCalendar(response.calendar);
+
+      if (calendarSeededRef.current) {
+        return;
+      }
+      calendarSeededRef.current = true;
 
       const moduleTimeframe =
         timeframe === "week" || timeframe === "month" ? timeframe : null;
@@ -157,7 +183,19 @@ export function useCalendarData({
         response?.calendar?.timeframe === "month"
           ? response.calendar.timeframe
           : "month";
-      const effectiveTimeframe = moduleTimeframe || calendarTimeframe;
+      let effectiveTimeframe = moduleTimeframe || calendarTimeframe;
+
+      // Hidden views can't be the default: fall back to the first grid view
+      // this embed still shows (PROD-556). No restriction means all views.
+      const allowed = Array.isArray(visibleViews) ? visibleViews : [];
+      if (allowed.length && !allowed.includes(effectiveTimeframe)) {
+        effectiveTimeframe = allowed.includes("month")
+          ? "month"
+          : allowed.includes("week")
+          ? "week"
+          : effectiveTimeframe;
+      }
+
       const defaultView =
         effectiveTimeframe === "week" ? "timeGridWeek" : "dayGridMonth";
 
@@ -175,6 +213,7 @@ export function useCalendarData({
       setInitialDate(date);
     } catch (err) {
       console.error("Failed to load initial calendar", err);
+      setLoadError(true);
     }
   };
 
@@ -244,7 +283,7 @@ export function useCalendarData({
       setLoading(true);
 
       const params = new URLSearchParams({ id: effectiveId, display });
-      if (shouldApplyListSorting && orderby) params.set("orderby", orderby);
+      if (shouldApplyListSorting && effectiveOrderby) params.set("orderby", effectiveOrderby);
       if (shouldApplyListSorting && order) params.set("order", order);
       if (requestRange.start) params.set("start", requestRange.start.toISOString());
       if (requestRange.end) params.set("end", requestRange.end.toISOString());
@@ -278,6 +317,7 @@ export function useCalendarData({
       }
     } catch (err) {
       console.error("Failed to load events for view", err);
+      setLoadError(true);
     } finally {
       if (requestId === viewRequestIdRef.current) {
         setLoading(false);
@@ -320,7 +360,7 @@ export function useCalendarData({
       }
       const run = (async () => {
         const p = new URLSearchParams({ id: effectiveId, display });
-        if (shouldApplyListSorting && orderby) p.set("orderby", orderby);
+        if (shouldApplyListSorting && effectiveOrderby) p.set("orderby", effectiveOrderby);
         if (shouldApplyListSorting && order) p.set("order", order);
         p.set("start", requestRange.start.toISOString());
         p.set("end", requestRange.end.toISOString());
@@ -366,7 +406,7 @@ export function useCalendarData({
       }
 
       const params = new URLSearchParams({ id: effectiveId, display });
-      if (shouldApplyListSorting && orderby) params.set("orderby", orderby);
+      if (shouldApplyListSorting && effectiveOrderby) params.set("orderby", effectiveOrderby);
       if (shouldApplyListSorting && order) params.set("order", order);
       if (display === "list") {
         const firstPageSize =
@@ -383,10 +423,30 @@ export function useCalendarData({
           params.set("date_end", dateEnd);
         }
       }
+
+      const listSearch = (searchTerm || "").trim();
+      if (listSearch) {
+        params.set("search", listSearch);
+      }
+
       const response = await publicApi({
         path: `/calendar_events?${params.toString()}`,
         method: "get",
       });
+
+      // A search returns a flat set of matches across all dates (capped
+      // server-side), not a paginated window, so render it as-is.
+      if (listSearch) {
+        const matched = Array.isArray(response.events) ? response.events : [];
+        const matchedTotal =
+          Number.parseInt(response.total, 10) || matched.length;
+        setAllEvents(matched);
+        setListTotal(matchedTotal);
+        setListPage(1);
+        setListHasMore(false);
+        return;
+      }
+
       const rawFirstPageEvents = Array.isArray(response.events) ? response.events : [];
       const firstPageEvents =
         listMaxResults > 0
@@ -401,6 +461,7 @@ export function useCalendarData({
       setListHasMore(firstPageEvents.length < total);
     } catch (err) {
       console.error("Failed to load all events", err);
+      setLoadError(true);
     } finally {
       if (display === "list") {
         setLoading(false);
@@ -447,7 +508,7 @@ export function useCalendarData({
         page: String(nextPage),
         per_page: String(nextPageSize),
       });
-      if (shouldApplyListSorting && orderby) params.set("orderby", orderby);
+      if (shouldApplyListSorting && effectiveOrderby) params.set("orderby", effectiveOrderby);
       if (shouldApplyListSorting && order) params.set("order", order);
       if (listMaxResults > 0) params.set("max_results", String(listMaxResults));
       if (dateStart) params.set("date_start", dateStart);
@@ -506,11 +567,59 @@ export function useCalendarData({
   useEffect(() => {
     if (display === "list") {
       loadAllEvents();
+      // The list renders with the full toolbar now, which reads its name, feed
+      // and defaults from the calendar meta. Without this the toolbar stayed
+      // on its loading skeletons and no controls appeared.
+      getInitialCalendar();
       return;
     }
 
     getInitialCalendar();
   }, []);
+
+  // Debounced search refetch for list mode. Skips the initial mount (handled by
+  // the effect above) and re-runs on every later search change, including
+  // clearing the box, which restores the full list.
+  // Month navigation moves the list's date window, so reload when it changes.
+  // Skips the initial mount, which the effect above already handles.
+  const listRangeInitRef = useRef(false);
+  useEffect(() => {
+    if (!listRangeInitRef.current) {
+      listRangeInitRef.current = true;
+      return;
+    }
+    if (display !== "list") {
+      return;
+    }
+    loadAllEvents();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dateStart, dateEnd]);
+
+  const listSearchInitRef = useRef(false);
+  useEffect(() => {
+    if (!listSearchInitRef.current) {
+      listSearchInitRef.current = true;
+      return undefined;
+    }
+    if (display !== "list") {
+      return undefined;
+    }
+    const handle = setTimeout(() => {
+      loadAllEvents();
+    }, 300);
+    return () => clearTimeout(handle);
+  }, [searchTerm]);
+
+  // Retries whichever fetch feeds the current display mode, so a failed
+  // load can recover without a full page reload.
+  const retry = () => {
+    if (display === "list") {
+      loadAllEvents();
+      return;
+    }
+
+    getInitialCalendar();
+  };
 
   return {
     calendar,
@@ -522,6 +631,8 @@ export function useCalendarData({
     setCurrentDate,
     initialDate,
     loading,
+    loadError,
+    retry,
     listTotal,
     listHasMore,
     listLoadingMore,

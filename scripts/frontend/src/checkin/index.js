@@ -1,7 +1,7 @@
 "use client";
 
 import { decodeEntities } from "@wordpress/html-entities";
-import { __, sprintf } from "@wordpress/i18n";
+import { __, _n, sprintf } from "@wordpress/i18n";
 import {
   BadgeCheck,
   CheckCheck,
@@ -44,6 +44,7 @@ import {
 import { buildTimeline, formatTimezoneLabel } from "@/lib/date-utils";
 import { resolvePublicRestUrl } from "@/lib/public-api";
 import { cn } from "@/lib/utils";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 function isTruthy(value) {
   return value === true || value === 1 || value === "1" || value === "true";
@@ -55,7 +56,7 @@ function formatFixedOffsetLabel(timezone) {
     return raw;
   }
 
-  return formatTimezoneLabel(raw, eventkoi_params?.time_format || "12", false);
+  return formatTimezoneLabel(raw, window.eventkoi_params?.time_format || "12", false);
 }
 
 function CheckinWidget({ mountEl }) {
@@ -99,7 +100,7 @@ function CheckinWidget({ mountEl }) {
         resolvePublicRestUrl(`/rsvp/checkin?${params.toString()}`),
         {
           headers: {
-            "X-WP-Nonce": eventkoi_params?.nonce || "",
+            "X-WP-Nonce": window.eventkoi_params?.nonce || "",
           },
         },
       );
@@ -152,10 +153,10 @@ function CheckinWidget({ mountEl }) {
   };
 
   const eventTitle = decodeEntities(data?.event?.title || "");
-  const autoDetectTimezone = isTruthy(eventkoi_params?.auto_detect_timezone);
+  const autoDetectTimezone = isTruthy(window.eventkoi_params?.auto_detect_timezone);
   const siteTimezone =
-    eventkoi_params?.timezone_string?.trim() ||
-    eventkoi_params?.timezone ||
+    window.eventkoi_params?.timezone_string?.trim() ||
+    window.eventkoi_params?.timezone ||
     "UTC";
   const timezonePref = autoDetectTimezone
     ? "local"
@@ -184,25 +185,27 @@ function CheckinWidget({ mountEl }) {
               data?.event?.all_day_end_exclusive_date,
           },
           timezonePref,
-          eventkoi_params?.time_format || "12",
+          window.eventkoi_params?.time_format || "12",
         ) || ""
       : data?.event?.datetime_utc || "";
   const location = data?.event?.location || "";
   const status = (data?.rsvp?.status || "").toLowerCase();
   const guests = Number(data?.rsvp?.guests || 0);
+  const isGuest = Boolean(data?.rsvp?.is_guest);
+  const guestOf = decodeEntities(data?.rsvp?.guest_of || "");
+  const guestNames = (data?.rsvp?.guest_rows || [])
+    .map((g) => decodeEntities(g?.name || ""))
+    .filter(Boolean);
   const checkinToken = data?.rsvp?.checkin_token || "";
   const attendeeName = decodeEntities(data?.rsvp?.name || "");
   const avatarUrl = data?.rsvp?.avatar_url || "";
   const instanceTs = Number(data?.rsvp?.instance_ts || 0);
   const eventId = Number(data?.event?.id || 0);
   const allowEdit = data?.allow_edit !== false;
-  const rsvpEnabled = data?.attendance_mode === 'rsvp';
-  
-  // Don't render checkin widget if RSVP is not enabled
-  if (data && !rsvpEnabled) {
-    return null;
-  }
-  
+  // Lite's checkin endpoint sends rsvp_enabled; attendance_mode is a Pro-only
+  // field, so reading it here left this permanently false and hid the widget.
+  const rsvpEnabled = data?.rsvp_enabled !== false;
+
   const allowGuests = data?.allow_guests;
   const maxGuests = data?.max_guests || 0;
   const capacity = data?.capacity || 0;
@@ -242,6 +245,13 @@ function CheckinWidget({ mountEl }) {
     );
   }, [data?.rsvp]);
 
+  // Don't render the checkin widget if RSVP is not enabled. This has to stay
+  // below every hook: bailing out earlier drops a useEffect once data arrives
+  // for a non-RSVP event, which changes the hook count between renders.
+  if (data && !rsvpEnabled) {
+    return null;
+  }
+
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     if (!eventId || !instanceTs) {
@@ -264,7 +274,7 @@ function CheckinWidget({ mountEl }) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-WP-Nonce": eventkoi_params?.nonce || "",
+          "X-WP-Nonce": window.eventkoi_params?.nonce || "",
         },
         body: JSON.stringify({
           event_id: eventId,
@@ -389,14 +399,28 @@ function CheckinWidget({ mountEl }) {
               </div>
             )}
 
-            {guests > 0 && (
+            {isGuest && guestOf && (
               <div className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
                 {sprintf(
-                  /* translators: %d: guest count */
-                  __("Guests: %d", "eventkoi-lite"),
-                  guests,
+                  /* translators: %s: name of the person who RSVPd */
+                  __("Guest of %s", "eventkoi-lite"),
+                  guestOf,
                 )}
+              </div>
+            )}
+
+            {!isGuest && guests > 0 && (
+              <div className="flex items-start gap-2">
+                <Users className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+                <span>
+                  {sprintf(
+                    /* translators: %d: guest count */
+                    __("Guests: %d", "eventkoi-lite"),
+                    guests,
+                  )}
+                  {guestNames.length > 0 ? ` (${guestNames.join(", ")})` : ""}
+                </span>
               </div>
             )}
 
@@ -467,19 +491,28 @@ function CheckinWidget({ mountEl }) {
 
                     <form className="grid gap-4" onSubmit={handleEditSubmit}>
                       {editError && (
-                        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+                        <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-[#b32d2e]">
                           {editError}
                         </div>
                       )}
 
+                      <p className="m-0 text-xs text-muted-foreground">
+                        {__(
+                          "Fields marked with an asterisk (*) are required.",
+                          "eventkoi-lite",
+                        )}
+                      </p>
+
                       <div className="grid gap-2">
                         <Label htmlFor="eventkoi-checkin-name">
                           {__("Name", "eventkoi-lite")}
+                          <span aria-hidden="true" className="text-destructive"> *</span>
                         </Label>
                         <Input
                           id="eventkoi-checkin-name"
                           value={editName}
                           onChange={(e) => setEditName(e.target.value)}
+                          autoComplete="name"
                           required
                         />
                       </div>
@@ -487,21 +520,26 @@ function CheckinWidget({ mountEl }) {
                       <div className="grid gap-2">
                         <Label htmlFor="eventkoi-checkin-email">
                           {__("Email", "eventkoi-lite")}
+                          <span aria-hidden="true" className="text-destructive"> *</span>
                         </Label>
                         <Input
                           id="eventkoi-checkin-email"
                           type="email"
                           value={editEmail}
                           onChange={(e) => setEditEmail(e.target.value)}
+                          autoComplete="email"
                           required
                         />
                       </div>
 
                       <div className="grid gap-2">
-                        <Label>{__("Status", "eventkoi-lite")}</Label>
+                        <Label id="eventkoi-checkin-status-label">
+                          {__("Status", "eventkoi-lite")}
+                        </Label>
                         <RadioGroup
                           value={editStatus}
                           onValueChange={setEditStatus}
+                          aria-labelledby="eventkoi-checkin-status-label"
                           className="flex flex-wrap gap-4"
                         >
                           {statusOptions.map((option) => (
@@ -562,10 +600,13 @@ function CheckinWidget({ mountEl }) {
                           {typeof maxGuestsAllowed === "number" && (
                             <div className="text-xs text-muted-foreground">
                               {sprintf(
-                                /* translators: %d: maximum guests */
-                                maxGuestsAllowed === 1
-                                  ? __("Max %d guest", "eventkoi-lite")
-                                  : __("Max %d guests", "eventkoi-lite"),
+                                /* translators: %d: maximum number of guests */
+                                _n(
+                                  "Max %d guest",
+                                  "Max %d guests",
+                                  maxGuestsAllowed,
+                                  "eventkoi-lite",
+                                ),
                                 maxGuestsAllowed,
                               )}
                             </div>
@@ -750,7 +791,11 @@ function mountCheckinWidgets() {
   document.querySelectorAll(".eventkoi-checkin").forEach((el) => {
     if (el.dataset.eventkoiMounted) return;
     const root = createRoot(el);
-    root.render(<CheckinWidget mountEl={el} />);
+    root.render(
+      <ErrorBoundary>
+        <CheckinWidget mountEl={el} />
+      </ErrorBoundary>
+    );
     el.dataset.eventkoiMounted = "true";
   });
 
@@ -763,7 +808,11 @@ function mountCheckinWidgets() {
       payload = {};
     }
     const root = createRoot(qrOverlayEl);
-    root.render(<QrCheckinOverlay payload={payload} />);
+    root.render(
+      <ErrorBoundary>
+        <QrCheckinOverlay payload={payload} />
+      </ErrorBoundary>
+    );
     qrOverlayEl.dataset.eventkoiMounted = "true";
   }
 }

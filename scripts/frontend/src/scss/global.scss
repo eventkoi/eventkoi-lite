@@ -147,3 +147,40 @@
   height: auto;
   margin: 0;
 }
+
+/* Thin, unobtrusive scrollbar for the scrollable body of sheet-style modals. */
+.ek-modal-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--foreground) / 0.25) transparent;
+}
+.ek-modal-scroll::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.ek-modal-scroll::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--foreground) / 0.25);
+  border-radius: 9999px;
+}
+.ek-modal-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+// Classic themes (e.g. Astra) wrap the content area in display:flex
+// containers; a flex item with no width shrink-wraps to its intrinsic
+// content width, collapsing the calendar/list wrapper to a narrow strip
+// that then renders in its compact (mobile) layout. Make the injected
+// calendar-page wrapper fill the row instead.
+main.eventkoi-main {
+  width: 100%;
+  min-width: 0;
+}
+
+// The scoped preflight zeroes input borders, which left a locked event's
+// password box as a white field on a white page. 0,4,2 beats its 0,3,1.
+.eventkoi-front form.post-password-form input[type="password"]:not(.wp-element-button) {
+  border-width: 1px;
+  border-style: solid;
+  border-color: #8c8c8c;
+  border-radius: 6px;
+  padding: 6px 10px;
+}

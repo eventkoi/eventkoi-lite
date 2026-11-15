@@ -1,4 +1,6 @@
+import { NewTabNote } from "@/components/new-tab-note";
 import { useEvent } from "@/blocks/event-query-loop/context";
+import apiRequest from "@wordpress/api-fetch";
 import { cn } from "@/lib/utils";
 import {
   AlignmentControl,
@@ -10,7 +12,7 @@ import {
 } from "@wordpress/block-editor";
 import { cloneBlock, createBlock } from "@wordpress/blocks";
 import { useDispatch, useSelect } from "@wordpress/data";
-import { useEffect, useRef } from "@wordpress/element";
+import { useEffect, useRef, useState } from "@wordpress/element";
 import { dateI18n } from "@wordpress/date";
 import { __ } from "@wordpress/i18n";
 import { Image as ImageIcon } from "lucide-react";
@@ -46,6 +48,28 @@ const getPrimaryLocation = (event = {}) => {
   return locations.find((location) => formatLocationLine(location)) || {};
 };
 
+/**
+ * Keep the first `count` words of some HTML as plain text, with an ellipsis.
+ * A count of 0 returns the HTML untouched.
+ */
+function trimExcerptWords(html, count) {
+  const limit = parseInt(count, 10) || 0;
+  if (limit <= 0 || !html) return html;
+  // Parse into an inert document (nothing loads or runs), take the text, then
+  // escape it again because the preview renders the result as HTML.
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  const text = (doc.body?.textContent || "").trim();
+  const words = text.split(/\s+/).filter(Boolean);
+  const trimmed =
+    words.length <= limit ? text : words.slice(0, limit).join(" ") + "\u2026";
+  return trimmed
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 export default function Edit({ attributes, setAttributes, clientId }) {
   const {
     field,
@@ -54,6 +78,7 @@ export default function Edit({ attributes, setAttributes, clientId }) {
     eventId = 0,
     dateFormat = "",
     timeFormat = "",
+    excerptLength = 0,
   } = attributes;
 
   const textAlignClass = textAlign ? `has-text-align-${textAlign}` : "";
@@ -95,6 +120,41 @@ export default function Edit({ attributes, setAttributes, clientId }) {
   const TagName = tagName;
   const isInQuery = !!contextEvent;
   const hasMovedIntoItem = useRef(false);
+
+  // With a word limit the server trims the full description, not the short
+  // summary that event lists carry, so fetch the full text for the preview.
+  const [fullDescription, setFullDescription] = useState(null);
+  const fullDescriptionCacheRef = useRef(new Map());
+  const baseEventId = parseInt(event?.event_id || event?.id, 10) || 0;
+  const wordLimit = parseInt(excerptLength, 10) || 0;
+  useEffect(() => {
+    if (!baseEventId || wordLimit <= 0 || field !== "excerpt") {
+      setFullDescription(null);
+      return undefined;
+    }
+    const cache = fullDescriptionCacheRef.current;
+    if (cache.has(baseEventId)) {
+      setFullDescription(cache.get(baseEventId));
+      return undefined;
+    }
+    let isMounted = true;
+    apiRequest({
+      path: `${eventkoi_params.api}/event?id=${baseEventId}`,
+      method: "get",
+    })
+      .then((res) => {
+        const text = res?.description?.rendered || res?.description || "";
+        cache.set(baseEventId, text);
+        if (isMounted) setFullDescription(text);
+      })
+      .catch(() => {
+        cache.set(baseEventId, null);
+        if (isMounted) setFullDescription(null);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [baseEventId, wordLimit, field]);
 
   const {
     isInsideEventQueryLoop,
@@ -268,11 +328,24 @@ export default function Edit({ attributes, setAttributes, clientId }) {
 
   // --- Normalize event fields ---
   const title = event.title?.rendered || event.title || "";
-  const excerpt =
+  const fullExcerpt =
     event.excerpt?.rendered ||
     event.description?.rendered ||
     event.description ||
     "";
+  // Mirror the server: Query Loop rows show the event's excerpt first. A word
+  // limit trims the full description, like core's Excerpt; without one the
+  // summary shows as before.
+  const rowExcerpt = !isInQuery
+    ? ""
+    : typeof event.excerpt === "string"
+      ? event.excerpt
+      : event._eventkoi?.excerpt || "";
+  const excerpt = trimExcerptWords(
+    rowExcerpt ||
+      (wordLimit > 0 && fullDescription ? fullDescription : fullExcerpt),
+    wordLimit
+  );
   const location = event.location_line || "";
   const timeline = event.datetime;
   const image = event.thumbnail ? (
@@ -286,7 +359,11 @@ export default function Edit({ attributes, setAttributes, clientId }) {
   let content = null;
 
   switch (field) {
-    case "title":
+    case "title": {
+      // Mirror the front-end markup: inside a query loop the title is a link
+      // to the event page, so the editor shows the same colours as the site.
+      const titleHtml = { __html: title };
+      const linksToEvent = isInQuery;
       content = (
         <TagName
           {...blockProps}
@@ -296,10 +373,26 @@ export default function Edit({ attributes, setAttributes, clientId }) {
               !/^h[1-6]$/.test(tagName) &&
               "ek-event-title-default"
           )}
-          dangerouslySetInnerHTML={{ __html: title }}
-        />
+        >
+          {linksToEvent ? (
+            <span className="ek-event-title--inner">
+              <a
+                href={event.url || event.link || "#"}
+                rel="bookmark"
+                onClick={(e) => e.preventDefault()}
+                dangerouslySetInnerHTML={titleHtml}
+              />
+            </span>
+          ) : (
+            <span
+              className="ek-event-title--inner"
+              dangerouslySetInnerHTML={titleHtml}
+            />
+          )}
+        </TagName>
       );
       break;
+    }
 
     case "excerpt":
       content = (
@@ -357,7 +450,7 @@ export default function Edit({ attributes, setAttributes, clientId }) {
             rel="noopener noreferrer"
           >
             {label}
-          </a>
+          <NewTabNote /></a>
         );
       } else if (locationLine) {
         locationContent = <span>{locationLine}</span>;
@@ -432,11 +525,14 @@ export default function Edit({ attributes, setAttributes, clientId }) {
           }
         }
 
-        const renderedValue =
+        let renderedValue =
           customFormatted ||
           (event && typeof event[field] === "string"
             ? event[field].trim()
             : "");
+        if (field === "event_excerpt" && wordLimit > 0) {
+          renderedValue = trimExcerptWords(renderedValue, wordLimit);
+        }
 
         if (renderedValue) {
           content = (

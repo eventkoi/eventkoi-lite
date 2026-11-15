@@ -139,6 +139,13 @@ class Settings {
 			}
 		}
 
+		// The private REST api_key signs write requests, so reading it requires
+		// the same capability that governs writing it. Holding an unrelated
+		// EventKoi capability must not hand out the site-wide signing secret.
+		if ( ! current_user_can( \EventKoi\Core\Permissions::cap_for_settings_key( 'api_key' ) ) ) {
+			unset( $settings['api_key'] );
+		}
+
 		return rest_ensure_response( $settings );
 	}
 
@@ -197,7 +204,9 @@ class Settings {
 		}
 
 		// Fallback: Update settings normally.
-		$html_keys = array( 'rsvp_email_template', 'ticket_email_template', 'refund_email_template' );
+		// Admin notification templates are rich HTML too; without them the save
+		// flattens the template to plain text (all formatting/paragraphs lost).
+		$html_keys = array( 'rsvp_email_template', 'ticket_email_template', 'refund_email_template', 'reminder_email_template', 'admin_sale_email_template', 'admin_rsvp_email_template', 'admin_ticket_email_template' );
 
 		foreach ( $data as $key => $value ) {
 			if ( in_array( $key, array( 'api_key' ), true ) ) {
@@ -225,6 +234,9 @@ class Settings {
 				$sanitized = wp_kses( $value, \EventKoi\Core\Settings::get_email_template_allowed_tags() );
 			} elseif ( \EventKoi\Core\Permissions::SETTINGS_KEY === $key ) {
 				$sanitized = self::sanitize_user_permissions( $value );
+			} elseif ( in_array( $key, array( 'default_event_template', 'default_series_template', 'default_calendar_template' ), true ) ) {
+				// Template slugs: a post_name, "default", or empty for unset.
+				$sanitized = sanitize_key( (string) $value );
 			} else {
 				$sanitized = is_array( $value )
 				? array_map( 'sanitize_text_field', $value )
@@ -328,7 +340,10 @@ class Settings {
 	 * @return string
 	 */
 	private static function sanitize_permalink_base( $value, $fallback ): string {
-		$slug = untrailingslashit( sanitize_title_with_dashes( (string) $value ) );
+		// Sanitize each path segment separately so nested bases like
+		// "agenda/calendar" keep their slashes.
+		$segments = array_filter( array_map( 'sanitize_title_with_dashes', explode( '/', (string) $value ) ) );
+		$slug     = implode( '/', $segments );
 
 		if ( '' === $slug ) {
 			$slug = sanitize_title_with_dashes( $fallback );

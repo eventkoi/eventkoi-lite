@@ -1,5 +1,6 @@
 import { Box } from "@/components/box";
 import { ConfirmDialog } from "@/components/confirm-dialog";
+import { EventDatePackageSetting } from "@/components/event/event-date-package-setting";
 import { Heading } from "@/components/heading";
 import { TimeInput } from "@/components/time-input";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,8 @@ import {
   InputGroupText,
 } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useEventEditContext } from "@/hooks/EventEditContext";
@@ -34,6 +37,19 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 
 const DEFAULT_CURRENCY = "USD";
+
+// Split visibility toggles fall back to the legacy catch-all value for
+// events saved before "Show unavailable tickets" became three switches.
+function readShowFlag(event, key) {
+  const value = event?.[key];
+  if (value === undefined || value === null || value === "") {
+    const legacy = event?.tickets_show_unavailable;
+    return legacy === undefined || legacy === null || legacy === ""
+      ? false
+      : !!legacy;
+  }
+  return !!value;
+}
 
 function SettingToggle({ id, label, description, checked, onCheckedChange }) {
   return (
@@ -81,7 +97,14 @@ export function EventEditManageTickets() {
     auto_create_account: false,
     show_remaining: true,
     show_unavailable: false,
+    show_sold_out: false,
+    show_upcoming: false,
+    show_ended: false,
+    event_capacity: "",
     terms_conditions: "",
+    terms_conditions_required: false,
+    agreements: [],
+    attendee_details: "off",
   });
 
   const wpTz = useMemo(
@@ -113,7 +136,23 @@ export function EventEditManageTickets() {
           event.tickets_show_unavailable === ""
             ? false
             : !!event.tickets_show_unavailable,
+        show_sold_out: readShowFlag(event, "tickets_show_sold_out"),
+        show_upcoming: readShowFlag(event, "tickets_show_upcoming"),
+        show_ended: readShowFlag(event, "tickets_show_ended"),
+        event_capacity:
+          event.tickets_event_capacity > 0
+            ? String(event.tickets_event_capacity)
+            : "",
         terms_conditions: event.tickets_terms_conditions || "",
+        terms_conditions_required: !!event.tickets_terms_conditions_required,
+        agreements: Array.isArray(event.tickets_agreements)
+          ? event.tickets_agreements
+          : [],
+        attendee_details: ["optional", "required"].includes(
+          event.tickets_attendee_details,
+        )
+          ? event.tickets_attendee_details
+          : "off",
       });
     }
   }, [event]);
@@ -230,6 +269,59 @@ export function EventEditManageTickets() {
     updateEvent(newSettings);
   };
 
+  const updateAgreements = (nextAgreements) => {
+    const newSettings = {
+      ...ticketSettings,
+      agreements: nextAgreements,
+    };
+    setTicketSettings(newSettings);
+    updateEvent(newSettings);
+  };
+
+  const handleAgreementChange = (index, patch) => {
+    updateAgreements(
+      (ticketSettings.agreements || []).map((item, idx) =>
+        idx === index ? { ...item, ...patch } : item,
+      ),
+    );
+  };
+
+  const handleAddAgreement = () => {
+    updateAgreements([
+      ...(ticketSettings.agreements || []),
+      {
+        id: `agr_${crypto?.randomUUID?.() || `${Date.now()}${Math.floor(Math.random() * 1e9)}`}`,
+        text: "",
+        required: true,
+      },
+    ]);
+  };
+
+  const handleRemoveAgreement = (index) => {
+    updateAgreements(
+      (ticketSettings.agreements || []).filter((_, idx) => idx !== index),
+    );
+  };
+
+  const handleAttendeeDetailsChange = (value) => {
+    const newSettings = {
+      ...ticketSettings,
+      attendee_details: value,
+    };
+    setTicketSettings(newSettings);
+    updateEvent(newSettings);
+  };
+
+  const handleCapacityChange = (e) => {
+    const digits = String(e.target.value || "").replace(/[^0-9]/g, "");
+    const newSettings = {
+      ...ticketSettings,
+      event_capacity: digits,
+    };
+    setTicketSettings(newSettings);
+    updateEvent(newSettings);
+  };
+
   const updateEvent = (newSettings) => {
     if (!event?.id) return;
 
@@ -239,11 +331,23 @@ export function EventEditManageTickets() {
       tickets_auto_create_account: newSettings.auto_create_account,
       tickets_show_remaining: newSettings.show_remaining,
       tickets_show_unavailable:
-        newSettings.show_unavailable === undefined
-          ? false
-          : !!newSettings.show_unavailable,
+        !!newSettings.show_sold_out ||
+        !!newSettings.show_upcoming ||
+        !!newSettings.show_ended,
+      tickets_show_sold_out: !!newSettings.show_sold_out,
+      tickets_show_upcoming: !!newSettings.show_upcoming,
+      tickets_show_ended: !!newSettings.show_ended,
       tickets_terms_conditions: newSettings.terms_conditions,
+      tickets_terms_conditions_required: newSettings.terms_conditions_required,
+      tickets_agreements: Array.isArray(newSettings.agreements)
+        ? newSettings.agreements
+        : [],
+      tickets_event_capacity:
+        newSettings.event_capacity === ""
+          ? 0
+          : Math.max(0, parseInt(newSettings.event_capacity, 10) || 0),
       tickets_display_mode: "cards",
+      tickets_attendee_details: newSettings.attendee_details || "off",
     };
 
     setEvent?.(updatedEvent);
@@ -609,7 +713,7 @@ export function EventEditManageTickets() {
   return (
     <div className="flex flex-col w-full gap-8">
       <Box container>
-        <Heading level={3}>{__("Tickets", "eventkoi-lite")}</Heading>
+        <Heading level={3}>{__("Event options", "eventkoi-lite")}</Heading>
 
         {!event?.id && (
           <p className="text-sm text-muted-foreground">
@@ -643,7 +747,132 @@ export function EventEditManageTickets() {
             onCheckedChange={() => handleToggle("show_remaining")}
           />
 
+          <EventDatePackageSetting
+            event={event}
+            setEvent={setEvent}
+            context="tickets"
+          />
+
+          <div className="flex flex-col gap-4">
+            <div className="grid gap-1">
+              <Label className="font-medium">
+                {__("Show unavailable tickets", "eventkoi-lite")}
+              </Label>
+              <p className="text-sm text-muted-foreground">
+                {__(
+                  "Choose which unavailable ticket types stay visible on the event page.",
+                  "eventkoi-lite",
+                )}
+              </p>
+            </div>
+
+            <SettingToggle
+              id="tickets_show_sold_out"
+              label={__("Display sold out tickets", "eventkoi-lite")}
+              checked={ticketSettings.show_sold_out}
+              onCheckedChange={() => handleToggle("show_sold_out")}
+            />
+
+            <SettingToggle
+              id="tickets_show_upcoming"
+              label={__("Display upcoming tickets", "eventkoi-lite")}
+              checked={ticketSettings.show_upcoming}
+              onCheckedChange={() => handleToggle("show_upcoming")}
+            />
+
+            <SettingToggle
+              id="tickets_show_ended"
+              label={__("Display ended tickets", "eventkoi-lite")}
+              checked={ticketSettings.show_ended}
+              onCheckedChange={() => handleToggle("show_ended")}
+            />
+          </div>
+
           <div className="flex flex-col gap-2 max-w-[500px] pt-4">
+            <Label className="font-medium" htmlFor="tickets-event-capacity">
+              {__("Total ticket quantity per event", "eventkoi-lite")}
+            </Label>
+            <Input
+              id="tickets-event-capacity"
+              type="text"
+              inputMode="numeric"
+              pattern="[0-9]*"
+              placeholder={__("Unlimited", "eventkoi-lite")}
+              value={ticketSettings.event_capacity}
+              onChange={handleCapacityChange}
+              className="max-w-[200px]"
+            />
+            <p className="text-sm text-muted-foreground">
+              {__(
+                "Caps the combined tickets sold across all ticket types, for venues with a maximum capacity. Leave empty for unlimited.",
+                "eventkoi-lite",
+              )}
+            </p>
+          </div>
+
+        </div>
+      </Box>
+
+      <Box container>
+        <Heading level={3}>{__("Attendee details", "eventkoi-lite")}</Heading>
+
+        <div className="flex flex-col gap-4">
+          <p className="text-sm text-muted-foreground">
+            {__(
+              "Ask buyers who each ticket is for. Names show on the attendee list, exports, check-in and the confirmation email.",
+              "eventkoi-lite",
+            )}
+          </p>
+
+          <RadioGroup
+            value={ticketSettings.attendee_details}
+            onValueChange={handleAttendeeDetailsChange}
+            className="grid gap-4"
+          >
+            <div className="flex items-start space-x-3">
+              <RadioGroupItem value="off" id="tickets-attendee-off" className="mt-1" />
+              <Label htmlFor="tickets-attendee-off" className="cursor-pointer flex-1">
+                <div className="font-medium">{__("Off", "eventkoi-lite")}</div>
+                <div className="text-sm text-muted-foreground mt-1">
+                  {__("Only the buyer's details are collected.", "eventkoi-lite")}
+                </div>
+              </Label>
+            </div>
+
+            <div className="flex items-start space-x-3">
+              <RadioGroupItem value="optional" id="tickets-attendee-optional" className="mt-1" />
+              <Label htmlFor="tickets-attendee-optional" className="cursor-pointer flex-1">
+                <div className="font-medium">{__("Optional", "eventkoi-lite")}</div>
+                <div className="text-sm text-muted-foreground mt-1">
+                  {__(
+                    "Checkout shows a name and email field for each ticket. Buyers can leave them empty.",
+                    "eventkoi-lite",
+                  )}
+                </div>
+              </Label>
+            </div>
+
+            <div className="flex items-start space-x-3">
+              <RadioGroupItem value="required" id="tickets-attendee-required" className="mt-1" />
+              <Label htmlFor="tickets-attendee-required" className="cursor-pointer flex-1">
+                <div className="font-medium">{__("Required", "eventkoi-lite")}</div>
+                <div className="text-sm text-muted-foreground mt-1">
+                  {__(
+                    "Every ticket needs an attendee name before checkout. Emails stay optional.",
+                    "eventkoi-lite",
+                  )}
+                </div>
+              </Label>
+            </div>
+          </RadioGroup>
+        </div>
+      </Box>
+
+      <Box container>
+        <Heading level={3}>{__("Terms and conditions", "eventkoi-lite")}</Heading>
+
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-2">
             <Label className="font-medium" htmlFor="tickets-terms-conditions">
               {__("Terms & conditions", "eventkoi-lite")}
             </Label>
@@ -659,7 +888,92 @@ export function EventEditManageTickets() {
             />
           </div>
 
-          <div className="flex flex-col gap-4 mt-2">
+          {ticketSettings.terms_conditions.trim().length > 0 && (
+            <SettingToggle
+              id="tickets_terms_conditions_required"
+              label={__("Require agreement to terms", "eventkoi-lite")}
+              description={__(
+                "Show the terms as a checkbox the buyer must tick before checkout.",
+                "eventkoi-lite",
+              )}
+              checked={ticketSettings.terms_conditions_required}
+              onCheckedChange={() =>
+                handleToggle("terms_conditions_required")
+              }
+            />
+          )}
+
+          <Separator />
+
+          <div className="flex flex-col gap-2">
+            <Label className="font-medium">
+              {__("Agreement checkboxes", "eventkoi-lite")}
+            </Label>
+            <p className="text-sm text-muted-foreground">
+              {__(
+                "Separate consents shown as individual checkboxes at checkout, for example a privacy statement or refund policy. Required ones must be ticked before the buyer can continue.",
+                "eventkoi-lite",
+              )}
+            </p>
+            {(ticketSettings.agreements || []).map((agreement, index) => (
+              <div
+                key={agreement.id || index}
+                className="flex flex-col gap-2 rounded-md border border-border p-3"
+              >
+                <Textarea
+                  aria-label={__("Agreement text", "eventkoi-lite")}
+                  placeholder={__(
+                    "e.g. I have read and accept the privacy statement.",
+                    "eventkoi-lite",
+                  )}
+                  value={agreement.text || ""}
+                  onChange={(e) =>
+                    handleAgreementChange(index, { text: e.target.value })
+                  }
+                  className="min-h-[60px]"
+                />
+                <div className="flex items-center justify-between gap-3">
+                  <label className="flex items-center gap-2 text-sm">
+                    <Switch
+                      checked={agreement.required !== false}
+                      onCheckedChange={(checked) =>
+                        handleAgreementChange(index, { required: !!checked })
+                      }
+                      aria-label={__("Require this agreement", "eventkoi-lite")}
+                    />
+                    {__("Required", "eventkoi-lite")}
+                  </label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => handleRemoveAgreement(index)}
+                    aria-label={__("Remove agreement", "eventkoi-lite")}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              className="w-fit"
+              onClick={handleAddAgreement}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              {__("Add agreement", "eventkoi-lite")}
+            </Button>
+          </div>
+
+        </div>
+      </Box>
+
+      <Box container>
+        <Heading level={3}>{__("Create tickets", "eventkoi-lite")}</Heading>
+
+        <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-4">
             {loadingTickets && (
               <div className="text-sm text-muted-foreground">
                 {__("Loading tickets…", "eventkoi-lite")}

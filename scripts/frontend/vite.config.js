@@ -54,6 +54,12 @@ export default defineConfig( ( { command } ) => {
 			outDir: 'build',
 			emptyOutDir: false,
 			sourcemap: false,
+			// Transpile modern syntax (nullish coalescing, optional chaining) down
+			// so the ticket modal still parses and runs on older mobile browsers.
+			// Without a target the bundle keeps ES2020 syntax that older iOS
+			// Safari / Android browsers cannot parse, which silently kills the
+			// whole frontend script (and the Buy tickets button) for those users.
+			target: [ 'es2019', 'safari12', 'ios12', 'chrome64', 'firefox62', 'edge79' ],
 			chunkSizeWarningLimit: 1000,
 			rollupOptions: {
 				input: path.resolve( __dirname, 'src/index.js' ),

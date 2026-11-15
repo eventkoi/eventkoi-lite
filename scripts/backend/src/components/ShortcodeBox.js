@@ -6,6 +6,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
+import { __ } from "@wordpress/i18n";
 import { CheckCheck, Copy } from "lucide-react";
 import { useState } from "react";
 
@@ -35,7 +36,7 @@ export function ShortcodeBox({ attribute, data, eventId }) {
               LABEL_WIDTH_CLASS
             )}
           >
-            Block attribute:
+            {__("Block attribute:", "eventkoi-lite")}
           </span>
           <div className="relative bg-[#eeeeee] flex items-center p-1 pt-2 py-1.5 pl-2 rounded-sm">
             <div className="text-xs font-mono pr-8">{attribute}</div>
@@ -46,7 +47,7 @@ export function ShortcodeBox({ attribute, data, eventId }) {
                   size="icon"
                   className="bg-white absolute top-[3px] right-[4px] p-0 w-6 h-6 border-none rounded-sm cursor-pointer hover:bg-white"
                   onClick={() => handleCopy(attribute, "attribute")}
-                  aria-label="Copy attribute"
+                  aria-label={__("Copy attribute", "eventkoi-lite")}
                 >
                   {copiedKey === "attribute" ? (
                     <CheckCheck className="h-4 w-4 transition-all duration-200" />
@@ -60,7 +61,9 @@ export function ShortcodeBox({ attribute, data, eventId }) {
                 side="top"
                 sideOffset={8}
               >
-                {copiedKey === "attribute" ? "Copied!" : "Copy attribute"}
+                {copiedKey === "attribute"
+                  ? __("Copied!", "eventkoi-lite")
+                  : __("Copy attribute", "eventkoi-lite")}
               </TooltipContent>
             </Tooltip>
           </div>
@@ -74,7 +77,7 @@ export function ShortcodeBox({ attribute, data, eventId }) {
               LABEL_WIDTH_CLASS
             )}
           >
-            Shortcode:
+            {__("Shortcode:", "eventkoi-lite")}
           </span>
           <div className="relative bg-[#eeeeee] flex items-center p-1 pt-2 py-1.5 pl-2 rounded-sm">
             <div className="text-xs font-mono pr-8">{shortcode}</div>
@@ -85,7 +88,7 @@ export function ShortcodeBox({ attribute, data, eventId }) {
                   size="icon"
                   className="bg-white absolute top-[3px] right-[4px] p-0 w-6 h-6 border-none rounded-sm cursor-pointer hover:bg-white"
                   onClick={() => handleCopy(shortcode, "shortcode")}
-                  aria-label="Copy shortcode"
+                  aria-label={__("Copy shortcode", "eventkoi-lite")}
                 >
                   {copiedKey === "shortcode" ? (
                     <CheckCheck className="h-4 w-4 transition-all duration-200" />
@@ -99,7 +102,9 @@ export function ShortcodeBox({ attribute, data, eventId }) {
                 side="top"
                 sideOffset={8}
               >
-                {copiedKey === "shortcode" ? "Copied!" : "Copy shortcode"}
+                {copiedKey === "shortcode"
+                  ? __("Copied!", "eventkoi-lite")
+                  : __("Copy shortcode", "eventkoi-lite")}
               </TooltipContent>
             </Tooltip>
           </div>

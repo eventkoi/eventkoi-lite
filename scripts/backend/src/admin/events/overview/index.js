@@ -1,3 +1,4 @@
+import { NewTabNote } from "@/components/new-tab-note";
 import { AddButton } from "@/components/add-button";
 import { DataTable } from "@/components/data-table";
 import { Heading } from "@/components/heading";
@@ -58,6 +59,19 @@ const multiColumnSearch = (row, _columnId, filterValue) => {
   const searchableRowContent = `${row.original.title} ${row.original.status}`;
   return searchableRowContent.toLowerCase().includes(filterValue.toLowerCase());
 };
+
+// All-day rows carry the calendar dates the event was authored with
+// (all_day_start_date / all_day_end_date, plain Y-m-d). Rendering the UTC
+// instant in the site timezone instead shifts those dates whenever the two
+// zones disagree, so an all-day 10–11 Nov event read as ending on the 12th.
+// Format the plain date as-is by pinning it to UTC.
+const formatAllDayDate = (dateOnly) =>
+  dateOnly
+    ? formatWPtime(String(dateOnly).slice(0, 10), {
+        timezone: "UTC",
+        format: "date",
+      })
+    : "";
 
 const sortStatusFn = (rowA, rowB) => {
   const order = [
@@ -523,7 +537,7 @@ export function EventsOverview() {
                     onClick={(e) => e.stopPropagation()}
                   >
                     <Link2 className="w-5 h-5 inline-block" />
-                  </a>
+                  <NewTabNote /></a>
                 )}
 
                 {/* Status badges inline with title */}
@@ -573,7 +587,7 @@ export function EventsOverview() {
       {
         accessorKey: "rsvp_used",
         header: ({ column }) => (
-          <SortButton title="RSVPs/Tickets" column={column} />
+          <SortButton title={__("RSVPs/Tickets", "eventkoi-lite")} column={column} />
         ),
         cell: ({ row }) => {
           const attendanceMode = row.original.attendance_mode || "none";
@@ -625,12 +639,16 @@ export function EventsOverview() {
             (["standard", "multi"].includes(date_type) &&
               event_days?.[0]?.all_day === true);
 
+          const allDayStart = event_days?.[0]?.all_day_start_date;
+
           return (
             <div className="text-foreground whitespace-pre-line">
-              {formatWPtime(start_date_iso, {
-                timezone,
-                format: isAllDay ? "date" : "date-time",
-              })}
+              {isAllDay && allDayStart
+                ? formatAllDayDate(allDayStart)
+                : formatWPtime(start_date_iso, {
+                    timezone,
+                    format: isAllDay ? "date" : "date-time",
+                  })}
             </div>
           );
         },
@@ -662,10 +680,15 @@ export function EventsOverview() {
             recurrence_rules?.[0]?.ends === "never" &&
             !end_date_iso;
 
+          const allDayEnd =
+            event_days?.[event_days.length - 1]?.all_day_end_date;
+
           return (
             <div className="text-foreground whitespace-pre-line">
               {isInfiniteRecurring
                 ? "Never"
+                : isAllDay && allDayEnd
+                ? formatAllDayDate(allDayEnd)
                 : formatWPtime(end_date_iso, {
                     timezone,
                     format: isAllDay ? "date" : "date-time",

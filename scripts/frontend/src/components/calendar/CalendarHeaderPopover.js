@@ -37,14 +37,29 @@ export function CalendarHeaderPopover({
   calendarApi,
   currentDate,
   setCurrentDate,
+  timezone,
 }) {
   const [open, setOpen] = useState(false);
 
-  const tz = calendarApi?.view?.calendar?.getOption("timeZone") || "UTC";
+  // In list view there is no FullCalendar instance, so fall back to the site
+  // timezone rather than UTC: currentDate is written by the grid in the site
+  // timezone, and formatting it in UTC shifted the label to the previous month.
+  const tz =
+    calendarApi?.view?.calendar?.getOption("timeZone") ||
+    (timezone === "local"
+      ? Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
+      : timezone || window.eventkoi_params?.timezone || "UTC");
 
-  // Normalize currentDate safely
-  let jsDate =
-    currentDate instanceof Date ? currentDate : new Date(currentDate);
+  // Normalize currentDate safely. Date-only strings ("2026-07-01") are
+  // interpreted in the display timezone: new Date() reads them as UTC
+  // midnight, which renders as the previous month west of Greenwich.
+  let jsDate;
+  if (currentDate instanceof Date) {
+    jsDate = currentDate;
+  } else {
+    const parsed = DateTime.fromISO(String(currentDate ?? ""), { zone: tz });
+    jsDate = parsed.isValid ? parsed.toJSDate() : new Date(currentDate);
+  }
   if (isNaN(jsDate)) {
     jsDate = new Date(); // fallback to today
   }
@@ -59,7 +74,7 @@ export function CalendarHeaderPopover({
       { zone: tz }
     );
     const jsDate = newDt.toJSDate();
-    calendarApi.gotoDate(jsDate);
+    calendarApi?.gotoDate?.(jsDate);
     setCurrentDate(jsDate);
     setOpen(false);
   };
@@ -67,14 +82,14 @@ export function CalendarHeaderPopover({
   const gotoPrevYear = () => {
     const newDt = dt.minus({ years: 1 }).startOf("month");
     const jsDate = newDt.toJSDate();
-    calendarApi.gotoDate(jsDate);
+    calendarApi?.gotoDate?.(jsDate);
     setCurrentDate(jsDate);
   };
 
   const gotoNextYear = () => {
     const newDt = dt.plus({ years: 1 }).startOf("month");
     const jsDate = newDt.toJSDate();
-    calendarApi.gotoDate(jsDate);
+    calendarApi?.gotoDate?.(jsDate);
     setCurrentDate(jsDate);
   };
 
@@ -83,11 +98,16 @@ export function CalendarHeaderPopover({
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
-          className="text-sm box-border text-foreground bg-background shadow-none rounded border-[1px] border-border border-solid px-3 py-1 pr-2 gap-2 h-10 justify-between hover:bg-muted cursor-pointer font-normal"
-          aria-label={__("Select month and year", "eventkoi-lite")}
+          className="eventkoi-calendar-period text-sm box-border text-foreground bg-background shadow-none rounded border-[1px] border-border border-solid px-3 py-1 pr-2 gap-2 h-10 justify-between hover:bg-muted cursor-pointer font-normal min-w-0 overflow-hidden"
+          // The spoken name starts with the visible month, so voice control
+          // users can say what they see.
+          aria-label={`${MONTHS[selectedMonth]} ${yearView}, ${__(
+            "Select month and year",
+            "eventkoi-lite"
+          )}`}
           title={__("Select month and year", "eventkoi-lite")}
         >
-          {`${MONTHS[selectedMonth]} ${yearView}`}
+          <span className="truncate">{`${MONTHS[selectedMonth]} ${yearView}`}</span>
           <ChevronDown className="h-4 w-4 min-w-4" aria-hidden="true" />
         </Button>
       </PopoverTrigger>
@@ -96,7 +116,7 @@ export function CalendarHeaderPopover({
         side="bottom"
         align="start"
         sideOffset={20}
-        className="!z-[2147483647] w-[240px] rounded !border !bg-white !opacity-100 shadow-[0_0_4px_#bbb] text-sm overflow-hidden"
+        className="w-[240px] rounded !border !bg-white !opacity-100 shadow-[0_0_4px_#bbb] text-sm overflow-hidden"
         aria-label={__("Month and year selection", "eventkoi-lite")}
       >
         {/* Year header */}

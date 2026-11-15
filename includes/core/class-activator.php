@@ -252,6 +252,9 @@ class Activator {
 				order_id varchar(255) NOT NULL,
 				customer_name varchar(255) NOT NULL,
 				customer_email varchar(255) NOT NULL,
+				attendee_name varchar(255) DEFAULT NULL,
+				attendee_email varchar(255) DEFAULT NULL,
+				attendee_meta longtext DEFAULT NULL,
 				quantity int(11) unsigned NOT NULL DEFAULT '1',
 				unit_price decimal(10,2) NOT NULL,
 				total_amount decimal(10,2) NOT NULL,
@@ -278,6 +281,159 @@ class Activator {
 		}
 
 		self::ensure_archive_columns( $orders_table, $ticket_orders_table );
+		self::ensure_attendee_columns( $ticket_orders_table );
+		self::maybe_upgrade_rsvp_guests();
+	}
+
+	/**
+	 * Bring the RSVP table up to the guest-row schema and give every existing
+	 * RSVP its unnamed guest rows. Runs once, guarded by an option, so the
+	 * plugins_loaded hook can call it cheaply on every request.
+	 *
+	 * @return void
+	 */
+	public static function maybe_upgrade_rsvp_guests() {
+		if ( get_option( 'eventkoi_rsvp_guest_rows_ready' ) ) {
+			return;
+		}
+
+		// Only one request runs the backfill; add_option is atomic, so the
+		// others skip it instead of inserting a second set of guest rows. A
+		// lock older than ten minutes is treated as abandoned.
+		if ( ! add_option( 'eventkoi_rsvp_guest_rows_lock', time(), '', 'no' ) ) {
+			$started = (int) get_option( 'eventkoi_rsvp_guest_rows_lock' );
+			if ( $started && time() - $started > 600 ) {
+				delete_option( 'eventkoi_rsvp_guest_rows_lock' );
+			}
+			return;
+		}
+
+		try {
+			self::upgrade_rsvp_guest_rows();
+		} finally {
+			delete_option( 'eventkoi_rsvp_guest_rows_lock' );
+		}
+	}
+
+	/**
+	 * The guest-row schema change and backfill. Called once, under the lock.
+	 *
+	 * @return void
+	 */
+	private static function upgrade_rsvp_guest_rows() {
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'eventkoi_rsvps';
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQLPlaceholders.SchemaChange -- One-shot schema upgrade; table name comes from $wpdb->prefix.
+		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $table ) );
+		if ( ! $exists ) {
+			return;
+		}
+
+		$columns = $wpdb->get_results( "SHOW COLUMNS FROM `{$table}`" );
+		$by_name = array();
+		foreach ( (array) $columns as $column ) {
+			$by_name[ (string) $column->Field ] = $column; // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+		}
+
+		if ( ! isset( $by_name['parent_id'] ) ) {
+			$wpdb->query( "ALTER TABLE `{$table}` ADD COLUMN `parent_id` BIGINT(20) UNSIGNED NOT NULL DEFAULT 0 AFTER `event_id`" );
+		}
+		if ( isset( $by_name['email'] ) && 'NO' === (string) $by_name['email']->Null ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+			$wpdb->query( "ALTER TABLE `{$table}` MODIFY `email` VARCHAR(150) DEFAULT NULL" );
+		}
+
+		$indexes = $wpdb->get_col( "SHOW INDEX FROM `{$table}`", 2 );
+		$indexes = is_array( $indexes ) ? array_unique( $indexes ) : array();
+		if ( ! in_array( 'event_instance_email_parent_uniq', $indexes, true ) ) {
+			$wpdb->query( "ALTER TABLE `{$table}` ADD UNIQUE KEY `event_instance_email_parent_uniq` (`event_id`, `instance_ts`, `email`, `parent_id`)" );
+		}
+		if ( in_array( 'event_instance_email_uniq', $indexes, true ) ) {
+			$wpdb->query( "ALTER TABLE `{$table}` DROP INDEX `event_instance_email_uniq`" );
+		}
+		if ( ! in_array( 'parent_id_idx', $indexes, true ) ) {
+			$wpdb->query( "ALTER TABLE `{$table}` ADD INDEX `parent_id_idx` (`parent_id`)" );
+		}
+
+		// RSVPs made before guest rows existed only carry a guest count. Give
+		// each of them unnamed guest rows so check-in, exports and the dialog
+		// treat old and new parties the same way, keeping the headcount that
+		// was already checked in.
+		$parents = $wpdb->get_results(
+			"SELECT r.id, r.event_id, r.instance_ts, r.status, r.guests, r.checked_in, r.checked_in_count, r.checkin_status
+			 FROM `{$table}` r
+			 LEFT JOIN `{$table}` g ON g.parent_id = r.id
+			 WHERE r.parent_id = 0 AND r.guests > 0 AND g.id IS NULL"
+		);
+		$now     = gmdate( 'Y-m-d H:i:s' );
+		foreach ( (array) $parents as $parent ) {
+			$guests          = absint( $parent->guests );
+			$going           = 'going' === (string) $parent->status;
+			$already_checked = max( 0, absint( $parent->checked_in_count ) - 1 );
+			for ( $i = 0; $i < $guests; $i++ ) {
+				$checked = $going && 'checked_in' === (string) $parent->checkin_status && $i < $already_checked;
+				$wpdb->insert(
+					$table,
+					array(
+						'event_id'         => absint( $parent->event_id ),
+						'parent_id'        => absint( $parent->id ),
+						'instance_ts'      => absint( $parent->instance_ts ),
+						'user_id'          => null,
+						'name'             => null,
+						'email'            => null,
+						'status'           => (string) $parent->status,
+						'guests'           => 0,
+						'meta'             => null,
+						'checkin_token'    => $going ? \EventKoi\Core\Rsvps::new_checkin_token() : null,
+						'checked_in'       => $checked ? (string) $parent->checked_in : null,
+						'checked_in_count' => null,
+						'checkin_status'   => $checked ? 'checked_in' : 'none',
+						'created'          => $now,
+						'updated'          => $now,
+					)
+				);
+			}
+		}
+		// phpcs:enable
+
+		// Autoloaded: the flag is read on every request.
+		update_option( 'eventkoi_rsvp_guest_rows_ready', 1, true );
+	}
+
+	/**
+	 * Add the per-seat attendee columns on installs that pre-date attendee
+	 * details. Idempotent.
+	 *
+	 * @param string $ticket_orders_table Fully-qualified table name.
+	 */
+	private static function ensure_attendee_columns( $ticket_orders_table ) {
+		global $wpdb;
+
+		// phpcs:disable WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching,WordPress.DB.DirectDatabaseQuery.SchemaChange,WordPress.DB.PreparedSQL.InterpolatedNotPrepared,WordPress.DB.PreparedSQL.NotPrepared,WordPress.DB.PreparedSQLPlaceholders.SchemaChange -- One-shot schema upgrade; table name comes from $wpdb->prefix.
+		$exists = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $ticket_orders_table ) );
+		if ( ! $exists ) {
+			return;
+		}
+
+		$columns = $wpdb->get_col( "SHOW COLUMNS FROM `{$ticket_orders_table}`", 0 );
+		$columns = is_array( $columns ) ? $columns : array();
+
+		$alter_clauses = array();
+		if ( ! in_array( 'attendee_name', $columns, true ) ) {
+			$alter_clauses[] = 'ADD COLUMN `attendee_name` VARCHAR(255) DEFAULT NULL';
+		}
+		if ( ! in_array( 'attendee_email', $columns, true ) ) {
+			$alter_clauses[] = 'ADD COLUMN `attendee_email` VARCHAR(255) DEFAULT NULL';
+		}
+		if ( ! in_array( 'attendee_meta', $columns, true ) ) {
+			$alter_clauses[] = 'ADD COLUMN `attendee_meta` LONGTEXT DEFAULT NULL';
+		}
+
+		if ( ! empty( $alter_clauses ) ) {
+			$wpdb->query( "ALTER TABLE `{$ticket_orders_table}` " . implode( ', ', $alter_clauses ) );
+		}
+		// phpcs:enable
 	}
 
 	/**
@@ -317,6 +473,8 @@ class Activator {
 
 		require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		self::ensure_archive_columns( $orders_table, $ticket_orders_table );
+		self::ensure_attendee_columns( $ticket_orders_table );
+		self::maybe_upgrade_rsvp_guests();
 		self::heal_orphaned_rsvp_instance_ts();
 
 		if ( ! get_option( 'eventkoi_site_instance_id' ) ) {
@@ -442,4 +600,58 @@ class Activator {
 
 		update_option( 'eventkoi_rsvp_instance_ts_healed', '1' );
 	}
+	/**
+	 * Recreate any custom table that has gone missing.
+	 *
+	 * Table creation is version gated, so a table dropped or lost in a partial
+	 * migration was never rebuilt and every read of it threw. Rate limited so a
+	 * page making many failing reads cannot turn one broken table into a burst
+	 * of schema work (XVSZTDGT).
+	 *
+	 * @return bool Whether anything was rebuilt.
+	 */
+	public static function maybe_repair_tables() {
+		if ( get_transient( 'eventkoi_table_repair_attempted' ) ) {
+			return false;
+		}
+
+		set_transient( 'eventkoi_table_repair_attempted', 1, 10 * MINUTE_IN_SECONDS );
+
+		$tables = array(
+			Orders::class,
+			Charges::class,
+			Customers::class,
+			Order_Notes::class,
+			Recurrence_Overrides::class,
+			Rsvps::class,
+			Tickets::class,
+			Ticket_Orders::class,
+		);
+
+		$repaired = false;
+
+		foreach ( $tables as $table_class ) {
+			if ( ! class_exists( $table_class ) ) {
+				continue;
+			}
+
+			try {
+				$table = new $table_class();
+
+				if ( $table->exists() ) {
+					continue;
+				}
+
+				$table->update();
+				$repaired = true;
+			} catch ( \Exception $e ) {
+				// A host that forbids CREATE TABLE cannot be helped from here;
+				// the caller still degrades instead of fataling.
+				continue;
+			}
+		}
+
+		return $repaired;
+	}
+
 }

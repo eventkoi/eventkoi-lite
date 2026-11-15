@@ -9,8 +9,20 @@ const ACTIVE_KEY = "eventkoi_onboarding_wizard_active";
 const DONE_KEY = "eventkoi_onboarding_wizard_done";
 const STEP_KEY = "eventkoi_onboarding_wizard_step";
 
-const wizardSteps = [{ key: "calendar", title: "Set calendar defaults" }];
-const stepOrder = ["license", "calendar", "datetime"];
+const builderActive = !!window?.eventkoi_params?.page_builder_active;
+
+const wizardSteps = [
+  { key: "calendar", title: __("Set calendar defaults", "eventkoi-lite") },
+  ...(builderActive
+    ? [{ key: "templates", title: __("Choose event templates", "eventkoi-lite") }]
+    : []),
+];
+const stepOrder = [
+  "license",
+  "calendar",
+  "datetime",
+  ...(builderActive ? ["templates"] : []),
+];
 
 const normalizeStep = (step) => {
   if (step === "defaults") return "calendar";

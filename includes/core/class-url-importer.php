@@ -78,7 +78,7 @@ class URL_Importer {
 					'success'          => true,
 					'already_imported' => true,
 					'event_id'         => $already_imported,
-					'event_title'      => get_the_title( $already_imported ),
+					'event_title'      => eventkoi_event_title_text( $already_imported ),
 				)
 			);
 		}

@@ -241,9 +241,11 @@ export function EventEditSalesHistory() {
           .join(",");
       });
 
-      const blob = new Blob([[headers.join(","), ...csvRows].join("\n")], {
-        type: "text/csv;charset=utf-8;",
-      });
+      // The byte order mark tells Excel the file is UTF-8, so accents survive.
+      const blob = new Blob(
+        ["﻿", [headers.join(","), ...csvRows].join("\n")],
+        { type: "text/csv;charset=utf-8;" }
+      );
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
@@ -306,7 +308,7 @@ export function EventEditSalesHistory() {
                       <TooltipTrigger asChild>
                         <button
                           type="button"
-                          aria-label="Net earnings info"
+                          aria-label={__("Net earnings info", "eventkoi-lite")}
                           className="inline-flex items-center text-muted-foreground hover:text-foreground cursor-pointer bg-transparent border-0 p-0"
                         >
                           <Info className="h-4 w-4" />

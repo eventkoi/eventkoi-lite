@@ -1,3 +1,4 @@
+import { NewTabNote } from "@/components/new-tab-note";
 import { toast } from "sonner";
 
 export function BaseToast({ message, url, variant = "default" }) {
@@ -20,7 +21,7 @@ export function BaseToast({ message, url, variant = "default" }) {
           className="underline underline-offset-2 text-xs hover:no-underline"
         >
           View
-        </a>
+        <NewTabNote /></a>
       )}
     </div>
   );

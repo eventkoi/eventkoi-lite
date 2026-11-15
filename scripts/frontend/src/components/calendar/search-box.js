@@ -5,18 +5,13 @@
  */
 
 import { Button } from "@/components/ui/button";
-import {
-  Command,
-  CommandEmpty,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
 import { normalizeTimeZone, wpToLuxonFormat } from "@/lib/date-utils";
 import { cn } from "@/lib/utils";
-import { __, sprintf } from "@wordpress/i18n";
+import { __, _n, sprintf } from "@wordpress/i18n";
 import { Loader2, Search } from "lucide-react";
 import { DateTime } from "luxon";
+import { useEffect, useRef, useState } from "react";
 
 function isTruthy(value) {
   return value === true || value === 1 || value === "1" || value === "true";
@@ -105,7 +100,7 @@ function getAllDayDisplayEnd(start, rawEnd, realEnd, options = {}) {
 }
 
 function formatSearchDate(event, timezone, timeFormat) {
-  const params = typeof eventkoi_params !== "undefined" ? eventkoi_params : {};
+  const params = typeof eventkoi_params !== "undefined" ? window.eventkoi_params : {};
   const locale = (params.locale || "en").replace("_", "-");
   const dateFormat = wpToLuxonFormat(params.date_format || "F j, Y");
   const timePreference = timeFormat || params.time_format || "12";
@@ -217,14 +212,79 @@ export function SearchBox({
   searchScope,
   onSearchScopePrev,
   onSearchScopeNext,
+  searching = false,
 }) {
   const isLoading = events === undefined || events === null;
   const isEmpty = !isLoading && events.length === 0;
+  const containerRef = useRef(null);
+  // Which result the arrow keys are on. -1 means none: focus stays in the
+  // input the whole time and aria-activedescendant points at the option.
+  const [activeIndex, setActiveIndex] = useState(-1);
+  // The parent passes null until a search has run.
+  const results = Array.isArray(paginatedResults) ? paginatedResults : [];
+  const resultKey = results.map((event) => event.id).join(",");
+  useEffect(() => {
+    setActiveIndex(-1);
+  }, [resultKey, open]);
+  const optionId = (event) => `event-search-option-${event.id}`;
+  const activeEvent =
+    open && search && activeIndex >= 0 ? results[activeIndex] || null : null;
+  useEffect(() => {
+    if (activeEvent) {
+      document
+        .getElementById(`event-search-option-${activeEvent.id}`)
+        ?.scrollIntoView({ block: "nearest" });
+    }
+  }, [activeEvent]);
+  const openEventInNewTab = (event) => {
+    if (!event?.url) {
+      return;
+    }
+
+    window.open(getEventPageUrl(event, timezone), "_blank", "noopener,noreferrer");
+    setOpen(false);
+    setSearchOpen?.(false);
+  };
+
+  // Close the results popover on Escape or any click outside it. These are
+  // document-level so they fire even when focus has moved onto a result item
+  // (where the input's own onKeyDown/onBlur no longer run).
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const close = () => {
+      setOpen(false);
+      setSearchOpen?.(false);
+    };
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") {
+        close();
+      }
+    };
+    const onPointerDown = (event) => {
+      if (containerRef.current && !containerRef.current.contains(event.target)) {
+        close();
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("touchstart", onPointerDown);
+
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("touchstart", onPointerDown);
+    };
+  }, [open, setOpen, setSearchOpen]);
 
   return (
     <div
-      className="relative w-full min-w-0 lg:w-[350px] lg:max-w-full"
-      aria-busy={isLoading}
+      ref={containerRef}
+      className="eventkoi-calendar-search relative w-full min-w-0 lg:w-[350px] lg:max-w-full"
+      aria-busy={isLoading || searching}
       aria-live="polite"
     >
       {/* Hidden accessible label */}
@@ -242,6 +302,7 @@ export function SearchBox({
         aria-expanded={open}
         aria-controls="event-search-listbox"
         aria-autocomplete="list"
+        aria-activedescendant={activeEvent ? optionId(activeEvent) : undefined}
         value={search}
         onFocus={() => setOpen(true)}
         onBlur={(e) => {
@@ -261,12 +322,40 @@ export function SearchBox({
             setOpen(false);
             setSearchOpen?.(false);
             e.currentTarget.blur();
+            return;
+          }
+
+          const count = results.length;
+
+          if (e.key === "ArrowDown" && search && count > 0) {
+            e.preventDefault();
+            setOpen(true);
+            setActiveIndex((index) => (index + 1) % count);
+            return;
+          }
+
+          if (e.key === "ArrowUp" && search && count > 0) {
+            e.preventDefault();
+            setOpen(true);
+            setActiveIndex((index) => (index <= 0 ? count - 1 : index - 1));
+            return;
+          }
+
+          if (e.key === "Enter" && open && search && activeEvent) {
+            e.preventDefault();
+            openEventInNewTab(activeEvent);
           }
         }}
         onChange={(e) => setSearch(e.target.value)}
-        className="pl-9 h-10 w-full min-w-0 shadow-none border border-solid box-border rounded disabled:bg-background"
+        className="eventkoi-calendar-search-input pl-9 h-10 w-full min-w-0 shadow-none border border-solid box-border rounded disabled:bg-background"
         autoComplete="off"
-        disabled={isLoading || isEmpty}
+        // Only disable while the calendar is still loading. Never disable for an
+        // empty result set: before any term is typed `events` is just the visible
+        // month, and a month with no events must still let a visitor search,
+        // since a search runs across every month once a term is present.
+        // Disabling mid-type would also blur the focused input and drop every
+        // keystroke after the first.
+        disabled={isLoading}
       />
 
       {/* Icon */}
@@ -274,7 +363,7 @@ export function SearchBox({
         aria-hidden="true"
         className="absolute inset-y-0 left-3 flex items-center text-muted-foreground pointer-events-none"
       >
-        {isLoading ? (
+        {isLoading || searching ? (
           <Loader2 className="w-4 h-4 animate-spin" />
         ) : (
           <Search className="w-4 h-4" />
@@ -285,57 +374,66 @@ export function SearchBox({
       <div className="sr-only" role="status">
         {isLoading
           ? __("Loading events...", "eventkoi-lite")
+          : searching
+          ? __("Searching...", "eventkoi-lite")
           : isEmpty
           ? __("No events found.", "eventkoi-lite")
           : sprintf(
               /* translators: %d: number of events found */
-              __("%d events found.", "eventkoi-lite"),
+              _n("%d event found.", "%d events found.", filteredResults.length, "eventkoi-lite"),
               filteredResults.length
             )}
       </div>
 
       {open && search && (
-        <Command
+        <div
           className={cn(
-            "absolute z-50 left-0 top-12 w-full rounded-md border bg-popover text-popover-foreground shadow-md border-border border-solid",
+            "absolute z-50 left-0 top-12 w-full flex flex-col overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md border-border border-solid",
             "max-h-[400px] h-auto"
           )}
         >
-          <CommandList
-            id="event-search-listbox"
-            role="listbox"
-            className="p-2 max-h-[400px] overflow-y-auto"
-          >
+          <div className="p-2 max-h-[400px] overflow-x-hidden overflow-y-auto overscroll-contain">
             {searchScope ? (
               <div className="px-2 pb-2 text-xs text-muted-foreground">
                 {searchScope}
               </div>
             ) : null}
 
-            {filteredResults.length === 0 ? (
-              <CommandEmpty className="p-4 text-muted-foreground text-sm">
+            {filteredResults.length === 0 && searching ? (
+              <div className="p-4 text-muted-foreground text-sm">
+                {__("Searching...", "eventkoi-lite")}
+              </div>
+            ) : filteredResults.length === 0 ? (
+              <div className="p-4 text-center text-muted-foreground text-sm">
                 {__("No events found.", "eventkoi-lite")}
-              </CommandEmpty>
+              </div>
             ) : (
-              paginatedResults.map((event) => {
+              // The listbox holds the options and nothing else, and carries
+              // the id the input points at with aria-controls.
+              <div
+                id="event-search-listbox"
+                role="listbox"
+                aria-label={__("Search results", "eventkoi-lite")}
+              >
+              {results.map((event, index) => {
                 const formatted = formatSearchDate(event, timezone, timeFormat);
+                const isActive = index === activeIndex;
 
                 return (
-                  <CommandItem
+                  <div
                     key={event.id}
+                    id={optionId(event)}
                     role="option"
-                    aria-selected="false"
-                    value={event.title}
-                    onClick={() => {
-                      window.open(
-                        getEventPageUrl(event, timezone),
-                        "_blank",
-                        "noopener,noreferrer"
-                      );
-                      setOpen(false);
-                      setSearchOpen?.(false);
-                    }}
-                    className="grid gap-1 p-2 cursor-pointer text-sm text-foreground rounded-md hover:!bg-accent"
+                    aria-selected={isActive}
+                    // Keep focus in the input: a mousedown would blur it and
+                    // close the list before the click lands.
+                    onMouseDown={(e) => e.preventDefault()}
+                    onMouseEnter={() => setActiveIndex(index)}
+                    onClick={() => openEventInNewTab(event)}
+                    className={cn(
+                      "grid gap-1 p-2 cursor-pointer text-sm text-foreground rounded-md hover:!bg-accent",
+                      isActive && "!bg-accent"
+                    )}
                   >
                     <span className="font-normal block">
                       {formatted.visible}
@@ -343,9 +441,13 @@ export function SearchBox({
                     <span className="font-medium">{event.title}</span>
                     {/* Hidden full date for screen readers */}
                     <span className="sr-only">{formatted.screenReader}</span>
-                  </CommandItem>
+                    <span className="sr-only">
+                      {__("Opens in a new tab", "eventkoi-lite")}
+                    </span>
+                  </div>
                 );
-              })
+              })}
+              </div>
             )}
 
             {/* Pagination footer: page navigation plus month navigation. Kept
@@ -419,8 +521,8 @@ export function SearchBox({
                 ) : null}
               </div>
             ) : null}
-          </CommandList>
-        </Command>
+          </div>
+        </div>
       )}
     </div>
   );

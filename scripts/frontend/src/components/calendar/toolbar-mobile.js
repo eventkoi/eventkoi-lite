@@ -2,6 +2,7 @@ import { __ } from "@wordpress/i18n";
 import { CalendarHeaderPopover } from "@/components/calendar/CalendarHeaderPopover";
 import { NavControls } from "@/components/calendar/nav-controls";
 import { SearchBox } from "@/components/calendar/search-box";
+import { SubscribeButton } from "@/components/calendar/subscribe-button";
 import { TodayButton } from "@/components/calendar/today-button";
 import { ViewToggle } from "@/components/calendar/view-toggle";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,9 @@ export function ToolbarMobile(props) {
     setCurrentDate,
     view,
     setView,
+    display,
+    setDisplay,
+    visibleViews,
     isTodayInRange,
     search,
     setSearch,
@@ -32,8 +36,11 @@ export function ToolbarMobile(props) {
     timezone,
     timeFormat,
     searchScope,
+    searching,
     onSearchScopePrev,
     onSearchScopeNext,
+    feedUrl,
+    feedWebcal,
   } = props;
 
   const [searchOpen, setSearchOpen] = useState(false);
@@ -46,7 +53,7 @@ export function ToolbarMobile(props) {
 
   if (isEmpty) {
     return (
-      <div className="ek-mobile-only flex-col w-full gap-4">
+      <div className="eventkoi-calendar-toolbar ek-mobile-only flex-col w-full gap-4">
         {/* Row 1 skeletons */}
         <div className="flex justify-between items-center">
           <Skeleton className="h-10 w-20 rounded-md" /> {/* Today */}
@@ -67,15 +74,19 @@ export function ToolbarMobile(props) {
   }
 
   return (
-    <div className="ek-mobile-only flex-col w-full gap-4">
-      {/* Row 1: Today + toggle */}
-      <div className="flex justify-between items-center">
+    <div className="eventkoi-calendar-toolbar ek-mobile-only flex-col w-full gap-4">
+      {/* Row 1: Today + toggle. Wraps so Subscribe + the three-option view
+          toggle never overflow narrow phones. */}
+      <div className="flex flex-wrap justify-between items-center gap-2">
         <TodayButton
           calendarApi={calendarApi}
           setCurrentDate={setCurrentDate}
           isTodayInRange={isTodayInRange}
         />
-        <ViewToggle calendarApi={calendarApi} view={view} setView={setView} />
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <SubscribeButton feedUrl={feedUrl} feedWebcal={feedWebcal} />
+          <ViewToggle calendarApi={calendarApi} view={view} setView={setView} display={display} setDisplay={setDisplay} visibleViews={visibleViews} />
+        </div>
       </div>
 
       {/* Row 2 */}
@@ -96,20 +107,22 @@ export function ToolbarMobile(props) {
             timezone={timezone}
             timeFormat={timeFormat}
             searchScope={searchScope}
+            searching={searching}
             onSearchScopePrev={onSearchScopePrev}
             onSearchScopeNext={onSearchScopeNext}
             setSearchOpen={setSearchOpen}
           />
         </div>
       ) : (
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <NavControls
               calendarApi={calendarApi}
               currentDate={currentDate}
               setCurrentDate={setCurrentDate}
+              timezone={timezone}
             />
-            {view === "timeGridWeek" || view === "week" ? (
+            {display !== "list" && (view === "timeGridWeek" || view === "week") ? (
               <WeekPopover
                 calendarApi={calendarApi}
                 currentDate={currentDate}
@@ -120,6 +133,7 @@ export function ToolbarMobile(props) {
                 calendarApi={calendarApi}
                 currentDate={currentDate}
                 setCurrentDate={setCurrentDate}
+                timezone={timezone}
               />
             )}
           </div>
@@ -127,7 +141,7 @@ export function ToolbarMobile(props) {
           <Button
             variant="outline"
             size="icon"
-            className="rounded shadow-sm border border-solid border-border cursor-pointer"
+            className="eventkoi-calendar-search-button rounded shadow-sm border border-solid border-border cursor-pointer"
             onClick={() => {
               setSearchOpen(true);
               setTimeout(() => inputRef.current?.focus(), 50);

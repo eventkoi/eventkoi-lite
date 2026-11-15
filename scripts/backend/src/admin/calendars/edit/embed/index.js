@@ -5,6 +5,7 @@ import { Separator } from "@/components/ui/separator";
 
 import { Box } from "@/components/box";
 import { CalendarBlock } from "@/components/calendar/calendar-block";
+import { CalendarFeed } from "@/components/calendar/calendar-feed";
 import { CalendarLink } from "@/components/calendar/calendar-link";
 import { CalendarShortcode } from "@/components/calendar/calendar-shortcode";
 import { Heading } from "@/components/heading";
@@ -22,6 +23,7 @@ export function CalendarEditEmbed() {
         <Separator />
         <div className="flex flex-col px-6 py-8 w-full gap-10">
           <CalendarLink calendar={calendar} setCalendar={setCalendar} />
+          <CalendarFeed calendar={calendar} />
           <CalendarShortcode calendar={calendar} setCalendar={setCalendar} />
           <CalendarBlock calendar={calendar} setCalendar={setCalendar} />
         </div>

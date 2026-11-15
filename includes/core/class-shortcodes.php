@@ -100,6 +100,16 @@ class Shortcodes {
 	private static function resolve_event_id_from_context( $event_id ) {
 		$event_id = absint( $event_id );
 		if ( $event_id > 0 ) {
+			// An explicit id is trusted only while the event stays publicly
+			// visible: a hardcoded id in a page-builder layout must not keep
+			// exposing an event after it is drafted or trashed.
+			if ( 'eventkoi_event' !== get_post_type( $event_id ) ) {
+				return 0;
+			}
+			if ( 'publish' !== get_post_status( $event_id ) && ! current_user_can( 'edit_post', $event_id ) ) {
+				return 0;
+			}
+
 			return $event_id;
 		}
 
@@ -124,7 +134,46 @@ class Shortcodes {
 			return $active_event_id;
 		}
 
-		return 0;
+		return self::sample_event_id_for_builder_preview();
+	}
+
+	/**
+	 * A real event to design against while a page builder edits a template.
+	 *
+	 * A library template has no event of its own, so "Current event" would
+	 * show a placeholder in the editor. The most recent published event
+	 * stands in there, and only there: on the live site the resolution above
+	 * still decides, and a page without an event stays empty.
+	 *
+	 * @return int Event id, or 0 outside a builder editor.
+	 */
+	private static function sample_event_id_for_builder_preview() {
+		if ( ! class_exists( '\Elementor\Plugin' ) || empty( \Elementor\Plugin::$instance->editor ) ) {
+			return 0;
+		}
+
+		$editor  = \Elementor\Plugin::$instance->editor;
+		$preview = \Elementor\Plugin::$instance->preview ?? null;
+
+		$in_editor = ( method_exists( $editor, 'is_edit_mode' ) && $editor->is_edit_mode() )
+			|| ( $preview && method_exists( $preview, 'is_preview_mode' ) && $preview->is_preview_mode() );
+
+		if ( ! $in_editor ) {
+			return 0;
+		}
+
+		$events = get_posts(
+			array(
+				'post_type'      => 'eventkoi_event',
+				'post_status'    => 'publish',
+				'posts_per_page' => 1,
+				'orderby'        => 'date',
+				'order'          => 'DESC',
+				'fields'         => 'ids',
+			)
+		);
+
+		return ! empty( $events[0] ) ? absint( $events[0] ) : 0;
 	}
 
 	/**
@@ -138,16 +187,20 @@ class Shortcodes {
 	public static function render_calendar( $user_attributes, $content, $shortcode_name ) {
 		$attributes = shortcode_atts(
 			array(
-				'id'               => '',
-				'display'          => 'calendar',
-				'orderby'          => 'date_modified',
-				'order'            => 'desc',
-				'per_page'         => 10,
-				'max_results'      => 0,
-				'date_start'       => '',
-				'date_end'         => '',
-				'expand'           => '',
-				'expand_instances' => '',
+				'id'                 => '',
+				'display'            => 'calendar',
+				'orderby'            => 'date_modified',
+				'order'              => 'desc',
+				'per_page'           => 10,
+				'max_results'        => 0,
+				'date_start'         => '',
+				'date_end'           => '',
+				'expand'             => '',
+				'expand_instances'   => '',
+				'timeframe'          => '',
+				'views'              => '',
+				'show_timezone'      => '',
+				'description_source' => '',
 			),
 			$user_attributes,
 			$shortcode_name
@@ -248,6 +301,18 @@ class Shortcodes {
 			'calendars' => $ids,
 		);
 
+		if ( '' !== trim( (string) $attributes['timeframe'] ) ) {
+			$calendar_args['timeframe'] = sanitize_key( $attributes['timeframe'] );
+		}
+
+		if ( '' !== trim( (string) $attributes['views'] ) ) {
+			$calendar_args['views'] = sanitize_text_field( $attributes['views'] );
+		}
+
+		if ( '' !== trim( (string) $attributes['show_timezone'] ) ) {
+			$calendar_args['show_timezone'] = (bool) filter_var( $attributes['show_timezone'], FILTER_VALIDATE_BOOLEAN );
+		}
+
 		if ( 'list' === $display ) {
 			$calendar_args['orderby']          = $orderby;
 			$calendar_args['order']            = $order;
@@ -256,6 +321,11 @@ class Shortcodes {
 			$calendar_args['date_start']       = $date_start;
 			$calendar_args['date_end']         = $date_end;
 			$calendar_args['expand_instances'] = $expand_instances;
+
+			$description_source = sanitize_key( (string) $attributes['description_source'] );
+			if ( in_array( $description_source, array( 'description', 'excerpt' ), true ) ) {
+				$calendar_args['description_source'] = $description_source;
+			}
 		}
 
 		$html = eventkoi_get_calendar_content( $primary_id, $display, $calendar_args );
@@ -298,17 +368,11 @@ class Shortcodes {
 			$shortcode_name
 		);
 
-		// Prefer explicitly passed ID.
-		$event_id = absint( $attributes['id'] );
-
-		// Attempt to detect event ID from current post when none provided.
-		if ( 0 === $event_id ) {
-			global $post;
-
-			if ( isset( $post->ID ) && 'eventkoi_event' === get_post_type( $post->ID ) ) {
-				$event_id = (int) $post->ID;
-			}
-		}
+		// Prefer explicitly passed ID, otherwise resolve from context. The
+		// shared resolver also refuses ids whose event is no longer public,
+		// so a hardcoded id in a page-builder layout cannot keep exposing a
+		// drafted or trashed event.
+		$event_id = self::resolve_event_id_from_context( $attributes['id'] );
 
 		// Bail if still no valid event ID or missing data parameter.
 		if ( 0 === $event_id || empty( $attributes['data'] ) ) {
@@ -320,12 +384,20 @@ class Shortcodes {
 		$keys        = array_map( 'trim', explode( ',', $attributes['data'] ) );
 		$parts       = array();
 		$bare_parts  = array();
+		$part_keys   = array();
 		$auto_unwrap = false;
 		$show_label  = self::parse_boolean_attribute( $attributes['with_name'] ?? false, is_array( $user_attributes ) && in_array( 'with_name', $user_attributes, true ) );
 
 		foreach ( $keys as $key ) {
-			$normalized_key = strtolower( str_replace( '-', '_', $key ) );
-			$normalized_key = preg_replace( '/[^a-z0-9_]/', '', $normalized_key );
+			$raw_key = strtolower( $key );
+
+			// A taxonomy slug can contain hyphens, so those keys keep theirs.
+			// Everything else stays on the historical underscore normalising.
+			if ( 0 === strpos( $raw_key, 'event_tax_' ) || 0 === strpos( $raw_key, 'tax_' ) ) {
+				$normalized_key = preg_replace( '/[^a-z0-9_.-]/', '', str_replace( ' ', '_', $raw_key ) );
+			} else {
+				$normalized_key = preg_replace( '/[^a-z0-9_]/', '', str_replace( '-', '_', $raw_key ) );
+			}
 
 			if ( ! empty( $normalized_key ) ) {
 
@@ -371,6 +443,7 @@ class Shortcodes {
 
 				$parts[]      = $value;
 				$bare_parts[] = $bare_value;
+				$part_keys[]  = $normalized_key;
 			}
 		}
 
@@ -394,17 +467,28 @@ class Shortcodes {
 			return wp_strip_all_tags( reset( $filtered_parts ) );
 		}
 
-		$wrapped = implode(
-			'',
-			array_map(
-				function ( $item ) {
-					return '<div class="eventkoi-data">' . wp_kses_post( $item ) . '</div>';
-				},
-				array_filter( $parts )
-			)
-		);
+		// The description sanitizer's allowed set, not wp_kses_post: the
+		// details part legitimately carries normalized video embeds that the
+		// stricter post context would silently strip.
+		$allowed_html = \EventKoi\Core\Event::get_description_allowed_html();
 
-		return '<div class="eventkoi-shortcode">' . wp_kses_post( $wrapped ) . '</div>';
+		// Rows the plugin renders itself (the ticket box with its no-script
+		// order form, the map mount, the series dates loop) carry a form,
+		// inline styles and data attributes that filter would strip. They are
+		// escaped at the source, so they pass through as rendered.
+		$interactive = array( 'event_ticket_rsvp', 'event_gmap', 'event_series_dates' );
+		$wrapped     = '';
+
+		foreach ( $parts as $index => $item ) {
+			if ( ! $item ) {
+				continue;
+			}
+
+			$is_interactive = in_array( (string) ( $part_keys[ $index ] ?? '' ), $interactive, true );
+			$wrapped       .= '<div class="eventkoi-data">' . ( $is_interactive ? $item : wp_kses( $item, $allowed_html ) ) . '</div>';
+		}
+
+		return '<div class="eventkoi-shortcode">' . $wrapped . '</div>';
 	}
 
 	/**
@@ -530,10 +614,16 @@ class Shortcodes {
 			(int) $instance_ts
 		);
 
+		// The mount node carries a server-rendered no-JS fallback form. React
+		// replaces it on mount (modal stays primary); if the script never runs,
+		// the form remains and can still complete a purchase.
+		$fallback = \EventKoi\Core\Ticket_Fallback::render_form( $event_id, $instance_ts );
+
 		return sprintf(
-			'<div class="eventkoi-front"><div id="eventkoi-tickets-%1$d" class="eventkoi-tickets" %2$s></div></div>',
+			'<div class="eventkoi-front"><div id="eventkoi-tickets-%1$d" class="eventkoi-tickets" %2$s>%3$s</div></div>',
 			(int) $event_id,
-			$attrs
+			$attrs,
+			$fallback
 		);
 	}
 

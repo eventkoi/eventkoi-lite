@@ -87,12 +87,19 @@ export function ListView({
   timezone,
   showImage,
   showDescription,
+  descriptionSource = "excerpt",
   showLocation,
   borderSize,
   borderStyle,
   timeFormat,
   loading,
 }) {
+  // The line under the title is the excerpt, or the description summary when
+  // the event has no excerpt or the calendar asks for the description only.
+  const summaryText = (event) =>
+    descriptionSource === "description"
+      ? event?.description || ""
+      : event?.excerpt || event?.description || "";
   if (events === null || loading) {
     return (
       <div
@@ -109,7 +116,7 @@ export function ListView({
   if (events.length === 0) {
     return (
       <div role="status" aria-live="polite" className="eventkoi-no-events py-8">
-        {eventkoi_params.no_events}
+        {window.eventkoi_params.no_events}
       </div>
     );
   }
@@ -138,7 +145,7 @@ export function ListView({
   };
 
   return (
-    <ul className="grid list-none m-0 p-0" role="list">
+    <ul className="eventkoi-calendar-list-items grid list-none m-0 p-0" role="list">
       {events.map((event) => {
         const wpTz = tzFromQuery
           ? safeNormalizeTimeZone(tzFromQuery)
@@ -149,6 +156,16 @@ export function ListView({
                 window.eventkoi_params?.timezone_string ||
                 "UTC"
             );
+
+        // Fall back to the server-rendered date string for any event whose
+        // timeline can't be computed on the client (e.g. imported multi-day or
+        // all-day events), so the date column is never blank.
+        const computedTimeline = buildTimeline(event, wpTz, timeFormat);
+        const serverTimeline =
+          (typeof event?.timeline === "string" && event.timeline.trim()) ||
+          (typeof event?.datetime === "string" && event.datetime.trim()) ||
+          "";
+        const timeline = computedTimeline || serverTimeline;
 
         const loc = getPrimaryLocation(event);
         const isVirtual = getLocationType(loc) === "online";
@@ -167,12 +184,12 @@ export function ListView({
             return (
               <a
                 href={virtualUrl}
-                className="flex gap-2 text-muted-foreground/90 text-sm underline underline-offset-4 truncate"
+                className="eventkoi-calendar-list-location flex gap-2 text-muted-foreground text-sm underline underline-offset-4 truncate"
                 title={label}
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                <Globe className="w-4 h-4 min-w-4 text-muted-foreground/90" />
+                <Globe className="w-4 h-4 min-w-4 text-muted-foreground" />
                 {label}
               </a>
             );
@@ -180,8 +197,8 @@ export function ListView({
 
           if (hasPhysical) {
             return (
-              <span className="flex text-muted-foreground/90 text-sm gap-2">
-                <MapPin className="w-4 h-4 min-w-4 text-muted-foreground/90" />
+              <span className="eventkoi-calendar-list-location flex text-muted-foreground text-sm gap-2">
+                <MapPin className="w-4 h-4 min-w-4 text-muted-foreground" />
                 {locationLine}
               </span>
             );
@@ -190,13 +207,13 @@ export function ListView({
           if (locationLine) {
             const icon =
               event.type === "virtual" ? (
-                <Globe className="w-4 h-4 min-w-4 text-muted-foreground/90" />
+                <Globe className="w-4 h-4 min-w-4 text-muted-foreground" />
               ) : (
-                <MapPin className="w-4 h-4 min-w-4 text-muted-foreground/90" />
+                <MapPin className="w-4 h-4 min-w-4 text-muted-foreground" />
               );
 
             return (
-              <span className="flex text-muted-foreground/90 text-sm gap-2">
+              <span className="eventkoi-calendar-list-location flex text-muted-foreground text-sm gap-2">
                 {icon}
                 {locationLine}
               </span>
@@ -209,18 +226,19 @@ export function ListView({
         return (
           <li
             key={`event-${event.id}`}
-            className="flex gap-8 py-8 border-border min-w-0"
+            className="eventkoi-calendar-list-item flex gap-8 py-8 border-border min-w-0"
             style={{
               borderBottomWidth: borderSize,
               borderBottomStyle: borderStyle,
             }}
           >
-            {showImage === "yes" && (
+            {showImage === "yes" && event.thumbnail && (
               <div
                 className={cn(
-                  "ek-image min-w-[140px]",
+                  "eventkoi-calendar-list-image ek-image w-full sm:w-auto sm:shrink-0",
                   !event.thumbnail && "hidden md:flex"
                 )}
+                style={{ width: "220px", flexBasis: "220px", flexShrink: 0, maxWidth: "220px" }}
               >
                 <AspectRatio ratio={1.5}>
                   {event.thumbnail ? (
@@ -234,7 +252,7 @@ export function ListView({
                       >
                         <img
                           src={event.thumbnail}
-                          className="h-full w-full rounded-xl"
+                          className="h-full w-full rounded-xl object-cover"
                           alt="" // decorative (title already present)
                           aria-hidden="true" // prevent screen reader duplication
                         />
@@ -255,30 +273,39 @@ export function ListView({
               </div>
             )}
 
-            <div className="ek-meta flex flex-col gap-2 grow min-w-0">
+            <div className="eventkoi-calendar-list-content ek-meta flex flex-col gap-2 grow min-w-0">
               <div
-                className="flex md:hidden text-muted-foreground whitespace-pre-line"
+                className="eventkoi-calendar-list-date ek-date-sm text-muted-foreground whitespace-pre-line"
                 role="group"
                 aria-hidden="true"
-                aria-label={`Event time: ${buildTimeline(
-                  event,
-                  wpTz,
-                  timeFormat
-                )}`}
+                aria-label={`Event time: ${timeline}`}
               >
-                {buildTimeline(event, wpTz, timeFormat)}
+                {timeline}
               </div>
 
-              <h3 className="m-0">
+              {event.calendar_name && (
+                <div className="eventkoi-calendar-list-calendar flex items-center gap-1.5 text-xs text-muted-foreground m-0">
+                  <span
+                    className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
+                    style={{
+                      backgroundColor: event.calendar_color || "currentColor",
+                    }}
+                    aria-hidden="true"
+                  />
+                  <span>{event.calendar_name}</span>
+                </div>
+              )}
+
+              <h3 aria-level="2" className="eventkoi-calendar-list-title m-0 text-lg font-semibold leading-snug">
                 <a href={getEventUrl(event, wpTz)} className="no-underline">
                   {event.title}
                   <span className="sr-only"> — View event details</span>
                 </a>
               </h3>
 
-              {showDescription === "yes" && event.description && (
-                <p className="text-base text-muted-foreground line-clamp-2 m-0">
-                  {event.description}
+              {showDescription === "yes" && summaryText(event) && (
+                <p className="eventkoi-calendar-list-summary text-base text-muted-foreground line-clamp-2 m-0">
+                  {summaryText(event)}
                 </p>
               )}
 
@@ -286,15 +313,11 @@ export function ListView({
             </div>
 
             <div
-              className="hidden md:block ml-auto text-[14px] text-muted-foreground min-w-[200px] text-right whitespace-pre-line"
+              className="eventkoi-calendar-list-date ek-date-md ml-auto text-[14px] text-muted-foreground min-w-[200px] text-right whitespace-pre-line"
               role="group"
-              aria-label={`Event time: ${buildTimeline(
-                event,
-                wpTz,
-                timeFormat
-              )}`}
+              aria-label={`Event time: ${timeline}`}
             >
-              {buildTimeline(event, wpTz, timeFormat)}
+              {timeline}
             </div>
           </li>
         );

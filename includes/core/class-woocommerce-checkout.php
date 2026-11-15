@@ -84,18 +84,12 @@ class WooCommerce_Checkout {
 		add_action( 'woocommerce_order_status_changed', array( __CLASS__, 'on_order_status_changed' ), 10, 4 );
 		add_action( 'woocommerce_thankyou', array( __CLASS__, 'maybe_redirect_to_event_page' ), 5 );
 
+		// Attendee names next to each ticket line on the admin order screen.
+		add_action( 'woocommerce_after_order_itemmeta', array( __CLASS__, 'render_admin_item_attendees' ), 10, 2 );
+
 		// Delete local EK orders when a WC order is permanently deleted.
 		add_action( 'woocommerce_before_delete_order', array( __CLASS__, 'on_order_deleted' ), 10, 2 );
 		add_action( 'before_delete_post', array( __CLASS__, 'on_order_post_deleted' ) );
-
-		// Suppress WC order emails for EventKoi ticket orders (EventKoi sends its own).
-		add_filter( 'woocommerce_email_enabled_new_order', array( __CLASS__, 'suppress_ticket_order_email' ), 10, 2 );
-		add_filter( 'woocommerce_email_enabled_customer_processing_order', array( __CLASS__, 'suppress_ticket_order_email' ), 10, 2 );
-		add_filter( 'woocommerce_email_enabled_customer_completed_order', array( __CLASS__, 'suppress_ticket_order_email' ), 10, 2 );
-		add_filter( 'woocommerce_email_enabled_customer_on_hold_order', array( __CLASS__, 'suppress_ticket_order_email' ), 10, 2 );
-		add_filter( 'woocommerce_email_enabled_customer_refunded_order', array( __CLASS__, 'suppress_ticket_order_email' ), 10, 2 );
-		add_filter( 'woocommerce_email_enabled_cancelled_order', array( __CLASS__, 'suppress_ticket_order_email' ), 10, 2 );
-		add_filter( 'woocommerce_email_enabled_failed_order', array( __CLASS__, 'suppress_ticket_order_email' ), 10, 2 );
 	}
 
 	/**
@@ -111,20 +105,6 @@ class WooCommerce_Checkout {
 		$settings = Settings::get();
 
 		return 'woocommerce' === ( $settings['ticket_checkout_method'] ?? '' );
-	}
-
-	/**
-	 * Suppress WC order emails for EventKoi ticket orders.
-	 *
-	 * @param bool     $enabled Whether the email is enabled.
-	 * @param WC_Order $order   The order object.
-	 * @return bool
-	 */
-	public static function suppress_ticket_order_email( $enabled, $order ) {
-		if ( $order instanceof \WC_Order && $order->get_meta( '_eventkoi_event_id' ) ) {
-			return false;
-		}
-		return $enabled;
 	}
 
 	/**
@@ -239,6 +219,12 @@ class WooCommerce_Checkout {
 		$event_id      = absint( $args['event_id'] ?? 0 );
 		$event_title   = sanitize_text_field( (string) ( $args['event_title'] ?? '' ) );
 		$instance_ts   = absint( $args['instance_ts'] ?? 0 );
+
+		// A single-package event is sold as one unit, so never bind a checkout to
+		// one day even if a per-day instance was somehow supplied.
+		if ( Event::is_package_event( $event_id ) ) {
+			$instance_ts = 0;
+		}
 		$email         = sanitize_email( (string) ( $args['email'] ?? '' ) );
 		$first_name    = sanitize_text_field( (string) ( $args['first_name'] ?? '' ) );
 		$last_name     = sanitize_text_field( (string) ( $args['last_name'] ?? '' ) );
@@ -294,9 +280,11 @@ class WooCommerce_Checkout {
 			'master_checkin_code' => $master_checkin_code,
 			'ticket_items'        => $all_ticket_items,
 			'checkout_fields'     => is_array( $args['checkout_fields'] ?? null ) ? $args['checkout_fields'] : array(),
+			'terms_consent'       => is_array( $args['terms_consent'] ?? null ) ? $args['terms_consent'] : null,
+			'hold_id'             => sanitize_text_field( (string) ( $args['hold_id'] ?? '' ) ),
 		);
 
-		set_transient( 'eventkoi_cart_' . $token, $checkout_data, HOUR_IN_SECONDS );
+		set_transient( 'eventkoi_cart_' . $token, $checkout_data, \EventKoi\API\Tickets::HOLD_DURATION );
 
 		// Return tokenized checkout URL — cart will be populated on page load.
 		$checkout_url = add_query_arg( 'ek_cart', $token, wc_get_checkout_url() );
@@ -523,6 +511,53 @@ class WooCommerce_Checkout {
 	}
 
 	/**
+	 * Print the attendees of a ticket line on the admin order screen.
+	 *
+	 * @param int                    $item_id Order item ID.
+	 * @param \WC_Order_Item_Product $item    Order item.
+	 * @return void
+	 */
+	public static function render_admin_item_attendees( $item_id, $item ) {
+		unset( $item_id );
+
+		if ( ! is_admin() || ! is_object( $item ) || ! method_exists( $item, 'get_meta' ) || 'yes' !== (string) $item->get_meta( '_eventkoi_ticket' ) ) {
+			return;
+		}
+
+		$ticket_id = absint( $item->get_meta( '_eventkoi_ticket_id' ) );
+		$order_id  = method_exists( $item, 'get_order_id' ) ? absint( $item->get_order_id() ) : 0;
+		if ( ! $ticket_id || ! $order_id ) {
+			return;
+		}
+
+		global $wpdb;
+		$table = $wpdb->prefix . 'eventkoi_ticket_orders';
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+		$rows = $wpdb->get_results(
+			$wpdb->prepare(
+				"SELECT attendee_name, attendee_email, checkin_token FROM {$table} WHERE order_id LIKE %s ORDER BY id ASC", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+				$wpdb->esc_like( 'wc_' . $order_id . ':' . $ticket_id . ':' ) . '%'
+			)
+		);
+
+		$names = array();
+		foreach ( (array) $rows as $row ) {
+			$name  = trim( (string) ( $row->attendee_name ?? '' ) );
+			$email = trim( (string) ( $row->attendee_email ?? '' ) );
+			if ( '' === $name && '' === $email ) {
+				continue;
+			}
+			$names[] = '' !== $email ? ( '' !== $name ? $name . ' (' . $email . ')' : $email ) : $name;
+		}
+
+		if ( empty( $names ) ) {
+			return;
+		}
+
+		echo '<div class="eventkoi-wc-attendees" style="margin-top:4px;color:#555;"><strong>' . esc_html__( 'Attendees:', 'eventkoi-lite' ) . '</strong> ' . esc_html( implode( ', ', $names ) ) . '</div>';
+	}
+
+	/**
 	 * Attach EventKoi metadata to the WC order after checkout.
 	 *
 	 * @param \WC_Order $order WC Order.
@@ -554,6 +589,41 @@ class WooCommerce_Checkout {
 				$label = $definitions[ $key ]['label'] ?? $key;
 				$order->add_order_note( sanitize_text_field( $label . ': ' . $value ) );
 			}
+		}
+
+		$hold_id = (string) ( $checkout_data['hold_id'] ?? '' );
+		$order->update_meta_data( '_eventkoi_hold_id', $hold_id );
+		$attendee_stash = '' !== $hold_id ? \EventKoi\Core\Attendees::get_stashed_checkout_attendees( $hold_id ) : array();
+		if ( ! empty( $attendee_stash['attendees'] ) ) {
+			$order->update_meta_data( '_eventkoi_attendees', $attendee_stash['attendees'] );
+			$order->update_meta_data( '_eventkoi_email_attendees', ! empty( $attendee_stash['email_each'] ) ? 'yes' : 'no' );
+		}
+
+		$consent     = is_array( $checkout_data['terms_consent'] ?? null ) ? $checkout_data['terms_consent'] : null;
+		$has_consent = $consent && ! empty( $consent['accepted_at'] )
+			&& ( ! empty( $consent['terms_text'] ) || ! empty( $consent['agreements'] ) );
+		if ( $has_consent ) {
+			$order->update_meta_data( '_eventkoi_terms_consent', $consent );
+
+			$consent_parts = array();
+			if ( ! empty( $consent['terms_text'] ) ) {
+				$consent_parts[] = wp_strip_all_tags( (string) $consent['terms_text'] );
+			}
+			foreach ( (array) ( $consent['agreements'] ?? array() ) as $agreement_text ) {
+				$agreement_text = trim( wp_strip_all_tags( (string) $agreement_text ) );
+				if ( '' !== $agreement_text ) {
+					$consent_parts[] = $agreement_text;
+				}
+			}
+
+			$order->add_order_note(
+				sprintf(
+					/* translators: 1: acceptance date/time, 2: the terms text the customer accepted. */
+					__( 'Terms and conditions accepted at %1$s. Terms: %2$s', 'eventkoi-lite' ),
+					wp_date( 'Y-m-d H:i:s T', (int) $consent['accepted_at'] ),
+					implode( ' | ', $consent_parts )
+				)
+			);
 		}
 
 		$order->save();
@@ -678,6 +748,7 @@ class WooCommerce_Checkout {
 			'event_id'       => $event_id,
 			'currency'       => $currency,
 			'items'          => $order_items,
+			'hold_id'        => (string) $order->get_meta( '_eventkoi_hold_id' ),
 			'metadata'       => $order_payload['metadata'],
 		);
 		Ticket_Order_Sync::sync_order_to_local( $local_order );
@@ -689,6 +760,7 @@ class WooCommerce_Checkout {
 				'id'                  => $ek_order_id,
 				'master_checkin_code' => $master_checkin_code,
 				'event_instance_ts'   => $instance_ts,
+				'terms_consent'       => is_array( $order->get_meta( '_eventkoi_terms_consent' ) ) ? $order->get_meta( '_eventkoi_terms_consent' ) : null,
 			)
 		);
 		Ticket_Emails::send_for_order_public( $email_order );

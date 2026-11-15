@@ -1,16 +1,18 @@
 import { Box } from "@/components/box";
 import { EventCalendar } from "@/components/event/event-calendar";
+import { EventTaxonomies } from "@/components/event/event-taxonomies";
 import { EventDate } from "@/components/event/event-date";
 import { EventDescription } from "@/components/event/event-description";
 import { EventImage } from "@/components/event/event-image";
 import { EventLocation } from "@/components/event/event-location";
+import { EventExcerpt } from "@/components/event/event-excerpt";
+import { EventMetaboxEmbed } from "@/components/event/event-metabox-embed";
 import { EventName } from "@/components/event/event-name";
 import { EventSlug } from "@/components/event/event-slug";
 import { EventTemplate } from "@/components/event/event-template";
 import { AttendanceModeSelector } from "@/components/event/attendance-mode-selector";
 import { Heading } from "@/components/heading";
 import { ProLaunch } from "@/components/dashboard/pro-launch";
-import { SeoPluginEditorLink } from "@/components/seo-plugin-editor-link";
 import { ShortcodeBox } from "@/components/ShortcodeBox";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -43,7 +45,19 @@ export function EventEditMain() {
             />
           </div>
         </div>
-        <EventSlug />
+        <div className="flex flex-col sm:flex-row sm:items-start sm:gap-6 [&>*]:flex-1 [&>*]:min-w-0">
+          <EventSlug />
+          <EventExcerpt />
+          {showAttributes && (
+            <div className="text-sm text-muted-foreground -mt-6">
+              <ShortcodeBox
+                attribute="event_excerpt"
+                data="excerpt"
+                eventId={event?.id}
+              />
+            </div>
+          )}
+        </div>
       </Box>
 
       {/* Event Date */}
@@ -89,7 +103,6 @@ export function EventEditMain() {
           </div>
         )}
         <EventDescription />
-        <SeoPluginEditorLink url={event?.native_edit_url} />
         {showAttributes && (
           <div className="text-sm text-muted-foreground -mt-6">
             <ShortcodeBox
@@ -111,10 +124,34 @@ export function EventEditMain() {
           </div>
         )}
         <ProLaunch
-          headline="Upgrade to switch event templates and calendars"
+          headline={__("Upgrade to switch event templates and calendars", "eventkoi-lite")}
           minimal
+          source="event-templates"
         />
       </Box>
+
+      {/* Third-party taxonomies (only renders when the site registered any) */}
+      <EventTaxonomiesBox showAttributes={showAttributes} />
+
+      {/* Metaboxes other plugins add (ACF, Pods, Yoast, ...) in one panel */}
+      <EventMetaboxEmbed />
     </div>
   );
+}
+
+function EventTaxonomiesBox({ showAttributes }) {
+  const { event } = useEventEditContext();
+  const hasTaxonomies =
+    Array.isArray(event?.custom_taxonomies) &&
+    event.custom_taxonomies.some(
+      (item) => Array.isArray(item.terms) && item.terms.length > 0
+    );
+
+  if (!hasTaxonomies) {
+    return null;
+  }
+
+  // No wrapper box or generic heading: each taxonomy renders its own
+  // container titled with its own name.
+  return <EventTaxonomies showAttributes={showAttributes} />;
 }

@@ -75,12 +75,14 @@ class Schema {
 			$schema['description'] = $description;
 		}
 
-		$organizer = self::get_schema_organizer( $event );
+		// A password-protected event says when it is and nothing more, so its
+		// organizer and its tickets (names, prices, stock) stay out too.
+		$organizer = $event::is_password_protected() ? array() : self::get_schema_organizer( $event );
 		if ( ! empty( $organizer ) ) {
 			$schema['organizer'] = $organizer;
 		}
 
-		$offers = self::get_schema_offers( $event );
+		$offers = $event::is_password_protected() ? array() : self::get_schema_offers( $event );
 		if ( ! empty( $offers ) ) {
 			$schema['offers'] = $offers;
 		}
@@ -443,7 +445,7 @@ class Schema {
 	 * @return string
 	 */
 	private static function get_schema_description( Event $event ) {
-		$description = self::schema_text( $event::get_instance_field( 'description' ) );
+		$description = $event::is_password_protected() ? '' : self::schema_text( $event::get_instance_field( 'description' ) );
 
 		if ( '' === $description ) {
 			$description = self::schema_text( $event->get_summary() );
@@ -483,6 +485,10 @@ class Schema {
 	 * @return array
 	 */
 	private static function get_schema_locations( Event $event ) {
+		if ( $event::is_password_protected() ) {
+			return array();
+		}
+
 		$locations = $event::get_instance_field( 'locations' );
 		$has_instance_locations_override = false;
 		$instance_ts                     = function_exists( 'eventkoi_get_instance_id' ) ? absint( eventkoi_get_instance_id() ) : 0;
@@ -585,6 +591,58 @@ class Schema {
 	}
 
 	/**
+	 * Split an address typed on one line into PostalAddress parts.
+	 *
+	 * Only a line with a recognisable postal code is split, in one of the two
+	 * common orders: "street, city, state zip[, country]" or
+	 * "street, zip city[, country]". Anything else is left as the street line.
+	 *
+	 * @param string $line Address text.
+	 * @return array PostalAddress keys to set, empty when the line is left alone.
+	 */
+	public static function split_single_line_address( $line ) {
+		$text     = (string) preg_replace( '/\s*[\r\n]+\s*/', ', ', trim( (string) $line ) );
+		$segments = array_values( array_filter( array_map( 'trim', explode( ',', $text ) ), 'strlen' ) );
+		$state_re = '/^(\p{L}[\p{L} .]*?)\s+(\d[\dA-Za-z-]{2,9})$/u';
+		$city_re  = '/^(\d{4,6})\s+(\p{L}[\p{L} .\'-]*)$/u';
+
+		if ( count( $segments ) < 2 ) {
+			return array();
+		}
+
+		$country = '';
+		$last    = (string) end( $segments );
+		if ( count( $segments ) >= 3 && preg_match( '/^[\p{L} .\'-]+$/u', $last ) ) {
+			$before = $segments[ count( $segments ) - 2 ];
+			if ( preg_match( $state_re, $before ) || preg_match( $city_re, $before ) ) {
+				$country = (string) array_pop( $segments );
+				$last    = (string) end( $segments );
+			}
+		}
+
+		$parts = array();
+		if ( count( $segments ) >= 3 && preg_match( $state_re, $last, $match ) ) {
+			array_pop( $segments );
+			$parts['addressRegion']   = $match[1];
+			$parts['postalCode']      = $match[2];
+			$parts['addressLocality'] = (string) array_pop( $segments );
+		} elseif ( preg_match( $city_re, $last, $match ) ) {
+			array_pop( $segments );
+			$parts['postalCode']      = $match[1];
+			$parts['addressLocality'] = $match[2];
+		} else {
+			return array();
+		}
+
+		if ( '' !== $country ) {
+			$parts['addressCountry'] = $country;
+		}
+		$parts['streetAddress'] = implode( ', ', $segments );
+
+		return $parts;
+	}
+
+	/**
 	 * Build a schema Place from a stored EventKoi location row.
 	 *
 	 * @param array $location Location row.
@@ -613,27 +671,35 @@ class Schema {
 			$street_address = self::location_value( $location, 'address' );
 		}
 
-		$address = array_filter(
-			array(
-				'@type'           => 'PostalAddress',
-				'streetAddress'   => $street_address,
-				'addressLocality' => self::first_schema_text(
-					self::location_value( $location, 'city' ),
-					self::location_value( $nested_address, 'addressLocality' )
-				),
-				'addressRegion'   => self::first_schema_text(
-					self::location_value( $location, 'state' ),
-					self::location_value( $nested_address, 'addressRegion' )
-				),
-				'postalCode'      => self::first_schema_text(
-					self::location_value( $location, 'zip' ),
-					self::location_value( $nested_address, 'postalCode' )
-				),
-				'addressCountry'  => self::first_schema_text(
-					self::location_value( $location, 'country' ),
-					self::location_value( $nested_address, 'addressCountry' )
-				),
+		$address = array(
+			'@type'           => 'PostalAddress',
+			'streetAddress'   => $street_address,
+			'addressLocality' => self::first_schema_text(
+				self::location_value( $location, 'city' ),
+				self::location_value( $nested_address, 'addressLocality' )
 			),
+			'addressRegion'   => self::first_schema_text(
+				self::location_value( $location, 'state' ),
+				self::location_value( $nested_address, 'addressRegion' )
+			),
+			'postalCode'      => self::first_schema_text(
+				self::location_value( $location, 'zip' ),
+				self::location_value( $nested_address, 'postalCode' )
+			),
+			'addressCountry'  => self::first_schema_text(
+				self::location_value( $location, 'country' ),
+				self::location_value( $nested_address, 'addressCountry' )
+			),
+		);
+
+		// A whole address typed on one line, as the frontend submission form
+		// collects it, still gets its city, region, postal code and country.
+		if ( 1 === count( $street_parts ) && '' === $address['addressLocality'] . $address['addressRegion'] . $address['postalCode'] . $address['addressCountry'] ) {
+			$address = array_merge( $address, self::split_single_line_address( $street_address ) );
+		}
+
+		$address = array_filter(
+			$address,
 			static function ( $value ) {
 				return '' !== (string) $value;
 			}

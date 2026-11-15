@@ -3,9 +3,15 @@
   "private": true,
   "scripts": {
     "dev": "concurrently \"npm --prefix scripts/frontend run dev\" \"npm --prefix scripts/backend run dev\"",
-    "build": "npm --prefix scripts/frontend run build && npm --prefix scripts/backend run build"
+    "build": "npm --prefix scripts/frontend run build && npm --prefix scripts/backend run build",
+    "lint": "npm --prefix scripts/backend run lint; npm --prefix scripts/frontend run lint",
+    "test:js": "vitest run",
+    "test:js:watch": "vitest"
   },
   "devDependencies": {
-    "concurrently": "^9.0.1"
+    "concurrently": "^9.0.1",
+    "luxon": "^3.7.2",
+    "vite": "^6.4.1",
+    "vitest": "^3.2.7"
   }
 }

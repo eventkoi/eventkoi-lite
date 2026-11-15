@@ -31,13 +31,55 @@ class Scripts {
 	public function __construct() {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ), 999 );
 		add_action( 'enqueue_block_editor_assets', array( $this, 'enqueue_block_editor_assets' ) );
+		add_action( 'enqueue_block_assets', array( $this, 'enqueue_block_assets' ) );
 
-		// Invalidate template cache when templates change.
-		foreach ( array( 'elementor_library' ) as $pt ) {
+		// Invalidate cached template list when relevant templates change.
+		foreach ( array( 'elementor_library', 'bricks_template', 'fl-builder-template', 'fl-theme-layout', 'et_pb_layout' ) as $pt ) {
 			add_action( "save_post_{$pt}", array( self::class, 'flush_template_cache' ) );
 		}
 		add_action( 'delete_post', array( self::class, 'flush_template_cache' ) );
 		add_action( 'switch_theme', array( self::class, 'flush_template_cache' ) );
+	}
+
+	/**
+	 * Enqueue block styles into the editor canvas (and front).
+	 *
+	 * `enqueue_block_editor_assets` styles only load in the editor chrome, not
+	 * inside WP's iframed canvas, so the calendar block preview renders unstyled.
+	 * `enqueue_block_assets` loads them into the iframe so the preview matches
+	 * the frontend.
+	 */
+	public function enqueue_block_assets() {
+		if ( ! is_admin() ) {
+			return;
+		}
+
+		$screen          = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+		$is_block_editor = $screen && method_exists( $screen, 'is_block_editor' ) && $screen->is_block_editor();
+
+		if ( ! $is_block_editor ) {
+			return;
+		}
+
+		$asset_file = include EVENTKOI_PLUGIN_DIR . 'scripts/backend/build/index.asset.php';
+		$build_url  = EVENTKOI_PLUGIN_URL . 'scripts/backend/build/';
+
+		wp_register_style(
+			'eventkoi-editor-tw',
+			$build_url . 'tailwind.css',
+			array(),
+			$asset_file['version']
+		);
+
+		wp_register_style(
+			'eventkoi-blocks',
+			$build_url . 'index.css',
+			array(),
+			$asset_file['version']
+		);
+
+		wp_enqueue_style( 'eventkoi-editor-tw' );
+		wp_enqueue_style( 'eventkoi-blocks' );
 	}
 
 	/**
@@ -89,50 +131,271 @@ class Scripts {
 	}
 
 	/**
-	 * Get custom templates, cached in a 30-minute transient.
+	 * Where each page builder's ready-made templates stand, for the builders
+	 * active on this site, in the order they are offered.
+	 *
+	 * @return array<int, array>
+	 */
+	public static function get_builder_template_statuses() {
+		$statuses = array();
+
+		if ( \EventKoi\Core\Elementor_Templates::is_available() ) {
+			$statuses[] = array_merge(
+				array(
+					'builder' => 'elementor',
+					'label'   => __( 'Elementor', 'eventkoi-lite' ),
+				),
+				\EventKoi\Core\Elementor_Templates::status()
+			);
+		}
+
+		foreach ( array( \EventKoi\Core\Beaver_Templates::class, \EventKoi\Core\Divi_Templates::class ) as $builder_templates ) {
+			if ( $builder_templates::is_available() ) {
+				$statuses[] = $builder_templates::status();
+			}
+		}
+
+		return $statuses;
+	}
+
+	/**
+	 * Get custom templates with transient caching.
 	 *
 	 * @return array
 	 */
 	public static function get_custom_templates() {
+		// The ready-made Elementor templates belong in the picker as soon as
+		// Elementor is active, so they are imported into the library here when
+		// missing. Nothing is applied until an owner picks one.
+		if (
+			class_exists( \EventKoi\Core\Elementor_Templates::class )
+			&& \EventKoi\Core\Elementor_Templates::is_available()
+			&& current_user_can( 'manage_options' )
+		) {
+			$status = \EventKoi\Core\Elementor_Templates::status();
+			if ( empty( $status['imported'] ) ) {
+				\EventKoi\Core\Elementor_Templates::import();
+			}
+		}
+
+		// The same goes for the Beaver Builder and Divi templates.
+		if ( current_user_can( 'manage_options' ) ) {
+			foreach ( array( \EventKoi\Core\Beaver_Templates::class, \EventKoi\Core\Divi_Templates::class ) as $builder_templates ) {
+				if ( ! class_exists( $builder_templates ) || ! $builder_templates::is_available() ) {
+					continue;
+				}
+
+				$status = $builder_templates::status();
+				if ( empty( $status['imported'] ) ) {
+					$builder_templates::import();
+				}
+			}
+		}
+
 		$cached = get_transient( 'eventkoi_custom_templates' );
-		if ( false !== $cached ) {
+		if ( is_array( $cached ) ) {
 			return $cached;
 		}
 
-		$theme = wp_get_theme()->get_stylesheet();
-
-		$templates        = get_block_templates( array( 'post_type' => 'wp_template' ), 'wp_template' );
-		$custom_templates = array();
+		$theme           = wp_get_theme()->get_stylesheet();
+		$templates       = get_block_templates( array( 'post_type' => 'wp_template' ), 'wp_template' );
+		$block_templates = array();
 
 		foreach ( $templates as $template ) {
 			if ( $template->theme === $theme ) {
-				$custom_templates[] = array(
+				$block_templates[] = array(
 					'slug'  => $template->slug,
 					'title' => $template->title->rendered ?? $template->title ?? $template->slug,
 				);
 			}
 		}
 
-		$elementor_templates = function_exists( 'eventkoi_get_template_ids_by_pattern' )
-			? eventkoi_get_template_ids_by_pattern( 'include/singular/eventkoi_event' )
-			: array();
-
-		$result = array(
+		$custom_templates = array(
 			array(
 				'type'      => 'block',
 				'label'     => __( 'Block', 'eventkoi-lite' ),
-				'templates' => $custom_templates,
-			),
-			array(
-				'type'      => 'elementor',
-				'label'     => __( 'Elementor', 'eventkoi-lite' ),
-				'templates' => $elementor_templates,
+				'templates' => $block_templates,
 			),
 		);
 
-		set_transient( 'eventkoi_custom_templates', $result, 30 * MINUTE_IN_SECONDS );
+		if ( defined( 'ELEMENTOR_VERSION' ) ) {
+			$elementor_templates = array();
+			$all_elementor_posts = get_posts(
+				array(
+					'post_type'      => 'elementor_library',
+					'post_status'    => 'publish',
+					'posts_per_page' => -1,
+					'orderby'        => 'title',
+					'order'          => 'ASC',
+				)
+			);
 
-		return $result;
+			// Any library template can render as an event layout, so the picker
+			// is no longer limited to templates whose display conditions name
+			// the event post type. Only library types that make no sense as a
+			// page body stay out.
+			$excluded_elementor_types = array( 'kit', 'popup', 'header', 'footer', 'loop-item', 'archive', 'search-results', 'error-404' );
+
+			foreach ( $all_elementor_posts as $tpl_post ) {
+				if ( empty( $tpl_post->post_name ) ) {
+					continue;
+				}
+
+				$tpl_type = (string) get_post_meta( $tpl_post->ID, '_elementor_template_type', true );
+				if ( in_array( $tpl_type, $excluded_elementor_types, true ) ) {
+					continue;
+				}
+
+				$elementor_templates[] = array(
+					'slug'     => $tpl_post->post_name,
+					'title'    => $tpl_post->post_title,
+					'edit_url' => add_query_arg(
+						array(
+							'post'   => $tpl_post->ID,
+							'action' => 'elementor',
+						),
+						admin_url( 'post.php' )
+					),
+				);
+			}
+
+			if ( ! empty( $elementor_templates ) ) {
+				$custom_templates[] = array(
+					'type'      => 'elementor',
+					'label'     => __( 'Elementor', 'eventkoi-lite' ),
+					'templates' => $elementor_templates,
+				);
+			}
+		}
+
+		if ( defined( 'BRICKS_VERSION' ) ) {
+			$bricks_templates = array();
+			$all_templates    = get_posts(
+				array(
+					'post_type'      => 'bricks_template',
+					'post_status'    => 'publish',
+					'posts_per_page' => -1,
+				)
+			);
+
+			foreach ( $all_templates as $template_post ) {
+				$bricks_templates[] = array(
+					'slug'  => $template_post->post_name,
+					'title' => $template_post->post_title,
+				);
+			}
+
+			if ( ! empty( $bricks_templates ) ) {
+				$custom_templates[] = array(
+					'type'      => 'bricks',
+					'label'     => __( 'Bricks', 'eventkoi-lite' ),
+					'templates' => $bricks_templates,
+				);
+			}
+		}
+
+		if ( \EventKoi\Core\Divi_Templates::is_available() ) {
+			$divi_templates = array();
+			$divi_layouts   = get_posts(
+				array(
+					'post_type'      => 'et_pb_layout',
+					'post_status'    => 'publish',
+					'posts_per_page' => -1,
+					'orderby'        => 'title',
+					'order'          => 'ASC',
+				)
+			);
+
+			foreach ( $divi_layouts as $template_post ) {
+				if ( ! ( $template_post instanceof \WP_Post ) || '' === $template_post->post_name ) {
+					continue;
+				}
+
+				// Only whole layouts make sense as a page body; saved rows,
+				// sections and modules stay out.
+				if ( taxonomy_exists( 'layout_type' ) ) {
+					$layout_types = wp_get_object_terms( $template_post->ID, 'layout_type', array( 'fields' => 'slugs' ) );
+					if ( is_array( $layout_types ) && ! empty( $layout_types ) && ! in_array( 'layout', $layout_types, true ) ) {
+						continue;
+					}
+				}
+
+				$permalink = (string) get_permalink( $template_post->ID );
+
+				$divi_templates[] = array(
+					'slug'     => 'divi__' . $template_post->post_name,
+					'title'    => $template_post->post_title,
+					'edit_url' => ( function_exists( 'et_fb_get_vb_url' ) && '' !== $permalink )
+						? (string) et_fb_get_vb_url( $permalink )
+						: admin_url( 'post.php?post=' . absint( $template_post->ID ) . '&action=edit' ),
+				);
+			}
+
+			if ( ! empty( $divi_templates ) ) {
+				$custom_templates[] = array(
+					'type'      => 'divi',
+					'label'     => __( 'Divi', 'eventkoi-lite' ),
+					'templates' => $divi_templates,
+				);
+			}
+		}
+
+		if ( post_type_exists( 'fl-builder-template' ) ) {
+			$beaver_templates = array();
+			$all_templates    = get_posts(
+				array(
+					'post_type'      => 'fl-builder-template',
+					'post_status'    => 'publish',
+					'posts_per_page' => -1,
+				)
+			);
+
+			foreach ( $all_templates as $template_post ) {
+				if ( ! ( $template_post instanceof \WP_Post ) ) {
+					continue;
+				}
+
+				$beaver_templates[] = array(
+					'slug'     => 'bb__' . $template_post->post_name,
+					'title'    => $template_post->post_title,
+					'edit_url' => admin_url( 'post.php?post=' . absint( $template_post->ID ) . '&action=edit' ),
+				);
+			}
+
+			if ( post_type_exists( 'fl-theme-layout' ) ) {
+				$themer_layouts = get_posts(
+					array(
+						'post_type'      => 'fl-theme-layout',
+						'post_status'    => 'publish',
+						'posts_per_page' => -1,
+					)
+				);
+
+				foreach ( $themer_layouts as $template_post ) {
+					if ( ! ( $template_post instanceof \WP_Post ) ) {
+						continue;
+					}
+
+					$beaver_templates[] = array(
+						'slug'     => 'bbt__' . $template_post->post_name,
+						'title'    => $template_post->post_title,
+						'edit_url' => admin_url( 'post.php?post=' . absint( $template_post->ID ) . '&action=edit' ),
+					);
+				}
+			}
+
+			if ( ! empty( $beaver_templates ) ) {
+				$custom_templates[] = array(
+					'type'      => 'beaver',
+					'label'     => __( 'Beaver Builder', 'eventkoi-lite' ),
+					'templates' => $beaver_templates,
+				);
+			}
+		}
+
+		set_transient( 'eventkoi_custom_templates', $custom_templates, 30 * MINUTE_IN_SECONDS );
+
+		return $custom_templates;
 	}
 
 	/**
@@ -170,10 +433,16 @@ class Scripts {
 			'general_options_url' => admin_url( 'options-general.php' ),
 			'site_url'            => get_bloginfo( 'url' ),
 			'theme'               => get_stylesheet(),
+			'block_theme'         => (bool) eventkoi_current_theme_support(),
 			'admin_email'         => get_bloginfo( 'admin_email' ),
 			'instance_id'         => get_option( 'eventkoi_site_instance_id' ),
 			'ajax_url'            => admin_url( 'admin-ajax.php' ),
 			'wc_settings_url'     => admin_url( 'admin.php?page=wc-settings' ),
+			'admin_post_url'      => admin_url( 'post.php' ),
+			'elementor_active'    => defined( 'ELEMENTOR_VERSION' ),
+			'elementor_templates' => 'toplevel_page_eventkoi' === $screen->base ? \EventKoi\Core\Elementor_Templates::status() : null,
+			'page_builder_active' => defined( 'ELEMENTOR_VERSION' ) || \EventKoi\Core\Beaver_Templates::is_available() || \EventKoi\Core\Divi_Templates::is_available(),
+			'builder_templates'   => 'toplevel_page_eventkoi' === $screen->base ? self::get_builder_template_statuses() : array(),
 			'api_key'             => REST::get_api_key(),
 			'has_seo_plugin'      => self::has_seo_plugin(),
 			'is_admin'            => current_user_can( 'manage_options' ),
@@ -205,9 +474,20 @@ class Scripts {
 			'caps'                => \EventKoi\Core\Permissions::user_caps(),
 			'caps_catalog'        => \EventKoi\Core\Permissions::all_caps(),
 			'roles_catalog'       => \EventKoi\Core\Permissions::roles_catalog(),
+			// Retired "Price from" attendance option, hidden by default. A site can
+			// re-enable it (e.g. via the EventKoi Price From add-on) by returning true.
+			'price_from_enabled'  => (bool) apply_filters( 'eventkoi_enable_price_from', false ),
 		);
 
 		$eventkoi_params['custom_templates'] = self::get_custom_templates();
+
+		if (
+			! empty( $eventkoi_params['new_event'] ) &&
+			! empty( $settings['default_event_template'] ) &&
+			'default' !== $settings['default_event_template']
+		) {
+			$eventkoi_params['new_event']['template'] = sanitize_key( $settings['default_event_template'] );
+		}
 
 		if ( $is_dev ) {
 			$vite_url = trim( file_get_contents( $hot_file ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents
@@ -295,7 +575,13 @@ class Scripts {
 				$asset_file['version']
 			);
 
-			wp_enqueue_style( 'eventkoi-admin' );
+			// Don't enqueue the admin app stylesheet on the block editor: WP copies
+			// it into the iframed canvas (an "added to the iframe incorrectly"
+			// warning) and the block already gets index.css via enqueue_block_assets.
+			$is_block_editor = method_exists( $screen, 'is_block_editor' ) && $screen->is_block_editor();
+			if ( ! $is_block_editor ) {
+				wp_enqueue_style( 'eventkoi-admin' );
+			}
 		}
 
 		// Load Tailwind CSS only on main plugin page or edit screens.

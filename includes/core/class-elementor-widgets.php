@@ -16,8 +16,44 @@ class Elementor_Widgets {
 	 */
 	public function __construct() {
 		add_action( 'elementor/widgets/register', array( $this, 'register_widget' ) );
+		add_action( 'init', array( $this, 'register_event_elementor_support' ), 20 );
 		add_action( 'elementor/elements/categories_registered', array( $this, 'register_category' ) );
 		add_action( 'elementor/editor/before_enqueue_scripts', array( $this, 'enqueue_editor_assets' ) );
+		add_action( 'elementor/preview/enqueue_scripts', array( $this, 'enqueue_preview_assets' ) );
+		add_action( 'elementor/frontend/before_enqueue_scripts', array( $this, 'hide_locked_event_excerpt' ) );
+	}
+
+	/**
+	 * Keep a locked event's excerpt out of Elementor's page config.
+	 *
+	 * Elementor prints the raw post excerpt into elementorFrontendConfig,
+	 * whether the post has a password or not.
+	 */
+	public function hide_locked_event_excerpt() {
+		$frontend = \Elementor\Plugin::$instance->frontend;
+		$post     = $frontend->get_settings( 'post' );
+		$event_id = absint( $post['id'] ?? 0 );
+
+		if ( empty( $post['excerpt'] ) || 'eventkoi_event' !== get_post_type( $event_id ) || ! Event::is_locked_for_visitor( $event_id ) ) {
+			return;
+		}
+
+		$post['excerpt'] = '';
+		$frontend->set_settings( 'post', $post );
+	}
+
+	/**
+	 * Let Elementor open events in its editor.
+	 *
+	 * Elementor only edits post types that declare 'elementor' support; without
+	 * this, the Edit with Elementor button in the event editor would bounce.
+	 */
+	public function register_event_elementor_support() {
+		if ( ! defined( 'ELEMENTOR_VERSION' ) ) {
+			return;
+		}
+
+		add_post_type_support( 'eventkoi_event', 'elementor' );
 	}
 
 	/**
@@ -61,5 +97,36 @@ class Elementor_Widgets {
 	 */
 	public function enqueue_editor_assets() {
 		Scripts::enqueue_frontend_assets();
+	}
+
+	/**
+	 * Load frontend assets into the preview iframe and re-mount on injection.
+	 *
+	 * Elementor injects widget markup into the preview after page scripts have
+	 * run, and again on every settings change, so the load-time mount never
+	 * sees it and the calendar shows as an empty box while editing.
+	 */
+	public function enqueue_preview_assets() {
+		Scripts::enqueue_frontend_assets();
+
+		wp_add_inline_script(
+			'eventkoi-frontend',
+			'( function () {
+				var ekReinit = function () {
+					if ( typeof window.eventkoiInitCalendars === "function" ) {
+						window.eventkoiInitCalendars();
+					}
+				};
+				var ekBind = function () {
+					if ( ! window.elementorFrontend || ! window.elementorFrontend.hooks ) {
+						return;
+					}
+					window.elementorFrontend.hooks.addAction( "frontend/element_ready/eventkoi-calendar.default", ekReinit );
+					window.elementorFrontend.hooks.addAction( "frontend/element_ready/eventkoi-event.default", ekReinit );
+				};
+				ekBind();
+				window.addEventListener( "elementor/frontend/init", ekBind );
+			} )();'
+		);
 	}
 }

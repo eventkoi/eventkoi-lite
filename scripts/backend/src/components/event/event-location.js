@@ -113,7 +113,7 @@ export function EventLocation({ isInstance = false, value, onChange }) {
         </Select>
         <Button type="button" variant="ghost" onClick={addLocation}>
           <Plus className="w-4 h-4 mr-2" />
-          Add location
+          {__("Add location", "eventkoi-lite")}
         </Button>
       </div>
     </Panel>

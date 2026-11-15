@@ -48,7 +48,15 @@ class Template {
 		add_filter( 'single_template', array( __CLASS__, 'maybe_force_bb_layout_editor_template' ), 40 );
 		add_filter( 'singular_template', array( __CLASS__, 'maybe_force_bb_layout_editor_template' ), 40 );
 		add_filter( 'template_include', array( __CLASS__, 'capture_initial_template_include' ), 1 );
+
+		// A Divi Library layout shown on an event or calendar page is not part
+		// of that page's own content, so Divi's per-page stylesheet would
+		// leave out what the layout needs (the column grid first of all).
+		add_filter( 'divi_frontend_assets_dynamic_assets_utils_use_dynamic_assets', array( __CLASS__, 'maybe_load_full_divi_styles' ) );
+		add_filter( 'et_use_dynamic_css', array( __CLASS__, 'maybe_load_full_divi_styles' ) );
+		add_filter( 'et_builder_should_load_framework', array( Divi_Templates::class, 'load_builder_on_eventkoi_screen' ) );
 		add_filter( 'template_include', array( __CLASS__, 'enforce_explicit_default_template' ), 9999 );
+		add_filter( 'template_include', array( __CLASS__, 'maybe_force_elementor_preview_template' ), 10000 );
 		add_filter( 'fl_builder_render_module_content', array( __CLASS__, 'maybe_replace_tokens_in_beaver_module_output' ), 20, 2 );
 		add_filter( 'fl_theme_builder_template_include', array( __CLASS__, 'maybe_override_beaver_themer_template_include' ), 20, 2 );
 		add_filter( 'deprecated_file_trigger_error', array( __CLASS__, 'maybe_disable_deprecated_file_warnings_for_bb_editor' ), 10, 1 );
@@ -198,6 +206,11 @@ class Template {
 		global $post;
 
 		if ( is_tax( 'event_cal' ) ) {
+			// A page builder template chosen for calendar pages renders the
+			// whole page (it exits); otherwise the PHP template takes over.
+			$settings = Settings::get();
+			self::render_builder_template( (string) ( $settings['default_calendar_template'] ?? '' ), null, 'calendar' );
+
 			$default_file = EVENTKOI_PLUGIN_DIR . 'includes/core/views/single-calendar-page.php';
 			if ( file_exists( $default_file ) ) {
 				$single = $default_file;
@@ -431,73 +444,21 @@ class Template {
 			return $template;
 		}
 
-		$event = new \EventKoi\Core\Event( get_the_ID() );
-		$instance_ts = eventkoi_get_instance_id();
-		$overrides   = $event->get_recurrence_overrides();
+		$event                  = new \EventKoi\Core\Event( get_the_ID() );
+		$instance_ts            = eventkoi_get_instance_id();
+		$overrides              = $event->get_recurrence_overrides();
+		$selected_template_slug = self::get_effective_template_slug( $event, $instance_ts, $overrides );
 
-		$selected_template_slug = $event::get_template();
-		if ( ! empty( $instance_ts ) ) {
-			$override = $overrides[ $instance_ts ] ?? array();
-			if ( ! empty( $override['template'] ) ) {
-				$selected_template_slug = sanitize_key( $override['template'] );
-			}
+		// A page builder template (Beaver, Elementor, Bricks) renders and exits
+		// here; anything else falls through to the block template handling.
+		// Elementor's editor preview of the event itself is left alone: it
+		// needs the_content for its canvas, which the compat template at the
+		// end of template_include provides, not the site's Elementor template.
+		if ( ! self::is_elementor_preview_request() ) {
+			self::render_builder_template( $selected_template_slug, $event );
 		}
 
-		// Fall back to global default template only when event does not explicitly set one.
-		if ( empty( $selected_template_slug ) ) {
-			$settings              = Settings::get();
-			$default_template_slug = $settings['default_event_template'] ?? '';
-			if ( ! empty( $default_template_slug ) && 'default' !== $default_template_slug ) {
-				$selected_template_slug = sanitize_key( $default_template_slug );
-			}
-		}
-
-		// Render Beaver templates (builder template or Themer layout).
-		if ( ! empty( $selected_template_slug ) ) {
-			$is_beaver_template = 0 === strpos( $selected_template_slug, 'bb__' );
-			$is_beaver_themer   = 0 === strpos( $selected_template_slug, 'bbt__' );
-
-			if ( $is_beaver_template || $is_beaver_themer ) {
-				$beaver_slug = $is_beaver_themer
-					? substr( $selected_template_slug, 5 )
-					: substr( $selected_template_slug, 4 );
-				$post_type   = $is_beaver_themer ? 'fl-theme-layout' : 'fl-builder-template';
-
-				if ( ! empty( $beaver_slug ) ) {
-					$template_obj = get_page_by_path( $beaver_slug, OBJECT, $post_type );
-
-					if ( $template_obj instanceof \WP_Post && shortcode_exists( 'fl_builder_insert_layout' ) ) {
-						$beaver_output = do_shortcode( '[fl_builder_insert_layout id="' . absint( $template_obj->ID ) . '"]' );
-						$beaver_output = self::replace_event_tokens_in_builder_content( $beaver_output, $event );
-						self::render_builder_template_content( $beaver_output );
-					}
-				}
-			}
-		}
-
-		// Render elementor template
-		if ( class_exists( '\Elementor\Plugin' ) ) {
-			$template_slug = $selected_template_slug;
-			$template_obj  = get_page_by_path( $template_slug, OBJECT, 'elementor_library' );
-
-			if ( $template_obj instanceof \WP_Post ) {
-				$elementor_output = \Elementor\Plugin::instance()->frontend->get_builder_content_for_display( $template_obj->ID );
-				self::render_builder_template_content( $elementor_output );
-			}
-		}
-
-		// Render bricks template
-		if ( defined( 'BRICKS_VERSION' ) ) {
-			$template_slug = $selected_template_slug;
-			$template_obj  = get_page_by_path( $template_slug, OBJECT, 'bricks_template' );
-
-			if ( $template_obj instanceof \WP_Post ) {
-				$bricks_output = do_shortcode( '[bricks_template id="' . $template_obj->ID . '"]' );
-				self::render_builder_template_content( $bricks_output );
-			}
-		}
-
-		$event_template = $event::get_template();
+		$event_template = self::get_effective_template_slug( $event, $instance_ts, $overrides );
 		if ( ! empty( $event_template ) && 'default' !== $event_template ) {
 			return $template;
 		}
@@ -593,6 +554,27 @@ class Template {
 			return $template;
 		}
 
+		// A theme block template chosen as the series default replaces the
+		// built-in series layout. Builder slugs were already handled (they
+		// exit on render) and an event-level template keeps precedence.
+		if ( empty( $event::get_template() ) || 'default' === $event::get_template() ) {
+			$settings    = Settings::get();
+			$series_slug = sanitize_key( (string) ( $settings['default_series_template'] ?? '' ) );
+
+			if ( '' !== $series_slug && 'default' !== $series_slug ) {
+				$series_post = get_page_by_path( $series_slug, OBJECT, 'wp_template' );
+
+				if ( $series_post && ! empty( $series_post->post_content ) ) {
+					global $_wp_current_template_id, $_wp_current_template_content;
+
+					$_wp_current_template_id      = wp_get_theme()->get_stylesheet() . '//' . $series_slug;
+					$_wp_current_template_content = $series_post->post_content;
+
+					return $template;
+				}
+			}
+		}
+
 		// Get the registered or saved Event Series block template.
 		if ( ! function_exists( 'get_block_template' ) ) {
 			return $template; // Fallback for older WordPress.
@@ -627,10 +609,51 @@ class Template {
 	}
 
 	/**
-	 * Force a block-theme-safe template when editing Beaver Themer layouts.
+	 * Whether the request is Elementor's editor preview of the current page.
 	 *
-	 * Beaver's editor route can call get_header()/get_footer() on block themes,
-	 * which triggers deprecated notices when header.php/footer.php don't exist.
+	 * @return bool
+	 */
+	private static function is_elementor_preview_request() {
+		if ( ! isset( $_GET['elementor-preview'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only routing check; Elementor validates its own preview nonce.
+			return false;
+		}
+
+		// Only the editor's own preview frame skips the builder template, never a visitor adding the parameter.
+		$post_id = absint( wp_unslash( $_GET['elementor-preview'] ) ); // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Same read-only routing check.
+
+		return $post_id > 0 && current_user_can( 'edit_post', $post_id );
+	}
+
+	/**
+	 * Serve a content-area template to Elementor's editor preview of events.
+	 *
+	 * @param string $template Current template path.
+	 *
+	 * @return string
+	 */
+	public static function maybe_force_elementor_preview_template( $template ) {
+		if ( ! is_singular( 'eventkoi_event' ) ) {
+			return $template;
+		}
+
+		if ( ! self::is_elementor_preview_request() ) {
+			return $template;
+		}
+
+		// Elementor's editor canvas arrives through the_content, which the
+		// plugin's event block template never prints. Runs after
+		// enforce_explicit_default_template so the editor always gets a
+		// template with a content area instead of "content area not found".
+		$compat_template = EVENTKOI_PLUGIN_DIR . 'includes/core/views/elementor-preview-compat.php';
+		if ( file_exists( $compat_template ) ) {
+			return $compat_template;
+		}
+
+		return $template;
+	}
+
+	/**
+	 * Force a block-theme-safe template when editing Beaver Themer layouts.
 	 *
 	 * @param string $template Current template path.
 	 *
@@ -746,6 +769,253 @@ class Template {
 	}
 
 	/**
+	 * Resolve the effective EventKoi template slug for the current event context.
+	 *
+	 * This merges event-level template selection, instance overrides, and the
+	 * global default template setting so late template guards can make decisions
+	 * based on the true effective template, not only explicit post meta.
+	 *
+	 * @param Event      $event       Event object.
+	 * @param int|string $instance_ts Current recurring instance timestamp.
+	 * @param array      $overrides   Recurrence override map keyed by instance ts.
+	 *
+	 * @return string
+	 */
+	public static function get_effective_template_slug( $event, $instance_ts = null, $overrides = array() ) {
+		$selected_template_slug = $event::get_template();
+
+		if ( ! empty( $instance_ts ) ) {
+			$override = $overrides[ $instance_ts ] ?? array();
+			if ( ! empty( $override['template'] ) ) {
+				$selected_template_slug = sanitize_key( $override['template'] );
+			}
+		}
+
+		if ( empty( $selected_template_slug ) ) {
+			$settings = Settings::get();
+
+			// The overview page of a recurring event has its own default. It
+			// only takes over when a real template is chosen; "default" and
+			// unset keep the event default, as before the setting existed.
+			$is_series_parent = empty( $instance_ts ) && 'recurring' === $event::get_date_type();
+			if ( $is_series_parent ) {
+				$series_template_slug = sanitize_key( (string) ( $settings['default_series_template'] ?? '' ) );
+				if ( '' !== $series_template_slug && 'default' !== $series_template_slug ) {
+					return $series_template_slug;
+				}
+			}
+
+			$default_template_slug = $settings['default_event_template'] ?? '';
+			if ( ! empty( $default_template_slug ) ) {
+				$selected_template_slug = sanitize_key( $default_template_slug );
+			}
+		}
+
+		return $selected_template_slug;
+	}
+
+	/**
+	 * Render a page builder template by its picker slug and end the request.
+	 *
+	 * Slugs are the ones the template pickers offer: bb__ and bbt__ prefixes
+	 * for Beaver Builder templates and Themer layouts, otherwise a post_name
+	 * looked up in the Elementor and Bricks libraries. Returns false when the
+	 * slug names no live builder template, so the caller can carry on with
+	 * the block or PHP template.
+	 *
+	 * @param string     $slug    Template slug.
+	 * @param Event|null $event   Event whose tokens Beaver output receives.
+	 * @param string     $context event or calendar; picks the surrounding actions.
+	 * @return bool False when nothing rendered.
+	 */
+	public static function render_builder_template( $slug, $event = null, $context = 'event' ) {
+		$slug = sanitize_key( (string) $slug );
+
+		if ( '' === $slug || 'default' === $slug ) {
+			return false;
+		}
+
+		$is_beaver_template = 0 === strpos( $slug, 'bb__' );
+		$is_beaver_themer   = 0 === strpos( $slug, 'bbt__' );
+
+		if ( $is_beaver_template || $is_beaver_themer ) {
+			$beaver_slug = $is_beaver_themer ? substr( $slug, 5 ) : substr( $slug, 4 );
+			$post_type   = $is_beaver_themer ? 'fl-theme-layout' : 'fl-builder-template';
+
+			if ( '' === $beaver_slug || ! shortcode_exists( 'fl_builder_insert_layout' ) ) {
+				return false;
+			}
+
+			$template_obj = get_page_by_path( $beaver_slug, OBJECT, $post_type );
+			if ( ! $template_obj instanceof \WP_Post ) {
+				return false;
+			}
+
+			$output = do_shortcode( '[fl_builder_insert_layout id="' . absint( $template_obj->ID ) . '"]' );
+			if ( $event ) {
+				$output = self::replace_event_tokens_in_builder_content( $output, $event );
+			}
+			self::render_builder_template_content( $output, $context );
+		}
+
+		if ( 0 === strpos( $slug, 'divi__' ) ) {
+			$divi_slug = substr( $slug, 6 );
+
+			if ( '' === $divi_slug || ! defined( 'ET_BUILDER_VERSION' ) ) {
+				return false;
+			}
+
+			$template_obj = get_page_by_path( $divi_slug, OBJECT, 'et_pb_layout' );
+			if ( ! $template_obj instanceof \WP_Post || 'publish' !== $template_obj->post_status ) {
+				return false;
+			}
+
+			self::render_builder_template_content( self::render_divi_layout( $template_obj ), $context );
+		}
+
+		if ( class_exists( '\Elementor\Plugin' ) ) {
+			$template_obj = get_page_by_path( $slug, OBJECT, 'elementor_library' );
+
+			if ( $template_obj instanceof \WP_Post && 'publish' === $template_obj->post_status ) {
+				$output = \Elementor\Plugin::instance()->frontend->get_builder_content_for_display( $template_obj->ID );
+				self::render_builder_template_content( $output, $context );
+			}
+		}
+
+		if ( defined( 'BRICKS_VERSION' ) ) {
+			$template_obj = get_page_by_path( $slug, OBJECT, 'bricks_template' );
+
+			if ( $template_obj instanceof \WP_Post ) {
+				$output = do_shortcode( '[bricks_template id="' . absint( $template_obj->ID ) . '"]' );
+				self::render_builder_template_content( $output, $context );
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Turn off Divi's per-page stylesheet on pages that open on a Divi
+	 * Library layout, so the full stylesheet is served there.
+	 *
+	 * @param bool $use_dynamic Whether Divi builds a per-page stylesheet.
+	 * @return bool
+	 */
+	public static function maybe_load_full_divi_styles( $use_dynamic ) {
+		return self::divi_layout_in_use() ? false : $use_dynamic;
+	}
+
+	/**
+	 * Whether the page being viewed opens on a Divi Library layout.
+	 *
+	 * @return bool
+	 */
+	private static function divi_layout_in_use() {
+		$settings = Settings::get();
+		$slugs    = array();
+
+		if ( is_tax( 'event_cal' ) ) {
+			$slugs[] = (string) ( $settings['default_calendar_template'] ?? '' );
+		} elseif ( is_singular( 'eventkoi_event' ) ) {
+			$slugs[] = (string) ( $settings['default_event_template'] ?? '' );
+			$slugs[] = (string) ( $settings['default_series_template'] ?? '' );
+			$slugs[] = (string) get_post_meta( (int) get_queried_object_id(), 'eventkoi_template', true );
+		}
+
+		foreach ( $slugs as $slug ) {
+			if ( 0 === strpos( $slug, 'divi__' ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Render a Divi Library layout for the page being viewed.
+	 *
+	 * The layout goes through the content filters Divi itself hooks, so
+	 * Divi 4 shortcodes and Divi 5 blocks both render with their styles, and
+	 * the event or calendar in view stays the current object throughout.
+	 *
+	 * @param \WP_Post $layout Library layout.
+	 * @return string
+	 */
+	private static function render_divi_layout( \WP_Post $layout ) {
+		$content = (string) $layout->post_content;
+
+		if ( '' === trim( $content ) ) {
+			return '';
+		}
+
+		// phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Core hook, so the builder renders the layout.
+		$output = apply_filters( 'the_content', $content );
+
+		self::print_divi_layout_styles( $layout );
+
+		// Divi scopes its module styles to this wrapper. Its own filter only
+		// adds it on singular posts built with Divi, which an event is not.
+		if ( false === strpos( $output, 'et-boc' ) && function_exists( 'et_builder_get_builder_content_opening_wrapper' ) ) {
+			$output = et_builder_get_builder_content_opening_wrapper()
+				. ( function_exists( 'et_builder_get_layout_opening_wrapper' ) ? et_builder_get_layout_opening_wrapper() : '' )
+				. $output
+				. ( function_exists( 'et_builder_get_layout_closing_wrapper' ) ? et_builder_get_layout_closing_wrapper() : '' )
+				. et_builder_get_builder_content_closing_wrapper();
+		}
+
+		return $output;
+	}
+
+	/**
+	 * Hand the styles of a rendered Divi 5 layout to Divi's page stylesheet.
+	 *
+	 * Divi 5 gathers each module's styles while a layout renders and prints
+	 * them for pages built with Divi. An event or calendar page is not one,
+	 * so the styles gathered for it are passed on here, inline, the way Divi
+	 * does for a layout it embeds itself.
+	 *
+	 * @param \WP_Post $layout Library layout that was just rendered.
+	 */
+	private static function print_divi_layout_styles( \WP_Post $layout ) {
+		$static_css = '\ET\Builder\FrontEnd\Assets\StaticCSS';
+
+		if ( ! class_exists( $static_css )
+			|| ! method_exists( $static_css, 'setup_styles_manager' )
+			|| ! method_exists( $static_css, 'style_output' ) ) {
+			return;
+		}
+
+		// Styles are filed under the page being viewed, not under the layout.
+		$owner_id = class_exists( '\ET_Post_Stack' ) ? (int) \ET_Post_Stack::get_main_post_id() : 0;
+		if ( $owner_id <= 0 ) {
+			$owner_id = (int) get_queried_object_id();
+		}
+
+		$result  = $static_css::setup_styles_manager( $owner_id );
+		$manager = is_array( $result ) ? ( $result['manager'] ?? null ) : null;
+
+		if ( ! is_object( $manager ) ) {
+			return;
+		}
+
+		// A cached file for this page would not hold a library layout's
+		// styles, so they always go out inline.
+		$manager->forced_inline = true;
+
+		$page_class = '\ET\Builder\FrontEnd\Page';
+
+		$static_css::style_output(
+			array(
+				'styles_manager' => $manager,
+				'custom'         => ( class_exists( $page_class ) && method_exists( $page_class, 'custom_css' ) ) ? (string) $page_class::custom_css( (int) $layout->ID ) : '',
+				// Styles of content rendered outside a Theme Builder layout
+				// are filed under no layout at all, which Divi counts as 0.
+				'element_id'     => 0,
+			)
+		);
+	}
+
+	/**
 	 * Inject a "Back to Event Series" link as the first element inside `.eventkoi-front` for recurring instances.
 	 *
 	 * @param string $block_content The rendered HTML of the block.
@@ -763,30 +1033,6 @@ class Template {
 			return $block_content;
 		}
 
-		// Resolve visibility. A per-event override ('show'/'hide') wins over the
-		// global Settings → Overview toggle; anything else inherits the global
-		// value, whose default is true for sites that never saved the option.
-		$override = sanitize_key( (string) get_post_meta( $post_id, 'series_backlink', true ) );
-		if ( 'hide' === $override ) {
-			return $block_content;
-		} elseif ( 'show' !== $override ) {
-			$settings = Settings::get();
-			$enabled  = ! isset( $settings['show_series_backlink'] )
-				|| '1' === (string) $settings['show_series_backlink']
-				|| 1 === $settings['show_series_backlink']
-				|| true === $settings['show_series_backlink'];
-			if ( ! $enabled ) {
-				return $block_content;
-			}
-		}
-
-		$instance_ts = function_exists( 'eventkoi_get_instance_id' ) ? eventkoi_get_instance_id() : null;
-
-		// Only apply to specific instances (not parent event).
-		if ( empty( $instance_ts ) ) {
-			return $block_content;
-		}
-
 		$attrs = $block['attrs'] ?? array();
 		$class = $attrs['className'] ?? '';
 
@@ -795,26 +1041,20 @@ class Template {
 			return $block_content;
 		}
 
-		$event = new \EventKoi\Core\Event( $post_id );
-
-		// Ensure event is recurring.
-		if ( method_exists( $event, 'get_date_type' ) && 'recurring' !== $event::get_date_type() ) {
+		// The template already places the link through its own bound block
+		// (event_series_link), wherever the site owner moved it.
+		if ( strpos( $block_content, 'eventkoi-back-to-series' ) !== false ) {
 			return $block_content;
 		}
 
-		$parent_url   = get_permalink( $post_id );
-		$parent_title = $event->get_title();
+		// Visibility, recurrence and the occurrence check all live in the
+		// renderer so the block and this fallback can never disagree.
+		new \EventKoi\Core\Event( $post_id );
+		$link_text = \EventKoi\Core\Event::rendered_series_link();
 
-		// Translators: %s is the linked event series title.
-		$link_text = sprintf(
-		/* translators: %s: linked event series title including the word "series". */
-			esc_html__( '← See all events in the %s', 'eventkoi-lite' ),
-			sprintf(
-				'<a href="%1$s" rel="bookmark">%2$s</a>',
-				esc_url( $parent_url ),
-				esc_html( $parent_title . ' series' )
-			)
-		);
+		if ( '' === $link_text ) {
+			return $block_content;
+		}
 
 		$back_link = sprintf(
 			'<div class="eventkoi-back-to-series">%s</div>',
@@ -856,13 +1096,18 @@ class Template {
 			return $content;
 		}
 
+		$shortcode_placeholders = array();
+		$content                = self::protect_eventkoi_shortcodes_for_builder_tokens( $content, $shortcode_placeholders );
+
 		$class_attribute_placeholders = array();
 		$content = self::protect_class_attributes_for_builder_tokens( $content, $class_attribute_placeholders );
 
 		// In Beaver editor context, render readable placeholders instead of
 		// binding to whichever preview event/layout happens to be active.
 		if ( self::is_beaver_builder_editor_request() ) {
-			return self::replace_builder_tokens_with_labels( $content );
+			$content = self::replace_builder_tokens_with_labels( $content );
+
+			return self::restore_protected_builder_placeholders( $content, $shortcode_placeholders );
 		}
 
 		// Beaver URL fields may auto-prefix token values as http://event_image_url.
@@ -920,7 +1165,9 @@ class Template {
 			$content
 		);
 
-		return self::restore_protected_builder_placeholders( $content, $class_attribute_placeholders );
+		$content = self::restore_protected_builder_placeholders( $content, $class_attribute_placeholders );
+
+		return self::restore_protected_builder_placeholders( $content, $shortcode_placeholders );
 	}
 
 	/**
@@ -931,6 +1178,9 @@ class Template {
 	 * @return string
 	 */
 	private static function replace_builder_tokens_with_labels( $content ) {
+		$shortcode_placeholders = array();
+		$content                = self::protect_eventkoi_shortcodes_for_builder_tokens( $content, $shortcode_placeholders );
+
 		$class_attribute_placeholders = array();
 		$content = self::protect_class_attributes_for_builder_tokens( $content, $class_attribute_placeholders );
 
@@ -944,7 +1194,36 @@ class Template {
 			$content
 		);
 
-		return self::restore_protected_builder_placeholders( $content, $class_attribute_placeholders );
+		$content = self::restore_protected_builder_placeholders( $content, $class_attribute_placeholders );
+
+		return self::restore_protected_builder_placeholders( $content, $shortcode_placeholders );
+	}
+
+	/**
+	 * Protect EventKoi shortcodes from plain-token replacement.
+	 *
+	 * Builder modules can carry `[eventkoi data=event_field_x]` for a later
+	 * do_shortcode pass. Rewriting the key inside the unresolved shortcode
+	 * would make it resolve a bogus key and output nothing.
+	 *
+	 * @param string $content HTML content.
+	 * @param array  $placeholder_map Placeholder map passed by reference.
+	 *
+	 * @return string
+	 */
+	private static function protect_eventkoi_shortcodes_for_builder_tokens( $content, &$placeholder_map ) {
+		$placeholder_map = array();
+
+		return preg_replace_callback(
+			'/\[\/?eventkoi(?:_[a-z0-9_]+)?\b[^\[\]]*\]/i',
+			static function ( $matches ) use ( &$placeholder_map ) {
+				$key                     = '__EK_SHORTCODE_PLACEHOLDER_' . count( $placeholder_map ) . '__';
+				$placeholder_map[ $key ] = $matches[0];
+
+				return $key;
+			},
+			$content
+		);
 	}
 
 	/**
@@ -1060,10 +1339,13 @@ class Template {
 	 * template-part based header/footer to avoid deprecated warnings.
 	 *
 	 * @param string $content Builder HTML content.
+	 * @param string $context event or calendar; picks the surrounding actions.
 	 *
 	 * @return void
 	 */
-	private static function render_builder_template_content( $content ) {
+	private static function render_builder_template_content( $content, $context = 'event' ) {
+		$context = 'calendar' === $context ? 'calendar' : 'event';
+
 		if ( wp_is_block_theme() ) {
 			$header = function_exists( 'eventkoi_get_header' ) ? eventkoi_get_header() : '';
 			$footer = function_exists( 'eventkoi_get_footer' ) ? eventkoi_get_footer() : '';
@@ -1078,9 +1360,9 @@ class Template {
 				<?php wp_body_open(); ?>
 				<div class="wp-site-blocks">
 					<?php echo $header; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-					<?php do_action( 'eventkoi_before_event_content' ); ?>
+					<?php do_action( "eventkoi_before_{$context}_content" ); ?>
 					<?php echo $content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
-					<?php do_action( 'eventkoi_after_event_content' ); ?>
+					<?php do_action( "eventkoi_after_{$context}_content" ); ?>
 					<?php echo $footer; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped ?>
 				</div>
 				<?php wp_footer(); ?>
@@ -1091,7 +1373,9 @@ class Template {
 		}
 
 		get_header();
+		do_action( "eventkoi_before_{$context}_content" );
 		echo $content; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		do_action( "eventkoi_after_{$context}_content" );
 		get_footer();
 		exit;
 	}

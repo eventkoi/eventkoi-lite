@@ -21,6 +21,17 @@
     font-size: 0.9em;
     opacity: 0.85;
 
+    // The block toolbar's alignment sets text-align, which does nothing on a
+    // flex container. Map it to justify-content so the location field honours
+    // center/right the same way the title and date fields do.
+    &.has-text-align-center {
+      justify-content: center;
+    }
+
+    &.has-text-align-right {
+      justify-content: flex-end;
+    }
+
     a,
     span {
       display: flex;

@@ -310,7 +310,7 @@ export function EventDateMultiple({ showAttributes }) {
       const wallTime = DateTime.fromISO(value, { zone: wpTz });
 
       if (currentStart && wallTime < currentStart) {
-        newErrors[index] = "End must be after start.";
+        newErrors[index] = __("End must be after start.", "eventkoi-lite");
       } else {
         day.end_date = wallTime
           .setZone("utc")
@@ -635,7 +635,7 @@ export function EventDateMultiple({ showAttributes }) {
             disabled={tbc}
           >
             <Plus className="w-4 h-4 mr-2" />
-            Add day
+            {__("Add day", "eventkoi-lite")}
           </Button>
         </div>
       )}

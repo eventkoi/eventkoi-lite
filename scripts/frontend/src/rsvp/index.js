@@ -1,6 +1,6 @@
 "use client";
 
-import { __, sprintf } from "@wordpress/i18n";
+import { __, _n, sprintf } from "@wordpress/i18n";
 import { useEffect, useMemo, useState } from "react";
 import { decodeEntities } from "@wordpress/html-entities";
 import { createRoot } from "react-dom/client";
@@ -8,9 +8,11 @@ import { createRoot } from "react-dom/client";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogHeader,
+  dialogSheetClass,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
@@ -22,6 +24,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { resolvePublicRestUrl } from "@/lib/public-api";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 function getInstanceTsFromDom(el) {
   const attr = el.getAttribute("data-instance-ts");
@@ -41,28 +44,41 @@ function getInstanceTsFromDom(el) {
 }
 
 function RsvpWidget({ eventId, instanceTs, mountEl }) {
-  const prefillName = eventkoi_params?.rsvp_user?.name || "";
-  const prefillEmail = eventkoi_params?.rsvp_user?.email || "";
-  const customFields = Array.isArray(eventkoi_params?.rsvp_fields)
-    ? eventkoi_params.rsvp_fields
-    : [];
-  const showNameField = eventkoi_params?.rsvp_show_name !== false;
-  const [fieldValues, setFieldValues] = useState(() => {
-    const initial = {};
-    const user = eventkoi_params?.rsvp_user || {};
-    customFields.forEach((field) => {
-      initial[field.key] =
-        field.key === "first_name" || field.key === "last_name"
-          ? user[field.key] || ""
-          : "";
-    });
-    return initial;
-  });
+  const prefillName = window.eventkoi_params?.rsvp_user?.name || "";
+  const prefillEmail = window.eventkoi_params?.rsvp_user?.email || "";
   const [summary, setSummary] = useState(null);
+  // The event's own questions come with its RSVP data. The page-level list is
+  // only right on the event's own page, so it is the fallback.
+  const customFields = Array.isArray(summary?.fields)
+    ? summary.fields
+    : Array.isArray(window.eventkoi_params?.rsvp_fields)
+      ? window.eventkoi_params.rsvp_fields
+      : [];
+  const showNameField = window.eventkoi_params?.rsvp_show_name !== false;
+  const [fieldValues, setFieldValues] = useState({});
+  const customFieldKeys = customFields.map((field) => field.key).join("|");
+  useEffect(() => {
+    const user = window.eventkoi_params?.rsvp_user || {};
+    setFieldValues((prev) => {
+      const next = { ...prev };
+      customFields.forEach((field) => {
+        if (next[field.key] === undefined) {
+          next[field.key] =
+            field.key === "first_name" || field.key === "last_name"
+              ? user[field.key] || ""
+              : "";
+        }
+      });
+      return next;
+    });
+  }, [customFieldKeys]);
   const [status, setStatus] = useState("going");
   const [name, setName] = useState(prefillName);
   const [email, setEmail] = useState(prefillEmail);
   const [guests, setGuests] = useState("");
+  // Who each guest is, in seat order, plus whether they get their own email.
+  const [guestDetails, setGuestDetails] = useState([]);
+  const [emailGuests, setEmailGuests] = useState(false);
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState(null);
@@ -86,7 +102,7 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
         resolvePublicRestUrl(`/rsvp/summary?${params.toString()}`),
         {
         headers: {
-          "X-WP-Nonce": eventkoi_params?.nonce || "",
+          "X-WP-Nonce": window.eventkoi_params?.nonce || "",
         },
         }
       );
@@ -133,6 +149,15 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
     if (typeof rsvpData.guests === "number") {
       setGuests(String(rsvpData.guests));
     }
+    if (Array.isArray(rsvpData.guest_details)) {
+      setGuestDetails(
+        rsvpData.guest_details.map((g) => ({
+          name: String(g?.name || ""),
+          email: String(g?.email || ""),
+        })),
+      );
+    }
+    setEmailGuests(!!rsvpData.email_guests);
     if (rsvpData.fields && typeof rsvpData.fields === "object") {
       setFieldValues((prev) => ({ ...prev, ...rsvpData.fields }));
     }
@@ -154,6 +179,9 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
 
   const allowGuests = summary?.allow_guests;
   const maxGuests = summary?.max_guests || 0;
+  const guestDetailsMode = ["optional", "required"].includes(summary?.guest_details)
+    ? summary.guest_details
+    : "off";
   const capacity = summary?.capacity || 0;
   const showCount = summary?.show_count !== false;
   const showRemaining = summary?.show_remaining !== false;
@@ -217,12 +245,64 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
     return Math.min(Number(guests) || 0, maxGuestsAllowed);
   }, [allowGuests, status, guests, maxGuestsAllowed]);
 
+  const guestSeatCount = Math.max(0, Number(guestsValue) || 0);
+  const collectGuestDetails = guestDetailsMode !== "off" && guestSeatCount > 0;
+  const guestEntries = Array.from({ length: guestSeatCount }, (_, i) => ({
+    name: String(guestDetails[i]?.name || ""),
+    email: String(guestDetails[i]?.email || ""),
+  }));
+  const setGuestField = (index, field, value) =>
+    setGuestDetails((prev) => {
+      const next = guestEntries.map((g, i) => ({ ...(prev[i] || g) }));
+      next[index] = { ...(next[index] || { name: "", email: "" }), [field]: value };
+      return next;
+    });
+  const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  const guestValidationError = (() => {
+    if (!collectGuestDetails) return null;
+    if (
+      guestDetailsMode === "required" &&
+      guestEntries.some((g) => g.name.trim() === "")
+    ) {
+      return __("Please enter a name for each guest.", "eventkoi-lite");
+    }
+    if (guestEntries.some((g) => g.email.trim() !== "" && !isValidEmail(g.email.trim()))) {
+      return __("Please enter a valid email address for each guest.", "eventkoi-lite");
+    }
+    if (emailGuests && guestEntries.some((g) => g.email.trim() === "")) {
+      return __(
+        "Add an email address for each guest to send them their own confirmation.",
+        "eventkoi-lite",
+      );
+    }
+    if (emailGuests) {
+      const seen = new Set([String(email || "").trim().toLowerCase()]);
+      for (const g of guestEntries) {
+        const value = g.email.trim().toLowerCase();
+        if (value && seen.has(value)) {
+          return __(
+            "Each guest needs their own email address to get their own confirmation.",
+            "eventkoi-lite",
+          );
+        }
+        if (value) seen.add(value);
+      }
+    }
+    return null;
+  })();
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
     setError(null);
     setFormError(null);
     setMessage(null);
+
+    if (guestValidationError) {
+      setFormError(guestValidationError);
+      setSubmitting(false);
+      return;
+    }
 
     try {
       const payload = {
@@ -233,13 +313,22 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
         status,
         guests: guestsValue,
         fields: fieldValues,
+        ...(collectGuestDetails
+          ? {
+              guest_details: guestEntries.map((g) => ({
+                name: g.name.trim(),
+                email: g.email.trim(),
+              })),
+              email_guests: emailGuests,
+            }
+          : {}),
       };
 
       const res = await fetch(resolvePublicRestUrl("/rsvp"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "X-WP-Nonce": eventkoi_params?.nonce || "",
+          "X-WP-Nonce": window.eventkoi_params?.nonce || "",
         },
         body: JSON.stringify(payload),
       });
@@ -271,10 +360,6 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
     }
   };
 
-  if (!eventId) {
-    return null;
-  }
-
   useEffect(() => {
     if (isRemoved || !mountEl) return;
 
@@ -303,6 +388,10 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
       }
     }
   }, [summary, isEnabled, error, mountEl, isRemoved]);
+
+  if (!eventId) {
+    return null;
+  }
 
   if (!summary && !error) {
     return (
@@ -428,8 +517,10 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
                     : __("RSVP", "eventkoi-lite")}
           </Button>
         </DialogTrigger>
-        <DialogContent className="eventkoi-front">
-          <DialogHeader className="space-y-1">
+        <DialogContent
+          className={`eventkoi-front ${dialogSheetClass} sm:max-w-[480px]`}
+        >
+          <DialogHeader className="flex-none space-y-1 p-5 pr-12 text-left sm:p-6 sm:pr-12">
             <DialogTitle>
               {eventTitle
                 ? sprintf(
@@ -443,21 +534,30 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
               {__("Let us know you're coming.", "eventkoi-lite")}
             </DialogDescription>
           </DialogHeader>
-          <form className="grid gap-4" onSubmit={handleSubmit}>
+          <form
+            className="flex min-h-0 flex-1 flex-col overflow-hidden"
+            onSubmit={handleSubmit}
+          >
+            <DialogBody className="grid gap-4 px-5 pb-5 sm:px-6">
             {formError && (
-              <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              <div className="rounded-md border border-destructive/30 bg-destructive/10 px-3 py-2 text-sm text-[#b32d2e]" role="alert">
                 {formError}
               </div>
             )}
+            <p className="m-0 text-xs text-muted-foreground">
+              {__("Fields marked with an asterisk (*) are required.", "eventkoi-lite")}
+            </p>
             {showNameField && (
               <div className="grid gap-2">
                 <Label htmlFor="eventkoi-rsvp-name">
                   {__("Name", "eventkoi-lite")}
+                  <span aria-hidden="true" className="text-destructive"> *</span>
                 </Label>
                 <Input
                   id="eventkoi-rsvp-name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
+                  autoComplete="name"
                   required
                 />
               </div>
@@ -465,12 +565,14 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
             <div className="grid gap-2">
               <Label htmlFor="eventkoi-rsvp-email">
                 {__("Email", "eventkoi-lite")}
+                <span aria-hidden="true" className="text-destructive"> *</span>
               </Label>
               <Input
                 id="eventkoi-rsvp-email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
                 required
               />
             </div>
@@ -542,10 +644,13 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
               );
             })}
             <div className="grid gap-2">
-              <Label>{__("Status", "eventkoi-lite")}</Label>
+              <Label id="eventkoi-rsvp-status-label">
+                {__("Status", "eventkoi-lite")}
+              </Label>
               <RadioGroup
                 value={status}
                 onValueChange={setStatus}
+                aria-labelledby="eventkoi-rsvp-status-label"
                 className="flex flex-wrap gap-4"
               >
                 {statusOptions.map((option) => (
@@ -602,29 +707,99 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
                 {typeof maxGuestsAllowed === "number" && (
                   <div className="text-xs text-muted-foreground">
                     {sprintf(
-                      /* translators: %d: maximum guests */
-                      maxGuestsAllowed === 1
-                        ? __("Max %d guest", "eventkoi-lite")
-                        : __("Max %d guests", "eventkoi-lite"),
+                      /* translators: %d: maximum number of guests */
+                      _n(
+                        "Max %d guest",
+                        "Max %d guests",
+                        maxGuestsAllowed,
+                        "eventkoi-lite"
+                      ),
                       maxGuestsAllowed
                     )}
                   </div>
                 )}
               </div>
             )}
-            <div className="flex flex-wrap items-center gap-3 pt-2">
-              <Button type="submit" disabled={submitting}>
-                {submitting
-                  ? __("Submitting...", "eventkoi-lite")
-                  : __("Submit RSVP", "eventkoi-lite")}
-              </Button>
-              <Button
-                type="button"
-                variant="link"
-                onClick={() => setOpen(false)}
-              >
-                {__("Cancel", "eventkoi-lite")}
-              </Button>
+            {collectGuestDetails && (
+              <div className="grid gap-3">
+                <div className="text-xs text-muted-foreground">
+                  {guestDetailsMode === "required"
+                    ? __("Enter the name of each guest.", "eventkoi-lite")
+                    : __("Optional. Tell us who your guests are.", "eventkoi-lite")}
+                </div>
+                {guestEntries.map((guest, index) => (
+                  <div
+                    key={index}
+                    className="grid gap-3 rounded-md border border-border p-4"
+                  >
+                    <div className="text-[13px] font-medium text-foreground">
+                      {sprintf(
+                        /* translators: %d: guest number */
+                        __("Guest %d", "eventkoi-lite"),
+                        index + 1,
+                      )}
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="grid gap-2">
+                        <Label htmlFor={`eventkoi-rsvp-guest-${index}-name`}>
+                          {__("Name", "eventkoi-lite")}
+                          {guestDetailsMode === "required" ? (
+                            <span aria-hidden="true" className="text-destructive"> *</span>
+                          ) : null}
+                        </Label>
+                        <Input
+                          id={`eventkoi-rsvp-guest-${index}-name`}
+                          value={guest.name}
+                          required={guestDetailsMode === "required"}
+                          onChange={(e) => setGuestField(index, "name", e.target.value)}
+                        />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label htmlFor={`eventkoi-rsvp-guest-${index}-email`}>
+                          {__("Email", "eventkoi-lite")}
+                        </Label>
+                        <Input
+                          id={`eventkoi-rsvp-guest-${index}-email`}
+                          type="email"
+                          value={guest.email}
+                          onChange={(e) => setGuestField(index, "email", e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                <Label className="flex items-start gap-2.5 text-xs font-normal leading-relaxed text-muted-foreground cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={emailGuests}
+                    onChange={(e) => setEmailGuests(e.target.checked)}
+                    className="mt-0.5 size-4 shrink-0 rounded border-input"
+                  />
+                  <span>
+                    {__(
+                      "Email each guest their own confirmation and check-in code.",
+                      "eventkoi-lite",
+                    )}
+                  </span>
+                </Label>
+              </div>
+            )}
+            </DialogBody>
+            <div className="flex-none border-t border-border bg-background px-5 py-4 sm:px-6">
+              <div className="flex flex-wrap items-center gap-3">
+                <Button type="submit" disabled={submitting}>
+                  {submitting
+                    ? __("Submitting...", "eventkoi-lite")
+                    : __("Submit RSVP", "eventkoi-lite")}
+                </Button>
+                <Button
+                  type="button"
+                  variant="link"
+                  onClick={() => setOpen(false)}
+                >
+                  {__("Cancel", "eventkoi-lite")}
+                </Button>
+              </div>
             </div>
           </form>
         </DialogContent>
@@ -656,6 +831,8 @@ document.querySelectorAll(".eventkoi-rsvp").forEach((el) => {
   const instanceTs = getInstanceTsFromDom(el);
   const root = createRoot(el);
   root.render(
-    <RsvpWidget eventId={eventId} instanceTs={instanceTs} mountEl={el} />
+    <ErrorBoundary>
+      <RsvpWidget eventId={eventId} instanceTs={instanceTs} mountEl={el} />
+    </ErrorBoundary>
   );
 });

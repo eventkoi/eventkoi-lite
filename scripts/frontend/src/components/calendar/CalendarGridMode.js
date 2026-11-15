@@ -1,6 +1,7 @@
 "use client";
 
 import { EventPopover } from "@/components/calendar/EventPopover";
+import { watchPlainCalendarLinks } from "@/lib/calendar-plain-links";
 import { Skeleton } from "@/components/ui/skeleton";
 import { wpToLuxonFormat } from "@/lib/date-utils";
 import { formatDate } from "@fullcalendar/core";
@@ -12,7 +13,7 @@ import FullCalendar from "@fullcalendar/react";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import { __, sprintf } from "@wordpress/i18n";
 import { DateTime } from "luxon";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const days = {
   sunday: 0,
@@ -52,7 +53,7 @@ const getDisplayTimezoneForUrl = (timezone, calendarTimeZone) => {
     );
   }
 
-  return calendarTimeZone || timezone || eventkoi_params?.timezone || "UTC";
+  return calendarTimeZone || timezone || window.eventkoi_params?.timezone || "UTC";
 };
 
 const getEventUrlWithTimezone = (url, timezone, calendarTimeZone) => {
@@ -157,6 +158,7 @@ const cascadeTimegrid = (root) => {
 };
 
 export function CalendarGridMode({
+  descriptionSource,
   calendarRef,
   events,
   view,
@@ -175,9 +177,8 @@ export function CalendarGridMode({
   timeFormat,
   startday,
   initialDate,
+  onApiChange,
 }) {
-  // Determine whether locale uses AM/PM
-  const usesMeridiem = /^en/i.test(localeToUse);
   const resolvedLocalTz =
     typeof window !== "undefined"
       ? Intl.DateTimeFormat().resolvedOptions().timeZone
@@ -191,6 +192,28 @@ export function CalendarGridMode({
   const displayTimezoneKey = calendarTimeZone || timezone || "UTC";
   const previousTimezoneRef = useRef(displayTimezoneKey);
   const cascadeScheduledRef = useRef(false);
+  const gridWrapRef = useRef(null);
+
+  useEffect(() => watchPlainCalendarLinks(gridWrapRef.current), [isEmpty]);
+
+  // A page builder's phone column can be under 300px wide, which leaves each
+  // day under 45px: "MON" and "TUE" then run into each other. Below 360px the
+  // day headers fall back to one letter, the way phone calendars do.
+  const [compactHeaders, setCompactHeaders] = useState(false);
+  useEffect(() => {
+    const root = calendarRef?.current?.elRef?.current;
+    if (!root || typeof ResizeObserver === "undefined") {
+      return undefined;
+    }
+    const update = () => {
+      const width = root.offsetWidth;
+      setCompactHeaders(width > 0 && width < 360);
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, [calendarRef, view]);
   const scheduleCascade = () => {
     if (cascadeScheduledRef.current) return;
     cascadeScheduledRef.current = true;
@@ -202,7 +225,7 @@ export function CalendarGridMode({
   };
   const resolvedWpTimeFormat =
     (typeof eventkoi_params !== "undefined" &&
-      eventkoi_params?.time_format_string) ||
+      window.eventkoi_params?.time_format_string) ||
     (timeFormat === "24" ? "H:i" : "g:i a");
   const formatWpTime = (dt) => {
     if (!dt?.isValid) {
@@ -292,16 +315,24 @@ export function CalendarGridMode({
     return calendarTimeZone ? dt.setZone(calendarTimeZone) : dt;
   };
   // Google-style compact time formatter for week-view tile labels.
-  // 12h: "9 – 11am", "1:30 – 3pm", "11am – 2pm". 24h: "9 – 11", "13:30 – 15".
+  // 12h: "9 – 11am", "1:30 – 3pm", "11am – 2pm" (drops :00, drops first
+  // period when both endpoints share one). 24h must never emit a bare hour:
+  // "15" has nothing marking it as a time, so on French sites it read as a
+  // count of events instead of 3pm. French gets its own convention ("15h",
+  // "18h30"); other 24h locales keep the minutes ("15:00", "18:30").
+  const isFrenchLocale = /^fr/i.test(localeToUse);
   const formatCompactTime = (dt) => {
     if (!dt) return "";
     const m = dt.minute;
-    const mPart = m === 0 ? "" : `:${String(m).padStart(2, "0")}`;
+    const mm = String(m).padStart(2, "0");
     if (timeFormat === "24") {
-      return `${dt.hour}${mPart}`;
+      if (isFrenchLocale) {
+        return `${dt.hour}h${m === 0 ? "" : mm}`;
+      }
+      return `${dt.hour}:${mm}`;
     }
     const h12 = ((dt.hour + 11) % 12) + 1;
-    return `${h12}${mPart}`;
+    return `${h12}${m === 0 ? "" : `:${mm}`}`;
   };
   const formatCompactRange = (start, end) => {
     const sStr = formatCompactTime(start);
@@ -389,32 +420,50 @@ export function CalendarGridMode({
     const dot =
       !isTimeGrid && dotColor ? (
         <div
-          className="fc-daygrid-event-dot"
+          className="fc-daygrid-event-dot eventkoi-calendar-event-dot"
           style={{ borderColor: dotColor }}
         />
       ) : null;
 
-    if (arg.event?.allDay || !arg.event?.start) {
-      return (
-        <>
-          {dot}
-          <span className="fc-event-title">{title}</span>
-        </>
-      );
-    }
-
     // Empty return from formatCalendarTimeRange is intentional (multi-day
     // middle/end segment, Google style). Don't fall through to FC's
     // default which would resurrect the hidden time.
-    const timeText = formatCalendarTimeRange(arg);
+    const timeText =
+      arg.event?.allDay || !arg.event?.start ? "" : formatCalendarTimeRange(arg);
+    const gridContent = arg.event?.extendedProps?.grid_content;
+    const showTime = gridContent?.show_time !== false && timeText;
+
+    const parts = (
+      <>
+        {gridContent?.show_dot !== false ? dot : null}
+        {showTime ? <span className="fc-event-time eventkoi-calendar-event-time">{timeText}</span> : null}
+        {showTime ? " " : null}
+        {gridContent?.show_title !== false ? (
+          <span className="fc-event-title eventkoi-calendar-event-title">{title}</span>
+        ) : null}
+      </>
+    );
+
+    if (!gridContent?.before && !gridContent?.after) {
+      return parts;
+    }
 
     return (
-      <>
-        {dot}
-        {timeText ? <span className="fc-event-time">{timeText}</span> : null}
-        {timeText ? " " : null}
-        <span className="fc-event-title">{title}</span>
-      </>
+      <div className="eventkoi-grid-event">
+        {gridContent.before ? (
+          <div
+            className="eventkoi-grid-event__before"
+            dangerouslySetInnerHTML={{ __html: gridContent.before }}
+          />
+        ) : null}
+        <div className="eventkoi-grid-event__main">{parts}</div>
+        {gridContent.after ? (
+          <div
+            className="eventkoi-grid-event__after"
+            dangerouslySetInnerHTML={{ __html: gridContent.after }}
+          />
+        ) : null}
+      </div>
     );
   };
   const formatInCalendarTz = (date, options) => {
@@ -440,10 +489,10 @@ export function CalendarGridMode({
           hour: "numeric",
           minute: "2-digit",
           hour12: true,
-          ...(usesMeridiem && {
-            omitZeroMinute: true,
-            meridiem: "short", // only for English-style locales
-          }),
+          // Keep the am/pm suffix in every locale: without it, non-English
+          // sites rendered a bare hour ("10"), which reads as a count.
+          omitZeroMinute: true,
+          meridiem: "short",
         };
 
   const formatSlotLabel = (date) => {
@@ -462,13 +511,28 @@ export function CalendarGridMode({
     });
     const withoutZeroMinutes = formatted.replace(/:00\b/, "");
 
-    if (!usesMeridiem) {
+    // Normalize or restore the am/pm suffix for every locale so a bare hour
+    // is never shown (a French "10" is indistinguishable from a count).
+    if (/([ap])\.?m?\.?$/i.test(withoutZeroMinutes)) {
+      return withoutZeroMinutes.replace(/\s?([ap])\.?m?\.?$/i, (match, part) => {
+        return ` ${part.toUpperCase()}M`;
+      });
+    }
+
+    const numeric = withoutZeroMinutes.match(/\d{1,2}/);
+    if (!numeric) {
       return withoutZeroMinutes;
     }
 
-    return withoutZeroMinutes.replace(/\s?([ap])\.?m?$/i, (match, part) => {
-      return ` ${part.toUpperCase()}M`;
-    });
+    const hour24 = parseInt(
+      formatInCalendarTz(date, { hour: "numeric", hour12: false }),
+      10
+    );
+    if (Number.isNaN(hour24)) {
+      return withoutZeroMinutes;
+    }
+
+    return `${withoutZeroMinutes} ${hour24 < 12 ? "AM" : "PM"}`;
   };
 
   const normalizeTimeValue = (value) => {
@@ -482,7 +546,7 @@ export function CalendarGridMode({
     return null;
   };
 
-  const globalDayStart = eventkoi_params?.day_start_time || "00:00";
+  const globalDayStart = window.eventkoi_params?.day_start_time || "00:00";
   const dayStartTime = calendar?.day_start_time || globalDayStart;
   const scrollTime = normalizeTimeValue(dayStartTime) || "07:00:00";
   const slotMinTime = "00:00:00";
@@ -530,6 +594,109 @@ export function CalendarGridMode({
   const timeGridHeight = useDefaultTimeGrid
     ? "auto"
     : slotsToShow * slotHeightPx;
+
+  // FullCalendar turns scrollTime into a pixel offset using the slot height
+  // it measures at that moment. A webfont arriving after mount makes every
+  // slot a little taller, and the already-applied offset then points one
+  // hour early (a start of 8 AM showed 7 AM). Re-anchor once the fonts are
+  // in, unless the visitor has already scrolled the grid themselves.
+  useEffect(() => {
+    if (!isTimeGridView) {
+      return undefined;
+    }
+
+    let cancelled = false;
+    let userScrolled = false;
+
+    const markUserScroll = () => {
+      userScrolled = true;
+    };
+    window.addEventListener("wheel", markUserScroll, { passive: true });
+    window.addEventListener("touchmove", markUserScroll, { passive: true });
+
+    const reanchor = () => {
+      if (cancelled || userScrolled) {
+        return;
+      }
+      calendarRef?.current?.getApi?.()?.scrollToTime?.(scrollTime);
+    };
+
+    document.fonts?.ready
+      ?.then?.(() => setTimeout(reanchor, 0))
+      ?.catch?.(() => {});
+    // Belt for late non-font layout growth (slow stylesheets, zoom quirks).
+    const lateTimer = setTimeout(reanchor, 1500);
+    // Optimisation plugins (e.g. WP Rocket) can defer or delay the whole
+    // bundle, so the grid settles well after any fixed timer; window load is a
+    // second belt for that.
+    window.addEventListener("load", reanchor);
+
+    // The real trigger is the grid growing taller after the first scroll, which
+    // late fonts, deferred stylesheets or a caching plugin can cause well after
+    // any fixed timer. Watch the grid height and re-anchor when it changes, then
+    // stop so it never fights the visitor's own scrolling.
+    let observer;
+    let stopObserverTimer;
+    const observerStart = setTimeout(() => {
+      const grid = calendarRef?.current
+        ?.getApi?.()
+        ?.el?.querySelector?.(".fc-timegrid-body");
+      if (!grid || typeof ResizeObserver === "undefined") {
+        return;
+      }
+      let lastHeight = grid.offsetHeight;
+      observer = new ResizeObserver(() => {
+        if (cancelled || userScrolled) {
+          return;
+        }
+        const height = grid.offsetHeight;
+        if (height !== lastHeight) {
+          lastHeight = height;
+          reanchor();
+        }
+      });
+      observer.observe(grid);
+      stopObserverTimer = setTimeout(() => observer?.disconnect(), 5000);
+    }, 0);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(lateTimer);
+      clearTimeout(observerStart);
+      clearTimeout(stopObserverTimer);
+      window.removeEventListener("wheel", markUserScroll);
+      window.removeEventListener("touchmove", markUserScroll);
+      window.removeEventListener("load", reanchor);
+      observer?.disconnect();
+    };
+  }, [isTimeGridView, view, scrollTime, calendarRef]);
+
+  // Publish the FullCalendar API upwards once it exists. The toolbar reads it
+  // from a ref, and a ref assignment does not re-render, so without this the
+  // toolbar holds `undefined` for the first render after every (re)mount and
+  // its buttons silently do nothing.
+  useEffect(() => {
+    if (typeof onApiChange !== "function") {
+      return undefined;
+    }
+
+    onApiChange(calendarRef?.current?.getApi?.() || null);
+
+    return () => onApiChange(null);
+  }, [onApiChange, calendarRef, isEmpty]);
+
+  // `initialView` is only read when FullCalendar is constructed, so the React
+  // `view` state is the single source of truth: whenever the two disagree
+  // (a toggle click that landed before the API was published, or a late state
+  // update), push the state onto the calendar.
+  useEffect(() => {
+    const api = calendarRef?.current?.getApi?.();
+    if (!api || !view || api.view?.type === view) {
+      return;
+    }
+
+    api.changeView(view);
+  }, [calendarRef, view, isEmpty]);
 
   useEffect(() => {
     if (previousTimezoneRef.current === displayTimezoneKey) {
@@ -649,6 +816,7 @@ export function CalendarGridMode({
   return (
     <>
       <div
+        ref={gridWrapRef}
         className="relative"
         style={calendarAccent ? { "--ek-calendar-accent": calendarAccent } : undefined}
       >
@@ -665,6 +833,14 @@ export function CalendarGridMode({
         firstDay={start_day}
         headerToolbar={false}
         slotEventOverlap={true}
+        // FullCalendar tags a card fc-timegrid-event-short (our one-line
+        // time+title layout) only when it is shorter than this, and its
+        // default of 30px is below what the stacked layout needs: the
+        // title's text ends 38.7px down. A 45-minute card lands at exactly
+        // 30px, missed the cutoff, and spilled its title below the card.
+        // 40px is the smallest threshold that covers the stacked layout
+        // while leaving hour-long cards (41px) on two lines.
+        eventShortHeight={40}
         nowIndicator={true}
         dayCellClassNames={(arg) => {
           // Tint days NOT in the user's configured working_days
@@ -676,8 +852,23 @@ export function CalendarGridMode({
           const isWorking = Array.isArray(wd)
             ? wd.map((n) => Number(n)).includes(monFirst)
             : monFirst < 5;
-          return isWorking ? "" : "ek-non-working-day";
+          const names = ["eventkoi-calendar-day"];
+          if (arg.isToday) names.push("eventkoi-calendar-day-today");
+          if (arg.isOther) names.push("eventkoi-calendar-day-other");
+          if (!isWorking) names.push("ek-non-working-day");
+          return names;
         }}
+        dayCellDidMount={(arg) => {
+          // FullCalendar draws the day number itself, so its class is
+          // added once the cell exists.
+          arg.el
+            .querySelector(".fc-daygrid-day-number")
+            ?.classList.add("eventkoi-calendar-day-number");
+        }}
+        dayHeaderClassNames="eventkoi-calendar-day-header"
+        eventClassNames="eventkoi-calendar-event"
+        moreLinkClassNames="eventkoi-calendar-more"
+        slotLabelClassNames="eventkoi-calendar-slot-label"
         eventsSet={() => scheduleCascade()}
         windowResize={() => scheduleCascade()}
         contentHeight={isTimeGridView ? timeGridHeight : "auto"}
@@ -711,7 +902,7 @@ export function CalendarGridMode({
           };
 
           const dayName = formatHeaderDate(date, {
-            weekday: "short",
+            weekday: compactHeaders ? "narrow" : "short",
           });
 
           // For week/day views → two lines: weekday + bold number
@@ -774,10 +965,14 @@ export function CalendarGridMode({
         eventClick={(info) => {
           info.jsEvent.preventDefault();
           info.jsEvent.stopPropagation();
+          // Safari does not focus a link on click. The popover returns focus
+          // to whatever is focused when it opens, so make that this event.
+          info.el.focus?.({ preventScroll: true });
           openEventPopover(info.el, info.event, info.jsEvent);
         }}
         eventDidMount={(info) => {
-          info.el.setAttribute("aria-label", `${info.event.title}`);
+          // No aria-label here: the visible time and title are the name a
+          // screen reader should read.
           if (info.view?.type?.startsWith("timeGrid")) {
             scheduleCascade();
           }
@@ -792,6 +987,7 @@ export function CalendarGridMode({
           onClose={closeEventPopover}
           ignoreNextOutsideClick={ignoreNextOutsideClick}
           timezone={timezone}
+          descriptionSource={descriptionSource}
         />
       )}
     </>

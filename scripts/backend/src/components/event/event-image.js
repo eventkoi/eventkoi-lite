@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useEventEditContext } from "@/hooks/EventEditContext";
 import { showToastError } from "@/lib/toast";
 import { cn } from "@/lib/utils";
-import { __ } from "@wordpress/i18n";
+import { __, sprintf } from "@wordpress/i18n";
 import apiRequest from "@wordpress/api-fetch";
 import { MediaUpload } from "@wordpress/media-utils";
 import {
@@ -215,6 +215,7 @@ export function EventImage({ isInstance = false, value, onChange }) {
             ) : image && !imageError ? (
               <ImagePreviewOverlay
                 imageUrl={image}
+                eventTitle={isInstance ? value?.title || event?.title : event?.title}
                 openMediaLibrary={open}
                 deleteImage={deleteImage}
                 onError={() => setImageError(true)}
@@ -312,12 +313,20 @@ function UrlInputBox({ urlInput, setUrlInput, onSubmit, onCancel, uploading }) {
   );
 }
 
-function ImagePreviewOverlay({ imageUrl, openMediaLibrary, deleteImage, onError }) {
+function ImagePreviewOverlay({ imageUrl, eventTitle, openMediaLibrary, deleteImage, onError }) {
   return (
     <div className="relative w-full h-auto group">
       <img
         src={imageUrl}
-        alt={__("Event featured image", "eventkoi-lite")}
+        alt={
+          eventTitle
+            ? sprintf(
+                /* translators: %s: event name. */
+                __("Featured image for %s", "eventkoi-lite"),
+                eventTitle
+              )
+            : __("Event featured image", "eventkoi-lite")
+        }
         className="w-full h-auto rounded-2xl object-cover transition duration-300 group-hover:opacity-80"
         onError={onError}
       />

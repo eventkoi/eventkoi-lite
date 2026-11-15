@@ -42,9 +42,27 @@ function applyMeridiemCasing(value) {
   return value;
 }
 
+function getPageEventZone() {
+  // A single event page carries its own timezone (which may be a per-event
+  // override) on the label and datetime nodes. Prefer it over the site
+  // timezone so overridden events display in their own zone by default.
+  if (typeof document === "undefined") {
+    return null;
+  }
+
+  const node =
+    document.querySelector(".ek-timezone[data-source-tz]") ||
+    document.querySelector(".ek-datetime[data-tz]");
+
+  return (
+    node?.getAttribute("data-source-tz") || node?.getAttribute("data-tz") || null
+  );
+}
+
 function getSourceZone(tz) {
   return (
     tz ||
+    getPageEventZone() ||
     window.eventkoi_params?.timezone_string ||
     window.eventkoi_params?.timezone_override ||
     window.eventkoi_params?.timezone ||
