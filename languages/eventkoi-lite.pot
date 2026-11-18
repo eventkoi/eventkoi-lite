@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: EventKoi Lite 1.5.0.0\n"
+"Project-Id-Version: EventKoi Lite 1.5.1.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/eventkoi-lite\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-15T14:15:58+00:00\n"
+"POT-Creation-Date: 2026-11-18T21:44:27+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -1328,7 +1328,7 @@ msgid "Ticket sales"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-template.php:1293
+#: includes/core/class-template.php:1331
 msgid "Custom fields"
 msgstr ""
 
@@ -7975,11 +7975,11 @@ msgstr ""
 msgid "Template used when viewing a recurring event series."
 msgstr ""
 
-#: includes/core/class-template.php:1285
+#: includes/core/class-template.php:1323
 msgid "Event Field Group"
 msgstr ""
 
-#: includes/core/class-template.php:1289
+#: includes/core/class-template.php:1327
 msgid "Event Field"
 msgstr ""
 
