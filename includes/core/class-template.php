@@ -851,7 +851,17 @@ class Template {
 				return false;
 			}
 
-			$output = do_shortcode( '[fl_builder_insert_layout id="' . absint( $template_obj->ID ) . '"]' );
+			if ( $is_beaver_themer && self::themer_loads_layout_styles( $template_obj->ID ) ) {
+				// Themer already loads this layout's styles for the page, so
+				// only the markup is rendered here. The shortcode would print
+				// the styles a second time, and Themer 1.6.1.1 and later then
+				// drop that copy, taking Beaver's column grid with it.
+				ob_start();
+				\FLBuilder::render_content_by_id( absint( $template_obj->ID ) );
+				$output = (string) ob_get_clean();
+			} else {
+				$output = do_shortcode( '[fl_builder_insert_layout id="' . absint( $template_obj->ID ) . '"]' );
+			}
 			if ( $event ) {
 				$output = self::replace_event_tokens_in_builder_content( $output, $event );
 			}
@@ -888,6 +898,34 @@ class Template {
 			if ( $template_obj instanceof \WP_Post ) {
 				$output = do_shortcode( '[bricks_template id="' . absint( $template_obj->ID ) . '"]' );
 				self::render_builder_template_content( $output, $context );
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Whether Beaver Themer loads a layout's styles on the page being viewed.
+	 *
+	 * Themer bundles the styles of every layout its location rules assign to
+	 * the page, so a layout picked both there and in EventKoi is covered.
+	 *
+	 * @param int $layout_id Themer layout post id.
+	 * @return bool
+	 */
+	private static function themer_loads_layout_styles( $layout_id ) {
+		if ( ! class_exists( '\FLThemeBuilderLayoutData' )
+			|| ! method_exists( '\FLThemeBuilderLayoutData', 'get_current_page_layouts' )
+			|| ! class_exists( '\FLBuilder' )
+			|| ! method_exists( '\FLBuilder', 'render_content_by_id' ) ) {
+			return false;
+		}
+
+		foreach ( (array) \FLThemeBuilderLayoutData::get_current_page_layouts() as $group ) {
+			foreach ( (array) $group as $layout ) {
+				if ( is_array( $layout ) && isset( $layout['id'] ) && (int) $layout['id'] === (int) $layout_id ) {
+					return true;
+				}
 			}
 		}
 
