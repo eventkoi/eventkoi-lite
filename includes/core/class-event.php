@@ -1212,6 +1212,35 @@ class Event {
 	}
 
 	/**
+	 * A timed consecutive-days event as its dates, then its start and end time,
+	 * when the daily times switch is on. Shared by the Datetime and Date and
+	 * Time fields so both read the same.
+	 *
+	 * @return string Markup, or an empty string when the switch does not apply.
+	 */
+	public static function render_daily_datetime() {
+		$display_tz = self::get_display_timezone();
+		$daily_span = self::get_daily_times_span( $display_tz );
+
+		if ( ! $daily_span ) {
+			return '';
+		}
+
+		$date_format = eventkoi_resolved_date_format();
+		$time_format = eventkoi_resolved_time_format();
+		$start_time  = wp_date( $time_format, $daily_span[0], $display_tz );
+		$end_time    = wp_date( $time_format, $daily_span[1], $display_tz );
+
+		$line = wp_date( $date_format, $daily_span[0], $display_tz )
+			. ' — ' . wp_date( $date_format, $daily_span[1], $display_tz )
+			. ', ' . ( $start_time === $end_time ? $start_time : $start_time . ' — ' . $end_time );
+		$line = self::wrap_datetime_with_data( $line, $daily_span[0], $daily_span[1], self::get_timezone() );
+		$line = str_replace( '<span class="ek-datetime"', '<span class="ek-datetime" data-ek-daily="1"', $line );
+
+		return wp_kses_post( $line );
+	}
+
+	/**
 	 * Get event days scoped to a selected frontend occurrence when requested.
 	 *
 	 * @param bool $ignore_loop_context When true, skip the query-loop per-card
@@ -5265,9 +5294,11 @@ class Event {
 				$lines[] = eventkoi_format_datetime_range( $start_ts, $end_ts && $end_ts >= $start_ts ? $end_ts : null, true, $args );
 			}
 
+			// The Show all dates switch lists the dates on one line, comma
+			// separated; without it each date keeps its own line.
 			return apply_filters(
 				'eventkoi_rendered_event_date',
-				implode( '<br>', $lines ),
+				implode( self::has_display_option( 'all_dates' ) ? ', ' : '<br>', $lines ),
 				self::$event_id,
 				self::$event
 			);
@@ -5442,23 +5473,11 @@ class Event {
 			}
 		}
 
-		$display_tz = self::get_display_timezone();
-		$daily_span = self::get_daily_times_span( $display_tz );
-		if ( $daily_span ) {
-			$date_format = eventkoi_resolved_date_format();
-			$time_format = eventkoi_resolved_time_format();
-			$start_time  = wp_date( $time_format, $daily_span[0], $display_tz );
-			$end_time    = wp_date( $time_format, $daily_span[1], $display_tz );
-
-			$line = wp_date( $date_format, $daily_span[0], $display_tz )
-				. ' — ' . wp_date( $date_format, $daily_span[1], $display_tz )
-				. ', ' . ( $start_time === $end_time ? $start_time : $start_time . ' — ' . $end_time );
-			$line = self::wrap_datetime_with_data( $line, $daily_span[0], $daily_span[1], $event_tz );
-			$line = str_replace( '<span class="ek-datetime"', '<span class="ek-datetime" data-ek-daily="1"', $line );
-
+		$daily_line = self::render_daily_datetime();
+		if ( '' !== $daily_line ) {
 			return apply_filters(
 				'eventkoi_rendered_event_datetime',
-				wp_kses_post( $line ),
+				$daily_line,
 				self::$event_id,
 				self::$event
 			);

@@ -2183,6 +2183,20 @@ JS;
 			return '';
 		}
 
+		// With the daily times switch on, the Date and Time field shows a timed
+		// consecutive-days event as its dates, then its start and end time, like
+		// the Datetime field does.
+		if ( 'timeline' === $field
+			&& array_key_exists( 'showDailyTimes', $attributes )
+			&& self::parse_boolean_attribute( $attributes['showDailyTimes'] )
+			&& ! self::is_all_day_timeline_row( $event ) ) {
+			$daily_line = self::render_daily_timeline( $event );
+
+			if ( '' !== $daily_line ) {
+				return '<div class="ek-event-timeline--inner">' . $daily_line . '</div>';
+			}
+		}
+
 		if ( isset( $map[ $field ] ) ) {
 			return $map[ $field ];
 		}
@@ -2274,6 +2288,46 @@ JS;
 			}
 
 			return '';
+		}
+
+		/**
+		 * Whether the Date and Time field shows this row as an all-day event, by the
+		 * same flags its own rendering reads. The daily times switch leaves those as
+		 * they are.
+		 *
+		 * @param array $event Event row payload.
+		 * @return bool
+		 */
+		private static function is_all_day_timeline_row( $event ) {
+			return self::parse_boolean_attribute( $event['allDay'] ?? false )
+				|| self::parse_boolean_attribute( $event['all_day'] ?? false )
+				|| self::parse_boolean_attribute( $event['event_days'][0]['all_day'] ?? false )
+				|| self::parse_boolean_attribute( $event['recurrence_rules'][0]['all_day'] ?? false );
+		}
+
+		/**
+		 * The daily times line for the Date and Time field.
+		 *
+		 * @param array $event Event row payload.
+		 * @return string Markup, or an empty string when the event is not a timed
+		 *                consecutive-days event that ends on a later day.
+		 */
+		private static function render_daily_timeline( $event ) {
+			$event_id = isset( $event['event_id'] ) ? absint( $event['event_id'] ) : ( isset( $event['id'] ) ? absint( $event['id'] ) : 0 );
+
+			if ( $event_id <= 0 ) {
+				return '';
+			}
+
+			$previous_display = Event::set_display_options( array( 'daily_times' => true ) );
+
+			try {
+				$event_obj = new Event( $event_id );
+
+				return (string) $event_obj::render_daily_datetime();
+			} finally {
+				Event::set_display_options( $previous_display );
+			}
 		}
 
 		/**

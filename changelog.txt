@@ -2,6 +2,10 @@
 
 Full release history of EventKoi Lite. The readme lists only the latest releases.
 
+= 1.5.1.1 – Event Data date options on the Date and Time field – 2026-11-19 =
+* Improvement: The Date and Time field of the Event Data block has the Show start and end time switch too, so an event on Consecutive Days shows its dates, then its start and end time.
+* Improvement: Show all dates lists the dates of an event on Selected Days on one line, separated by commas.
+
 = 1.5.1.0 – Event Data options for multi-day events and Beaver Themer layout fix – 2026-11-18 =
 * New: Two Event Data block options for multi-day events. Show all dates lists every date of an event on Selected Days instead of only the next one, also in a query loop. Show start and end time lists the dates of an event on Consecutive Days, then its start and end time. Both are off until you turn them on.
 * Fix: Event and calendar pages that use a Beaver Themer layout picked in the EventKoi template settings lost their columns and styling with Beaver Themer 1.6.1.1. They display correctly again.
