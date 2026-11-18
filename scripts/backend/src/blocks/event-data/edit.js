@@ -78,6 +78,8 @@ export default function Edit({ attributes, setAttributes, clientId }) {
     eventId = 0,
     dateFormat = "",
     timeFormat = "",
+    showAllDates = false,
+    showDailyTimes = false,
     excerptLength = 0,
   } = attributes;
 
@@ -525,7 +527,14 @@ export default function Edit({ attributes, setAttributes, clientId }) {
           }
         }
 
+        // The date display switches change the whole line, so their rendered
+        // value wins over the single-date format preview.
+        const switchValue =
+          (showDailyTimes && event?.date_display?.daily_times?.[field]) ||
+          (showAllDates && event?.date_display?.all_dates?.[field]) ||
+          "";
         let renderedValue =
+          (typeof switchValue === "string" && switchValue.trim()) ||
           customFormatted ||
           (event && typeof event[field] === "string"
             ? event[field].trim()

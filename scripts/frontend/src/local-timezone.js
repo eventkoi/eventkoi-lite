@@ -218,6 +218,28 @@ function formatRange(
   return output;
 }
 
+// A multi-day event shown as its dates, then its start and end time.
+function formatDailyRange(startISO, endISO, tz) {
+  const localZone = getDisplayZone();
+  const sourceZone = getSourceZone(tz);
+  const start = parseWithZone(startISO, sourceZone);
+  const end = parseWithZone(endISO, sourceZone);
+  if (!start?.isValid || !end?.isValid) return null;
+
+  const startLocal = start.setZone(localZone).setLocale(localeToUse);
+  const endLocal = end.setZone(localZone).setLocale(localeToUse);
+  if (startLocal.toISODate() === endLocal.toISODate()) return null;
+
+  const timeFmt = wpTimeFormat || (is24h ? "HH:mm" : "h:mm a");
+  const startTime = applyMeridiemCasing(startLocal.toFormat(timeFmt));
+  const endTime = applyMeridiemCasing(endLocal.toFormat(timeFmt));
+  const times = startTime === endTime ? startTime : `${startTime} — ${endTime}`;
+
+  return `${startLocal.toFormat(dateFmt)} — ${endLocal.toFormat(
+    dateFmt
+  )}, ${times}`;
+}
+
 function rewriteEventDates() {
   if (!shouldAutoDetect && !hasDisplayZoneOverride()) return;
   const nodes = document.querySelectorAll(".ek-datetime");
@@ -278,6 +300,16 @@ function rewriteEventDates() {
     }
 
     if (!startISO) return;
+    if (node.getAttribute("data-ek-daily") === "1" && endISO && !isAllDay) {
+      const dailyText = formatDailyRange(startISO, endISO, tz);
+      if (dailyText) {
+        node.firstChild
+          ? (node.firstChild.textContent = dailyText)
+          : (node.textContent = dailyText);
+        return;
+      }
+    }
+
     const text = formatRange(
       startISO,
       endISO,

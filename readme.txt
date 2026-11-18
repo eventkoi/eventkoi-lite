@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.5.0.0
+Stable tag: 1.5.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -226,6 +226,10 @@ This service is provided by Google LLC: [Terms of Service](https://cloud.google.
 
 The latest releases are listed here. See changelog.txt in the plugin folder for older versions.
 
+= 1.5.1.0 – Event Data options for multi-day events and Beaver Themer layout fix – 2026-11-18 =
+* New: Two Event Data block options for multi-day events. Show all dates lists every date of an event on Selected Days instead of only the next one, also in a query loop. Show start and end time lists the dates of an event on Consecutive Days, then its start and end time. Both are off until you turn them on.
+* Fix: Event and calendar pages that use a Beaver Themer layout picked in the EventKoi template settings lost their columns and styling with Beaver Themer 1.6.1.1. They display correctly again.
+
 = 1.5.0.0 – Attendee details, guest check-in, Beaver Builder and Divi templates and accessibility – 2026-11-13 =
 * New: Ticket buyers can enter a name and email for each ticket at checkout. Attendees are listed one per ticket with edit, check-in and export, and appear on ticket emails, QR check-in and WooCommerce orders.
 * New: RSVP guests are saved with their own names and emails. They show under their host and can be checked in, edited or removed one by one or as a party, also from the QR check-in screen.
@@ -294,22 +298,7 @@ The latest releases are listed here. See changelog.txt in the plugin folder for 
 * Fix: Event taxonomies were missing from the Attributes list in the block editor, so a block could not be connected to the taxonomy terms of an event. They are now listed and show the terms of the event.
 * Fix: A taxonomy whose slug contains the word event could print nothing when used as an event attribute.
 
-= 1.4.6.0 – Elementor calendar colours, attendee emails and calendar fixes – 2026-09-29 =
-* New: Colour pickers on the Elementor calendar widget, which now starts on a white background instead of inheriting grey page colours. Elementor global colours are honoured.
-* New: When adding an attendee by hand, tick a box to email them the ticket confirmation with their check-in code.
-* New: A Series dates data row for page builders, and the Elementor editor previews the Event widget with a real event.
-* Improvement: Event Data rows in the Elementor Event widget can carry a label, so templates read like the block templates.
-* Improvement: The Text colour on the Elementor calendar widget now reaches the day headings, day numbers, event titles and search box.
-* Improvement: Calendar page headings use plain markup, and builder buttons inside the calendar keep their own styling.
-* Fix: Calendar search stayed disabled in months without events, and a search in list view said nothing was found while the list showed the matches. Search now works in any month and shows a searching state until the results arrive.
-* Fix: The month dropdown label could take the button text colour from Beaver Builder global styles and turn white on white.
-* Fix: In narrow columns the toolbar could cover the month picker and the Today button. It now wraps onto extra lines.
-* Fix: Switching from the month grid to list view kept the list on a stale month, and the new month is queried on the first render after a toolbar click.
-* Fix: A multi-select field could lock up the page when its selection was passed straight back to it.
-* Fix: The ticket form and map inside the Elementor Event widget were stripped by output filtering and could not render.
-* Fix: A Stripe webhook saved by an earlier version could come back unreadable and log warnings. It is now read safely.
-
 == Upgrade Notice ==
 
-= 1.5.0.0 =
-Adds attendee details per ticket, RSVP guest rows with check-in, Beaver Builder and Divi templates, order corrections, email defaults and a round of accessibility improvements.
+= 1.5.1.0 =
+Fixes event and calendar pages built with Beaver Themer layouts on Beaver Themer 1.6.1.1 and adds two Event Data options for multi-day events.

@@ -265,6 +265,34 @@ class Event {
 					$event[ $field ] = $rendered;
 				}
 			}
+
+			// What the Event Data block's date display switches would show, kept
+			// only where it differs, so the editor can preview them.
+			if ( 'standard' === $event_obj::get_date_type() ) {
+				$switch_fields = array(
+					'all_dates'   => array( 'event_date', 'event_time', 'event_datetime' ),
+					'daily_times' => array( 'event_time', 'event_datetime' ),
+				);
+				$date_display  = array();
+
+				foreach ( $switch_fields as $switch => $fields ) {
+					$previous_display = $event_obj::set_display_options( array( $switch => true ) );
+					try {
+						foreach ( $fields as $field ) {
+							$rendered = (string) $event_obj::render_meta( $field );
+							if ( '' !== $rendered && ( ! isset( $event[ $field ] ) || $rendered !== $event[ $field ] ) ) {
+								$date_display[ $switch ][ $field ] = $rendered;
+							}
+						}
+					} finally {
+						$event_obj::set_display_options( $previous_display );
+					}
+				}
+
+				if ( $date_display ) {
+					$event['date_display'] = $date_display;
+				}
+			}
 		} finally {
 			if ( null !== $day_index ) {
 				if ( $had_day_context ) {

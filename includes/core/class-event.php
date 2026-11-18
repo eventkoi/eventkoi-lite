@@ -118,6 +118,13 @@ class Event {
 	private static $event_id = 0;
 
 	/**
+	 * Display switches for the date field being rendered.
+	 *
+	 * @var array
+	 */
+	private static $display_options = array();
+
+	/**
 	 * Control flags.
 	 *
 	 * @var bool
@@ -1147,6 +1154,64 @@ class Event {
 	}
 
 	/**
+	 * Set the display switches for the next date field render.
+	 *
+	 * Known keys: all_dates (a selected-dates event lists every date, also on a
+	 * loop card) and daily_times (a consecutive-days event shows its dates, then
+	 * its start and end time).
+	 *
+	 * @param array $options Display switches.
+	 * @return array The switches that were set before, to restore afterwards.
+	 */
+	public static function set_display_options( $options ) {
+		$previous              = self::$display_options;
+		self::$display_options = is_array( $options ) ? $options : array();
+
+		return $previous;
+	}
+
+	/**
+	 * Whether a display switch is on.
+	 *
+	 * @param string $key Switch name.
+	 * @return bool
+	 */
+	private static function has_display_option( $key ) {
+		return ! empty( self::$display_options[ $key ] );
+	}
+
+	/**
+	 * Start and end of a timed consecutive-days event that ends on a later day,
+	 * when the daily times switch is on.
+	 *
+	 * @param \DateTimeZone|null $timezone Timezone the days are compared in.
+	 * @return array{0:int,1:int}|null
+	 */
+	private static function get_daily_times_span( $timezone = null ) {
+		if ( ! self::has_display_option( 'daily_times' ) ) {
+			return null;
+		}
+
+		if ( 'standard' !== self::get_date_type() || 'continuous' !== self::get_standard_type() ) {
+			return null;
+		}
+
+		$first    = self::get_first_instance();
+		$start_ts = ! empty( $first['start_date'] ) ? (int) strtotime( $first['start_date'] ) : 0;
+		$end_ts   = ! empty( $first['end_date'] ) ? (int) strtotime( $first['end_date'] ) : 0;
+
+		if ( ! empty( $first['all_day'] ) || $start_ts <= 0 || $end_ts <= $start_ts ) {
+			return null;
+		}
+
+		if ( wp_date( 'Y-m-d', $start_ts, $timezone ) === wp_date( 'Y-m-d', $end_ts, $timezone ) ) {
+			return null;
+		}
+
+		return array( $start_ts, $end_ts );
+	}
+
+	/**
 	 * Get event days scoped to a selected frontend occurrence when requested.
 	 *
 	 * @param bool $ignore_loop_context When true, skip the query-loop per-card
@@ -1155,6 +1220,10 @@ class Event {
 	 * @return array
 	 */
 	protected static function get_event_days_for_rendering( $ignore_loop_context = false ) {
+		if ( self::has_display_option( 'all_dates' ) ) {
+			$ignore_loop_context = true;
+		}
+
 		$selected_day = self::get_selected_event_day_from_request( $ignore_loop_context );
 
 		if ( is_array( $selected_day ) ) {
@@ -5270,6 +5339,19 @@ class Event {
 			}
 		}
 
+		$daily_span = self::get_daily_times_span();
+		if ( $daily_span ) {
+			$start_str = wp_date( $time_format, $daily_span[0] );
+			$end_str   = wp_date( $time_format, $daily_span[1] );
+
+			return apply_filters(
+				'eventkoi_rendered_event_time',
+				$start_str === $end_str ? $start_str : $start_str . ' — ' . $end_str,
+				self::$event_id,
+				self::$event
+			);
+		}
+
 		// Dates sharing a time show it once; different times are each listed.
 		$listed_days = self::get_listed_event_days();
 		$rows        = count( $listed_days ) > 1 ? $listed_days : array( self::get_first_instance() );
@@ -5358,6 +5440,28 @@ class Event {
 					self::$event
 				);
 			}
+		}
+
+		$display_tz = self::get_display_timezone();
+		$daily_span = self::get_daily_times_span( $display_tz );
+		if ( $daily_span ) {
+			$date_format = eventkoi_resolved_date_format();
+			$time_format = eventkoi_resolved_time_format();
+			$start_time  = wp_date( $time_format, $daily_span[0], $display_tz );
+			$end_time    = wp_date( $time_format, $daily_span[1], $display_tz );
+
+			$line = wp_date( $date_format, $daily_span[0], $display_tz )
+				. ' — ' . wp_date( $date_format, $daily_span[1], $display_tz )
+				. ', ' . ( $start_time === $end_time ? $start_time : $start_time . ' — ' . $end_time );
+			$line = self::wrap_datetime_with_data( $line, $daily_span[0], $daily_span[1], $event_tz );
+			$line = str_replace( '<span class="ek-datetime"', '<span class="ek-datetime" data-ek-daily="1"', $line );
+
+			return apply_filters(
+				'eventkoi_rendered_event_datetime',
+				wp_kses_post( $line ),
+				self::$event_id,
+				self::$event
+			);
 		}
 
 		if ( 'recurring' === $type ) {
