@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.5.1.0
+Stable tag: 1.5.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -226,6 +226,10 @@ This service is provided by Google LLC: [Terms of Service](https://cloud.google.
 
 The latest releases are listed here. See changelog.txt in the plugin folder for older versions.
 
+= 1.5.1.1 – Event Data date options on the Date and Time field – 2026-11-19 =
+* Improvement: The Date and Time field of the Event Data block has the Show start and end time switch too, so an event on Consecutive Days shows its dates, then its start and end time.
+* Improvement: Show all dates lists the dates of an event on Selected Days on one line, separated by commas.
+
 = 1.5.1.0 – Event Data options for multi-day events and Beaver Themer layout fix – 2026-11-18 =
 * New: Two Event Data block options for multi-day events. Show all dates lists every date of an event on Selected Days instead of only the next one, also in a query loop. Show start and end time lists the dates of an event on Consecutive Days, then its start and end time. Both are off until you turn them on.
 * Fix: Event and calendar pages that use a Beaver Themer layout picked in the EventKoi template settings lost their columns and styling with Beaver Themer 1.6.1.1. They display correctly again.
@@ -294,11 +298,7 @@ The latest releases are listed here. See changelog.txt in the plugin folder for 
 * Fix: The block editor no longer writes empty event attribute rows to the database on every save, and old empty rows are cleaned up in the background.
 * Fix: Events without a location no longer render an empty map frame.
 
-= 1.4.6.1 – Taxonomy attributes in the block editor – 2026-10-06 =
-* Fix: Event taxonomies were missing from the Attributes list in the block editor, so a block could not be connected to the taxonomy terms of an event. They are now listed and show the terms of the event.
-* Fix: A taxonomy whose slug contains the word event could print nothing when used as an event attribute.
-
 == Upgrade Notice ==
 
-= 1.5.1.0 =
-Fixes event and calendar pages built with Beaver Themer layouts on Beaver Themer 1.6.1.1 and adds two Event Data options for multi-day events.
+= 1.5.1.1 =
+Adds the start and end time switch to the Date and Time field of the Event Data block and lists all dates on one line.
