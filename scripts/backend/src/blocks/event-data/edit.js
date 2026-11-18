@@ -349,7 +349,13 @@ export default function Edit({ attributes, setAttributes, clientId }) {
     wordLimit
   );
   const location = event.location_line || "";
-  const timeline = event.datetime;
+  // The daily times switch shows a consecutive-days event as its dates, then
+  // its start and end time, like the Datetime field.
+  const dailyTimeline =
+    showDailyTimes && typeof event?.date_display?.daily_times?.timeline === "string"
+      ? event.date_display.daily_times.timeline.trim()
+      : "";
+  const timeline = dailyTimeline || event.datetime;
   const image = event.thumbnail ? (
     <img
       src={event.thumbnail}

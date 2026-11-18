@@ -289,6 +289,22 @@ class Event {
 					}
 				}
 
+				// The Date and Time field previews as plain text, and leaves a row
+				// it shows as all-day as it is, like the frontend does.
+				$previous_display = $event_obj::set_display_options( array( 'daily_times' => true ) );
+				try {
+					$daily_line = (string) $event_obj::render_daily_datetime();
+				} finally {
+					$event_obj::set_display_options( $previous_display );
+				}
+				$row_all_day = wp_validate_boolean( $event['allDay'] ?? false )
+					|| wp_validate_boolean( $event['all_day'] ?? false )
+					|| wp_validate_boolean( $event['event_days'][0]['all_day'] ?? false )
+					|| wp_validate_boolean( $event['recurrence_rules'][0]['all_day'] ?? false );
+				if ( '' !== $daily_line && ! $row_all_day ) {
+					$date_display['daily_times']['timeline'] = html_entity_decode( wp_strip_all_tags( $daily_line ), ENT_QUOTES, 'UTF-8' );
+				}
+
 				if ( $date_display ) {
 					$event['date_display'] = $date_display;
 				}

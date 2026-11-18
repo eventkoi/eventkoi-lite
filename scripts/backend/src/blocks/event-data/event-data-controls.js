@@ -42,7 +42,7 @@ const FORMATTABLE_DATE_FIELDS = new Set([
 const ALL_DATES_FIELDS = new Set(["event_date", "event_time", "event_datetime"]);
 
 // Fields that can show a Consecutive Days event as dates, then daily times.
-const DAILY_TIMES_FIELDS = new Set(["event_time", "event_datetime"]);
+const DAILY_TIMES_FIELDS = new Set(["event_time", "event_datetime", "timeline"]);
 
 // Fields whose output a custom PHP "time format" string applies to.
 const FORMATTABLE_TIME_FIELDS = new Set([
