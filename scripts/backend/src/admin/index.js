@@ -43,6 +43,8 @@ import { OrderRefundView } from "@/admin/tickets/orders/refund";
 
 import { Settings } from "@/admin/settings";
 import { SettingsFields } from "@/admin/settings/fields";
+import { SettingsAttendeeFields } from "@/admin/settings/fields/attendees";
+import { SettingsFieldGroups } from "@/admin/settings/fields/groups";
 import { SettingsIntegrations } from "@/admin/settings/integrations";
 import { SettingsOverview } from "@/admin/settings/overview";
 import { SettingsEmails } from "@/admin/settings/emails";
@@ -50,6 +52,7 @@ import { SettingsPayments } from "@/admin/settings/payments";
 import { SettingsImport } from "@/admin/settings/import";
 import { SettingsPermissions } from "@/admin/settings/permissions";
 import { SettingsSubmissions } from "@/admin/settings/submissions";
+import { SettingsTaxonomies } from "@/admin/settings/taxonomies";
 
 import { Nav } from "@/components/nav";
 import { FeatureDisabled } from "@/components/empty-state/FeatureDisabled";
@@ -95,6 +98,7 @@ function getRouteTitle(pathname) {
       return __("Ticket sales", "eventkoi-lite");
     case "settings":
       if (seg[1] === "fields") return __("Custom fields", "eventkoi-lite");
+      if (seg[1] === "taxonomies") return __("Taxonomies", "eventkoi-lite");
       return __("Settings", "eventkoi-lite");
     default:
       return __("Events", "eventkoi-lite");
@@ -252,6 +256,9 @@ function AdminLayout() {
           )}
           <Route path="emails" element={<SettingsEmails />} />
           <Route path="fields" element={<SettingsFields />} />
+          <Route path="fields/groups" element={<SettingsFieldGroups />} />
+          <Route path="fields/attendees" element={<SettingsAttendeeFields />} />
+          <Route path="taxonomies" element={<SettingsTaxonomies />} />
           <Route path="submissions" element={<SettingsSubmissions />} />
           <Route path="integrations" element={<SettingsIntegrations />} />
           <Route path="import" element={<SettingsImport />} />

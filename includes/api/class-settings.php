@@ -213,6 +213,12 @@ class Settings {
 				continue;
 			}
 
+			// User permissions are a Pro feature. Lite keeps applying the ones
+			// already saved but never changes them.
+			if ( \EventKoi\Core\Permissions::SETTINGS_KEY === $key ) {
+				continue;
+			}
+
 			if ( 'permalinks' === $key ) {
 				$settings['permalinks'] = self::save_permalink_settings( $value );
 				continue;
@@ -232,8 +238,6 @@ class Settings {
 				$sanitized = $currency;
 			} elseif ( in_array( $key, $html_keys, true ) ) {
 				$sanitized = wp_kses( $value, \EventKoi\Core\Settings::get_email_template_allowed_tags() );
-			} elseif ( \EventKoi\Core\Permissions::SETTINGS_KEY === $key ) {
-				$sanitized = self::sanitize_user_permissions( $value );
 			} elseif ( in_array( $key, array( 'default_event_template', 'default_series_template', 'default_calendar_template' ), true ) ) {
 				// Template slugs: a post_name, "default", or empty for unset.
 				$sanitized = sanitize_key( (string) $value );
@@ -268,41 +272,6 @@ class Settings {
 				'settings' => $settings,
 			)
 		);
-	}
-
-	/**
-	 * Sanitize the user_permissions payload: a role-keyed map of capability
-	 * booleans. Strip anything outside the canonical cap catalog and never
-	 * persist administrator overrides.
-	 *
-	 * @param mixed $value Raw payload value.
-	 * @return array<string, array<string, bool>>
-	 */
-	private static function sanitize_user_permissions( $value ): array {
-		if ( ! is_array( $value ) ) {
-			return array();
-		}
-		$known = array_flip( \EventKoi\Core\Permissions::cap_keys() );
-		$out   = array();
-		foreach ( $value as $role => $caps ) {
-			$role = sanitize_key( (string) $role );
-			if ( '' === $role || 'administrator' === $role ) {
-				continue;
-			}
-			if ( ! is_array( $caps ) ) {
-				continue;
-			}
-			$role_caps = array();
-			foreach ( $caps as $cap => $granted ) {
-				$cap = sanitize_key( (string) $cap );
-				if ( ! isset( $known[ $cap ] ) ) {
-					continue;
-				}
-				$role_caps[ $cap ] = (bool) filter_var( $granted, FILTER_VALIDATE_BOOLEAN );
-			}
-			$out[ $role ] = $role_caps;
-		}
-		return $out;
 	}
 
 	/**
