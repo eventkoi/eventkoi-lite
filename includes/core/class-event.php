@@ -597,6 +597,9 @@ class Event {
 
 		do_action( 'eventkoi_before_update_event_meta', $meta, self::$event_id, self::$event );
 
+		$previous_image_id = (int) get_post_meta( self::$event_id, 'image_id', true );
+		$previous_image    = (string) get_post_meta( self::$event_id, 'image', true );
+
 		// Default ON for new events to match the editor's default toggle.
 		$timezone_display = array_key_exists( 'timezone_display', $meta ) ? self::normalize_boolean_meta( $meta['timezone_display'] ) : true;
 		$tbc              = array_key_exists( 'tbc', $meta ) ? self::normalize_boolean_meta( $meta['tbc'] ) : false;
@@ -775,6 +778,16 @@ class Event {
 
 		if ( $image_id ) {
 			set_post_thumbnail( self::$event_id, $image_id );
+		} elseif ( '' === $image && ( array_key_exists( 'image', $meta ) || array_key_exists( 'image_id', $meta ) ) ) {
+			// The event image was removed. Take off the featured image it set
+			// too, so templates that show the featured image stop showing it.
+			// An event with no image of its own shows its featured image in the
+			// editor, so removing that one takes the featured image off as well.
+			// A featured image that differs from the event image stays.
+			$thumbnail_id = (int) get_post_thumbnail_id( self::$event_id );
+			if ( $thumbnail_id && ( '' === $previous_image || $thumbnail_id === $previous_image_id || $thumbnail_id === (int) attachment_url_to_postid( $previous_image ) ) ) {
+				delete_post_thumbnail( self::$event_id );
+			}
 		}
 
 		if ( $start_date ) {
