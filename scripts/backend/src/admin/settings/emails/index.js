@@ -362,6 +362,8 @@ export function SettingsEmails() {
   const [recipients, setRecipients] = useState("");
   const [cc, setCc] = useState("");
   const [bcc, setBcc] = useState("");
+  const [showCopies, setShowCopies] = useState(false);
+  const ccInputRef = useRef(null);
   const [pendingSave, setPendingSave] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [copiedTag, setCopiedTag] = useState(null);
@@ -456,8 +458,11 @@ export function SettingsEmails() {
     setRecipients(
       typeof storedRecipients === "string" ? storedRecipients : defaultRecipient,
     );
-    setCc(String(settings?.[keys.cc] || ""));
-    setBcc(String(settings?.[keys.bcc] || ""));
+    const storedCc = String(settings?.[keys.cc] || "");
+    const storedBcc = String(settings?.[keys.bcc] || "");
+    setCc(storedCc);
+    setBcc(storedBcc);
+    setShowCopies(Boolean(storedCc || storedBcc));
   }, [
     activeConfig.prefix,
     settings,
@@ -466,6 +471,11 @@ export function SettingsEmails() {
     globalSenderName,
     globalSenderEmail,
   ]);
+
+  const revealCopies = () => {
+    setShowCopies(true);
+    window.requestAnimationFrame(() => ccInputRef.current?.focus());
+  };
 
   const handleGlobalSenderToggle = (checked) => {
     const next = checked === true;
@@ -643,7 +653,7 @@ export function SettingsEmails() {
         <div className="grid w-full">
           <Panel variant="header" className="flex flex-col gap-4">
             <Heading level={3}>{__("Emails", "eventkoi-lite")}</Heading>
-            <div className="flex items-end gap-8 py-4">
+            <div className="flex flex-col gap-4 py-4 sm:flex-row sm:items-end sm:gap-8">
               <div className="grid w-full max-w-[260px] gap-2">
                 <Label htmlFor="eventkoi-email-template">
                   {__("Select email template", "eventkoi-lite")}
@@ -678,13 +688,25 @@ export function SettingsEmails() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <div>
-                  <span className="font-medium">{__("Recipient:", "eventkoi-lite")}</span>{" "}
-                  {activeConfig.recipient}
+              <div className="grid gap-2">
+                <div className="flex flex-wrap items-center gap-3">
+                  <Switch
+                    id={templateToggleId}
+                    checked={emailEnabled}
+                    onCheckedChange={(value) => {
+                      setEmailEnabled(value);
+                      requestSave({ [keys.enabled]: value ? "1" : "0" });
+                    }}
+                  />
+                  <Label
+                    htmlFor={templateToggleId}
+                    className={`font-normal ${!emailEnabled ? "text-muted-foreground" : ""}`}
+                  >
+                    {activeConfig.enabledLabel}
+                  </Label>
                 </div>
                 <div>
-                  <span className="font-medium">{__("Description:", "eventkoi-lite")}</span>{" "}
+                  <span className="font-medium">{__("Trigger:", "eventkoi-lite")}</span>{" "}
                   {activeConfig.description}
                 </div>
               </div>
@@ -694,23 +716,7 @@ export function SettingsEmails() {
           <Separator />
 
           <Panel>
-            <div className="flex w-full flex-col gap-4 pb-6 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-wrap items-center gap-3">
-                <Switch
-                  id={templateToggleId}
-                  checked={emailEnabled}
-                  onCheckedChange={(value) => {
-                    setEmailEnabled(value);
-                    requestSave({ [keys.enabled]: value ? "1" : "0" });
-                  }}
-                />
-                <Label
-                  htmlFor={templateToggleId}
-                  className={`font-normal ${!emailEnabled ? "text-muted-foreground" : ""}`}
-                >
-                  {activeConfig.enabledLabel}
-                </Label>
-              </div>
+            <div className="flex w-full justify-end pb-6">
               <div className="flex flex-wrap items-center gap-3">
                 <Button
                   type="button"
@@ -786,7 +792,7 @@ export function SettingsEmails() {
                   </div>
                 </div>
 
-                <div className="grid w-full max-w-[520px] gap-6 mb-6">
+                <div className="grid w-full gap-6 mb-6">
                   <div className="grid gap-2">
                     <Label
                       htmlFor={templateRecipientsId}
@@ -794,14 +800,28 @@ export function SettingsEmails() {
                     >
                       {__("Recipients", "eventkoi-lite")}
                     </Label>
-                    <Input
-                      id={templateRecipientsId}
-                      value={recipients}
-                      onChange={(event) => setRecipients(event.target.value)}
-                      placeholder={defaultRecipient}
-                      disabled={!emailEnabled || isSaving}
-                    />
-                    <p className="m-0 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-4">
+                      <Input
+                        id={templateRecipientsId}
+                        value={recipients}
+                        onChange={(event) => setRecipients(event.target.value)}
+                        placeholder={defaultRecipient}
+                        disabled={!emailEnabled || isSaving}
+                        className="max-w-[520px]"
+                      />
+                      {!showCopies && (
+                        <Button
+                          type="button"
+                          variant="link"
+                          onClick={revealCopies}
+                          disabled={!emailEnabled || isSaving}
+                          className="h-auto shrink-0 px-0 font-normal"
+                        >
+                          {__("Cc/Bcc", "eventkoi-lite")}
+                        </Button>
+                      )}
+                    </div>
+                    <p className="m-0 max-w-[520px] text-sm text-muted-foreground">
                       {sprintf(
                         /* translators: 1: address token such as [attendee_email], 2: who it stands for. */
                         __(
@@ -813,36 +833,39 @@ export function SettingsEmails() {
                       )}
                     </p>
                   </div>
-                  <div className="flex flex-col gap-8 sm:flex-row sm:items-start">
-                    <div className="grid flex-1 gap-2">
-                      <Label
-                        htmlFor={templateCcId}
-                        className={!emailEnabled ? "text-muted-foreground" : ""}
-                      >
-                        {__("Cc", "eventkoi-lite")}
-                      </Label>
-                      <Input
-                        id={templateCcId}
-                        value={cc}
-                        onChange={(event) => setCc(event.target.value)}
-                        disabled={!emailEnabled || isSaving}
-                      />
+                  {showCopies && (
+                    <div className="flex max-w-[520px] flex-col gap-8 sm:flex-row sm:items-start">
+                      <div className="grid flex-1 gap-2">
+                        <Label
+                          htmlFor={templateCcId}
+                          className={!emailEnabled ? "text-muted-foreground" : ""}
+                        >
+                          {__("Cc", "eventkoi-lite")}
+                        </Label>
+                        <Input
+                          ref={ccInputRef}
+                          id={templateCcId}
+                          value={cc}
+                          onChange={(event) => setCc(event.target.value)}
+                          disabled={!emailEnabled || isSaving}
+                        />
+                      </div>
+                      <div className="grid flex-1 gap-2">
+                        <Label
+                          htmlFor={templateBccId}
+                          className={!emailEnabled ? "text-muted-foreground" : ""}
+                        >
+                          {__("Bcc", "eventkoi-lite")}
+                        </Label>
+                        <Input
+                          id={templateBccId}
+                          value={bcc}
+                          onChange={(event) => setBcc(event.target.value)}
+                          disabled={!emailEnabled || isSaving}
+                        />
+                      </div>
                     </div>
-                    <div className="grid flex-1 gap-2">
-                      <Label
-                        htmlFor={templateBccId}
-                        className={!emailEnabled ? "text-muted-foreground" : ""}
-                      >
-                        {__("Bcc", "eventkoi-lite")}
-                      </Label>
-                      <Input
-                        id={templateBccId}
-                        value={bcc}
-                        onChange={(event) => setBcc(event.target.value)}
-                        disabled={!emailEnabled || isSaving}
-                      />
-                    </div>
-                  </div>
+                  )}
                 </div>
 
                 <ProLaunch
