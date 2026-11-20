@@ -15,12 +15,12 @@ export function DashboardOverview() {
       <div className="grid">
         <UpcomingEvents />
       </div>
-      <div className="grid">
-        <ProLaunch source="dashboard" />
-      </div>
       <div className="grid gap-8 md:grid-cols-2">
         <GettingStarted />
         <QuickLinks />
+      </div>
+      <div className="grid">
+        <ProLaunch source="dashboard" />
       </div>
     </div>
   );
