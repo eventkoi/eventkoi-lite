@@ -6207,6 +6207,33 @@ class Event {
 	}
 
 	/**
+	 * Rendered event start date in the resolved date format ("Monday, May 4").
+	 *
+	 * The shortcode's format attribute sets the format through
+	 * eventkoi_resolved_date_format; without it the EventKoi date format
+	 * setting applies, then the site's. Uses the event's display timezone,
+	 * and an all-day event's own timezone, so the day matches rendered_date().
+	 *
+	 * @return string
+	 */
+	public static function rendered_start_date() {
+		$ts = self::get_effective_start_timestamp();
+		if ( ! $ts ) {
+			return apply_filters( 'eventkoi_rendered_event_start_date', '', self::$event_id, self::$event );
+		}
+
+		$timezone    = self::get_display_timezone();
+		$is_instance = eventkoi_get_instance_id() && 'recurring' === self::get_date_type();
+		$first       = $is_instance ? array() : self::get_first_instance();
+		if ( ! empty( $first['all_day'] ) ) {
+			$timezone = self::get_all_day_datetime_timezone( self::get_timezone(), $first );
+		}
+
+		$out = esc_html( wp_date( eventkoi_resolved_date_format(), $ts, $timezone ) );
+		return apply_filters( 'eventkoi_rendered_event_start_date', $out, self::$event_id, self::$event );
+	}
+
+	/**
 	 * RSVP counts/capacity snapshot. Lite has no recurring events, so this is
 	 * always the event-level aggregate.
 	 *

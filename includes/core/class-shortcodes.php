@@ -350,6 +350,37 @@ class Shortcodes {
 
 
 	/**
+	 * Render a shortcode key, applying the shortcode's own date format to
+	 * the start date key.
+	 *
+	 * The format only lasts for this one render, the same way the Event Data
+	 * block applies its per-block date format.
+	 *
+	 * @param string $key    Normalized data key.
+	 * @param string $format PHP date format from the shortcode, or empty.
+	 * @return string
+	 */
+	private static function render_data_key( $key, $format ) {
+		$format = trim( (string) $format );
+
+		if ( '' === $format || ! in_array( $key, array( 'start_date', 'event_start_date' ), true ) ) {
+			return \EventKoi\Core\Event::render_meta( $key );
+		}
+
+		$use_format = static function () use ( $format ) {
+			return $format;
+		};
+
+		add_filter( 'eventkoi_resolved_date_format', $use_format );
+
+		try {
+			return \EventKoi\Core\Event::render_meta( $key );
+		} finally {
+			remove_filter( 'eventkoi_resolved_date_format', $use_format );
+		}
+	}
+
+	/**
 	 * Render event meta via shortcode.
 	 *
 	 * @param array  $user_attributes Shortcode attributes.
@@ -360,9 +391,10 @@ class Shortcodes {
 	public static function render_event_data( $user_attributes, $content, $shortcode_name ) {
 		$attributes = shortcode_atts(
 			array(
-				'id'       => 0,
-				'data'     => '',
+				'id'        => 0,
+				'data'      => '',
 				'with_name' => false,
+				'format'    => '',
 			),
 			$user_attributes,
 			$shortcode_name
@@ -409,7 +441,7 @@ class Shortcodes {
 					$auto_unwrap = true;
 				}
 
-				$value      = \EventKoi\Core\Event::render_meta( $normalized_key );
+				$value      = self::render_data_key( $normalized_key, $attributes['format'] );
 				$bare_value = null;
 				if ( '' === $value ) {
 					continue;
