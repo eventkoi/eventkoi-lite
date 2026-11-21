@@ -305,7 +305,7 @@ export function EventsOverview() {
                 {/* Title + frontend link icon */}
                 <a
                   href={`#/events/${parseInt(id, 10)}/main`}
-                  className="inline font-medium hover:underline hover:decoration-dotted underline-offset-4 truncate"
+                  className="inline min-w-[4.5rem] font-medium hover:underline hover:decoration-dotted underline-offset-4 truncate"
                   title={row.getValue("title")}
                   data-ek-tour="event-title"
                   data-ek-event-id={parseInt(id, 10)}

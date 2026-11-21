@@ -4,6 +4,7 @@ import {
   FinalModal,
   HelpBox,
   Popover,
+  ResumeButton,
   WelcomePopover,
 } from "@/tour/components";
 import {
@@ -129,10 +130,16 @@ function place(anchor, placement, width, height) {
   };
 }
 
-function isOffScreen(el) {
+function needsScroll(el) {
   const rect = el.getBoundingClientRect();
   const vp = viewport();
-  return rect.bottom < vp.top + 40 || rect.top > vp.height - 40;
+
+  if (rect.bottom < vp.top + 40 || rect.top > vp.height - 40) {
+    return true;
+  }
+
+  // Small screens put the popover under its anchor: keep room for it.
+  return vp.width < MOBILE && rect.bottom > vp.height * 0.5;
 }
 
 function samePosition(a, b) {
@@ -161,11 +168,15 @@ function usePlacement(selector, placement, highlight, popRef) {
     const tick = () => {
       const anchor = findAnchor(selector);
 
-      // Bring the anchor into view once when the step opens.
+      // Bring the anchor into view once when the step opens, and again
+      // after the window is resized.
       if (anchor && !scrolled) {
         scrolled = true;
-        if (isOffScreen(anchor)) {
-          anchor.scrollIntoView({ block: "center", behavior: "smooth" });
+        if (needsScroll(anchor)) {
+          anchor.scrollIntoView({
+            block: viewport().width < MOBILE ? "start" : "center",
+            behavior: "smooth",
+          });
         }
       }
       const pop = popRef.current;
@@ -187,10 +198,16 @@ function usePlacement(selector, placement, highlight, popRef) {
       frame = window.requestAnimationFrame(tick);
     };
 
+    const onResize = () => {
+      scrolled = false;
+    };
+
     frame = window.requestAnimationFrame(tick);
+    window.addEventListener("resize", onResize);
 
     return () => {
       window.cancelAnimationFrame(frame);
+      window.removeEventListener("resize", onResize);
       outlined?.classList.remove("ek-tour-target");
     };
   }, [selector, placement, highlight, popRef]);
@@ -294,28 +311,17 @@ export function Tour() {
   const ctx = tourContext();
   const [tour, setTour] = useState(getTourState());
   const loc = useLocationWatch(ctx.screen);
-  const beginHandled = useRef(false);
 
   useEffect(() => subscribeTour(setTour), []);
 
   const demoId = tour.demoEventId;
   const step = tour.step;
 
-  // Links back into the tour: the Dashboard's Begin plugin tour, and the
-  // Continue Tour buttons on the event and calendar pages.
+  // The Continue Tour buttons on the event and calendar pages. They only
+  // move an admin who is already on that step one step on.
   useEffect(() => {
     const param = loc.params.get("eventkoi_tour");
     if (!param) return;
-
-    if (param === "begin") {
-      if (beginHandled.current) return;
-      beginHandled.current = true;
-      removeTourParam();
-      beginTour({ restart: true }).catch(() => {
-        beginHandled.current = false;
-      });
-      return;
-    }
 
     if (tour.active && param === "8" && step === 7) goToStep(8);
     if (tour.active && param === "12" && step === 11) goToStep(12);
@@ -391,6 +397,26 @@ export function Tour() {
   if (!tour.active) return null;
 
   const def = STEPS[step];
+
+  // Mid-tour on another EventKoi page: offer to go back to the step.
+  if (loc.app && step >= 2 && (!def || !def.on(loc, demoId))) {
+    const resume = () => {
+      // The event and calendar pages are left with Continue Tour, which
+      // moves the tour on, so resume at the step after them.
+      const target = step === 7 ? 8 : step === 11 ? 12 : step;
+      const route = stepRoute(target, demoId);
+      if (target !== step) goToStep(target);
+      if (route) window.location.hash = `#${route}`;
+    };
+
+    return (
+      <>
+        <ResumeButton onClick={resume} raised={!tour.helpHidden} />
+        {!tour.helpHidden && <HelpBox />}
+      </>
+    );
+  }
+
   if (!def || !def.on(loc, demoId)) return null;
 
   if (def.variant === "final") {

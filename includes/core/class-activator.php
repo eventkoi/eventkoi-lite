@@ -38,6 +38,9 @@ class Activator {
 	 * @return void
 	 */
 	public static function activate() {
+		// No instance ID yet means EventKoi was never activated on this site.
+		$first_activation = ! get_option( 'eventkoi_site_instance_id' );
+
 		// Generate and store a persistent site instance ID.
 		if ( ! get_option( 'eventkoi_site_instance_id' ) ) {
 			update_option( 'eventkoi_site_instance_id', wp_generate_uuid4() );
@@ -48,9 +51,9 @@ class Activator {
 			update_option( 'eventkoi_api_key', 'eventkoi_' . strtolower( preg_replace( '/[^a-z0-9]/i', '', wp_generate_password( 20, false, false ) ) ) );
 		}
 
-		// Offer the plugin tour after activation, unless it was finished or
-		// closed before. A re-activation starts it again from the welcome.
-		if ( ! get_option( \EventKoi\API\Onboarding::COMPLETED_OPTION ) ) {
+		// Offer the plugin tour to new users only: the first activation on a
+		// site. Updates never run this, and re-activations skip it.
+		if ( $first_activation && ! get_option( \EventKoi\API\Onboarding::COMPLETED_OPTION ) ) {
 			update_option( \EventKoi\API\Onboarding::PROMPT_OPTION, 'yes' );
 			update_option( \EventKoi\API\Onboarding::STARTED_OPTION, time(), false );
 

@@ -1,5 +1,5 @@
 import { __, sprintf } from "@wordpress/i18n";
-import { BookOpen, Inbox, Loader2, X } from "lucide-react";
+import { ArrowLeft, BookOpen, Inbox, Loader2, X } from "lucide-react";
 import { forwardRef, useEffect, useRef, useState } from "react";
 
 import { LogoIcon } from "@/components/logo-icon";
@@ -170,6 +170,23 @@ export const WelcomePopover = forwardRef(function WelcomePopover(
     </div>
   );
 });
+
+/**
+ * Continue Tour, shown on EventKoi pages other than the one the current step
+ * is on, so an admin who left mid-tour can pick it up again.
+ */
+export function ResumeButton({ onClick, raised }) {
+  return (
+    <button
+      type="button"
+      className={`ek-tour-resume${raised ? " ek-tour-resume--raised" : ""}`}
+      onClick={onClick}
+    >
+      <ArrowLeft aria-hidden="true" />
+      {__("Continue Tour", "eventkoi-lite")}
+    </button>
+  );
+}
 
 /**
  * The Need more help box in the bottom right corner.

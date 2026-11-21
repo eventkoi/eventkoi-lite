@@ -353,6 +353,51 @@
   stroke-width: 1.5;
 }
 
+/* Continue Tour, for an admin who left mid-tour */
+
+#eventkoi-tour-root .ek-tour-resume {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 240px;
+  height: 44px;
+  margin: 0;
+  padding: 0 16px;
+  background: var(--ek-tour-ink);
+  border: 0;
+  border-radius: 4px;
+  box-shadow: var(--ek-tour-shadow);
+  color: #ffffff;
+  font-family: var(--ek-tour-font);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  animation: ek-tour-in 0.16s ease-out;
+}
+
+#eventkoi-tour-root .ek-tour-resume--raised {
+  bottom: 222px;
+}
+
+#eventkoi-tour-root .ek-tour-resume:hover {
+  background: #000000;
+}
+
+#eventkoi-tour-root .ek-tour-resume:focus-visible {
+  outline: 2px solid var(--ek-tour-ink);
+  outline-offset: 2px;
+}
+
+#eventkoi-tour-root .ek-tour-resume svg {
+  width: 16px;
+  height: 16px;
+}
+
 /* Outline on the element a step asks to click */
 
 .ek-tour-target {
@@ -540,6 +585,15 @@
   #eventkoi-tour-root .ek-tour-help {
     right: 12px;
     bottom: 12px;
+  }
+
+  #eventkoi-tour-root .ek-tour-resume {
+    right: 12px;
+    bottom: 12px;
+  }
+
+  #eventkoi-tour-root .ek-tour-resume--raised {
+    bottom: 210px;
   }
 
   #eventkoi-tour-root .ek-tour-modal {

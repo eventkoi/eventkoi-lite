@@ -106,7 +106,7 @@ export const STEPS = {
       demoTitle()
     ),
     body: [
-      __("Clicking the event to edit it.", "eventkoi-lite"),
+      __("Click the event to edit it.", "eventkoi-lite"),
       __("The tour will continue on the next page.", "eventkoi-lite"),
     ],
     counter: [2, 2],
@@ -120,7 +120,7 @@ export const STEPS = {
       "Get familiar with the event settings by playing around and making changes.",
       "eventkoi-lite"
     ),
-    counter: [1, 2],
+    counter: [1, 3],
     next: 5,
   },
   5: {
@@ -171,10 +171,7 @@ export const STEPS = {
     click: true,
     highlight: true,
     title: __("Click link icon", "eventkoi-lite"),
-    body: [
-      __("Click the icon to view the frontend calendar.", "eventkoi-lite"),
-      __("This is your last step in the tour.", "eventkoi-lite"),
-    ],
+    body: __("Click the icon to view the frontend calendar.", "eventkoi-lite"),
     counter: [2, 2],
     back: 9,
   },

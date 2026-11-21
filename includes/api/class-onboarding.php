@@ -24,14 +24,21 @@ defined( 'ABSPATH' ) || exit;
 class Onboarding {
 
 	/**
-	 * Site option set on activation: the tour should be offered.
+	 * Site option set on the first activation on a site: offer the tour.
 	 */
-	const PROMPT_OPTION = 'eventkoi_show_quick_start_prompt';
+	const PROMPT_OPTION = 'eventkoi_tour_prompt';
 
 	/**
 	 * Site option set once the tour is finished or closed.
 	 */
-	const COMPLETED_OPTION = 'eventkoi_quick_start_completed';
+	const COMPLETED_OPTION = 'eventkoi_tour_completed';
+
+	/**
+	 * The old quick start's options. Marked done with the tour, so switching
+	 * to Pro later does not start Pro's onboarding again.
+	 */
+	const LEGACY_COMPLETED_OPTION = 'eventkoi_quick_start_completed';
+	const LEGACY_PROMPT_OPTION    = 'eventkoi_show_quick_start_prompt';
 
 	/**
 	 * Site option: when the tour was offered, as a timestamp.
@@ -124,9 +131,10 @@ class Onboarding {
 	/**
 	 * Where an admin is in the tour.
 	 *
-	 * The tour is offered after activation until someone finishes or closes
-	 * it. It stops showing when it sat untouched for a week: the welcome a
-	 * week after it was offered, a started tour a week after its last step.
+	 * The tour is offered after the first activation on a site, never on an
+	 * update, until someone finishes or closes it. It stops showing when it
+	 * sat untouched for a week: the welcome a week after it was offered, a
+	 * started tour a week after its last step.
 	 *
 	 * @param int $user_id User ID, the current user when 0.
 	 * @return array{active:bool,step:int}
@@ -146,7 +154,6 @@ class Onboarding {
 
 		$started = (int) get_option( self::STARTED_OPTION, 0 );
 
-		// Sites that were offered the old quick start have no start time yet.
 		if ( ! $started ) {
 			$started = time();
 			update_option( self::STARTED_OPTION, $started, false );
@@ -198,6 +205,8 @@ class Onboarding {
 	public static function complete() {
 		update_option( self::COMPLETED_OPTION, 'yes' );
 		delete_option( self::PROMPT_OPTION );
+		update_option( self::LEGACY_COMPLETED_OPTION, 'yes' );
+		delete_option( self::LEGACY_PROMPT_OPTION );
 
 		$user_id = get_current_user_id();
 		delete_user_meta( $user_id, self::STEP_META );

@@ -1,6 +1,7 @@
 import { BigLink } from "@/components/big-link";
 import { Box } from "@/components/box";
 import { Heading } from "@/components/heading";
+import { beginTour } from "@/tour/store";
 import { __ } from "@wordpress/i18n";
 
 function BinocularsIcon({ className }) {
@@ -33,7 +34,12 @@ export function GettingStarted() {
       <Heading level={3}>{__("Getting started", "eventkoi-lite")}</Heading>
       <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 w-full">
         <BigLink
-          href="#/events?eventkoi_tour=begin"
+          href="#/events"
+          onClick={(event) => {
+            // Starts only from this click, never from a link someone sends.
+            event.preventDefault();
+            beginTour({ restart: true }).catch(() => {});
+          }}
           className="flex-1 flex-col items-center text-center w-full h-auto justify-center py-8"
           target="_self"
         >
