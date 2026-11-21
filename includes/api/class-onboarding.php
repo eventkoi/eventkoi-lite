@@ -76,10 +76,11 @@ class Onboarding {
 	const SUPPORT_URL = 'https://wordpress.org/support/plugin/eventkoi-lite/';
 
 	/**
-	 * MailerLite form subscribe URL for the last step. Empty until the form
-	 * exists; the email field then reports that signup is not available.
+	 * Signup endpoint on eventkoi.com for the email field on the last step.
+	 * It adds the address to the EventKoi mailing list on MailerLite, so the
+	 * MailerLite key stays on eventkoi.com and never ships in the plugin.
 	 */
-	const NEWSLETTER_URL = '';
+	const NEWSLETTER_URL = 'https://eventkoi.com/wp-json/eventkoi-site/v1/newsletter';
 
 	/**
 	 * Register REST routes.
@@ -309,22 +310,30 @@ class Onboarding {
 			return new WP_Error( 'eventkoi_newsletter_unavailable', __( 'Email signup is not available right now.', 'eventkoi-lite' ), array( 'status' => 503 ) );
 		}
 
+		// Only the address is sent. The user agent leaves out the site address
+		// WordPress adds by default.
 		$response = wp_remote_post(
 			$url,
 			array(
-				'timeout' => 10,
-				'body'    => array(
-					'fields[email]' => $email,
-					'ml-submit'     => '1',
-					'anticsrf'      => 'true',
+				'timeout'    => 15,
+				'user-agent' => 'EventKoi Lite/' . EVENTKOI_VERSION,
+				'body'       => array(
+					'email' => $email,
 				),
 			)
 		);
 
 		$code = is_wp_error( $response ) ? 0 : (int) wp_remote_retrieve_response_code( $response );
-		$body = is_wp_error( $response ) ? null : json_decode( wp_remote_retrieve_body( $response ), true );
 
-		if ( $code < 200 || $code >= 300 || ( is_array( $body ) && isset( $body['success'] ) && ! $body['success'] ) ) {
+		if ( 400 === $code ) {
+			return new WP_Error( 'eventkoi_invalid_email', __( 'Please enter a valid email address.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
+		if ( 429 === $code ) {
+			return new WP_Error( 'eventkoi_newsletter_busy', __( 'Too many signups right now. Please try again later.', 'eventkoi-lite' ), array( 'status' => 429 ) );
+		}
+
+		if ( $code < 200 || $code >= 300 ) {
 			return new WP_Error( 'eventkoi_newsletter_failed', __( 'Something went wrong. Please try again.', 'eventkoi-lite' ), array( 'status' => 502 ) );
 		}
 
@@ -342,7 +351,7 @@ class Onboarding {
 	 */
 	public static function newsletter_url() {
 		/**
-		 * Filter the MailerLite form subscribe URL used by the tour's last step.
+		 * Filter the signup URL used by the email field on the tour's last step.
 		 *
 		 * @param string $url Subscribe URL, empty to turn the signup off.
 		 */

@@ -496,6 +496,7 @@
 }
 
 #eventkoi-tour-root .ek-tour-modal-main p {
+  max-width: 300px;
   margin: 0 0 12px;
   padding: 0;
   color: var(--ek-tour-ink);
@@ -523,7 +524,7 @@
 }
 
 #eventkoi-tour-root .ek-tour-form input[type="email"] {
-  width: 280px;
+  width: 300px;
   max-width: 100%;
   height: 46px;
   min-height: 46px;
