@@ -5271,7 +5271,7 @@ class Event {
 			$instance_context = self::resolve_recurring_instance_context( $instance_ts );
 			if ( $instance_context ) {
 				$end_ts = $instance_context['end_ts'];
-				$args   = array();
+				$args   = array( 'timezone' => self::get_display_timezone() );
 				if ( ! empty( $instance_context['all_day'] ) ) {
 					$args['timezone'] = self::get_all_day_datetime_timezone(
 						self::get_timezone(),
@@ -5302,7 +5302,7 @@ class Event {
 				$end_ts   = ! empty( $day['end_date'] ) ? strtotime( $day['end_date'] ) : null;
 				$args     = ! empty( $day['all_day'] )
 					? array( 'timezone' => self::get_all_day_datetime_timezone( self::get_timezone(), $day ) )
-					: array();
+					: array( 'timezone' => self::get_display_timezone() );
 
 				$lines[] = eventkoi_format_datetime_range( $start_ts, $end_ts && $end_ts >= $start_ts ? $end_ts : null, true, $args );
 			}
@@ -5331,7 +5331,7 @@ class Event {
 		}
 
 		// Force all-day format: date(s) only, no times.
-		$args = array();
+		$args = array( 'timezone' => self::get_display_timezone() );
 		if ( 'recurring' !== $type && ! empty( $first['all_day'] ) ) {
 			$args['timezone'] = self::get_all_day_datetime_timezone( self::get_timezone(), $first );
 		}
@@ -5357,6 +5357,7 @@ class Event {
 		$instance_ts = eventkoi_get_instance_id();
 		$type        = self::get_date_type();
 		$time_format = eventkoi_resolved_time_format();
+		$timezone    = self::get_display_timezone();
 
 		// Instance-aware render for a specific recurring occurrence.
 		if ( $instance_ts && 'recurring' === $type ) {
@@ -5368,10 +5369,10 @@ class Event {
 
 				$end_ts = $instance_context['end_ts'];
 
-				$start_str = wp_date( $time_format, $instance_ts );
-				$same_day  = $end_ts && wp_date( 'Y-m-d', $instance_ts ) === wp_date( 'Y-m-d', $end_ts );
+				$start_str = wp_date( $time_format, $instance_ts, $timezone );
+				$same_day  = $end_ts && wp_date( 'Y-m-d', $instance_ts, $timezone ) === wp_date( 'Y-m-d', $end_ts, $timezone );
 				$output    = $end_ts && $same_day
-					? $start_str . ' — ' . wp_date( $time_format, $end_ts )
+					? $start_str . ' — ' . wp_date( $time_format, $end_ts, $timezone )
 					: $start_str;
 
 				return apply_filters(
@@ -5383,10 +5384,10 @@ class Event {
 			}
 		}
 
-		$daily_span = self::get_daily_times_span();
+		$daily_span = self::get_daily_times_span( $timezone );
 		if ( $daily_span ) {
-			$start_str = wp_date( $time_format, $daily_span[0] );
-			$end_str   = wp_date( $time_format, $daily_span[1] );
+			$start_str = wp_date( $time_format, $daily_span[0], $timezone );
+			$end_str   = wp_date( $time_format, $daily_span[1], $timezone );
 
 			return apply_filters(
 				'eventkoi_rendered_event_time',
@@ -5401,7 +5402,7 @@ class Event {
 		$rows        = count( $listed_days ) > 1 ? $listed_days : array( self::get_first_instance() );
 		$lines       = array();
 		foreach ( $rows as $row ) {
-			$lines[] = self::format_day_time_range( $row, $time_format );
+			$lines[] = self::format_day_time_range( $row, $time_format, $timezone );
 		}
 
 		return apply_filters(
@@ -5415,11 +5416,12 @@ class Event {
 	/**
 	 * Format one date row's time range. Empty for an all-day row.
 	 *
-	 * @param array  $day         Date row.
-	 * @param string $time_format PHP time format.
+	 * @param array              $day         Date row.
+	 * @param string             $time_format PHP time format.
+	 * @param \DateTimeZone|null $timezone    Timezone to format in, the site's when null.
 	 * @return string
 	 */
-	private static function format_day_time_range( $day, $time_format ) {
+	private static function format_day_time_range( $day, $time_format, $timezone = null ) {
 		$start_ts = ! empty( $day['start_date'] ) ? strtotime( $day['start_date'] ) : null;
 		$end_ts   = ! empty( $day['end_date'] ) ? strtotime( $day['end_date'] ) : null;
 
@@ -5427,10 +5429,10 @@ class Event {
 			return '';
 		}
 
-		$start_str = wp_date( $time_format, $start_ts );
+		$start_str = wp_date( $time_format, $start_ts, $timezone );
 
-		if ( $end_ts && $end_ts >= $start_ts && wp_date( 'Y-m-d', $start_ts ) === wp_date( 'Y-m-d', $end_ts ) ) {
-			return $start_str . ' — ' . wp_date( $time_format, $end_ts );
+		if ( $end_ts && $end_ts >= $start_ts && wp_date( 'Y-m-d', $start_ts, $timezone ) === wp_date( 'Y-m-d', $end_ts, $timezone ) ) {
+			return $start_str . ' — ' . wp_date( $time_format, $end_ts, $timezone );
 		}
 
 		return $start_str;
@@ -6117,27 +6119,58 @@ class Event {
 	}
 
 	/**
-	 * Resolve the effective event start timestamp, honouring the instance context
-	 * so date-format tokens match the rest of the renderers under /event/slug/{ts}/.
+	 * Resolve the effective start timestamp and display timezone for date-part tokens.
 	 *
-	 * @return int|null
+	 * All-day events store UTC instants, but their date-only labels belong to the
+	 * source all-day timezone. Keep granular builder tokens aligned with
+	 * rendered_date()/rendered_datetime().
+	 *
+	 * @return array{timestamp:int,timezone:\DateTimeZone}|null
 	 */
-	protected static function get_effective_start_timestamp() {
+	protected static function get_effective_start_date_context() {
 		$instance_ts = eventkoi_get_instance_id();
 		$type        = self::get_date_type();
+		$timezone    = self::get_display_timezone();
 
 		if ( $instance_ts && 'recurring' === $type ) {
-			return (int) $instance_ts;
+			$context  = self::resolve_recurring_instance_context( $instance_ts );
+			$start_ts = is_array( $context ) && isset( $context['start_ts'] ) ? (int) $context['start_ts'] : (int) $instance_ts;
+
+			if ( is_array( $context ) && ! empty( $context['all_day'] ) ) {
+				$timezone = self::get_all_day_datetime_timezone(
+					self::get_timezone(),
+					self::get_all_day_occurrence_range(
+						$start_ts,
+						$context['end_ts'] ?? null,
+						is_array( $context['rule'] ?? null ) ? $context['rule'] : array()
+					)
+				);
+			}
+
+			return array(
+				'timestamp' => $start_ts,
+				'timezone'  => $timezone,
+			);
 		}
 
 		$first = self::get_first_instance();
-		if ( ! empty( $first['start_date'] ) ) {
-			$ts = strtotime( $first['start_date'] );
-			if ( $ts ) {
-				return (int) $ts;
-			}
+		if ( empty( $first['start_date'] ) ) {
+			return null;
 		}
-		return null;
+
+		$timestamp = strtotime( (string) $first['start_date'] );
+		if ( ! $timestamp ) {
+			return null;
+		}
+
+		if ( ! empty( $first['all_day'] ) ) {
+			$timezone = self::get_all_day_datetime_timezone( self::get_timezone(), $first );
+		}
+
+		return array(
+			'timestamp' => (int) $timestamp,
+			'timezone'  => $timezone,
+		);
 	}
 
 	/**
@@ -6146,8 +6179,8 @@ class Event {
 	 * @return string
 	 */
 	public static function rendered_date_year() {
-		$ts  = self::get_effective_start_timestamp();
-		$out = $ts ? wp_date( 'Y', $ts ) : '';
+		$context = self::get_effective_start_date_context();
+		$out     = $context ? wp_date( 'Y', $context['timestamp'], $context['timezone'] ) : '';
 		return apply_filters( 'eventkoi_rendered_event_date_year', $out, self::$event_id, self::$event );
 	}
 
@@ -6157,8 +6190,8 @@ class Event {
 	 * @return string
 	 */
 	public static function rendered_date_month() {
-		$ts  = self::get_effective_start_timestamp();
-		$out = $ts ? wp_date( 'F', $ts ) : '';
+		$context = self::get_effective_start_date_context();
+		$out     = $context ? wp_date( 'F', $context['timestamp'], $context['timezone'] ) : '';
 		return apply_filters( 'eventkoi_rendered_event_date_month', $out, self::$event_id, self::$event );
 	}
 
@@ -6168,8 +6201,8 @@ class Event {
 	 * @return string
 	 */
 	public static function rendered_date_month_short() {
-		$ts  = self::get_effective_start_timestamp();
-		$out = $ts ? wp_date( 'M', $ts ) : '';
+		$context = self::get_effective_start_date_context();
+		$out     = $context ? wp_date( 'M', $context['timestamp'], $context['timezone'] ) : '';
 		return apply_filters( 'eventkoi_rendered_event_date_month_short', $out, self::$event_id, self::$event );
 	}
 
@@ -6179,8 +6212,8 @@ class Event {
 	 * @return string
 	 */
 	public static function rendered_date_day() {
-		$ts  = self::get_effective_start_timestamp();
-		$out = $ts ? wp_date( 'j', $ts ) : '';
+		$context = self::get_effective_start_date_context();
+		$out     = $context ? wp_date( 'j', $context['timestamp'], $context['timezone'] ) : '';
 		return apply_filters( 'eventkoi_rendered_event_date_day', $out, self::$event_id, self::$event );
 	}
 
@@ -6190,8 +6223,8 @@ class Event {
 	 * @return string
 	 */
 	public static function rendered_date_day_name() {
-		$ts  = self::get_effective_start_timestamp();
-		$out = $ts ? wp_date( 'l', $ts ) : '';
+		$context = self::get_effective_start_date_context();
+		$out     = $context ? wp_date( 'l', $context['timestamp'], $context['timezone'] ) : '';
 		return apply_filters( 'eventkoi_rendered_event_date_day_name', $out, self::$event_id, self::$event );
 	}
 
@@ -6201,36 +6234,41 @@ class Event {
 	 * @return string
 	 */
 	public static function rendered_date_iso() {
-		$ts  = self::get_effective_start_timestamp();
-		$out = $ts ? wp_date( 'Y-m-d', $ts ) : '';
+		$context = self::get_effective_start_date_context();
+		$out     = $context ? wp_date( 'Y-m-d', $context['timestamp'], $context['timezone'] ) : '';
 		return apply_filters( 'eventkoi_rendered_event_date_iso', $out, self::$event_id, self::$event );
 	}
 
 	/**
 	 * Rendered event start date in the resolved date format ("Monday, May 4").
 	 *
-	 * The shortcode's format attribute sets the format through
-	 * eventkoi_resolved_date_format; without it the EventKoi date format
-	 * setting applies, then the site's. Uses the event's display timezone,
-	 * and an all-day event's own timezone, so the day matches rendered_date().
+	 * Same start as the date parts above. The shortcode's format attribute
+	 * sets the format through eventkoi_resolved_date_format; without it the
+	 * EventKoi date format setting applies, then the site's.
 	 *
 	 * @return string
 	 */
 	public static function rendered_start_date() {
-		$ts = self::get_effective_start_timestamp();
-		if ( ! $ts ) {
-			return apply_filters( 'eventkoi_rendered_event_start_date', '', self::$event_id, self::$event );
-		}
-
-		$timezone    = self::get_display_timezone();
-		$is_instance = eventkoi_get_instance_id() && 'recurring' === self::get_date_type();
-		$first       = $is_instance ? array() : self::get_first_instance();
-		if ( ! empty( $first['all_day'] ) ) {
-			$timezone = self::get_all_day_datetime_timezone( self::get_timezone(), $first );
-		}
-
-		$out = esc_html( wp_date( eventkoi_resolved_date_format(), $ts, $timezone ) );
+		$context = self::get_effective_start_date_context();
+		$out     = $context ? esc_html( wp_date( eventkoi_resolved_date_format(), $context['timestamp'], $context['timezone'] ) ) : '';
 		return apply_filters( 'eventkoi_rendered_event_start_date', $out, self::$event_id, self::$event );
+	}
+
+	/**
+	 * Build an all-day range payload for a concrete occurrence.
+	 *
+	 * @param int        $start_ts Occurrence start timestamp.
+	 * @param int|null   $end_ts   Occurrence end timestamp.
+	 * @param array|null $source   Optional source rule/day fields.
+	 * @return array
+	 */
+	protected static function get_all_day_occurrence_range( $start_ts, $end_ts = null, $source = array() ) {
+		$range = is_array( $source ) ? $source : array();
+
+		$range['start_date'] = gmdate( 'Y-m-d\TH:i:s\Z', (int) $start_ts );
+		$range['end_date']   = ! empty( $end_ts ) ? gmdate( 'Y-m-d\TH:i:s\Z', (int) $end_ts ) : '';
+
+		return $range;
 	}
 
 	/**
