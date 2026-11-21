@@ -329,6 +329,10 @@ class Onboarding {
 			return new WP_Error( 'eventkoi_invalid_email', __( 'Please enter a valid email address.', 'eventkoi-lite' ), array( 'status' => 400 ) );
 		}
 
+		if ( 409 === $code ) {
+			return new WP_Error( 'eventkoi_newsletter_unsubscribed', __( 'This email unsubscribed from EventKoi emails earlier, so it cannot be added again.', 'eventkoi-lite' ), array( 'status' => 409 ) );
+		}
+
 		if ( 429 === $code ) {
 			return new WP_Error( 'eventkoi_newsletter_busy', __( 'Too many signups right now. Please try again later.', 'eventkoi-lite' ), array( 'status' => 429 ) );
 		}
