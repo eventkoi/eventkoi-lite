@@ -2,7 +2,6 @@ import { BigLink } from "@/components/big-link";
 import { Box } from "@/components/box";
 import { Heading } from "@/components/heading";
 import { __ } from "@wordpress/i18n";
-import { Rocket } from "lucide-react";
 
 function BinocularsIcon({ className }) {
   return (
@@ -34,17 +33,7 @@ export function GettingStarted() {
       <Heading level={3}>{__("Getting started", "eventkoi-lite")}</Heading>
       <div className="flex flex-col gap-3 sm:flex-row sm:gap-4 w-full">
         <BigLink
-          href="#/dashboard/onboarding?step=calendar"
-          className="flex-1 flex-col items-center text-center w-full h-auto justify-center py-8"
-          target="_self"
-        >
-          <Rocket className="min-w-5 min-h-5 w-5 h-5 mb-2" />
-          <span className="block">
-            {__("Launch onboarding wizard", "eventkoi-lite")}
-          </span>
-        </BigLink>
-        <BigLink
-          href="#/events?onboarding=demo-event&hint=1"
+          href="#/events?eventkoi_tour=begin"
           className="flex-1 flex-col items-center text-center w-full h-auto justify-center py-8"
           target="_self"
         >

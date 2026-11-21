@@ -10,10 +10,10 @@ import {
 import { useEventEditContext } from "@/hooks/EventEditContext";
 import { useInstanceEditContext } from "@/hooks/InstanceEditContext";
 import { showToast } from "@/lib/toast";
-import { cn } from "@/lib/utils";
+import { tourEventSaved, tourHandlePreview } from "@/tour/store";
 import apiRequest from "@wordpress/api-fetch";
 import { ChevronDown, Loader2 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 // Optional: Replace this with lodash.isequal if needed
@@ -41,31 +41,6 @@ function deepEqual(a, b) {
 export function EventNavBar() {
   const location = useLocation();
   const isInstanceEdit = location.pathname.includes("/instances/edit/");
-  const combinedParams = useMemo(() => {
-    const merged = new URLSearchParams();
-    const sources = [location.search, location.hash];
-    sources.forEach((part) => {
-      if (!part) return;
-      const query = part.startsWith("?")
-        ? part.slice(1)
-        : part.includes("?")
-        ? part.split("?")[1]
-        : "";
-      if (!query) return;
-      const params = new URLSearchParams(query);
-      params.forEach((value, key) => {
-        merged.set(key, value);
-      });
-    });
-    return merged;
-  }, [location.search, location.hash]);
-  const onboardingActive =
-    combinedParams.get("onboarding") === "demo-event" ||
-    combinedParams.get("eventkoi_onboarding") === "demo-event";
-  const onboardingHint = useMemo(() => {
-    const parsed = parseInt(combinedParams.get("hint"), 10);
-    return Number.isFinite(parsed) ? parsed : null;
-  }, [combinedParams]);
 
   let instanceCtx = null;
   try {
@@ -90,7 +65,6 @@ export function EventNavBar() {
   const [saving, setSaving] = useState(false);
   const [justSaved, setJustSaved] = useState(false);
   const hasSavedOnce = useRef(false);
-  const [highlightPreview, setHighlightPreview] = useState(false);
 
   const isDisabled = saving || loading;
 
@@ -135,15 +109,6 @@ export function EventNavBar() {
       setSaving(false);
     }
   };
-
-  useEffect(() => {
-    const handler = (event) => {
-      const step = event?.detail?.step;
-      setHighlightPreview(onboardingActive && step === 3);
-    };
-    window.addEventListener("eventkoi:onboardingStep", handler);
-    return () => window.removeEventListener("eventkoi:onboardingStep", handler);
-  }, [onboardingActive]);
 
   const handleAction = async (path, data = {}) => {
     setSaving(true);
@@ -208,6 +173,7 @@ export function EventNavBar() {
       if (response?.id) {
         // Always trust the server response for the ID
         setEvent?.(response);
+        tourEventSaved(response);
 
         // Mark that we have a permanent ID now
         if (!hasSavedOnce.current) {
@@ -253,16 +219,6 @@ export function EventNavBar() {
     instanceCtx?.data &&
     instanceCtx?.originalData &&
     !deepEqual(instanceCtx.data, instanceCtx.originalData);
-
-  useEffect(() => {
-    if (!onboardingActive) {
-      setHighlightPreview(false);
-      return;
-    }
-    if (onboardingHint && onboardingHint >= 3) {
-      setHighlightPreview(true);
-    }
-  }, [onboardingActive, onboardingHint]);
 
   return (
     <div className="flex gap-1 md:gap-2">
@@ -331,34 +287,10 @@ export function EventNavBar() {
             variant="link"
             disabled={isDisabled || !event?.url}
             onClick={() => {
-              const url =
-                onboardingActive && highlightPreview
-                  ? (() => {
-                      try {
-                        const previewUrl = new URL(
-                          event?.url || "",
-                          window.location?.origin
-                        );
-                        previewUrl.searchParams.set(
-                          "onboarding",
-                          "demo-event"
-                        );
-                        return previewUrl.toString();
-                      } catch {
-                        const separator = (event?.url || "").includes("?")
-                          ? "&"
-                          : "?";
-                        return `${event?.url || ""}${separator}onboarding=demo-event`;
-                      }
-                    })()
-                  : event?.url;
-              window.open(url, "_blank");
+              if (tourHandlePreview(event)) return;
+              window.open(event?.url, "_blank");
             }}
-            className={cn(
-              highlightPreview &&
-                "ring-2 ring-[#fb4409] ring-offset-2 ring-offset-white rounded-sm"
-            )}
-            data-eventkoi-onboarding-preview
+            data-ek-tour="preview"
           >
             {__("Preview", "eventkoi-lite")}
           </Button>
@@ -367,14 +299,8 @@ export function EventNavBar() {
               variant="default"
               className="rounded-r-none"
               disabled={isDisabled}
-              onClick={() => {
-                saveEvent("publish");
-                if (typeof window !== "undefined") {
-                  window.dispatchEvent(
-                    new CustomEvent("eventkoi:onboardingPublish")
-                  );
-                }
-              }}
+              onClick={() => saveEvent("publish")}
+              data-ek-tour="publish"
             >
               {saving ? (
                 <span className="flex items-center gap-2">

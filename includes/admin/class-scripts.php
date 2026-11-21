@@ -536,19 +536,12 @@ class Scripts {
 			apply_filters( 'eventkoi_admin_params', $eventkoi_params )
 		);
 
-		$quick_start_flag = get_option( 'eventkoi_show_quick_start_prompt' );
-		$quick_start_done = (bool) get_option( 'eventkoi_quick_start_completed' );
-
 		wp_localize_script(
 			'eventkoi-admin',
-			'eventkoiQuickStart',
-			array(
-				'show'           => (bool) $quick_start_flag && ! $quick_start_done,
-				'onboarding_url' => esc_url_raw( admin_url( 'admin.php?page=eventkoi#/dashboard/onboarding' ) ),
-				'dashboard_url'  => esc_url_raw( admin_url( 'admin.php?page=eventkoi#/dashboard' ) ),
-				'restUrl'        => esc_url_raw( rest_url( EVENTKOI_API . '/onboarding/complete' ) ),
-				'nonce'          => wp_create_nonce( 'wp_rest' ),
-				'screen'         => $screen->base ?? '',
+			'eventkoiTour',
+			array_merge(
+				\EventKoi\API\Onboarding::get_admin_context(),
+				array( 'screen' => $screen->base ?? '' )
 			)
 		);
 

@@ -16,8 +16,6 @@ import "@/blocks/event-data";
 import "@/blocks/event-query-loop";
 import "@/blocks/event-query-loop/item";
 
-import "@/plugins/admin-checklist";
 import "@/plugins/auto-update-toggle";
 import "@/plugins/event-query-loop-controls";
-import "@/plugins/onboarding-wizard-widget";
-import "@/plugins/quick-start-snackbar";
+import "@/tour";

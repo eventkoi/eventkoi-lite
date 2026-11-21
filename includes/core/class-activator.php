@@ -48,9 +48,16 @@ class Activator {
 			update_option( 'eventkoi_api_key', 'eventkoi_' . strtolower( preg_replace( '/[^a-z0-9]/i', '', wp_generate_password( 20, false, false ) ) ) );
 		}
 
-		// Flag that the plugin was just activated so we can show the quick start prompt.
-		if ( ! get_option( 'eventkoi_quick_start_completed' ) ) {
-			update_option( 'eventkoi_show_quick_start_prompt', 'yes' );
+		// Offer the plugin tour after activation, unless it was finished or
+		// closed before. A re-activation starts it again from the welcome.
+		if ( ! get_option( \EventKoi\API\Onboarding::COMPLETED_OPTION ) ) {
+			update_option( \EventKoi\API\Onboarding::PROMPT_OPTION, 'yes' );
+			update_option( \EventKoi\API\Onboarding::STARTED_OPTION, time(), false );
+
+			if ( get_current_user_id() ) {
+				delete_user_meta( get_current_user_id(), \EventKoi\API\Onboarding::STEP_META );
+				delete_user_meta( get_current_user_id(), \EventKoi\API\Onboarding::UPDATED_META );
+			}
 		}
 
 		// Create/update database tables.

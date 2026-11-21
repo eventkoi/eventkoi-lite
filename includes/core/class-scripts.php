@@ -174,6 +174,12 @@ class Scripts {
 			apply_filters( 'eventkoi_frontend_params', $params )
 		);
 
+		$tour = \EventKoi\API\Onboarding::get_front_context();
+
+		if ( $tour ) {
+			wp_localize_script( 'eventkoi-frontend', 'eventkoiTourFront', $tour );
+		}
+
 		wp_set_script_translations(
 			'eventkoi-frontend',
 			'eventkoi-lite',

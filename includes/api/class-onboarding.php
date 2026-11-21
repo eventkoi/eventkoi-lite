@@ -8,6 +8,7 @@
 
 namespace EventKoi\API;
 
+use WP_Error;
 use WP_REST_Request;
 use WP_REST_Response;
 
@@ -17,9 +18,61 @@ defined( 'ABSPATH' ) || exit;
 /**
  * Class Onboarding.
  *
- * Handles quick start completion/dismissal.
+ * The plugin tour: when it shows, which step each admin is on, and the
+ * newsletter signup on its last step.
  */
 class Onboarding {
+
+	/**
+	 * Site option set on activation: the tour should be offered.
+	 */
+	const PROMPT_OPTION = 'eventkoi_show_quick_start_prompt';
+
+	/**
+	 * Site option set once the tour is finished or closed.
+	 */
+	const COMPLETED_OPTION = 'eventkoi_quick_start_completed';
+
+	/**
+	 * Site option: when the tour was offered, as a timestamp.
+	 */
+	const STARTED_OPTION = 'eventkoi_tour_started';
+
+	/**
+	 * User meta: the step this admin is on.
+	 */
+	const STEP_META = 'eventkoi_tour_step';
+
+	/**
+	 * User meta: when this admin last moved a step, as a timestamp.
+	 */
+	const UPDATED_META = 'eventkoi_tour_updated';
+
+	/**
+	 * Number of steps in the tour.
+	 */
+	const LAST_STEP = 14;
+
+	/**
+	 * A tour nobody touched for this long stops showing.
+	 */
+	const STALE_AFTER = 7 * DAY_IN_SECONDS;
+
+	/**
+	 * Need more help: setup guide.
+	 */
+	const GUIDE_URL = 'https://eventkoi.com/docs/knowledge-base/set-up-eventkoi-lite/';
+
+	/**
+	 * Need more help: support forum.
+	 */
+	const SUPPORT_URL = 'https://wordpress.org/support/plugin/eventkoi-lite/';
+
+	/**
+	 * MailerLite form subscribe URL for the last step. Empty until the form
+	 * exists; the email field then reports that signup is not available.
+	 */
+	const NEWSLETTER_URL = '';
 
 	/**
 	 * Register REST routes.
@@ -27,25 +80,25 @@ class Onboarding {
 	 * @return void
 	 */
 	public static function init() {
-		register_rest_route(
-			EVENTKOI_API,
-			'/onboarding/complete',
-			array(
-				'methods'             => 'POST',
-				'callback'            => array( self::class, 'complete' ),
-				'permission_callback' => array( self::class, 'permission_check' ),
-			)
+		$routes = array(
+			'/onboarding/complete'   => 'complete',
+			'/onboarding/demo-event' => 'store_demo_event',
+			'/onboarding/tour'       => 'save_step',
+			'/onboarding/restart'    => 'restart_tour',
+			'/onboarding/subscribe'  => 'subscribe',
 		);
 
-		register_rest_route(
-			EVENTKOI_API,
-			'/onboarding/demo-event',
-			array(
-				'methods'             => 'POST',
-				'callback'            => array( self::class, 'store_demo_event' ),
-				'permission_callback' => array( self::class, 'permission_check' ),
-			)
-		);
+		foreach ( $routes as $route => $callback ) {
+			register_rest_route(
+				EVENTKOI_API,
+				$route,
+				array(
+					'methods'             => 'POST',
+					'callback'            => array( self::class, $callback ),
+					'permission_callback' => array( self::class, 'permission_check' ),
+				)
+			);
+		}
 	}
 
 	/**
@@ -69,18 +122,289 @@ class Onboarding {
 	}
 
 	/**
+	 * Where an admin is in the tour.
+	 *
+	 * The tour is offered after activation until someone finishes or closes
+	 * it. It stops showing when it sat untouched for a week: the welcome a
+	 * week after it was offered, a started tour a week after its last step.
+	 *
+	 * @param int $user_id User ID, the current user when 0.
+	 * @return array{active:bool,step:int}
+	 */
+	public static function get_state( $user_id = 0 ) {
+		$user_id = $user_id ? (int) $user_id : get_current_user_id();
+
+		$step = (int) get_user_meta( $user_id, self::STEP_META, true );
+		$step = ( $step >= 1 && $step <= self::LAST_STEP ) ? $step : 1;
+
+		if ( ! $user_id || get_option( self::COMPLETED_OPTION ) || ! get_option( self::PROMPT_OPTION ) ) {
+			return array(
+				'active' => false,
+				'step'   => $step,
+			);
+		}
+
+		$started = (int) get_option( self::STARTED_OPTION, 0 );
+
+		// Sites that were offered the old quick start have no start time yet.
+		if ( ! $started ) {
+			$started = time();
+			update_option( self::STARTED_OPTION, $started, false );
+		}
+
+		$updated = (int) get_user_meta( $user_id, self::UPDATED_META, true );
+		$last    = ( $step > 1 && $updated ) ? $updated : $started;
+
+		return array(
+			'active' => ( time() - $last ) <= self::STALE_AFTER,
+			'step'   => $step,
+		);
+	}
+
+	/**
+	 * Offer the tour again and put an admin on a step.
+	 *
+	 * @param int $user_id User ID.
+	 * @param int $step    Step to start on.
+	 * @return void
+	 */
+	public static function restart( $user_id, $step = 1 ) {
+		delete_option( self::COMPLETED_OPTION );
+		update_option( self::PROMPT_OPTION, 'yes' );
+		update_option( self::STARTED_OPTION, time(), false );
+
+		self::set_step( $user_id, $step );
+	}
+
+	/**
+	 * Store the step an admin is on.
+	 *
+	 * @param int $user_id User ID.
+	 * @param int $step    Step number.
+	 * @return void
+	 */
+	private static function set_step( $user_id, $step ) {
+		$step = max( 1, min( self::LAST_STEP, (int) $step ) );
+
+		update_user_meta( $user_id, self::STEP_META, $step );
+		update_user_meta( $user_id, self::UPDATED_META, time() );
+	}
+
+	/**
 	 * Mark onboarding as complete/dismissed.
 	 *
 	 * @return WP_REST_Response
 	 */
 	public static function complete() {
-		update_option( 'eventkoi_quick_start_completed', 'yes' );
-		delete_option( 'eventkoi_show_quick_start_prompt' );
+		update_option( self::COMPLETED_OPTION, 'yes' );
+		delete_option( self::PROMPT_OPTION );
+
+		$user_id = get_current_user_id();
+		delete_user_meta( $user_id, self::STEP_META );
+		delete_user_meta( $user_id, self::UPDATED_META );
 
 		return rest_ensure_response(
 			array(
 				'success' => true,
 			)
+		);
+	}
+
+	/**
+	 * Save the step the current admin is on.
+	 *
+	 * @param WP_REST_Request $request Request instance.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function save_step( WP_REST_Request $request ) {
+		$step = absint( $request->get_param( 'step' ) );
+
+		if ( $step < 1 || $step > self::LAST_STEP ) {
+			return new WP_Error( 'eventkoi_invalid_step', __( 'Invalid tour step.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
+		self::set_step( get_current_user_id(), $step );
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+				'step'    => $step,
+			)
+		);
+	}
+
+	/**
+	 * Offer the tour again, from the Dashboard's Begin plugin tour link.
+	 *
+	 * @param WP_REST_Request $request Request instance.
+	 * @return WP_REST_Response
+	 */
+	public static function restart_tour( WP_REST_Request $request ) {
+		$step = absint( $request->get_param( 'step' ) );
+
+		self::restart( get_current_user_id(), $step ? $step : 1 );
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+			)
+		);
+	}
+
+	/**
+	 * Restart the tour from the Start tour link on the Plugins page.
+	 *
+	 * @return void
+	 */
+	public static function handle_start_tour() {
+		if ( ! current_user_can( 'manage_options' ) ) {
+			wp_die( esc_html__( 'Sorry, you are not allowed to do that.', 'eventkoi-lite' ), 403 );
+		}
+
+		check_admin_referer( 'eventkoi_start_tour' );
+
+		self::restart( get_current_user_id(), 1 );
+
+		wp_safe_redirect( admin_url( 'plugins.php' ) );
+		exit;
+	}
+
+	/**
+	 * Link that restarts the tour on the Plugins page.
+	 *
+	 * @return string
+	 */
+	public static function start_tour_url() {
+		return wp_nonce_url( admin_url( 'admin-post.php?action=eventkoi_start_tour' ), 'eventkoi_start_tour' );
+	}
+
+	/**
+	 * Add the email from the last step to the MailerLite list.
+	 *
+	 * Only sent when the admin types or confirms their email and clicks
+	 * Email me.
+	 *
+	 * @param WP_REST_Request $request Request instance.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public static function subscribe( WP_REST_Request $request ) {
+		$email = sanitize_email( (string) $request->get_param( 'email' ) );
+
+		if ( ! is_email( $email ) ) {
+			return new WP_Error( 'eventkoi_invalid_email', __( 'Please enter a valid email address.', 'eventkoi-lite' ), array( 'status' => 400 ) );
+		}
+
+		$url = self::newsletter_url();
+
+		if ( '' === $url ) {
+			return new WP_Error( 'eventkoi_newsletter_unavailable', __( 'Email signup is not available right now.', 'eventkoi-lite' ), array( 'status' => 503 ) );
+		}
+
+		$response = wp_remote_post(
+			$url,
+			array(
+				'timeout' => 10,
+				'body'    => array(
+					'fields[email]' => $email,
+					'ml-submit'     => '1',
+					'anticsrf'      => 'true',
+				),
+			)
+		);
+
+		$code = is_wp_error( $response ) ? 0 : (int) wp_remote_retrieve_response_code( $response );
+		$body = is_wp_error( $response ) ? null : json_decode( wp_remote_retrieve_body( $response ), true );
+
+		if ( $code < 200 || $code >= 300 || ( is_array( $body ) && isset( $body['success'] ) && ! $body['success'] ) ) {
+			return new WP_Error( 'eventkoi_newsletter_failed', __( 'Something went wrong. Please try again.', 'eventkoi-lite' ), array( 'status' => 502 ) );
+		}
+
+		return rest_ensure_response(
+			array(
+				'success' => true,
+			)
+		);
+	}
+
+	/**
+	 * MailerLite form subscribe URL, if set.
+	 *
+	 * @return string
+	 */
+	public static function newsletter_url() {
+		/**
+		 * Filter the MailerLite form subscribe URL used by the tour's last step.
+		 *
+		 * @param string $url Subscribe URL, empty to turn the signup off.
+		 */
+		return esc_url_raw( (string) apply_filters( 'eventkoi_tour_newsletter_url', self::NEWSLETTER_URL ) );
+	}
+
+	/**
+	 * Tour data for the admin screens.
+	 *
+	 * @return array
+	 */
+	public static function get_admin_context() {
+		$can   = current_user_can( 'manage_options' );
+		$state = $can ? self::get_state() : array(
+			'active' => false,
+			'step'   => 1,
+		);
+		$user  = wp_get_current_user();
+		$base  = trailingslashit( EVENTKOI_PLUGIN_URL ) . 'templates/assets/onboarding/';
+
+		return array(
+			'canManage'   => $can,
+			'active'      => $can && $state['active'],
+			'step'        => $state['step'],
+			'demoEventId' => (int) get_option( 'eventkoi_demo_event_id', 0 ),
+			'rest'        => esc_url_raw( rest_url( EVENTKOI_API . '/onboarding' ) ),
+			'nonce'       => wp_create_nonce( 'wp_rest' ),
+			'adminUrl'    => admin_url( 'admin.php?page=eventkoi' ),
+			'email'       => $user ? $user->user_email : '',
+			'avatar'      => $base . 'lesley-sim.jpg',
+			'signature'   => $base . 'lesley-sim-signature.png',
+			'guideUrl'    => self::GUIDE_URL,
+			'supportUrl'  => self::SUPPORT_URL,
+		);
+	}
+
+	/**
+	 * Tour data for the event and calendar pages the tour opens.
+	 *
+	 * Only for an admin who reached that step, on a page opened by the tour.
+	 *
+	 * @return array|null
+	 */
+	public static function get_front_context() {
+		if ( ! is_user_logged_in() || ! current_user_can( 'manage_options' ) ) {
+			return null;
+		}
+
+		// Read-only: picks which tour step to show, changes nothing.
+		$requested = isset( $_GET['eventkoi_tour'] ) ? absint( wp_unslash( $_GET['eventkoi_tour'] ) ) : 0; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+		if ( ! in_array( $requested, array( 7, 11 ), true ) ) {
+			return null;
+		}
+
+		$state = self::get_state();
+
+		if ( ! $state['active'] || $state['step'] !== $requested ) {
+			return null;
+		}
+
+		$admin_url = admin_url( 'admin.php?page=eventkoi' );
+		$demo_id   = (int) get_option( 'eventkoi_demo_event_id', 0 );
+
+		return array(
+			'step'        => $requested,
+			'continueUrl' => 7 === $requested
+				? $admin_url . '#/events/' . $demo_id . '/main?eventkoi_tour=8'
+				: $admin_url . '#/calendars?eventkoi_tour=12',
+			'guideUrl'    => self::GUIDE_URL,
+			'supportUrl'  => self::SUPPORT_URL,
 		);
 	}
 
