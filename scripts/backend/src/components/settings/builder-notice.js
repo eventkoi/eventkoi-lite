@@ -119,6 +119,13 @@ export function BuilderNotice({ usingDefaultTemplates }) {
 
   const single = statuses.length === 1 ? statuses[0] : null;
 
+  // "Elementor", "Elementor and Divi", "Elementor, Beaver Builder and Divi".
+  const labels = statuses.map((status) => status.label);
+  const names =
+    labels.length > 1
+      ? labels.slice(0, -1).join(", ") + __(" and ", "eventkoi-lite") + labels[labels.length - 1]
+      : labels[0];
+
   return (
     <div
       role="status"
@@ -136,7 +143,7 @@ export function BuilderNotice({ usingDefaultTemplates }) {
             {sprintf(
               /* translators: %s: page builder name, or several names. */
               __("%s detected.", "eventkoi-lite"),
-              statuses.map((status) => status.label).join(__(" and ", "eventkoi-lite"))
+              names
             )}
           </div>
           <div className="text-sm leading-snug text-muted-foreground">

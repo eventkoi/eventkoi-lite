@@ -155,12 +155,22 @@ class Scripts {
 			}
 		}
 
-		// Beaver Builder ships its own logo; the settings notice shows it.
+		// The builders ship their own logos; the settings notice shows them.
+		$logos = array();
+
 		if ( defined( 'FL_BUILDER_DIR' ) && defined( 'FL_BUILDER_URL' ) && file_exists( FL_BUILDER_DIR . 'img/beaver-128.png' ) ) {
-			foreach ( $statuses as $index => $status ) {
-				if ( 'beaver' === ( $status['builder'] ?? '' ) ) {
-					$statuses[ $index ]['logo'] = esc_url_raw( FL_BUILDER_URL . 'img/beaver-128.png' );
-				}
+			$logos['beaver'] = FL_BUILDER_URL . 'img/beaver-128.png';
+		}
+
+		if ( 'Divi' === get_template() && file_exists( get_template_directory() . '/images/logo.png' ) ) {
+			$logos['divi'] = get_template_directory_uri() . '/images/logo.png';
+		}
+
+		foreach ( $statuses as $index => $status ) {
+			$builder = $status['builder'] ?? '';
+
+			if ( isset( $logos[ $builder ] ) ) {
+				$statuses[ $index ]['logo'] = esc_url_raw( $logos[ $builder ] );
 			}
 		}
 
