@@ -9,10 +9,10 @@ import { showToast, showToastError } from "@/lib/toast";
 
 const DISMISSED_KEY = "builder_notice_dismissed";
 
-function BuilderLogo({ builder }) {
-  if (builder === "elementor") {
+function BuilderLogo({ status }) {
+  if (status.builder === "elementor") {
     return (
-      <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden="true" className="shrink-0">
+      <svg width="40" height="40" viewBox="0 0 24 24" aria-hidden="true" className="shrink-0">
         <circle cx="12" cy="12" r="12" fill="#92003B" />
         <path
           fill="#ffffff"
@@ -22,7 +22,17 @@ function BuilderLogo({ builder }) {
     );
   }
 
-  return <LayoutTemplate className="h-5 w-5 shrink-0" aria-hidden="true" />;
+  if (status.logo) {
+    return (
+      <img src={status.logo} alt="" width="40" height="40" className="h-10 w-10 shrink-0 object-contain" />
+    );
+  }
+
+  return (
+    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#161616] text-white">
+      <LayoutTemplate className="h-5 w-5" aria-hidden="true" />
+    </span>
+  );
 }
 
 /**
@@ -113,63 +123,65 @@ export function BuilderNotice({ usingDefaultTemplates }) {
     <div
       role="status"
       data-ek-builder-notice
-      className="grid gap-3 rounded-lg border border-solid border-border bg-[#f7f7f7] p-4 max-w-[640px]"
+      className="flex items-start gap-4 rounded-lg border border-solid border-border bg-[#f7f7f7] p-5 max-w-[680px]"
     >
-      <div className="grid gap-1">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[14px] font-medium text-[#161616]">
+      <div className="flex shrink-0 items-center gap-2">
+        {statuses.map((status) => (
+          <BuilderLogo key={status.builder} status={status} />
+        ))}
+      </div>
+      <div className="grid gap-3">
+        <div className="grid gap-1">
+          <div className="text-[15px] font-semibold leading-6 text-[#161616]">
+            {sprintf(
+              /* translators: %s: page builder name, or several names. */
+              __("%s detected.", "eventkoi-lite"),
+              statuses.map((status) => status.label).join(__(" and ", "eventkoi-lite"))
+            )}
+          </div>
+          <div className="text-sm leading-snug text-muted-foreground">
+            {single
+              ? sprintf(
+                  /* translators: %s: page builder name. */
+                  __(
+                    "EventKoi is currently using block editor templates for your events. Would you like to switch to %s templates instead?",
+                    "eventkoi-lite"
+                  ),
+                  single.label
+                )
+              : __(
+                  "EventKoi is currently using block editor templates for your events. Would you like to switch to page builder templates instead?",
+                  "eventkoi-lite"
+                )}
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
           {statuses.map((status) => (
-            <span key={status.builder} className="flex items-center gap-2">
-              <BuilderLogo builder={status.builder} />
+            <Button
+              key={status.builder}
+              className="h-9 cursor-pointer"
+              disabled={!!pending}
+              onClick={() => switchTo(status)}
+            >
+              {pending === status.builder && (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
+              )}
               {sprintf(
                 /* translators: %s: page builder name. */
-                __("%s detected.", "eventkoi-lite"),
+                __("Switch to %s templates", "eventkoi-lite"),
                 status.label
               )}
-            </span>
+            </Button>
           ))}
-        </div>
-        <div className="text-sm leading-snug text-muted-foreground">
-          {single
-            ? sprintf(
-                /* translators: %s: page builder name. */
-                __(
-                  "EventKoi is currently using block editor templates for your events. Would you like to switch to %s templates instead?",
-                  "eventkoi-lite"
-                ),
-                single.label
-              )
-            : __(
-                "EventKoi is currently using block editor templates for your events. Would you like to switch to page builder templates instead?",
-                "eventkoi-lite"
-              )}
-        </div>
-      </div>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        {statuses.map((status) => (
-          <Button
-            key={status.builder}
-            className="h-9 cursor-pointer"
+          <button
+            type="button"
+            className="cursor-pointer border-0 bg-transparent p-0 text-sm text-[#161616] underline hover:no-underline"
             disabled={!!pending}
-            onClick={() => switchTo(status)}
+            onClick={dismiss}
           >
-            {pending === status.builder && (
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden="true" />
-            )}
-            {sprintf(
-              /* translators: %s: page builder name. */
-              __("Switch to %s templates", "eventkoi-lite"),
-              status.label
-            )}
-          </Button>
-        ))}
-        <button
-          type="button"
-          className="cursor-pointer border-0 bg-transparent p-0 text-sm text-[#161616] underline hover:no-underline"
-          disabled={!!pending}
-          onClick={dismiss}
-        >
-          {__("Dismiss", "eventkoi-lite")}
-        </button>
+            {__("Dismiss", "eventkoi-lite")}
+          </button>
+        </div>
       </div>
     </div>
   );

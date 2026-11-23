@@ -155,6 +155,15 @@ class Scripts {
 			}
 		}
 
+		// Beaver Builder ships its own logo; the settings notice shows it.
+		if ( defined( 'FL_BUILDER_DIR' ) && defined( 'FL_BUILDER_URL' ) && file_exists( FL_BUILDER_DIR . 'img/beaver-128.png' ) ) {
+			foreach ( $statuses as $index => $status ) {
+				if ( 'beaver' === ( $status['builder'] ?? '' ) ) {
+					$statuses[ $index ]['logo'] = esc_url_raw( FL_BUILDER_URL . 'img/beaver-128.png' );
+				}
+			}
+		}
+
 		return $statuses;
 	}
 
