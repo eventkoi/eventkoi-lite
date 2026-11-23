@@ -4,6 +4,7 @@ import apiRequest from "@wordpress/api-fetch";
 import { useEffect, useMemo, useState } from "react";
 
 import { Box } from "@/components/box";
+import { BuilderNotice } from "@/components/settings/builder-notice";
 import { Heading } from "@/components/heading";
 import { Panel } from "@/components/panel";
 import { Button } from "@/components/ui/button";
@@ -749,6 +750,8 @@ export function SettingsOverview() {
             <Heading level={3}>{__("Single event pages", "eventkoi-lite")}</Heading>
           </Panel>
           <Panel className="gap-10 pt-2">
+            <BuilderNotice usingDefaultTemplates={usingDefaultTemplates} />
+
             {renderTemplatePicker({
               id: "default-event-template",
               label: __("Default event template", "eventkoi-lite"),
