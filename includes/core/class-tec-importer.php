@@ -27,6 +27,14 @@ class TEC_Importer
 {
 
     /**
+     * EventKoi event being built by the import in progress, 0 when none.
+     * Lets a failure remove the half-built copy.
+     *
+     * @var int
+     */
+    private static $importing_event_id = 0;
+
+    /**
      * Constructor — registers REST routes.
      */
     public function __construct()
@@ -152,6 +160,15 @@ class TEC_Importer
             return new WP_Error('tec_not_active', __('The Events Calendar plugin is not active.', 'eventkoi-lite'), array( 'status' => 400 ));
         }
 
+        // A large site imports in several requests: each one takes the next
+        // `batch` events that are not imported yet and reports how many are
+        // left, so no single request has to outlast the server's time limit.
+        // `exclude` holds the events that already failed in this run.
+        $batch          = ! empty($data['batch']) ? min(100, absint($data['batch'])) : 0;
+        $exclude        = ! empty($data['exclude']) && is_array($data['exclude']) ? array_map('absint', $data['exclude']) : array();
+        $remaining      = 0;
+        $already_copied = 0;
+
         // If no specific IDs, import all events directly via SQL to bypass TEC date filters.
         if (empty($event_ids) ) {
             global $wpdb;
@@ -160,9 +177,18 @@ class TEC_Importer
             $event_ids = $wpdb->get_col(
                 "SELECT ID FROM {$wpdb->posts}
 				 WHERE post_type = 'tribe_events'
-				 AND post_status IN ('publish','draft','pending','future','private')"
+				 AND post_status IN ('publish','draft','pending','future','private')
+				 ORDER BY ID ASC"
             );
             $event_ids = array_map('absint', $event_ids);
+
+            if ($batch > 0 ) {
+                $copied         = self::get_imported_source_ids();
+                $already_copied = count(array_intersect($event_ids, $copied));
+                $pending        = array_values(array_diff($event_ids, $copied, $exclude));
+                $event_ids      = array_slice($pending, 0, $batch);
+                $remaining      = count($pending) - count($event_ids);
+            }
         }
 
         $results  = array();
@@ -171,7 +197,26 @@ class TEC_Importer
         $errors   = 0;
 
         foreach ( $event_ids as $tec_id ) {
-            $result = self::import_single_event($tec_id, $import_images);
+            self::$importing_event_id = 0;
+
+            try {
+                $result = self::import_single_event($tec_id, $import_images);
+            } catch ( \Throwable $error ) {
+                // One broken event must not stop the others, or leave a
+                // half-built copy that a second run would duplicate.
+                self::discard_partial_event(self::$importing_event_id);
+
+                $result = new WP_Error(
+                    'import_failed',
+                    sprintf(
+                        /* translators: %s: technical error message. */
+                        __('This event could not be imported and was left out: %s', 'eventkoi-lite'),
+                        $error->getMessage()
+                    )
+                );
+            }
+
+            self::$importing_event_id = 0;
 
             if (is_wp_error($result) ) {
                 ++$errors;
@@ -215,6 +260,12 @@ class TEC_Importer
             }
         }
 
+        // In a batched run the already-imported events are never visited, so
+        // they are counted up front instead.
+        if ($batch > 0 ) {
+            $skipped += $already_copied;
+        }
+
         $notice = '';
         if ($skipped > 0) {
             $notice = __('Already-imported events are skipped and never updated. To re-import one after changing it in The Events Calendar, delete its EventKoi copy first.', 'eventkoi-lite');
@@ -230,8 +281,32 @@ class TEC_Importer
             'non_default_count'   => count($non_default_ids),
             'non_default_ids'     => $non_default_ids,
             'recurring_flattened' => $recurring_flattened,
+            'remaining'           => $remaining,
             )
         );
+    }
+
+    /**
+     * Remove an event the import started but could not finish, with the
+     * ticket types already written for it.
+     *
+     * @param  int $event_id EventKoi event post ID.
+     * @return void
+     */
+    private static function discard_partial_event( $event_id )
+    {
+        global $wpdb;
+
+        $event_id = absint($event_id);
+
+        if (! $event_id || 'eventkoi_event' !== get_post_type($event_id) ) {
+            return;
+        }
+
+        // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery,WordPress.DB.DirectDatabaseQuery.NoCaching
+        $wpdb->delete($wpdb->prefix . 'eventkoi_tickets', array( 'event_id' => $event_id ), array( '%d' ));
+
+        wp_delete_post($event_id, true);
     }
 
     /**
@@ -425,6 +500,8 @@ class TEC_Importer
         if (is_wp_error($new_post_id) ) {
             return $new_post_id;
         }
+
+        self::$importing_event_id = (int) $new_post_id;
 
         // Real Event Tickets (RSVP / Tickets Commerce) take precedence over TEC's
         // free-text cost field: each ticket type is imported with its capacity,

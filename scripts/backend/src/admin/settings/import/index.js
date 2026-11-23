@@ -61,50 +61,105 @@ export function SettingsImport() {
     detectTEC();
   }, [detectTEC]);
 
+  // Events per request. A big site imports over several requests, so none of
+  // them has to outlast the server's time limit.
+  const TEC_BATCH = 20;
+
   const importTEC = async () => {
-    setTecState((s) => ({ ...s, importing: true, result: null }));
+    setTecState((s) => ({ ...s, importing: true, result: null, progress: null }));
+
+    const total = {
+      imported: 0,
+      skipped: 0,
+      errors: 0,
+      results: [],
+      notice: "",
+      non_default_ids: [],
+      non_default_count: 0,
+      recurring_flattened: 0,
+    };
+    const failed = [];
+    let first = true;
+
     try {
-      const response = await apiRequest({
-        path: `${eventkoi_params.api}/tec-import/run`,
-        method: "POST",
-        data: { event_ids: [], import_images: true },
-        headers: { "EVENTKOI-API-KEY": eventkoi_params.api_key },
-      });
-      setTecState((s) => ({ ...s, importing: false, result: response }));
-      if (response?.imported > 0) {
+      for (;;) {
+        const response = await apiRequest({
+          path: `${eventkoi_params.api}/tec-import/run`,
+          method: "POST",
+          data: { event_ids: [], import_images: true, batch: TEC_BATCH, exclude: failed },
+          headers: { "EVENTKOI-API-KEY": eventkoi_params.api_key },
+        });
+
+        const imported = response?.imported || 0;
+        const errors = response?.errors || 0;
+        const remaining = response?.remaining || 0;
+
+        total.imported += imported;
+        total.errors += errors;
+        total.results.push(...(response?.results || []));
+        total.non_default_ids.push(...(response?.non_default_ids || []));
+        total.non_default_count = total.non_default_ids.length;
+        total.recurring_flattened += response?.recurring_flattened || 0;
+        (response?.results || []).forEach((row) => {
+          if (!row?.success && row?.tec_id) failed.push(row.tec_id);
+        });
+
+        if (first) {
+          // Already-imported events are counted once, on the first request.
+          total.skipped = response?.skipped || 0;
+          total.notice = response?.notice || "";
+          first = false;
+        }
+
+        const done = total.imported + total.errors;
+        setTecState((s) => ({ ...s, progress: { done, total: done + remaining } }));
+
+        // Stop when nothing is left, or when a request made no headway.
+        if (remaining <= 0 || imported + errors === 0) break;
+      }
+
+      setTecState((s) => ({ ...s, importing: false, result: total, progress: null }));
+      if (total.imported > 0) {
         showToast({
           message: sprintf(
             /* translators: %d: number of imported events */
             _n(
               "%d event imported.",
               "%d events imported.",
-              response.imported,
+              total.imported,
               "eventkoi-lite"
             ),
-            response.imported
+            total.imported
           ),
         });
       }
-      if (!response?.imported && response?.skipped > 0 && response?.notice) {
-        showToast({ message: response.notice });
+      if (!total.imported && total.skipped > 0 && total.notice) {
+        showToast({ message: total.notice });
       }
-      if (response?.errors > 0) {
+      if (total.errors > 0) {
         showToastError(
           sprintf(
             /* translators: %d: number of failed events */
             _n(
               "%d event failed.",
               "%d events failed.",
-              response.errors,
+              total.errors,
               "eventkoi-lite"
             ),
-            response.errors
+            total.errors
           )
         );
       }
     } catch (err) {
       showToastError(err?.message ?? __("Import failed.", "eventkoi-lite"));
-      setTecState((s) => ({ ...s, importing: false }));
+      // What was imported before the failure stays; running the import again
+      // carries on with the rest.
+      setTecState((s) => ({
+        ...s,
+        importing: false,
+        progress: null,
+        result: total.imported > 0 ? total : null,
+      }));
     }
   };
 
@@ -232,6 +287,7 @@ export function SettingsImport() {
           installed={tecInstalled}
           available={tecAvailable}
           importing={tecImporting}
+          progress={tecState.progress}
           done={tecDone}
           count={tec?.events_count || 0}
           totalCount={tec?.total_events || 0}
@@ -280,6 +336,7 @@ function IntegrationCard({
   installed,
   available,
   importing,
+  progress,
   done,
   count,
   totalCount,
@@ -417,7 +474,14 @@ function IntegrationCard({
         {!loading && importing && (
           <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            {__("Importing events...", "eventkoi-lite")}
+            {progress?.total > 0
+              ? sprintf(
+                  /* translators: 1: events handled so far, 2: events to import in total. */
+                  __("Importing events... %1$d of %2$d", "eventkoi-lite"),
+                  progress.done,
+                  progress.total
+                )
+              : __("Importing events...", "eventkoi-lite")}
           </span>
         )}
 
