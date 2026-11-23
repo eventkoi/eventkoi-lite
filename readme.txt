@@ -222,7 +222,7 @@ This plugin can connect to the **Google Maps JavaScript API** in order to displa
 It sends your configured Google Maps API key (if provided) along with requests made by the visitor's browser when viewing a page that contains an embedded map. No personal data is sent by the plugin itself, but Google may collect usage data in accordance with their policies. This connection only happens if maps are enabled in the plugin settings and a page with an event location map is viewed.
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
-The last step of the plugin tour can send an email address to **eventkoi.com**, which adds it to the EventKoi mailing list hosted on MailerLite, so EventKoi can email you a list of helpful articles and videos.
+The last step of the plugin tour can send an email address to **eventkoi.com**, which adds it to the EventKoi mailing list hosted on MailerLite, so EventKoi can email you a list of helpful tutorials.
 Only the email address you type is sent, and only when you click Email me in that step. Nothing is sent if you skip it.
 This service is provided by EventKoi: [Privacy Policy](https://eventkoi.com/docs/knowledge-base/privacy-policy/). The mailing list is hosted by MailerLite: [Terms of Service](https://www.mailerlite.com/legal/terms-of-service), [Privacy Policy](https://www.mailerlite.com/legal/privacy-policy).
 

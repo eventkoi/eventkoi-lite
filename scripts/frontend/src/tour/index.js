@@ -25,7 +25,14 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 
 function el(tag, styles = {}, attrs = {}) {
   const node = document.createElement(tag);
-  Object.assign(node.style, styles);
+  // Set as important so the theme's own link and text rules cannot change them.
+  Object.entries(styles).forEach(([key, value]) => {
+    node.style.setProperty(
+      key.replace(/[A-Z]/g, (c) => "-" + c.toLowerCase()),
+      value,
+      "important"
+    );
+  });
   Object.entries(attrs).forEach(([key, value]) => node.setAttribute(key, value));
   return node;
 }
@@ -113,7 +120,12 @@ function helpLink(href, icon, label) {
       margin: "0 16px",
       padding: "12px 6px",
       color: "#161616",
+      fontFamily: FONT,
       fontSize: "15px",
+      fontWeight: "400",
+      fontStyle: "normal",
+      letterSpacing: "normal",
+      textTransform: "none",
       lineHeight: "20px",
       textDecoration: "none",
       boxShadow: "none",
@@ -125,10 +137,10 @@ function helpLink(href, icon, label) {
   link.appendChild(lucide(icon));
   link.appendChild(document.createTextNode(label));
   link.addEventListener("mouseenter", () => {
-    link.style.textDecoration = "underline";
+    link.style.setProperty("text-decoration", "underline", "important");
   });
   link.addEventListener("mouseleave", () => {
-    link.style.textDecoration = "none";
+    link.style.setProperty("text-decoration", "none", "important");
   });
   return link;
 }
@@ -138,7 +150,7 @@ function buildHelpBox(tour) {
     "aside",
     {
       width: "240px",
-      padding: "0 0 12px",
+      padding: "0 0 8px",
       background: "#f7f7f7",
       border: "1px solid #aaaaaa",
       borderRadius: "6px",
@@ -159,8 +171,12 @@ function buildHelpBox(tour) {
   });
   head.appendChild(logo());
   const title = el("span", {
+    fontFamily: FONT,
     fontSize: "15px",
     fontWeight: "600",
+    fontStyle: "normal",
+    letterSpacing: "normal",
+    textTransform: "none",
     lineHeight: "20px",
     color: "#161616",
   });
@@ -197,13 +213,9 @@ function buildHelpBox(tour) {
   box.appendChild(
     helpLink(tour.guideUrl, ICONS.bookOpen, __("Read setup guide", "eventkoi-lite"))
   );
-  const support = helpLink(
-    tour.supportUrl,
-    ICONS.inbox,
-    __("Contact support", "eventkoi-lite")
+  box.appendChild(
+    helpLink(tour.supportUrl, ICONS.inbox, __("Contact support", "eventkoi-lite"))
   );
-  support.style.borderBottom = "1px solid #dcdcdc";
-  box.appendChild(support);
 
   return box;
 }
@@ -226,8 +238,12 @@ function buildContinueButton(tour) {
       boxShadow: "0 4px 10px rgba(0, 0, 0, 0.16)",
       boxSizing: "border-box",
       color: "#ffffff",
+      fontFamily: FONT,
       fontSize: "15px",
       fontWeight: "500",
+      fontStyle: "normal",
+      letterSpacing: "normal",
+      textTransform: "none",
       lineHeight: "44px",
       textDecoration: "none",
     },
@@ -236,10 +252,10 @@ function buildContinueButton(tour) {
   button.appendChild(lucide(ICONS.arrowLeft, 16, "#ffffff"));
   button.appendChild(document.createTextNode(__("Continue Tour", "eventkoi-lite")));
   button.addEventListener("mouseenter", () => {
-    button.style.background = "#000000";
+    button.style.setProperty("background", "#000000", "important");
   });
   button.addEventListener("mouseleave", () => {
-    button.style.background = "#161616";
+    button.style.setProperty("background", "#161616", "important");
   });
   return button;
 }

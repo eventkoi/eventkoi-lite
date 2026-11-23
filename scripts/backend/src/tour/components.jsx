@@ -307,7 +307,7 @@ export function FinalModal({ onClose, onDone }) {
           <p className="ek-tour-sign-name">{__("Lesley Sim", "eventkoi-lite")}</p>
           <p>
             {__(
-              "P.S. I’ve hand picked a list of the best articles and videos to help you get the most out of EventKoi.",
+              "P.S. I’ve handpicked a list of our best tutorials to help you get the most out of EventKoi.",
               "eventkoi-lite"
             )}
           </p>

@@ -290,7 +290,7 @@
   bottom: 24px;
   z-index: 100000;
   width: 240px;
-  padding: 0 0 12px;
+  padding: 0 0 8px;
   background: var(--ek-tour-bg);
   border: 1px solid var(--ek-tour-border);
   border-radius: 6px;
@@ -332,12 +332,6 @@
   font-size: 15px;
   line-height: 20px;
   text-decoration: none;
-}
-
-#eventkoi-tour-root .ek-tour-help-link:last-child {
-  border-bottom: 1px solid var(--ek-tour-divider);
-  border-radius: 0;
-  margin-bottom: 0;
 }
 
 #eventkoi-tour-root .ek-tour-help-link:hover {
