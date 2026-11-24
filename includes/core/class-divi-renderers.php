@@ -114,7 +114,7 @@ class Divi_Renderers {
 		$data = sanitize_key( $props['eventkoi_data'] ?? 'full' );
 
 		if ( 'full' === $data ) {
-			$items  = array( 'event_title', 'event_datetime', 'event_location', 'event_details' );
+			$items  = array( 'event_title', 'event_image', 'event_datetime', 'event_location', 'event_details' );
 			$output = '';
 			foreach ( $items as $key ) {
 				$output .= do_shortcode( sprintf( '[eventkoi id=%d data=%s]', $event_id, $key ) );
