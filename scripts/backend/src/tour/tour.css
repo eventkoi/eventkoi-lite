@@ -15,6 +15,11 @@
     oxygen-sans, ubuntu, cantarell, "Helvetica Neue", sans-serif;
 }
 
+#eventkoi-tour-root.ek-tour-system-font {
+  --ek-tour-font: -apple-system, blinkmacsystemfont, "Segoe UI", roboto,
+    oxygen-sans, ubuntu, cantarell, "Helvetica Neue", sans-serif;
+}
+
 #eventkoi-tour-root *,
 #eventkoi-tour-root *::before,
 #eventkoi-tour-root *::after {

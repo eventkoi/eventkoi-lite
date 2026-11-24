@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.5.2.0
+Stable tag: 1.5.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -230,6 +230,9 @@ This service is provided by EventKoi: [Privacy Policy](https://eventkoi.com/docs
 
 The latest releases are listed here. See changelog.txt in the plugin folder for older versions.
 
+= 1.5.2.1 – Plugin tour text weight on Divi sites – 2026-11-24 =
+* Fix: The plugin tour text is no longer too heavy on sites running Divi, which loads its own font in the WordPress admin.
+
 = 1.5.2.0 – Plugin tour, page builder notice and import improvements – 2026-11-24 =
 * New: A guided plugin tour for new installs. It walks you through your events, the event editor, your calendar and the settings on your own site, with a help box on every step. Start it again any time from the Plugins page or the EventKoi Dashboard. It replaces the onboarding wizard.
 * New: Settings shows a notice under Single event pages when Elementor, Beaver Builder or Divi is active, with a button to switch to that builder's event templates.
@@ -300,13 +303,7 @@ The latest releases are listed here. See changelog.txt in the plugin folder for 
 * Fix: The event URL is available as a block attribute, so a Button inside the event query loop can link to each event, and attribute bindings inside the loop read the event in each row rather than the page.
 * Fix: The Event Data title block shows the same link in the editor as on the site, so colours match while you design.
 
-= 1.4.8.0 – Divi 5 modules, event reminder emails and calendar page fixes – 2026-10-19 =
-* New: Native Divi 5 modules for the calendar and single events, with live previews in the builder, conversion of the Divi 4 modules and dynamic content for event data.
-* New: Attendees can get a reminder email the day before their event, with its own template under Settings > Emails. Reminders are off until you switch them on.
-* Improvement: Calendars in a narrow column use one-letter day headers so weekday names no longer run together on phones.
-* Fix: Forms, buttons and icons in the theme header and footer are kept intact on calendar pages. Form plugins such as WPForms no longer lose their fields there.
-
 == Upgrade Notice ==
 
-= 1.5.2.0 =
-Adds a guided plugin tour for new installs, a page builder notice in Settings, a start date shortcode format and a more reliable Events Calendar import.
+= 1.5.2.1 =
+Fixes plugin tour text that looked too heavy on sites running Divi.
