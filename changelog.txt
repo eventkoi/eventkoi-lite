@@ -2,6 +2,21 @@
 
 Full release history of EventKoi Lite. The readme lists only the latest releases.
 
+= 1.5.2.0 – Plugin tour, page builder notice and import improvements – 2026-11-24 =
+* New: A guided plugin tour for new installs. It walks you through your events, the event editor, your calendar and the settings on your own site, with a help box on every step. Start it again any time from the Plugins page or the EventKoi Dashboard. It replaces the onboarding wizard.
+* New: Settings shows a notice under Single event pages when Elementor, Beaver Builder or Divi is active, with a button to switch to that builder's event templates.
+* New: The EventKoi shortcode has a start_date key with a format attribute that takes any PHP date format, so one shortcode can show the start date the way you want it.
+* Improvement: The Events Calendar import runs in batches with a progress count, so large sites no longer time out. An event that cannot be imported is skipped and named in the result instead of stopping the import.
+* Improvement: Settings > Emails shows the on and off switch next to each template, names the trigger, and keeps Cc and Bcc behind a link.
+* Improvement: The EventKoi Dashboard lists Getting started and Quick links before the Pro features.
+* Improvement: Custom data and User permissions are shown as Pro previews in Settings. User permissions can no longer be changed in Lite, and permissions you saved earlier keep applying.
+* Improvement: The event series template option is removed from Settings, because event series are a Pro feature.
+* Fix: The date and time of an event follow the timezone set for that event, in shortcodes and data fields too.
+* Fix: Recurring all-day events no longer cause an error where their date is shown through a shortcode or data field.
+* Fix: Removing the image of an event also removes the featured image it had set.
+* Fix: Event titles stay visible in the events list on narrow screens.
+* Fix: The events list counts seats from orders that were added by hand.
+
 = 1.5.1.1 – Event Data date options on the Date and Time field – 2026-11-19 =
 * Improvement: The Date and Time field of the Event Data block has the Show start and end time switch too, so an event on Consecutive Days shows its dates, then its start and end time.
 * Improvement: Show all dates lists the dates of an event on Selected Days on one line, separated by commas.

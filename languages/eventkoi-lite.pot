@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: EventKoi Lite 1.5.1.1\n"
+"Project-Id-Version: EventKoi Lite 1.5.2.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/eventkoi-lite\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-18T22:51:22+00:00\n"
+"POT-Creation-Date: 2026-11-24T07:27:18+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -58,89 +58,7 @@ msgid "View public calendar (opens in new tab)"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: scripts/frontend/build/index.js:1
-msgid "Publish demo event"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-#: scripts/frontend/build/index.js:1
-msgid "View default calendar"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-#: scripts/frontend/build/index.js:1
-msgid "EventKoi Plugin Tour Completed!"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-#: scripts/frontend/build/index.js:1
-msgid "Close"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-#: scripts/frontend/build/index.js:1
-msgid "What you can do next:"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-#: scripts/frontend/build/index.js:1
-msgid "Go to EventKoi Dashboard"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-#: scripts/frontend/build/index.js:1
-msgid "Learn how to customize an Event Template"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-#: scripts/frontend/build/index.js:1
-msgid "You can restart this Tour any time in the EventKoi Dashboard."
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-#: scripts/frontend/build/index.js:1
-msgid "EventKoi Plugin Tour"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Welcome to your Calendars"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Take action: Click link icon"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Here, you can create new calendars, edit existing ones, and more."
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Click the icon to view the frontend calendar."
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "This is your last step in the tour."
-msgstr ""
-
-#. translators: 1: current step number, 2: total steps
-#: scripts/backend/build/index.js:1
-#, js-format
-msgid "%1$s of %2$s"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-#: scripts/frontend/build/index.js:1
-msgid "Back"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-#: scripts/frontend/build/index.js:1
-#: includes/core/class-blocks.php:1570
-msgid "Next"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-#: includes/admin/class-menus.php:155
+#: includes/admin/class-menus.php:156
 #: includes/core/class-beaver-modules.php:102
 #: includes/core/class-permissions.php:75
 #: includes/core/class-post-types.php:58
@@ -160,66 +78,8 @@ msgid "Upgrade to access Unlimited Calendars"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-msgid "Set calendar defaults"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Confirm timezone and date format"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Choose event templates"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Classical Concert in the Park"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "<p>A serene evening of classical music unfolds at the Singapore Botanic Gardens’ iconic Bandstand. Surrounded by lush greenery and gentle evening breezes, audiences can enjoy a live orchestral performance beneath the open sky. An enchanting blend of nature, culture, and timeless melodies in the heart of the city.</p>"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "A ready-made listing to explore."
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "You're ready to<br />start using EventKoi!"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Take a quick 2-minute tour to learn how to:"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "View your ready-made calendar"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Creating demo event…"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Start plugin tour"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Onboarding wizard"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Finish setup"
-msgstr ""
-
-#. translators: %s: title of the next onboarding step.
-#: scripts/backend/build/index.js:1
-#, js-format
-msgid "Next: %s"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-#: includes/admin/class-menus.php:54
-#: includes/admin/class-menus.php:153
+#: includes/admin/class-menus.php:55
+#: includes/admin/class-menus.php:154
 msgid "Dashboard"
 msgstr ""
 
@@ -329,7 +189,7 @@ msgstr ""
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
 #: includes/api/class-rsvps.php:479
-#: includes/core/class-tec-importer.php:458
+#: includes/core/class-tec-importer.php:535
 msgid "Email"
 msgstr ""
 
@@ -769,39 +629,12 @@ msgid "Restore this event to make changes. While trashed it stays hidden from th
 msgstr ""
 
 #: scripts/backend/build/index.js:1
+#: scripts/frontend/build/index.js:1
+msgid "Back"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
 msgid "Restore event"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Welcome to your Events settings"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Take action: Click on \"Publish\""
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Take action: Click on \"Preview\" or \"Save\""
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Take action: Click on \"Calendars\""
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "This particular event is a demo, so we’ve pre-filled everything for you. Feel free to play around."
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Once you have finished editing your event, you can publish it."
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "View the event you have created or make additional changes and save them."
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "We’re headed to your Calendars next."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
@@ -1147,10 +980,6 @@ msgid "No orders found."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-msgid "View calendar"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
 msgid "Import failed."
 msgstr ""
 
@@ -1180,22 +1009,6 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 msgid "No events found in file."
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Welcome to your Events list"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Take action: Click on \"Classical Concert in the Park\""
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Here, you can create new events, edit existing ones, search/filter, and more."
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Click the event to open it. We'll continue on the next page."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
@@ -1244,9 +1057,9 @@ msgid "Empty trash"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/admin/class-menus.php:141
 #: includes/admin/class-menus.php:142
-#: includes/admin/class-menus.php:154
+#: includes/admin/class-menus.php:143
+#: includes/admin/class-menus.php:155
 #: includes/core/class-permissions.php:68
 #: includes/core/class-post-types.php:115
 msgid "Events"
@@ -1323,7 +1136,7 @@ msgid "Edit calendar"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/admin/class-menus.php:156
+#: includes/admin/class-menus.php:157
 msgid "Ticket sales"
 msgstr ""
 
@@ -1333,8 +1146,12 @@ msgid "Custom fields"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/admin/class-menus.php:55
-#: includes/admin/class-menus.php:157
+msgid "Taxonomies"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+#: includes/admin/class-menus.php:56
+#: includes/admin/class-menus.php:158
 msgid "Settings"
 msgstr ""
 
@@ -1626,11 +1443,7 @@ msgid "Admin notifications"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-msgid "Recipient:"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Description:"
+msgid "Trigger:"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
@@ -1672,6 +1485,10 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 msgid "Recipients"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Cc/Bcc"
 msgstr ""
 
 #. translators: 1: address token such as [attendee_email], 2: who it stands for.
@@ -1725,15 +1542,19 @@ msgid "Change sender"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-msgid "Upgrade to access Custom Fields"
+msgid "Upgrade to access Tickets & RSVP Fields"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-msgid "Preview of Pro Custom Fields. Upgrade to enable."
+msgid "Tickets & RSVP fields"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-msgid "Group"
+msgid "Questions for the people who buy tickets or RSVP. Add them to an event under Tickets or RSVP, where you choose whether each one is asked once or for every attendee."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Reorder"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
@@ -1762,11 +1583,44 @@ msgid "ID"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
+msgid "Upgrade to access Custom Fields"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
 msgid "Groups"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
+msgid "Preview of Pro field groups. Upgrade to enable."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+#: scripts/frontend/build/index.js:1
+msgid "Move to trash"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Add Group"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Field group"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Field count"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
 msgid "Global"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Preview of Pro Custom Fields. Upgrade to enable."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Group"
 msgstr ""
 
 #. translators: %d: number of imported events
@@ -1854,6 +1708,12 @@ msgstr ""
 msgid "If you import as is, paid ticket types are added without pricing."
 msgstr ""
 
+#. translators: 1: events handled so far, 2: events to import in total.
+#: scripts/backend/build/index.js:1
+#, js-format
+msgid "Importing events... %1$d of %2$d"
+msgstr ""
+
 #: scripts/backend/build/index.js:1
 msgid "Importing events..."
 msgstr ""
@@ -1915,7 +1775,7 @@ msgid "Supports structured data & OG tags"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/admin/class-scripts.php:216
+#: includes/admin/class-scripts.php:235
 msgid "Block"
 msgstr ""
 
@@ -2078,14 +1938,6 @@ msgid "Applied to every event page unless overridden on the event itself."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-msgid "Event series template"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "The overview page of a recurring event, listing its dates. Default keeps EventKoi's built-in series layout."
-msgstr ""
-
-#: scripts/backend/build/index.js:1
 msgid "Calendar page template"
 msgstr ""
 
@@ -2106,11 +1958,7 @@ msgid "Adds a small link above the title on event pages that takes visitors to t
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-msgid "Permissions saved."
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Something went wrong."
+msgid "Upgrade to access User Permissions"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
@@ -2119,6 +1967,10 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 msgid "User permissions"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Pick a user role, then tick what EventKoi features that role can access. Administrators always have full access."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
@@ -2191,6 +2043,92 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 msgid "When ON, the submission form shows a Recurring section (daily/weekly/monthly/yearly with end conditions). When OFF, only single events can be submitted."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "View terms (6)"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "View terms (12)"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "View terms (4)"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+#: includes/api/class-rsvps.php:464
+#: includes/api/class-tickets.php:1052
+#: includes/core/class-beaver-modules.php:69
+#: includes/core/class-beaver-modules.php:140
+#: includes/core/class-beaver-modules.php:149
+#: includes/core/class-beaver-modules.php:158
+#: includes/core/class-beaver-modules.php:167
+#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:65
+#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:76
+#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:87
+#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:98
+#: includes/core/elementor-widgets/class-widget-calendar.php:117
+#: includes/core/elementor-widgets/class-widget-calendar.php:130
+msgid "Yes"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+#: includes/api/class-rsvps.php:464
+#: includes/api/class-tickets.php:1052
+#: includes/core/class-beaver-modules.php:70
+#: includes/core/class-beaver-modules.php:141
+#: includes/core/class-beaver-modules.php:150
+#: includes/core/class-beaver-modules.php:159
+#: includes/core/class-beaver-modules.php:168
+#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:66
+#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:77
+#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:88
+#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:99
+#: includes/core/elementor-widgets/class-widget-calendar.php:118
+#: includes/core/elementor-widgets/class-widget-calendar.php:131
+msgid "No"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Upgrade to access Custom Taxonomies"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Preview of Pro custom taxonomies. Upgrade to enable."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "3 taxonomies"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Add taxonomy"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Taxonomy"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Hierarchical"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "In admin menu"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Terms"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Replace default location fields with a custom taxonomy"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Choose a taxonomy to replace EventKoi's default location fields. Your custom taxonomy will show up in event settings under Location details and be used for event schema."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
@@ -2337,7 +2275,7 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-event.php:4816
+#: includes/core/class-event.php:4829
 #: includes/core/class-ticket-emails.php:499
 #: includes/core/class-ticket-fallback.php:141
 msgid "Tickets"
@@ -2443,84 +2381,84 @@ msgid "Current month"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6495
+#: includes/core/class-event.php:6573
 #: includes/core/elementor-widgets/class-widget-calendar.php:1226
 #: includes/helpers/instance.php:134
 msgid "January"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6496
+#: includes/core/class-event.php:6574
 #: includes/core/elementor-widgets/class-widget-calendar.php:1227
 #: includes/helpers/instance.php:135
 msgid "February"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6497
+#: includes/core/class-event.php:6575
 #: includes/core/elementor-widgets/class-widget-calendar.php:1228
 #: includes/helpers/instance.php:136
 msgid "March"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6498
+#: includes/core/class-event.php:6576
 #: includes/core/elementor-widgets/class-widget-calendar.php:1229
 #: includes/helpers/instance.php:137
 msgid "April"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6499
+#: includes/core/class-event.php:6577
 #: includes/core/elementor-widgets/class-widget-calendar.php:1230
 #: includes/helpers/instance.php:138
 msgid "May"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6500
+#: includes/core/class-event.php:6578
 #: includes/core/elementor-widgets/class-widget-calendar.php:1231
 #: includes/helpers/instance.php:139
 msgid "June"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6501
+#: includes/core/class-event.php:6579
 #: includes/core/elementor-widgets/class-widget-calendar.php:1232
 #: includes/helpers/instance.php:140
 msgid "July"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6502
+#: includes/core/class-event.php:6580
 #: includes/core/elementor-widgets/class-widget-calendar.php:1233
 #: includes/helpers/instance.php:141
 msgid "August"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6503
+#: includes/core/class-event.php:6581
 #: includes/core/elementor-widgets/class-widget-calendar.php:1234
 #: includes/helpers/instance.php:142
 msgid "September"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6504
+#: includes/core/class-event.php:6582
 #: includes/core/elementor-widgets/class-widget-calendar.php:1235
 #: includes/helpers/instance.php:143
 msgid "October"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6505
+#: includes/core/class-event.php:6583
 #: includes/core/elementor-widgets/class-widget-calendar.php:1236
 #: includes/helpers/instance.php:144
 msgid "November"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6506
+#: includes/core/class-event.php:6584
 #: includes/core/elementor-widgets/class-widget-calendar.php:1237
 #: includes/helpers/instance.php:145
 msgid "December"
@@ -2903,7 +2841,7 @@ msgid "RSVP going"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6291
+#: includes/core/class-event.php:6369
 msgid "RSVP full"
 msgstr ""
 
@@ -2927,6 +2865,12 @@ msgstr ""
 #: scripts/frontend/build/index.js:1
 #: includes/core/class-blocks.php:1566
 msgid "Previous"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+#: scripts/frontend/build/index.js:1
+#: includes/core/class-blocks.php:1570
+msgid "Next"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
@@ -2992,11 +2936,6 @@ msgstr ""
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
 msgid "Duplicate"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-#: scripts/frontend/build/index.js:1
-msgid "Move to trash"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
@@ -3206,7 +3145,7 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-divi5-modules.php:360
-#: includes/core/class-event.php:6413
+#: includes/core/class-event.php:6491
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:110
 #: includes/core/elementor-widgets/class-widget-calendar.php:1248
 #: includes/helpers/instance.php:158
@@ -3215,7 +3154,7 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-divi5-modules.php:361
-#: includes/core/class-event.php:6414
+#: includes/core/class-event.php:6492
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:111
 #: includes/core/elementor-widgets/class-widget-calendar.php:1249
 #: includes/helpers/instance.php:159
@@ -3224,7 +3163,7 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-divi5-modules.php:362
-#: includes/core/class-event.php:6415
+#: includes/core/class-event.php:6493
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:112
 #: includes/core/elementor-widgets/class-widget-calendar.php:1250
 #: includes/helpers/instance.php:160
@@ -3233,7 +3172,7 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-divi5-modules.php:363
-#: includes/core/class-event.php:6416
+#: includes/core/class-event.php:6494
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:113
 #: includes/core/elementor-widgets/class-widget-calendar.php:1251
 #: includes/helpers/instance.php:161
@@ -3242,7 +3181,7 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-divi5-modules.php:364
-#: includes/core/class-event.php:6417
+#: includes/core/class-event.php:6495
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:114
 #: includes/core/elementor-widgets/class-widget-calendar.php:1252
 #: includes/helpers/instance.php:162
@@ -3251,7 +3190,7 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-divi5-modules.php:365
-#: includes/core/class-event.php:6418
+#: includes/core/class-event.php:6496
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:115
 #: includes/core/elementor-widgets/class-widget-calendar.php:1253
 #: includes/helpers/instance.php:163
@@ -3260,7 +3199,7 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-divi5-modules.php:359
-#: includes/core/class-event.php:6412
+#: includes/core/class-event.php:6490
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:109
 #: includes/core/elementor-widgets/class-widget-calendar.php:1254
 #: includes/helpers/instance.php:164
@@ -3411,10 +3350,6 @@ msgid "Getting started"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-msgid "Launch onboarding wizard"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
 msgid "Begin plugin tour"
 msgstr ""
 
@@ -3501,6 +3436,10 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 msgid "View all events"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "View default calendar"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
@@ -3644,27 +3583,27 @@ msgid "Attendees purchase one ticket that covers the whole event, instead of one
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6422
+#: includes/core/class-event.php:6500
 msgid "first"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6423
+#: includes/core/class-event.php:6501
 msgid "second"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6424
+#: includes/core/class-event.php:6502
 msgid "third"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6425
+#: includes/core/class-event.php:6503
 msgid "fourth"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:6426
+#: includes/core/class-event.php:6504
 msgid "fifth"
 msgstr ""
 
@@ -3750,9 +3689,9 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-event.php:254
-#: includes/core/class-event.php:945
-#: includes/core/class-event.php:2357
-#: includes/core/class-event.php:2610
+#: includes/core/class-event.php:958
+#: includes/core/class-event.php:2370
+#: includes/core/class-event.php:2623
 msgid "Date and time to be confirmed"
 msgstr ""
 
@@ -4343,100 +4282,6 @@ msgid "opens in new tab"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-msgid "Default templates are back in use."
-msgstr ""
-
-#. translators: %s: page builder name.
-#: scripts/backend/build/index.js:1
-#, js-format
-msgid "%s templates are now in use."
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "The templates could not be updated."
-msgstr ""
-
-#. translators: %s: page builder name.
-#: scripts/backend/build/index.js:1
-#, js-format
-msgid "Yes, use %s templates"
-msgstr ""
-
-#. translators: %s: page builder name.
-#: scripts/backend/build/index.js:1
-#, js-format
-msgid "Event, event series and calendar pages open on templates built for %1$s. Edit them in %1$s like any other template."
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "No, keep the default templates"
-msgstr ""
-
-#. translators: %s: page builder name.
-#: scripts/backend/build/index.js:1
-#, js-format
-msgid "Pages keep EventKoi's built-in templates. You can switch to the %s templates later from Settings."
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Pages keep EventKoi's built-in templates. You can switch to page builder templates later from Settings."
-msgstr ""
-
-#. translators: %s: page builder name.
-#: scripts/backend/build/index.js:1
-#, js-format
-msgid "Would you like to use %s templates for your events?"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Would you like to use page builder templates for your events?"
-msgstr ""
-
-#. translators: %s: page builder name.
-#: scripts/backend/build/index.js:1
-#, js-format
-msgid "%1$s is active on this site, so your event pages can be designed in %1$s from the start."
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "More than one page builder is active on this site. Pick the one your event pages should be designed in."
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Templates ready. Edit them any time:"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid ""
-"EventKoi uses this site’s default timezone and date format.\n"
-"Go to General Settings if you want to change them."
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Site defaults"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Go to General Settings and change"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Set your calendar defaults"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Select the day calendars use as the start of the week."
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Select your working days. These are used for recurring event rules."
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-msgid "Select how event times are displayed (e.g. 2:00 PM or 14:00)."
-msgstr ""
-
-#: scripts/backend/build/index.js:1
 msgid "All time"
 msgstr ""
 
@@ -4474,23 +4319,6 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 msgid "Not answered"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
-#: includes/api/class-rsvps.php:464
-#: includes/api/class-tickets.php:1052
-#: includes/core/class-beaver-modules.php:69
-#: includes/core/class-beaver-modules.php:140
-#: includes/core/class-beaver-modules.php:149
-#: includes/core/class-beaver-modules.php:158
-#: includes/core/class-beaver-modules.php:167
-#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:65
-#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:76
-#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:87
-#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:98
-#: includes/core/elementor-widgets/class-widget-calendar.php:117
-#: includes/core/elementor-widgets/class-widget-calendar.php:130
-msgid "Yes"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
@@ -4761,6 +4589,10 @@ msgid "Unexpected response."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
+msgid "Something went wrong."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
 msgid "EventKoi API"
 msgstr ""
 
@@ -4786,6 +4618,50 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 msgid "Regenerate API key"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "The notice could not be dismissed."
+msgstr ""
+
+#. translators: %s: page builder name.
+#: scripts/backend/build/index.js:1
+#, js-format
+msgid "%s templates are now in use."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "The templates could not be updated."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "EventKoi is currently using block editor templates for your events. Would you like to switch to page builder templates instead?"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Dismiss"
+msgstr ""
+
+#. translators: %s: page builder name.
+#: scripts/backend/build/index.js:1
+#, js-format
+msgid "Switch to %s templates"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Page builders detected."
+msgstr ""
+
+#. translators: %s: page builder name.
+#: scripts/backend/build/index.js:1
+#, js-format
+msgid "%s detected."
+msgstr ""
+
+#. translators: %s: page builder name.
+#: scripts/backend/build/index.js:1
+#, js-format
+msgid "EventKoi is currently using block editor templates for your events. Would you like to switch to %s templates instead?"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
@@ -4903,6 +4779,14 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 msgid "Default settings"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Custom data"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Fields"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
@@ -5046,6 +4930,11 @@ msgid "Next slide"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
+#: scripts/frontend/build/index.js:1
+msgid "Close"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
 msgid "Set date"
 msgstr ""
 
@@ -5060,7 +4949,7 @@ msgid "More pages"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-event.php:1748
+#: includes/core/class-event.php:1761
 msgid "YouTube video"
 msgstr ""
 
@@ -5214,11 +5103,6 @@ msgid "Event ID"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: scripts/frontend/build/index.js:1
-msgid "Continue Guide"
-msgstr ""
-
-#: scripts/backend/build/index.js:1
 msgid "Error toggling auto-updates."
 msgstr ""
 
@@ -5311,23 +5195,204 @@ msgid "Changing list layouts rebuilds the template and may reset custom styling 
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-msgid "Continue Onboarding Wizard"
+msgid "Close tour"
+msgstr ""
+
+#. translators: 1: current step, 2: number of steps.
+#: scripts/backend/build/index.js:1
+#, js-format
+msgid "%1$s of %2$s"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-msgid "EventKoi Onboarding Wizard"
+msgid "Lesley Sim"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-msgid "Launch EventKoi Onboarding Wizard?"
+msgid "Co-founder, EventKoi"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-msgid "Dismiss"
+msgid "Begin tour"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-msgid "Launch wizard"
+msgid "The tour could not start. Please try again."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+#: scripts/frontend/build/index.js:1
+msgid "Continue Tour"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+#: scripts/frontend/build/index.js:1
+msgid "Need more help?"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+#: scripts/frontend/build/index.js:1
+msgid "Close help"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+#: scripts/frontend/build/index.js:1
+msgid "Read setup guide"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+#: scripts/frontend/build/index.js:1
+msgid "Contact support"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+#: includes/api/class-onboarding.php:341
+#: includes/core/class-ticket-fallback.php:350
+msgid "Something went wrong. Please try again."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "You made it! Welcome onboard! 🥳"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "We built EventKoi to be fast, modern and built for today’s WordPress with the block editor and page builders."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "I sincerely hope you enjoy using it."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "P.S. I’ve handpicked a list of our best tutorials to help you get the most out of EventKoi."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Would you like me to email it to you?"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Thanks! Check your inbox."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+#: scripts/frontend/build/index.js:1
+#: includes/core/class-ticket-fallback.php:183
+msgid "Email address"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Email me"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Classical Concert in the Park"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "<p>A serene evening of classical music unfolds at the Singapore Botanic Gardens’ iconic Bandstand. Surrounded by lush greenery and gentle evening breezes, audiences can enjoy a live orchestral performance beneath the open sky. An enchanting blend of nature, culture, and timeless melodies in the heart of the city.</p>"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "A ready-made listing to explore."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Welcome to EventKoi! 👋"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "To get you started, I’ve created a short tour to help you publish your first event and get familiar with our features."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Manage your events here"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Create new events, or edit existing ones."
+msgstr ""
+
+#. translators: %s: name of the demo event.
+#: scripts/backend/build/index.js:1
+#, js-format
+msgid "Click on “%s”"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Click the event to edit it."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "The tour will continue on the next page."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Explore and edit event"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Get familiar with the event settings by playing around and making changes."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Click “Publish”"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Publish your event when you’re ready."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Click “Preview”"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "See what your event looks like to attendees."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Click on “Calendars”"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "We’re headed to your Calendars next."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Welcome to your Calendar"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Access and manage your calendar here."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Click link icon"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Click the icon to view the frontend calendar."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Click on “Settings”"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Let’s personalise your event and calendar settings."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Personalise your settings"
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Take your time. Go through everything and customise what you need."
+msgstr ""
+
+#: scripts/backend/build/index.js:1
+msgid "Next: Final step"
 msgstr ""
 
 #: scripts/frontend/build/index.js:1
@@ -5749,7 +5814,7 @@ msgid "Check-in code:"
 msgstr ""
 
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-event.php:5878
+#: includes/core/class-event.php:5893
 msgid "Sold out"
 msgstr ""
 
@@ -5772,6 +5837,8 @@ msgid "Please complete all required fields."
 msgstr ""
 
 #: scripts/frontend/build/index.js:1
+#: includes/api/class-onboarding.php:304
+#: includes/api/class-onboarding.php:329
 #: includes/api/class-tickets.php:880
 #: includes/core/class-order-customer.php:51
 #: includes/core/class-rsvps.php:811
@@ -5887,7 +5954,7 @@ msgid "Not on sale"
 msgstr ""
 
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-event.php:4830
+#: includes/core/class-event.php:4843
 msgid "Get tickets"
 msgstr ""
 
@@ -6001,11 +6068,6 @@ msgid "Last name is required."
 msgstr ""
 
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-ticket-fallback.php:183
-msgid "Email address"
-msgstr ""
-
-#: scripts/frontend/build/index.js:1
 msgid "We will send your tickets to this email address."
 msgstr ""
 
@@ -6067,46 +6129,46 @@ msgstr ""
 msgid "https://eventkoi.com/"
 msgstr ""
 
-#: includes/admin/class-menus.php:53
-msgid "Launch Onboarding Wizard"
+#: includes/admin/class-menus.php:54
+msgid "Start tour"
 msgstr ""
 
-#: includes/admin/class-menus.php:112
-#: includes/admin/class-menus.php:131
+#: includes/admin/class-menus.php:113
+#: includes/admin/class-menus.php:132
 #, php-format
 msgid "Thank you for using %s!"
 msgstr ""
 
-#: includes/admin/class-menus.php:118
+#: includes/admin/class-menus.php:119
 #, php-format
 msgid "Thank you for using %1$s! Please rate us %2$s to help us spread the word."
 msgstr ""
 
-#: includes/admin/class-menus.php:119
+#: includes/admin/class-menus.php:120
 #, php-format
 msgid "Thank you for using %1$s! If you enjoy it, please leave us a %2$s rating."
 msgstr ""
 
-#: includes/admin/class-menus.php:120
+#: includes/admin/class-menus.php:121
 #, php-format
 msgid "Thank you for using %1$s! Please consider leaving a %2$s review."
 msgstr ""
 
 #: includes/admin/class-scripts.php:146
-#: includes/admin/class-scripts.php:265
+#: includes/admin/class-scripts.php:284
 msgid "Elementor"
 msgstr ""
 
-#: includes/admin/class-scripts.php:291
+#: includes/admin/class-scripts.php:310
 msgid "Bricks"
 msgstr ""
 
-#: includes/admin/class-scripts.php:337
+#: includes/admin/class-scripts.php:356
 #: includes/core/class-divi-templates.php:38
 msgid "Divi"
 msgstr ""
 
-#: includes/admin/class-scripts.php:390
+#: includes/admin/class-scripts.php:409
 #: includes/core/class-beaver-templates.php:38
 msgid "Beaver Builder"
 msgstr ""
@@ -6228,6 +6290,26 @@ msgstr ""
 msgid "No event IDs provided."
 msgstr ""
 
+#: includes/api/class-onboarding.php:233
+msgid "Invalid tour step."
+msgstr ""
+
+#: includes/api/class-onboarding.php:271
+msgid "Sorry, you are not allowed to do that."
+msgstr ""
+
+#: includes/api/class-onboarding.php:310
+msgid "Email signup is not available right now."
+msgstr ""
+
+#: includes/api/class-onboarding.php:333
+msgid "This email unsubscribed from EventKoi emails earlier, so it cannot be added again."
+msgstr ""
+
+#: includes/api/class-onboarding.php:337
+msgid "Too many signups right now. Please try again later."
+msgstr ""
+
 #: includes/api/class-order.php:56
 #: includes/core/class-ticket-emails.php:31
 #: includes/core/class-ticket-emails.php:69
@@ -6305,22 +6387,6 @@ msgstr ""
 msgid "Invalid RSVP status."
 msgstr ""
 
-#: includes/api/class-rsvps.php:464
-#: includes/api/class-tickets.php:1052
-#: includes/core/class-beaver-modules.php:70
-#: includes/core/class-beaver-modules.php:141
-#: includes/core/class-beaver-modules.php:150
-#: includes/core/class-beaver-modules.php:159
-#: includes/core/class-beaver-modules.php:168
-#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:66
-#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:77
-#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:88
-#: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:99
-#: includes/core/elementor-widgets/class-widget-calendar.php:118
-#: includes/core/elementor-widgets/class-widget-calendar.php:131
-msgid "No"
-msgstr ""
-
 #: includes/api/class-rsvps.php:481
 msgid "Guest of"
 msgstr ""
@@ -6341,11 +6407,11 @@ msgstr ""
 msgid "Invalid data format. Expected a JSON object."
 msgstr ""
 
-#: includes/api/class-settings.php:227
+#: includes/api/class-settings.php:233
 msgid "Invalid currency code."
 msgstr ""
 
-#: includes/api/class-settings.php:267
+#: includes/api/class-settings.php:271
 msgid "Settings updated successfully."
 msgstr ""
 
@@ -7237,7 +7303,7 @@ msgid "Elementor is not active."
 msgstr ""
 
 #: includes/core/class-event.php:491
-#: includes/core/class-event.php:4548
+#: includes/core/class-event.php:4561
 msgid "Attend online"
 msgstr ""
 
@@ -7250,143 +7316,143 @@ msgid "Event updated."
 msgstr ""
 
 #. translators: %d is the number of extra recurrence rules.
-#: includes/core/class-event.php:2392
+#: includes/core/class-event.php:2405
 #, php-format
 msgid "%d more rule"
 msgid_plural "%d more rules"
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/core/class-event.php:4004
+#: includes/core/class-event.php:4017
 #: includes/core/class-events.php:651
 msgid "Event restored successfully."
 msgid_plural "Events restored successfully."
 msgstr[0] ""
 msgstr[1] ""
 
-#: includes/core/class-event.php:4020
+#: includes/core/class-event.php:4033
 msgid "Event moved to Trash."
 msgstr ""
 
 #. translators: %s event title
-#: includes/core/class-event.php:4034
+#: includes/core/class-event.php:4047
 #, php-format
 msgid "[Duplicate]: %s"
 msgstr ""
 
-#: includes/core/class-event.php:4063
+#: includes/core/class-event.php:4076
 msgid "Event duplicated."
 msgstr ""
 
-#: includes/core/class-event.php:4167
+#: includes/core/class-event.php:4180
 #: includes/core/class-schema.php:435
 msgid "Untitled event"
 msgstr ""
 
-#: includes/core/class-event.php:4218
+#: includes/core/class-event.php:4231
 msgid "No event details."
 msgstr ""
 
 #. translators: %s: linked event title.
-#: includes/core/class-event.php:4424
+#: includes/core/class-event.php:4437
 #, php-format
 msgid "← See all events in the %s series"
 msgstr ""
 
-#: includes/core/class-event.php:4478
+#: includes/core/class-event.php:4491
 msgid "Enter the password to see the location."
 msgstr ""
 
-#: includes/core/class-event.php:4484
-#: includes/core/class-event.php:4573
+#: includes/core/class-event.php:4497
+#: includes/core/class-event.php:4586
 msgid "No location available."
 msgstr ""
 
 #. translators: %s: formatted starting price.
-#: includes/core/class-event.php:4763
+#: includes/core/class-event.php:4776
 #, php-format
 msgid "From %s"
 msgstr ""
 
-#: includes/core/class-event.php:5129
-#: includes/core/class-event.php:5441
+#: includes/core/class-event.php:5142
+#: includes/core/class-event.php:5456
 msgid "Date and time to be confirmed."
 msgstr ""
 
-#: includes/core/class-event.php:5907
+#: includes/core/class-event.php:5922
 msgid "Low stock"
 msgstr ""
 
-#: includes/core/class-event.php:6438
+#: includes/core/class-event.php:6516
 msgid "days"
 msgstr ""
 
-#: includes/core/class-event.php:6439
+#: includes/core/class-event.php:6517
 msgid "weeks"
 msgstr ""
 
-#: includes/core/class-event.php:6440
+#: includes/core/class-event.php:6518
 msgid "months"
 msgstr ""
 
-#: includes/core/class-event.php:6441
+#: includes/core/class-event.php:6519
 msgid "years"
 msgstr ""
 
 #. translators: %1$d: interval number (e.g., 2). %2$s: period plural (e.g., "months").
-#: includes/core/class-event.php:6445
+#: includes/core/class-event.php:6523
 #, php-format
 msgid "Every %1$d %2$s"
 msgstr ""
 
-#: includes/core/class-event.php:6447
+#: includes/core/class-event.php:6525
 msgid "Daily"
 msgstr ""
 
-#: includes/core/class-event.php:6449
+#: includes/core/class-event.php:6527
 msgid "Weekly"
 msgstr ""
 
-#: includes/core/class-event.php:6451
+#: includes/core/class-event.php:6529
 msgid "Monthly"
 msgstr ""
 
-#: includes/core/class-event.php:6453
+#: includes/core/class-event.php:6531
 msgid "Yearly"
 msgstr ""
 
 #. translators: 1: ordinal week in the month, 2: weekday name.
-#: includes/core/class-event.php:6470
+#: includes/core/class-event.php:6548
 #, php-format
 msgid ", on the %1$s %2$s"
 msgstr ""
 
 #. translators: %d: day number in the month.
-#: includes/core/class-event.php:6486
+#: includes/core/class-event.php:6564
 #, php-format
 msgid ", on day %d"
 msgstr ""
 
 #. translators: %s: comma-separated month names.
-#: includes/core/class-event.php:6520
+#: includes/core/class-event.php:6598
 #, php-format
 msgid ", in %s"
 msgstr ""
 
 #. translators: %s: comma-separated weekday names.
-#: includes/core/class-event.php:6551
+#: includes/core/class-event.php:6629
 #, php-format
 msgid ", on %s"
 msgstr ""
 
-#: includes/core/class-event.php:6651
-#: includes/core/class-event.php:6684
+#: includes/core/class-event.php:6729
+#: includes/core/class-event.php:6762
 msgid ", forever"
 msgstr ""
 
 #. translators: %d: total completed events.
-#: includes/core/class-event.php:6657
-#: includes/core/class-event.php:6672
+#: includes/core/class-event.php:6735
+#: includes/core/class-event.php:6750
 #, php-format
 msgid ", all %d event completed"
 msgid_plural ", all %d events completed"
@@ -7394,8 +7460,8 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: remaining events, 2: total events.
-#: includes/core/class-event.php:6663
-#: includes/core/class-event.php:6678
+#: includes/core/class-event.php:6741
+#: includes/core/class-event.php:6756
 #, php-format
 msgid ", %1$d of %2$d event left"
 msgid_plural ", %1$d of %2$d events left"
@@ -7476,7 +7542,7 @@ msgid "Parsed data has expired. Please upload the file again."
 msgstr ""
 
 #: includes/core/class-ics-importer.php:290
-#: includes/core/class-tec-importer.php:347
+#: includes/core/class-tec-importer.php:422
 msgid "Event has no start date."
 msgstr ""
 
@@ -7889,50 +7955,56 @@ msgstr ""
 msgid "The event's timezone."
 msgstr ""
 
-#: includes/core/class-tec-importer.php:88
-#: includes/core/class-tec-importer.php:152
+#: includes/core/class-tec-importer.php:96
+#: includes/core/class-tec-importer.php:160
 msgid "The Events Calendar plugin is not active."
 msgstr ""
 
-#: includes/core/class-tec-importer.php:220
+#. translators: %s: technical error message.
+#: includes/core/class-tec-importer.php:213
+#, php-format
+msgid "This event could not be imported and was left out: %s"
+msgstr ""
+
+#: includes/core/class-tec-importer.php:271
 msgid "Already-imported events are skipped and never updated. To re-import one after changing it in The Events Calendar, delete its EventKoi copy first."
 msgstr ""
 
-#: includes/core/class-tec-importer.php:285
+#: includes/core/class-tec-importer.php:360
 msgid "No default calendar is set."
 msgstr ""
 
-#: includes/core/class-tec-importer.php:334
+#: includes/core/class-tec-importer.php:409
 msgid "TEC event not found."
 msgstr ""
 
-#: includes/core/class-tec-importer.php:456
+#: includes/core/class-tec-importer.php:533
 msgid "Organizer"
 msgstr ""
 
-#: includes/core/class-tec-importer.php:461
+#: includes/core/class-tec-importer.php:538
 msgid "Phone"
 msgstr ""
 
-#: includes/core/class-tec-importer.php:464
+#: includes/core/class-tec-importer.php:541
 msgid "Website"
 msgstr ""
 
-#: includes/core/class-tec-importer.php:471
-#: includes/core/class-tec-importer.php:1530
+#: includes/core/class-tec-importer.php:548
+#: includes/core/class-tec-importer.php:1607
 msgid "Event website"
 msgstr ""
 
-#: includes/core/class-tec-importer.php:477
+#: includes/core/class-tec-importer.php:554
 msgid "Cost"
 msgstr ""
 
-#: includes/core/class-tec-importer.php:861
+#: includes/core/class-tec-importer.php:938
 msgid "General admission"
 msgstr ""
 
 #. translators: %d: number of WooCommerce tickets.
-#: includes/core/class-tec-importer.php:908
+#: includes/core/class-tec-importer.php:985
 #, php-format
 msgid "%d WooCommerce ticket (Event Tickets Plus) was not imported."
 msgid_plural "%d WooCommerce tickets (Event Tickets Plus) were not imported."
@@ -7940,7 +8012,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of attendees.
-#: includes/core/class-tec-importer.php:923
+#: includes/core/class-tec-importer.php:1000
 #, php-format
 msgid "%d attendee record was not imported."
 msgid_plural "%d attendee records were not imported."
@@ -7948,7 +8020,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: 1: number of paid tickets, 2: TEC currency code, 3: checkout currency code.
-#: includes/core/class-tec-importer.php:971
+#: includes/core/class-tec-importer.php:1048
 #, php-format
 msgid "%1$d paid ticket was imported without pricing because Event Tickets charges %2$s while your checkout currency is %3$s."
 msgid_plural "%1$d paid tickets were imported without pricing because Event Tickets charges %2$s while your checkout currency is %3$s."
@@ -7956,7 +8028,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of previously sold tickets.
-#: includes/core/class-tec-importer.php:981
+#: includes/core/class-tec-importer.php:1058
 #, php-format
 msgid "%d previously sold ticket was deducted from the imported capacity."
 msgid_plural "%d previously sold tickets were deducted from the imported capacity."
@@ -8125,10 +8197,6 @@ msgstr ""
 
 #: includes/core/class-ticket-fallback.php:339
 msgid "Thank you, your order has been received and is waiting for payment confirmation."
-msgstr ""
-
-#: includes/core/class-ticket-fallback.php:350
-msgid "Something went wrong. Please try again."
 msgstr ""
 
 #: includes/core/class-url-importer.php:99
