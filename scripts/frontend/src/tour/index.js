@@ -5,8 +5,33 @@ import { __ } from "@wordpress/i18n";
 // Need more help box. Inline styles, so a theme cannot restyle them.
 
 const HELP_HIDDEN_KEY = "eventkoi_tour_help_hidden";
-const FONT =
-  'inter, -apple-system, blinkmacsystemfont, "Segoe UI", roboto, oxygen-sans, ubuntu, cantarell, "Helvetica Neue", sans-serif';
+const SYSTEM_FONT =
+  '-apple-system, blinkmacsystemfont, "Segoe UI", roboto, oxygen-sans, ubuntu, cantarell, "Helvetica Neue", sans-serif';
+let FONT = "inter, " + SYSTEM_FONT;
+
+// A theme can load its own Inter without a regular weight (Divi ships only
+// 500 to 700). Regular text would then render as medium, so use the system
+// font on those sites.
+function siteInterLacksRegular() {
+  try {
+    const faces = [...document.fonts].filter((face) =>
+      /^["']?inter["']?$/i.test(face.family)
+    );
+    if (!faces.length) return false;
+
+    const toNumber = (value) =>
+      value === "normal" ? 400 : value === "bold" ? 700 : parseInt(value, 10);
+
+    return !faces.some((face) => {
+      const range = String(face.weight).trim().split(/\s+/).map(toNumber);
+      return range.length > 1
+        ? range[0] <= 400 && range[1] >= 400
+        : range[0] === 400;
+    });
+  } catch (error) {
+    return false;
+  }
+}
 
 const LOGO_PATHS = [
   [
@@ -264,6 +289,10 @@ function mount() {
   const tour = window.eventkoiTourFront;
   if (!tour || !tour.continueUrl || document.getElementById("eventkoi-tour-front")) {
     return;
+  }
+
+  if (siteInterLacksRegular()) {
+    FONT = SYSTEM_FONT;
   }
 
   const wrap = el(
