@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.5.1.1
+Stable tag: 1.5.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -222,9 +222,28 @@ This plugin can connect to the **Google Maps JavaScript API** in order to displa
 It sends your configured Google Maps API key (if provided) along with requests made by the visitor's browser when viewing a page that contains an embedded map. No personal data is sent by the plugin itself, but Google may collect usage data in accordance with their policies. This connection only happens if maps are enabled in the plugin settings and a page with an event location map is viewed.
 This service is provided by Google LLC: [Terms of Service](https://cloud.google.com/maps-platform/terms), [Privacy Policy](https://policies.google.com/privacy).
 
+The last step of the plugin tour can send an email address to **eventkoi.com**, which adds it to the EventKoi mailing list hosted on MailerLite, so EventKoi can email you a list of helpful tutorials.
+Only the email address you type is sent, and only when you click Email me in that step. Nothing is sent if you skip it.
+This service is provided by EventKoi: [Privacy Policy](https://eventkoi.com/docs/knowledge-base/privacy-policy/). The mailing list is hosted by MailerLite: [Terms of Service](https://www.mailerlite.com/legal/terms-of-service), [Privacy Policy](https://www.mailerlite.com/legal/privacy-policy).
+
 == Changelog ==
 
 The latest releases are listed here. See changelog.txt in the plugin folder for older versions.
+
+= 1.5.2.0 – Plugin tour, page builder notice and import improvements – 2026-11-24 =
+* New: A guided plugin tour for new installs. It walks you through your events, the event editor, your calendar and the settings on your own site, with a help box on every step. Start it again any time from the Plugins page or the EventKoi Dashboard. It replaces the onboarding wizard.
+* New: Settings shows a notice under Single event pages when Elementor, Beaver Builder or Divi is active, with a button to switch to that builder's event templates.
+* New: The EventKoi shortcode has a start_date key with a format attribute that takes any PHP date format, so one shortcode can show the start date the way you want it.
+* Improvement: The Events Calendar import runs in batches with a progress count, so large sites no longer time out. An event that cannot be imported is skipped and named in the result instead of stopping the import.
+* Improvement: Settings > Emails shows the on and off switch next to each template, names the trigger, and keeps Cc and Bcc behind a link.
+* Improvement: The EventKoi Dashboard lists Getting started and Quick links before the Pro features.
+* Improvement: Custom data and User permissions are shown as Pro previews in Settings. User permissions can no longer be changed in Lite, and permissions you saved earlier keep applying.
+* Improvement: The event series template option is removed from Settings, because event series are a Pro feature.
+* Fix: The date and time of an event follow the timezone set for that event, in shortcodes and data fields too.
+* Fix: Recurring all-day events no longer cause an error where their date is shown through a shortcode or data field.
+* Fix: Removing the image of an event also removes the featured image it had set.
+* Fix: Event titles stay visible in the events list on narrow screens.
+* Fix: The events list counts seats from orders that were added by hand.
 
 = 1.5.1.1 – Event Data date options on the Date and Time field – 2026-11-19 =
 * Improvement: The Date and Time field of the Event Data block has the Show start and end time switch too, so an event on Consecutive Days shows its dates, then its start and end time.
@@ -287,18 +306,7 @@ The latest releases are listed here. See changelog.txt in the plugin folder for 
 * Improvement: Calendars in a narrow column use one-letter day headers so weekday names no longer run together on phones.
 * Fix: Forms, buttons and icons in the theme header and footer are kept intact on calendar pages. Form plugins such as WPForms no longer lose their fields there.
 
-= 1.4.7.0 – Elementor templates, series page fixes and WooCommerce emails – 2026-10-15 =
-* New: Ready-made Elementor templates for event pages, series pages and calendar pages. Pick them under Settings > Single event pages, and a new onboarding step offers them when Elementor is active.
-* New: Template pickers in Settings list block, Elementor, Beaver Builder and Bricks templates with an edit link for each, and a site-wide template now applies to every event page that has no template of its own.
-* Improvement: The series page title is an H1, and the back to series link on event pages is a movable block in the template.
-* Fix: EventKoi no longer switches off WooCommerce order emails for ticket orders. Store owners keep control of every email in WooCommerce settings.
-* Fix: Images inside the Event Query Loop keep the aspect ratio, size and scale set in the editor.
-* Fix: Recurrence rules on the event page are listed by date instead of the order they were added.
-* Fix: Child terms are indented again in the taxonomy dropdown of the event editor.
-* Fix: The block editor no longer writes empty event attribute rows to the database on every save, and old empty rows are cleaned up in the background.
-* Fix: Events without a location no longer render an empty map frame.
-
 == Upgrade Notice ==
 
-= 1.5.1.1 =
-Adds the start and end time switch to the Date and Time field of the Event Data block and lists all dates on one line.
+= 1.5.2.0 =
+Adds a guided plugin tour for new installs, a page builder notice in Settings, a start date shortcode format and a more reliable Events Calendar import.

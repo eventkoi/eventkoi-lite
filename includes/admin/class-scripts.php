@@ -155,6 +155,25 @@ class Scripts {
 			}
 		}
 
+		// The builders ship their own logos; the settings notice shows them.
+		$logos = array();
+
+		if ( defined( 'FL_BUILDER_DIR' ) && defined( 'FL_BUILDER_URL' ) && file_exists( FL_BUILDER_DIR . 'img/beaver-128.png' ) ) {
+			$logos['beaver'] = FL_BUILDER_URL . 'img/beaver-128.png';
+		}
+
+		if ( 'Divi' === get_template() && file_exists( get_template_directory() . '/images/logo.png' ) ) {
+			$logos['divi'] = get_template_directory_uri() . '/images/logo.png';
+		}
+
+		foreach ( $statuses as $index => $status ) {
+			$builder = $status['builder'] ?? '';
+
+			if ( isset( $logos[ $builder ] ) ) {
+				$statuses[ $index ]['logo'] = esc_url_raw( $logos[ $builder ] );
+			}
+		}
+
 		return $statuses;
 	}
 
@@ -536,19 +555,12 @@ class Scripts {
 			apply_filters( 'eventkoi_admin_params', $eventkoi_params )
 		);
 
-		$quick_start_flag = get_option( 'eventkoi_show_quick_start_prompt' );
-		$quick_start_done = (bool) get_option( 'eventkoi_quick_start_completed' );
-
 		wp_localize_script(
 			'eventkoi-admin',
-			'eventkoiQuickStart',
-			array(
-				'show'           => (bool) $quick_start_flag && ! $quick_start_done,
-				'onboarding_url' => esc_url_raw( admin_url( 'admin.php?page=eventkoi#/dashboard/onboarding' ) ),
-				'dashboard_url'  => esc_url_raw( admin_url( 'admin.php?page=eventkoi#/dashboard' ) ),
-				'restUrl'        => esc_url_raw( rest_url( EVENTKOI_API . '/onboarding/complete' ) ),
-				'nonce'          => wp_create_nonce( 'wp_rest' ),
-				'screen'         => $screen->base ?? '',
+			'eventkoiTour',
+			array_merge(
+				\EventKoi\API\Onboarding::get_admin_context(),
+				array( 'screen' => $screen->base ?? '' )
 			)
 		);
 

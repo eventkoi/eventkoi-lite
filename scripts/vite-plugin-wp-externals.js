@@ -358,6 +358,29 @@ export function wpExternals() {
 			} );
 		},
 
+		// The version also busts the browser cache for index.css. Vite only
+		// writes the stylesheet after generateBundle, so fold it in here, once
+		// both files are on disk.
+		writeBundle( options ) {
+			const outDir = options.dir || path.dirname( options.file || '' );
+			const assetFile = path.join( outDir, 'index.asset.php' );
+			const cssFile = path.join( outDir, 'index.css' );
+			const jsFile = path.join( outDir, 'index.js' );
+
+			if ( ! fs.existsSync( assetFile ) || ! fs.existsSync( cssFile ) || ! fs.existsSync( jsFile ) ) {
+				return;
+			}
+
+			const hash = createHash( 'md5' )
+				.update( fs.readFileSync( jsFile ) )
+				.update( fs.readFileSync( cssFile ) )
+				.digest( 'hex' )
+				.slice( 0, 20 );
+			const php = fs.readFileSync( assetFile, 'utf8' );
+
+			fs.writeFileSync( assetFile, php.replace( /'version' => '[^']*'/, `'version' => '${ hash }'` ) );
+		},
+
 		// ── Dev mode: transform imports + hot file ──
 
 		configureServer( server ) {

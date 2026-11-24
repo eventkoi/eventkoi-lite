@@ -28,6 +28,7 @@ class Menus {
 		);
 
 		add_action( 'in_admin_header', array( static::class, 'remove_admin_notices' ), 99 );
+		add_action( 'admin_post_eventkoi_start_tour', array( \EventKoi\API\Onboarding::class, 'handle_start_tour' ) );
 		add_filter( 'admin_body_class', array( static::class, 'admin_body_class' ), 99 );
 
 		add_action( 'admin_menu', array( static::class, 'admin_menu' ), 10 );
@@ -50,7 +51,7 @@ class Menus {
 	public static function add_plugin_action_links( $links ) {
 		// Prepend custom links.
 		$custom_links = array(
-			'<a href="' . esc_url( admin_url( 'admin.php?page=eventkoi#/dashboard/onboarding' ) ) . '">' . esc_html__( 'Launch Onboarding Wizard', 'eventkoi-lite' ) . '</a>',
+			'<a href="' . esc_url( \EventKoi\API\Onboarding::start_tour_url() ) . '">' . esc_html__( 'Start tour', 'eventkoi-lite' ) . '</a>',
 			'<a href="' . esc_url( admin_url( 'admin.php?page=eventkoi#/dashboard' ) ) . '">' . esc_html__( 'Dashboard', 'eventkoi-lite' ) . '</a>',
 			'<a href="' . esc_url( admin_url( 'admin.php?page=eventkoi#/settings' ) ) . '">' . esc_html__( 'Settings', 'eventkoi-lite' ) . '</a>',
 		);

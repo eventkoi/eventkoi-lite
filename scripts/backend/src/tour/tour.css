@@ -1,0 +1,606 @@
+/*
+ * Plugin tour. Scoped to #eventkoi-tour-root so WordPress admin styles for
+ * buttons, headings, paragraphs and inputs do not leak in.
+ */
+
+#eventkoi-tour-root {
+  --ek-tour-ink: #161616;
+  --ek-tour-muted: #2b2b2b;
+  --ek-tour-bg: #f7f7f7;
+  --ek-tour-border: #aaaaaa;
+  --ek-tour-divider: #dcdcdc;
+  --ek-tour-orange: #fb4409;
+  --ek-tour-shadow: 0 4px 10px rgba(0, 0, 0, 0.16);
+  --ek-tour-font: inter, -apple-system, blinkmacsystemfont, "Segoe UI", roboto,
+    oxygen-sans, ubuntu, cantarell, "Helvetica Neue", sans-serif;
+}
+
+#eventkoi-tour-root *,
+#eventkoi-tour-root *::before,
+#eventkoi-tour-root *::after {
+  box-sizing: border-box;
+}
+
+/* Popover */
+
+#eventkoi-tour-root .ek-tour-pop {
+  position: fixed;
+  z-index: 100001;
+  width: 376px;
+  max-width: calc(100vw - 40px);
+  padding: 22px 20px 14px 28px;
+  animation: ek-tour-in 0.16s ease-out;
+  background: var(--ek-tour-bg);
+  border: 1px solid var(--ek-tour-border);
+  border-radius: 6px;
+  box-shadow: var(--ek-tour-shadow);
+  color: var(--ek-tour-ink);
+  font-family: var(--ek-tour-font);
+  font-size: 14px;
+  line-height: 20px;
+  text-align: left;
+}
+
+#eventkoi-tour-root .ek-tour-pop--welcome {
+  width: 320px;
+  padding: 22px 22px 22px 24px;
+}
+
+#eventkoi-tour-root .ek-tour-arrow {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: var(--ek-tour-bg);
+  border: 1px solid var(--ek-tour-border);
+}
+
+#eventkoi-tour-root .ek-tour-pop--arrow-left .ek-tour-arrow {
+  left: -7px;
+  margin-top: -6px;
+  border-top-color: transparent;
+  border-right-color: transparent;
+  transform: rotate(45deg);
+}
+
+#eventkoi-tour-root .ek-tour-pop--arrow-top .ek-tour-arrow {
+  top: -7px;
+  margin-left: -6px;
+  border-right-color: transparent;
+  border-bottom-color: transparent;
+  transform: rotate(45deg);
+}
+
+#eventkoi-tour-root .ek-tour-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: 4px;
+  box-shadow: none;
+  color: var(--ek-tour-muted);
+  cursor: pointer;
+}
+
+#eventkoi-tour-root .ek-tour-close:hover {
+  background: rgba(0, 0, 0, 0.06);
+  color: var(--ek-tour-ink);
+}
+
+#eventkoi-tour-root .ek-tour-close:focus-visible,
+#eventkoi-tour-root .ek-tour-next:focus-visible,
+#eventkoi-tour-root .ek-tour-back:focus-visible,
+#eventkoi-tour-root .ek-tour-begin:focus-visible,
+#eventkoi-tour-root .ek-tour-help-link:focus-visible,
+#eventkoi-tour-root .ek-tour-form button:focus-visible {
+  outline: 2px solid var(--ek-tour-ink);
+  outline-offset: 2px;
+}
+
+#eventkoi-tour-root .ek-tour-close svg {
+  width: 15px;
+  height: 15px;
+}
+
+#eventkoi-tour-root .ek-tour-click {
+  display: block;
+  margin: 0 0 10px;
+  stroke: var(--ek-tour-orange);
+  stroke-width: 1.25;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#eventkoi-tour-root .ek-tour-title {
+  margin: 0 28px 2px 0;
+  padding: 0;
+  color: var(--ek-tour-ink);
+  font-family: var(--ek-tour-font);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+#eventkoi-tour-root .ek-tour-body {
+  margin: 0;
+  padding: 0;
+  color: var(--ek-tour-ink);
+  font-size: 14px;
+  line-height: 20px;
+}
+
+#eventkoi-tour-root .ek-tour-line {
+  display: block;
+}
+
+#eventkoi-tour-root .ek-tour-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 26px;
+  margin-top: 36px;
+}
+
+#eventkoi-tour-root .ek-tour-counter {
+  font-size: 14px;
+  line-height: 20px;
+}
+
+#eventkoi-tour-root .ek-tour-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+#eventkoi-tour-root .ek-tour-next,
+#eventkoi-tour-root .ek-tour-back {
+  height: 26px;
+  min-height: 26px;
+  margin: 0;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 4px;
+  box-shadow: none;
+  font-family: var(--ek-tour-font);
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 26px;
+  cursor: pointer;
+}
+
+#eventkoi-tour-root .ek-tour-next {
+  background: var(--ek-tour-ink);
+  color: #ffffff;
+}
+
+#eventkoi-tour-root .ek-tour-next:hover {
+  background: #000000;
+}
+
+#eventkoi-tour-root .ek-tour-back {
+  padding: 0 4px;
+  background: transparent;
+  color: var(--ek-tour-ink);
+  font-weight: 400;
+}
+
+#eventkoi-tour-root .ek-tour-back:hover {
+  text-decoration: underline;
+}
+
+/* Welcome */
+
+#eventkoi-tour-root .ek-tour-person {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+#eventkoi-tour-root .ek-tour-person img {
+  display: block;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+#eventkoi-tour-root .ek-tour-person > span {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+#eventkoi-tour-root .ek-tour-person strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+#eventkoi-tour-root .ek-tour-begin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 40px;
+  margin: 18px 0 0;
+  padding: 0 16px;
+  background: var(--ek-tour-ink);
+  border: 0;
+  border-radius: 4px;
+  box-shadow: none;
+  color: #ffffff;
+  font-family: var(--ek-tour-font);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+#eventkoi-tour-root .ek-tour-begin:hover {
+  background: #000000;
+}
+
+#eventkoi-tour-root .ek-tour-begin:disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+
+#eventkoi-tour-root .ek-tour-error {
+  margin: 10px 0 0;
+  color: #b42318;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+#eventkoi-tour-root .ek-tour-spin {
+  width: 16px;
+  height: 16px;
+  animation: ek-tour-spin 0.9s linear infinite;
+}
+
+@keyframes ek-tour-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes ek-tour-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Need more help */
+
+#eventkoi-tour-root .ek-tour-help {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 100000;
+  width: 240px;
+  padding: 0 0 8px;
+  background: var(--ek-tour-bg);
+  border: 1px solid var(--ek-tour-border);
+  border-radius: 6px;
+  box-shadow: var(--ek-tour-shadow);
+  color: var(--ek-tour-ink);
+  font-family: var(--ek-tour-font);
+}
+
+#eventkoi-tour-root .ek-tour-help-head {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 16px 8px;
+  padding: 18px 28px 14px 6px;
+  border-bottom: 1px solid var(--ek-tour-divider);
+}
+
+#eventkoi-tour-root .ek-tour-help-head .ek-tour-close {
+  top: 14px;
+  right: -6px;
+}
+
+#eventkoi-tour-root .ek-tour-help-title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
+}
+
+#eventkoi-tour-root .ek-tour-help-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0 16px;
+  padding: 12px 6px;
+  border-radius: 4px;
+  box-shadow: none;
+  color: var(--ek-tour-ink);
+  font-size: 15px;
+  line-height: 20px;
+  text-decoration: none;
+}
+
+#eventkoi-tour-root .ek-tour-help-link:hover {
+  color: var(--ek-tour-ink);
+  text-decoration: underline;
+}
+
+#eventkoi-tour-root .ek-tour-help-link svg {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--ek-tour-muted);
+  stroke-width: 1.5;
+}
+
+/* Continue Tour, for an admin who left mid-tour */
+
+#eventkoi-tour-root .ek-tour-resume {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 100000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 240px;
+  height: 44px;
+  margin: 0;
+  padding: 0 16px;
+  background: var(--ek-tour-ink);
+  border: 0;
+  border-radius: 4px;
+  box-shadow: var(--ek-tour-shadow);
+  color: #ffffff;
+  font-family: var(--ek-tour-font);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  animation: ek-tour-in 0.16s ease-out;
+}
+
+#eventkoi-tour-root .ek-tour-resume--raised {
+  bottom: 222px;
+}
+
+#eventkoi-tour-root .ek-tour-resume:hover {
+  background: #000000;
+}
+
+#eventkoi-tour-root .ek-tour-resume:focus-visible {
+  outline: 2px solid var(--ek-tour-ink);
+  outline-offset: 2px;
+}
+
+#eventkoi-tour-root .ek-tour-resume svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Outline on the element a step asks to click */
+
+.ek-tour-target {
+  outline: 1px solid currentColor !important;
+  outline-offset: 2px !important;
+  border-radius: 2px;
+}
+
+/* Admin menu rows touch the edge of the menu: draw the outline inside. */
+#adminmenu .ek-tour-target {
+  outline-offset: -3px !important;
+}
+
+/* Final step */
+
+#eventkoi-tour-root .ek-tour-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100010;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.45);
+  font-family: var(--ek-tour-font);
+}
+
+#eventkoi-tour-root .ek-tour-modal {
+  position: relative;
+  display: grid;
+  grid-template-columns: 148px minmax(0, 1fr);
+  gap: 44px;
+  width: 760px;
+  max-width: 100%;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  padding: 52px 56px 56px;
+  background: #ffffff;
+  border-radius: 8px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+  color: var(--ek-tour-ink);
+}
+
+#eventkoi-tour-root .ek-tour-modal:focus {
+  outline: none;
+}
+
+#eventkoi-tour-root .ek-tour-close--modal {
+  top: 22px;
+  right: 22px;
+  width: 28px;
+  height: 28px;
+}
+
+#eventkoi-tour-root .ek-tour-close--modal svg {
+  width: 18px;
+  height: 18px;
+}
+
+#eventkoi-tour-root .ek-tour-modal-side {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+#eventkoi-tour-root .ek-tour-modal-side img {
+  display: block;
+  width: 108px;
+  height: 106px;
+  margin-bottom: 12px;
+  border-radius: 13px;
+  object-fit: cover;
+}
+
+#eventkoi-tour-root .ek-tour-modal-side strong {
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 20px;
+}
+
+#eventkoi-tour-root .ek-tour-modal-side span {
+  font-size: 13px;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+#eventkoi-tour-root .ek-tour-modal-main h2 {
+  margin: 0 32px 22px 0;
+  padding: 0;
+  color: var(--ek-tour-ink);
+  font-family: var(--ek-tour-font);
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 26px;
+}
+
+#eventkoi-tour-root .ek-tour-modal-main p {
+  max-width: 300px;
+  margin: 0 0 12px;
+  padding: 0;
+  color: var(--ek-tour-ink);
+  font-size: 15px;
+  line-height: 22px;
+}
+
+#eventkoi-tour-root .ek-tour-modal-main .ek-tour-signature {
+  display: block;
+  width: 122px;
+  height: auto;
+  margin: 18px 0 16px;
+}
+
+#eventkoi-tour-root .ek-tour-modal-main .ek-tour-sign-name {
+  margin-bottom: 30px;
+}
+
+#eventkoi-tour-root .ek-tour-form {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+#eventkoi-tour-root .ek-tour-form input[type="email"] {
+  width: 300px;
+  max-width: 100%;
+  height: 46px;
+  min-height: 46px;
+  margin: 0;
+  padding: 0 12px;
+  background: #ffffff;
+  border: 1px solid var(--ek-tour-ink);
+  border-radius: 3px;
+  box-shadow: none;
+  color: var(--ek-tour-ink);
+  font-family: var(--ek-tour-font);
+  font-size: 15px;
+  line-height: 44px;
+}
+
+#eventkoi-tour-root .ek-tour-form input[type="email"]:focus {
+  outline: 2px solid var(--ek-tour-ink);
+  outline-offset: 1px;
+  box-shadow: none;
+}
+
+#eventkoi-tour-root .ek-tour-form button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 46px;
+  margin: 0;
+  padding: 0 20px;
+  background: var(--ek-tour-ink);
+  border: 0;
+  border-radius: 3px;
+  box-shadow: none;
+  color: #ffffff;
+  font-family: var(--ek-tour-font);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+#eventkoi-tour-root .ek-tour-form button:hover {
+  background: #000000;
+}
+
+#eventkoi-tour-root .ek-tour-form button:disabled {
+  cursor: default;
+  opacity: 0.85;
+}
+
+#eventkoi-tour-root .ek-tour-form .ek-tour-error {
+  margin: 0;
+}
+
+#eventkoi-tour-root .ek-tour-modal-main .ek-tour-sent {
+  margin-top: 18px;
+  font-weight: 500;
+}
+
+@media (max-width: 782px) {
+  #eventkoi-tour-root .ek-tour-help {
+    right: 12px;
+    bottom: 12px;
+  }
+
+  #eventkoi-tour-root .ek-tour-resume {
+    right: 12px;
+    bottom: 12px;
+  }
+
+  #eventkoi-tour-root .ek-tour-resume--raised {
+    bottom: 210px;
+  }
+
+  #eventkoi-tour-root .ek-tour-modal {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding: 48px 24px 32px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #eventkoi-tour-root .ek-tour-spin,
+  #eventkoi-tour-root .ek-tour-pop {
+    animation: none;
+  }
+}

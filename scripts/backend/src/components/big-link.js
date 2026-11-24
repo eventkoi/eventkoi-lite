@@ -6,10 +6,12 @@ export function BigLink({
   disabled = false,
   className = "",
   target = "_blank",
+  onClick,
 }) {
   return (
     <a
       href={disabled ? undefined : href}
+      onClick={disabled ? undefined : onClick}
       target={disabled ? undefined : target}
       rel={target === "_blank" ? "noopener noreferrer" : undefined}
       aria-disabled={disabled}

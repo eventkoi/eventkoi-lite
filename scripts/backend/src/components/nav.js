@@ -37,6 +37,7 @@ export function Nav({ isEvent = false, isCalendar = false }) {
 
   return (
     <header
+      data-ek-tour="app-header"
       className={cn(
         "relative bg-white shadow-sm md:shadow-none md:bg-transparent border-b px-4 py-4 md:py-2 text-sm",
         isEvent && "sticky top-8 z-[500] bg-muted h-20 shadow-sm border-none",

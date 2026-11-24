@@ -4,6 +4,7 @@ import apiRequest from "@wordpress/api-fetch";
 import { useEffect, useMemo, useState } from "react";
 
 import { Box } from "@/components/box";
+import { BuilderNotice } from "@/components/settings/builder-notice";
 import { Heading } from "@/components/heading";
 import { Panel } from "@/components/panel";
 import { Button } from "@/components/ui/button";
@@ -63,9 +64,6 @@ export function SettingsOverview() {
   );
   const [defaultTemplate, setDefaultTemplate] = useState(
     settings?.default_event_template || "default"
-  );
-  const [seriesTemplate, setSeriesTemplate] = useState(
-    settings?.default_series_template || "default"
   );
   const [calendarTemplate, setCalendarTemplate] = useState(
     settings?.default_calendar_template || "default"
@@ -350,13 +348,6 @@ export function SettingsOverview() {
     }
   };
 
-  const handleSeriesTemplateChange = (value) => {
-    setSeriesTemplate(value);
-    if (value !== (settings?.default_series_template || "default")) {
-      saveSettings({ default_series_template: value });
-    }
-  };
-
   const handleCalendarTemplateChange = (value) => {
     setCalendarTemplate(value);
     if (value !== (settings?.default_calendar_template || "default")) {
@@ -367,9 +358,8 @@ export function SettingsOverview() {
   // Keep the pickers in step with settings saved elsewhere (the Elementor
   // switch below, the onboarding wizard).
   useEffect(() => {
-    setSeriesTemplate(settings?.default_series_template || "default");
     setCalendarTemplate(settings?.default_calendar_template || "default");
-  }, [settings?.default_series_template, settings?.default_calendar_template]);
+  }, [settings?.default_calendar_template]);
 
   useEffect(() => {
     if (Array.isArray(window.eventkoi_params?.custom_templates)) {
@@ -377,14 +367,15 @@ export function SettingsOverview() {
     }
   }, [settings?.default_event_template, settings?.default_series_template, settings?.default_calendar_template]);
 
+  // A series template saved while Pro was active has no picker in Lite, so it
+  // still counts here and the switch back clears it.
   const usingDefaultTemplates =
     (defaultTemplate || "default") === "default" &&
-    (seriesTemplate || "default") === "default" &&
+    (settings?.default_series_template || "default") === "default" &&
     (calendarTemplate || "default") === "default";
 
   const switchBackToDefaultTemplates = () => {
     setDefaultTemplate("default");
-    setSeriesTemplate("default");
     setCalendarTemplate("default");
     saveSettings({
       default_event_template: "default",
@@ -759,6 +750,8 @@ export function SettingsOverview() {
             <Heading level={3}>{__("Single event pages", "eventkoi-lite")}</Heading>
           </Panel>
           <Panel className="gap-10 pt-2">
+            <BuilderNotice usingDefaultTemplates={usingDefaultTemplates} />
+
             {renderTemplatePicker({
               id: "default-event-template",
               label: __("Default event template", "eventkoi-lite"),
@@ -766,15 +759,6 @@ export function SettingsOverview() {
               onChange: handleDefaultTemplateChange,
               options: templateOptions,
               help: __("Applied to every event page unless overridden on the event itself.", "eventkoi-lite"),
-            })}
-
-            {renderTemplatePicker({
-              id: "default-series-template",
-              label: __("Event series template", "eventkoi-lite"),
-              value: seriesTemplate,
-              onChange: handleSeriesTemplateChange,
-              options: templateOptions,
-              help: __("The overview page of a recurring event, listing its dates. Default keeps EventKoi's built-in series layout.", "eventkoi-lite"),
             })}
 
             {renderTemplatePicker({

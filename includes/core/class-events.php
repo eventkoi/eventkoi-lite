@@ -510,7 +510,7 @@ class Events {
 					FROM {$orders_table}
 					WHERE event_id IN ({$placeholders})
 					  AND payment_status IN ('complete','completed','succeeded','partially_refunded')
-					  AND order_id LIKE 'wc\\_%'{$currency_clause}
+					  AND ( order_id LIKE 'wc\\_%' OR order_id LIKE 'manual\\_%' ){$currency_clause}
 					GROUP BY event_id";
 				// phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- Dynamic placeholder list is flattened before prepare().
 				$orders_prepared = call_user_func_array( array( $wpdb, 'prepare' ), array_merge( array( $orders_sql ), $event_ids ) );
