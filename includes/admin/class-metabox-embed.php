@@ -300,7 +300,7 @@ class Metabox_Embed {
 			#poststuff:after, #post-body:after { display: none !important; }
 
 			/* Stack into one column: plugin fields first, update action last. */
-			#post-body.columns-2 { display: flex !important; flex-direction: column !important; margin: 0 !important; }
+			#post-body.columns-2 { display: flex !important; flex-direction: column !important; margin: 0 0 -16px !important; }
 			#post-body.columns-2 #post-body-content { order: 0; }
 			#post-body.columns-2 #postbox-container-1 { order: 2; float: none; width: 100% !important; margin: 0 !important; }
 			#post-body.columns-2 #postbox-container-2 { order: 1; width: 100% !important; margin: 0 !important; }
@@ -310,8 +310,14 @@ class Metabox_Embed {
 
 			/* Keep each plugin's metabox as its own titled, collapsible card so it stays clear which fields belong to which plugin. Only the reorder arrows go. */
 			.postbox { margin: 0 0 16px !important; }
-			#postbox-container-2 .meta-box-sortables > .postbox:last-child,
-			#postbox-container-1 .meta-box-sortables > .postbox:last-child { margin-bottom: 0 !important; }
+			/* Every card keeps its space, also where one group ends and the next
+				starts. The negative margin takes back the space after the last card,
+				whichever group that card is in. */
+			#post-body { margin-bottom: -16px !important; }
+			#post-body.columns-1 { display: flow-root !important; }
+			/* ACF offsets its "High (after title)" group for the native screen,
+				which pulls the next card over it here. */
+			#acf_after_title-sortables { margin: 0 !important; }
 			.postbox .handle-order-higher, .postbox .handle-order-lower { display: none !important; }
 
 			/* Clean white cards with a hairline border instead of WP's gray chrome. */
