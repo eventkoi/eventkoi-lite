@@ -184,3 +184,12 @@ main.eventkoi-main {
   border-radius: 6px;
   padding: 6px 10px;
 }
+
+// The timezone control is a button, so it must not carry an underline itself
+// (accessibility checkers flag underlined text that is not a link). Its label
+// is drawn by ::before, which can be underlined, and the same text stays in
+// the button for screen readers.
+.eventkoi-calendar-timezone::before {
+  content: attr(data-label);
+  text-decoration: underline;
+}

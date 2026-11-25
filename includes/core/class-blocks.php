@@ -1609,7 +1609,36 @@ JS;
 			return '';
 		}
 
+		$links = array_map( array( __CLASS__, 'mark_current_page_as_link' ), $links );
+
 		return '<div class="wp-block-query-pagination-numbers">' . implode( '', $links ) . '</div>';
+	}
+
+	/**
+	 * Mark the current page number up as a disabled link.
+	 *
+	 * It is underlined like the page links around it, so assistive technology
+	 * and accessibility checkers should see it as one of them.
+	 *
+	 * @param string $link One item of paginate_links().
+	 * @return string
+	 */
+	protected static function mark_current_page_as_link( $link ) {
+		$tags = new \WP_HTML_Tag_Processor( $link );
+
+		if ( ! $tags->next_tag(
+			array(
+				'tag_name'   => 'span',
+				'class_name' => 'current',
+			)
+		) ) {
+			return $link;
+		}
+
+		$tags->set_attribute( 'role', 'link' );
+		$tags->set_attribute( 'aria-disabled', 'true' );
+
+		return $tags->get_updated_html();
 	}
 
 	/**

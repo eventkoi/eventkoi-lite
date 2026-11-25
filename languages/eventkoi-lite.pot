@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: EventKoi Lite 1.5.2.1\n"
+"Project-Id-Version: EventKoi Lite 1.5.3.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/eventkoi-lite\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-24T09:17:07+00:00\n"
+"POT-Creation-Date: 2026-11-25T17:24:09+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -114,7 +114,7 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-rsvps.php:1744
+#: includes/core/class-rsvps.php:1800
 msgid "Going"
 msgstr ""
 
@@ -142,7 +142,7 @@ msgid "Check in"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/api/class-rsvps.php:484
+#: includes/api/class-rsvps.php:489
 #: includes/api/class-tickets.php:1029
 msgid "Checked in"
 msgstr ""
@@ -182,13 +182,13 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
-#: includes/api/class-rsvps.php:478
+#: includes/api/class-rsvps.php:483
 msgid "Name"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
-#: includes/api/class-rsvps.php:479
+#: includes/api/class-rsvps.php:484
 #: includes/core/class-tec-importer.php:535
 msgid "Email"
 msgstr ""
@@ -456,7 +456,7 @@ msgid "Show guests"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/api/class-rsvps.php:460
+#: includes/api/class-rsvps.php:465
 msgid "Guest"
 msgstr ""
 
@@ -482,14 +482,14 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
-#: includes/api/class-rsvps.php:483
+#: includes/api/class-rsvps.php:488
 #: includes/api/class-tickets.php:1028
 msgid "Check-in code"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
-#: includes/api/class-rsvps.php:482
+#: includes/api/class-rsvps.php:487
 msgid "Status"
 msgstr ""
 
@@ -497,19 +497,19 @@ msgstr ""
 #. translators: %s: name of the person who RSVPd.
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-rsvps.php:1725
+#: includes/core/class-rsvps.php:1781
 #, js-format,php-format
 msgid "Guest of %s"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
-#: includes/api/class-rsvps.php:485
+#: includes/api/class-rsvps.php:490
 msgid "Guests"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/api/class-rsvps.php:486
+#: includes/api/class-rsvps.php:491
 msgid "RSVP date"
 msgstr ""
 
@@ -1358,7 +1358,7 @@ msgid "Sent to the site admin when someone RSVPs to an event."
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/class-rsvps.php:2122
+#: includes/core/class-rsvps.php:2178
 msgid "New RSVP: [event_name]"
 msgstr ""
 
@@ -1574,7 +1574,7 @@ msgid "Field name"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/api/class-rsvps.php:480
+#: includes/api/class-rsvps.php:485
 msgid "Type"
 msgstr ""
 
@@ -2058,7 +2058,7 @@ msgid "View terms (4)"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/api/class-rsvps.php:464
+#: includes/api/class-rsvps.php:469
 #: includes/api/class-tickets.php:1052
 #: includes/core/class-beaver-modules.php:69
 #: includes/core/class-beaver-modules.php:140
@@ -2075,7 +2075,7 @@ msgid "Yes"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/api/class-rsvps.php:464
+#: includes/api/class-rsvps.php:469
 #: includes/api/class-tickets.php:1052
 #: includes/core/class-beaver-modules.php:70
 #: includes/core/class-beaver-modules.php:141
@@ -2323,7 +2323,7 @@ msgid "List"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/elementor-widgets/class-widget-calendar.php:1091
+#: includes/core/elementor-widgets/class-widget-calendar.php:1101
 msgid "Accent"
 msgstr ""
 
@@ -2375,91 +2375,91 @@ msgid "Default month to display"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/core/elementor-widgets/class-widget-calendar.php:1225
+#: includes/core/elementor-widgets/class-widget-calendar.php:1235
 #: includes/helpers/instance.php:133
 msgid "Current month"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-event.php:6573
-#: includes/core/elementor-widgets/class-widget-calendar.php:1226
+#: includes/core/elementor-widgets/class-widget-calendar.php:1236
 #: includes/helpers/instance.php:134
 msgid "January"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-event.php:6574
-#: includes/core/elementor-widgets/class-widget-calendar.php:1227
+#: includes/core/elementor-widgets/class-widget-calendar.php:1237
 #: includes/helpers/instance.php:135
 msgid "February"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-event.php:6575
-#: includes/core/elementor-widgets/class-widget-calendar.php:1228
+#: includes/core/elementor-widgets/class-widget-calendar.php:1238
 #: includes/helpers/instance.php:136
 msgid "March"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-event.php:6576
-#: includes/core/elementor-widgets/class-widget-calendar.php:1229
+#: includes/core/elementor-widgets/class-widget-calendar.php:1239
 #: includes/helpers/instance.php:137
 msgid "April"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-event.php:6577
-#: includes/core/elementor-widgets/class-widget-calendar.php:1230
+#: includes/core/elementor-widgets/class-widget-calendar.php:1240
 #: includes/helpers/instance.php:138
 msgid "May"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-event.php:6578
-#: includes/core/elementor-widgets/class-widget-calendar.php:1231
+#: includes/core/elementor-widgets/class-widget-calendar.php:1241
 #: includes/helpers/instance.php:139
 msgid "June"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-event.php:6579
-#: includes/core/elementor-widgets/class-widget-calendar.php:1232
+#: includes/core/elementor-widgets/class-widget-calendar.php:1242
 #: includes/helpers/instance.php:140
 msgid "July"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-event.php:6580
-#: includes/core/elementor-widgets/class-widget-calendar.php:1233
+#: includes/core/elementor-widgets/class-widget-calendar.php:1243
 #: includes/helpers/instance.php:141
 msgid "August"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-event.php:6581
-#: includes/core/elementor-widgets/class-widget-calendar.php:1234
+#: includes/core/elementor-widgets/class-widget-calendar.php:1244
 #: includes/helpers/instance.php:142
 msgid "September"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-event.php:6582
-#: includes/core/elementor-widgets/class-widget-calendar.php:1235
+#: includes/core/elementor-widgets/class-widget-calendar.php:1245
 #: includes/helpers/instance.php:143
 msgid "October"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-event.php:6583
-#: includes/core/elementor-widgets/class-widget-calendar.php:1236
+#: includes/core/elementor-widgets/class-widget-calendar.php:1246
 #: includes/helpers/instance.php:144
 msgid "November"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: includes/core/class-event.php:6584
-#: includes/core/elementor-widgets/class-widget-calendar.php:1237
+#: includes/core/elementor-widgets/class-widget-calendar.php:1247
 #: includes/helpers/instance.php:145
 msgid "December"
 msgstr ""
@@ -3147,7 +3147,7 @@ msgstr ""
 #: includes/core/class-divi5-modules.php:360
 #: includes/core/class-event.php:6491
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:110
-#: includes/core/elementor-widgets/class-widget-calendar.php:1248
+#: includes/core/elementor-widgets/class-widget-calendar.php:1258
 #: includes/helpers/instance.php:158
 msgid "Monday"
 msgstr ""
@@ -3156,7 +3156,7 @@ msgstr ""
 #: includes/core/class-divi5-modules.php:361
 #: includes/core/class-event.php:6492
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:111
-#: includes/core/elementor-widgets/class-widget-calendar.php:1249
+#: includes/core/elementor-widgets/class-widget-calendar.php:1259
 #: includes/helpers/instance.php:159
 msgid "Tuesday"
 msgstr ""
@@ -3165,7 +3165,7 @@ msgstr ""
 #: includes/core/class-divi5-modules.php:362
 #: includes/core/class-event.php:6493
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:112
-#: includes/core/elementor-widgets/class-widget-calendar.php:1250
+#: includes/core/elementor-widgets/class-widget-calendar.php:1260
 #: includes/helpers/instance.php:160
 msgid "Wednesday"
 msgstr ""
@@ -3174,7 +3174,7 @@ msgstr ""
 #: includes/core/class-divi5-modules.php:363
 #: includes/core/class-event.php:6494
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:113
-#: includes/core/elementor-widgets/class-widget-calendar.php:1251
+#: includes/core/elementor-widgets/class-widget-calendar.php:1261
 #: includes/helpers/instance.php:161
 msgid "Thursday"
 msgstr ""
@@ -3183,7 +3183,7 @@ msgstr ""
 #: includes/core/class-divi5-modules.php:364
 #: includes/core/class-event.php:6495
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:114
-#: includes/core/elementor-widgets/class-widget-calendar.php:1252
+#: includes/core/elementor-widgets/class-widget-calendar.php:1262
 #: includes/helpers/instance.php:162
 msgid "Friday"
 msgstr ""
@@ -3192,7 +3192,7 @@ msgstr ""
 #: includes/core/class-divi5-modules.php:365
 #: includes/core/class-event.php:6496
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:115
-#: includes/core/elementor-widgets/class-widget-calendar.php:1253
+#: includes/core/elementor-widgets/class-widget-calendar.php:1263
 #: includes/helpers/instance.php:163
 msgid "Saturday"
 msgstr ""
@@ -3201,7 +3201,7 @@ msgstr ""
 #: includes/core/class-divi5-modules.php:359
 #: includes/core/class-event.php:6490
 #: includes/core/divi-modules/class-et-builder-module-eventkoicalendar.php:109
-#: includes/core/elementor-widgets/class-widget-calendar.php:1254
+#: includes/core/elementor-widgets/class-widget-calendar.php:1264
 #: includes/helpers/instance.php:164
 msgid "Sunday"
 msgstr ""
@@ -3471,15 +3471,15 @@ msgid "Go to Experimental settings"
 msgstr ""
 
 #: scripts/backend/build/index.js:1
-#: includes/api/class-rsvps.php:1084
+#: includes/api/class-rsvps.php:1089
 #: includes/api/class-tickets.php:1161
 #: includes/core/class-divi5-modules.php:326
 #: includes/core/class-divi5-modules.php:328
 #: includes/core/class-post-types.php:116
-#: includes/core/class-rsvps.php:2015
+#: includes/core/class-rsvps.php:2071
 #: includes/core/class-template.php:158
 #: includes/core/class-ticket-emails.php:1343
-#: includes/core/class-woocommerce-checkout.php:482
+#: includes/core/class-woocommerce-checkout.php:489
 #: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:27
 #: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:41
 msgid "Event"
@@ -4049,7 +4049,7 @@ msgstr ""
 
 #: scripts/backend/build/index.js:1
 #: scripts/frontend/build/index.js:1
-#: includes/api/class-rsvps.php:460
+#: includes/api/class-rsvps.php:465
 msgid "RSVP"
 msgstr ""
 
@@ -5422,7 +5422,7 @@ msgstr ""
 #. translators: %d: guest count
 #. translators: %d: Number of guests attached to the RSVP.
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-rsvps.php:1719
+#: includes/core/class-rsvps.php:1775
 #, js-format,php-format
 msgid "Guests: %d"
 msgstr ""
@@ -5742,12 +5742,12 @@ msgid "Your RSVP: %s"
 msgstr ""
 
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-rsvps.php:526
+#: includes/core/class-rsvps.php:577
 msgid "Please enter a name for each guest."
 msgstr ""
 
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-rsvps.php:507
+#: includes/core/class-rsvps.php:558
 msgid "Please enter a valid email address for each guest."
 msgstr ""
 
@@ -5756,7 +5756,7 @@ msgid "Add an email address for each guest to send them their own confirmation."
 msgstr ""
 
 #: scripts/frontend/build/index.js:1
-#: includes/core/class-rsvps.php:289
+#: includes/core/class-rsvps.php:291
 msgid "Each guest needs their own email address to get their own confirmation."
 msgstr ""
 
@@ -5841,7 +5841,7 @@ msgstr ""
 #: includes/api/class-onboarding.php:329
 #: includes/api/class-tickets.php:880
 #: includes/core/class-order-customer.php:51
-#: includes/core/class-rsvps.php:811
+#: includes/core/class-rsvps.php:862
 msgid "Please enter a valid email address."
 msgstr ""
 
@@ -6255,9 +6255,9 @@ msgstr ""
 #: includes/api/class-event.php:397
 #: includes/api/class-event.php:420
 #: includes/api/class-event.php:447
-#: includes/api/class-rsvps.php:188
-#: includes/api/class-rsvps.php:350
-#: includes/api/class-rsvps.php:581
+#: includes/api/class-rsvps.php:193
+#: includes/api/class-rsvps.php:355
+#: includes/api/class-rsvps.php:586
 msgid "Missing event ID."
 msgstr ""
 
@@ -6344,58 +6344,58 @@ msgstr ""
 msgid "Invalid RSVP data."
 msgstr ""
 
-#: includes/api/class-rsvps.php:193
-#: includes/api/class-rsvps.php:355
-#: includes/api/class-rsvps.php:586
-#: includes/api/class-rsvps.php:593
-#: includes/api/class-rsvps.php:781
+#: includes/api/class-rsvps.php:198
+#: includes/api/class-rsvps.php:360
+#: includes/api/class-rsvps.php:591
+#: includes/api/class-rsvps.php:598
+#: includes/api/class-rsvps.php:786
 #: includes/api/class-tickets.php:993
 #: includes/api/class-tickets.php:2032
 #: includes/api/class-tickets.php:2137
 #: includes/api/class-tickets.php:2144
 #: includes/api/class-tickets.php:2348
-#: includes/core/class-rsvps.php:203
+#: includes/core/class-rsvps.php:205
 msgid "Invalid event."
 msgstr ""
 
-#: includes/api/class-rsvps.php:201
-#: includes/api/class-rsvps.php:217
-#: includes/api/class-rsvps.php:363
-#: includes/api/class-rsvps.php:379
-#: includes/api/class-rsvps.php:620
-#: includes/api/class-rsvps.php:638
-#: includes/core/class-rsvps.php:210
+#: includes/api/class-rsvps.php:206
+#: includes/api/class-rsvps.php:222
+#: includes/api/class-rsvps.php:368
+#: includes/api/class-rsvps.php:384
+#: includes/api/class-rsvps.php:625
+#: includes/api/class-rsvps.php:643
+#: includes/core/class-rsvps.php:212
 msgid "Missing event instance."
 msgstr ""
 
-#: includes/api/class-rsvps.php:291
+#: includes/api/class-rsvps.php:296
 #: includes/api/class-stats.php:55
 #: includes/api/class-uploads.php:194
 msgid "Invalid request."
 msgstr ""
 
-#: includes/api/class-rsvps.php:298
+#: includes/api/class-rsvps.php:303
 msgid "Missing required fields."
 msgstr ""
 
-#: includes/api/class-rsvps.php:322
+#: includes/api/class-rsvps.php:327
 msgid "Invalid action."
 msgstr ""
 
-#: includes/api/class-rsvps.php:384
-#: includes/core/class-rsvps.php:1295
+#: includes/api/class-rsvps.php:389
+#: includes/core/class-rsvps.php:1346
 msgid "Invalid RSVP status."
 msgstr ""
 
-#: includes/api/class-rsvps.php:481
+#: includes/api/class-rsvps.php:486
 msgid "Guest of"
 msgstr ""
 
-#: includes/api/class-rsvps.php:770
+#: includes/api/class-rsvps.php:775
 msgid "Missing check-in code."
 msgstr ""
 
-#: includes/api/class-rsvps.php:775
+#: includes/api/class-rsvps.php:780
 msgid "Invalid check-in code."
 msgstr ""
 
@@ -6709,7 +6709,7 @@ msgid "Default calendar"
 msgstr ""
 
 #: includes/core/class-beaver-modules.php:106
-#: includes/core/elementor-widgets/class-widget-calendar.php:1213
+#: includes/core/elementor-widgets/class-widget-calendar.php:1223
 msgid "Current calendar"
 msgstr ""
 
@@ -7052,11 +7052,11 @@ msgstr ""
 msgid "Pagination"
 msgstr ""
 
-#: includes/core/class-blocks.php:2564
+#: includes/core/class-blocks.php:2593
 msgid "No calendar is available to display."
 msgstr ""
 
-#: includes/core/class-blocks.php:2568
+#: includes/core/class-blocks.php:2597
 msgid "Create a calendar"
 msgstr ""
 
@@ -7792,72 +7792,76 @@ msgstr ""
 msgid "QR check-in is a Pro feature. Upgrade to scan codes and check in attendees."
 msgstr ""
 
-#: includes/core/class-rsvps.php:198
+#: includes/core/class-rsvps.php:200
 msgid "Missing RSVP fields."
 msgstr ""
 
-#: includes/core/class-rsvps.php:233
+#: includes/core/class-rsvps.php:235
 msgid "RSVP is disabled for this event."
 msgstr ""
 
-#: includes/core/class-rsvps.php:244
+#: includes/core/class-rsvps.php:246
 msgid "This event has ended and is no longer accepting RSVPs."
 msgstr ""
 
-#: includes/core/class-rsvps.php:255
+#: includes/core/class-rsvps.php:257
 msgid "RSVP is not open yet."
 msgstr ""
 
-#: includes/core/class-rsvps.php:258
+#: includes/core/class-rsvps.php:260
 msgid "RSVP is closed."
 msgstr ""
 
-#: includes/core/class-rsvps.php:334
+#: includes/core/class-rsvps.php:340
+msgid "There is already an RSVP for this email. To change it, use the link in your confirmation email."
+msgstr ""
+
+#: includes/core/class-rsvps.php:358
 msgid "RSVP capacity reached."
 msgstr ""
 
-#: includes/core/class-rsvps.php:344
+#: includes/core/class-rsvps.php:368
 msgid "RSVP already exists."
 msgstr ""
 
-#: includes/core/class-rsvps.php:446
+#: includes/core/class-rsvps.php:474
 msgid "Failed to create RSVP."
 msgstr ""
 
-#: includes/core/class-rsvps.php:805
+#: includes/core/class-rsvps.php:856
 msgid "Guest not found."
 msgstr ""
 
-#: includes/core/class-rsvps.php:824
+#: includes/core/class-rsvps.php:875
 msgid "Someone on this RSVP already uses that email address."
 msgstr ""
 
-#: includes/core/class-rsvps.php:1338
+#: includes/core/class-rsvps.php:1389
 msgid "Failed to update RSVP status."
 msgstr ""
 
-#: includes/core/class-rsvps.php:1362
+#: includes/core/class-rsvps.php:1413
 msgid "Invalid check-in status."
 msgstr ""
 
-#: includes/core/class-rsvps.php:1420
+#: includes/core/class-rsvps.php:1471
 msgid "Failed to update check-in status."
 msgstr ""
 
-#: includes/core/class-rsvps.php:1483
+#: includes/core/class-rsvps.php:1534
 msgid "Failed to update check-in count."
 msgstr ""
 
-#: includes/core/class-rsvps.php:1593
+#: includes/core/class-rsvps.php:1644
 msgid "Failed to delete RSVPs."
 msgstr ""
 
-#: includes/core/class-rsvps.php:1668
+#: includes/core/class-rsvps.php:1719
 #, php-format
 msgid "Your RSVP for %s"
 msgstr ""
 
-#: includes/core/class-rsvps.php:1733
+#: includes/core/class-rsvps.php:1789
 #: includes/core/class-ticket-emails.php:307
 #: includes/core/class-ticket-emails.php:467
 #: includes/core/class-ticket-emails.php:656
@@ -7865,25 +7869,25 @@ msgstr ""
 msgid "there"
 msgstr ""
 
-#: includes/core/class-rsvps.php:1756
+#: includes/core/class-rsvps.php:1812
 #, php-format
 msgid "Schedule (%s):"
 msgstr ""
 
-#: includes/core/class-rsvps.php:1757
+#: includes/core/class-rsvps.php:1813
 msgid "Schedule:"
 msgstr ""
 
-#: includes/core/class-rsvps.php:1764
+#: includes/core/class-rsvps.php:1820
 msgid "View / manage your RSVP:"
 msgstr ""
 
-#: includes/core/class-rsvps.php:1765
+#: includes/core/class-rsvps.php:1821
 msgid "View event page:"
 msgstr ""
 
-#: includes/core/class-rsvps.php:1774
-#: includes/core/class-rsvps.php:1785
+#: includes/core/class-rsvps.php:1830
+#: includes/core/class-rsvps.php:1841
 #: includes/core/class-ticket-emails.php:255
 #: includes/core/class-ticket-emails.php:335
 #: includes/core/class-ticket-emails.php:502
@@ -7891,25 +7895,25 @@ msgid "Location:"
 msgstr ""
 
 #. translators: %d: Number of guests.
-#: includes/core/class-rsvps.php:2110
+#: includes/core/class-rsvps.php:2166
 msgid "Guests:"
 msgstr ""
 
-#: includes/core/class-rsvps.php:2126
+#: includes/core/class-rsvps.php:2182
 msgid "A new RSVP has been submitted."
 msgstr ""
 
-#: includes/core/class-rsvps.php:2127
+#: includes/core/class-rsvps.php:2183
 msgid "Attendee:"
 msgstr ""
 
-#: includes/core/class-rsvps.php:2129
+#: includes/core/class-rsvps.php:2185
 #: includes/core/class-ticket-emails.php:865
 #: includes/core/class-ticket-emails.php:1813
 msgid "Event:"
 msgstr ""
 
-#: includes/core/class-rsvps.php:2130
+#: includes/core/class-rsvps.php:2186
 #: includes/core/class-ticket-emails.php:866
 #: includes/core/class-ticket-emails.php:1814
 msgid "Date:"
@@ -8214,29 +8218,29 @@ msgstr ""
 msgid "No event data found on this page."
 msgstr ""
 
-#: includes/core/class-woocommerce-checkout.php:216
+#: includes/core/class-woocommerce-checkout.php:220
 msgid "WooCommerce is not active."
 msgstr ""
 
-#: includes/core/class-woocommerce-checkout.php:238
+#: includes/core/class-woocommerce-checkout.php:242
 msgid "Could not create ticket product."
 msgstr ""
 
-#: includes/core/class-woocommerce-checkout.php:557
+#: includes/core/class-woocommerce-checkout.php:631
 msgid "Attendees:"
 msgstr ""
 
 #. translators: 1: acceptance date/time, 2: the terms text the customer accepted.
-#: includes/core/class-woocommerce-checkout.php:622
+#: includes/core/class-woocommerce-checkout.php:770
 #, php-format
 msgid "Terms and conditions accepted at %1$s. Terms: %2$s"
 msgstr ""
 
-#: includes/core/class-woocommerce-checkout.php:777
+#: includes/core/class-woocommerce-checkout.php:934
 msgid "EventKoi ticket order auto-completed."
 msgstr ""
 
-#: includes/core/class-woocommerce-checkout.php:968
+#: includes/core/class-woocommerce-checkout.php:1125
 msgid "Status updated via EventKoi."
 msgstr ""
 
@@ -8399,19 +8403,19 @@ msgstr ""
 msgid "List: Date"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-calendar.php:1087
+#: includes/core/elementor-widgets/class-widget-calendar.php:1097
 msgid "Calendar background"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-calendar.php:1088
+#: includes/core/elementor-widgets/class-widget-calendar.php:1098
 msgid "Text"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-calendar.php:1089
+#: includes/core/elementor-widgets/class-widget-calendar.php:1099
 msgid "Buttons"
 msgstr ""
 
-#: includes/core/elementor-widgets/class-widget-calendar.php:1090
+#: includes/core/elementor-widgets/class-widget-calendar.php:1100
 msgid "Button text"
 msgstr ""
 

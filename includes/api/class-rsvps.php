@@ -165,6 +165,11 @@ class Rsvps {
 		// compose the name differently or post-process custom field values.
 		$payload = apply_filters( 'eventkoi_rsvp_payload', $payload, $data );
 
+		// This route is open to visitors, so an existing RSVP only changes for
+		// whoever holds its check-in code or is signed in as its owner.
+		$payload['require_owner'] = true;
+		$payload['checkin_token'] = sanitize_text_field( (string) ( $data['checkin_token'] ?? '' ) );
+
 		$result = Core_Rsvps::create( $payload );
 
 		if ( is_wp_error( $result ) ) {

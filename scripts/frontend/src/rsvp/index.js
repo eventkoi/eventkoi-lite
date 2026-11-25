@@ -97,6 +97,12 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
     if (instanceTs) {
       params.set("instance_ts", String(instanceTs));
     }
+    const rsvpToken = new URLSearchParams(window.location.search).get(
+      "eventkoi_rsvp"
+    );
+    if (rsvpToken) {
+      params.set("eventkoi_rsvp", rsvpToken);
+    }
     try {
       const res = await fetch(
         resolvePublicRestUrl(`/rsvp/summary?${params.toString()}`),
@@ -313,6 +319,7 @@ function RsvpWidget({ eventId, instanceTs, mountEl }) {
         status,
         guests: guestsValue,
         fields: fieldValues,
+        ...(checkinToken ? { checkin_token: checkinToken } : {}),
         ...(collectGuestDetails
           ? {
               guest_details: guestEntries.map((g) => ({

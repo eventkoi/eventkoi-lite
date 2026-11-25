@@ -2,6 +2,12 @@
 
 Full release history of EventKoi Lite. The readme lists only the latest releases.
 
+= 1.5.3.0 – RSVP, ticket cart and accessibility improvements – 2026-11-25 =
+* Improvement: Attendees change their RSVP from the link in their confirmation email, or while signed in to their account.
+* Improvement: Ticket quantities in the WooCommerce cart stay as picked on the event page.
+* Improvement: Accessibility of the calendar time zone control and of page numbers. They look the same.
+* Fix: The Divi Event module shows the event image in the Full event layout.
+
 = 1.5.2.1 – Plugin tour text weight on Divi sites – 2026-11-24 =
 * Fix: The plugin tour text is no longer too heavy on sites running Divi, which loads its own font in the WordPress admin.
 

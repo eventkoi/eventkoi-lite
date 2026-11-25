@@ -283,6 +283,7 @@ function CheckinWidget({ mountEl }) {
           email: editEmail,
           status: editStatus,
           guests: guestsValue,
+          checkin_token: checkinToken,
         }),
       });
 
