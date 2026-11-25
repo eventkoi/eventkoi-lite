@@ -19,9 +19,11 @@ import { DateTime } from "luxon";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogHeader,
+  dialogSheetClass,
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
@@ -1455,7 +1457,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
 
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogContent
-            className="eventkoi-front w-[95vw] max-w-[900px] gap-0 overflow-hidden p-0 focus:outline-none"
+            className={`eventkoi-front ${dialogSheetClass} sm:max-w-[900px] focus:outline-none`}
             // Do not jump to the first quantity button (on a phone that
             // scrolls the sheet), but do move focus into the dialog. Left on
             // the page behind, Tab walked the page under the overlay and
@@ -1491,12 +1493,13 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
             </DialogHeader>
             {dialogStep === "tickets" ? (
               <>
-                <div className="p-5 pb-8 sm:p-6 sm:pb-10">
+                <div className="flex-none p-5 pb-8 sm:p-6 sm:pb-10">
                   <div className="text-2xl font-semibold leading-none text-foreground">
                     {__("Buy tickets", "eventkoi-lite")}
                   </div>
                 </div>
 
+                <DialogBody>
                 <div className="px-5 sm:px-6">
                   {displayTickets.map((ticket, idx) => {
                     const qty = Math.max(
@@ -1521,7 +1524,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                           <div className="h-px w-full bg-border" />
                         ) : null}
                         <div
-                          className={`grid grid-cols-[1fr_auto] gap-6 py-6 ${
+                          className={`grid grid-cols-1 gap-4 py-6 sm:grid-cols-[1fr_auto] sm:gap-6 ${
                             idx === 0 ? "pt-0" : ""
                           }`}
                         >
@@ -1604,7 +1607,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                             </div>
                           </div>
 
-                          <div className="flex min-w-[180px] flex-col items-end justify-center">
+                          <div className="flex min-w-0 flex-col items-start justify-center sm:min-w-[180px] sm:items-end">
                             <div className="flex flex-col items-center">
                               <div className="flex items-center gap-2">
                                 <button
@@ -1691,17 +1694,18 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                       : __("This event is sold out.", "eventkoi-lite")}
                   </div>
                 ) : null}
+                </DialogBody>
 
-                <div className="border-t border-border bg-muted/30 px-5 py-5 sm:px-6 sm:py-6">
-                  <div className="grid grid-cols-[1fr_auto] items-center gap-4">
-                    <div>
+                <div className="flex-none border-t border-border bg-muted/30 px-5 py-5 sm:px-6 sm:py-6">
+                  <div className="flex flex-col gap-4 sm:grid sm:grid-cols-[1fr_auto] sm:items-center">
+                    <div className="min-w-0">
                       <div className="text-[18px] font-medium leading-tight text-foreground">
                         {footerEventTitle}
                       </div>
                       {footerEventLocation ? (
                         <div className="mt-1 flex items-start gap-2 text-sm text-foreground">
                           <MapPin className="mt-0.5 size-4 shrink-0" />
-                          <span>{footerEventLocation}</span>
+                          <span className="min-w-0 [overflow-wrap:anywhere]">{footerEventLocation}</span>
                         </div>
                       ) : null}
                       {footerEventDate ? (
@@ -1712,8 +1716,8 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                       ) : null}
                     </div>
 
-                    <div className="flex flex-col items-end justify-center gap-3">
-                      <div className="flex items-center gap-3 leading-none">
+                    <div className="flex flex-col items-stretch justify-center gap-3 sm:items-end">
+                      <div className="flex items-center justify-between gap-3 leading-none sm:justify-start">
                         <span className="text-sm leading-none text-muted-foreground">
                           {__("Total", "eventkoi-lite")}
                         </span>
@@ -1723,10 +1727,10 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                           </span>
                         </span>
                       </div>
-                      <div className="flex items-center gap-5">
+                      <div className="flex flex-wrap items-center justify-between gap-3 sm:justify-end sm:gap-5">
                         <button
                           type="button"
-                          className="text-sm leading-[20px] text-foreground border-0 border-b border-transparent hover:border-foreground transition-none"
+                          className="shrink-0 text-sm leading-[20px] text-foreground border-0 border-b border-transparent hover:border-foreground transition-none"
                           onClick={() => {
                             const cleared = {};
                             displayTickets.forEach((ticket) => {
@@ -1772,7 +1776,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                 </div>
               </>
             ) : (
-              <div className="p-5 pt-10 pb-8 sm:p-6 sm:pt-10 sm:pb-10">
+              <DialogBody className="p-5 pt-10 pb-8 sm:p-6 sm:pt-10 sm:pb-10">
                 <DialogHeader className="sr-only">
                   <DialogTitle>
                     {__("Checkout", "eventkoi-lite")}
@@ -1782,7 +1786,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                   </DialogDescription>
                 </DialogHeader>
 
-                <div className="grid gap-12 md:grid-cols-[1fr_320px]">
+                <div className="grid grid-cols-1 gap-12 md:grid-cols-[1fr_320px]">
                   <form
                     className="space-y-4"
                     onSubmit={(event) => {
@@ -2316,7 +2320,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                       {footerEventLocation ? (
                         <div className="mt-3 flex items-start gap-2 text-sm text-foreground">
                           <MapPin className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
-                          <span>{footerEventLocation}</span>
+                          <span className="min-w-0 [overflow-wrap:anywhere]">{footerEventLocation}</span>
                         </div>
                       ) : null}
                       {footerEventDate ? (
@@ -2357,7 +2361,7 @@ function TicketsWidget({ eventId, instanceTs, mountEl }) {
                     </div>
                   </div>
                 </div>
-              </div>
+              </DialogBody>
             )}
           </DialogContent>
         </Dialog>
