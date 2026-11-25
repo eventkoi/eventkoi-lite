@@ -64,6 +64,9 @@ class WooCommerce_Checkout {
 		add_filter( 'woocommerce_cart_item_thumbnail', array( __CLASS__, 'filter_cart_item_thumbnail' ), 10, 3 );
 		add_filter( 'woocommerce_product_get_image_id', array( __CLASS__, 'suppress_proxy_product_image' ), 10, 2 );
 		add_filter( 'woocommerce_get_item_data', array( __CLASS__, 'filter_cart_item_data' ), 10, 2 );
+		add_filter( 'woocommerce_cart_item_quantity', array( __CLASS__, 'lock_classic_cart_quantity' ), 10, 3 );
+		add_filter( 'woocommerce_store_api_product_quantity_editable', array( __CLASS__, 'lock_block_cart_quantity' ), 10, 3 );
+		add_action( 'woocommerce_after_cart_item_quantity_update', array( __CLASS__, 'keep_ticket_quantity' ), 10, 4 );
 		add_action( 'woocommerce_checkout_create_order_line_item', array( __CLASS__, 'add_order_item_meta' ), 10, 4 );
 		add_action( 'woocommerce_checkout_order_created', array( __CLASS__, 'attach_order_meta' ) );
 		add_action( 'woocommerce_store_api_checkout_order_processed', array( __CLASS__, 'attach_order_meta' ) );
@@ -488,6 +491,48 @@ class WooCommerce_Checkout {
 	}
 
 	/**
+	 * Show a ticket's quantity as plain text in the classic cart.
+	 *
+	 * Seats are held, limited and named per ticket on the event page, so that is
+	 * where their number is chosen.
+	 *
+	 * @param string $html          Quantity input markup.
+	 * @param string $cart_item_key Cart item key.
+	 * @param array  $cart_item     Cart item.
+	 * @return string
+	 */
+	public static function lock_classic_cart_quantity( $html, $cart_item_key, $cart_item = array() ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundInExtendedClassBeforeLastUsed, Generic.CodeAnalysis.UnusedFunctionParameter.FoundBeforeLastUsed
+		return empty( $cart_item['eventkoi_ticket'] ) ? $html : esc_html( (string) absint( $cart_item['quantity'] ?? 1 ) );
+	}
+
+	/**
+	 * Show a ticket's quantity as plain text in the cart block.
+	 *
+	 * @param bool        $editable  Whether the quantity can be edited.
+	 * @param \WC_Product $product   Product.
+	 * @param array|null  $cart_item Cart item, or null outside the cart.
+	 * @return bool
+	 */
+	public static function lock_block_cart_quantity( $editable, $product, $cart_item = null ) { // phpcs:ignore Generic.CodeAnalysis.UnusedFunctionParameter.FoundBeforeLastUsed
+		return empty( $cart_item['eventkoi_ticket'] ) ? $editable : false;
+	}
+
+	/**
+	 * Undo a quantity change on a ticket line, however it was made.
+	 *
+	 * @param string        $cart_item_key Cart item key.
+	 * @param int           $quantity      New quantity.
+	 * @param int           $old_quantity  Quantity before the change.
+	 * @param \WC_Cart|null $cart          Cart.
+	 * @return void
+	 */
+	public static function keep_ticket_quantity( $cart_item_key, $quantity, $old_quantity = 0, $cart = null ) {
+		if ( $cart && $old_quantity > 0 && (int) $quantity !== (int) $old_quantity && ! empty( $cart->cart_contents[ $cart_item_key ]['eventkoi_ticket'] ) ) {
+			$cart->cart_contents[ $cart_item_key ]['quantity'] = $old_quantity;
+		}
+	}
+
+	/**
 	 * Add EventKoi metadata to WC order line items.
 	 *
 	 * @param \WC_Order_Item_Product $item     Order item.
@@ -558,6 +603,66 @@ class WooCommerce_Checkout {
 	}
 
 	/**
+	 * Tickets an order contains, by their place in the list saved at checkout.
+	 *
+	 * @param \WC_Order $order WC Order.
+	 * @return array<int,array{ticket_id:int,quantity:int}>
+	 */
+	private static function get_order_ticket_lines( $order ) {
+		$lines = array();
+
+		foreach ( $order->get_items( 'line_item' ) as $item ) {
+			if ( ! is_object( $item ) || 'yes' !== (string) $item->get_meta( '_eventkoi_ticket' ) ) {
+				continue;
+			}
+
+			$index = absint( $item->get_meta( '_eventkoi_index' ) );
+			if ( ! isset( $lines[ $index ] ) ) {
+				$lines[ $index ] = array(
+					'ticket_id' => absint( $item->get_meta( '_eventkoi_ticket_id' ) ),
+					'quantity'  => 0,
+				);
+			}
+			$lines[ $index ]['quantity'] += absint( $item->get_quantity() );
+		}
+
+		return $lines;
+	}
+
+	/**
+	 * Reduce the list saved at checkout to the tickets the order is for.
+	 *
+	 * The list is what the buyer picked on the event page. Lines can be dropped or
+	 * changed after that, so the order itself decides what gets issued.
+	 *
+	 * @param \WC_Order $order        WC Order.
+	 * @param array     $ticket_items Ticket items saved at checkout.
+	 * @return array Ticket items to issue, with one code per seat.
+	 */
+	private static function get_paid_ticket_items( $order, array $ticket_items ) {
+		$lines = self::get_order_ticket_lines( $order );
+		$paid  = array();
+
+		foreach ( $ticket_items as $index => $item ) {
+			$line = $lines[ $index ] ?? null;
+			if ( ! is_array( $item ) || ! $line || $line['quantity'] < 1 || absint( $item['ticket_id'] ?? 0 ) !== $line['ticket_id'] ) {
+				continue;
+			}
+
+			$codes = array_slice( array_values( (array) ( $item['codes'] ?? array() ) ), 0, $line['quantity'] );
+			for ( $missing = $line['quantity'] - count( $codes ); $missing > 0; --$missing ) {
+				$codes[] = self::generate_unique_code();
+			}
+
+			$item['quantity'] = $line['quantity'];
+			$item['codes']    = $codes;
+			$paid[ $index ]   = $item;
+		}
+
+		return $paid;
+	}
+
+	/**
 	 * Attach EventKoi metadata to the WC order after checkout.
 	 *
 	 * @param \WC_Order $order WC Order.
@@ -565,6 +670,11 @@ class WooCommerce_Checkout {
 	public static function attach_order_meta( $order ) {
 		$checkout_data = WC()->session ? WC()->session->get( self::SESSION_KEY ) : null;
 		if ( ! $checkout_data ) {
+			return;
+		}
+
+		// The buyer may have dropped the tickets and bought something else.
+		if ( empty( self::get_order_ticket_lines( $order ) ) ) {
 			return;
 		}
 
@@ -658,6 +768,12 @@ class WooCommerce_Checkout {
 			return;
 		}
 
+		$saved_items  = (array) $order->get_meta( '_eventkoi_ticket_items' );
+		$ticket_items = self::get_paid_ticket_items( $order, $saved_items );
+		if ( empty( $ticket_items ) ) {
+			return; // No ticket was paid for.
+		}
+
 		$lock_key   = 'ek_wc_synced_' . absint( $wc_order_id );
 		$lock_added = wp_cache_add( $lock_key, 1, 'eventkoi_locks', HOUR_IN_SECONDS );
 		if ( ! $lock_added ) {
@@ -676,13 +792,16 @@ class WooCommerce_Checkout {
 
 		$instance_ts         = absint( $order->get_meta( '_eventkoi_instance_ts' ) );
 		$event_title         = (string) $order->get_meta( '_eventkoi_event_title' );
-		$ticket_items        = (array) $order->get_meta( '_eventkoi_ticket_items' );
 		$master_checkin_code = (string) $order->get_meta( '_eventkoi_master_checkin_code' );
 		$wp_user_id          = absint( $order->get_meta( '_eventkoi_wp_user_id' ) );
 		$wp_user_label       = (string) $order->get_meta( '_eventkoi_wp_user_label' );
 		$currency            = strtolower( $order->get_currency() );
 		$customer_name       = trim( $order->get_billing_first_name() . ' ' . $order->get_billing_last_name() );
 		$customer_email      = $order->get_billing_email();
+
+		if ( $ticket_items !== $saved_items ) {
+			$order->update_meta_data( '_eventkoi_ticket_items', $ticket_items );
+		}
 
 		// Build order payload for local sync.
 		$ek_order_id = 'wc_' . $wc_order_id;
