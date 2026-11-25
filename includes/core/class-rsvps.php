@@ -171,7 +171,9 @@ class Rsvps {
 	/**
 	 * Create or update an RSVP.
 	 *
-	 * @param array $args RSVP data.
+	 * @param array $args RSVP data. With `require_owner` set, a change to an RSVP
+	 *                    that is going needs its check-in code in `checkin_token`
+	 *                    or its owner signed in as `user_id`.
 	 * @return array|\WP_Error
 	 */
 	public static function create( $args = array() ) {
@@ -292,6 +294,10 @@ class Rsvps {
 			}
 		}
 
+		// The account the request was made with. The one resolved below comes from
+		// the typed address, which says nothing about who typed it.
+		$request_user_id = $user_id;
+
 		$auto_account = Event::get_rsvp_auto_account();
 		if ( ! $user_id && 'going' === $status && $auto_account ) {
 			$user_id = self::get_or_create_user( $email, $name );
@@ -322,6 +328,24 @@ class Rsvps {
 				->get();
 		}
 
+		// Knowing someone's address must not be enough to change their RSVP.
+		$start_over = false;
+		if (
+			! empty( $existing )
+			&& ! empty( $args['require_owner'] )
+			&& Event::get_rsvp_allow_edit()
+			&& ! self::request_owns_rsvp( $existing, (string) ( $args['checkin_token'] ?? '' ), $request_user_id )
+		) {
+			if ( 'going' === ( $existing->status ?? '' ) ) {
+				return new \WP_Error( 'eventkoi_rsvp_exists', __( 'There is already an RSVP for this email. To change it, use the link in your confirmation email.', 'eventkoi-lite' ), array( 'status' => 409 ) );
+			}
+
+			// Someone who is not going was never sent a code to prove it with, so
+			// they can RSVP again, as a fresh RSVP that shows nothing of the
+			// stored one.
+			$start_over = true;
+		}
+
 		if ( 'going' === $status ) {
 			$capacity = Event::get_rsvp_capacity();
 			if ( $capacity > 0 ) {
@@ -347,7 +371,7 @@ class Rsvps {
 			// An edit only replaces what its form showed. Answers to questions
 			// the event no longer asks stay on the RSVP, and a form without
 			// the questions or the "email each guest" box changes neither.
-			$stored_meta   = json_decode( (string) ( $existing->meta ?? '' ), true );
+			$stored_meta   = $start_over ? array() : json_decode( (string) ( $existing->meta ?? '' ), true );
 			$stored_meta   = is_array( $stored_meta ) ? $stored_meta : array();
 			$stored_fields = isset( $stored_meta['fields'] ) && is_array( $stored_meta['fields'] ) ? $stored_meta['fields'] : array();
 			$fields_sent   = isset( $args['fields_sent'] ) ? (bool) $args['fields_sent'] : array_key_exists( 'fields', $args );
@@ -366,7 +390,7 @@ class Rsvps {
 			}
 			$meta_json = $meta ? wp_json_encode( $meta ) : null;
 
-			$updated_token = $existing->checkin_token ?? '';
+			$updated_token = $start_over ? '' : ( $existing->checkin_token ?? '' );
 			if ( empty( $updated_token ) ) {
 				$updated_token = self::generate_checkin_token();
 			}
@@ -388,6 +412,10 @@ class Rsvps {
 				);
 
 			self::bump_events_cache_version();
+
+			if ( $start_over ) {
+				DB::table( 'eventkoi_rsvps' )->where( 'parent_id', absint( $existing->id ) )->delete();
+			}
 
 			// Guests were only mailed before if the host had asked for it then.
 			$previous_meta = json_decode( (string) ( $existing->meta ?? '' ), true );
@@ -415,7 +443,7 @@ class Rsvps {
 
 			return array(
 				'id'            => $existing->id,
-				'checkin_token' => $existing->checkin_token,
+				'checkin_token' => $updated_token,
 				'updated'       => true,
 			);
 		}
@@ -476,6 +504,29 @@ class Rsvps {
 			'checkin_token' => $checkin_token,
 			'created'       => true,
 		);
+	}
+
+	/**
+	 * Whether a request proves the RSVP it wants to change is its own.
+	 *
+	 * @param object $existing RSVP owner row.
+	 * @param string $token    Check-in code sent with the request.
+	 * @param int    $user_id  Signed-in user, or 0.
+	 * @return bool
+	 */
+	private static function request_owns_rsvp( $existing, $token, $user_id ) {
+		$stored = (string) ( $existing->checkin_token ?? '' );
+		if ( '' !== $stored && '' !== $token && hash_equals( $stored, $token ) ) {
+			return true;
+		}
+
+		$user = $user_id ? get_user_by( 'id', $user_id ) : false;
+		if ( ! $user ) {
+			return false;
+		}
+
+		return absint( $existing->user_id ?? 0 ) === (int) $user->ID
+			|| ( '' !== (string) ( $existing->email ?? '' ) && 0 === strcasecmp( (string) $existing->email, (string) $user->user_email ) );
 	}
 
 	/**
@@ -1668,6 +1719,11 @@ class Rsvps {
 		$subject = sprintf( __( 'Your RSVP for %s', 'eventkoi-lite' ), $title );
 
 		$event_url = self::get_event_url( $event_id, $instance_ts );
+		// The link the email offers to manage the RSVP carries its code. A guest's
+		// link never opens the RSVP for editing, so it carries none.
+		if ( $event_url && ! $is_guest ) {
+			$event_url = add_query_arg( 'eventkoi_rsvp', (string) $token, $event_url );
+		}
 
 		$schedule            = self::get_event_instance_schedule( $event_id, $instance_ts );
 		$event_timestamp     = $schedule['start'];
