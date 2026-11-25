@@ -770,6 +770,16 @@ class Calendar_Widget extends Widget_Base {
 		$base     = self::typography_declarations( $values );
 		$css      = '' !== $base ? $selector . '{' . $base . '}' : '';
 
+		// The timezone label and its underline are drawn by ::before, so a
+		// text decoration choice has to land there and not on the button.
+		if ( '.eventkoi-calendar-timezone' === $selectors ) {
+			$decoration = (string) preg_replace( '/[^a-z-]/', '', strtolower( (string) ( $values['text_decoration'] ?? '' ) ) );
+
+			if ( '' !== $decoration ) {
+				$css .= $selector . '{text-decoration:none!important;}' . $selector . '::before{text-decoration:' . $decoration . '!important;}';
+			}
+		}
+
 		foreach ( self::breakpoints() as $name => $query ) {
 			$device = self::typography_declarations( $values, '_' . $name );
 			if ( '' !== $device ) {
