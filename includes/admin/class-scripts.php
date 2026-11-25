@@ -68,7 +68,7 @@ class Scripts {
 			'eventkoi-editor-tw',
 			$build_url . 'tailwind.css',
 			array(),
-			$asset_file['version']
+			EVENTKOI_VERSION . '-' . $asset_file['version']
 		);
 
 		wp_register_style(
@@ -596,16 +596,16 @@ class Scripts {
 			}
 		}
 
-		// Load Tailwind CSS only on main plugin page or edit screens.
-		if (
-			'toplevel_page_eventkoi' === $screen->base
-			|| ( isset( $_GET['action'] ) && 'edit' === $_GET['action'] ) // phpcs:ignore WordPress.Security.NonceVerification.Recommended
-		) {
+		// Load Tailwind CSS only on EventKoi's own pages. Its utility names are
+		// generic, so on other edit screens they override the markup of other
+		// plugins (WooCommerce product fields use the class "hidden"). The block
+		// editor gets its own copy from enqueue_block_editor_assets().
+		if ( 'toplevel_page_eventkoi' === $screen->base ) {
 			wp_register_style(
 				'eventkoi-admin-tw',
 				$build_url . 'tailwind.css',
 				null,
-				$asset_file['version']
+				EVENTKOI_VERSION . '-' . $asset_file['version']
 			);
 
 			wp_enqueue_style( 'eventkoi-admin-tw' );
@@ -649,7 +649,7 @@ class Scripts {
 			'eventkoi-editor-tw',
 			$build_url . 'tailwind.css',
 			array(),
-			$asset_file['version']
+			EVENTKOI_VERSION . '-' . $asset_file['version']
 		);
 
 		wp_enqueue_style( 'eventkoi-editor-tw' );
