@@ -67,6 +67,7 @@ class WooCommerce_Checkout {
 		add_filter( 'woocommerce_cart_item_quantity', array( __CLASS__, 'lock_classic_cart_quantity' ), 10, 3 );
 		add_filter( 'woocommerce_store_api_product_quantity_editable', array( __CLASS__, 'lock_block_cart_quantity' ), 10, 3 );
 		add_action( 'woocommerce_after_cart_item_quantity_update', array( __CLASS__, 'keep_ticket_quantity' ), 10, 4 );
+		add_action( 'woocommerce_cart_loaded_from_session', array( __CLASS__, 'drop_tickets_from_other_checkouts' ) );
 		add_action( 'woocommerce_checkout_create_order_line_item', array( __CLASS__, 'add_order_item_meta' ), 10, 4 );
 		add_action( 'woocommerce_checkout_order_created', array( __CLASS__, 'attach_order_meta' ) );
 		add_action( 'woocommerce_store_api_checkout_order_processed', array( __CLASS__, 'attach_order_meta' ) );
@@ -282,6 +283,7 @@ class WooCommerce_Checkout {
 			'wp_user_label'       => $wp_user_label,
 			'master_checkin_code' => $master_checkin_code,
 			'ticket_items'        => $all_ticket_items,
+			'checkout_key'        => wp_generate_uuid4(),
 			'checkout_fields'     => is_array( $args['checkout_fields'] ?? null ) ? $args['checkout_fields'] : array(),
 			'terms_consent'       => is_array( $args['terms_consent'] ?? null ) ? $args['terms_consent'] : null,
 			'hold_id'             => sanitize_text_field( (string) ( $args['hold_id'] ?? '' ) ),
@@ -355,11 +357,13 @@ class WooCommerce_Checkout {
 				0,
 				array(),
 				array(
-					'eventkoi_ticket'     => true,
-					'eventkoi_index'      => $index,
-					'eventkoi_name'       => $ticket['name'],
-					'eventkoi_unit_cents' => $ticket['unit_amount'],
-					'eventkoi_ticket_id'  => $ticket['ticket_id'],
+					'eventkoi_ticket'       => true,
+					'eventkoi_index'        => $index,
+					'eventkoi_name'         => $ticket['name'],
+					'eventkoi_unit_cents'   => $ticket['unit_amount'],
+					'eventkoi_ticket_id'    => $ticket['ticket_id'],
+					// Ties the line to this checkout's dates and prices.
+					'eventkoi_checkout_key' => (string) ( $data['checkout_key'] ?? '' ),
 				)
 			);
 		}
@@ -533,6 +537,30 @@ class WooCommerce_Checkout {
 	}
 
 	/**
+	 * Remove ticket lines that a different checkout put in the cart.
+	 *
+	 * Signing in merges the customer's saved cart into the current one, which can
+	 * bring back tickets picked earlier, for another date or at another price.
+	 * Starting a checkout replaces the tickets in the cart, so it does here too.
+	 *
+	 * @param \WC_Cart $cart Cart.
+	 * @return void
+	 */
+	public static function drop_tickets_from_other_checkouts( $cart ) {
+		$checkout_data = WC()->session ? WC()->session->get( self::SESSION_KEY ) : null;
+		if ( ! is_array( $checkout_data ) || ! is_object( $cart ) ) {
+			return;
+		}
+
+		$checkout_key = (string) ( $checkout_data['checkout_key'] ?? '' );
+		foreach ( (array) $cart->cart_contents as $cart_item_key => $cart_item ) {
+			if ( ! empty( $cart_item['eventkoi_ticket'] ) && (string) ( $cart_item['eventkoi_checkout_key'] ?? '' ) !== $checkout_key ) {
+				$cart->remove_cart_item( $cart_item_key );
+			}
+		}
+	}
+
+	/**
 	 * Add EventKoi metadata to WC order line items.
 	 *
 	 * @param \WC_Order_Item_Product $item     Order item.
@@ -548,6 +576,7 @@ class WooCommerce_Checkout {
 		$item->add_meta_data( '_eventkoi_ticket', 'yes', true );
 		$item->add_meta_data( '_eventkoi_ticket_id', $values['eventkoi_ticket_id'] ?? 0, true );
 		$item->add_meta_data( '_eventkoi_index', $values['eventkoi_index'] ?? 0, true );
+		$item->add_meta_data( '_eventkoi_checkout_key', $values['eventkoi_checkout_key'] ?? '', true );
 
 		// Override the displayed name.
 		if ( ! empty( $values['eventkoi_name'] ) ) {
@@ -605,14 +634,20 @@ class WooCommerce_Checkout {
 	/**
 	 * Tickets an order contains, by their place in the list saved at checkout.
 	 *
-	 * @param \WC_Order $order WC Order.
+	 * @param \WC_Order $order        WC Order.
+	 * @param string    $checkout_key Checkout the list was saved by, '' before keys existed.
 	 * @return array<int,array{ticket_id:int,quantity:int}>
 	 */
-	private static function get_order_ticket_lines( $order ) {
+	private static function get_order_ticket_lines( $order, $checkout_key ) {
 		$lines = array();
 
 		foreach ( $order->get_items( 'line_item' ) as $item ) {
 			if ( ! is_object( $item ) || 'yes' !== (string) $item->get_meta( '_eventkoi_ticket' ) ) {
+				continue;
+			}
+
+			// Another checkout's line was priced for another list.
+			if ( (string) $item->get_meta( '_eventkoi_checkout_key' ) !== $checkout_key ) {
 				continue;
 			}
 
@@ -640,7 +675,7 @@ class WooCommerce_Checkout {
 	 * @return array Ticket items to issue, with one code per seat.
 	 */
 	private static function get_paid_ticket_items( $order, array $ticket_items ) {
-		$lines = self::get_order_ticket_lines( $order );
+		$lines = self::get_order_ticket_lines( $order, (string) $order->get_meta( '_eventkoi_checkout_key' ) );
 		$paid  = array();
 
 		foreach ( $ticket_items as $index => $item ) {
@@ -674,9 +709,12 @@ class WooCommerce_Checkout {
 		}
 
 		// The buyer may have dropped the tickets and bought something else.
-		if ( empty( self::get_order_ticket_lines( $order ) ) ) {
+		$checkout_key = (string) ( $checkout_data['checkout_key'] ?? '' );
+		if ( empty( self::get_order_ticket_lines( $order, $checkout_key ) ) ) {
 			return;
 		}
+
+		$order->update_meta_data( '_eventkoi_checkout_key', $checkout_key );
 
 		$order->update_meta_data( '_eventkoi_event_id', $checkout_data['event_id'] ?? 0 );
 		$order->update_meta_data( '_eventkoi_instance_ts', $checkout_data['instance_ts'] ?? 0 );
