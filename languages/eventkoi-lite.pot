@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: EventKoi Lite 1.5.2.1\n"
+"Project-Id-Version: EventKoi Lite 1.5.3.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/eventkoi-lite\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-25T12:49:11+00:00\n"
+"POT-Creation-Date: 2026-11-25T17:24:09+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: eventkoi-lite\n"
@@ -3479,7 +3479,7 @@ msgstr ""
 #: includes/core/class-rsvps.php:2071
 #: includes/core/class-template.php:158
 #: includes/core/class-ticket-emails.php:1343
-#: includes/core/class-woocommerce-checkout.php:485
+#: includes/core/class-woocommerce-checkout.php:489
 #: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:27
 #: includes/core/divi-modules/class-et-builder-module-eventkoievent.php:41
 msgid "Event"
@@ -8218,29 +8218,29 @@ msgstr ""
 msgid "No event data found on this page."
 msgstr ""
 
-#: includes/core/class-woocommerce-checkout.php:219
+#: includes/core/class-woocommerce-checkout.php:220
 msgid "WooCommerce is not active."
 msgstr ""
 
-#: includes/core/class-woocommerce-checkout.php:241
+#: includes/core/class-woocommerce-checkout.php:242
 msgid "Could not create ticket product."
 msgstr ""
 
-#: includes/core/class-woocommerce-checkout.php:602
+#: includes/core/class-woocommerce-checkout.php:631
 msgid "Attendees:"
 msgstr ""
 
 #. translators: 1: acceptance date/time, 2: the terms text the customer accepted.
-#: includes/core/class-woocommerce-checkout.php:732
+#: includes/core/class-woocommerce-checkout.php:770
 #, php-format
 msgid "Terms and conditions accepted at %1$s. Terms: %2$s"
 msgstr ""
 
-#: includes/core/class-woocommerce-checkout.php:896
+#: includes/core/class-woocommerce-checkout.php:934
 msgid "EventKoi ticket order auto-completed."
 msgstr ""
 
-#: includes/core/class-woocommerce-checkout.php:1087
+#: includes/core/class-woocommerce-checkout.php:1125
 msgid "Status updated via EventKoi."
 msgstr ""
 

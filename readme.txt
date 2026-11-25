@@ -5,7 +5,7 @@ Tags: event calendar, event management, event tickets, event registration, rsvp
 Requires at least: 6.7
 Tested up to: 7.1
 Requires PHP: 8.0
-Stable tag: 1.5.2.1
+Stable tag: 1.5.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -230,6 +230,12 @@ This service is provided by EventKoi: [Privacy Policy](https://eventkoi.com/docs
 
 The latest releases are listed here. See changelog.txt in the plugin folder for older versions.
 
+= 1.5.3.0 – RSVP, ticket cart and accessibility improvements – 2026-11-25 =
+* Improvement: Attendees change their RSVP from the link in their confirmation email, or while signed in to their account.
+* Improvement: Ticket quantities in the WooCommerce cart stay as picked on the event page.
+* Improvement: Accessibility of the calendar time zone control and of page numbers. They look the same.
+* Fix: The Divi Event module shows the event image in the Full event layout.
+
 = 1.5.2.1 – Plugin tour text weight on Divi sites – 2026-11-24 =
 * Fix: The plugin tour text is no longer too heavy on sites running Divi, which loads its own font in the WordPress admin.
 
@@ -298,12 +304,7 @@ The latest releases are listed here. See changelog.txt in the plugin folder for 
 * Fix: The date and location icons in the single event template sit centred on their first line, matching the editor, and no longer pick up duplicated attributes.
 * Fix: Buying a ticket without JavaScript now shows a success, pending or error message above the checkout form, and the form keeps its styling on sites where an SEO plugin renders the content early.
 
-= 1.4.8.1 – Event URL binding, editor title preview and ampersand fixes – 2026-10-21 =
-* Fix: Event titles with ampersands or quotes show as typed in the ticket sales screens, order details, email subjects and admin notifications instead of HTML codes.
-* Fix: The event URL is available as a block attribute, so a Button inside the event query loop can link to each event, and attribute bindings inside the loop read the event in each row rather than the page.
-* Fix: The Event Data title block shows the same link in the editor as on the site, so colours match while you design.
-
 == Upgrade Notice ==
 
-= 1.5.2.1 =
-Fixes plugin tour text that looked too heavy on sites running Divi.
+= 1.5.3.0 =
+RSVP, ticket cart and accessibility improvements. Recommended for all sites.
