@@ -3,7 +3,9 @@ import { ModuleContainer, StyleContainer, CssStyle, textOptionsClassnames } from
 
 import { getBuilderData } from './data';
 
-const ModuleStyles = ( { attrs, settings, orderClass, mode, state, noStyleTag, elements, defaultPrintedStyleAttrs } ) => (
+// The module's own design settings, then one style per element the Design
+// tab styles (title, date, ...), then custom CSS.
+const makeModuleStyles = ( styleAttrs ) => ( { attrs, settings, orderClass, mode, state, noStyleTag, elements, defaultPrintedStyleAttrs } ) => (
 	<StyleContainer mode={ mode } state={ state } noStyleTag={ noStyleTag }>
 		{ elements.style( {
 			attrName: 'module',
@@ -24,6 +26,9 @@ const ModuleStyles = ( { attrs, settings, orderClass, mode, state, noStyleTag, e
 				],
 			},
 		} ) }
+		{ styleAttrs.map( ( attrName ) => (
+			<React.Fragment key={ attrName }>{ elements.style( { attrName } ) }</React.Fragment>
+		) ) }
 		<CssStyle selector={ orderClass } attr={ attrs?.css } cssFields={ {} } />
 	</StyleContainer>
 );
@@ -38,12 +43,12 @@ const moduleClassnames = ( { classnamesInstance, attrs } ) => {
 	classnamesInstance.add( textOptionsClassnames( attrs?.module?.advanced?.text ) );
 };
 
-// Only the content settings change the markup; design settings are applied
-// by Divi through generated CSS.
-const contentAttrs = ( attrs ) => {
+// Only the content settings change the markup; design settings, the
+// module's and each element's, are applied by Divi through generated CSS.
+const contentAttrs = ( attrs, styleAttrs ) => {
 	const out = {};
 	Object.keys( attrs || {} ).forEach( ( key ) => {
-		if ( 'module' !== key && 'css' !== key ) {
+		if ( 'module' !== key && 'css' !== key && ! styleAttrs.includes( key ) ) {
 			out[ key ] = attrs[ key ];
 		}
 	} );
@@ -54,10 +59,10 @@ const contentAttrs = ( attrs ) => {
  * Server rendered preview. The markup is produced by the same PHP that
  * renders the front end, so what the builder shows is what visitors get.
  */
-const ServerPreview = ( { module, attrs } ) => {
+const ServerPreview = ( { module, attrs, styleAttrs } ) => {
 	const data = getBuilderData();
 	const i18n = data.i18n || {};
-	const payload = JSON.stringify( contentAttrs( attrs ) );
+	const payload = JSON.stringify( contentAttrs( attrs, styleAttrs ) );
 	const [ state, setState ] = useState( { html: '', loading: true, error: false } );
 	const container = useRef( null );
 
@@ -122,7 +127,8 @@ const ServerPreview = ( { module, attrs } ) => {
 	return <div ref={ container } className="eventkoi-divi5-preview" dangerouslySetInnerHTML={ { __html: state.html } } />;
 };
 
-export const makeEdit = ( module ) => {
+export const makeEdit = ( module, styleAttrs = [] ) => {
+	const ModuleStyles = makeModuleStyles( styleAttrs );
 	const Edit = ( { attrs, id, name, elements, isLooped, loopIndex } ) => (
 		<ModuleContainer
 			attrs={ attrs }
@@ -136,7 +142,7 @@ export const makeEdit = ( module ) => {
 			loopIndex={ loopIndex }
 		>
 			{ elements.styleComponents( { attrName: 'module' } ) }
-			<ServerPreview module={ module } attrs={ attrs } />
+			<ServerPreview module={ module } attrs={ attrs } styleAttrs={ styleAttrs } />
 		</ModuleContainer>
 	);
 

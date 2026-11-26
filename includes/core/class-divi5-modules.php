@@ -142,6 +142,27 @@ class Divi5_Modules {
 	}
 
 	/**
+	 * Attributes that style one element of a module from the Design tab
+	 * (its title, its date, ...), as opposed to content settings: the ones
+	 * module.json gives a selector, apart from the module itself.
+	 *
+	 * @param string $slug Module slug.
+	 * @return string[]
+	 */
+	public static function style_elements( $slug ) {
+		$metadata = self::module_metadata( $slug );
+		$elements = array();
+
+		foreach ( (array) ( $metadata['attributes'] ?? array() ) as $name => $attribute ) {
+			if ( 'module' !== $name && is_array( $attribute ) && ! empty( $attribute['selector'] ) ) {
+				$elements[] = (string) $name;
+			}
+		}
+
+		return $elements;
+	}
+
+	/**
 	 * Block attributes for a module: the static ones from module.json plus
 	 * one checkbox list per built taxonomy on the calendar module.
 	 *
@@ -323,7 +344,18 @@ class Divi5_Modules {
 				'weekStart'          => array( 'label' => __( 'Week starts on', 'eventkoi-lite' ) ),
 			),
 			'event'    => array(
-				'group' => array( 'label' => __( 'Event', 'eventkoi-lite' ) ),
+				'group'  => array( 'label' => __( 'Event', 'eventkoi-lite' ) ),
+				'font'   => __( 'Font', 'eventkoi-lite' ),
+				'groups' => array(
+					'designText'     => __( 'Body Text', 'eventkoi-lite' ),
+					'designLabel'    => __( 'Label Text', 'eventkoi-lite' ),
+					'designTitle'    => __( 'Title Text', 'eventkoi-lite' ),
+					'designDateTime' => __( 'Date Text', 'eventkoi-lite' ),
+					'designLocation' => __( 'Location Text', 'eventkoi-lite' ),
+					'designDetails'  => __( 'Details Text', 'eventkoi-lite' ),
+					'designLinks'    => __( 'Link Text', 'eventkoi-lite' ),
+					'designImage'    => __( 'Image', 'eventkoi-lite' ),
+				),
 				'event' => array(
 					'label'       => __( 'Event', 'eventkoi-lite' ),
 					'description' => __( 'Select an event to display. Use the current event when placed on an event template.', 'eventkoi-lite' ),

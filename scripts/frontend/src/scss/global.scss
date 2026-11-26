@@ -193,3 +193,14 @@ main.eventkoi-main {
   content: attr(data-label);
   text-decoration: underline;
 }
+
+// Divi gives the body a line height in em, so children inherit it as a fixed
+// pixel value and text set larger in the Design tab overlaps its next line.
+// Divi's own text modules restate it per element; this does the same, at the
+// ratio the text has today, so nothing moves until a size is changed. The
+// selector stays below Divi's generated ones, so a line height set in the
+// Design tab still wins.
+:where(.eventkoi-divi-event) .eventkoi-data,
+:where(.eventkoi-divi-event) .eventkoi-label {
+  line-height: var(--et_global_body_font_height, 1.7em);
+}

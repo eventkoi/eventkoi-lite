@@ -15,6 +15,15 @@ const SOURCES = {
 
 const clone = ( value ) => JSON.parse( JSON.stringify( value ) );
 
+/**
+ * Attributes that style one element from the Design tab: the ones with a
+ * selector, apart from the module itself. The PHP side reads the same rule.
+ */
+const styleAttrNames = ( metadata ) =>
+	Object.keys( metadata.attributes || {} ).filter(
+		( name ) => 'module' !== name && !! metadata.attributes[ name ]?.selector
+	);
+
 const toSelectOptions = ( list ) => {
 	const options = {};
 	( list || [] ).forEach( ( { value, label } ) => {
@@ -77,11 +86,39 @@ const prepareMetadata = ( slug, source, data ) => {
 	} );
 
 	const groups = metadata.settings?.groups || {};
+	const designLabels = labels.groups || {};
 	Object.keys( groups ).forEach( ( groupSlug ) => {
-		const key = groupSlug.endsWith( 'Query' ) ? 'queryGroup' : 'group';
-		if ( labels[ key ]?.label && groups[ groupSlug ].component?.props ) {
-			groups[ groupSlug ].component.props.groupLabel = labels[ key ].label;
+		const props = groups[ groupSlug ].component?.props;
+		if ( ! props ) {
+			return;
 		}
+		if ( designLabels[ groupSlug ] ) {
+			props.groupLabel = designLabels[ groupSlug ];
+			return;
+		}
+		if ( 'design' === groups[ groupSlug ].panel ) {
+			return;
+		}
+		const key = groupSlug.endsWith( 'Query' ) ? 'queryGroup' : 'group';
+		if ( labels[ key ]?.label ) {
+			props.groupLabel = labels[ key ].label;
+		}
+	} );
+
+	// The fields inside each Design group carry the group's name too.
+	styleAttrNames( metadata ).forEach( ( attr ) => {
+		const decoration = metadata.attributes[ attr ]?.settings?.decoration || {};
+		Object.keys( decoration ).forEach( ( name ) => {
+			const item = decoration[ name ]?.item;
+			const label = item && designLabels[ item.groupSlug ];
+			if ( label && item.component?.props?.fieldLabel ) {
+				item.component.props.fieldLabel = label;
+			}
+			// Inside an element's group, its font settings read as "Font".
+			if ( 'font' === name && item?.component?.props && labels.font ) {
+				item.component.props.groupLabel = labels.font;
+			}
+		} );
 	} );
 
 	if ( 'calendar' === slug ) {
@@ -119,7 +156,7 @@ export const buildModuleDefinitions = () => {
 			metadata: prepareMetadata( slug, SOURCES[ slug ].metadata, data ),
 			conversionOutline: prepareOutline( slug, SOURCES[ slug ].outline, data ),
 			placeholderContent: {},
-			renderers: { edit: makeEdit( slug ) },
+			renderers: { edit: makeEdit( slug, styleAttrNames( SOURCES[ slug ].metadata ) ) },
 			callbacks: { content: { elements: elementsCallbacks } },
 		} ) );
 };

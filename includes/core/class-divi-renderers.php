@@ -101,10 +101,7 @@ class Divi_Renderers {
 		$selected = $props['eventkoi_event_id'] ?? 'current';
 		$event_id = ( '' === $selected || 'current' === $selected ) ? 0 : absint( $selected );
 		if ( ! $event_id ) {
-			$current = get_the_ID();
-			if ( $current && 'eventkoi_event' === get_post_type( $current ) ) {
-				$event_id = (int) $current;
-			}
+			$event_id = self::current_event_id();
 		}
 
 		if ( ! $event_id ) {
@@ -113,14 +110,10 @@ class Divi_Renderers {
 
 		$data = sanitize_key( $props['eventkoi_data'] ?? 'full' );
 
-		if ( 'full' === $data ) {
-			$items  = array( 'event_title', 'event_image', 'event_datetime', 'event_location', 'event_details' );
-			$output = '';
-			foreach ( $items as $key ) {
-				$output .= do_shortcode( sprintf( '[eventkoi id=%d data=%s]', $event_id, $key ) );
-			}
-		} else {
-			$output = do_shortcode( sprintf( '[eventkoi id=%d data=%s]', $event_id, $data ) );
+		$items  = 'full' === $data ? array( 'event_title', 'event_image', 'event_datetime', 'event_location', 'event_details' ) : array( $data );
+		$output = '';
+		foreach ( $items as $key ) {
+			$output .= self::event_part( $event_id, $key );
 		}
 
 		if ( '' === trim( $output ) ) {
@@ -144,6 +137,55 @@ class Divi_Renderers {
 		}
 
 		return sprintf( '<div class="eventkoi-divi-event">%s</div>', $output );
+	}
+
+	/**
+	 * The event being viewed. In a Theme Builder template the post in the
+	 * loop is the template itself, so the page's main post and the queried
+	 * event are asked too.
+	 *
+	 * @return int Event ID, or 0 when the page shows no event.
+	 */
+	private static function current_event_id() {
+		$candidates = array( get_the_ID() );
+
+		if ( class_exists( '\ET_Post_Stack' ) && method_exists( '\ET_Post_Stack', 'get_main_post_id' ) ) {
+			$candidates[] = \ET_Post_Stack::get_main_post_id();
+		}
+
+		if ( is_singular( 'eventkoi_event' ) ) {
+			$candidates[] = get_queried_object_id();
+		}
+
+		foreach ( $candidates as $candidate ) {
+			if ( $candidate && 'eventkoi_event' === get_post_type( (int) $candidate ) ) {
+				return (int) $candidate;
+			}
+		}
+
+		return 0;
+	}
+
+	/**
+	 * One piece of event data, its wrapper marked with the data it holds
+	 * (eventkoi-data-event_title, ...) so the Design tab can style each part.
+	 * The Elementor widget uses the same class names.
+	 *
+	 * @param int    $event_id Event ID.
+	 * @param string $key      Data key.
+	 * @return string
+	 */
+	private static function event_part( $event_id, $key ) {
+		$html = do_shortcode( sprintf( '[eventkoi id=%d data=%s]', $event_id, $key ) );
+
+		if ( '' === trim( $html ) ) {
+			return '';
+		}
+
+		$class  = 'eventkoi-data-' . sanitize_html_class( $key );
+		$marked = preg_replace( '/^(\s*<div class="eventkoi-shortcode)"/', '$1 ' . $class . '"', $html, 1, $count );
+
+		return $count ? $marked : '<div class="eventkoi-shortcode ' . esc_attr( $class ) . '">' . $html . '</div>';
 	}
 
 	/**

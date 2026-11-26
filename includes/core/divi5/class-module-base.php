@@ -125,42 +125,51 @@ abstract class Module_Base implements DependencyInterface {
 		$settings                    = $args['settings'] ?? array();
 		$default_printed_style_attrs = $args['defaultPrintedStyleAttrs'] ?? array();
 
+		$styles = array(
+			$elements->style(
+				array(
+					'attrName'   => 'module',
+					'styleProps' => array(
+						'defaultPrintedStyleAttrs' => $default_printed_style_attrs['module']['decoration'] ?? array(),
+						'disabledOn'               => array(
+							'disabledModuleVisibility' => $settings['disabledModuleVisibility'] ?? null,
+						),
+						'advancedStyles'           => array(
+							array(
+								'componentName' => 'divi/text',
+								'props'         => array(
+									'selector' => $args['orderClass'],
+									'attr'     => $attrs['module']['advanced']['text'] ?? array(),
+									'defaultPrintedStyleAttr' => $default_printed_style_attrs['module']['advanced']['text'] ?? array(),
+								),
+							),
+						),
+					),
+				)
+			),
+		);
+
+		// Then each element the Design tab styles (title, date, ...).
+		foreach ( Divi5_Modules::style_elements( static::slug() ) as $attr_name ) {
+			$styles[] = $elements->style( array( 'attrName' => $attr_name ) );
+		}
+
+		// Custom CSS last, so it still has the final word.
+		$styles[] = CssStyle::style(
+			array(
+				'selector'  => $args['orderClass'],
+				'attr'      => $attrs['css'] ?? array(),
+				'cssFields' => static::custom_css(),
+			)
+		);
+
 		Style::add(
 			array(
 				'id'            => $args['id'],
 				'name'          => $args['name'],
 				'orderIndex'    => $args['orderIndex'],
 				'storeInstance' => $args['storeInstance'],
-				'styles'        => array(
-					$elements->style(
-						array(
-							'attrName'   => 'module',
-							'styleProps' => array(
-								'defaultPrintedStyleAttrs' => $default_printed_style_attrs['module']['decoration'] ?? array(),
-								'disabledOn'               => array(
-									'disabledModuleVisibility' => $settings['disabledModuleVisibility'] ?? null,
-								),
-								'advancedStyles'           => array(
-									array(
-										'componentName' => 'divi/text',
-										'props'         => array(
-											'selector' => $args['orderClass'],
-											'attr'     => $attrs['module']['advanced']['text'] ?? array(),
-											'defaultPrintedStyleAttr' => $default_printed_style_attrs['module']['advanced']['text'] ?? array(),
-										),
-									),
-								),
-							),
-						)
-					),
-					CssStyle::style(
-						array(
-							'selector'  => $args['orderClass'],
-							'attr'      => $attrs['css'] ?? array(),
-							'cssFields' => static::custom_css(),
-						)
-					),
-				),
+				'styles'        => $styles,
 			)
 		);
 	}
