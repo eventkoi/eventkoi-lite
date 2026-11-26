@@ -6,7 +6,7 @@ import eventMetadata from '../../../includes/core/divi5/modules/event/module.jso
 import eventOutline from '../../../includes/core/divi5/modules/event/conversion-outline.json';
 
 import { getBuilderData } from './data';
-import { makeEdit } from './edit';
+import { makeEdit, makeModuleStyles } from './edit';
 
 const SOURCES = {
 	calendar: { metadata: calendarMetadata, outline: calendarOutline },
@@ -152,11 +152,16 @@ export const buildModuleDefinitions = () => {
 
 	return slugs
 		.filter( ( slug ) => SOURCES[ slug ] )
-		.map( ( slug ) => ( {
-			metadata: prepareMetadata( slug, SOURCES[ slug ].metadata, data ),
-			conversionOutline: prepareOutline( slug, SOURCES[ slug ].outline, data ),
-			placeholderContent: {},
-			renderers: { edit: makeEdit( slug, styleAttrNames( SOURCES[ slug ].metadata ) ) },
-			callbacks: { content: { elements: elementsCallbacks } },
-		} ) );
+		.map( ( slug ) => {
+			const styleAttrs = styleAttrNames( SOURCES[ slug ].metadata );
+			const styles = makeModuleStyles( styleAttrs );
+
+			return {
+				metadata: prepareMetadata( slug, SOURCES[ slug ].metadata, data ),
+				conversionOutline: prepareOutline( slug, SOURCES[ slug ].outline, data ),
+				placeholderContent: {},
+				renderers: { edit: makeEdit( slug, styleAttrs, styles ), styles },
+				callbacks: { content: { elements: elementsCallbacks } },
+			};
+		} );
 };

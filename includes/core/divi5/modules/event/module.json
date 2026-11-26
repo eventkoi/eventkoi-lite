@@ -422,7 +422,8 @@
           "important": true
         },
         "spacing": {
-          "important": true
+          "important": true,
+          "selector": "{{selector}} .eventkoi-divi-event .eventkoi-data-event_details .eventkoi-data"
         }
       },
       "settings": {
@@ -570,7 +571,8 @@
           "props": {
             "groupLabel": "Body Text",
             "clipboardCategory": "style",
-            "dynamicSubgroupHost": true
+            "dynamicSubgroupHost": true,
+            "presetGroup": "divi/font"
           }
         }
       },
@@ -584,7 +586,8 @@
           "props": {
             "groupLabel": "Label Text",
             "clipboardCategory": "style",
-            "dynamicSubgroupHost": true
+            "dynamicSubgroupHost": true,
+            "presetGroup": "divi/font"
           }
         }
       },
@@ -598,7 +601,8 @@
           "props": {
             "groupLabel": "Title Text",
             "clipboardCategory": "style",
-            "dynamicSubgroupHost": true
+            "dynamicSubgroupHost": true,
+            "presetGroup": "divi/font"
           }
         }
       },
@@ -612,7 +616,8 @@
           "props": {
             "groupLabel": "Date Text",
             "clipboardCategory": "style",
-            "dynamicSubgroupHost": true
+            "dynamicSubgroupHost": true,
+            "presetGroup": "divi/font"
           }
         }
       },
@@ -626,7 +631,8 @@
           "props": {
             "groupLabel": "Location Text",
             "clipboardCategory": "style",
-            "dynamicSubgroupHost": true
+            "dynamicSubgroupHost": true,
+            "presetGroup": "divi/font"
           }
         }
       },
@@ -640,7 +646,8 @@
           "props": {
             "groupLabel": "Details Text",
             "clipboardCategory": "style",
-            "dynamicSubgroupHost": true
+            "dynamicSubgroupHost": true,
+            "presetGroup": "divi/font"
           }
         }
       },
@@ -654,7 +661,8 @@
           "props": {
             "groupLabel": "Link Text",
             "clipboardCategory": "style",
-            "dynamicSubgroupHost": true
+            "dynamicSubgroupHost": true,
+            "presetGroup": "divi/font"
           }
         }
       },
@@ -668,7 +676,8 @@
           "props": {
             "groupLabel": "Image",
             "clipboardCategory": "style",
-            "dynamicSubgroupHost": true
+            "dynamicSubgroupHost": true,
+            "presetGroup": "divi/image"
           }
         }
       }

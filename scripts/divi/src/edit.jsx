@@ -4,8 +4,9 @@ import { ModuleContainer, StyleContainer, CssStyle, textOptionsClassnames } from
 import { getBuilderData } from './data';
 
 // The module's own design settings, then one style per element the Design
-// tab styles (title, date, ...), then custom CSS.
-const makeModuleStyles = ( styleAttrs ) => ( { attrs, settings, orderClass, mode, state, noStyleTag, elements, defaultPrintedStyleAttrs } ) => (
+// tab styles (title, date, ...), then custom CSS. Divi also calls this with
+// a preset's settings to print that preset's CSS.
+export const makeModuleStyles = ( styleAttrs ) => ( { attrs, settings, orderClass, mode, state, noStyleTag, elements, defaultPrintedStyleAttrs } ) => (
 	<StyleContainer mode={ mode } state={ state } noStyleTag={ noStyleTag }>
 		{ elements.style( {
 			attrName: 'module',
@@ -127,8 +128,7 @@ const ServerPreview = ( { module, attrs, styleAttrs } ) => {
 	return <div ref={ container } className="eventkoi-divi5-preview" dangerouslySetInnerHTML={ { __html: state.html } } />;
 };
 
-export const makeEdit = ( module, styleAttrs = [] ) => {
-	const ModuleStyles = makeModuleStyles( styleAttrs );
+export const makeEdit = ( module, styleAttrs = [], ModuleStyles = makeModuleStyles( styleAttrs ) ) => {
 	const Edit = ( { attrs, id, name, elements, isLooped, loopIndex } ) => (
 		<ModuleContainer
 			attrs={ attrs }

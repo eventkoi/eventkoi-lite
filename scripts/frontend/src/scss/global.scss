@@ -199,8 +199,9 @@ main.eventkoi-main {
 // Divi's own text modules restate it per element; this does the same, at the
 // ratio the text has today, so nothing moves until a size is changed. The
 // selector stays below Divi's generated ones, so a line height set in the
-// Design tab still wins.
-:where(.eventkoi-divi-event) .eventkoi-data,
-:where(.eventkoi-divi-event) .eventkoi-label {
+// Design tab still wins. Only the Divi 5 module has those settings, so the
+// Divi 4 module is left as it was.
+:where(.eventkoi_divi_event .eventkoi-divi-event) .eventkoi-data,
+:where(.eventkoi_divi_event .eventkoi-divi-event) .eventkoi-label {
   line-height: var(--et_global_body_font_height, 1.7em);
 }

@@ -141,17 +141,13 @@ class Divi_Renderers {
 
 	/**
 	 * The event being viewed. In a Theme Builder template the post in the
-	 * loop is the template itself, so the page's main post and the queried
-	 * event are asked too.
+	 * loop is the template itself, so on an event page the event the page
+	 * shows is asked too. Archive pages have no single event of their own.
 	 *
 	 * @return int Event ID, or 0 when the page shows no event.
 	 */
 	private static function current_event_id() {
 		$candidates = array( get_the_ID() );
-
-		if ( class_exists( '\ET_Post_Stack' ) && method_exists( '\ET_Post_Stack', 'get_main_post_id' ) ) {
-			$candidates[] = \ET_Post_Stack::get_main_post_id();
-		}
 
 		if ( is_singular( 'eventkoi_event' ) ) {
 			$candidates[] = get_queried_object_id();
@@ -185,7 +181,13 @@ class Divi_Renderers {
 		$class  = 'eventkoi-data-' . sanitize_html_class( $key );
 		$marked = preg_replace( '/^(\s*<div class="eventkoi-shortcode)"/', '$1 ' . $class . '"', $html, 1, $count );
 
-		return $count ? $marked : '<div class="eventkoi-shortcode ' . esc_attr( $class ) . '">' . $html . '</div>';
+		if ( $count ) {
+			return $marked;
+		}
+
+		// Some data comes back as bare text (Event URL). Give it the same two
+		// wrappers as the rest so a label stays on its line and Body Text applies.
+		return '<div class="eventkoi-shortcode ' . esc_attr( $class ) . '"><div class="eventkoi-data">' . $html . '</div></div>';
 	}
 
 	/**
