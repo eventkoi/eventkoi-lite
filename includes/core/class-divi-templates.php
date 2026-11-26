@@ -57,6 +57,24 @@ class Divi_Templates extends Builder_Templates {
 	}
 
 	/**
+	 * Template setting that hands the page to Divi's Theme Builder.
+	 *
+	 * Picked in EventKoi's template choices, it lets the Theme Builder
+	 * template Divi assigns to the event (All Events, a category, one event)
+	 * render it, the way Divi does for posts.
+	 */
+	const THEME_BUILDER_SLUG = 'divi-theme-builder';
+
+	/**
+	 * Whether Divi's Theme Builder is there to take a page.
+	 *
+	 * @return bool
+	 */
+	public static function theme_builder_available() {
+		return function_exists( 'et_theme_builder_frontend_override_template' );
+	}
+
+	/**
 	 * The Divi theme or the Divi Builder plugin is running.
 	 *
 	 * @return bool

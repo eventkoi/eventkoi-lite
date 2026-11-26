@@ -315,7 +315,17 @@ class Scripts {
 
 		if ( \EventKoi\Core\Divi_Templates::is_available() ) {
 			$divi_templates = array();
-			$divi_layouts   = get_posts(
+
+			// Lets the Theme Builder template Divi assigns to a page render it.
+			if ( \EventKoi\Core\Divi_Templates::theme_builder_available() ) {
+				$divi_templates[] = array(
+					'slug'     => \EventKoi\Core\Divi_Templates::THEME_BUILDER_SLUG,
+					'title'    => __( 'Theme Builder', 'eventkoi-lite' ),
+					'edit_url' => admin_url( 'admin.php?page=et_theme_builder' ),
+				);
+			}
+
+			$divi_layouts = get_posts(
 				array(
 					'post_type'      => 'et_pb_layout',
 					'post_status'    => 'publish',
