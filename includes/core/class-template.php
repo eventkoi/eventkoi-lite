@@ -880,6 +880,14 @@ class Template {
 				return false;
 			}
 
+			// Divi swaps in its Theme Builder header and footer from its own
+			// template_include filter, which runs after this one and never
+			// gets the chance once the page is printed here. Without it the
+			// theme's built-in header shows instead of the site's own.
+			if ( function_exists( 'et_theme_builder_frontend_override_template' ) ) {
+				et_theme_builder_frontend_override_template( '' );
+			}
+
 			self::render_builder_template_content( self::render_divi_layout( $template_obj ), $context );
 		}
 
@@ -1005,11 +1013,11 @@ class Template {
 	}
 
 	/**
-	 * Hand the styles of a rendered Divi 5 layout to Divi's page stylesheet.
+	 * Print the styles of a rendered Divi 5 layout.
 	 *
 	 * Divi 5 gathers each module's styles while a layout renders and prints
 	 * them for pages built with Divi. An event or calendar page is not one,
-	 * so the styles gathered for it are passed on here, inline, the way Divi
+	 * so the styles gathered for it are printed here, inline, the way Divi
 	 * does for a layout it embeds itself.
 	 *
 	 * @param \WP_Post $layout Library layout that was just rendered.
@@ -1018,8 +1026,8 @@ class Template {
 		$static_css = '\ET\Builder\FrontEnd\Assets\StaticCSS';
 
 		if ( ! class_exists( $static_css )
-			|| ! method_exists( $static_css, 'setup_styles_manager' )
-			|| ! method_exists( $static_css, 'style_output' ) ) {
+			|| ! method_exists( $static_css, 'style_output' )
+			|| ! function_exists( 'et_core_page_resource_get' ) ) {
 			return;
 		}
 
@@ -1029,15 +1037,16 @@ class Template {
 			$owner_id = (int) get_queried_object_id();
 		}
 
-		$result  = $static_css::setup_styles_manager( $owner_id );
-		$manager = is_array( $result ) ? ( $result['manager'] ?? null ) : null;
+		// A stylesheet of its own: Divi's page stylesheet also carries the
+		// Theme Builder header and footer styles, which Divi adds later in
+		// the page and which would be lost if that one printed early.
+		$manager = et_core_page_resource_get( 'builder', 'eventkoi-divi-layout', $owner_id, 40 );
 
 		if ( ! is_object( $manager ) ) {
 			return;
 		}
 
-		// A cached file for this page would not hold a library layout's
-		// styles, so they always go out inline.
+		// Printed inline on every load rather than from a cached file.
 		$manager->forced_inline = true;
 
 		$page_class = '\ET\Builder\FrontEnd\Page';
